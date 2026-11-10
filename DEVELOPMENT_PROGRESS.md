@@ -88,7 +88,9 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 | `npm audit` | 0 vulnerabilities |
 | Visual | Screenshots inspected: the crate rests on the grid floor with lighting, at both desktop and mobile aspect ratios. |
 
-**Not done / deferred:** lint and format tooling (moved to Phase 1). CI has not run on GitHub yet; it runs on the next push and its result should be checked. Nothing deployed: GitHub Pages is not yet enabled.
+**Not done / deferred:** lint and format tooling (moved to Phase 1). GitHub CI results (checked 10/11/2026):
+- Run #1 (3D commit `83c4e8f`): **failed**, mobile e2e only. Cause: a flawed test, not the game. It required more than 60 physics steps at the moment the crate landed, but a 3.5 m fall takes about 0.84 s (about 51 steps), so the result depended on timing. That test was removed with the 3D scene.
+- Run #2 (2D commit `e7206a0`): **passed** (typecheck, tests, build, e2e on desktop and mobile). Nothing deployed: GitHub Pages is not yet enabled.
 
 ### 10/11/2026: Switched from 3D to 2D top-down (owner instruction)
 **Owner:** "Make it in 2D not 3D like Creature Clash where the creature can go front and back and left and right, everything should be in 2D; show me a screenshot after creation."
