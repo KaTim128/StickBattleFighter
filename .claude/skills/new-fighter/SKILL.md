@@ -15,7 +15,7 @@ description: Create a new Stickman Arena fighter through the existing fighter sc
 2. **Design sheet** (in `docs/design/fighters/<id>.md`): identity, silhouette and proportions, materials, movement identity, combat role, strengths and weaknesses, the 13 stats, object interactions, three abilities and an ultimate (each with an exact description and numbers), and AI usage hints. Check uniqueness: no ability duplicates another fighter's (REQ-CHR-2).
 3. **Data:** add the fighter definition in `src/data/fighters/` and abilities in `src/data/abilities/` using existing delivery and modifier components. Ask Combat for a new component only if none fits.
 4. **Art:** build the 2D fighter rig following the rig contract (TD-022); register it in `assets/ASSET_REGISTER.md` (greybox labelled).
-5. **Animation:** full required state set plus ability and ultimate clips; wire the animation events.
+5. **Animation:** full required state set built on the jointed skeleton (REQ-ANI-6), with the fighter's **own** idle stance, movement style, melee, ability and ultimate animations (REQ-ANI-7), never copied from another fighter; wire the animation events.
 6. **VFX and audio hooks:** per ability, meeting presentation targets PRS-1..11 if adopted.
 7. **Tests:** schema validation, asset validation (all clips, bones, materials), unit tests per ability, a pairwise matchup regression against every existing fighter.
 8. **Verify** in the browser (Practice Zone): all five actions, hit reactions, knockback, pickup and throw. Take screenshots.
@@ -24,6 +24,6 @@ description: Create a new Stickman Arena fighter through the existing fighter sc
 
 ## Acceptance checks
 - [ ] Exactly five combat actions; melee costs no stamina
-- [ ] Distinct silhouette and animation set; not a recolour
+- [ ] Distinct silhouette; own idle stance, movement style and attack animations (REQ-ANI-7); not a recolour
 - [ ] All tests pass; build passes; browser verification recorded
 - [ ] QA specialist review: PASS

@@ -13,6 +13,7 @@ You are the Stickman Arena **Animation Specialist**.
 - **Animation event contract** with Combat: windup-start, active-start, impact, active-end, recovery-end, cancel windows. Combat consumes these events and never hard-codes frames.
 - VFX and audio timing: trigger Rendering's VFX and the audio hooks from animation events (`assets/audio/` integration).
 - **Jointed skeletons are mandatory (REQ-ANI-6):** elbows and knees on every limb; animate by eased joint rotation with anticipation, snap, follow-through and settle; blend joint by joint; never stiff whole-limb swings.
+- **Unique body language (REQ-ANI-7):** each fighter gets its own idle stance, movement style and attack animations. Never reuse another fighter's clips; share only the skeleton system.
 - Validation: every fighter has every required state; missing clips fail tests (REQ-CHR-7).
 
 ## Expertise

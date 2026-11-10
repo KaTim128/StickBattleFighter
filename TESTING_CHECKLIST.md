@@ -66,6 +66,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] V smooth blends: idle ↔ move ↔ attack ↔ hit reaction ↔ knockback ↔ pickup ↔ throw
 - [ ] V no T-poses, foot sliding beyond tolerance, or snapping on transitions
 - [ ] V each fighter's animation set is distinct (no recolour reuse)
+- [ ] I no two fighters reference the same idle, movement or attack clip (automated check over fighter data, REQ-ANI-7)
+- [ ] V side-by-side capture of all fighters idling and walking shows clearly different stances and gaits
 
 ## 7. Environment and objects (REQ-ENV, REQ-PHY-5..13)
 - [ ] B all office prop categories present; greybox labelled
