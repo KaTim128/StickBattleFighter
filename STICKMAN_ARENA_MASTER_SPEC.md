@@ -23,10 +23,11 @@ The playbook says the master specification should hold "the complete original St
 
 | ID | Requirement | Source |
 |---|---|---|
-| REQ-VIS-1 | Stickman Arena is an **original**, browser-based, **fully 3D, real-time arena fighting game**. | [PB §7, §14.1] [OWNER] |
-| REQ-VIS-2 | **Unrestricted 360° player movement** in explorable 3D arenas. | [PB §4.3, §14.1] |
-| REQ-VIS-3 | **No** side-scrolling, fixed side view, 2D fighting lane, or flat 2D sprite combat. | [PB §4.3, §4.4, §14.1] |
+| REQ-VIS-1 | Stickman Arena is an **original**, browser-based, **2D top-down, real-time arena fighting game**. Everything is 2D: arenas, fighters, effects and UI. | [OWNER 10/11/2026] (supersedes the playbook's "fully 3D", SUP-04) |
+| REQ-VIS-2 | **Free movement in every direction** across the arena floor, seen from above: up/down (front/back), left/right and diagonals, like Creature Clash. | [OWNER 10/11/2026] [PB §4.3, §14.1] |
+| REQ-VIS-3 | **No** side-scrolling, side view or single fighting lane: the arena is viewed from above and fighters can go anywhere on it. (The playbook's ban on "flat 2D sprite combat" is superseded, SUP-04.) | [PB §4.3, §4.4, §14.1] [OWNER] |
 | REQ-VIS-4 | Players can circle, retreat, approach from behind, reposition, dodge and use obstacles tactically. | [PB §14.1] |
+| REQ-VIS-9 | **Depth in 2D:** objects lower on the screen draw in front (y-sorting); jumping, thrown objects and airborne attacks show height with a ground shadow. | [TD-021] |
 | REQ-VIS-5 | All characters, abilities, VFX, animations, UI, arenas, progression and identity must be original. References are for learning only. | [PB §4.4] [OWNER] |
 | REQ-VIS-6 | Stickman Arena is **not** a Pokémon game, a creature-collection game, or a turn-based battle game. No Pokémon branding or implied affiliation. | [PB §4.5] [OWNER] |
 | REQ-VIS-7 | Stickman Arena is a **standalone repository**, separate from the Froggy project. | [PB §1, §3.1] |
@@ -44,12 +45,12 @@ The playbook says the master specification should hold "the complete original St
 
 ### 2.2 Reference translation rules `[PB §4.4, §4.5]`
 
-1. Keep the game fully 3D with unrestricted 360° movement, free camera rotation and explorable arenas.
-2. Design original 3D attacks that account for real distance, facing, height, obstacles, hitboxes, hurtboxes and physics.
+1. Keep the game 2D top-down with free movement in every direction across explorable arenas (REQ-VIS-1/2).
+2. Design original attacks that account for real distance, facing, obstacles, hitboxes, hurtboxes and physics in the 2D arena plane, plus airborne state where relevant.
 3. Treat combo windows, attacks from behind, aerial follow-ups, blocks, counters and hit reactions as **optional patterns**, each checked against the five-action layout (§7) and balance. **Do not add actions that contradict the approved controls.**
 4. The video may shape how the five actions are **presented**, but must not silently change the control layout or game design.
 5. If a reference cannot be accessed, report it and work from public descriptions or owner-supplied screenshots or videos. Never claim to have inspected gameplay you did not see.
-6. Reference research for a milestone is done by a specialist who writes an observation report: the design lesson, how it translates to original 3D, the relevant REQ ID, and any conflict. **The Master Developer decides** whether to adopt it `[PB §4.4]`.
+6. Reference research for a milestone is done by a specialist who writes an observation report: the design lesson, how it translates to the original 2D top-down game, the relevant REQ ID, and any conflict. **The Master Developer decides** whether to adopt it `[PB §4.4]`.
 
 ### 2.3 Reference reports already produced
 
@@ -61,7 +62,7 @@ The playbook says the master specification should hold "the complete original St
 
 | ID | Invariant |
 |---|---|
-| INV-1 | Fully 3D free movement. No side-scrolling, fixed side view or traditional 2D fighting lane. |
+| INV-1 | **2D top-down free movement** in every direction (owner, 10/11/2026). No side-scrolling, side view or single fighting lane. |
 | INV-2 | Creature Clash is a read-only reference, never a source of copied code or assets. |
 | INV-3 | Stickman Kombat 2D is a secondary reference for presentation, timing, combo flow, defence and tutorial ideas only. |
 | INV-4 | The Froggy project is never modified by Stickman Arena workers. |
@@ -82,25 +83,25 @@ The playbook says the master specification should hold "the complete original St
 | REQ-ARC-5 | Shared combat and physics systems are reusable across modes. | [PB §7] |
 | REQ-ARC-6 | Avoid duplicate logic and premature abstractions. | [PB §7] |
 | REQ-ARC-7 | Before choosing an engine, compare **at least two** plausible rendering approaches and explain the choice. Do not install competing engines just to test. | [PB §6] |
-| REQ-ARC-8 | Evaluate browser 3D engines, physics engines, animation pipelines, asset formats, UI approaches and backend options. | [PB §6] |
+| REQ-ARC-8 | Evaluate browser 2D renderers, physics engines, animation pipelines, asset formats, UI approaches and backend options. | [PB §6] |
 | REQ-ARC-9 | Check toolchain version requirements (for example Vite's Node requirement) during architecture planning. Do not pin old versions blindly. | [PB §3.2] |
 | REQ-ARC-10 | Engine-agnostic fighter logic: avoid fighter-specific branches inside the shared engine where configuration or ability components fit. | [PB §8.5] |
 | REQ-ARC-11 | Content pipeline must scale (toward 100 fighters) without rewriting core systems. | [PB §12 Phase 15] |
 | REQ-ARC-12 | Changing the approved rendering or physics architecture after implementation starts requires owner approval. | [PB §17.1] |
 
-Candidate technologies named in the playbook's official references: Three.js, Rapier (JavaScript), Playwright, Blender `[PB §20]`. **Nothing has been selected yet.** The proposal and its status are in `TECHNICAL_DECISIONS.md` (TD-003 to TD-007).
+Selected stack (TD-021, after the switch to 2D): TypeScript + Vite, **PixiJS 8** (2D WebGL renderer), **Rapier 2D** physics, Vitest + Playwright. The playbook's 3D candidates (Three.js, Blender) are superseded.
 
-## 5. 3D environments and arenas
+## 5. 2D environments and arenas
 
-### 5.1 Camera `[PB §14.1, §12 Phase 3]`
+### 5.1 Camera (2D top-down) `[OWNER 10/11/2026]` `[TD-021]`
 
 | ID | Requirement |
 |---|---|
-| REQ-CAM-1 | Third-person camera that follows, rotates (orbit) and zooms. |
-| REQ-CAM-2 | Smoothing, and obstruction handling: no clipping through walls or furniture. |
-| REQ-CAM-3 | Opponent framing (keep combat readable). |
-| REQ-CAM-4 | Camera stability under knockback; camera recovers after obstruction. |
-| REQ-CAM-5 | Free camera rotation. [PB §4.4] |
+| REQ-CAM-1 | Top-down 2D camera that **follows the player** smoothly. |
+| REQ-CAM-2 | Keeps the **opponent(s) in frame**, zooming out automatically when fighters spread apart (within limits) and in when close. |
+| REQ-CAM-3 | Clamped to the arena bounds (never shows large empty space beyond the walls when avoidable). |
+| REQ-CAM-4 | Screen shake, flash and short zoom punches for impacts and ultimates (PRS-3, PRS-8), stable under knockback. |
+| REQ-CAM-5 | No manual camera rotation; the view is always from above. *(Supersedes free 3D camera rotation, orbit and obstruction handling: SUP-04.)* |
 
 ### 5.2 First arena: the office `[PB §12 Phase 4, §14.4]`
 
@@ -123,8 +124,8 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 
 | ID | Requirement |
 |---|---|
-| REQ-PHY-1 | Reusable 3D character controller (capsule controller named in the playbook). |
-| REQ-PHY-2 | 360° movement with acceleration, deceleration, turning/rotation, running, **jumping**, gravity, ground detection, slopes, stairs and obstacles. |
+| REQ-PHY-1 | Reusable 2D top-down character controller (circle or capsule body on the floor plane). |
+| REQ-PHY-2 | Free movement in all directions with acceleration, deceleration, facing direction, running, obstacles and **jumping as a short hop** (airborne height with a ground shadow; the player is airborne for a moment and avoids ground-level hits). There is no gravity in the floor plane, and no slopes or stairs. *(3D gravity, slopes and stairs superseded: SUP-04.)* |
 | REQ-PHY-3 | Friction, knockback, and per-fighter weight and mobility values. |
 | REQ-PHY-4 | Collision layers, rigid bodies, camera collision, navigation integration, physics performance. |
 
@@ -235,7 +236,7 @@ No numeric values were supplied (OQ-05).
 | ID | Requirement | Source |
 |---|---|---|
 | REQ-CMB-1 | Shared combat state machine, attack timing, hitboxes, hurtboxes, target validation, damage, recovery, stun, knockback, interruptions, block, dodge, counter, and death or defeat states. | [PB §12 Phase 5–6] |
-| REQ-CMB-2 | **Real spatial hit detection**: results depend on actual 3D positions, attack direction, timing, range, line of sight and obstruction. **No guaranteed hits.** | [PB §8.5, §12] |
+| REQ-CMB-2 | **Real spatial hit detection**: results depend on actual 2D arena positions (plus airborne state), attack direction, timing, range, line of sight and obstruction. **No guaranteed hits.** | [PB §8.5, §12] |
 | REQ-CMB-3 | Outcomes supported: hit, miss, dodge, block, interrupt, counter, recovery. | [PB §8.5] |
 | REQ-CMB-4 | Health, stamina, cooldowns. Melee costs no stamina; abilities have configurable stamina cost and cooldown. | [PB §4.2, §12] |
 | REQ-CMB-5 | Abilities support cooldowns, stamina, targeting, animation, range, collision, VFX and sound, plus interruption. | [PB §11.1, §12] |
@@ -254,7 +255,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ABL-2 | Each fighter has exactly 3 unique abilities and 1 unique ultimate. | [PB §4.2, §14.2] |
 | REQ-ABL-3 | Ultimate has its own **charge or cooldown** rule (not yet specified, OQ-04). | [PB §4.2] |
 | REQ-ABL-4 | Ability interfaces support fighter–object interactions (§8.3). | [PB §12 Phase 7] |
-| REQ-ABL-5 | Abilities and ultimates must be **original**. Creature Clash's ability catalogue may be used as a **design reference** for delivery types (projectile, fan, ring, dash, beam, trap, shield, blink, lob, snare, aura, heal), effect categories (control, damage-over-time, mobility, defence, summons, zones) and the "every ultimate designed, none weaker" balance philosophy, reinterpreted for 3D. See `docs/references/CREATURE_CLASH_OBSERVATIONS.md`. | [OWNER 10/11/2026] [REF-CC] |
+| REQ-ABL-5 | Abilities and ultimates must be **original**. Creature Clash's ability catalogue may be used as a **design reference** for delivery types (projectile, fan, ring, dash, beam, trap, shield, blink, lob, snare, aura, heal), effect categories (control, damage-over-time, mobility, defence, summons, zones) and the "every ultimate designed, none weaker" balance philosophy, reinterpreted for Stickman Arena. See `docs/references/CREATURE_CLASH_OBSERVATIONS.md`. | [OWNER 10/11/2026] [REF-CC] |
 | REQ-ABL-6 | Telegraphing: where an ability has a delayed area, show it before it lands so it can be avoided. *Adopted by the owner 10/11/2026 (OQ-15).* | [REF-CC] [REF-VIDEO] [OWNER] |
 
 ## 11. Animation and visual presentation
@@ -267,7 +268,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ANI-2 | Animation states blend smoothly with movement, attacks, hit reactions, knockback, pickup and throwing. |
 | REQ-ANI-3 | Each fighter has distinct attack, ability and ultimate animations. |
 | REQ-ANI-4 | Animation events (for example hit-frame timing) are coordinated with the combat system. |
-| REQ-ANI-5 | Asset creation: Blender for original models, rigs, animations and environment assets. `[PB §3.4]` |
+| REQ-ANI-5 | 2D asset pipeline (TD-022, proposed): fighters as crisp vector stick figures drawn in code with 2D skeletal (bone) animation defined as data; effects as particles and sprites; environment props as 2D top-down art. *(Blender and glTF superseded: SUP-04.)* |
 
 ### 11.2 Presentation quality targets (from the owner's videos) `[PB §4.5]` `[REF-VIDEO]`
 
@@ -285,7 +286,7 @@ No numeric values were supplied (OQ-05).
 | PRS-8 | **Ultimate showcase:** a brief full-screen or cinematic emphasis (for example speed lines or a flash) when an ultimate lands, kept short so real-time play is not interrupted for long. |
 | PRS-9 | **Defeat moment:** a clear KO callout and a short beat before the next round or result screen. |
 | PRS-10 | **HUD at a glance:** top health bars with portraits for both sides, a match timer, and the name of the action just used. |
-| PRS-11 | Readability has to survive the move from a top-down 2D view (the videos) to a free 3D third-person camera: effects must read from any camera angle. |
+| PRS-11 | The top-down view matches the reference videos, so their readability lessons apply directly. Effects must stay readable at the camera's widest zoom and on small phone screens. |
 
 ## 12. AI
 
@@ -373,8 +374,8 @@ A successful build alone does not prove the game works. Use unit tests for deter
 | Area | Minimum evidence before marking complete |
 |---|---|
 | Build | Production build exits successfully. No unresolved TypeScript or bundler errors. |
-| Movement | Forward, backward, lateral, diagonal movement, jump, collision, turning and knockback. |
-| Camera | Orbit, zoom, wall obstruction, furniture obstruction and camera recovery. |
+| Movement | Up, down, left, right and diagonal movement (diagonals not faster), hop, collision, facing and knockback. |
+| Camera | Follow, auto-zoom to keep fighters framed, arena-bound clamping, shake. |
 | Combat | Hit, miss, block, dodge, interrupt, cooldown, stamina and knockback. |
 | Environment | Pickup validity, carry, throw, collision, bounce, breakage and cleanup. |
 | Fighters | Every fighter action and important matchups; distinct animation and stats. |
@@ -384,7 +385,7 @@ A successful build alone does not prove the game works. Use unit tests for deter
 | Backend | Cross-device persistence, server-validated rewards, access control and audit trail. |
 | Performance | Frame rate, memory, loading and input responsiveness on real devices. |
 
-Browser verification uses the documented dev command and browser automation: test the milestone's acceptance criteria (not just the home page), capture screenshots where visual or 3D behaviour matters, and inspect console and network errors. **Never infer success from source code alone** `[PB §15.1]`. The full checklist is in `TESTING_CHECKLIST.md`.
+Browser verification uses the documented dev command and browser automation: test the milestone's acceptance criteria (not just the home page), capture screenshots where visual behaviour matters, and inspect console and network errors. **Never infer success from source code alone** `[PB §15.1]`. The full checklist is in `TESTING_CHECKLIST.md`.
 
 ## 19. Process, permissions and safe autonomy `[PB §16, §17]`
 
@@ -418,7 +419,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | OQ-13 | Multiplayer: are 1v1 and 3v3 against AI only, local, or **online PvP**? Nothing in the playbook specifies networking. | Online PvP changes the architecture fundamentally (netcode, authoritative server). | **RESOLVED 10/11/2026:** AI opponents only for now; online play possibly in the future (REQ-VIS-8, TD-018). |
 | OQ-14 | Phase 11 says the desktop and mobile layouts "work independently **and simultaneously**". Does that mean one device with a keyboard and touchscreen at once, or only that both code paths coexist? | REQ-CTL-9 | **RESOLVED 10/11/2026 (TD-016):** both layouts coexist in one build; the active one follows the device actually used. A touch laptop switches to the touch HUD on the first touch and back on keyboard or mouse input. |
 | OQ-15 | Adopt reference-derived presentation targets PRS-1 to PRS-11 and the telegraphing rule REQ-ABL-6 as binding? | Videos are references; the owner decides adoption. | **RESOLVED 10/11/2026:** adopted as binding (PRS-1..11, REQ-ABL-6). |
-| OQ-16 | Art direction: what does "stickman" mean in 3D (pure line-figure, thick capsule limbs, stylised low-poly)? How do the five fighters keep distinct silhouettes within it? | REQ-CHR-1, REQ-CHR-3 | Phase 8 |
+| OQ-16 | Art direction: what should the 2D top-down stickmen look like (pure line figures, thicker limbs, outlines, colours; seen from above or at a slight three-quarter angle)? How do the five fighters keep distinct silhouettes within it? | REQ-CHR-1, REQ-CHR-3 | Phase 8 |
 | OQ-17 | Audio: no music or SFX requirements beyond "sound" hooks. Source of audio assets? | REQ-ABL-1 | Phase 6 onward |
 | OQ-18 | The specialist team was set by the owner (10 roles), which differs from the playbook's 9. The mapping of the playbook's environment, game-mode, UI and tutorial duties onto the 10 roles is in `docs/workflow/SYSTEM_OWNERSHIP.md`. Confirm. | Ownership clarity. | **RESOLVED 10/11/2026:** mapping confirmed, on condition that specialists are only used when needed to save tokens (TD-019). |
 
@@ -428,6 +429,7 @@ Browser verification uses the documented dev command and browser automation: tes
 |---|---|---|---|
 | SUP-01 | Four visible basic attack buttons plus four abilities. | Five-action layout (§7.1): 1 melee + 3 abilities + 1 ultimate. | Playbook v1.0/v1.2, 08/11/2026 |
 | SUP-02 | Playbook §8.1: nine-worker team (stickman-architect, movement-physics-engineer, combat-systems-engineer, environment-engineer, character-animation-engineer, ai-gameplay-engineer, ui-mobile-tutorial-engineer, backend-security-engineer, qa-reviewer). | Owner's 10-specialist team (10/11/2026). Duties remapped in `docs/workflow/SYSTEM_OWNERSHIP.md`. | 10/11/2026 |
+| SUP-04 | Fully 3D game: 3D arenas, third-person orbit camera with free rotation and obstruction handling, 3D gravity, slopes and stairs, Three.js, Blender and glTF assets, "no flat 2D sprite combat". | **2D top-down** game (REQ-VIS-1/2/3/9, INV-1, §5.1, REQ-PHY-1/2, REQ-ANI-5; TD-021, TD-022). Owner: "make it in 2D not 3D like Creature Clash where the creature can go front and back and left and right, everything should be in 2D". | 10/11/2026 |
 | SUP-03 | Playbook §8: "create the first group [of workers] after the architecture has been approved". | Owner instructed creating all specialists during initialisation (10/11/2026). | 10/11/2026 |
 
 ## 23. Change log
@@ -435,5 +437,6 @@ Browser verification uses the documented dev command and browser automation: tes
 | Date | Change | By |
 |---|---|---|
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |
+| 10/11/2026 | **Switched from 3D to 2D top-down** (owner). Rewrote REQ-VIS-1/2/3, INV-1, §5.1 camera, REQ-PHY-1/2, REQ-CMB-2, REQ-ANI-5, PRS-11, the §18 table and OQ-16; added REQ-VIS-9; superseded the 3D rules as SUP-04. | Master Developer |
 | 10/11/2026 | Game hosting switched from Cloudflare Pages to GitHub Pages (owner). | Master Developer |
 | 10/11/2026 | Owner decisions applied: control scheme (REQ-CTL-11..15, TD-016), AI-only play (REQ-VIS-8), free hosting (REQ-BE-11), PRS-1..11 and REQ-ABL-6 binding, Stickman Kombat 2D role confirmed and widened to style, feel, sound effects and attacks; OQ-01/02/03/13/14/15/18 resolved, OQ-11 partly; original requirements confirmed unavailable. | Master Developer |

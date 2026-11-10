@@ -1,8 +1,8 @@
 # Stickman Arena
 
-An original, browser-based, **fully 3D, real-time, free-movement arena fighting game**.
+An original, browser-based, **2D top-down, real-time arena fighting game**: fighters move freely up, down, left and right across the arena.
 
-> **Status:** Phase 0 complete (10/11/2026): toolchain plus a minimal 3D engine-check scene (renderer + physics). No gameplay yet. Next: Phase 1, engine foundation.
+> **Status:** Phase 0 complete (10/11/2026): toolchain plus a minimal 2D top-down engine-check scene (renderer + physics). No gameplay yet. Next: Phase 1, engine foundation.
 
 ## Run it locally
 Requires Node.js 20.19+ or 22.12+.
@@ -34,14 +34,14 @@ Deployment is manual and needs the owner's go-ahead. Enable it once under **Sett
 | [`docs/references/`](docs/references/) | Playbook and reference observation reports |
 
 ## Claude Code setup
-- **Specialists:** `.claude/agents/` (10 subagents: architecture, rendering, physics, combat, character, animation, AI, mobile controls, backend, QA)
+- **Specialists:** `.claude/agents/` (10 subagents: architecture, 2D rendering, physics, combat, character, animation, AI, mobile controls, backend, QA)
 - **Rules:** `.claude/rules/`
 - **Skills:** `/new-fighter`, `/new-ability`, `/new-arena`, `/bug-investigation`, `/release-check`, `/assign-specialist`, `/session-checkpoint`, `/reference-observation`
 
 If newly added agents or skills are not detected, restart Claude Code in the project folder.
 
 ## Stack
-TypeScript + Vite · Three.js · Rapier · Vitest + Playwright · Blender → glTF (approved). Game hosting: GitHub Pages. Data backend for Phase 14: Supabase Free (proposed). See `TECHNICAL_DECISIONS.md`.
+TypeScript + Vite · PixiJS 8 (2D) · Rapier 2D · Vitest + Playwright (TD-021). Game hosting: GitHub Pages. Data backend for Phase 14: Supabase Free (proposed). See `TECHNICAL_DECISIONS.md`.
 
 ## Boundaries
 Froggy (`froggy-arcade`) is a read-only reference. Reference videos inform presentation only. Stickman Arena is not affiliated with any franchise shown in them.

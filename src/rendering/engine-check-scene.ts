@@ -1,72 +1,60 @@
-import {
-  BoxGeometry,
-  Color,
-  DirectionalLight,
-  Fog,
-  GridHelper,
-  HemisphereLight,
-  Mesh,
-  MeshStandardMaterial,
-  PerspectiveCamera,
-  PlaneGeometry,
-  Scene,
-} from 'three';
+import { Container, Graphics } from 'pixi.js';
+import { ENGINE_CHECK } from '../data/arenas/engine-check';
 
 /**
- * Phase 0 engine-check scene: GREYBOX ONLY. Proves the renderer, lighting and
- * physics sync work end to end. It is not the office arena (Phase 4) and holds
- * no game content. Shared dimensions keep the visuals and colliders in step.
+ * Draws the Phase 0 engine-check arena (2D top-down, GREYBOX ONLY) from the
+ * shared data in src/data/arenas/engine-check.ts.
  */
-export const ENGINE_CHECK = {
-  floorHalfSizeM: 10,
-  floorThicknessM: 0.2,
-  crateHalfSizeM: 0.5,
-  crateStart: { x: 0, y: 4, z: 0 },
-  background: 0x1b2230,
-} as const;
 
 export interface EngineCheckScene {
-  readonly scene: Scene;
-  readonly camera: PerspectiveCamera;
-  readonly crate: Mesh;
+  /** Everything in world space (metres); position and scale it with the camera. */
+  readonly world: Container;
+  readonly crate: Container;
 }
 
 export function buildEngineCheckScene(): EngineCheckScene {
-  const scene = new Scene();
-  scene.background = new Color(ENGINE_CHECK.background);
-  scene.fog = new Fog(ENGINE_CHECK.background, 25, 60);
+  const { arenaWidthM: w, arenaHeightM: h, wallThicknessM: t, crateHalfSizeM: c, colours } = ENGINE_CHECK;
+  const world = new Container();
+  world.label = 'world';
 
-  scene.add(new HemisphereLight(0xdfe8ff, 0x3a3326, 1.2));
-  const sun = new DirectionalLight(0xffffff, 2.2);
-  sun.position.set(6, 10, 4);
-  scene.add(sun);
+  const floor = new Graphics().rect(0, 0, w, h).fill(colours.floor);
+  floor.label = 'greybox-floor';
+  world.addChild(floor);
 
-  const size = ENGINE_CHECK.floorHalfSizeM * 2;
-  const floor = new Mesh(
-    new PlaneGeometry(size, size),
-    new MeshStandardMaterial({ color: 0x59606b, roughness: 0.95 }),
-  );
-  floor.name = 'greybox-floor';
-  floor.rotation.x = -Math.PI / 2;
-  scene.add(floor);
+  const grid = new Graphics();
+  for (let x = 1; x < w; x++) grid.moveTo(x, 0).lineTo(x, h);
+  for (let y = 1; y < h; y++) grid.moveTo(0, y).lineTo(w, y);
+  grid.stroke({ width: 0.03, color: colours.grid });
+  world.addChild(grid);
 
-  const grid = new GridHelper(size, size, 0x8a93a3, 0x6b7280);
-  grid.position.y = 0.001; // just above the floor to avoid z-fighting
-  scene.add(grid);
+  // Walls sit just outside the floor, matching the physics colliders.
+  const walls = new Graphics()
+    .rect(-t, -t, w + 2 * t, t)
+    .rect(-t, h, w + 2 * t, t)
+    .rect(-t, 0, t, h)
+    .rect(w, 0, t, h)
+    .fill(colours.wall)
+    .rect(0, 0, w, h)
+    .stroke({ width: 0.06, color: colours.wallEdge });
+  walls.label = 'greybox-walls';
+  world.addChild(walls);
 
-  const crateSize = ENGINE_CHECK.crateHalfSizeM * 2;
-  const crate = new Mesh(
-    new BoxGeometry(crateSize, crateSize, crateSize),
-    new MeshStandardMaterial({ color: 0xe0a14a, roughness: 0.6 }),
-  );
-  crate.name = 'greybox-crate';
-  const { x, y, z } = ENGINE_CHECK.crateStart;
-  crate.position.set(x, y, z);
-  scene.add(crate);
+  const crate = new Container();
+  crate.label = 'greybox-crate';
+  // A soft drop shadow offset "south" gives the top-down view some depth.
+  const shadow = new Graphics().rect(-c + 0.12, -c + 0.18, c * 2, c * 2).fill({ color: colours.shadow, alpha: 0.3 });
+  const body = new Graphics()
+    .rect(-c, -c, c * 2, c * 2)
+    .fill(colours.crate)
+    .stroke({ width: 0.06, color: colours.crateEdge })
+    .moveTo(-c, -c)
+    .lineTo(c, c)
+    .moveTo(c, -c)
+    .lineTo(-c, c)
+    .stroke({ width: 0.05, color: colours.crateEdge });
+  crate.addChild(shadow, body);
+  crate.position.set(ENGINE_CHECK.crateStart.x, ENGINE_CHECK.crateStart.y);
+  world.addChild(crate);
 
-  const camera = new PerspectiveCamera(55, 16 / 9, 0.1, 200);
-  camera.position.set(6, 5, 8);
-  camera.lookAt(0, 0.5, 0);
-
-  return { scene, camera, crate };
+  return { world, crate };
 }

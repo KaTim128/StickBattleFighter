@@ -15,7 +15,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: 'off',
     launchOptions: {
-      // Software WebGL so headless runs (CI, cloud) can render the 3D canvas.
+      // Software WebGL so headless runs (CI, cloud) can render the WebGL canvas.
       args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
     },
   },

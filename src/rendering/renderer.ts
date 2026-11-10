@@ -1,4 +1,4 @@
-import { WebGLRenderer, type PerspectiveCamera } from 'three';
+import { Application } from 'pixi.js';
 
 /** Upper bound on device pixel ratio: sharper than this costs mobile GPUs a lot for little gain. */
 export const MAX_PIXEL_RATIO = 2;
@@ -8,41 +8,21 @@ export function clampPixelRatio(devicePixelRatio: number): number {
   return Math.min(devicePixelRatio, MAX_PIXEL_RATIO);
 }
 
-export interface RenderSurface {
-  readonly renderer: WebGLRenderer;
-  /** Keep renderer size and camera aspect in step with the container. */
-  fitTo(camera: PerspectiveCamera): void;
-  dispose(): void;
-}
-
-export function createRenderSurface(container: HTMLElement): RenderSurface {
-  const renderer = new WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(clampPixelRatio(window.devicePixelRatio));
-  container.appendChild(renderer.domElement);
-
-  let observedCamera: PerspectiveCamera | null = null;
-  const resize = (): void => {
-    const width = Math.max(1, container.clientWidth);
-    const height = Math.max(1, container.clientHeight);
-    renderer.setSize(width, height, false);
-    if (observedCamera) {
-      observedCamera.aspect = width / height;
-      observedCamera.updateProjectionMatrix();
-    }
-  };
-  const observer = new ResizeObserver(resize);
-  observer.observe(container);
-
-  return {
-    renderer,
-    fitTo(camera) {
-      observedCamera = camera;
-      resize();
-    },
-    dispose() {
-      observer.disconnect();
-      renderer.dispose();
-      renderer.domElement.remove();
-    },
-  };
+/**
+ * Create the 2D WebGL render surface (PixiJS, TD-021). The game drives
+ * rendering from its own fixed-step loop, so Pixi's ticker is not started.
+ */
+export async function createRenderSurface(container: HTMLElement, background: number): Promise<Application> {
+  const app = new Application();
+  await app.init({
+    preference: 'webgl',
+    resizeTo: container,
+    background,
+    antialias: true,
+    autoDensity: true,
+    resolution: clampPixelRatio(window.devicePixelRatio),
+    autoStart: false,
+  });
+  container.appendChild(app.canvas);
+  return app;
 }

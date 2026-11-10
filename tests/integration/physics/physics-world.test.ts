@@ -1,8 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { addEngineCheckColliders } from '../../../src/arenas/engine-check-colliders';
+import { ENGINE_CHECK } from '../../../src/data/arenas/engine-check';
 import { initPhysics, PhysicsWorld } from '../../../src/physics/physics-world';
-import { ENGINE_CHECK } from '../../../src/rendering/engine-check-scene';
 
-describe('PhysicsWorld (Rapier, TD-005)', () => {
+const STEP = 1 / 60;
+
+describe('PhysicsWorld (Rapier 2D, top-down, TD-021)', () => {
   beforeAll(async () => {
     await initPhysics();
   });
@@ -11,25 +14,43 @@ describe('PhysicsWorld (Rapier, TD-005)', () => {
     await expect(Promise.all([initPhysics(), initPhysics()])).resolves.toBeDefined();
   });
 
-  it('drops the engine-check crate onto the floor where it comes to rest', () => {
+  it('has no gravity in the top-down plane: a resting box stays put', () => {
     const physics = new PhysicsWorld();
-    const { floorHalfSizeM, floorThicknessM, crateHalfSizeM, crateStart } = ENGINE_CHECK;
-    physics.addStaticBox({
-      halfExtents: { x: floorHalfSizeM, y: floorThicknessM / 2, z: floorHalfSizeM },
-      position: { x: 0, y: -floorThicknessM / 2, z: 0 },
-    });
-    const crate = physics.addDynamicBox({
-      halfExtents: { x: crateHalfSizeM, y: crateHalfSizeM, z: crateHalfSizeM },
-      position: crateStart,
-    });
+    const box = physics.addDynamicBox({ halfExtents: { x: 0.5, y: 0.5 }, position: { x: 2, y: 2 } });
+    for (let i = 0; i < 120; i++) physics.step(STEP);
+    expect(box.translation().x).toBeCloseTo(2, 6);
+    expect(box.translation().y).toBeCloseTo(2, 6);
+    physics.dispose();
+  });
 
-    physics.step(1 / 60);
-    expect(crate.translation().y).toBeLessThan(crateStart.y); // gravity acts
+  it('slides the engine-check crate, bounces it off walls and brings it to rest inside the arena', () => {
+    const physics = new PhysicsWorld();
+    const { crate } = addEngineCheckColliders(physics);
+    const { arenaWidthM: w, arenaHeightM: h, crateHalfSizeM: c, crateStart } = ENGINE_CHECK;
+    // The crate's centre can never get closer to a wall than its half size.
+    // Contact solving allows a few centimetres of momentary overlap on impact;
+    // tunnelling would put the centre far beyond this.
+    const tolerance = 0.05;
+    let bounces = 0;
+    let prev = crate.linvel();
 
-    for (let i = 0; i < 300; i++) physics.step(1 / 60); // 5 simulated seconds
-    // Resting on the floor (top at y = 0): centre at half its height, no tunnelling.
-    expect(crate.translation().y).toBeCloseTo(crateHalfSizeM, 1);
-    expect(Math.abs(crate.linvel().y)).toBeLessThan(0.05);
+    for (let i = 0; i < 60 * 12; i++) {
+      physics.step(STEP);
+      const p = crate.translation();
+      expect(p.x).toBeGreaterThanOrEqual(c - tolerance); // never tunnels through a wall
+      expect(p.x).toBeLessThanOrEqual(w - c + tolerance);
+      expect(p.y).toBeGreaterThanOrEqual(c - tolerance);
+      expect(p.y).toBeLessThanOrEqual(h - c + tolerance);
+      const v = crate.linvel();
+      if (Math.sign(v.x) !== Math.sign(prev.x) && Math.abs(prev.x) > 0.5) bounces++;
+      if (Math.sign(v.y) !== Math.sign(prev.y) && Math.abs(prev.y) > 0.5) bounces++;
+      prev = v;
+    }
+
+    const end = crate.translation();
+    expect(bounces).toBeGreaterThanOrEqual(2); // hits both a side wall and a top/bottom wall
+    expect(Math.hypot(end.x - crateStart.x, end.y - crateStart.y)).toBeGreaterThan(1);
+    expect(Math.hypot(crate.linvel().x, crate.linvel().y)).toBeLessThan(0.05);
     physics.dispose();
   });
 });

@@ -1,6 +1,6 @@
 ---
 name: new-arena
-description: Create a new Stickman Arena 3D arena using the shared loading, collision, navigation, interactable-object and performance conventions. Use for the office arena and every later arena (playground, street, jungle, field).
+description: Create a new Stickman Arena 2D top-down arena using the shared loading, collision, navigation, interactable-object and performance conventions. Use for the office arena and every later arena (playground, street, jungle, field).
 ---
 # New arena
 

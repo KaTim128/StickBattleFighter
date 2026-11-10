@@ -10,8 +10,8 @@ Persistent record of project state. Update after every meaningful piece of work 
 | Next milestone | **Phase 1:** engine foundation |
 | Branch | `ccr-6b7ad8fe-whr1i5` |
 | Latest commit | see `git log -1` |
-| Runnable game | Engine-check scene only (`npm run dev`): floor, lights, a falling crate. No gameplay. |
-| Installed dependencies | three 0.187, Rapier compat 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, Vitest 5.1, Playwright 1.63.0 |
+| Runnable game | **2D top-down** engine-check scene only (`npm run dev`): a walled floor and a crate that slides, bounces off the walls and stops. No gameplay. |
+| Installed dependencies | pixi.js 8.22, Rapier 2D compat 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, Vitest 5.1, Playwright 1.63.0 |
 
 ## Active assignments
 
@@ -90,6 +90,29 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 
 **Not done / deferred:** lint and format tooling (moved to Phase 1). CI has not run on GitHub yet; it runs on the next push and its result should be checked. Nothing deployed: GitHub Pages is not yet enabled.
 
+### 10/11/2026: Switched from 3D to 2D top-down (owner instruction)
+**Owner:** "Make it in 2D not 3D like Creature Clash where the creature can go front and back and left and right, everything should be in 2D; show me a screenshot after creation."
+
+**Acceptance criteria (set before editing):** the engine-check scene is 2D top-down (walled floor seen from above; free movement plane with no gravity); physics proves collisions (the crate bounces off walls without tunnelling and comes to rest); typecheck, tests, build and browser smoke tests pass on desktop and mobile; screenshots captured and inspected; all documents updated with 3D rules superseded, not deleted.
+
+**Changes:**
+- Libraries: removed three, @types/three and @dimforge/rapier3d-compat; added **pixi.js 8.22** and **@dimforge/rapier2d-compat 0.21** (TD-021).
+- Code: `src/physics/physics-world.ts` (Rapier 2D, zero gravity, damping, restitution, friction, CCD); `src/rendering/renderer.ts` (Pixi app with its own ticker off, driven by our fixed-step loop); `src/rendering/engine-check-scene.ts` (2D greybox floor, grid, walls, crate with shadow); `src/camera/fit-view.ts` (fit arena to viewport); `src/arenas/engine-check-colliders.ts`; `src/data/arenas/engine-check.ts` (shared arena data, REQ-ARC-3); `src/app/bootstrap.ts` (position and rotation interpolation).
+- Tests: new `tests/unit/camera/fit-view.test.ts`; physics integration test rewritten for 2D (no gravity in the plane; the crate bounces off at least 2 walls, never tunnels, comes to rest); e2e smoke test rewritten for 2D.
+- Docs: spec (REQ-VIS-1/2/3/9, INV-1, §5.1, REQ-PHY-1/2, REQ-CMB-2, REQ-ANI-5, PRS-11, SUP-04), TD-021 and TD-022 (new), TD-004/005/007/011 superseded, control scheme (camera controls removed), CLAUDE.md, README, roadmap, checklist, rules, skills and agents (`rendering-3d-specialist` renamed to `rendering-specialist`).
+
+**Issue found and fixed during verification:** the first 2D test run showed the crate stopping before any wall (too much friction), so the scene did not actually prove wall collisions. I traced its path, then raised the launch speed, lowered the floor friction and set low wall friction, all as arena data. The trace showed about 2.7 cm of momentary overlap on impact, which is normal contact solving; the test tolerance is 5 cm, well short of tunnelling.
+
+**Evidence:** see the Phase 0 (2D) table below, which supersedes the 3D Phase 0 numbers.
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm test` | 5 files, **15/15 passed** |
+| `npm run build` | exit 0. Chunks: app 7 kB, pixi 512 kB (146 kB gzip), rapier 2D 3.40 MB (1.30 MB gzip) |
+| `npm run e2e` | **2/2 passed** (desktop-chromium, mobile-chromium) |
+| Screenshots | `docs/screenshots/phase0-2d-desktop.png` (1280×720 @2x), `docs/screenshots/phase0-2d-phone-landscape.png` (Pixel 7 landscape), both captured mid-slide with zero console errors and inspected. |
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
@@ -97,7 +120,7 @@ Full list in spec §21. Still open:
 1. **OQ-10:** performance targets and minimum devices. Needed before Phase 1 ends; I can propose defaults if you prefer.
 2. **OQ-04, OQ-05:** ultimate rule; stat, stamina and cooldown baselines (Phase 5–6). I can propose balanced defaults for approval.
 3. **OQ-06, OQ-07, OQ-08, OQ-09:** match rules, 3v3/ladder/story details, economy numbers, real-money purchases (Phase 13–14).
-4. **OQ-12:** sand in the office? **OQ-16:** 3D stickman art direction. **OQ-17:** audio source (original sound effects in the Stickman Kombat 2D style).
+4. **OQ-12:** sand in the office? **OQ-16:** 2D stickman art direction (TD-022 proposes code-drawn vector stick figures with 2D bone animation). **OQ-17:** audio source (original sound effects in the Stickman Kombat 2D style).
 5. **TD-017:** game hosting is GitHub Pages (decided). To publish, enable Pages in the repository settings and run the deploy workflow (or ask me to). Pages is free only for **public** repositories. The Supabase data backend needs approval by Phase 14.
 
 ## Known issues
@@ -106,5 +129,5 @@ Full list in spec §21. Still open:
 
 ## Outstanding tasks (next)
 1. **Check CI** on GitHub after this push (typecheck, tests, build, e2e).
-2. **Phase 1: engine foundation.** Acceptance: lint and format tooling; Rapier switched to the non-compat build with a separate `.wasm` (smaller bundle) or the size justified against OQ-10; scene lifecycle (load and unload without leaks); an asset loader with a handled-error path (test: missing asset shows an error, not a crash); a debug overlay (FPS, physics wireframe toggle); collision boundaries around the test floor; all tests and build green; e2e plus screenshots.
+2. **Phase 1: engine foundation (2D).** Acceptance: lint and format tooling; Rapier 2D switched to the non-compat build with a separate `.wasm` (smaller bundle) or the size justified against OQ-10; scene lifecycle (load and unload without leaks); an asset loader with a handled-error path (test: missing asset shows an error, not a crash); a debug overlay (FPS, physics collider outlines toggle); y-sorted draw-order layer; all tests and build green; e2e plus screenshots.
 3. Owner: answer OQ-10 (performance targets) before Phase 1 ends.

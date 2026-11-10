@@ -9,8 +9,8 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 | I | Project initialisation (docs, team, rules, skills, structure) | — | Master Developer | — | ☑ |
 | 0 | Workspace, architecture approval, bootstrap | I | Master Developer | — (stack approved 10/11/2026) | ☑ |
 | 1 | Rendering, physics, main loop, asset pipeline, scenes | 0 | Rendering, Physics | — | ☐ |
-| 2 | Player character, 360° movement, gravity, collision | 1 | Physics | — | ☐ |
-| 3 | Third-person camera | 2 | Rendering (camera), Physics (camera collision) | — | ☐ |
+| 2 | Player character, free top-down movement (up/down/left/right), hop, collision | 1 | Physics | — | ☐ |
+| 3 | Top-down camera (follow, auto-zoom framing, shake) | 2 | Rendering | — | ☐ |
 | 4 | Office arena (greybox → readable) | 1, 2 ∥3 | Rendering, Physics | — | ☐ |
 | 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-05 | ☐ |
 | 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-04, OQ-05 | ☐ |
@@ -35,21 +35,21 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 
 ## Phase 0: Architecture approval and bootstrap
 **Tasks:** owner reviews TD-003 to TD-007 and answers architecture-relevant OQs (online PvP, performance targets); Architecture specialist reviews the structure; create `package.json`, TypeScript config, Vite, lint and format, Vitest, Playwright; `npm run dev` shows a minimal 3D scene; CI-equivalent scripts (`typecheck`, `test`, `build`, `e2e`).
-**Exit:** a documented project that **launches a minimal 3D scene** `[PB §12]`.
+**Exit:** a documented project that **launches a minimal scene** `[PB §12]` (2D top-down since TD-021).
 **Acceptance tests:** `npm run typecheck`, `npm test`, `npm run build` exit 0; a Playwright smoke test loads the page with zero console errors and a non-blank WebGL canvas (screenshot).
 
 ## Phase 1: Engine foundation
 **Tasks:** renderer setup, lights, fixed-timestep loop (TD-013), Rapier init, scene lifecycle (load/unload), asset loader with error handling, debug overlay (FPS, physics wireframe).
-**Exit:** stable 3D test environment and repeatable local build.
+**Exit:** stable 2D test environment and repeatable local build.
 **Acceptance:** test scene with floor, lights, camera and collision boundaries; loop runs at a fixed step (unit test); a missing asset shows a handled error, not a crash; build reproducible.
 
 ## Phase 2: Character movement
 **Exit:** one character moves naturally through a greybox arena.
-**Acceptance:** forward, backward, lateral and diagonal movement; acceleration and deceleration; turning; jump (utility button / Space, TD-016); gravity; slopes and steps; wall collision without tunnelling; per-fighter weight and mobility from data; input layer separate (unit tests on the controller with synthetic input).
+**Acceptance:** up, down, left, right and diagonal movement (diagonals not faster); acceleration and deceleration; facing; jump hop with shadow (utility button / Space, TD-016); gravity;  wall collision without tunnelling; per-fighter weight and mobility from data; input layer separate (unit tests on the controller with synthetic input).
 
 ## Phase 3: Camera
 **Exit:** camera stays readable and does not clip through geometry.
-**Acceptance:** orbit, zoom limits, smoothing, wall and furniture obstruction, recovery after obstruction, opponent framing, stability under knockback (scripted Playwright scenarios plus screenshots).
+**Acceptance:** top-down follow, auto-zoom framing of all fighters within limits, smoothing, arena-bound clamping, shake, stability under knockback (scripted Playwright scenarios plus screenshots).
 
 ## Phase 4: Office arena
 **Exit:** fully explorable office with correct collision and navigation.
@@ -69,7 +69,7 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 
 ## Phase 8: First polished fighter
 **Exit:** one fighter proves the full production quality bar.
-**Acceptance:** original model and rig in glTF; complete animation set; presentation targets PRS-1 to PRS-11 if adopted (OQ-15); asset validation test passes; QA review recorded.
+**Acceptance:** original 2D rig and art (TD-022); complete animation set; presentation targets PRS-1 to PRS-11 if adopted (OQ-15); asset validation test passes; QA review recorded.
 
 ## Phase 9: Full initial roster
 **Exit:** five unique fighters pass matchup and ability tests.

@@ -1,7 +1,7 @@
 # STICKMAN ARENA — PROJECT INSTRUCTIONS
 
 ## Project identity
-Stickman Arena is an original, browser-based, **fully 3D, real-time, free-movement arena fighting game**. The full requirements are in `STICKMAN_ARENA_MASTER_SPEC.md`; cite its REQ, INV and OQ IDs.
+Stickman Arena is an original, browser-based, **2D top-down, real-time, free-movement arena fighting game** (move up/down/left/right like Creature Clash). The full requirements are in `STICKMAN_ARENA_MASTER_SPEC.md`; cite its REQ, INV and OQ IDs.
 
 ## Authority and role
 - The **primary Claude Code session is the Master Developer**: Technical Lead and Project Architect. It owns roadmap coordination, architecture decisions, task assignment, integration, regression control and milestone sign-off. It stays accountable for the final integrated project.
@@ -20,7 +20,7 @@ Stickman Arena is an original, browser-based, **fully 3D, real-time, free-moveme
 - Never overwrite or delete unrelated files. Never expose secrets or commit `.env` files.
 
 ## Design invariants (spec §3)
-Fully 3D free movement · single player vs AI (no online yet) · one shared combat engine for all fighters and modes · one input-independent combat layer · **exactly five combat actions** (melee with no stamina cost, 3 unique abilities, 1 ultimate; controls in `docs/design/CONTROL_SCHEME.md`) · server-validated persistence and admin · nothing is complete without tests.
+2D top-down free movement (everything 2D) · single player vs AI (no online yet) · one shared combat engine for all fighters and modes · one input-independent combat layer · **exactly five combat actions** (melee with no stamina cost, 3 unique abilities, 1 ultimate; controls in `docs/design/CONTROL_SCHEME.md`) · server-validated persistence and admin · nothing is complete without tests.
 
 ## Architecture and code
 - Modular systems, single sources of truth, **data-driven** fighters, abilities, arenas and settings.

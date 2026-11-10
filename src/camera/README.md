@@ -1,2 +1,2 @@
 # src/camera
-**Owner:** 3D Rendering Specialist (obstruction queries from Physics). Third-person follow, orbit, zoom, smoothing, opponent framing, knockback stability (REQ-CAM-*).
+**Owner:** Rendering Specialist (2D). Top-down follow, auto-zoom to frame fighters, arena clamping, shake (REQ-CAM-*). `fit-view.ts` fits a whole arena into the viewport.

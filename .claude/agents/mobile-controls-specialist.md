@@ -21,7 +21,7 @@ Pointer and touch events, virtual joystick ergonomics, responsive HTML/CSS overl
 Input and UI systems with unit tests (intent mapping, rebinding conflicts), Playwright tests at multiple viewports and mobile emulation, real-device test notes, and screenshots.
 
 ## Collaboration boundaries
-- Gameplay rules belong to Combat and Physics; you emit intents only. Persistence and role checks belong to Backend; you call its interface. Visual 3D overlays rendered in-scene are coordinated with Rendering.
+- Gameplay rules belong to Combat and Physics; you emit intents only. Persistence and role checks belong to Backend; you call its interface. In-arena overlays (e.g. health bars above fighters) are coordinated with Rendering.
 
 ## Operating rules (all implementation specialists)
 - Before acting, read `CLAUDE.md`, the master-spec sections named in your assignment, the relevant `.claude/rules/`, and `docs/workflow/SYSTEM_OWNERSHIP.md`.

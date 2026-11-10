@@ -13,11 +13,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] No game code, fighters, arenas or assets created
 - [x] Froggy repository unmodified (`git status` clean in froggy-arcade)
 
-## 0b. Phase 0 bootstrap (verified 10/11/2026)
+## 0b. Phase 0 bootstrap: 2D top-down (re-verified 10/11/2026 after the switch to 2D, TD-021)
 - [x] `npm run typecheck` exits 0 (both tsconfig projects)
-- [x] `npm test`: 4 files, 11 tests pass (fixed-step accumulator, game loop, pixel-ratio clamp, Rapier crate-on-floor)
+- [x] `npm test`: 5 files, 15 tests pass (fixed-step accumulator, game loop, pixel-ratio clamp, 2D view fit, Rapier 2D: no in-plane gravity, crate bounces off walls without tunnelling and comes to rest)
 - [x] `npm run build` exits 0; the only size warning was triaged (TD-020)
-- [x] `npm run e2e`: 2/2 pass (desktop Chrome + Pixel 7): ready state, physics steps advance, crate settles at about 0.5 m, canvas not blank, zero console, page or network errors; screenshots saved
+- [x] `npm run e2e`: 2/2 pass (desktop Chrome + Pixel 7): ready state, physics steps advance, the crate slides more than 1 m and comes to rest, canvas not blank, zero console, page or network errors; screenshots saved
 - [x] Pages build (`BASE_PATH=/StickBattleFighter/`) loads under the sub-path with zero errors
 
 ## 1. Build and code health (every change)
@@ -37,7 +37,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] I rigid bodies sleep when idle; cosmetic objects use no expensive physics
 
 ## 3. Camera (REQ-CAM)
-- [ ] B orbit full 360°, zoom within limits, smoothing
+- [ ] B top-down follow with smoothing; auto-zoom keeps all fighters framed within zoom limits
 - [ ] B wall obstruction and furniture obstruction (no clipping), recovery after obstruction
 - [ ] B opponent framing in combat
 - [ ] B stability during knockback and fast movement
@@ -45,7 +45,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 
 ## 4. Combat (REQ-CMB)
 - [ ] U hit, miss, block, dodge, interrupt, counter, recovery outcomes
-- [ ] U hits depend on 3D position, facing, range, timing; obstruction blocks hits; **no guaranteed hits**
+- [ ] U hits depend on 2D position (plus airborne state), facing, range, timing; obstruction blocks hits; **no guaranteed hits**
 - [ ] U melee (Button 1) has **no stamina cost**
 - [ ] U stamina spend and regeneration; ability refused when stamina is insufficient
 - [ ] U cooldowns start, tick and reset correctly; not bypassable by input spam

@@ -8,14 +8,14 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 | TD-001 | Project management foundation before any game code | ACCEPTED | 10/11/2026 |
 | TD-002 | Five-action combat layout supersedes 4+4 layout | ACCEPTED | 10/11/2026 |
 | TD-003 | Language and build: TypeScript + Vite | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
-| TD-004 | Rendering engine: Three.js (vs Babylon.js) | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
-| TD-005 | Physics engine: Rapier (JS/WASM) | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
+| TD-004 | Rendering engine: Three.js (vs Babylon.js) | SUPERSEDED by TD-021 (2D) | 10/11/2026 |
+| TD-005 | Physics engine: Rapier 3D (JS/WASM) | SUPERSEDED by TD-021 (Rapier 2D) | 10/11/2026 |
 | TD-006 | Test stack: Vitest + Playwright | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
-| TD-007 | Asset pipeline: Blender → glTF 2.0 (.glb) | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
+| TD-007 | Asset pipeline: Blender → glTF 2.0 (.glb) | SUPERSEDED by TD-022 (2D) | 10/11/2026 |
 | TD-008 | Backend technology | PROPOSED: Supabase (see TD-017) | 10/11/2026 |
 | TD-009 | Ten-specialist team replaces the playbook's nine workers | ACCEPTED | 10/11/2026 |
 | TD-010 | Directory structure | ACCEPTED | 10/11/2026 |
-| TD-011 | Creature Clash is 2D: limits on its use as a 3D reference | ACCEPTED | 10/11/2026 |
+| TD-011 | Creature Clash is 2D: limits on its use as a 3D reference | SUPERSEDED (game is now 2D, TD-021) | 10/11/2026 |
 | TD-012 | Reference videos are not committed to the repository | ACCEPTED | 10/11/2026 |
 | TD-013 | Fixed-timestep simulation separated from rendering | ACCEPTED (implemented Phase 0) | 10/11/2026 |
 | TD-014 | Data-driven content format | PROPOSED | 10/11/2026 |
@@ -24,7 +24,9 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 | TD-017 | Free hosting: GitHub Pages (game) + Supabase Free (Phase 14 data) | ACCEPTED (game hosting); data PROPOSED | 10/11/2026 |
 | TD-018 | Single player against AI only; online deferred | ACCEPTED | 10/11/2026 |
 | TD-019 | Token-economy delegation policy for specialists | ACCEPTED | 10/11/2026 |
-| TD-020 | Phase 0 toolchain details | ACCEPTED | 10/11/2026 |
+| TD-020 | Phase 0 toolchain details | ACCEPTED (libraries updated by TD-021) | 10/11/2026 |
+| TD-021 | Switch to 2D top-down: PixiJS 8 + Rapier 2D | ACCEPTED (owner direction) | 10/11/2026 |
+| TD-022 | 2D art and animation pipeline | PROPOSED | 10/11/2026 |
 
 ---
 
@@ -44,7 +46,7 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 **Recommendation:** TypeScript in strict mode, Vite as dev server and bundler, npm as package manager. Node ≥ 20 (the dev container has Node 22.23.4; confirm Vite's current minimum when bootstrapping).
 **Alternatives:** Webpack (slower dev loop); plain JS (loses type safety across many data-driven systems).
 
-### TD-004: Rendering engine — ACCEPTED: Three.js
+### TD-004: Rendering engine — SUPERSEDED by TD-021 (was: Three.js)
 **Approved by the owner on 10/11/2026.**
 Playbook §6 requires comparing at least two approaches.
 
@@ -59,7 +61,7 @@ Playbook §6 requires comparing at least two approaches.
 
 **Recommendation:** **Three.js**. A smaller footprint for mobile, fine control over the loop and rendering cost, familiarity, and it is named in the playbook. **Trade-off:** we must build or choose our own scene management, animation state machine and debug tooling. **Rejected for now:** Babylon.js (heavier, overlapping features), PlayCanvas (editor-centric workflow), Unity/Godot web export (large downloads, weaker browser and mobile iteration).
 
-### TD-005: Physics — ACCEPTED: Rapier (`@dimforge/rapier3d-compat`)
+### TD-005: Physics — SUPERSEDED by TD-021 (was: Rapier 3D, `@dimforge/rapier3d-compat`)
 **Approved by the owner on 10/11/2026.**
 **Reasons:** WASM performance, deterministic options, a built-in **kinematic character controller** (slopes, steps, snap to ground) matching REQ-PHY-1/2, collision groups for layers, shape casts and ray casts for hit detection, line of sight and camera obstruction. Named in the playbook (§20).
 **Alternatives:** cannon-es (pure JS, slower, less maintained); Ammo.js (Bullet port, large and awkward API); custom physics (too risky).
@@ -69,7 +71,7 @@ Playbook §6 requires comparing at least two approaches.
 **Approved by the owner on 10/11/2026.**
 Vitest for unit and integration tests of deterministic rules (combat maths, cooldowns, stamina, data validation). Playwright for browser flows, screenshots and mobile emulation (`--trace off` by default). Real-device checks remain manual and logged in `TESTING_CHECKLIST.md`.
 
-### TD-007: Asset pipeline — ACCEPTED: Blender → glTF 2.0 binary (.glb)
+### TD-007: Asset pipeline — SUPERSEDED by TD-022 (was: Blender → glTF 2.0 binary (.glb))
 **Approved by the owner on 10/11/2026.**
 Shared rig contract (bone names and animation clip naming) across fighters; Draco or Meshopt compression and KTX2 textures evaluated in Phase 1. Greybox assets live under `assets/**/greybox/` and are listed in `assets/ASSET_REGISTER.md`.
 
@@ -79,7 +81,7 @@ Candidates to evaluate in Phase 14 (REQ-BE-1): managed Postgres with auth and ro
 ### TD-009: Ten-specialist team — ACCEPTED
 **Context:** Playbook §8.1 defines nine workers. The owner's 10/11/2026 instruction defines ten different roles.
 **Decision:** The owner's list governs (latest explicit instruction). Duties in the playbook that have no direct owner role are remapped:
-- *environment-engineer* → split: **3D Rendering** (arena visuals, materials, layout art) + **Physics** (arena collision, destructibles, pickup and throw).
+- *environment-engineer* → split: **Rendering (2D since TD-021)** (arena visuals, materials, layout art) + **Physics** (arena collision, destructibles, pickup and throw).
 - *ai-gameplay-engineer* (game modes, match flow) → **AI Specialist** keeps match flow and mode orchestration as in the playbook.
 - *ui-mobile-tutorial-engineer* → **Mobile Controls Specialist** owns all input, HUD, menus, desktop keybinds and tutorial UI ("cross-platform input consistency").
 - *backend-security-engineer* → **Backend Specialist** (including security).
@@ -89,7 +91,8 @@ Architecture and QA remain **read only**, as in the playbook. Mapping detail: `d
 ### TD-010: Directory structure — ACCEPTED
 Follows the playbook §5 target layout, with these additions: `src/modes/` (game modes were not in the target list but are a distinct owned system), `src/data/` (data-driven definitions, REQ-ARC-3), `src/vfx/` (VFX has its own owner boundary), `backend/` (server code kept out of the browser bundle, REQ-BE-8), `tools/`, `docs/`. Each folder holds a `README.md` with purpose and owner instead of an empty placeholder. The `src/environment/` name is kept for runtime interactable-object systems; `src/arenas/` holds arena definitions and loaders.
 
-### TD-011: Creature Clash is 2D — ACCEPTED
+### TD-011: Creature Clash is 2D — SUPERSEDED
+*Moot since TD-021: Stickman Arena is now 2D top-down too, so Creature Clash is a direct reference for movement, arena layout and camera framing.*
 The playbook treats Creature Clash as the primary 3D foundation reference. Inspection showed it is a top-down 2D Phaser scene. It remains a reference for planar free movement, cover and line of sight, AI and abilities. The 3D camera, vertical movement and 3D collision are designed from engine documentation and first principles. See `docs/references/CREATURE_CLASH_OBSERVATIONS.md`.
 
 ### TD-012: Reference videos not committed — ACCEPTED
@@ -107,7 +110,7 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 
 ### TD-016: Control scheme — ACCEPTED
 **Context:** Five combat buttons only (INV-9), yet block, dodge, jump, pick up, throw and targeting are all required. The owner delegated the design (10/11/2026).
-**Decision:** Hold Button 1 = block (tap = melee); flick the movement stick = dodge (Shift on desktop; optional double-tap mode); one **contextual utility button** that is not a combat button = jump / pick up / throw (hold to drop); automatic soft target lock (tap an opponent or Tab to switch); drag the right side of the screen or the mouse for the camera. Desktop presets: keyboard + mouse (default) and keyboard only. Both layouts live in one build; the active one follows the device last used (resolves OQ-14). Full spec: `docs/design/CONTROL_SCHEME.md`.
+**Decision:** Hold Button 1 = block (tap = melee); flick the movement stick = dodge (Shift on desktop; optional double-tap mode); one **contextual utility button** that is not a combat button = jump / pick up / throw (hold to drop); automatic soft target lock (tap an opponent or Tab to switch). Camera is automatic (2D top-down, TD-021), so there are no camera controls. Desktop presets: keyboard + mouse (default) and keyboard only. Both layouts live in one build; the active one follows the device last used (resolves OQ-14). Full spec: `docs/design/CONTROL_SCHEME.md`.
 **Alternatives rejected:** extra Dodge, Block and Jump buttons (clutter; arguably breaks INV-9); a swipe on the camera area for dodge (conflicts with camera drag); automatic block (removes skill).
 **Trade-offs:** a hold-to-block threshold adds about 0.2 s before the guard rises, so the threshold is data-driven and tuned in playtests. Flicks can misfire, hence the double-tap option.
 
@@ -137,17 +140,41 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 
 ### TD-020: Phase 0 toolchain details — ACCEPTED
 - **TypeScript 7.0.2** (latest at bootstrap). Two configs: `tsconfig.json` covers browser code and unit/integration tests (no Node globals); `tsconfig.node.json` covers the config files and Playwright tests (Node types).
-- **Vite 8.3.7** (Rolldown bundler), **Vitest 5.1.0**, **Three.js 0.187.0**, **Rapier compat 0.21.0**.
+- **Vite 8.3.7** (Rolldown bundler), **Vitest 5.1.0**. Rendering and physics libraries: see TD-021 (originally Three.js 0.187 and Rapier 3D 0.21).
 - **@playwright/test pinned at 1.63.0** to match the browser build preinstalled in the cloud dev environment. On a new machine run `npx playwright install chromium` once.
 - Browser tests run against the **production build** (`vite preview`) in two projects, desktop Chrome and Pixel 7 emulation, using software WebGL (SwiftShader) so headless CI can render.
-- Vendor chunks are split (`vendor-three`, `vendor-rapier`) for caching. **Known cost:** Rapier's compat build embeds its WASM as base64 (about 4.3 MB raw, 1.7 MB gzipped). Switching to the non-compat build with a separate `.wasm` file is a Phase 1 item.
+- Vendor chunks are split (`vendor-pixi`, `vendor-rapier`) for caching. **Known cost:** Rapier's compat build embeds its WASM as base64 (2D: about 3.4 MB raw, 1.3 MB gzipped). Switching to the non-compat build with a separate `.wasm` file is a Phase 1 item.
 - **CI** (`.github/workflows/ci.yml`) runs typecheck, tests, build and e2e on every push. **Deployment** (`deploy-pages.yml`) is manual only (`workflow_dispatch`).
 - A read-only debug hook (`window.__stickmanDebug`) lets the smoke tests check physics progress and read canvas pixels. It exposes no gameplay control.
 - Lint and format tooling is deferred to Phase 1, to keep Phase 0 minimal.
+
+### TD-021: Switch to 2D top-down — ACCEPTED (owner direction, 10/11/2026)
+**Owner instruction:** "Make it in 2D not 3D like Creature Clash where the creature can go front and back and left and right, everything should be in 2D."
+**Decision:** the game is 2D, seen from above. Fighters move freely up/down (front/back), left/right and diagonally. Supersedes TD-004, TD-005, TD-007 and TD-011, and spec SUP-04.
+**Renderer: PixiJS 8** (2D WebGL; `preference: 'webgl'`).
+
+| Option | Verdict |
+|---|---|
+| **PixiJS 8** | **Chosen.** A fast 2D WebGL renderer only (about 146 kB gzipped here), so it slots into our own fixed-step loop, data-driven systems and Rapier physics without fighting a framework. Strong particle, filter and graphics support for PRS VFX. |
+| Phaser 4 | Full game framework (what Creature Clash uses). Brings its own loop, scenes, physics and input, which would duplicate or override our architecture (input layer, fixed step, shared combat engine). Using it would also blur the line with Froggy's implementation. |
+| Plain Canvas 2D | No dependency, but CPU-bound drawing struggles with many particles and effects on mobile. |
+
+**Physics: Rapier 2D** (`@dimforge/rapier2d-compat` 0.21). Same engine family as before: top-down with zero gravity, kinematic character controller, collision groups, ray and shape casts for hit detection and line of sight, CCD against tunnelling.
+**Conventions:** units are metres and seconds; +x = right, +y = down the screen; y-sorting for draw order; jump is a short hop shown with a ground shadow (REQ-PHY-2, REQ-VIS-9).
+**Camera:** automatic follow and framing, no manual rotation (spec §5.1). The control scheme loses its camera controls (TD-016 updated).
+**Ownership:** the "3D Rendering Specialist" becomes the **Rendering Specialist (2D)** (`rendering-specialist`).
+**Migration done:** Phase 0 engine-check rebuilt in 2D (walled floor plus a sliding, bouncing crate); all tests rewritten and passing (see DEVELOPMENT_PROGRESS.md).
+
+### TD-022: 2D art and animation pipeline — PROPOSED
+- **Fighters:** vector stick figures drawn in code with Pixi Graphics, animated by a small **2D skeletal system** (bones and keyframes stored as data). This gives crisp lines at any zoom, tiny downloads, and easy distinct silhouettes (limb thickness, head shapes, accessories, colours) without recolours.
+- **Effects:** Pixi particles, sprites and filters (glow, flash, trails).
+- **Props and arenas:** 2D top-down art as SVG or PNG/WebP sprite sheets; greybox shapes until final art.
+- **Tools:** no paid tools required. An in-repo pose and keyframe editor can come later if hand-authoring data is slow.
+- **Pending:** owner input on art direction (OQ-16).
 
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).
 
 ## Dependencies
-Installed at Phase 0 (see `package.json` and TD-020): three, @dimforge/rapier3d-compat; dev: typescript, vite, vitest, @playwright/test, @types/three, @types/node. `npm audit`: 0 vulnerabilities (10/11/2026).
+Installed (see `package.json`, TD-020, TD-021): pixi.js 8.22, @dimforge/rapier2d-compat 0.21; dev: typescript, vite, vitest, @playwright/test, @types/node. `npm audit`: 0 vulnerabilities (10/11/2026).

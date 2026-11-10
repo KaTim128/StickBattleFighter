@@ -7,7 +7,7 @@ Maintained by the Master Developer. **One owner per system.** Owners make the ch
 | Agent file | Role | Write access |
 |---|---|---|
 | `stickman-architect` | Architecture Specialist | **Read only** |
-| `rendering-3d-specialist` | 3D Rendering Specialist | Implementation |
+| `rendering-specialist` | Rendering Specialist (2D) | Implementation |
 | `physics-specialist` | Physics Specialist | Implementation |
 | `combat-systems-specialist` | Combat Systems Specialist | Implementation |
 | `character-specialist` | Character Development Specialist | Implementation |
@@ -25,7 +25,7 @@ Maintained by the Master Developer. **One owner per system.** Owners make the ch
 | `src/core/` (loop, events, shared types, utilities) | Master Developer | Architecture (review), all (request changes) |
 | `src/rendering/` | Rendering | Animation (VFX hooks) |
 | `src/vfx/` | Rendering | Animation (timing), Combat (impact profiles) |
-| `src/camera/` | Rendering | Physics (camera collision queries) |
+| `src/camera/` | Rendering | — |
 | `src/physics/` | Physics | Combat (hit query API) |
 | `src/environment/` (interactable objects, pickup/throw, destruction) | Physics | Combat (damage from objects), Rendering (visuals) |
 | `src/arenas/` (arena definitions, loaders, layout) | Rendering | Physics (colliders, nav data) |
@@ -73,3 +73,4 @@ Maintained by the Master Developer. **One owner per system.** Owners make the ch
 | Date | Change |
 |---|---|
 | 10/11/2026 | Initial registry (TD-009 mapping). |
+| 10/11/2026 | 3D Rendering Specialist renamed to Rendering Specialist (2D) (TD-021). |

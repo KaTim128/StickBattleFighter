@@ -1,2 +1,2 @@
 # src/rendering
-**Owner:** 3D Rendering Specialist. Renderer, quality tiers, lighting, materials, shaders, post-processing, render interpolation. Reads simulation state; never mutates it.
+**Owner:** Rendering Specialist (2D). PixiJS 2D renderer, quality tiers, y-sorted draw order, filters, render interpolation. Reads simulation state; never mutates it.
