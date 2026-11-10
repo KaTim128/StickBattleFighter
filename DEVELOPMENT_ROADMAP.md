@@ -7,21 +7,21 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 | Phase | Name | Depends on | Lead specialist(s) | Blocking OQs | Status |
 |---|---|---|---|---|---|
 | I | Project initialisation (docs, team, rules, skills, structure) | — | Master Developer | — | ☑ |
-| 0 | Workspace, architecture approval, bootstrap | I | Architecture | OQ-10, OQ-13 (architecture-relevant) | ☐ |
+| 0 | Workspace, architecture approval, bootstrap | I | Master Developer | — (stack approved 10/11/2026) | ☐ |
 | 1 | Rendering, physics, main loop, asset pipeline, scenes | 0 | Rendering, Physics | — | ☐ |
-| 2 | Player character, 360° movement, gravity, collision | 1 | Physics | OQ-02 (jump input on mobile) | ☐ |
+| 2 | Player character, 360° movement, gravity, collision | 1 | Physics | — | ☐ |
 | 3 | Third-person camera | 2 | Rendering (camera), Physics (camera collision) | — | ☐ |
 | 4 | Office arena (greybox → readable) | 1, 2 ∥3 | Rendering, Physics | — | ☐ |
-| 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-02, OQ-05 | ☐ |
-| 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-04, OQ-05, OQ-15 | ☐ |
-| 7 | Object interaction: pickup, carry, throw, material, destruction | 4, 5 | Physics, Combat | OQ-02, OQ-12 | ☐ |
+| 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-05 | ☐ |
+| 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-04, OQ-05 | ☐ |
+| 7 | Object interaction: pickup, carry, throw, material, destruction | 4, 5 | Physics, Combat | OQ-12 | ☐ |
 | 8 | First fully polished fighter + asset pipeline | 6, 7 | Character, Animation, Rendering | OQ-16 | ☐ |
 | 9 | Inferno, Shadowfang, Ronin, Titan, Phantom roster | 8 | Character, Animation, Combat | OQ-05 | ☐ |
 | 10 | AI opponents, personalities, navigation, Practice Zone | 5, 6, 7 ∥9 | AI | — | ☐ |
-| 11 | Desktop keybinds, mobile joystick, five buttons, settings | 6 ∥(may start after 5) | Mobile Controls | OQ-02, OQ-03, OQ-14 | ☐ |
+| 11 | Desktop keybinds, mobile joystick, five buttons, settings | 6 ∥(may start after 5) | Mobile Controls | — | ☐ |
 | 12 | Tutorial, replay, profile persistence, admin skip | 11, 14 (interface) | Mobile Controls, Backend | — | ☐ |
 | 13 | Practice, 1v1, 3v3, Ladder Run, Story Mode | 9, 10 | AI (match flow) | OQ-06, OQ-07, OQ-08 | ☐ |
-| 14 | Backend, profiles, tokens, unlocks, achievements, admin | 0 (selection), 13 (data) | Backend | OQ-08, OQ-09, OQ-11 | ☐ |
+| 14 | Backend, profiles, tokens, unlocks, achievements, admin | 0 (selection), 13 (data) | Backend | OQ-08, OQ-09 | ☐ |
 | 15 | More arenas, objects, roster expansion toward 100 | 9, 13, 14 | All content specialists | — | ☐ |
 | 16 | Performance, security, compatibility, release | all | QA + all | OQ-10 | ☐ |
 
@@ -45,7 +45,7 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 
 ## Phase 2: Character movement
 **Exit:** one character moves naturally through a greybox arena.
-**Acceptance:** forward, backward, lateral and diagonal movement; acceleration and deceleration; turning; jump (input per OQ-02); gravity; slopes and steps; wall collision without tunnelling; per-fighter weight and mobility from data; input layer separate (unit tests on the controller with synthetic input).
+**Acceptance:** forward, backward, lateral and diagonal movement; acceleration and deceleration; turning; jump (utility button / Space, TD-016); gravity; slopes and steps; wall collision without tunnelling; per-fighter weight and mobility from data; input layer separate (unit tests on the controller with synthetic input).
 
 ## Phase 3: Camera
 **Exit:** camera stays readable and does not clip through geometry.
@@ -104,4 +104,4 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 **Acceptance:** `/release-check` passes; performance targets (OQ-10) met on real devices; security review; known issues documented; **public deployment only with explicit owner approval**.
 
 ## Next recommended milestone
-**Phase 0:** owner approves or adjusts TD-003 to TD-007 and answers OQ-02, OQ-10 and OQ-13; then bootstrap the toolchain and a minimal 3D scene with smoke tests.
+**Phase 0:** the stack is approved (10/11/2026). Bootstrap the toolchain (TypeScript, Vite, Three.js, Rapier, Vitest, Playwright) and a minimal 3D scene with smoke tests. Starts on the owner's go-ahead. OQ-10 (performance targets) should be answered before Phase 1 ends.

@@ -12,7 +12,8 @@ You are the Stickman Arena **Combat Systems Specialist**.
 - **Real spatial hit detection:** direction, timing, range, height, line of sight and obstruction via the Physics query API. Outcomes: hit, miss, dodge, block, interrupt, counter, recovery. **No guaranteed hits** (REQ-CMB-2/3).
 - Damage, critical chance and damage, defence, avoidance, knockback (scaled by Knockback Resistance), stun, hit-stop, defeat.
 - **Shared ability framework** (`src/abilities/`, `src/data/abilities/`): target validation, stamina, cooldown, range, delivery component (projectile, beam, area, dash, blink, trap, shield, aura…), modifiers, interruption, animation and VFX and SFX hooks, AI usage hints. The Creature Clash ability vocabulary may inform *concepts* only (REQ-ABL-5).
-- Ultimate charge or cooldown rule (pending OQ-04); ultimate balance budget.
+- Ultimate charge or cooldown rule (pending OQ-04); ultimate balance budget. Block (hold Button 1) and dodge intents per `docs/design/CONTROL_SCHEME.md`.
+- Attack feel: the style and feel reference is Stickman Kombat 2D (spec §2.1); presentation targets PRS-1..11 are binding.
 - Combat events for Animation, VFX, HUD, AI, Modes and Backend stats.
 - Balancing: data-only tuning, balance reports, pairwise matchup tests.
 

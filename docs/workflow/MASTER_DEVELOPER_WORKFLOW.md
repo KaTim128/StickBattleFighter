@@ -16,7 +16,11 @@ Requirement analysis → Planning → Dependency and conflict check → Assignme
 
 ### 1.2 Planning
 - Write acceptance criteria (observable behaviour plus tests) **before** any edit.
-- Decide whether to delegate. Delegate only for specialist knowledge, a well-bounded component, or to keep large research and logs out of the main context. The Master keeps cross-system integration.
+- Decide whether to delegate, following the **token-economy policy (TD-019, owner condition)**:
+  - Do small and medium tasks yourself; spawning a specialist costs a fresh context.
+  - Delegate only for (a) a large task fully inside one specialist's paths, (b) the independent QA review at milestone sign-off, or (c) heavy research or log reading that would flood the main context.
+  - One specialist at a time by default; parallel only for disjoint, sizeable work. Scope reviews to the milestone diff, never "review everything".
+  - The Master keeps cross-system integration.
 
 ### 1.3 Dependency and conflict check (mandatory before assigning)
 1. Look up the owner of every touched path in `SYSTEM_OWNERSHIP.md`.

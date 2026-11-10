@@ -7,12 +7,12 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 |---|---|---|---|
 | TD-001 | Project management foundation before any game code | ACCEPTED | 10/11/2026 |
 | TD-002 | Five-action combat layout supersedes 4+4 layout | ACCEPTED | 10/11/2026 |
-| TD-003 | Language and build: TypeScript + Vite | PROPOSED | 10/11/2026 |
-| TD-004 | Rendering engine: Three.js (vs Babylon.js) | PROPOSED | 10/11/2026 |
-| TD-005 | Physics engine: Rapier (JS/WASM) | PROPOSED | 10/11/2026 |
-| TD-006 | Test stack: Vitest + Playwright | PROPOSED | 10/11/2026 |
-| TD-007 | Asset pipeline: Blender → glTF 2.0 (.glb) | PROPOSED | 10/11/2026 |
-| TD-008 | Backend technology | OPEN | 10/11/2026 |
+| TD-003 | Language and build: TypeScript + Vite | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
+| TD-004 | Rendering engine: Three.js (vs Babylon.js) | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
+| TD-005 | Physics engine: Rapier (JS/WASM) | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
+| TD-006 | Test stack: Vitest + Playwright | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
+| TD-007 | Asset pipeline: Blender → glTF 2.0 (.glb) | ACCEPTED (owner, 10/11/2026) | 10/11/2026 |
+| TD-008 | Backend technology | PROPOSED: Supabase (see TD-017) | 10/11/2026 |
 | TD-009 | Ten-specialist team replaces the playbook's nine workers | ACCEPTED | 10/11/2026 |
 | TD-010 | Directory structure | ACCEPTED | 10/11/2026 |
 | TD-011 | Creature Clash is 2D: limits on its use as a 3D reference | ACCEPTED | 10/11/2026 |
@@ -20,6 +20,10 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 | TD-013 | Fixed-timestep simulation separated from rendering | PROPOSED | 10/11/2026 |
 | TD-014 | Data-driven content format | PROPOSED | 10/11/2026 |
 | TD-015 | Agent Teams stay disabled | ACCEPTED | 10/11/2026 |
+| TD-016 | Control scheme (resolves OQ-02, OQ-03, OQ-14) | ACCEPTED | 10/11/2026 |
+| TD-017 | Free hosting: Cloudflare Pages + Supabase Free | PROPOSED | 10/11/2026 |
+| TD-018 | Single player against AI only; online deferred | ACCEPTED | 10/11/2026 |
+| TD-019 | Token-economy delegation policy for specialists | ACCEPTED | 10/11/2026 |
 
 ---
 
@@ -33,12 +37,14 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 **Decision:** Exactly five combat actions: Button 1 universal melee (no stamina cost), Buttons 2–4 unique abilities, Button 5 ultimate. The old layout is recorded as SUP-01 in the spec.
 **Open consequence:** inputs for dodge, block, jump, pickup and throw are undefined (OQ-02).
 
-### TD-003: TypeScript + Vite — PROPOSED
+### TD-003: TypeScript + Vite — ACCEPTED
+**Approved by the owner on 10/11/2026.**
 **Context:** Browser game; the playbook mentions TypeScript build gates (§15) and Vite tooling (§3.2).
 **Recommendation:** TypeScript in strict mode, Vite as dev server and bundler, npm as package manager. Node ≥ 20 (the dev container has Node 22.23.4; confirm Vite's current minimum when bootstrapping).
 **Alternatives:** Webpack (slower dev loop); plain JS (loses type safety across many data-driven systems).
 
-### TD-004: Rendering engine — PROPOSED: Three.js
+### TD-004: Rendering engine — ACCEPTED: Three.js
+**Approved by the owner on 10/11/2026.**
 Playbook §6 requires comparing at least two approaches.
 
 | Criterion | Three.js | Babylon.js |
@@ -52,19 +58,22 @@ Playbook §6 requires comparing at least two approaches.
 
 **Recommendation:** **Three.js**. A smaller footprint for mobile, fine control over the loop and rendering cost, familiarity, and it is named in the playbook. **Trade-off:** we must build or choose our own scene management, animation state machine and debug tooling. **Rejected for now:** Babylon.js (heavier, overlapping features), PlayCanvas (editor-centric workflow), Unity/Godot web export (large downloads, weaker browser and mobile iteration).
 
-### TD-005: Physics — PROPOSED: Rapier (`@dimforge/rapier3d-compat`)
+### TD-005: Physics — ACCEPTED: Rapier (`@dimforge/rapier3d-compat`)
+**Approved by the owner on 10/11/2026.**
 **Reasons:** WASM performance, deterministic options, a built-in **kinematic character controller** (slopes, steps, snap to ground) matching REQ-PHY-1/2, collision groups for layers, shape casts and ray casts for hit detection, line of sight and camera obstruction. Named in the playbook (§20).
 **Alternatives:** cannon-es (pure JS, slower, less maintained); Ammo.js (Bullet port, large and awkward API); custom physics (too risky).
 **Risk:** WASM init is asynchronous, so the bootstrap must await it. Watch mobile memory.
 
-### TD-006: Test stack — PROPOSED: Vitest + Playwright
+### TD-006: Test stack — ACCEPTED: Vitest + Playwright
+**Approved by the owner on 10/11/2026.**
 Vitest for unit and integration tests of deterministic rules (combat maths, cooldowns, stamina, data validation). Playwright for browser flows, screenshots and mobile emulation (`--trace off` by default). Real-device checks remain manual and logged in `TESTING_CHECKLIST.md`.
 
-### TD-007: Asset pipeline — PROPOSED: Blender → glTF 2.0 binary (.glb)
+### TD-007: Asset pipeline — ACCEPTED: Blender → glTF 2.0 binary (.glb)
+**Approved by the owner on 10/11/2026.**
 Shared rig contract (bone names and animation clip naming) across fighters; Draco or Meshopt compression and KTX2 textures evaluated in Phase 1. Greybox assets live under `assets/**/greybox/` and are listed in `assets/ASSET_REGISTER.md`.
 
-### TD-008: Backend — OPEN
-Candidates to evaluate in Phase 14 (REQ-BE-1): managed Postgres with auth and row-level security (e.g. Supabase); Firebase (Auth + Firestore + Cloud Functions); custom Node (Fastify) API + Postgres. Requirements: server-validated ledger, verified roles, versioned config with rollback, audit log, cross-device profiles. **Owner input needed:** OQ-11 (preference and MYR budget), OQ-13 (online PvP?), OQ-09 (real-money purchases?). Until then, the client talks to an internal `services/` interface so the backend can be swapped in.
+### TD-008: Backend — PROPOSED: Supabase (Postgres + Auth + row-level security); see TD-017
+Candidates to evaluate in Phase 14 (REQ-BE-1): managed Postgres with auth and row-level security (e.g. Supabase); Firebase (Auth + Firestore + Cloud Functions); custom Node (Fastify) API + Postgres. Requirements: server-validated ledger, verified roles, versioned config with rollback, audit log, cross-device profiles. **Update 10/11/2026:** online PvP is out of scope (TD-018) and hosting must be free (TD-017), which points to Supabase. Still open: OQ-09 (real-money purchases?). Until Phase 14, the client talks to an internal `services/` interface so the backend can be swapped in.
 
 ### TD-009: Ten-specialist team — ACCEPTED
 **Context:** Playbook §8.1 defines nine workers. The owner's 10/11/2026 instruction defines ten different roles.
@@ -94,10 +103,36 @@ Fighters, abilities, arenas, objects and mode rules defined as typed TypeScript 
 ### TD-015: Agent Teams disabled — ACCEPTED
 Playbook §2/§10: start with standard subagents. Agent Teams are experimental and more expensive. Not enabled in `.claude/settings.json`.
 
+### TD-016: Control scheme — ACCEPTED
+**Context:** Five combat buttons only (INV-9), yet block, dodge, jump, pick up, throw and targeting are all required. The owner delegated the design (10/11/2026).
+**Decision:** Hold Button 1 = block (tap = melee); flick the movement stick = dodge (Shift on desktop; optional double-tap mode); one **contextual utility button** that is not a combat button = jump / pick up / throw (hold to drop); automatic soft target lock (tap an opponent or Tab to switch); drag the right side of the screen or the mouse for the camera. Desktop presets: keyboard + mouse (default) and keyboard only. Both layouts live in one build; the active one follows the device last used (resolves OQ-14). Full spec: `docs/design/CONTROL_SCHEME.md`.
+**Alternatives rejected:** extra Dodge, Block and Jump buttons (clutter; arguably breaks INV-9); a swipe on the camera area for dodge (conflicts with camera drag); automatic block (removes skill).
+**Trade-offs:** a hold-to-block threshold adds about 0.2 s before the guard rises, so the threshold is data-driven and tuned in playtests. Flicks can misfire, hence the double-tap option.
+
+### TD-017: Free hosting — PROPOSED
+**Owner requirement:** free hosting (MYR 0). Free-tier figures below come from third-party 2026 pricing summaries; the official pricing pages could not be opened from the development environment, so **confirm them when creating the accounts**.
+
+| Need | Recommended | Free-tier facts (2026, unverified against official pages) | Alternatives |
+|---|---|---|---|
+| Game (static site: HTML, JS, 3D assets) | **Cloudflare Pages** | Unlimited static bandwidth and requests; 500 builds per month; 1 concurrent build; reportedly a 25 MB per-file cap (keep each `.glb` under it) | GitHub Pages (simple, but a soft bandwidth cap); Netlify or Vercel (metered bandwidth on free tiers) |
+| Auth, profiles, ledger, admin config | **Supabase Free** | 500 MB Postgres; 1 GB file storage; 50,000 monthly active users; 2 free projects; 5 GB egress; **pauses after 7 days without activity** (data is kept; the first request after a pause is slow) | **Cloudflare Workers + D1**: 100,000 requests per day; 5 million rows read and 100,000 rows written per day; 5 GB storage; no pausing; but authentication must be built ourselves |
+| Not recommended | Firebase Spark | Cloud Functions need the paid Blaze plan, so server-side validation would cost money or be impossible for free | — |
+
+**Why Supabase:** Auth, Postgres row-level security and SQL functions let the **server** validate the ledger, rewards, unlocks, tutorial completion and admin role (REQ-BE-3/4, INV-7) with no paid compute. **Risk:** the 7-day pause matters for a small player base; the mitigation is a free scheduled ping or accepting a slow first request. If pausing becomes a problem, switch to Workers + D1 behind the same `src/services/` interface.
+**Cost if outgrown:** Supabase Pro is USD 25 per month ≈ **MYR 101.50 per month** (rate used: 1 USD = 4.06 MYR, reference rate 01/11/2026). Upgrading requires owner approval.
+**Not yet done:** no accounts created and nothing deployed. Deployment always needs explicit owner approval (spec §19).
+
+### TD-018: AI-only play — ACCEPTED
+**Decision (owner, 10/11/2026):** every mode is single player against AI (allies and opponents in 3v3 are AI). No netcode or matchmaking. TD-013 (fixed timestep) and input intents keep online play possible later.
+**Consequence:** the AI quality bar is higher, because AI is the whole opponent experience (Phase 10 is critical). The backend only needs per-player data, not real-time servers, which fits free tiers.
+
+### TD-019: Token-economy delegation — ACCEPTED
+**Owner condition (10/11/2026):** use specialists only when needed so tokens are not wasted.
+**Policy:** the Master Developer does small and medium tasks itself. Delegate only when (a) a task is large and fully inside one specialist's paths, (b) an independent read-only review is required at milestone sign-off (QA), or (c) heavy research or log reading would flood the main context. Default to **one** specialist at a time; parallel specialists only for disjoint, sizeable work. No "review everything" sweeps; reviews are scoped to the milestone diff. Recorded in `CLAUDE.md` and the workflow.
+
 ## Unresolved technical questions
-- TD-008 backend choice; online PvP (OQ-13) would require an authoritative server and netcode, so decide **before** Phase 5 combat architecture hardens.
 - Performance budgets (OQ-10).
-- Whether jump exists on mobile given the five-button HUD (OQ-02).
+- Final backend sign-off at Phase 14 (TD-008, TD-017).
 
 ## Dependencies
-None installed. The proposed dependency list (TD-003 to TD-007) is installed only at Phase 0/1 after owner approval.
+None installed yet. The stack (TD-003 to TD-007) is approved and is installed at Phase 0.

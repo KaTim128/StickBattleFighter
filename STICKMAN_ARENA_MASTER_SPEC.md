@@ -15,7 +15,7 @@
 
 ## Important gap
 
-The playbook says the master specification should hold "the complete original Stickman Arena requirements, including the main game systems and later requirements…" `[PB §4.1]`. **No separate original requirements document was supplied.** This specification was built from everything the playbook contains (sections 4, 8, 12, 14, 15 and 17 especially) and from the owner's instructions. Where the original requirements would have given numbers (stamina values, prices, rewards, cooldowns, story content and so on), they are **missing** and listed in §21. If the owner has the original requirements text, add it here and reconcile it.
+The playbook says the master specification should hold "the complete original Stickman Arena requirements, including the main game systems and later requirements…" `[PB §4.1]`. **No separate original requirements document was supplied.** This specification was built from everything the playbook contains (sections 4, 8, 12, 14, 15 and 17 especially) and from the owner's instructions. Where the original requirements would have given numbers (stamina values, prices, rewards, cooldowns, story content and so on), they are **missing** and listed in §21. If the owner has the original requirements text, add it here and reconcile it. **Update 10/11/2026:** the owner does not remember the original requirements, so this specification (playbook-based) stands as the baseline. Missing numbers are decided per phase and recorded as TD entries with owner sign-off.
 
 ---
 
@@ -30,6 +30,7 @@ The playbook says the master specification should hold "the complete original St
 | REQ-VIS-5 | All characters, abilities, VFX, animations, UI, arenas, progression and identity must be original. References are for learning only. | [PB §4.4] [OWNER] |
 | REQ-VIS-6 | Stickman Arena is **not** a Pokémon game, a creature-collection game, or a turn-based battle game. No Pokémon branding or implied affiliation. | [PB §4.5] [OWNER] |
 | REQ-VIS-7 | Stickman Arena is a **standalone repository**, separate from the Froggy project. | [PB §1, §3.1] |
+| REQ-VIS-8 | **Single player against AI only** for now. Every opponent and teammate in every mode is AI-controlled. Online multiplayer may come later; the architecture keeps that path open (fixed-timestep simulation, device-independent intents) but no netcode is built. | [OWNER 10/11/2026] (resolves OQ-13) |
 
 ## 2. Reference material and how it may be used
 
@@ -38,7 +39,7 @@ The playbook says the master specification should hold "the complete original St
 | Ref | Role | Allowed use | Forbidden |
 |---|---|---|---|
 | **Creature Clash** (Froggy project, `KaTim128/froggy-arcade`) | Primary reference for free arena movement, navigation, positioning around opponents, collision, arena exploration `[PB §4.4]`. Owner (10/11/2026) also allows **its abilities as a reference** `[OWNER]`. | Study design goals and ability *concepts* (delivery types, effect categories, ultimate design philosophy, AI behaviour ideas). Recreate them with an original architecture. | Importing, modifying or copying Froggy code or assets. **Froggy is read only** and must never be modified by Stickman Arena workers `[PB §4.3, §17.1]`. |
-| **Stickman Kombat 2D** (Playgama, by Ernar / Tempo Play; title still to be confirmed by owner, see OQ-01) | Secondary reference for combat readability, hit feedback, attack timing, combo pacing, defensive choices, fighter differentiation and beginner guidance `[PB §4.4]`. | High-level study only. Patterns to *evaluate*: timed combo windows, attacks from behind, aerial follow-ups, blocks, counters, clear hit reactions. | Its characters, designs, exact move list, animation sequences, interface, sound, arena layouts, source code or assets. It must **never** push the game towards side view, side-scrolling or lanes. Not a reference for 3D movement, camera or arena structure `[PB §4.3]`. |
+| **Stickman Kombat 2D** (Playgama, by Ernar / Tempo Play; **confirmed by owner 10/11/2026**) | Reference for **style and feel**: the character of its sound effects and its attacks, plus combat readability, hit feedback, attack timing, combo pacing, defensive choices, fighter differentiation and beginner guidance `[PB §4.4]` [OWNER]. **Movement does NOT follow it**: movement follows Creature Clash (free movement around the whole map, not side to side) [OWNER]. | Study the style, punchiness and feel of attacks and sound effects, then create **original** attacks and **original** sound effects with a similar feel. Patterns to *evaluate*: timed combo windows, attacks from behind, aerial follow-ups, blocks, counters, clear hit reactions. | Its characters, designs, exact move list, animation sequences, interface, sound, arena layouts, source code or assets. It must **never** push the game towards side view, side-scrolling or lanes. Not a reference for 3D movement, camera or arena structure `[PB §4.3]`. |
 | **Owner-supplied gameplay videos** (two files; they show Pokémon fan games) | Visual and animation reference for how combat should **look and feel** `[PB §4.5]` [OWNER]. | Transferable presentation principles: anticipation, wind-up, timing, impact frames, hit reactions, knockback, recovery, ability activation, camera framing, VFX, particles, lighting, trails, sound cues, readability. | Pokémon characters, creatures, names, designs, moves, type system, battle rules, collection mechanics, evolution, UI, music, sound, exact animation sequences, any protected expression. |
 
 ### 2.2 Reference translation rules `[PB §4.4, §4.5]`
@@ -54,7 +55,7 @@ The playbook says the master specification should hold "the complete original St
 
 - `docs/references/VIDEO_REFERENCE_OBSERVATIONS.md`: Video Reference Observation Report for both videos `[PB §4.5]`.
 - `docs/references/CREATURE_CLASH_OBSERVATIONS.md`: read-only Creature Clash observation report, covering movement, arena and the ability catalogue.
-- Stickman Kombat 2D: **not inspected** (not attached, and no gameplay access during initialisation). Public description only. See OQ-01.
+- Stickman Kombat 2D: **not yet inspected** (not attached, and no gameplay access during initialisation). The owner confirmed it as the style, feel, attack and sound-effect reference (10/11/2026). A `/reference-observation` report is scheduled for Phase 5–6, before attacks and sound effects are designed; it needs access to the game or owner-supplied footage.
 
 ## 3. Design invariants (must never be broken) `[PB §4.3]`
 
@@ -160,7 +161,15 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 
 - Fighters may still have **combo chains and multiple animation variations**, but the mobile HUD shows **exactly five** combat buttons `[PB §4.2]`.
 - This supersedes the older "four basic attack buttons plus four abilities" layout (see §22, SUP-01).
-- **Open:** how dodge, block, jump, pickup and throw are triggered given only five combat buttons. See OQ-02.
+- **Resolved (TD-016, 10/11/2026):** block = hold Button 1; dodge = flick the movement stick (or a dodge key on desktop); jump, pick up and throw = one contextual **utility** button that is not a combat button; automatic soft target lock. The full scheme, layouts and default bindings are in `docs/design/CONTROL_SCHEME.md`, which is part of this specification.
+
+| ID | Requirement | Source |
+|---|---|---|
+| REQ-CTL-11 | Block by **holding Button 1** (hold threshold data-driven, default 0.2 s); a tap is melee. | [TD-016] |
+| REQ-CTL-12 | Dodge by **flicking the movement stick** on touch (optional double-tap mode) or the dodge key (Shift) on desktop. | [TD-016] |
+| REQ-CTL-13 | One **contextual utility button** (jump / pick up / throw; hold to drop), visually distinct from the five combat buttons. Desktop has Space for jump and a separate interact key. | [TD-016] |
+| REQ-CTL-14 | Automatic soft target lock on the nearest visible opponent; switch with a tap on the opponent or Tab. Aim assist never guarantees hits. | [TD-016] |
+| REQ-CTL-15 | Two desktop presets: keyboard + mouse (default) and keyboard only. | [TD-016] |
 
 ### 7.2 Desktop `[PB §8.9, §12 Phase 11]`
 
@@ -246,7 +255,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ABL-3 | Ultimate has its own **charge or cooldown** rule (not yet specified, OQ-04). | [PB §4.2] |
 | REQ-ABL-4 | Ability interfaces support fighter–object interactions (§8.3). | [PB §12 Phase 7] |
 | REQ-ABL-5 | Abilities and ultimates must be **original**. Creature Clash's ability catalogue may be used as a **design reference** for delivery types (projectile, fan, ring, dash, beam, trap, shield, blink, lob, snare, aura, heal), effect categories (control, damage-over-time, mobility, defence, summons, zones) and the "every ultimate designed, none weaker" balance philosophy, reinterpreted for 3D. See `docs/references/CREATURE_CLASH_OBSERVATIONS.md`. | [OWNER 10/11/2026] [REF-CC] |
-| REQ-ABL-6 | Telegraphing: where an ability has a delayed area, show it before it lands so it can be avoided. *Reference-derived proposal; owner approval needed (OQ-15).* | [REF-CC] [REF-VIDEO] |
+| REQ-ABL-6 | Telegraphing: where an ability has a delayed area, show it before it lands so it can be avoided. *Adopted by the owner 10/11/2026 (OQ-15).* | [REF-CC] [REF-VIDEO] [OWNER] |
 
 ## 11. Animation and visual presentation
 
@@ -262,7 +271,7 @@ No numeric values were supplied (OQ-05).
 
 ### 11.2 Presentation quality targets (from the owner's videos) `[PB §4.5]` `[REF-VIDEO]`
 
-These are **quality targets for presentation**, not new mechanics. Full evidence and timestamps are in `docs/references/VIDEO_REFERENCE_OBSERVATIONS.md`.
+**Status: BINDING. Adopted by the owner on 10/11/2026 (OQ-15).** These are **quality targets for presentation**, not new mechanics. Full evidence and timestamps are in `docs/references/VIDEO_REFERENCE_OBSERVATIONS.md`.
 
 | ID | Target |
 |---|---|
@@ -344,6 +353,7 @@ All numeric economy values (starting tokens, prices, entry costs, rewards, achie
 | REQ-BE-8 | No secrets in source control or browser code. No client-side security. | [PB §8.9, §8.10] |
 | REQ-BE-9 | Never deploy, create paid services or change production data without explicit owner approval. | [PB §8.10, §17.1] |
 | REQ-BE-10 | Test cross-device persistence and abuse cases. | [PB §12 Phase 14] |
+| REQ-BE-11 | Hosting uses **free tiers** (MYR 0 running cost). Proposed: Cloudflare Pages for the game, Supabase Free for auth and data (TD-017). Any paid upgrade needs owner approval with its cost in MYR. | [OWNER 10/11/2026] |
 
 ## 17. Performance
 
@@ -391,11 +401,11 @@ Browser verification uses the documented dev command and browser automation: tes
 
 ## 21. Open questions (need owner decisions)
 
-| ID | Question | Why it matters | Blocks |
+| ID | Question | Why it matters | Blocks / status |
 |---|---|---|---|
-| OQ-01 | Is **Stickman Kombat 2D** (Playgama, Ernar / Tempo Play) the intended "Stickman Kombat" reference? `[PB §4.4]` | The playbook asks for confirmation before treating it as definitive. | Combat-presentation research only |
-| OQ-02 | **How are dodge, block, jump, pickup and throw triggered** when the HUD has exactly five combat buttons? Options: gestures (for example swipe the joystick to dodge), context-sensitive Button 1 near an object, extra *non-combat* buttons, automatic block, or a combination. | Dodge, block, jump, pickup and throw are all required (REQ-CMB-1, REQ-PHY-2, REQ-PHY-8, REQ-TUT-2), but no inputs are assigned. Adding buttons could breach INV-9. | Phase 2 (jump), Phase 5, Phase 7, Phase 11 |
-| OQ-03 | Desktop default key map for the five actions, dodge, block, jump and pickup. | Only WASD is specified. | Phase 11 |
+| OQ-01 | Is **Stickman Kombat 2D** (Playgama, Ernar / Tempo Play) the intended "Stickman Kombat" reference? `[PB §4.4]` | The playbook asks for confirmation before treating it as definitive. | **RESOLVED 10/11/2026:** confirmed. It is the reference for style, feel, sound effects and attacks; movement follows Creature Clash (§2.1). |
+| OQ-02 | **How are dodge, block, jump, pickup and throw triggered** when the HUD has exactly five combat buttons? Options: gestures (for example swipe the joystick to dodge), context-sensitive Button 1 near an object, extra *non-combat* buttons, automatic block, or a combination. | Dodge, block, jump, pickup and throw are all required (REQ-CMB-1, REQ-PHY-2, REQ-PHY-8, REQ-TUT-2), but no inputs are assigned. Adding buttons could breach INV-9. | **RESOLVED 10/11/2026 (TD-016):** the owner delegated the design. Hold Button 1 = block, flick stick = dodge, contextual utility button = jump / pick up / throw. See `docs/design/CONTROL_SCHEME.md`. |
+| OQ-03 | Desktop default key map for the five actions, dodge, block, jump and pickup. | Only WASD is specified. | **RESOLVED 10/11/2026 (TD-016):** default bindings in `docs/design/CONTROL_SCHEME.md` §4. |
 | OQ-04 | **Ultimate rule:** charge meter (built how?) or timed cooldown? Values? (For reference, Creature Clash unlocks ultimates 25 s into a fight with a 25 s cooldown.) | REQ-ABL-3 | Phase 6 |
 | OQ-05 | Base **stat values** and ranges for the 13 stats; stamina pool, regeneration rate and ability costs. | Balance needs a baseline. | Phase 5–6, Phase 9 |
 | OQ-06 | **Match rules:** round count, timer, draw conditions, win conditions, ring-out or fall-off? | REQ-MOD-7 | Phase 13 |
@@ -403,14 +413,14 @@ Browser verification uses the documented dev command and browser automation: tes
 | OQ-08 | **Economy numbers:** starting tokens, fighter prices, entry costs, rewards per mode, achievement list. | REQ-ECO-* | Phase 13–14 |
 | OQ-09 | Does "purchases" mean real-money purchases? If yes: payment provider, MYR pricing, legal requirements. | Security and legal scope. | Phase 14 |
 | OQ-10 | **Performance targets:** target FPS (desktop and mobile), minimum supported devices and browsers, load-time and bundle budgets. | REQ-PRF-* | Phase 1 onward |
-| OQ-11 | **Backend preference** (for example Supabase, Firebase, or a custom Node API with Postgres) and hosting budget in MYR. | REQ-BE-1 | Phase 14 |
+| OQ-11 | **Backend preference** (for example Supabase, Firebase, or a custom Node API with Postgres) and hosting budget in MYR. | REQ-BE-1 | **PARTLY RESOLVED 10/11/2026:** owner wants free hosting (MYR 0). Proposal: Cloudflare Pages + Supabase Free (TD-017). Final backend sign-off is in Phase 14. |
 | OQ-12 | **Sand** is listed under office props. Does the office have a sand source (for example a planter or fire bucket), or is sand for future arenas only? | REQ-PHY-12 | Phase 7 |
-| OQ-13 | Multiplayer: are 1v1 and 3v3 against AI only, local, or **online PvP**? Nothing in the playbook specifies networking. | Online PvP changes the architecture fundamentally (netcode, authoritative server). | Architecture (Phase 0–1) |
-| OQ-14 | Phase 11 says the desktop and mobile layouts "work independently **and simultaneously**". Does that mean one device with a keyboard and touchscreen at once, or only that both code paths coexist? | REQ-CTL-9 | Phase 11 |
-| OQ-15 | Adopt reference-derived presentation targets PRS-1 to PRS-11 and the telegraphing rule REQ-ABL-6 as binding? | Videos are references; the owner decides adoption. | Phase 5–9 |
+| OQ-13 | Multiplayer: are 1v1 and 3v3 against AI only, local, or **online PvP**? Nothing in the playbook specifies networking. | Online PvP changes the architecture fundamentally (netcode, authoritative server). | **RESOLVED 10/11/2026:** AI opponents only for now; online play possibly in the future (REQ-VIS-8, TD-018). |
+| OQ-14 | Phase 11 says the desktop and mobile layouts "work independently **and simultaneously**". Does that mean one device with a keyboard and touchscreen at once, or only that both code paths coexist? | REQ-CTL-9 | **RESOLVED 10/11/2026 (TD-016):** both layouts coexist in one build; the active one follows the device actually used. A touch laptop switches to the touch HUD on the first touch and back on keyboard or mouse input. |
+| OQ-15 | Adopt reference-derived presentation targets PRS-1 to PRS-11 and the telegraphing rule REQ-ABL-6 as binding? | Videos are references; the owner decides adoption. | **RESOLVED 10/11/2026:** adopted as binding (PRS-1..11, REQ-ABL-6). |
 | OQ-16 | Art direction: what does "stickman" mean in 3D (pure line-figure, thick capsule limbs, stylised low-poly)? How do the five fighters keep distinct silhouettes within it? | REQ-CHR-1, REQ-CHR-3 | Phase 8 |
 | OQ-17 | Audio: no music or SFX requirements beyond "sound" hooks. Source of audio assets? | REQ-ABL-1 | Phase 6 onward |
-| OQ-18 | The specialist team was set by the owner (10 roles), which differs from the playbook's 9. The mapping of the playbook's environment, game-mode, UI and tutorial duties onto the 10 roles is in `docs/workflow/SYSTEM_OWNERSHIP.md`. Confirm. | Ownership clarity. | None (provisional mapping active) |
+| OQ-18 | The specialist team was set by the owner (10 roles), which differs from the playbook's 9. The mapping of the playbook's environment, game-mode, UI and tutorial duties onto the 10 roles is in `docs/workflow/SYSTEM_OWNERSHIP.md`. Confirm. | Ownership clarity. | **RESOLVED 10/11/2026:** mapping confirmed, on condition that specialists are only used when needed to save tokens (TD-019). |
 
 ## 22. Superseded requirements
 
@@ -425,3 +435,4 @@ Browser verification uses the documented dev command and browser automation: tes
 | Date | Change | By |
 |---|---|---|
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |
+| 10/11/2026 | Owner decisions applied: control scheme (REQ-CTL-11..15, TD-016), AI-only play (REQ-VIS-8), free hosting (REQ-BE-11), PRS-1..11 and REQ-ABL-6 binding, Stickman Kombat 2D role confirmed and widened to style, feel, sound effects and attacks; OQ-01/02/03/13/14/15/18 resolved, OQ-11 partly; original requirements confirmed unavailable. | Master Developer |

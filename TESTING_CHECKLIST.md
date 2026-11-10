@@ -85,6 +85,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] B key rebinding, conflict prevention, reset defaults, persistence of bindings
 - [ ] B cooldown and stamina indicators update correctly
 - [ ] B multiple viewport sizes; accessibility (contrast, touch target size)
+- [ ] U tap Button 1 = melee; hold ≥ threshold (0.2 s) = block; release ends block (REQ-CTL-11)
+- [ ] U stick flick triggers dodge in the flick direction; ordinary steering never does; double-tap mode works (REQ-CTL-12)
+- [ ] B utility button: jump by default; pick-up icon near a throwable; throw while carrying; hold to drop; visually distinct from combat buttons (REQ-CTL-13)
+- [ ] B soft target lock: nearest visible opponent; tap or Tab switches; aim assist never guarantees a hit (REQ-CTL-14)
+- [ ] B both desktop presets (keyboard + mouse, keyboard only) work and rebind (REQ-CTL-15)
+- [ ] B touch laptop: HUD switches to touch on first touch and back on keyboard or mouse input
 
 ## 10. Tutorial (REQ-TUT)
 - [ ] B new player: tutorial starts; covers every REQ-TUT-2 topic

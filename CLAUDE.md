@@ -16,11 +16,11 @@ Stickman Arena is an original, browser-based, **fully 3D, real-time, free-moveme
 ## Project boundaries
 - Work only inside this repository unless the owner explicitly authorises another location.
 - **Froggy (`froggy-arcade`) is read only.** Never edit, copy or import its code or assets. Creature Clash is a design reference only.
-- Reference videos and games inform *presentation and feel*, never characters, names, mechanics, UI or audio (spec §2). Stickman Arena is **not** a Pokémon game.
+- Reference videos and games inform *presentation, feel and sound style* (Stickman Kombat 2D sets the attack and sound-effect feel; Creature Clash sets free movement). Never copy their characters, names, mechanics, UI, art or audio files (spec §2). Stickman Arena is **not** a Pokémon game.
 - Never overwrite or delete unrelated files. Never expose secrets or commit `.env` files.
 
 ## Design invariants (spec §3)
-Fully 3D free movement · one shared combat engine for all fighters and modes · one input-independent combat layer · **exactly five combat actions** (melee with no stamina cost, 3 unique abilities, 1 ultimate) · server-validated persistence and admin · nothing is complete without tests.
+Fully 3D free movement · single player vs AI (no online yet) · one shared combat engine for all fighters and modes · one input-independent combat layer · **exactly five combat actions** (melee with no stamina cost, 3 unique abilities, 1 ultimate; controls in `docs/design/CONTROL_SCHEME.md`) · server-validated persistence and admin · nothing is complete without tests.
 
 ## Architecture and code
 - Modular systems, single sources of truth, **data-driven** fighters, abilities, arenas and settings.
@@ -30,7 +30,7 @@ Fully 3D free movement · one shared combat engine for all fighters and modes ·
 ## Working method
 1. **Inspect before changing:** read the relevant spec sections and the existing code and assets first. Preserve working systems; avoid rewrites.
 2. Define acceptance criteria before editing.
-3. Delegate only when a specialist adds value. Give an exact objective, spec IDs, file boundaries, interfaces to preserve, and required tests (skill `/assign-specialist`).
+3. **Delegate sparingly to save tokens (TD-019):** do small and medium tasks yourself. Use a specialist only for a large task inside one owner's paths, a milestone QA review, or heavy research. Default to one specialist at a time. When you do delegate, give an exact objective, spec IDs, file boundaries, interfaces to preserve, and required tests (skill `/assign-specialist`).
 4. **Never let two specialists edit the same files or systems at once.** Check dependencies and conflicts before assigning.
 5. **Verify worker output yourself:** run the tests and build, and launch the app for anything visible. Completion reports are not evidence.
 
