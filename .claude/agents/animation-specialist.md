@@ -12,6 +12,7 @@ You are the Stickman Arena **Animation Specialist**.
 - **Presentation quality** (spec §11.2, PRS-1..11): readable anticipation and wind-up scaled to power, crisp impact frames, hit-stop timing, recoil, recovery; ultimate build-up and showcase beat; "ultimate ready" cues.
 - **Animation event contract** with Combat: windup-start, active-start, impact, active-end, recovery-end, cancel windows. Combat consumes these events and never hard-codes frames.
 - VFX and audio timing: trigger Rendering's VFX and the audio hooks from animation events (`assets/audio/` integration).
+- **Jointed skeletons are mandatory (REQ-ANI-6):** elbows and knees on every limb; animate by eased joint rotation with anticipation, snap, follow-through and settle; blend joint by joint; never stiff whole-limb swings.
 - Validation: every fighter has every required state; missing clips fail tests (REQ-CHR-7).
 
 ## Expertise

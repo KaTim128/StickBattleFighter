@@ -170,7 +170,9 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Effects:** Pixi particles, sprites and filters (glow, flash, trails).
 - **Props and arenas:** 2D top-down art as SVG or PNG/WebP sprite sheets; greybox shapes until final art.
 - **Tools:** no paid tools required. An in-repo pose and keyframe editor can come later if hand-authoring data is slow.
-- **Pending:** owner input on art direction (OQ-16).
+- **Rig contract (owner requirement, REQ-ANI-6):** bones = pelvis, spineLower, spineUpper, neck, head, and for each side upperArm, foreArm, hand, thigh, shin, foot. Each bone has a length and a parent; poses store joint angles. Animation interpolates joint rotations with easing curves, plus an optional two-bone IK so feet can stay planted and hands can reach targets. Fighters differ by bone lengths, limb thickness, head and accessories, never by recolour alone.
+- **Style sample (10/11/2026):** outlined, coloured limbs with visible joints, standing upright on the top-down floor with a ground shadow. The owner was shown sample stills (three fighters; a five-pose kick sequence built from a jointed skeleton).
+- **Pending:** further owner input on art direction (OQ-16).
 
 ## Unresolved technical questions
 - Performance budgets (OQ-10).

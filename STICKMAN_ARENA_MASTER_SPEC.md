@@ -269,6 +269,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ANI-3 | Each fighter has distinct attack, ability and ultimate animations. |
 | REQ-ANI-4 | Animation events (for example hit-frame timing) are coordinated with the combat system. |
 | REQ-ANI-5 | 2D asset pipeline (TD-022, proposed): fighters as crisp vector stick figures drawn in code with 2D skeletal (bone) animation defined as data; effects as particles and sprites; environment props as 2D top-down art. *(Blender and glTF superseded: SUP-04.)* |
+| REQ-ANI-6 | **Jointed fighters (owner, 10/11/2026):** every fighter has a 2D skeleton with real joints: pelvis, spine (lower and upper), neck, head; shoulder → **elbow** → hand; hip → **knee** → foot on both sides. Attacks, kicks and movement are animated by rotating these joints with eased curves (anticipation, snap, follow-through, settle), so motion feels smooth and natural, never stiff. Blending between animations is joint by joint. | [OWNER 10/11/2026] [TD-022] |
 
 ### 11.2 Presentation quality targets (from the owner's videos) `[PB §4.5]` `[REF-VIDEO]`
 
@@ -437,6 +438,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | Date | Change | By |
 |---|---|---|
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |
+| 10/11/2026 | Added REQ-ANI-6: jointed 2D skeletons with elbows and knees for smooth, natural attacks (owner). | Master Developer |
 | 10/11/2026 | **Switched from 3D to 2D top-down** (owner). Rewrote REQ-VIS-1/2/3, INV-1, §5.1 camera, REQ-PHY-1/2, REQ-CMB-2, REQ-ANI-5, PRS-11, the §18 table and OQ-16; added REQ-VIS-9; superseded the 3D rules as SUP-04. | Master Developer |
 | 10/11/2026 | Game hosting switched from Cloudflare Pages to GitHub Pages (owner). | Master Developer |
 | 10/11/2026 | Owner decisions applied: control scheme (REQ-CTL-11..15, TD-016), AI-only play (REQ-VIS-8), free hosting (REQ-BE-11), PRS-1..11 and REQ-ABL-6 binding, Stickman Kombat 2D role confirmed and widened to style, feel, sound effects and attacks; OQ-01/02/03/13/14/15/18 resolved, OQ-11 partly; original requirements confirmed unavailable. | Master Developer |
