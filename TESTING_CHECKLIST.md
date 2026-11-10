@@ -13,6 +13,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] No game code, fighters, arenas or assets created
 - [x] Froggy repository unmodified (`git status` clean in froggy-arcade)
 
+## 0b. Phase 0 bootstrap (verified 10/11/2026)
+- [x] `npm run typecheck` exits 0 (both tsconfig projects)
+- [x] `npm test`: 4 files, 11 tests pass (fixed-step accumulator, game loop, pixel-ratio clamp, Rapier crate-on-floor)
+- [x] `npm run build` exits 0; the only size warning was triaged (TD-020)
+- [x] `npm run e2e`: 2/2 pass (desktop Chrome + Pixel 7): ready state, physics steps advance, crate settles at about 0.5 m, canvas not blank, zero console, page or network errors; screenshots saved
+- [x] Pages build (`BASE_PATH=/StickBattleFighter/`) loads under the sub-path with zero errors
+
 ## 1. Build and code health (every change)
 - [ ] U `npm run typecheck` exits 0
 - [ ] U/I `npm test` passes; no skipped tests without a recorded reason

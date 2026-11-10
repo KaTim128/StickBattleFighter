@@ -17,13 +17,14 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 | TD-010 | Directory structure | ACCEPTED | 10/11/2026 |
 | TD-011 | Creature Clash is 2D: limits on its use as a 3D reference | ACCEPTED | 10/11/2026 |
 | TD-012 | Reference videos are not committed to the repository | ACCEPTED | 10/11/2026 |
-| TD-013 | Fixed-timestep simulation separated from rendering | PROPOSED | 10/11/2026 |
+| TD-013 | Fixed-timestep simulation separated from rendering | ACCEPTED (implemented Phase 0) | 10/11/2026 |
 | TD-014 | Data-driven content format | PROPOSED | 10/11/2026 |
 | TD-015 | Agent Teams stay disabled | ACCEPTED | 10/11/2026 |
 | TD-016 | Control scheme (resolves OQ-02, OQ-03, OQ-14) | ACCEPTED | 10/11/2026 |
-| TD-017 | Free hosting: Cloudflare Pages + Supabase Free | PROPOSED | 10/11/2026 |
+| TD-017 | Free hosting: GitHub Pages (game) + Supabase Free (Phase 14 data) | ACCEPTED (game hosting); data PROPOSED | 10/11/2026 |
 | TD-018 | Single player against AI only; online deferred | ACCEPTED | 10/11/2026 |
 | TD-019 | Token-economy delegation policy for specialists | ACCEPTED | 10/11/2026 |
+| TD-020 | Phase 0 toolchain details | ACCEPTED | 10/11/2026 |
 
 ---
 
@@ -94,7 +95,8 @@ The playbook treats Creature Clash as the primary 3D foundation reference. Inspe
 ### TD-012: Reference videos not committed — ACCEPTED
 The two owner videos contain third-party franchise footage (≈ 22 MB). Committing them to a public-facing repository creates IP and size risks. Only the written observation report is committed; the owner keeps the originals. The playbook `.docx` **is** committed under `docs/references/` (owner-authored, 75 KB).
 
-### TD-013: Fixed-timestep simulation — PROPOSED
+### TD-013: Fixed-timestep simulation — ACCEPTED
+**Implemented in Phase 0:** `src/core/fixed-step.ts` and `src/core/game-loop.ts`; 60 Hz step, at most 5 steps per frame; render interpolation by alpha.
 Gameplay (physics, combat, AI) steps at a fixed rate (proposed 60 Hz) with rendering interpolated, so combat timing (wind-up, active frames, hit-stop) is frame-rate independent across desktop and mobile. This also keeps an online-PvP path possible (OQ-13).
 
 ### TD-014: Data-driven content format — PROPOSED
@@ -109,7 +111,10 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 **Alternatives rejected:** extra Dodge, Block and Jump buttons (clutter; arguably breaks INV-9); a swipe on the camera area for dodge (conflicts with camera drag); automatic block (removes skill).
 **Trade-offs:** a hold-to-block threshold adds about 0.2 s before the guard rises, so the threshold is data-driven and tuned in playtests. Flicks can misfire, hence the double-tap option.
 
-### TD-017: Free hosting — PROPOSED
+### TD-017: Free hosting — game on GitHub Pages ACCEPTED (owner, 10/11/2026); data PROPOSED
+**Owner decision (10/11/2026):** host the game on **GitHub Pages** instead of Cloudflare Pages, since the code already lives on GitHub. Notes: Pages is free for **public** repositories (private repositories need a paid GitHub plan); the limits recalled from GitHub's docs (about 1 GB per site, a soft bandwidth limit of about 100 GB per month) are unverified, so confirm them when enabling Pages. The Vite `base` path is set at build time (`BASE_PATH=/StickBattleFighter/`). Deployment runs only from a **manually triggered** workflow (`.github/workflows/deploy-pages.yml`), and the owner enables Pages in the repository settings, because public deployment needs owner approval (spec §19). GitHub cannot store player data, so the Supabase proposal below remains for Phase 14.
+
+*Original evaluation (game hosting part superseded by the decision above):*
 **Owner requirement:** free hosting (MYR 0). Free-tier figures below come from third-party 2026 pricing summaries; the official pricing pages could not be opened from the development environment, so **confirm them when creating the accounts**.
 
 | Need | Recommended | Free-tier facts (2026, unverified against official pages) | Alternatives |
@@ -130,9 +135,19 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 **Owner condition (10/11/2026):** use specialists only when needed so tokens are not wasted.
 **Policy:** the Master Developer does small and medium tasks itself. Delegate only when (a) a task is large and fully inside one specialist's paths, (b) an independent read-only review is required at milestone sign-off (QA), or (c) heavy research or log reading would flood the main context. Default to **one** specialist at a time; parallel specialists only for disjoint, sizeable work. No "review everything" sweeps; reviews are scoped to the milestone diff. Recorded in `CLAUDE.md` and the workflow.
 
+### TD-020: Phase 0 toolchain details — ACCEPTED
+- **TypeScript 7.0.2** (latest at bootstrap). Two configs: `tsconfig.json` covers browser code and unit/integration tests (no Node globals); `tsconfig.node.json` covers the config files and Playwright tests (Node types).
+- **Vite 8.3.7** (Rolldown bundler), **Vitest 5.1.0**, **Three.js 0.187.0**, **Rapier compat 0.21.0**.
+- **@playwright/test pinned at 1.63.0** to match the browser build preinstalled in the cloud dev environment. On a new machine run `npx playwright install chromium` once.
+- Browser tests run against the **production build** (`vite preview`) in two projects, desktop Chrome and Pixel 7 emulation, using software WebGL (SwiftShader) so headless CI can render.
+- Vendor chunks are split (`vendor-three`, `vendor-rapier`) for caching. **Known cost:** Rapier's compat build embeds its WASM as base64 (about 4.3 MB raw, 1.7 MB gzipped). Switching to the non-compat build with a separate `.wasm` file is a Phase 1 item.
+- **CI** (`.github/workflows/ci.yml`) runs typecheck, tests, build and e2e on every push. **Deployment** (`deploy-pages.yml`) is manual only (`workflow_dispatch`).
+- A read-only debug hook (`window.__stickmanDebug`) lets the smoke tests check physics progress and read canvas pixels. It exposes no gameplay control.
+- Lint and format tooling is deferred to Phase 1, to keep Phase 0 minimal.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).
 
 ## Dependencies
-None installed yet. The stack (TD-003 to TD-007) is approved and is installed at Phase 0.
+Installed at Phase 0 (see `package.json` and TD-020): three, @dimforge/rapier3d-compat; dev: typescript, vite, vitest, @playwright/test, @types/three, @types/node. `npm audit`: 0 vulnerabilities (10/11/2026).

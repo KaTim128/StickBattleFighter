@@ -6,12 +6,12 @@ Persistent record of project state. Update after every meaningful piece of work 
 
 | Item | Value |
 |---|---|
-| Current phase | **Phase I: Project initialisation: COMPLETE** (10/11/2026) |
-| Next milestone | **Phase 0:** architecture approval and bootstrap (minimal 3D scene) |
+| Current phase | **Phase 0: bootstrap: COMPLETE** (10/11/2026) |
+| Next milestone | **Phase 1:** engine foundation |
 | Branch | `ccr-6b7ad8fe-whr1i5` |
 | Latest commit | see `git log -1` |
-| Runnable game | **None yet**, by design (TD-001) |
-| Installed dependencies | None |
+| Runnable game | Engine-check scene only (`npm run dev`): floor, lights, a falling crate. No gameplay. |
+| Installed dependencies | three 0.187, Rapier compat 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, Vitest 5.1, Playwright 1.63.0 |
 
 ## Active assignments
 
@@ -66,6 +66,30 @@ Owner answers to the initialisation questions, recorded across spec, TD log, CLA
 
 **Limitation:** official pricing pages (Cloudflare, Supabase) were not reachable from this session's network. Free-tier figures come from third-party 2026 summaries and must be confirmed when accounts are created.
 
+### 10/11/2026: Game hosting switched to GitHub Pages (owner decision)
+TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free still proposed for Phase 14 data.
+
+### 10/11/2026: Phase 0 bootstrap (Master Developer; no specialists used, per TD-019)
+**Acceptance criteria (set before editing):** typecheck, unit tests and build exit 0; a browser smoke test shows a rendered, non-blank WebGL canvas with working physics and zero console errors, on desktop and mobile emulation; the GitHub Pages sub-path build works.
+
+**Files created:** `package.json`, `package-lock.json`, `tsconfig.json`, `tsconfig.node.json`, `vite.config.ts`, `playwright.config.ts`, `index.html`, `src/main.ts`, `src/app/bootstrap.ts`, `src/core/fixed-step.ts`, `src/core/game-loop.ts`, `src/physics/physics-world.ts`, `src/rendering/renderer.ts`, `src/rendering/engine-check-scene.ts` (greybox), `tests/unit/core/{fixed-step,game-loop}.test.ts`, `tests/unit/rendering/renderer.test.ts`, `tests/integration/physics/physics-world.test.ts`, `tests/e2e/smoke.spec.ts`, `.github/workflows/{ci,deploy-pages}.yml`.
+
+**Ownership note:** the Master Developer wrote the starter `src/physics/` and `src/rendering/` files during bootstrap. Ownership stays with the Physics and Rendering specialists from Phase 1 on.
+
+**Evidence (all run by the Master Developer on 10/11/2026):**
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm test` | 4 files, **11/11 passed** |
+| `npm run build` | exit 0. Chunks: app 5.8 kB, three 534 kB (132 kB gzip), rapier 4.33 MB (1.67 MB gzip) |
+| `npm run e2e` | **2/2 passed** (desktop-chromium 4.9 s, mobile-chromium 6.5 s) |
+| Pages sub-path check | `BASE_PATH=/StickBattleFighter/` build served by `vite preview` reached the ready state at `/StickBattleFighter/` with no errors. The first attempt failed only because my check served the wrong base path; corrected and re-run. |
+| `npm audit` | 0 vulnerabilities |
+| Visual | Screenshots inspected: the crate rests on the grid floor with lighting, at both desktop and mobile aspect ratios. |
+
+**Not done / deferred:** lint and format tooling (moved to Phase 1). CI has not run on GitHub yet; it runs on the next push and its result should be checked. Nothing deployed: GitHub Pages is not yet enabled.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
@@ -74,13 +98,13 @@ Full list in spec §21. Still open:
 2. **OQ-04, OQ-05:** ultimate rule; stat, stamina and cooldown baselines (Phase 5–6). I can propose balanced defaults for approval.
 3. **OQ-06, OQ-07, OQ-08, OQ-09:** match rules, 3v3/ladder/story details, economy numbers, real-money purchases (Phase 13–14).
 4. **OQ-12:** sand in the office? **OQ-16:** 3D stickman art direction. **OQ-17:** audio source (original sound effects in the Stickman Kombat 2D style).
-5. **TD-017:** approve the free hosting proposal (needed only by Phase 14 or first deployment).
+5. **TD-017:** game hosting is GitHub Pages (decided). To publish, enable Pages in the repository settings and run the deploy workflow (or ask me to). Pages is free only for **public** repositories. The Supabase data backend needs approval by Phase 14.
 
 ## Known issues
 - None in code (no code exists).
 - Documentation limitation: numeric gameplay and economy values are absent from the source material (spec §21).
 
 ## Outstanding tasks (next)
-1. **Phase 0** (stack approved; starts on the owner's go-ahead): Architecture specialist reviews the structure → Master creates `package.json`, TypeScript, Vite, Vitest and Playwright config → minimal Three.js + Rapier scene → smoke tests.
-   - **Acceptance:** `npm run typecheck`, `npm test`, `npm run build` exit 0; a Playwright smoke test shows a non-blank WebGL canvas with zero console errors (screenshot saved).
-2. Restart Claude Code locally after pulling so the new agents and skills are detected (Playbook §8.12), then smoke-test by asking `stickman-architect` for a read-only review.
+1. **Check CI** on GitHub after this push (typecheck, tests, build, e2e).
+2. **Phase 1: engine foundation.** Acceptance: lint and format tooling; Rapier switched to the non-compat build with a separate `.wasm` (smaller bundle) or the size justified against OQ-10; scene lifecycle (load and unload without leaks); an asset loader with a handled-error path (test: missing asset shows an error, not a crash); a debug overlay (FPS, physics wireframe toggle); collision boundaries around the test floor; all tests and build green; e2e plus screenshots.
+3. Owner: answer OQ-10 (performance targets) before Phase 1 ends.

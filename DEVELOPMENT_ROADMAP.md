@@ -7,7 +7,7 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 | Phase | Name | Depends on | Lead specialist(s) | Blocking OQs | Status |
 |---|---|---|---|---|---|
 | I | Project initialisation (docs, team, rules, skills, structure) | — | Master Developer | — | ☑ |
-| 0 | Workspace, architecture approval, bootstrap | I | Master Developer | — (stack approved 10/11/2026) | ☐ |
+| 0 | Workspace, architecture approval, bootstrap | I | Master Developer | — (stack approved 10/11/2026) | ☑ |
 | 1 | Rendering, physics, main loop, asset pipeline, scenes | 0 | Rendering, Physics | — | ☐ |
 | 2 | Player character, 360° movement, gravity, collision | 1 | Physics | — | ☐ |
 | 3 | Third-person camera | 2 | Rendering (camera), Physics (camera collision) | — | ☐ |
@@ -104,4 +104,4 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 **Acceptance:** `/release-check` passes; performance targets (OQ-10) met on real devices; security review; known issues documented; **public deployment only with explicit owner approval**.
 
 ## Next recommended milestone
-**Phase 0:** the stack is approved (10/11/2026). Bootstrap the toolchain (TypeScript, Vite, Three.js, Rapier, Vitest, Playwright) and a minimal 3D scene with smoke tests. Starts on the owner's go-ahead. OQ-10 (performance targets) should be answered before Phase 1 ends.
+**Phase 1: engine foundation.** Phase 0 was verified on 10/11/2026. Already in place: the fixed-timestep loop and physics initialisation. Remaining: lint and format tooling (deferred from Phase 0), a smaller Rapier bundle, scene lifecycle, an asset loader with error handling, a debug overlay, and collision boundaries. OQ-10 (performance targets) should be answered before Phase 1 ends.

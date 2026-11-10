@@ -353,7 +353,7 @@ All numeric economy values (starting tokens, prices, entry costs, rewards, achie
 | REQ-BE-8 | No secrets in source control or browser code. No client-side security. | [PB §8.9, §8.10] |
 | REQ-BE-9 | Never deploy, create paid services or change production data without explicit owner approval. | [PB §8.10, §17.1] |
 | REQ-BE-10 | Test cross-device persistence and abuse cases. | [PB §12 Phase 14] |
-| REQ-BE-11 | Hosting uses **free tiers** (MYR 0 running cost). Proposed: Cloudflare Pages for the game, Supabase Free for auth and data (TD-017). Any paid upgrade needs owner approval with its cost in MYR. | [OWNER 10/11/2026] |
+| REQ-BE-11 | Hosting uses **free tiers** (MYR 0 running cost). The game is hosted on **GitHub Pages** (owner decision 10/11/2026); Supabase Free is proposed for auth and data from Phase 14 (TD-017). Any paid upgrade needs owner approval with its cost in MYR. | [OWNER 10/11/2026] |
 
 ## 17. Performance
 
@@ -413,7 +413,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | OQ-08 | **Economy numbers:** starting tokens, fighter prices, entry costs, rewards per mode, achievement list. | REQ-ECO-* | Phase 13–14 |
 | OQ-09 | Does "purchases" mean real-money purchases? If yes: payment provider, MYR pricing, legal requirements. | Security and legal scope. | Phase 14 |
 | OQ-10 | **Performance targets:** target FPS (desktop and mobile), minimum supported devices and browsers, load-time and bundle budgets. | REQ-PRF-* | Phase 1 onward |
-| OQ-11 | **Backend preference** (for example Supabase, Firebase, or a custom Node API with Postgres) and hosting budget in MYR. | REQ-BE-1 | **PARTLY RESOLVED 10/11/2026:** owner wants free hosting (MYR 0). Proposal: Cloudflare Pages + Supabase Free (TD-017). Final backend sign-off is in Phase 14. |
+| OQ-11 | **Backend preference** (for example Supabase, Firebase, or a custom Node API with Postgres) and hosting budget in MYR. | REQ-BE-1 | **PARTLY RESOLVED 10/11/2026:** owner wants free hosting (MYR 0). Game on GitHub Pages (decided); Supabase Free proposed for data (TD-017). Final backend sign-off is in Phase 14. |
 | OQ-12 | **Sand** is listed under office props. Does the office have a sand source (for example a planter or fire bucket), or is sand for future arenas only? | REQ-PHY-12 | Phase 7 |
 | OQ-13 | Multiplayer: are 1v1 and 3v3 against AI only, local, or **online PvP**? Nothing in the playbook specifies networking. | Online PvP changes the architecture fundamentally (netcode, authoritative server). | **RESOLVED 10/11/2026:** AI opponents only for now; online play possibly in the future (REQ-VIS-8, TD-018). |
 | OQ-14 | Phase 11 says the desktop and mobile layouts "work independently **and simultaneously**". Does that mean one device with a keyboard and touchscreen at once, or only that both code paths coexist? | REQ-CTL-9 | **RESOLVED 10/11/2026 (TD-016):** both layouts coexist in one build; the active one follows the device actually used. A touch laptop switches to the touch HUD on the first touch and back on keyboard or mouse input. |
@@ -435,4 +435,5 @@ Browser verification uses the documented dev command and browser automation: tes
 | Date | Change | By |
 |---|---|---|
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |
+| 10/11/2026 | Game hosting switched from Cloudflare Pages to GitHub Pages (owner). | Master Developer |
 | 10/11/2026 | Owner decisions applied: control scheme (REQ-CTL-11..15, TD-016), AI-only play (REQ-VIS-8), free hosting (REQ-BE-11), PRS-1..11 and REQ-ABL-6 binding, Stickman Kombat 2D role confirmed and widened to style, feel, sound effects and attacks; OQ-01/02/03/13/14/15/18 resolved, OQ-11 partly; original requirements confirmed unavailable. | Master Developer |

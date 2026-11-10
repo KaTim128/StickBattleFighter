@@ -2,7 +2,23 @@
 
 An original, browser-based, **fully 3D, real-time, free-movement arena fighting game**.
 
-> **Status:** project initialisation complete (10/11/2026). **No game code yet.** The next milestone is Phase 0: architecture approval and bootstrap of a minimal 3D scene.
+> **Status:** Phase 0 complete (10/11/2026): toolchain plus a minimal 3D engine-check scene (renderer + physics). No gameplay yet. Next: Phase 1, engine foundation.
+
+## Run it locally
+Requires Node.js 20.19+ or 22.12+.
+
+```bash
+npm install
+npm run dev          # start the game at http://localhost:5173
+npm run typecheck    # TypeScript checks
+npm test             # unit + integration tests (Vitest)
+npm run build        # production build into dist/
+npx playwright install chromium   # once per machine, for browser tests
+npm run e2e          # browser smoke tests (desktop + mobile emulation)
+```
+
+## Publishing (GitHub Pages)
+Deployment is manual and needs the owner's go-ahead. Enable it once under **Settings → Pages → Source: GitHub Actions**, then run the **Deploy to GitHub Pages** workflow from the Actions tab. The game then appears at `https://<owner>.github.io/StickBattleFighter/`. GitHub Pages is free for public repositories.
 
 ## Start here
 
@@ -24,8 +40,8 @@ An original, browser-based, **fully 3D, real-time, free-movement arena fighting 
 
 If newly added agents or skills are not detected, restart Claude Code in the project folder.
 
-## Proposed stack (awaiting approval)
-TypeScript + Vite · Three.js · Rapier · Vitest + Playwright · Blender → glTF. Backend undecided. See `TECHNICAL_DECISIONS.md`.
+## Stack
+TypeScript + Vite · Three.js · Rapier · Vitest + Playwright · Blender → glTF (approved). Game hosting: GitHub Pages. Data backend for Phase 14: Supabase Free (proposed). See `TECHNICAL_DECISIONS.md`.
 
 ## Boundaries
 Froggy (`froggy-arcade`) is a read-only reference. Reference videos inform presentation only. Stickman Arena is not affiliated with any franchise shown in them.
