@@ -300,6 +300,9 @@ The diagonal wall became a curve bowing into the boss room with the door at its 
 ### 11/11/2026: Fire sound effects and background music (owner request)
 Original fire sounds designed from the owner's three reference clips (measured, not used): Inferno's punches and kicks, Fire Bolt (whoosh and fireball burst), Meteor Fist (growling build-up, rushing launch, double explosion). Procedural music: a fight track per map and a menu theme (TD-042). **Files:** `src/audio/sound-board.ts`, `src/audio/music.ts` (new), `src/data/audio/music-tracks.ts` (new), `src/data/abilities/inferno.ts`, `src/data/characters/inferno/audio.json`, arena data, `bootstrap.ts`, tests. E2E headroom: two tests that wait in real time for game-time events were failing on this (slower) container even on the previous commit; their waits got more time, the checks are unchanged. **Evidence:** lint clean; typecheck 0; `npm test` 238/238; `npm run e2e` 24/24; browser check. **Limitation:** sounds cannot be heard here; owner check on speakers needed.
 
+### 11/11/2026: 2.5D style mockups (owner request; awaiting approval)
+Original mockups of the proposed pseudo-isometric look: an office corner (plank floor, cut-away walls with skirting and a window, desks with monitors, mesh-back chairs, shelving, water cooler, sofa, plants, rug), a furniture sheet, and a stickman close-up with the procedural fire head (idle, walk, punch) lighting the floor. Files: `docs/mockups/style-2-5d.html` (animated in a browser) and three PNGs. TD-043 (PROPOSED). Nothing in the game has changed yet.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stickman Arena: 2.5D style mockup (for owner approval)</title>
+<style>
+  html, body { margin: 0; background: #e9e4dc; font-family: system-ui, sans-serif; color: #3a3530; }
+  header { padding: 14px 20px 4px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p { margin: 0 0 10px; font-size: 13px; opacity: .8; }
+  canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .label { text-align: center; font-size: 13px; margin: 6px 0 18px; opacity: .75; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Stickman Arena: 2.5D pseudo-isometric style mockup</h1>
+  <p>Original designs for approval (not in the game yet). Light from the top-left; soft drop shadows; ambient occlusion at the bases; the fire head lights the room. <code>?view=room</code>, <code>?view=props</code> or <code>?view=hero</code> shows one panel.</p>
+</header>
+<canvas id="room" width="1600" height="980"></canvas>
+<div class="label">1. Office corner: plank floor, walls with skirting and window, desk, mesh chair, shelving, water cooler, sofa, plant, and Inferno lighting the floor</div>
+<canvas id="props" width="1600" height="560"></canvas>
+<div class="label">2. Furniture sheet, each piece on its own tile</div>
+<canvas id="hero" width="1600" height="700"></canvas>
+<div class="label">3. Stickman close-up: volumetric limbs and the procedural fire head (idle, walking, attacking)</div>
+<script>
+'use strict';
+// ---------- projection: 1 m tiles, 2:1 dimetric (about 26.6°), height drawn up the screen ----------
+let TW = 96, TH = 48, ZH = 62;
+let BRIGHT_SCENE = false;
+/** Zoom a panel: k = 1 is 96 px per metre across a tile. */
+function setScale(k) { TW = 96 * k; TH = 48 * k; ZH = 62 * k; }
+function iso(o, x, y, z = 0) { return [o.x + (x - y) * TW / 2, o.y + (x + y) * TH / 2 - z * ZH]; }
+const LIGHT = { top: 1.0, left: 0.86, right: 0.68 }; // light from the top-left: the +y face is lit, the +x face in shade
+
+function shade(hex, k) {
+  if (hex.startsWith('rgb')) { const [r, g, b] = hex.match(/\d+/g).map(Number); hex = '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0'); }
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 255) * k));
+  const g = Math.min(255, Math.round(((n >> 8) & 255) * k));
+  const b = Math.min(255, Math.round((n & 255) * k));
+  return `rgb(${r},${g},${b})`;
+}
+function poly(ctx, pts, fill, stroke, lw = 1) {
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+/** A bevelled box: x,y,z = near-floor corner (min x, min y), w along x, d along y, h up. */
+function box(ctx, o, x, y, z, w, d, h, col, opt = {}) {
+  const P = (a, b, c) => iso(o, a, b, c);
+  const top = [P(x, y, z + h), P(x + w, y, z + h), P(x + w, y + d, z + h), P(x, y + d, z + h)];
+  const left = [P(x, y + d, z), P(x + w, y + d, z), P(x + w, y + d, z + h), P(x, y + d, z + h)]; // +y face
+  const right = [P(x + w, y, z), P(x + w, y + d, z), P(x + w, y + d, z + h), P(x + w, y, z + h)]; // +x face
+  const edge = opt.edge ?? 'rgba(40,32,24,.35)';
+  // Faces with a vertical gradient: a little lighter at the top (bounce light), darker at the base (AO).
+  const grad = (pts, k) => {
+    const g = ctx.createLinearGradient(0, pts[3][1], 0, pts[0][1]);
+    g.addColorStop(0, shade(col, k * 1.04)); g.addColorStop(1, shade(col, k * (opt.ao === false ? 1 : 0.86)));
+    return g;
+  };
+  poly(ctx, left, grad(left, LIGHT.left), edge, 1);
+  poly(ctx, right, grad(right, LIGHT.right), edge, 1);
+  poly(ctx, top, opt.topFill ?? shade(col, LIGHT.top), edge, 1);
+  // Bevel: a soft highlight along the lit top edges.
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(...top[3]); ctx.lineTo(...top[0]); ctx.lineTo(...top[1]); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.25)';
+  ctx.beginPath(); ctx.moveTo(...top[3]); ctx.lineTo(...top[2]); ctx.stroke();
+  return { top, left, right };
+}
+/** Upright cylinder (radius r m) for bottles, pots and gas lifts. */
+function cylinder(ctx, o, x, y, z, r, h, col, alpha = 1) {
+  const [cx, cyB] = iso(o, x, y, z), [, cyT] = iso(o, x, y, z + h);
+  const rx = r * TW * 0.72, ry = r * TH * 0.72;
+  ctx.save(); ctx.globalAlpha = alpha;
+  const g = ctx.createLinearGradient(cx - rx, 0, cx + rx, 0);
+  g.addColorStop(0, shade(col, 0.98)); g.addColorStop(0.35, shade(col, 1.12)); g.addColorStop(1, shade(col, 0.66));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(cx, cyB, rx, ry, 0, 0, Math.PI); ctx.lineTo(cx - rx, cyT); ctx.ellipse(cx, cyT, rx, ry, 0, Math.PI, 0, true); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = shade(col, 1.15); ctx.beginPath(); ctx.ellipse(cx, cyT, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(40,32,24,.3)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore();
+}
+/** Soft drop shadow of a footprint, cast down-right (light top-left), blurred. */
+function shadow(ctx, o, x, y, w, d, h, strength = 0.28) {
+  const off = Math.min(1.2, h * 0.55);
+  ctx.save(); ctx.filter = `blur(${6 + h * 6}px)`; ctx.globalAlpha = strength;
+  poly(ctx, [iso(o, x, y), iso(o, x + w + off, y + off * 0.3), iso(o, x + w + off, y + d + off), iso(o, x + off * 0.3, y + d + off), iso(o, x, y + d)], '#2b2118');
+  ctx.restore();
+  // Contact AO: a tight dark rim right at the base.
+  ctx.save(); ctx.filter = 'blur(3px)'; ctx.globalAlpha = 0.3;
+  poly(ctx, [iso(o, x - .03, y - .03), iso(o, x + w + .05, y - .03), iso(o, x + w + .05, y + d + .05), iso(o, x - .03, y + d + .05)], '#2b2118');
+  ctx.restore();
+}
+
+// ---------- environment ----------
+function floor(ctx, o, W, D) {
+  // Light-wood planks: 0.2 m wide boards along x, staggered ends, per-board tone variation, satin sheen.
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const tones = ['#e7c48f', '#e2bc84', '#ecc999', '#ddb67d', '#e9c690'];
+  for (let j = 0; j < D / 0.2; j++) {
+    let x = -rnd() * 1.4;
+    while (x < W) {
+      const len = 1.1 + rnd() * 1.1, x0 = Math.max(0, x), x1 = Math.min(W, x + len);
+      if (x1 > x0) poly(ctx, [iso(o, x0, j * .2), iso(o, x1, j * .2), iso(o, x1, j * .2 + .2), iso(o, x0, j * .2 + .2)], tones[(rnd() * tones.length) | 0], 'rgba(150,105,60,.28)', .8);
+      x += len;
+    }
+  }
+  // Sheen from the window (top-left) fading across the floor.
+  const [ax, ay] = iso(o, 0, 0), [bx, by] = iso(o, W, D);
+  const g = ctx.createLinearGradient(ax, ay, bx, by);
+  g.addColorStop(0, 'rgba(255,248,230,.28)'); g.addColorStop(.6, 'rgba(255,248,230,0)'); g.addColorStop(1, 'rgba(60,40,20,.10)');
+  poly(ctx, [iso(o, 0, 0), iso(o, W, 0), iso(o, W, D), iso(o, 0, D)], g);
+}
+function walls(ctx, o, W, D, H) {
+  const T = 0.14;
+  // Only the inside faces show (a cut-away room): the back wall catches the light, the left wall a little less.
+  const face = (pts, c0, c1) => { const g = ctx.createLinearGradient(0, pts[3][1], 0, pts[0][1]); g.addColorStop(0, c0); g.addColorStop(1, c1); poly(ctx, pts, g, 'rgba(120,105,90,.25)'); };
+  face([iso(o, 0, 0, 0), iso(o, W, 0, 0), iso(o, W, 0, H), iso(o, 0, 0, H)], '#f7f2ea', '#e7dfd3');
+  face([iso(o, 0, 0, 0), iso(o, 0, D, 0), iso(o, 0, D, H), iso(o, 0, 0, H)], '#ece5da', '#ddd3c5');
+  // Wall tops (the cut), a crisp light edge.
+  poly(ctx, [iso(o, -T, -T, H), iso(o, W, -T, H), iso(o, W, 0, H), iso(o, 0, 0, H), iso(o, 0, D, H), iso(o, -T, D, H)], '#fbf8f3', 'rgba(120,105,90,.35)');
+  // Ambient occlusion where the walls meet the floor and each other.
+  ctx.save(); ctx.filter = 'blur(8px)'; ctx.globalAlpha = .22;
+  poly(ctx, [iso(o, 0, 0), iso(o, W, 0), iso(o, W, .25), iso(o, .25, .25), iso(o, .25, D), iso(o, 0, D)], '#5a4632');
+  ctx.restore();
+  // Skirting boards.
+  poly(ctx, [iso(o, 0, 0, 0), iso(o, W, 0, 0), iso(o, W, 0, .1), iso(o, 0, 0, .1)], '#d8cfc2');
+  poly(ctx, [iso(o, 0, 0, 0), iso(o, 0, D, 0), iso(o, 0, D, .1), iso(o, 0, 0, .1)], '#d2c8ba');
+  // Window on the back wall, with daylight spilling in.
+  const wx0 = 2.2, wx1 = 4.6, wz0 = .9, wz1 = 2.1;
+  poly(ctx, [iso(o, wx0, 0, wz0), iso(o, wx1, 0, wz0), iso(o, wx1, 0, wz1), iso(o, wx0, 0, wz1)], '#c9e6f6', 'rgba(255,255,255,.9)', 3);
+  ctx.save(); ctx.globalAlpha = .55; poly(ctx, [iso(o, wx0 + .2, 0, wz1 - .1), iso(o, wx0 + .9, 0, wz1 - .1), iso(o, wx0 + .5, 0, wz0 + .1), iso(o, wx0 + .1, 0, wz0 + .1)], '#ffffff'); ctx.restore();
+  poly(ctx, [iso(o, (wx0 + wx1) / 2, 0, wz0), iso(o, (wx0 + wx1) / 2, 0, wz1)], null, 'rgba(255,255,255,.9)', 3);
+  ctx.save(); ctx.globalAlpha = .16; ctx.filter = 'blur(10px)';
+  poly(ctx, [iso(o, wx0, .05), iso(o, wx1, .05), iso(o, wx1 + .6, 2.4), iso(o, wx0 + .6, 2.4)], '#fff6dc'); ctx.restore();
+  // A framed print on the left wall (original abstract art).
+  poly(ctx, [iso(o, 0, 1.2, 1.1), iso(o, 0, 2.4, 1.1), iso(o, 0, 2.4, 1.9), iso(o, 0, 1.2, 1.9)], '#2f2b29');
+  poly(ctx, [iso(o, 0, 1.3, 1.18), iso(o, 0, 2.3, 1.18), iso(o, 0, 2.3, 1.82), iso(o, 0, 1.3, 1.82)], '#f6efe4');
+  ctx.strokeStyle = '#e0763a'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(...iso(o, 0, 1.5, 1.3)); ctx.quadraticCurveTo(...iso(o, 0, 1.8, 1.8), ...iso(o, 0, 2.1, 1.35)); ctx.stroke();
+}
+
+// ---------- furniture (all original designs) ----------
+function desk(ctx, o, x, y) {
+  shadow(ctx, o, x, y, 1.6, .8, .75);
+  const leg = (a, b) => box(ctx, o, x + a, y + b, 0, .06, .06, .72, '#4a4f57');
+  leg(.05, .05); leg(1.49, .05);
+  box(ctx, o, x + 1.0, y + .08, 0, .5, .64, .68, '#5d636c'); // drawer pedestal
+  for (const z of [.2, .44]) poly(ctx, [iso(o, x + 1.0, y + .72, z), iso(o, x + 1.5, y + .72, z)], null, 'rgba(255,255,255,.35)', 1.2);
+  leg(.05, .69); leg(1.49, .69);
+  box(ctx, o, x, y, .72, 1.6, .8, .04, '#f4f1ec', { edge: 'rgba(60,50,40,.35)' });
+  // Monitor: stand, thin bezel, glowing screen.
+  box(ctx, o, x + .62, y + .2, .76, .22, .16, .02, '#3a3e45');
+  box(ctx, o, x + .7, y + .26, .78, .06, .04, .22, '#3a3e45');
+  const s = box(ctx, o, x + .35, y + .24, .98, .8, .04, .48, '#26292e');
+  const sc = [iso(o, x + .39, y + .28, 1.01), iso(o, x + 1.11, y + .28, 1.01), iso(o, x + 1.11, y + .28, 1.43), iso(o, x + .39, y + .28, 1.43)];
+  const g = ctx.createLinearGradient(sc[0][0], sc[3][1], sc[1][0], sc[0][1]);
+  g.addColorStop(0, '#7ec8f2'); g.addColorStop(1, '#3d7fc0'); poly(ctx, s.left.map((p, i) => sc[i] ?? p), g);
+  box(ctx, o, x + .45, y + .5, .76, .5, .16, .015, '#d9dbe0'); // keyboard
+  box(ctx, o, x + 1.1, y + .55, .76, .07, .1, .02, '#d9dbe0'); // mouse
+  cylinder(ctx, o, x + .2, y + .55, .76, .045, .1, '#e2643a'); // mug
+}
+function meshChair(ctx, o, x, y, t = 0) {
+  shadow(ctx, o, x - .3, y - .3, .6, .6, .6, .22);
+  // Five-star base with castors.
+  ctx.strokeStyle = '#2f3237'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  for (let i = 0; i < 5; i++) {
+    const a = i / 5 * Math.PI * 2 + t; ctx.beginPath(); ctx.moveTo(...iso(o, x, y, .08)); ctx.lineTo(...iso(o, x + Math.cos(a) * .3, y + Math.sin(a) * .3, .05)); ctx.stroke();
+    ctx.fillStyle = '#1f2125'; ctx.beginPath(); const c = iso(o, x + Math.cos(a) * .3, y + Math.sin(a) * .3, .02); ctx.arc(c[0], c[1], 4, 0, 7); ctx.fill();
+  }
+  cylinder(ctx, o, x, y, .08, .03, .34, '#9aa0a8'); // gas lift
+  box(ctx, o, x - .26, y - .24, .42, .52, .5, .08, '#3b3f46'); // seat
+  box(ctx, o, x - .2, y - .18, .5, .4, .38, .03, '#4a4f58', { ao: false }); // cushion
+  // Mesh back: a frame with a fine woven grid, see-through.
+  const bx = x - .26, by = y + .22;
+  const fr = [iso(o, bx, by, .55), iso(o, bx + .52, by, .55), iso(o, bx + .52, by + .02, 1.18), iso(o, bx, by + .02, 1.18)];
+  ctx.save(); poly(ctx, fr, 'rgba(40,44,52,.55)'); ctx.clip();
+  ctx.strokeStyle = 'rgba(160,170,185,.55)'; ctx.lineWidth = .8;
+  for (let i = -20; i < 40; i++) { ctx.beginPath(); ctx.moveTo(fr[0][0] + i * 5, fr[3][1] - 10); ctx.lineTo(fr[0][0] + i * 5 + 40, fr[0][1] + 30); ctx.stroke(); ctx.beginPath(); ctx.moveTo(fr[0][0] + i * 5 + 40, fr[3][1] - 10); ctx.lineTo(fr[0][0] + i * 5, fr[0][1] + 30); ctx.stroke(); }
+  ctx.restore();
+  poly(ctx, fr, null, '#22252a', 4);
+  // Armrests.
+  for (const ax of [-.3, .26]) { box(ctx, o, x + ax, y - .1, .5, .04, .3, .18, '#2f3237'); box(ctx, o, x + ax - .01, y - .14, .68, .06, .34, .03, '#3b3f46'); }
+}
+function shelving(ctx, o, x, y) {
+  const w = 1.4, d = .4, h = 1.9;
+  shadow(ctx, o, x, y, w, d, h, .3);
+  box(ctx, o, x, y, 0, .05, d, h, '#cfa36c'); box(ctx, o, x + w - .05, y, 0, .05, d, h, '#cfa36c');
+  box(ctx, o, x, y - .02, 0, w, .02, h, '#b98d58');
+  let seed = 9; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const book = ['#c0504d', '#3e6e9e', '#e3b23c', '#5b8c5a', '#7d5ba6', '#e07b39', '#2f4858'];
+  for (const z of [0, .48, .96, 1.44]) {
+    box(ctx, o, x + .05, y, z, w - .1, d, .04, '#e0b47c');
+    let bx = x + .1; while (bx < x + w - .25) { const bw = .05 + rnd() * .05, bh = .26 + rnd() * .14; box(ctx, o, bx, y + .06, z + .04, bw, d - .1, bh, book[(rnd() * book.length) | 0], { edge: 'rgba(0,0,0,.25)' }); bx += bw + .005; if (rnd() < .12) bx += .12; }
+  }
+  box(ctx, o, x, y, h - .04, w, d, .04, '#e0b47c');
+  cylinder(ctx, o, x + 1.0, y + .2, 1.92, .08, .14, '#7fb38c'); // a small vase on top
+}
+function waterCooler(ctx, o, x, y) {
+  shadow(ctx, o, x, y, .34, .34, 1.3, .25);
+  box(ctx, o, x, y, 0, .34, .34, .95, '#f3f4f6');
+  poly(ctx, [iso(o, x + .08, y + .34, .62), iso(o, x + .26, y + .34, .62), iso(o, x + .26, y + .34, .78), iso(o, x + .08, y + .34, .78)], '#c9ccd2');
+  for (const [dx, c] of [[.12, '#3c7fd6'], [.22, '#d64c3c']]) { ctx.fillStyle = c; const p = iso(o, x + dx, y + .345, .72); ctx.beginPath(); ctx.arc(p[0], p[1], 3.2, 0, 7); ctx.fill(); }
+  cylinder(ctx, o, x + .17, y + .17, .95, .13, .42, '#5fb6ee', .78);
+  ctx.save(); ctx.globalAlpha = .5; const hl = iso(o, x + .12, y + .2, 1.1); ctx.fillStyle = '#fff'; ctx.fillRect(hl[0] - 6, hl[1] - 18, 3, 20); ctx.restore();
+}
+function sofa(ctx, o, x, y) {
+  const w = 2.2, d = .9;
+  shadow(ctx, o, x, y, w, d, .8, .26);
+  const c = '#cfd3d8';
+  box(ctx, o, x, y, .06, w, d, .3, c);
+  box(ctx, o, x, y, .36, w, .22, .45, shade(c, .97)); // back
+  box(ctx, o, x, y + .22, .36, .2, d - .22, .2, c); box(ctx, o, x + w - .2, y + .22, .36, .2, d - .22, .2, c); // arms
+  for (let i = 0; i < 2; i++) box(ctx, o, x + .22 + i * .9, y + .24, .36, .88, d - .28, .12, '#dfe2e6'); // seat cushions
+  for (let i = 0; i < 2; i++) box(ctx, o, x + .26 + i * .9, y + .2, .5, .8, .1, .32, '#e4e7ea'); // back cushions
+  for (const lx of [.06, w - .1]) for (const ly of [.06, d - .1]) box(ctx, o, x + lx, y + ly, 0, .04, .04, .06, '#6b5a48');
+  box(ctx, o, x + .5, y + .3, .48, .32, .12, .26, '#e2643a'); // accent pillow
+}
+function plant(ctx, o, x, y, t = 0) {
+  shadow(ctx, o, x - .2, y - .2, .4, .4, 1.1, .22);
+  cylinder(ctx, o, x, y, 0, .18, .38, '#f2efe9');
+  ctx.fillStyle = '#5a3f2b'; const top = iso(o, x, y, .38); ctx.beginPath(); ctx.ellipse(top[0], top[1], 11, 5.5, 0, 0, 7); ctx.fill();
+  // Leaves: long arched blades, two greens, swaying very slightly.
+  for (let i = 0; i < 16; i++) {
+    const a = i / 16 * Math.PI * 2 + Math.sin(t + i) * .03, len = 46 + (i % 4) * 12, lift = 52 + (i % 3) * 18;
+    const [bx, by] = top; const tx = bx + Math.cos(a) * len, ty = by - lift + Math.sin(a) * len * .4;
+    ctx.fillStyle = i % 2 ? '#3f8f4f' : '#56a85f';
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx + Math.cos(a) * len * .3 - 6, ty - 26, tx, ty); ctx.quadraticCurveTo(bx + Math.cos(a) * len * .3 + 6, ty - 14, bx, by); ctx.fill();
+  }
+}
+function rug(ctx, o, x, y, w, d) {
+  poly(ctx, [iso(o, x, y), iso(o, x + w, y), iso(o, x + w, y + d), iso(o, x, y + d)], '#d9cbb4');
+  poly(ctx, [iso(o, x + .12, y + .12), iso(o, x + w - .12, y + .12), iso(o, x + w - .12, y + d - .12), iso(o, x + .12, y + d - .12)], null, 'rgba(160,110,70,.45)', 2);
+}
+
+// ---------- the stickman ----------
+/** A limb segment with volume: a dark outline, the body colour, then a light core toward the light. */
+function limb(ctx, a, b, w, col) {
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(25,18,14,.9)'; ctx.lineWidth = w + 4; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+  ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,230,200,.45)'; ctx.lineWidth = w * .32; ctx.beginPath(); ctx.moveTo(a[0] - w * .18, a[1] - w * .18); ctx.lineTo(b[0] - w * .18, b[1] - w * .18); ctx.stroke();
+}
+function joint(ctx, p, r, col) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 7); ctx.fill(); }
+/** Pose in screen pixels around the feet (sx, sy); s = scale; phase drives walking; mode idle|walk|punch. */
+function stickman(ctx, sx, sy, s, t, mode) {
+  const col = '#e8572a', dark = '#b8401d';
+  const walk = mode === 'walk' ? Math.sin(t * 7) : 0;
+  const bob = mode === 'walk' ? Math.abs(Math.cos(t * 7)) * 4 * s : Math.sin(t * 2.4) * 1.5 * s;
+  const hip = [sx, sy - 66 * s - bob], chest = [sx + 4 * s, sy - 118 * s - bob], neck = [sx + 5 * s, sy - 127 * s - bob];
+  // Legs (far leg darker), knees bent a touch.
+  const leg = (sgn, c) => { const kx = hip[0] + (sgn * walk * 16 + 6) * s, ky = sy - 34 * s; const fx = hip[0] + sgn * walk * 26 * s, fy = sy - Math.max(0, sgn * Math.cos(t * 7)) * (mode === 'walk' ? 8 * s : 0);
+    limb(ctx, hip, [kx, ky], 13 * s, c); limb(ctx, [kx, ky], [fx, fy], 12 * s, c); joint(ctx, [kx, ky], 6 * s, c); };
+  leg(-1, dark); leg(1, col);
+  limb(ctx, hip, chest, 16 * s, col);
+  // Arms: guard up at idle, swinging when walking, a straight jab when punching.
+  const punch = mode === 'punch' ? Math.max(0, Math.sin(t * 5)) : 0;
+  const arm = (sgn, c, lead) => {
+    let e, h;
+    if (mode === 'punch' && lead) { e = [chest[0] + 24 * s + punch * 18 * s, chest[1] + 6 * s]; h = [chest[0] + 40 * s + punch * 40 * s, chest[1] - 2 * s]; }
+    else if (mode === 'walk') { e = [chest[0] - sgn * walk * 14 * s, chest[1] + 26 * s]; h = [chest[0] - sgn * walk * 22 * s + 10 * s, chest[1] + 40 * s]; }
+    else { e = [chest[0] + (lead ? 16 : 6) * s, chest[1] + 22 * s]; h = [chest[0] + (lead ? 26 : 16) * s, chest[1] - 4 * s]; }
+    limb(ctx, chest, e, 11 * s, c); limb(ctx, e, h, 10 * s, c); joint(ctx, h, 7 * s, c);
+  };
+  arm(-1, dark, false); arm(1, col, true);
+  limb(ctx, chest, neck, 8 * s, col);
+  fireHead(ctx, neck[0] + 2 * s, neck[1] - 22 * s, 24 * s, t, mode === 'walk' ? 1 : mode === 'punch' ? .6 : 0);
+  return neck;
+}
+/**
+ * Procedural fire head: a hot core plus layered tongues that flicker on their own noise,
+ * lean back when moving (vel 0..1), drawn additively so overlaps glow. Blue at the base,
+ * white-yellow core, orange body, red tips.
+ */
+function fireHead(ctx, x, y, r, t, vel) {
+  ctx.save();
+  // Additive glow in dark scenes; normal blending on bright floors so the colours stay orange, not white.
+  ctx.globalCompositeOperation = BRIGHT_SCENE ? 'source-over' : 'lighter';
+  const halo = ctx.createRadialGradient(x, y, r * .2, x, y, r * 3.2);
+  halo.addColorStop(0, 'rgba(255,170,60,.55)'); halo.addColorStop(.5, 'rgba(255,90,20,.16)'); halo.addColorStop(1, 'rgba(255,60,0,0)');
+  ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x, y, r * 3.2, 0, 7); ctx.fill();
+  const layers = [
+    { n: 7, c0: 'rgba(255,60,20,.6)', c1: 'rgba(255,40,0,0)', len: 2.2, w: .42 },
+    { n: 6, c0: 'rgba(255,140,30,.75)', c1: 'rgba(255,90,0,0)', len: 1.8, w: .38 },
+    { n: 5, c0: 'rgba(255,225,100,.85)', c1: 'rgba(255,170,40,0)', len: 1.35, w: .34 },
+  ];
+  for (const L of layers) {
+    for (let i = 0; i < L.n; i++) {
+      // Each tongue grows from the upper half of the head and licks up and back.
+      const ang = Math.PI + (i + .5) / L.n * Math.PI;
+      const bx = x + Math.cos(ang) * r * .8, by = y + Math.sin(ang) * r * .55;
+      const flick = Math.sin(t * 9 + i * 2.1 + L.len * 3) * .5 + Math.sin(t * 15.3 + i * 1.3) * .3;
+      const up = (.6 + .4 * Math.sin(ang - Math.PI)) * L.len;
+      const tipX = bx + Math.cos(ang) * r * .35 - vel * r * 1.1 + flick * r * .25;
+      const tipY = y - r * (up + .3 + flick * .2);
+      const bw = r * L.w;
+      const g = ctx.createLinearGradient(bx, by, tipX, tipY);
+      g.addColorStop(0, L.c0); g.addColorStop(1, L.c1);
+      ctx.fillStyle = g;
+      // A teardrop: round at the root inside the head, tapering to a flickering tip.
+      ctx.beginPath();
+      ctx.moveTo(bx, by + r * .35);
+      ctx.bezierCurveTo(bx - bw * 1.6, by + r * .2, tipX - bw * .5, tipY + r * .7, tipX, tipY);
+      ctx.bezierCurveTo(tipX + bw * .5, tipY + r * .7, bx + bw * 1.6, by + r * .2, bx, by + r * .35);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // The head itself: a round, glowing ball of fire under the tongues.
+  const ball = ctx.createRadialGradient(x - r * .25, y - r * .25, r * .1, x, y, r);
+  ball.addColorStop(0, 'rgba(255,240,170,.95)'); ball.addColorStop(.6, 'rgba(255,150,40,.85)'); ball.addColorStop(1, 'rgba(230,70,20,.0)');
+  ctx.fillStyle = ball; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  // Core: white-hot centre with a blue base where the fire sits on the neck.
+  const core = ctx.createRadialGradient(x, y, 0, x, y, r * 1.05);
+  core.addColorStop(0, 'rgba(255,250,225,.85)'); core.addColorStop(.45, 'rgba(255,200,90,.55)'); core.addColorStop(1, 'rgba(255,120,30,0)');
+  ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y, r * 1.05, 0, 7); ctx.fill();
+  const blue = ctx.createRadialGradient(x, y + r * .7, 0, x, y + r * .7, r * .7);
+  blue.addColorStop(0, 'rgba(110,170,255,.75)'); blue.addColorStop(1, 'rgba(60,120,255,0)');
+  ctx.fillStyle = blue; ctx.beginPath(); ctx.ellipse(x, y + r * .7, r * .75, r * .4, 0, 0, 7); ctx.fill();
+  // Embers drifting up.
+  for (let i = 0; i < 6; i++) {
+    const k = (t * .8 + i / 6) % 1; ctx.fillStyle = `rgba(255,${180 - k * 120},60,${1 - k})`;
+    ctx.beginPath(); ctx.arc(x + Math.sin(i * 4 + t * 3) * r * .8 - vel * k * r, y - r * (1 + k * 3), r * .09 * (1 - k * .6), 0, 7); ctx.fill();
+  }
+  // Eyes: two calm white slits in the fire (character, not a face).
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(255,255,250,.95)';
+  ctx.beginPath(); ctx.ellipse(x + r * .25, y - r * .05, r * .09, r * .2, .15, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + r * .62, y - r * .02, r * .08, r * .18, .15, 0, 7); ctx.fill();
+  ctx.restore();
+}
+/** Warm light the fire head throws on the floor and nearby furniture (flickering). */
+function fireLight(ctx, x, y, t, strength = 1) {
+  const f = .9 + Math.sin(t * 11) * .05 + Math.sin(t * 17.7) * .05;
+  ctx.save(); ctx.globalCompositeOperation = 'soft-light';
+  const g = ctx.createRadialGradient(x, y, 0, x, y, 300 * f);
+  g.addColorStop(0, `rgba(255,150,60,${.75 * strength})`); g.addColorStop(1, 'rgba(255,120,40,0)');
+  ctx.fillStyle = g; ctx.fillRect(x - 320, y - 320, 640, 640);
+  ctx.globalCompositeOperation = 'lighter';
+  const g2 = ctx.createRadialGradient(x, y, 0, x, y, 170 * f);
+  g2.addColorStop(0, `rgba(255,120,40,${.22 * strength})`); g2.addColorStop(1, 'rgba(255,100,30,0)');
+  ctx.fillStyle = g2; ctx.fillRect(x - 200, y - 200, 400, 400);
+  ctx.restore();
+}
+function fighterShadow(ctx, x, y, s) {
+  ctx.save(); ctx.filter = 'blur(5px)'; ctx.fillStyle = 'rgba(40,25,15,.35)';
+  ctx.beginPath(); ctx.ellipse(x + 10 * s, y + 3 * s, 34 * s, 11 * s, 0, 0, 7); ctx.fill(); ctx.restore();
+}
+
+// ---------- panels ----------
+const params = new URLSearchParams(location.search);
+const only = params.get('view');
+const frozen = params.has('t') ? parseFloat(params.get('t')) : null;
+for (const id of ['room', 'props', 'hero']) if (only && only !== id) document.getElementById(id).style.display = 'none';
+
+function drawRoom(t) {
+  const c = document.getElementById('room'), ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  const bg = ctx.createLinearGradient(0, 0, 0, c.height); bg.addColorStop(0, '#efe9e0'); bg.addColorStop(1, '#e2dbd0'); ctx.fillStyle = bg; ctx.fillRect(0, 0, c.width, c.height);
+  setScale(1.4);
+  BRIGHT_SCENE = true;
+  const o = { x: 790, y: 215 }, W = 9, D = 8;
+  floor(ctx, o, W, D); walls(ctx, o, W, D, 2.6);
+  rug(ctx, o, 4.6, 4.2, 3.2, 2.4);
+  // Painter's order: far to near (by x + y).
+  shelving(ctx, o, 5.4, .05);
+  waterCooler(ctx, o, 7.6, .2);
+  plant(ctx, o, .45, .45, t);
+  desk(ctx, o, .3, 2.0); meshChair(ctx, o, 1.05, 3.25);
+  desk(ctx, o, .3, 4.3); meshChair(ctx, o, 1.05, 5.55, .4);
+  sofa(ctx, o, 5.0, 6.0);
+  // Inferno walking through the room, lighting it up.
+  const px = 4.2 + Math.sin(t * .5) * 1.0, py = 2.7;
+  const [fx, fy] = iso(o, px, py);
+  fireLight(ctx, fx, fy - 10, t, 1);
+  fighterShadow(ctx, fx, fy, 1.5);
+  stickman(ctx, fx, fy, 1.5, t, 'walk');
+  plant(ctx, o, 8.4, 7.2, t);
+  BRIGHT_SCENE = false;
+  setScale(1);
+}
+function drawProps(t) {
+  const c = document.getElementById('props'), ctx = c.getContext('2d');
+  ctx.fillStyle = '#ece6dd'; ctx.fillRect(0, 0, c.width, c.height);
+  const items = [
+    [(o) => desk(ctx, o, -.8, -.4), 1.8], [(o) => meshChair(ctx, o, 0, 0, .3), 1], [(o) => shelving(ctx, o, -.7, -.2), 1.6],
+    [(o) => waterCooler(ctx, o, -.17, -.17), .9], [(o) => sofa(ctx, o, -1.1, -.45), 2.4], [(o) => plant(ctx, o, 0, 0, t), .9],
+  ];
+  setScale(1.25);
+  items.forEach(([draw], i) => {
+    const o = { x: 140 + i * 265, y: 360 };
+    poly(ctx, [iso(o, -1, -1), iso(o, 1, -1), iso(o, 1, 1), iso(o, -1, 1)], '#e3c08c', 'rgba(150,105,60,.3)');
+    draw(o);
+  });
+  setScale(1);
+}
+function drawHero(t) {
+  const c = document.getElementById('hero'), ctx = c.getContext('2d');
+  const bg = ctx.createLinearGradient(0, 0, 0, c.height); bg.addColorStop(0, '#2a2422'); bg.addColorStop(1, '#3a302b'); ctx.fillStyle = bg; ctx.fillRect(0, 0, c.width, c.height);
+  // Wooden floor strip so the fire light reads.
+  const o = { x: 800, y: 420 };
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 470, c.width, c.height - 470); ctx.clip();
+  for (let i = -40; i < 40; i++) for (let j = -40; j < 40; j++) poly(ctx, [iso(o, i, j * .5), iso(o, i + 1, j * .5), iso(o, i + 1, j * .5 + .5), iso(o, i, j * .5 + .5)], (i * 3 + j) % 4 ? '#8a6440' : '#946b45', 'rgba(0,0,0,.18)');
+  ctx.restore();
+  const fade = ctx.createLinearGradient(0, 470, 0, 540); fade.addColorStop(0, '#2a2422'); fade.addColorStop(1, 'rgba(42,36,34,0)'); ctx.fillStyle = fade; ctx.fillRect(0, 470, c.width, 70);
+  const poses = [['idle', 380], ['walk', 800], ['punch', 1220]];
+  for (const [mode, x] of poses) {
+    const y = 600;
+    fireLight(ctx, x, y - 160, t, .9);
+    fighterShadow(ctx, x, y, 2.2);
+    stickman(ctx, x, y, 2.2, t, mode);
+    ctx.fillStyle = 'rgba(255,235,210,.75)'; ctx.font = '600 22px system-ui'; ctx.textAlign = 'center'; ctx.fillText(mode.toUpperCase(), x, 670);
+  }
+}
+function frame(ms) {
+  const t = frozen ?? ms / 1000;
+  if (!only || only === 'room') drawRoom(t);
+  if (!only || only === 'props') drawProps(t);
+  if (!only || only === 'hero') drawHero(t);
+  if (frozen === null) requestAnimationFrame(frame);
+  else document.body.dataset.ready = '1';
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

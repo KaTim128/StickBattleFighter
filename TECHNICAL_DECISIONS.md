@@ -322,6 +322,11 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** licensed audio files (rejected for now: licence register, bundle size; still possible later through the asset register); copying the reference clips (rejected: not ours to ship).
 - **Trade-offs:** synthesised music is simpler than produced tracks; the sounds are designed by measurement and cannot be listened to in the build environment, so the owner's ear on real speakers is the acceptance test.
 
+### TD-043: 2.5D pseudo-isometric look — PROPOSED, awaiting owner approval of the mockups (11/11/2026)
+- **Context:** the owner asked for a high-end 2.5D pseudo-isometric style (light-wood plank floors on an isometric grid, detailed bevelled furniture, soft shadows from a top-left light, ambient occlusion, a volumetric stickman and a procedural fire head that lights the room) and asked for mockups first, to approve before anything is rebuilt.
+- **Proposal:** mockups in `docs/mockups/` (`style-2-5d.html`, animated; PNG stills). If approved: keep PixiJS 8 and the 2D simulation unchanged (physics stays top-down in metres); change only the presentation: an isometric projection in the camera/world transform, props drawn as bevelled prisms with baked gradients, a shadow layer (blurred, pooled), the y-sort key moved to the isometric depth (x + y), and the fire head as a pooled particle/shape emitter with an additive light sprite. Collision, combat and data stay as they are.
+- **Approval needed:** changing the approved rendering approach (TD-022, REQ-ARC-12) needs the owner's sign-off, so nothing in the game changes until the mockups are approved. Performance on phones must be measured (OQ-10).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).
