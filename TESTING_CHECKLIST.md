@@ -65,6 +65,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/phase6-abilities.png` (bolt in flight and hit, flame trail, eruption warning and blast, meteor leap with landing warning, impact, ultimate ready).
 - [ ] V Owner playtest of ability feel and balance (values provisional, OQ-05)
 
+## 0j. Hit feel and KO dissolve (verified 11/11/2026)
+- [x] `npm test`: **194 tests**. New: a landed jab flashes the target, queues `punch-light`, recoils the puncher and freezes the next step (hit-stop); the finisher sounds `punch-heavy`; a held guard sounds `block` with no flash; a KO queues `ko`, the dummy stays visible while fainted, fades while `dust` plays, is gone before respawn and is fully visible after; every impact, ability and KO sound id has a recipe; the sound board is silent without Web Audio.
+- [x] `npm run e2e`: **36/36** over 2 repeats.
+- [x] V Browser (frozen frames): white flash with contact star on a jab; KO blow; lying; dissolving into dust; gone (`docs/screenshots/hit-feel-and-ko-dissolve.png`). Played sounds confirmed in order (`punch-light`, `ko`, `dust`), no console errors.
+- [ ] Owner listening check on real speakers or headphones (sound cannot be judged in headless tests).
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

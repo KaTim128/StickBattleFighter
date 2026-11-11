@@ -16,6 +16,22 @@ export function onToggleDummyAttacks(target: Window, callback: () => void): () =
   return onKey(target, 'KeyT', callback);
 }
 
+/** M mutes or unmutes sound (a setting in Phase 11). */
+export function onToggleMute(target: Window, callback: () => void): () => void {
+  return onKey(target, 'KeyM', callback);
+}
+
+/** The first key or pointer press (browsers only allow audio to start after one). */
+export function onFirstInput(target: Window, callback: () => void): void {
+  const once = (): void => {
+    target.removeEventListener('keydown', once);
+    target.removeEventListener('pointerdown', once);
+    callback();
+  };
+  target.addEventListener('keydown', once);
+  target.addEventListener('pointerdown', once);
+}
+
 function onKey(target: Window, code: string, callback: () => void): () => void {
   const listener = (event: KeyboardEvent): void => {
     if (event.code === code && !event.repeat) callback();

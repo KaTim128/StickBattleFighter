@@ -28,6 +28,13 @@ export class FighterEntity {
   abilityLift = 0;
   /** Burn damage not yet shown as a floating number. */
   burnShown = 0;
+  /** Hit flash time left (white figure), seconds. */
+  flashS = 0;
+  /** Recoil bounce time left after landing a blow, seconds. */
+  recoilS = 0;
+  /** KO presentation: the boom and the dusting sound play once per KO. */
+  koSounded = false;
+  dustSounded = false;
   burnTextS = 0;
   body: RigidBody | null = null;
   view: StickmanView | null = null;
@@ -107,6 +114,9 @@ export class FighterEntity {
     this.combatant.reset();
     this.combo.interrupt();
     this.caster?.reset();
+    this.koSounded = false;
+    this.dustSounded = false;
+    if (this.view) this.view.root.alpha = 1;
     this.placeAt(this.spawn);
   }
 

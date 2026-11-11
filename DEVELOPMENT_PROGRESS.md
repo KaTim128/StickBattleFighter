@@ -255,6 +255,13 @@ Also added `?slowmo=` and a freeze hook for exact animation screenshots.
 **Evidence:** lint clean; typecheck 0; `npm test` **189/189**; build clean; `npm run e2e` **18/18**; browser screenshots of every ability (`docs/screenshots/phase6-abilities.png`).
 **Limitations:** numbers provisional (OQ-05); sound hooks fire but no audio plays yet (OQ-17); the dummy does not use abilities (AI is Phase 10).
 
+### 11/11/2026: Hit feel and KO dissolve (owner request; Master Developer, no specialists, per TD-019)
+**What changed:** every contact now flashes the target white, plays a synthesised contact sound by blow type, throws sparks with a contact flash, recoils the striker, shakes a little and freezes briefly; knockback already followed the hit direction. A KO freezes longer, then the fighter faints, lies still, and dissolves into drifting dust while fading out, with KO and dusting sounds. Sound effects for abilities now play too. See TD-033, REQ-CMB-24, REQ-ANI-9.
+**Files:** `src/data/combat/impacts.ts`, `src/audio/sound-board.ts` (+README), `src/combat/attacks.ts`, `combatant.ts`, `src/abilities/ability-def.ts`, `src/data/fighters/greybox-stickman.ts`, `src/app/scenes/fight-arena-scene.ts`, `fighter-entity.ts`, `scene-abilities.ts`, `src/rendering/stickman-view.ts`, `src/vfx/ability-vfx.ts`, `src/input/debug-keys.ts`, `src/app/bootstrap.ts`.
+**Issues found and fixed:** sparks were too small to see at normal zoom (about 1 px), so they were made thicker with a contact flash; the first KO capture never reached a KO, so a `setDummyHp` debug hook was added for reliable checks.
+**Evidence:** lint clean; typecheck 0; `npm test` **194/194**; build clean; `npm run e2e` **36/36** (2 repeats); frozen-frame screenshots; played-sound log.
+**Limitations:** sound quality needs a listening check by the owner; music is still open (OQ-17).
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

@@ -53,7 +53,8 @@ export const DEFENCE = {
   getUpS: 0.55,
   /** Extra invulnerability once standing again (and after a respawn). */
   getUpInvulnS: 0.2,
-  koRespawnS: 2.5,
+  /** KO: faint, lie still, dissolve into dust (presentation), then respawn (Practice). */
+  koRespawnS: 3,
 } as const;
 
 export interface IncomingHit {

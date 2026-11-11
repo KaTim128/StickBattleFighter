@@ -7,6 +7,7 @@ import {
   AbilityWorld,
   type Vec2,
 } from '../../abilities/ability-world';
+import type { ImpactId } from '../../data/combat/impacts';
 import type { ArenaProps } from '../../environment/arena-props';
 import { type BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
 import type { PhysicsWorld } from '../../physics/physics-world';
@@ -16,7 +17,15 @@ import type { FighterEntity } from './fighter-entity';
 export type StrikeFn = (
   attacker: FighterEntity,
   target: FighterEntity,
-  strike: { damage: number; heavy: boolean; knockbackMps: number; dir: Vec2; melee: boolean; burn?: Burn },
+  strike: {
+    damage: number;
+    heavy: boolean;
+    knockbackMps: number;
+    dir: Vec2;
+    melee: boolean;
+    burn?: Burn;
+    impact: ImpactId;
+  },
 ) => boolean;
 
 const MAX_FX_LOG = 60;
@@ -35,6 +44,8 @@ export class SceneAbilities implements AbilityHost {
   readonly sfxLog: string[] = [];
   /** Recent FX events, newest last (tests and the debug hook; the VFX layer drains `pending`). */
   readonly recentFx: AbilityFx[] = [];
+  /** Sound ids not yet played (the sound board drains them every frame). */
+  private readonly sounds: string[] = [];
 
   constructor(
     private readonly fightersOf: () => readonly FighterEntity[],
@@ -88,6 +99,10 @@ export class SceneAbilities implements AbilityHost {
   /** FX events since the last call (VFX layer). */
   drainFx(): AbilityFx[] {
     return this.pending.splice(0, this.pending.length);
+  }
+
+  drainSounds(): string[] {
+    return this.sounds.splice(0, this.sounds.length);
   }
 
   hud(f: FighterEntity): AbilityHudState | null {
@@ -149,6 +164,7 @@ export class SceneAbilities implements AbilityHost {
       dir,
       melee: false,
       burn: payload.burn,
+      impact: payload.impact ?? (payload.heavy ? 'fire-heavy' : 'fire'),
     });
   }
 
@@ -205,6 +221,8 @@ export class SceneAbilities implements AbilityHost {
     if (this.recentFx.length > MAX_FX_LOG) this.recentFx.shift();
     if (this.pending.length > 200) this.pending.shift(); // nobody draining (headless): keep it bounded
     if (fx.sfx) {
+      this.sounds.push(fx.sfx);
+      if (this.sounds.length > 32) this.sounds.shift();
       this.sfxLog.push(fx.sfx);
       if (this.sfxLog.length > MAX_FX_LOG) this.sfxLog.shift();
     }

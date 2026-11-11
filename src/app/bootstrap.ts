@@ -1,5 +1,6 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
+import { SoundBoard } from '../audio/sound-board';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
@@ -7,7 +8,7 @@ import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
-import { onDebugImpact, onDebugToggle, onToggleDummyAttacks } from '../input/debug-keys';
+import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse } from '../input/keyboard';
 import { attachTouchControls } from '../input/touch-controls';
@@ -41,8 +42,12 @@ export interface EngineDebugInfo {
   doors: DoorState[];
   /** The player's ability slots and ultimate meter (Phase 6). */
   abilities: AbilityHudState | null;
-  /** Recent sound-hook ids (audio itself arrives with OQ-17). */
+  /** Recent ability sound-hook ids. */
   sfx: string[];
+  /** Recent sounds played by the sound board (melee contacts, KO, dusting, abilities). */
+  sounds: string[];
+  /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
+  setDummyHp(hp: number): void;
   /** Props summary: how many are broken, and how many are moving right now. */
   props: { total: number; broken: number; awake: number };
   assetFailures: { url: string; message: string }[];
@@ -120,8 +125,14 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   onDebugToggle(window, () => overlay.toggle());
   const combatText = new CombatText(document.body);
   const abilityHud = new AbilityHud(document.body); // after the touch controls: it paints their ability buttons
+  const sound = new SoundBoard();
+  sound.muted = params.has('mute');
+  onFirstInput(window, () => sound.unlock());
+  onToggleMute(window, () => {
+    sound.muted = !sound.muted;
+  });
   const controlsHint =
-    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F ultimate · Shift dodge · T dummy attacks';
+    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F ultimate · Shift dodge · T dummy attacks · M mute';
   onToggleDummyAttacks(window, () => {
     if (!(scene instanceof FightArenaScene)) return;
     scene.dummyAttacks = !scene.dummyAttacks;
@@ -145,6 +156,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     props: { total: 0, broken: 0, awake: 0 },
     abilities: null,
     sfx: [],
+    sounds: [],
+    setDummyHp() {}, // replaced once the scene exists
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     setTimeScale() {}, // replaced once the loop exists
@@ -195,6 +208,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         debug.dummyAttacks = scene.dummyAttacks;
         combatText.show(scene.drainEvents(), (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
+        for (const id of scene.drainSounds()) {
+          sound.play(id);
+          debug.sounds.push(id);
+          if (debug.sounds.length > 16) debug.sounds.shift();
+        }
         debug.abilities = scene.abilityHud;
         debug.sfx = scene.abilities?.sfxLog.slice(-12) ?? [];
         debug.doors = scene.doorStates;
@@ -208,6 +226,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       debug.debugOverlay = { enabled: overlay.enabled, segments: overlay.drawnSegments, fps: fps.fps };
     },
   });
+  if (scene instanceof FightArenaScene) {
+    debug.setDummyHp = (hp: number) => {
+      scene.dummyFighter.combatant.hp = Math.max(1, Math.min(scene.dummyFighter.combatant.stats.maxHp, hp));
+    };
+  }
   // Slow motion for reviewing animations, e.g. ?slowmo=0.25 (debug; clamped so the game never stalls by URL).
   const slowmo = Number(params.get('slowmo'));
   if (slowmo > 0) loop.timeScale = Math.min(1, Math.max(0.05, slowmo));

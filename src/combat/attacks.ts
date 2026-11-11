@@ -1,3 +1,4 @@
+import type { ImpactId } from '../data/combat/impacts';
 /**
  * Attack definitions (data-driven, Combat specialist). An attack has three
  * phases: wind-up (anticipation), a short active window where the hit is
@@ -36,6 +37,8 @@ export interface AttackDef {
   /** Forward lunge added at the strike, m/s (flying kick). */
   readonly lungeMps: number;
   /** Camera feedback on a landed hit (REQ-CAM-4, PRS-3). */
+  /** How the contact feels and sounds (flash, sparks, recoil, hit-stop, shake): src/data/combat/impacts.ts. */
+  readonly impact: ImpactId;
   readonly trauma: number;
   readonly zoomPunch: number;
 }

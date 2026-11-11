@@ -34,10 +34,14 @@ export class StickmanView {
    * @param facing 1 = right, -1 = left (the figure is mirrored)
    * @param heightM jump hop height; the figure lifts, the shadow stays and shrinks
    * @param tiltRad rotate the whole figure about its feet (knockdown: lying on the floor)
+   * @param flash 0..1 hit flash: the whole figure blends to white (a few frames on impact)
    */
-  draw(pose: Pose, facing: 1 | -1, heightM: number, tiltRad = 0): void {
+  draw(pose: Pose, facing: 1 | -1, heightM: number, tiltRad = 0, flash = 0): void {
     const s = solveSkeleton(pose, this.bones);
-    const { limb, limbBack, outline, limbWidthM: w, outlineWidthM: o } = this.look;
+    const { limbWidthM: w, outlineWidthM: o } = this.look;
+    const limb = towardWhite(this.look.limb, flash);
+    const limbBack = towardWhite(this.look.limbBack, flash);
+    const outline = towardWhite(this.look.outline, flash * 0.85);
 
     const shrink = 1 / (1 + heightM * 0.8);
     this.shadow
@@ -77,4 +81,15 @@ export class StickmanView {
   destroy(): void {
     this.root.destroy({ children: true });
   }
+}
+
+/** Blend a colour toward white by k (0..1). */
+function towardWhite(colour: number, k: number): number {
+  if (k <= 0) return colour;
+  const t = Math.min(1, k);
+  const ch = (shift: number): number => {
+    const c = (colour >> shift) & 0xff;
+    return Math.round(c + (255 - c) * t);
+  };
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }

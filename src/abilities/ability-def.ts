@@ -1,3 +1,5 @@
+import type { ImpactId } from '../data/combat/impacts';
+
 /**
  * Ability data (REQ-ABL-1..6, TD-032). Every fighter's three abilities and
  * ultimate are plain data run by one shared framework: the caster (stamina,
@@ -28,6 +30,8 @@ export interface AbilityPayload {
   readonly burn?: Burn;
   /** Sets flammable props alight (Inferno, spec §8.3). */
   readonly ignites?: boolean;
+  /** How a hit feels (flash, sparks, hit-stop); defaults to 'fire', or 'fire-heavy' when heavy. */
+  readonly impact?: ImpactId;
 }
 
 /** A shot that flies until it hits a fighter, a wall or solid furniture, or runs out of range. */

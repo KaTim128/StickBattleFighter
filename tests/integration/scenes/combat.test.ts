@@ -100,6 +100,75 @@ describe('Phase 5 combat in the arena', () => {
     scenes.clear();
   });
 
+  it('a landed punch flashes the target white, sounds, throws sparks, recoils the puncher and freezes briefly', async () => {
+    const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
+    lineUp();
+    scene.drainSounds();
+    const x0 = scene.player.x;
+    intents.pressMelee();
+    runUntil(() => scene.dummy.hp < 1000, 1);
+    expect(scene.dummyFighter.flashS).toBeGreaterThan(0); // white flash for a few frames
+    expect(scene.drainSounds()).toContain('punch-light'); // bare-knuckle contact sound
+    const vx = scene.playerFighter.body!.linvel().x;
+    expect(vx).toBeLessThan(0); // the puncher bounces back off the contact
+    // Hit-stop: the next step does not move anything.
+    const dx = scene.dummy.x;
+    run(STEP);
+    expect(scene.dummy.x).toBe(dx);
+    run(0.3);
+    expect(scene.dummyFighter.flashS).toBe(0);
+    expect(Math.abs(scene.player.x - x0)).toBeLessThan(0.5);
+    scenes.clear();
+  });
+
+  it('the finisher sounds heavier, and a blocked punch sounds like a block with no flash', async () => {
+    const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
+    lineUp();
+    scene.drainSounds();
+    for (const step of ['jab', 'hook', 'heavy']) {
+      intents.pressMelee();
+      runUntil(() => scene.player.attack === step, 1.5);
+      run(0.12);
+    }
+    run(0.3);
+    expect(scene.drainSounds()).toContain('punch-heavy');
+    scenes.clear();
+
+    const b = await setup();
+    b.lineUp();
+    b.scene.dummyFighter.combatant.setGuard(true);
+    b.scene.dummyFighter.combatant.update(0.5); // guard held long enough not to be a parry
+    b.scene.drainSounds();
+    b.intents.pressMelee();
+    b.runUntil(() => b.scene.dummy.hp < 1000, 1);
+    expect(b.scene.drainSounds()).toContain('block');
+    expect(b.scene.dummyFighter.flashS).toBe(0);
+    b.scenes.clear();
+  });
+
+  it('at zero health the dummy faints, then dissolves into dust and fades away before getting up again', async () => {
+    const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
+    lineUp();
+    scene.dummyFighter.combatant.hp = 30;
+    intents.pressMelee();
+    runUntil(() => scene.dummy.state === 'ko', 1);
+    expect(scene.dummy.state).toBe('ko');
+    expect(scene.drainSounds()).toContain('ko');
+    const view = scene.dummyFighter.view!;
+    run(0.8);
+    expect(view.root.alpha).toBe(1); // fainted, lying still
+    run(1.0);
+    expect(view.root.alpha).toBeLessThan(0.9); // dissolving
+    expect(view.root.alpha).toBeGreaterThan(0);
+    expect(scene.drainSounds()).toContain('dust');
+    run(0.95); // (the KO's longer hit-stop holds the clock for 0.18 s)
+    expect(view.root.alpha).toBeLessThan(0.05); // gone
+    runUntil(() => scene.dummy.state !== 'ko', 1);
+    expect(scene.dummy.hp).toBe(1000);
+    expect(view.root.alpha).toBe(1);
+    scenes.clear();
+  });
+
   it('KO at 0 health, then the dummy gets back up at full health where it started', async () => {
     const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
     // Start the dummy at 200 health so one full combo (240+ damage) is enough; retry if a hit misses.

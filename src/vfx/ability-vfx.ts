@@ -16,7 +16,28 @@ export interface BurningThing {
   readonly heightM: number;
 }
 
+/** A blow landing (melee or ability): sparks fly along the blow and a burst ring pops. */
+export interface ImpactBurst {
+  readonly x: number;
+  readonly y: number;
+  readonly dir: { readonly x: number; readonly y: number };
+  readonly sparks: number;
+  readonly speedMps: number;
+  readonly colour: number;
+  readonly burstM: number;
+}
+
+/** A KO'd fighter dissolving: dust rises from points along its body (world x, y and height). */
+export interface DustSource {
+  readonly points: readonly { readonly x: number; readonly y: number; readonly z: number }[];
+  readonly colour: number;
+  /** Particles to release this frame. */
+  readonly count: number;
+}
+
 export interface AbilityVfxInput {
+  readonly impacts: readonly ImpactBurst[];
+  readonly dust: readonly DustSource[];
   readonly projectiles: readonly Projectile[];
   readonly zones: readonly FireZone[];
   readonly telegraphs: readonly Telegraph[];
@@ -24,8 +45,12 @@ export interface AbilityVfxInput {
   readonly burning: readonly BurningThing[];
 }
 
+type ParticleKind = 'ember' | 'spark' | 'dust';
+
 interface Particle {
   live: boolean;
+  kind: ParticleKind;
+  colour: number;
   x: number;
   y: number;
   z: number;
@@ -38,6 +63,7 @@ interface Particle {
 }
 
 interface Ring {
+  colour: number;
   x: number;
   y: number;
   r0: number;
@@ -53,7 +79,8 @@ interface Scorch {
   ageS: number;
 }
 
-const MAX_PARTICLES = 320;
+const MAX_PARTICLES = 480;
+const CONTACT_FLASH_S = 0.09;
 const SCORCH_LIFE_S = 6;
 const FIRE = { deep: 0xd8320c, hot: 0xff6a00, bright: 0xffa53a, core: 0xfff1a8 } as const;
 /** A fireball flies at chest height. */
@@ -65,6 +92,7 @@ export class AbilityVfx {
   private readonly particles: Particle[] = [];
   private readonly rings: Ring[] = [];
   private readonly scorches: Scorch[] = [];
+  private readonly flashes: { x: number; y: number; r: number; ageS: number; colour: number }[] = [];
   private timeS = 0;
   private seed = 1;
 
@@ -72,7 +100,20 @@ export class AbilityVfx {
     this.floor.label = 'vfx-floor';
     this.air.label = 'vfx-air';
     for (let i = 0; i < MAX_PARTICLES; i++) {
-      this.particles.push({ live: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, ageS: 0, lifeS: 1, size: 0.1 });
+      this.particles.push({
+        live: false,
+        kind: 'ember',
+        colour: 0,
+        x: 0,
+        y: 0,
+        z: 0,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        ageS: 0,
+        lifeS: 1,
+        size: 0.1,
+      });
     }
   }
 
@@ -85,6 +126,8 @@ export class AbilityVfx {
   update(dtS: number, input: AbilityVfxInput): void {
     this.timeS += dtS;
     for (const fx of input.fx) this.onFx(fx);
+    for (const hit of input.impacts) this.burst(hit);
+    for (const d of input.dust) this.dustFrom(d);
     for (const p of input.projectiles) this.emitAt(p.x, p.y, BOLT_HEIGHT_M, 2, 0.6, 0.3, 0.09);
     for (const z of input.zones) if (this.rand() < 0.35) this.emitAt(z.x, z.y, 0.1, 1, 0.5, 0.25, 0.08);
     for (const b of input.burning)
@@ -117,6 +160,7 @@ export class AbilityVfx {
           big ? 0.16 : 0.11,
         );
         this.rings.push({
+          colour: FIRE.bright,
           x: fx.x,
           y: fx.y,
           r0: r * 0.2,
@@ -125,7 +169,15 @@ export class AbilityVfx {
           lifeS: big ? 0.45 : 0.25,
         });
         if (big) {
-          this.rings.push({ x: fx.x, y: fx.y, r0: r * 0.5, r1: r * 1.5, ageS: -0.08, lifeS: 0.55 });
+          this.rings.push({
+            colour: FIRE.bright,
+            x: fx.x,
+            y: fx.y,
+            r0: r * 0.5,
+            r1: r * 1.5,
+            ageS: -0.08,
+            lifeS: 0.55,
+          });
           this.scorches.push({ x: fx.x, y: fx.y, r: r * 0.8, ageS: 0 });
           if (this.scorches.length > 12) this.scorches.shift();
         }
@@ -139,6 +191,69 @@ export class AbilityVfx {
     }
   }
 
+  /** Sparks thrown along the blow (a cone around its direction) and a quick burst ring at chest height. */
+  private burst(hit: ImpactBurst): void {
+    const base = Math.atan2(hit.dir.y, hit.dir.x);
+    for (let n = 0; n < hit.sparks; n++) {
+      const p = this.free();
+      if (!p) break;
+      const a = base + (this.rand() - 0.5) * 1.3;
+      const sp = hit.speedMps * (0.45 + this.rand() * 0.55);
+      Object.assign(p, {
+        live: true,
+        kind: 'spark',
+        colour: hit.colour,
+        x: hit.x,
+        y: hit.y,
+        z: 0.9 + this.rand() * 0.5,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp * 0.6,
+        vz: (this.rand() - 0.3) * 3,
+        ageS: 0,
+        lifeS: 0.14 + this.rand() * 0.18,
+        size: 0.045 + this.rand() * 0.04,
+      });
+    }
+    this.rings.push({
+      colour: hit.colour,
+      x: hit.x,
+      y: hit.y - 1.1,
+      r0: hit.burstM * 0.2,
+      r1: hit.burstM,
+      ageS: 0,
+      lifeS: 0.16,
+    });
+    // A bright contact flash at the point of impact (a few frames).
+    this.flashes.push({ x: hit.x, y: hit.y - 1.1, r: hit.burstM * 0.75, ageS: 0, colour: hit.colour });
+  }
+
+  /** Dust motes leave the body and drift up and away on a light breeze, fading as they go. */
+  private dustFrom(d: DustSource): void {
+    for (let n = 0; n < d.count && d.points.length > 0; n++) {
+      const p = this.free();
+      if (!p) break;
+      const at = d.points[Math.floor(this.rand() * d.points.length)]!;
+      Object.assign(p, {
+        live: true,
+        kind: 'dust',
+        colour: this.rand() < 0.65 ? d.colour : 0xd9d4c7,
+        x: at.x + (this.rand() - 0.5) * 0.12,
+        y: at.y + (this.rand() - 0.5) * 0.08,
+        z: at.z,
+        vx: 0.25 + this.rand() * 0.6,
+        vy: (this.rand() - 0.5) * 0.25,
+        vz: 0.3 + this.rand() * 0.9,
+        ageS: 0,
+        lifeS: 0.9 + this.rand() * 0.8,
+        size: 0.03 + this.rand() * 0.045,
+      });
+    }
+  }
+
+  private free(): Particle | undefined {
+    return this.particles.find((q) => !q.live);
+  }
+
   /** Spawn embers that rise, spread and fade. */
   private emitAt(x: number, y: number, z: number, count: number, spread: number, lifeS: number, size: number): void {
     for (let n = 0; n < count; n++) {
@@ -148,6 +263,8 @@ export class AbilityVfx {
       const s = spread * (0.3 + this.rand() * 0.7);
       Object.assign(p, {
         live: true,
+        kind: 'ember',
+        colour: 0,
         x,
         y,
         z,
@@ -172,13 +289,27 @@ export class AbilityVfx {
       p.x += p.vx * dtS;
       p.y += p.vy * dtS;
       p.z = Math.max(0, p.z + p.vz * dtS);
-      p.vx *= 0.92;
-      p.vy *= 0.92;
+      if (p.kind === 'spark') {
+        p.vz -= 9 * dtS; // sparks arc down
+        p.vx *= 0.88;
+        p.vy *= 0.88;
+      } else if (p.kind === 'dust') {
+        p.vx *= 0.99;
+        p.vy *= 0.99;
+      } else {
+        p.vx *= 0.92;
+        p.vy *= 0.92;
+      }
     }
     for (let i = this.rings.length - 1; i >= 0; i--) {
       const r = this.rings[i]!;
       r.ageS += dtS;
       if (r.ageS >= r.lifeS) this.rings.splice(i, 1);
+    }
+    for (let i = this.flashes.length - 1; i >= 0; i--) {
+      const fl = this.flashes[i]!;
+      fl.ageS += dtS;
+      if (fl.ageS >= CONTACT_FLASH_S) this.flashes.splice(i, 1);
     }
     for (let i = this.scorches.length - 1; i >= 0; i--) {
       const s = this.scorches[i]!;
@@ -222,7 +353,7 @@ export class AbilityVfx {
       if (r.ageS < 0) continue;
       const k = r.ageS / r.lifeS;
       const rad = r.r0 + (r.r1 - r.r0) * (1 - (1 - k) * (1 - k));
-      f.ellipse(r.x, r.y, rad, rad * 0.6).stroke({ width: 0.12 * (1 - k) + 0.02, color: FIRE.bright, alpha: 1 - k });
+      f.ellipse(r.x, r.y, rad, rad * 0.6).stroke({ width: 0.12 * (1 - k) + 0.02, color: r.colour, alpha: 1 - k });
     }
 
     // Fireballs: glow, body, white-hot core and a fading trail; a shadow on the floor.
@@ -240,14 +371,37 @@ export class AbilityVfx {
       g.circle(p.x, y, radius * 0.5).fill({ color: FIRE.core, alpha: 1 });
     }
 
+    // Contact flashes: a white-hot star that shrinks away in a few frames.
+    for (const fl of this.flashes) {
+      const k = fl.ageS / CONTACT_FLASH_S;
+      const r = fl.r * (1 - k * 0.5);
+      g.circle(fl.x, fl.y, r).fill({ color: fl.colour, alpha: 0.55 * (1 - k) });
+      g.circle(fl.x, fl.y, r * 0.5).fill({ color: 0xffffff, alpha: 0.95 * (1 - k) });
+      g.moveTo(fl.x - r * 1.6, fl.y)
+        .lineTo(fl.x + r * 1.6, fl.y)
+        .stroke({ width: 0.04, color: 0xffffff, alpha: 1 - k });
+      g.moveTo(fl.x, fl.y - r * 1.2)
+        .lineTo(fl.x, fl.y + r * 1.2)
+        .stroke({ width: 0.035, color: 0xffffff, alpha: 1 - k });
+    }
+
     // Flames on burning fighters and furniture.
     for (const b of input.burning) this.flame(g, b.x, b.y, 0.35, b.heightM, t + b.x * 3);
 
     for (const p of this.particles) {
       if (!p.live) continue;
       const k = p.ageS / p.lifeS;
-      const color = k < 0.3 ? FIRE.core : k < 0.6 ? FIRE.bright : FIRE.hot;
-      g.circle(p.x, p.y - p.z, p.size * (1 - k * 0.6)).fill({ color, alpha: 1 - k });
+      if (p.kind === 'spark') {
+        // A short bright streak along its motion.
+        g.moveTo(p.x, p.y - p.z)
+          .lineTo(p.x - p.vx * 0.045, p.y - p.z - p.vy * 0.045 + p.vz * 0.045)
+          .stroke({ width: p.size, color: p.colour, alpha: 1 - k * 0.7, cap: 'round' });
+      } else if (p.kind === 'dust') {
+        g.circle(p.x, p.y - p.z, p.size * (1 - k * 0.5)).fill({ color: p.colour, alpha: 0.85 * (1 - k) });
+      } else {
+        const color = k < 0.3 ? FIRE.core : k < 0.6 ? FIRE.bright : FIRE.hot;
+        g.circle(p.x, p.y - p.z, p.size * (1 - k * 0.6)).fill({ color, alpha: 1 - k });
+      }
     }
   }
 

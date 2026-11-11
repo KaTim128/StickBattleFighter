@@ -254,6 +254,15 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Provisional numbers:** Fire Bolt 20 ST, 2.5 s, 70 dmg + burn 12/s for 2 s; Flame Dash 30 ST, 5 s, 4.5 m, 60 dmg, trail burn 18/s; Eruption 35 ST, 7 s, radius 2.3 m after 0.5 s warning, 110 dmg, knockdown; Meteor Fist meter, radius 3 m, 260 dmg, knockdown.
 - **Alternatives:** per-ability classes (rejected: data plus four delivery types covers the kit and scales to 100 fighters); Rapier sensors for projectiles (rejected: a ray per step is simpler, deterministic and cannot tunnel).
 
+### TD-033: Impact feel and synthesised sound — ACCEPTED (owner request 11/11/2026)
+- **Impact profiles** (`src/data/combat/impacts.ts`): per contact type (`knuckle-light`, `knuckle-heavy`, `kick`, `fire`, `fire-heavy`, `blocked`) a sound id, white-flash time, sparks (count, speed, colour), burst size, attacker recoil, hit-stop and shake. Attacks and ability payloads name a profile; weapons add their own later. `applyStrike` applies it on every contact (melee and abilities share it, INV-5); hit-stop takes the larger of the profile's and the KO's (0.18 s).
+- **Flash:** `StickmanView.draw(..., flash)` blends limb and outline colours to white. **Recoil:** the striker loses `recoilMps` along the blow plus a 0.14 s visual bounce. **Sparks and contact flash:** new particle kinds in `AbilityVfx` (sparks arc and streak; a white star shrinks away in 0.09 s).
+- **KO dissolve:** respawn moved to 3 s; from 1.0 s to 2.6 s after the KO the figure fades (smoothstep) while dust rises from points along the tilted body and drifts on a light breeze; `ko` and `dust` sounds.
+- **Sound:** `SoundBoard` (`src/audio/sound-board.ts`) synthesises every effect with Web Audio: layered pitch-dropping thumps, filtered noise bursts and crackle, with a small random pitch and level spread so repeated hits differ. A compressor prevents clipping. It unlocks on the first input (browser rule), M mutes, `?mute` starts muted, and it is silent without Web Audio.
+  - *Why synthesis:* the owner wanted sound now; there are no audio assets and OQ-17 (source) was open. Synthesis is original by construction (spec §2: no reference audio may be reused), costs nothing and adds no files or licences.
+  - *Alternatives:* recorded or commissioned SFX (better realism, needs sourcing and licensing, can replace recipes later without code changes elsewhere); a free SFX pack (licence review, less control).
+- **Debug hook additions:** `sounds` (recently played), `setDummyHp` (see a KO quickly).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

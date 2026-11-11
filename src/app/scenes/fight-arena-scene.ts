@@ -14,6 +14,7 @@ import { type AttackDef, capsuleTouchesRect, distanceToCapsule, hitCapsule } fro
 import { type CombatState, DEFENCE, seededRandom } from '../../combat/combatant';
 import type { CombatEvent } from '../../combat/events';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
+import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
 import { GREYBOX_STICKMAN } from '../../data/fighters/greybox-stickman';
 import { INFERNO } from '../../data/fighters/inferno';
 import { TRAINING_DUMMY } from '../../data/fighters/training-dummy';
@@ -25,7 +26,7 @@ import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
 import { tallestPropM } from '../../rendering/prop-view';
-import { AbilityVfx, type BurningThing } from '../../vfx/ability-vfx';
+import { AbilityVfx, type BurningThing, type DustSource, type ImpactBurst } from '../../vfx/ability-vfx';
 import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
 import { SceneAbilities } from './scene-abilities';
@@ -92,8 +93,14 @@ const HEAVY_KNOCKBACK_MPS = 6;
 const SETTLE_DECEL = 14;
 /** Durability a knocked-back body takes off a prop it crashes into, per unit of mass × speed. */
 const KNOCK_PROP_DAMAGE = 0.1;
-const HITSTOP_LIGHT_S = 0.05;
 const HITSTOP_HEAVY_S = 0.09;
+/** The final blow freezes longer: a cinematic beat before the faint. */
+const HITSTOP_KO_S = 0.18;
+/** A striker's little bounce back off a landed blow, seconds. */
+const RECOIL_BOUNCE_S = 0.14;
+/** KO: lie still, then dissolve into dust over this window (seconds after the KO), then respawn. */
+const KO_DISSOLVE_FROM_S = 1.0;
+const KO_DISSOLVE_S = 1.6;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
 const HEAD_TOP_M = 1.75;
 
@@ -122,6 +129,12 @@ export class FightArenaScene implements ArenaScene {
   readonly playerFighter: FighterEntity;
   readonly dummyFighter: FighterEntity;
   private readonly events: CombatEvent[] = [];
+  /** Contacts this frame, for sparks and bursts (presentation). */
+  private readonly impacts: { x: number; y: number; dir: { x: number; y: number }; profile: ImpactProfile }[] = [];
+  /** KO dust to release this frame (filled while drawing fighters, used by the VFX). */
+  private readonly frameDust: DustSource[] = [];
+  /** Sounds waiting to be played by the sound board. */
+  private readonly sounds: string[] = [];
   private readonly shake = new CameraShake();
   private readonly rng = seededRandom(1234);
   private hitstopS = 0;
@@ -275,6 +288,8 @@ export class FightArenaScene implements ArenaScene {
       if (burned > 0) this.showBurn(f, burned);
       if (!wasKo && f.combatant.isKo) this.abilities?.interrupt(f, true); // burned out
       f.burnTextS = Math.max(0, f.burnTextS - stepS);
+      f.flashS = Math.max(0, f.flashS - stepS);
+      f.recoilS = Math.max(0, f.recoilS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
       if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS) f.respawn();
@@ -417,7 +432,9 @@ export class FightArenaScene implements ArenaScene {
 
   /**
    * The one hit path for melee and abilities (INV-5): combat rules, floating text,
-   * parry, interruption, ultimate charge, burn, knockback and hit-stop.
+   * parry, interruption, ultimate charge, burn, knockback, and the impact feel
+   * (owner, 11/11/2026): white flash, contact sound, sparks along the blow,
+   * attacker recoil, shake and hit-stop from the blow's impact profile.
    * `dir` scales the knockback velocity (melee uses facing plus a little sideways).
    * Returns true if the hit connected (anything but a dodge or an ignored hit).
    */
@@ -431,6 +448,7 @@ export class FightArenaScene implements ArenaScene {
       dir: { x: number; y: number };
       melee: boolean;
       burn?: Burn;
+      impact: ImpactId;
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
@@ -451,6 +469,10 @@ export class FightArenaScene implements ArenaScene {
     if (result.outcome === 'ignored') return false;
     this.events.push({ kind: result.outcome, target: target.name, x: t.x, y: t.y - HEAD_TOP_M, amount: result.damage });
 
+    if (result.outcome === 'dodged') return false;
+    const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
+    this.impactFeel(attacker, target, s, guarded ? IMPACTS.blocked : IMPACTS[s.impact], result.outcome === 'ko');
+
     if (result.outcome === 'parried') {
       if (s.melee) {
         attacker.combatant.stun(result.attackerStunS);
@@ -461,7 +483,6 @@ export class FightArenaScene implements ArenaScene {
       this.hitstopS = HITSTOP_HEAVY_S;
       return true;
     }
-    if (result.outcome === 'dodged') return false;
 
     // Damage dealt and taken fills the ultimate meters (OQ-04: charge meter).
     attacker.caster?.onDamage(result.damage, 0);
@@ -475,12 +496,48 @@ export class FightArenaScene implements ArenaScene {
     const speed = s.knockbackMps * result.knockbackScale;
     target.body.setLinvel({ x: s.dir.x * speed, y: s.dir.y * speed }, true);
     target.knockFlightS = speed >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : 0;
-    this.hitstopS = s.heavy || result.outcome === 'ko' ? HITSTOP_HEAVY_S : HITSTOP_LIGHT_S;
     if (result.outcome === 'ko') {
+      this.hitstopS = Math.max(this.hitstopS, HITSTOP_KO_S); // a longer, cinematic freeze on the final blow
       this.shake.addTrauma(0.7);
       this.shake.punch(0.08);
     }
     return true;
+  }
+
+  /** Flash, sound, sparks, recoil, shake and hit-stop for one contact. */
+  private impactFeel(
+    attacker: FighterEntity,
+    target: FighterEntity,
+    s: { dir: { x: number; y: number }; melee: boolean },
+    profile: ImpactProfile,
+    ko: boolean,
+  ): void {
+    const len = Math.hypot(s.dir.x, s.dir.y) || 1;
+    const dir = { x: s.dir.x / len, y: s.dir.y / len };
+    target.flashS = Math.max(target.flashS, profile.flashS);
+    this.hitstopS = Math.max(this.hitstopS, profile.hitstopS);
+    this.shake.addTrauma(profile.shake);
+    this.impacts.push({ x: target.x - dir.x * 0.2, y: target.y, dir, profile });
+    // Ability hits already play their own impact sound from the ability's hooks.
+    if (s.melee) this.queueSound(profile.sound);
+    if (ko) this.queueSound('ko');
+    if (s.melee && profile.recoilMps > 0 && attacker.body) {
+      // The striker bounces back a little off the contact.
+      const v = attacker.body.linvel();
+      attacker.body.setLinvel({ x: v.x - dir.x * profile.recoilMps, y: v.y - dir.y * profile.recoilMps }, true);
+      attacker.recoilS = RECOIL_BOUNCE_S;
+    }
+  }
+
+  private queueSound(id: string): void {
+    this.sounds.push(id);
+    if (this.sounds.length > 32) this.sounds.shift();
+  }
+
+  /** Sound ids to play now (melee contacts, KOs, dusting and ability hooks), oldest first. */
+  drainSounds(): string[] {
+    const ability = this.abilities?.drainSounds() ?? [];
+    return [...this.sounds.splice(0, this.sounds.length), ...ability];
   }
 
   /** Burn damage shows as small floating numbers, at most twice a second; it also charges the ultimate. */
@@ -501,6 +558,7 @@ export class FightArenaScene implements ArenaScene {
     const p = body.translation();
     const capsule = hitCapsule(p, facing, a);
     let connected = false;
+    let hitFighter = false; // fighter contacts shake through their impact profile
 
     if (a.lungeMps > 0) {
       const v = body.linvel();
@@ -512,8 +570,17 @@ export class FightArenaScene implements ArenaScene {
       const t = target.body.translation();
       if (distanceToCapsule(capsule, t.x, t.y) > a.hitRadiusM + target.def.body.footRadiusM) continue;
       const sideways = Math.max(-0.4, Math.min(0.4, t.y - p.y));
-      const strike = { damage: a.damage, heavy: a.heavy, knockbackMps: a.knockbackSpeedMps, melee: true };
-      if (this.applyStrike(attacker, target, { ...strike, dir: { x: facing, y: sideways } })) connected = true;
+      const strike = {
+        damage: a.damage,
+        heavy: a.heavy,
+        knockbackMps: a.knockbackSpeedMps,
+        melee: true,
+        impact: a.impact,
+      };
+      if (this.applyStrike(attacker, target, { ...strike, dir: { x: facing, y: sideways } })) {
+        connected = true;
+        hitFighter = true;
+      }
     }
 
     for (const door of this.doors) {
@@ -544,7 +611,7 @@ export class FightArenaScene implements ArenaScene {
 
     if (connected) {
       attacker.hits++;
-      this.shake.addTrauma(a.trauma);
+      if (!hitFighter) this.shake.addTrauma(a.trauma);
       this.shake.punch(a.zoomPunch);
     }
   }
@@ -667,7 +734,19 @@ export class FightArenaScene implements ArenaScene {
       if (p.burnS > 0 && !p.broken) burning.push({ x: p.pose.x, y: p.pose.y, heightM: p.size.h + 0.35 });
     }
     const world = this.abilities.world;
+    const impacts: ImpactBurst[] = this.impacts.splice(0, this.impacts.length).map((h) => ({
+      x: h.x,
+      y: h.y,
+      dir: h.dir,
+      sparks: h.profile.sparks,
+      speedMps: h.profile.sparkSpeedMps,
+      colour: h.profile.sparkColour,
+      burstM: h.profile.burstM,
+    }));
+    const dust = this.frameDust.splice(0, this.frameDust.length);
     this.vfx.update(frameDtS, {
+      impacts,
+      dust,
       projectiles: world.projectiles,
       zones: world.zones,
       telegraphs: world.telegraphs,
@@ -729,8 +808,14 @@ export class FightArenaScene implements ArenaScene {
     }
     f.tilt += (tiltTarget - f.tilt) * smoothing(frame ? 40 : 12, frameDtS);
 
-    f.view.draw(pose, f.facing, heightM + lift + f.abilityLift, f.tilt);
+    // Hit flash: white for a few frames, fading out at the end.
+    const flash = f.flashS > 0 ? Math.min(1, f.flashS / 0.04) : 0;
+    // The striker's little bounce off a landed blow.
+    const bounce = f.recoilS > 0 ? 0.07 * Math.sin(Math.PI * (1 - f.recoilS / RECOIL_BOUNCE_S)) : 0;
+    const drawnHeight = heightM + lift + f.abilityLift + bounce;
+    f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash);
     f.view.root.position.set(x, y);
+    this.koDissolve(f, x, y, drawnHeight, frameDtS);
     f.bars?.draw(
       x,
       y - heightM - HEAD_TOP_M * Math.cos(f.tilt),
@@ -739,6 +824,37 @@ export class FightArenaScene implements ArenaScene {
       !c.isKo,
     );
     return { x, y };
+  }
+
+  /**
+   * KO (owner, 11/11/2026): the fighter faints (the fall), lies still for a beat,
+   * then dissolves into dust that drifts away while the figure fades out.
+   */
+  private koDissolve(f: FighterEntity, x: number, y: number, heightM: number, frameDtS: number): void {
+    const view = f.view;
+    if (!view) return;
+    const c = f.combatant;
+    if (!c.isKo) {
+      view.root.alpha = 1;
+      return;
+    }
+    const k = Math.min(1, Math.max(0, (c.koAge - KO_DISSOLVE_FROM_S) / KO_DISSOLVE_S));
+    view.root.alpha = 1 - k * k * (3 - 2 * k);
+    if (k <= 0 || k >= 1) return;
+    if (!f.dustSounded) {
+      f.dustSounded = true;
+      this.queueSound('dust');
+    }
+    // Points along the (tilted) body from the feet to the head, as floor position plus height.
+    const rot = -f.facing * f.tilt;
+    const points: { x: number; y: number; z: number }[] = [];
+    for (let i = 0; i <= 6; i++) {
+      const d = (HEAD_TOP_M * i) / 6;
+      points.push({ x: x + d * Math.sin(rot), y, z: Math.max(0, heightM + d * Math.cos(rot)) });
+    }
+    // Most dust leaves early, thinning out as the last of the body fades.
+    const count = Math.round(260 * frameDtS * (1.2 - k));
+    this.frameDust.push({ points, colour: f.def.look.limb, count });
   }
 
   debugStats(): Record<string, string | number> {
