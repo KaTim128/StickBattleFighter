@@ -52,7 +52,9 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     run(K.a1.payload.burn!.durationS + 0.2);
     expect(scene.dummy.burning).toBe(false);
     expect(scene.drainEvents().some((e) => e.kind === 'burn')).toBe(true);
-    expect(scene.abilities!.sfxLog).toEqual(expect.arrayContaining(['fire-charge', 'fire-whoosh', 'fire-burst-small']));
+    expect(scene.abilities!.sfxLog).toEqual(
+      expect.arrayContaining(['fire-charge', 'fireball-cast', 'fireball-impact']),
+    );
     scenes.clear();
   });
 
@@ -212,7 +214,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     intents.pressAbility('a1'); // …while the bolt winds up for 0.18 s
     run(0.5);
     expect(scene.player.ability).toBeNull();
-    expect(scene.abilities!.sfxLog).not.toContain('fire-whoosh');
+    expect(scene.abilities!.sfxLog).not.toContain('fireball-cast');
     expect(scene.dummy.hp).toBe(1000);
     scenes.clear();
   });

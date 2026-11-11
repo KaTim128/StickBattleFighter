@@ -1,5 +1,6 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
+import { MusicPlayer } from '../audio/music';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
 import { BUILT_IN_LIBRARY, withEntries } from '../characters/library';
@@ -11,6 +12,7 @@ import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
+import { MUSIC_TRACKS } from '../data/audio/music-tracks';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse } from '../input/keyboard';
@@ -51,6 +53,8 @@ export interface EngineDebugInfo {
   sfx: string[];
   /** Recent sounds played by the sound board (melee contacts, KO, dusting, abilities). */
   sounds: string[];
+  /** The background music track playing (or waiting for the first input to start). */
+  music: string | null;
   /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
   setDummyHp(hp: number): void;
   /** The Punch Clash in progress (power, timer), or null. */
@@ -163,9 +167,19 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const clashHud = new ClashHud(document.body);
   const sound = new SoundBoard();
   sound.muted = params.has('mute');
-  onFirstInput(window, () => sound.unlock());
+  // Background music (owner, 11/11/2026): each map its own fight track; `?music=<id>` previews any
+  // track (e.g. the menu theme), `?music=none` turns it off.
+  const music = new MusicPlayer();
+  music.setMuted(sound.muted);
+  const musicId = params.get('music') ?? (scene instanceof FightArenaScene ? scene.arena.music : undefined);
+  music.play(musicId ? (MUSIC_TRACKS[musicId] ?? null) : null);
+  onFirstInput(window, () => {
+    sound.unlock();
+    if (sound.context && sound.musicBus) music.attach(sound.context, sound.musicBus);
+  });
   onToggleMute(window, () => {
     sound.muted = !sound.muted;
+    music.setMuted(sound.muted);
   });
   const controlsHint =
     'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F or I ultimate (aim with WASD, press again) · Shift dodge · T dummy attacks · M mute';
@@ -193,6 +207,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     abilities: null,
     sfx: [],
     sounds: [],
+    music: music.current,
     setDummyHp() {}, // replaced once the scene exists
     clash: null,
     startClash() {}, // replaced once the scene exists

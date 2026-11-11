@@ -30,7 +30,7 @@ export const INFERNO_KIT: AbilityKit = {
     },
     delivery: { type: 'projectile', speedMps: 15, radiusM: 0.28, maxRangeM: 10 },
     vfx: 'fire-bolt',
-    sfx: { cast: 'fire-charge', release: 'fire-whoosh', impact: 'fire-burst-small' },
+    sfx: { cast: 'fire-charge', release: 'fireball-cast', impact: 'fireball-impact' },
   },
   // A2: a burst forward wrapped in flame, scorching the floor behind.
   a2: {

@@ -7,6 +7,7 @@ import { GREYBOX_COLOURS } from './greybox-arena';
  */
 export const TRAINING_YARD: ArenaLayout = {
   id: 'training-yard',
+  music: 'yard-fight',
   name: 'Training yard',
   widthM: 30,
   heightM: 20,

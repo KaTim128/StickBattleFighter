@@ -316,6 +316,12 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** keep the straight wall and only lower it (tried; the owner preferred a diagonal, then a curve); a stepped wall of axis-aligned boxes (rejected: jagged look, more colliders).
 - **Trade-offs:** the closed door no longer seals the boss room during play (it opens on contact), so "fight in the main room" depends on AI behaviour later (Phase 10). Props are still axis-aligned.
 
+### TD-042: Fire sound design and procedural background music — ACCEPTED (owner request 11/11/2026)
+- **Context:** the owner wants fire-type sounds for Inferno's punches, kicks and abilities ("Fire Bolt sounds like a wooden plank", "Meteor Fist has no fire or excitement"), fight music per map and a menu theme. Three reference clips (fireball whooshes, fire magic) were supplied as references.
+- **Decision:** the references were analysed for shape only (loudness over time and frequency balance: a swell over 0.3–0.5 s, energy at 150–400 Hz, a soft tail) and are **not** used or committed. The synthesiser gains flame `flutter` (amplitude tremble) and `drive` (overdrive) on layers; new original recipes: `fireball-cast`, `fireball-impact`, `fire-punch-light(-b)`, `fire-kick-light`, `fire-punch-heavy`, `fire-kick-heavy`, and reworked `fire-hit`, `fire-whoosh`, `fire-rush`, `fire-burst-small`, `fire-roar`, `leap-whoosh`, `meteor-impact` (a double explosion with a long crackle and sizzle). Inferno's audio profile uses the fire punches and kicks. Music: `src/audio/music.ts` is a lookahead sequencer on the Web Audio clock (no game-loop work) playing data tracks (`src/data/audio/music-tracks.ts`: tempo, scale, chord loop, drum patterns, bass, lead, pad, arpeggio). Each arena names its track (`music`): office "Overtime Brawl" (146 BPM), training yard "Sparring Grounds" (124 BPM); the menu theme "Before the Bell" (84 BPM) is ready for the menu screen (Phase 11) and previews with `?music=menu-theme`. Music shares the mute (M).
+- **Alternatives:** licensed audio files (rejected for now: licence register, bundle size; still possible later through the asset register); copying the reference clips (rejected: not ours to ship).
+- **Trade-offs:** synthesised music is simpler than produced tracks; the sounds are designed by measurement and cannot be listened to in the build environment, so the owner's ear on real speakers is the acceptance test.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

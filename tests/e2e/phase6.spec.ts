@@ -30,7 +30,7 @@ test('abilities: Q fires a Fire Bolt that hits and burns the dummy; the ability 
 
   await page.keyboard.press('KeyQ');
   await expect.poll(async () => (await hook(page)).dummy.hp, { timeout: 5000 }).toBeLessThan(1000);
-  expect((await hook(page)).sfx).toEqual(expect.arrayContaining(['fire-charge', 'fire-whoosh']));
+  expect((await hook(page)).sfx).toEqual(expect.arrayContaining(['fire-charge', 'fireball-cast']));
   await expect(page.locator('.ability-slot[data-slot="a1"]')).toHaveClass(/cooling/);
   await page.screenshot({ path: testInfo.outputPath('fire-bolt.png') });
 
@@ -76,7 +76,7 @@ test('ultimate aiming (desktop): I aims in a crouch, D moves the spot, I launche
   await expect
     .poll(async () => (await hook(page)).player.ability, { timeout: 3000, intervals: [20] })
     .toBe('meteorFist');
-  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 5000 }).toBeNull();
+  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull(); // headroom for a slow software-rendered browser
   expect((await hook(page)).player.y).toBeLessThan(before.player.y - 1); // landed up the screen, where aimed
   expect(errors).toEqual([]);
 });
@@ -113,7 +113,7 @@ test('ultimate aiming (touch): hold ULT, drag to aim, release to jump', async ({
   await expect
     .poll(async () => (await hook(page)).player.ability, { timeout: 3000, intervals: [20] })
     .toBe('meteorFist');
-  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 5000 }).toBeNull();
+  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull(); // headroom for a slow software-rendered browser
   expect((await hook(page)).player.y).toBeLessThan(y0 - 2); // dragged up → jumped up the screen
   expect(errors).toEqual([]);
 });

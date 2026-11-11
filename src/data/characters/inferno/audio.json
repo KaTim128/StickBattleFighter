@@ -1,9 +1,9 @@
 {
   "id": "inferno-audio",
-  "lightPunch": ["punch-light", "punch-light-b"],
-  "heavyPunch": ["punch-heavy", "fire-hit"],
-  "lightKick": ["kick-light"],
-  "heavyKick": ["kick-heavy", "fire-hit"],
+  "lightPunch": ["fire-punch-light", "fire-punch-light-b"],
+  "heavyPunch": ["fire-punch-heavy", "fire-hit"],
+  "lightKick": ["fire-kick-light"],
+  "heavyKick": ["fire-kick-heavy"],
   "block": ["block"],
   "parry": ["parry"],
   "footstep": ["footstep"],

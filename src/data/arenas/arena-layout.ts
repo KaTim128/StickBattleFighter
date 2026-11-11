@@ -31,6 +31,8 @@ export interface ArenaLayout {
   readonly floorZones?: readonly FloorZone[];
   /** Solid walls inside the arena (rect, metres). Drawn as wall blocks and given colliders. */
   readonly interiorWalls?: readonly WallRect[];
+  /** Background fight music: a track id from src/data/audio/music-tracks.ts (each map its own). */
+  readonly music?: string;
   /** Doors in gaps of the interior walls. */
   readonly doors?: readonly DoorSpec[];
 }

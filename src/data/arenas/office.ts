@@ -192,6 +192,7 @@ const ARC_OUTLINE: number[] = Array.from({ length: 33 }, (_, i) => {
 
 export const OFFICE: ArenaLayout = {
   id: 'office',
+  music: 'office-fight',
   name: 'Office',
   widthM: WIDTH,
   heightM: HEIGHT,

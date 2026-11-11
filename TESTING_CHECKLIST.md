@@ -100,6 +100,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/office-curved-wall.png`, `docs/screenshots/office-door-walkthrough.png`.
 - [ ] Owner on a phone: the door is easy to spot and walking through feels natural.
 
+## 0s. Fire sounds and music (verified 11/11/2026)
+- [x] `npm test`: **238 tests**. The menu has its own theme and every map its own different fight track; every track well formed (patterns, lengths, tempo, note range); fight tracks have a kick on every downbeat and are faster than the calmer menu theme (no snare); scale degrees and the loop; Fire Bolt plays `fireball-cast` and `fireball-impact`.
+- [x] Browser: after the first key press the map's track plays (`yard-fight`, `office-fight`; `?music=menu-theme` plays the menu theme); Fire Bolt and Meteor Fist play their new sounds; no console errors.
+- [ ] Owner on real speakers: fire punches/kicks, Fire Bolt and Meteor Fist sound like fire with fury; the music suits each map and the menu.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

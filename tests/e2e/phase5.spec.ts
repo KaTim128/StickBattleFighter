@@ -56,7 +56,8 @@ test('combat: with dummy attacks on, an unguarded player takes damage; Shift dod
   await expect.poll(async () => (await hook(page)).player.hp, { timeout: 8000 }).toBeLessThan(1000);
   await page.keyboard.press('KeyT'); // dummy attacks off again, so the player can recover
   // A stunned fighter cannot dodge: wait until free, then dodge.
-  await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000, intervals: [20] }).toBe('free');
+  // Real-time waits for game-time events get headroom: a software-rendered browser under parallel load runs slow.
+  await expect.poll(async () => (await hook(page)).player.state, { timeout: 8000, intervals: [20] }).toBe('free');
   await expect.poll(async () => (await hook(page)).player.stamina, { timeout: 3000 }).toBe(100);
   await page.keyboard.press('ShiftLeft');
   await expect
