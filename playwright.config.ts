@@ -10,6 +10,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // One browser at a time on CI: each test renders WebGL in software (SwiftShader), and two at once
+  // on the small runner slowed the game below real time, so real-time waits timed out.
+  workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
