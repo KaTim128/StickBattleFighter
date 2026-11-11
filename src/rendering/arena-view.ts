@@ -14,6 +14,8 @@ export interface ArenaView {
   readonly propCount: number;
   /** Standing props' views by their index in `arena.props`, so moving or broken props can follow the simulation. */
   readonly props: Map<number, Container>;
+  /** Interior wall sections and door sections that can stand in front of a fighter (wall transparency). */
+  readonly occluders: Container[];
   destroy(): void;
 }
 
@@ -104,13 +106,16 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     actors.add(view, propFootOffset(p));
   });
 
+  const occluders: Container[] = [];
   for (const r of arena.interiorWalls ?? []) {
     const front = wallColour(arena, r);
     const top = 0x9aa3b2;
     const ww = r.x1 - r.x0;
     for (let y = r.y0; y < r.y1 - 1e-6; y += WALL_CHUNK_M) {
       const d = Math.min(WALL_CHUNK_M, r.y1 - y);
-      actors.add(wallChunk((r.x0 + r.x1) / 2, y + d / 2, ww, d, top, front), d / 2);
+      const chunk = wallChunk((r.x0 + r.x1) / 2, y + d / 2, ww, d, top, front);
+      actors.add(chunk, d / 2);
+      occluders.push(chunk);
     }
   }
 
@@ -118,7 +123,10 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   for (const spec of arena.doors ?? []) {
     const view = new DoorView(spec, INTERIOR_WALL_HEIGHT_M);
     doors.set(spec.id, view);
-    for (const part of view.parts) actors.add(part.node, part.footOffset);
+    for (const part of view.parts) {
+      actors.add(part.node, part.footOffset);
+      occluders.push(part.node);
+    }
   }
 
   return {
@@ -127,6 +135,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     doors,
     propCount: arena.props.length,
     props,
+    occluders,
     destroy() {
       for (const d of doors.values()) d.destroy();
       actors.destroy();

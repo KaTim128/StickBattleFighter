@@ -269,6 +269,9 @@ Also added `?slowmo=` and a freeze hook for exact animation screenshots.
 **Evidence:** lint clean; typecheck 0; `npm test` **207/207**; build clean; `npm run e2e` **19/19**; screenshots of every stage.
 **Next queued owner requests:** dynamic wall transparency; Inferno ultimate aiming (I / drag); walking and running animation; office centre cubicle pairs and breakables; Inferno fist flames.
 
+### 11/11/2026: Dynamic wall transparency (owner request)
+Walls, door sections, pillars and props that cover a fighter fade to 30% over 0.2 s and restore smoothly (TD-035, REQ-VIS-10). Files: `src/rendering/occlusion-fader.ts`, `arena-view.ts` (exposes wall and door sections), `fight-arena-scene.ts`. Evidence: `npm test` 211/211, e2e 19/19, screenshots. Finding: a fighter standing beside a vertical wall strip is not actually covered by it in this view; the covering cases are standing behind (north of) tall objects and in doorways, which is what the tests use.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

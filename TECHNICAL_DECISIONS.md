@@ -270,6 +270,11 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** a separate mini-game scene (rejected: breaks continuity; the owner wanted one cinematic gameplay event); random winner on ties (rejected by the owner: stalemate).
 - **Practice/test hooks:** `startClash()` on the scene and the debug hook.
 
+### TD-035: Wall transparency by drawn bounds and depth order — ACCEPTED (owner request 11/11/2026)
+- `OcclusionFader` (`src/rendering/occlusion-fader.ts`) checks every interior-wall section, door section and prop each frame: if it depth-sorts after a fighter (its zIndex, the feet y, is larger, so it is drawn in front) and its drawn bounds overlap the fighter's (slightly inset), it fades linearly toward 30% opacity (full range in 0.2 s); otherwise back to 100%. Using real drawn bounds handles tall props, moving furniture and every arena without per-object geometry.
+- *Alternatives:* ray casts from a virtual 3D camera (no 3D camera exists in 2D top-down); hiding objects outright (rejected by the owner: smooth fade, not disappearing).
+- Cost: about 110 bounds checks per frame in the office; measured no visible frame-time change in the browser runs.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

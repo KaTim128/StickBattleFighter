@@ -28,6 +28,7 @@ The playbook says the master specification should hold "the complete original St
 | REQ-VIS-3 | **No** side-scrolling, side view or single fighting lane: the arena is viewed from above and fighters can go anywhere on it. (The playbook's ban on "flat 2D sprite combat" is superseded, SUP-04.) | [PB §4.3, §4.4, §14.1] [OWNER] |
 | REQ-VIS-4 | Players can circle, retreat, approach from behind, reposition, dodge and use obstacles tactically. | [PB §14.1] |
 | REQ-VIS-9 | **Depth in 2D:** objects lower on the screen draw in front (y-sorting); jumping, thrown objects and airborne attacks show height with a ground shadow. | [TD-021] |
+| REQ-VIS-10 | **Dynamic wall transparency (owner, 11/11/2026):** any wall section, door, pillar or prop drawn in front of a fighter and covering it fades to about 30% opacity over about 0.2 s, and restores smoothly when no longer covering; only the covering sections fade; it works continuously, including between rooms and for moving furniture, so combat is never hidden. |
 | REQ-VIS-5 | All characters, abilities, VFX, animations, UI, arenas, progression and identity must be original. References are for learning only. | [PB §4.4] [OWNER] |
 | REQ-VIS-6 | Stickman Arena is **not** a Pokémon game, a creature-collection game, or a turn-based battle game. No Pokémon branding or implied affiliation. | [PB §4.5] [OWNER] |
 | REQ-VIS-7 | Stickman Arena is a **standalone repository**, separate from the Froggy project. | [PB §1, §3.1] |
@@ -471,6 +472,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Owner: dynamic wall transparency (REQ-VIS-10). | Master Developer |
 | 11/11/2026 | Owner: Punch Clash (REQ-CMB-25). | Master Developer |
 | 11/11/2026 | Owner: hit feel for every blow (REQ-CMB-24) and the KO dust dissolve (REQ-ANI-9); OQ-17 partly answered (synthesised original SFX, TD-033). | Master Developer |
 | 11/11/2026 | Phase 6: OQ-04 resolved (charge-meter ultimate, REQ-ABL-3); Inferno kit (REQ-ABL-7); abilities share melee rules (REQ-ABL-8). | Master Developer |

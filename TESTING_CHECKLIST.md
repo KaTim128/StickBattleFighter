@@ -77,6 +77,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/punch-clash.png` (normal, lock-up, mid, final stretch, finisher, camera back).
 - [ ] Owner playtest: is 6.5 presses/s the right challenge for the training dummy?
 
+## 0l. Wall transparency (verified 11/11/2026)
+- [x] `npm test`: **211 tests**. A pillar in front of a fighter fades smoothly (mid-fade seen, then 30%) while the other pillars stay solid; it restores to 100% when the fighter walks away; in the open office doorway only the covering wall sections fade; nothing fades when nothing covers a fighter.
+- [x] V Screenshots: `docs/screenshots/wall-transparency.png`.
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

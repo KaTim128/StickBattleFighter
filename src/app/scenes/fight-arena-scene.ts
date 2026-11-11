@@ -31,6 +31,7 @@ import { stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
+import { OcclusionFader } from '../../rendering/occlusion-fader';
 import { tallestPropM } from '../../rendering/prop-view';
 import { AbilityVfx, type BurningThing, type DustSource, type ImpactBurst } from '../../vfx/ability-vfx';
 import type { ArenaScene, Viewport } from './arena-scene';
@@ -129,6 +130,8 @@ export class FightArenaScene implements ArenaScene {
   /** The shared ability framework in this arena (Phase 6). */
   abilities: SceneAbilities | null = null;
   private vfx: AbilityVfx | null = null;
+  /** Fades walls and tall props that stand in front of a fighter (owner, 11/11/2026). */
+  occlusion: OcclusionFader | null = null;
   /** Desk items that fell to the floor and now depth-sort as floor objects. */
   private readonly grounded = new Set<number>();
   /** Practice option: the dummy jabs back when you are close (REQ-MOD-5). */
@@ -216,6 +219,11 @@ export class FightArenaScene implements ArenaScene {
     return [this.playerFighter, this.dummyFighter];
   }
 
+  /** The arena's display objects (tests and tools inspect props and wall sections). */
+  get arenaView(): ArenaView | null {
+    return this.view;
+  }
+
   get world(): Container | null {
     return this.view?.world ?? null;
   }
@@ -298,6 +306,9 @@ export class FightArenaScene implements ArenaScene {
     );
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
+    this.occlusion = new OcclusionFader();
+    for (const node of this.view.occluders) this.occlusion.add(node);
+    for (const node of this.view.props.values()) this.occlusion.add(node);
     this.vfx = new AbilityVfx();
     this.vfx.attach(this.view.world, this.view.actors.container);
     this.overlay = new Container();
@@ -739,6 +750,11 @@ export class FightArenaScene implements ArenaScene {
     this.renderProps();
     this.renderAbilityFx(frameDtS);
     this.view.actors.update();
+    // Keep both fighters visible: fade whatever stands in front of them.
+    const viewers = this.fighters.flatMap((f) =>
+      f.view ? [{ node: f.view.root, depth: () => f.view?.root.zIndex ?? 0 }] : [],
+    );
+    this.occlusion?.update(viewers, frameDtS);
 
     // Frame the player and the dummy (aiming at torsos), then apply impact shake.
     const { width, height } = this.viewport();
@@ -986,6 +1002,7 @@ export class FightArenaScene implements ArenaScene {
     this.doors = [];
     this.props = null;
     this.abilities = null;
+    this.occlusion = null;
     this.vfx = null; // destroyed with the arena view
     this.debrisView?.destroy();
     this.debrisView = null;
