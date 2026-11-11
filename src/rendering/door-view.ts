@@ -88,21 +88,23 @@ export class DoorView {
     this.leaf.visible = false;
     this.parts.push({ node: this.leaf, footOffset: 0.2 });
 
-    // Door frame: a bright post at each end, a little taller and wider than the wall.
-    const postD = 0.16;
-    const wide = 0.17;
-    for (const [ya, yb] of [
-      [spec.y0 - postD, spec.y0],
-      [spec.y1, spec.y1 + postD],
-    ] as const) {
-      const post = this.block(spec.x0 - wide, ya, spec.x1 + wide, yb, heightM + 0.08, {
-        front: FRAME,
-        top: 0x5c6470,
-        edge: FRAME_EDGE,
-        edgeWidth: 0.025,
-      });
-      post.node.label = `door-frame-${spec.id}`;
-      this.parts.push(post);
+    // Door frame: a dark metal post filling each gap between the leaf and the wall end, exactly
+    // as thick and as tall as the wall, so it meets both flush (no clipping, owner 11/11/2026).
+    for (const post of spec.posts ?? []) {
+      const c = post.corners;
+      const centre = {
+        x: c.reduce((a, p) => a + p.x, 0) / c.length,
+        y: c.reduce((a, p) => a + p.y, 0) / c.length,
+      };
+      const rel = c.map((p) => iso(p.x - centre.x, p.y - centre.y));
+      const node = new Container();
+      node.label = `door-frame-${spec.id}`;
+      node.addChild(
+        drawPrism(new Graphics(), rel, heightM, { front: FRAME, top: 0x5c6470, edge: FRAME_EDGE, edgeWidth: 0.025 }),
+      );
+      const at = iso(centre.x, centre.y);
+      node.position.set(at.x, at.y);
+      this.parts.push({ node, footOffset: Math.max(...rel.map((p) => p.y)) });
     }
   }
 

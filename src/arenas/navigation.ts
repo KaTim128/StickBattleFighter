@@ -32,6 +32,7 @@ export function buildNavGrid(
       return { x0: p.x - f.w / 2, x1: p.x + f.w / 2, y0: p.y - f.d / 2, y1: p.y + f.d / 2 };
     })
     .concat(arena.interiorWalls ?? [])
+    .concat((arena.doors ?? []).flatMap((d) => (d.posts ?? []).map((p) => p.rect)))
     .concat(doorsOpen ? [] : (arena.doors ?? []));
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {

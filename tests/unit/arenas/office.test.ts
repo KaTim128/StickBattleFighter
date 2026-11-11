@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildNavGrid, isWalkable, walkableRegions } from '../../../src/arenas/navigation';
+import { fromBoxFrame } from '../../../src/core/oriented-rect';
 import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
 import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
@@ -195,5 +196,45 @@ describe('Phase 7 throwables in the office (REQ-PHY-9)', () => {
     expect(extras.length).toBe(desks.length);
     for (const e of extras) expect(PROP_KINDS[e.kind].throwable).toBe(true);
     expect(OFFICE.props.filter((p) => p.kind === 'fire-extinguisher').length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('boss-room doorway fits the curved wall (owner, 11/11/2026: no clipping)', () => {
+  const door = OFFICE.doors![0]!;
+  const corners = (r: Parameters<typeof fromBoxFrame>[0]) => [
+    fromBoxFrame(r, r.x0, r.y0),
+    fromBoxFrame(r, r.x1, r.y0),
+    fromBoxFrame(r, r.x1, r.y1),
+    fromBoxFrame(r, r.x0, r.y1),
+  ];
+  const near = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-6;
+
+  it('each frame post meets the leaf end and the wall end face flush, at full wall thickness', () => {
+    const walls = OFFICE.interiorWalls ?? [];
+    expect(door.posts).toHaveLength(2);
+    for (const post of door.posts!) {
+      const [l0, l1, w0, w1] = post.corners;
+      // Leaf side: straight across the doorway at the leaf's end, as thick as the wall (0.4 m).
+      expect(Math.abs(l0!.y - l1!.y)).toBeLessThan(1e-9);
+      expect(Math.hypot(l1!.x - l0!.x, l1!.y - l0!.y)).toBeCloseTo(0.4, 6);
+      const leafEnd = Math.abs(l0!.y - door.y0) < 1e-6 ? door.y0 : door.y1;
+      expect(Math.abs(l0!.y - leafEnd)).toBeLessThan(1e-6);
+      // Wall side: exactly the two end corners of one curved wall piece.
+      const owner = walls.find((w) => {
+        const c = corners(w);
+        return c.some((p) => near(p, w0!)) && c.some((p) => near(p, w1!));
+      });
+      expect(owner).toBeDefined();
+    }
+  });
+
+  it('no wall piece reaches into the doorway', () => {
+    for (const w of OFFICE.interiorWalls ?? []) {
+      for (const p of corners(w)) {
+        const inGap = p.y > door.y0 - 0.05 && p.y < door.y1 + 0.05; // the leaf's span (the posts fill the rest, tested above)
+        const inWall = Math.abs(p.x - (door.x0 + door.x1) / 2) < 0.5;
+        expect(inGap && inWall, `${p.x.toFixed(3)}, ${p.y.toFixed(3)}`).toBe(false);
+      }
+    }
   });
 });

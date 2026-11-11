@@ -74,4 +74,16 @@ export interface DoorSpec extends Rect {
   readonly id: string;
   /** Impact strength needed to break it (kick ≈ 600, a knocked-back dummy ≈ mass × speed). */
   readonly breakStrength: number;
+  /**
+   * Frame posts between the leaf and each wall end (owner, 11/11/2026: no clipping into the
+   * wall). `corners` is the post's exact floor outline (4 points, metres) filling the gap from
+   * the leaf's end to the wall's end face, so the post meets both flush; `rect` is the solid box
+   * used for collision and navigation. The posts stay standing when the leaf opens or breaks.
+   */
+  readonly posts?: readonly DoorPost[];
+}
+
+export interface DoorPost {
+  readonly corners: readonly { readonly x: number; readonly y: number }[];
+  readonly rect: Rect;
 }

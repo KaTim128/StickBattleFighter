@@ -54,7 +54,13 @@ const ARC_CX = ARC_APEX_X - ARC_R;
 /** Angle (from the centre, 0 = the apex) where the arc meets the top and bottom walls, plus a little overrun. */
 const ARC_HALF_ANGLE = Math.asin(MID_Y / ARC_R) + 0.02;
 const DOOR_HALF_ANGLE = DOOR_LEN_M / 2 / ARC_R;
+/** Door frame posts between the glass leaf and the wall ends (along the wall), metres. */
+const DOOR_POST_M = 0.14;
+/** Where the curved wall stops on each side of the doorway (leaf plus a post). */
+const DOOR_GAP_HALF_ANGLE = (DOOR_LEN_M / 2 + DOOR_POST_M) / ARC_R;
 const WALL_PIECES_PER_HALF = 12;
+/** Neighbouring curved wall pieces overlap by this angle so the outside of the bend has no gaps. */
+const ARC_PAD = 0.012;
 /**
  * Each section of the curved wall can be chipped through (owner, 11/11/2026): about six or seven
  * full 1-2-3 combos at one spot open a small hole; two neighbouring holes make a gap to walk through.
@@ -65,21 +71,50 @@ function arcPoint(angle: number): [number, number] {
   return [ARC_CX + ARC_R * Math.cos(angle), MID_Y + ARC_R * Math.sin(angle)];
 }
 
+/**
+ * The door frame post on one side (−1 = the top end, +1 = the bottom end): it fills the gap
+ * between the end of the glass leaf (straight across the doorway) and the end face of the last
+ * curved wall piece (square to that piece), so it meets both flush at full wall thickness.
+ */
+function doorPost(side: -1 | 1) {
+  const [ex, ey] = arcPoint(side * DOOR_HALF_ANGLE); // end of the leaf (the doorway runs along y)
+  const [wx, wy] = arcPoint(side * DOOR_GAP_HALF_ANGLE); // end of the wall
+  // The last wall piece's direction at its door end, and its normal (across the wall).
+  const pieceSpan = (ARC_HALF_ANGLE - DOOR_GAP_HALF_ANGLE) / WALL_PIECES_PER_HALF;
+  const [px, py] = arcPoint(side * (DOOR_GAP_HALF_ANGLE + pieceSpan + ARC_PAD)); // that piece's far (padded) end
+  const len = Math.hypot(px - wx, py - wy);
+  const n = { x: (py - wy) / len, y: -(px - wx) / len };
+  const h = WALL_THICK_M / 2;
+  const corners = [
+    { x: ex - h, y: ey },
+    { x: ex + h, y: ey },
+    { x: wx + Math.sign(n.x) * n.x * h, y: wy + Math.sign(n.x) * n.y * h },
+    { x: wx - Math.sign(n.x) * n.x * h, y: wy - Math.sign(n.x) * n.y * h },
+  ];
+  return { corners, rect: segmentBox(ex, ey, wx, wy, WALL_THICK_M) };
+}
+
 /** x of the curved wall's centre line at height y. */
 function wallX(y: number): number {
   const dy = Math.max(-ARC_R, Math.min(ARC_R, y - MID_Y));
   return ARC_CX + Math.sqrt(ARC_R * ARC_R - dy * dy);
 }
 
-/** Short straight wall pieces along the arc from angle a0 to a1 (each overlaps the next a little). */
-function arcPieces(a0: number, a1: number): WallRect[] {
+/**
+ * Short straight wall pieces along the arc from angle a0 to a1. Neighbouring pieces overlap a
+ * little so the outside of the bend has no gaps; the end at the doorway (`doorEnd`) does not,
+ * so no wall pokes into the door frame.
+ */
+function arcPieces(a0: number, a1: number, doorEnd: 'a0' | 'a1'): WallRect[] {
   const pieces: WallRect[] = [];
+  const pad = ARC_PAD;
   for (let i = 0; i < WALL_PIECES_PER_HALF; i++) {
     const t0 = a0 + ((a1 - a0) * i) / WALL_PIECES_PER_HALF;
     const t1 = a0 + ((a1 - a0) * (i + 1)) / WALL_PIECES_PER_HALF;
-    const pad = 0.012; // overlap so the outside of the bend has no gaps
+    const pad0 = doorEnd === 'a0' && i === 0 ? 0 : pad;
+    const pad1 = doorEnd === 'a1' && i === WALL_PIECES_PER_HALF - 1 ? 0 : pad;
     pieces.push({
-      ...segmentBox(...arcPoint(t0 - pad), ...arcPoint(t1 + pad), WALL_THICK_M),
+      ...segmentBox(...arcPoint(t0 - pad0), ...arcPoint(t1 + pad1), WALL_THICK_M),
       colour: OFFICE_WALL_FACE,
       durability: WALL_SECTION_HP,
     });
@@ -290,12 +325,16 @@ export const OFFICE: ArenaLayout = {
       polygon: [WIDTH, 0, WIDTH, HEIGHT, ...ARC_OUTLINE],
     },
   ],
-  interiorWalls: [...arcPieces(-ARC_HALF_ANGLE, -DOOR_HALF_ANGLE), ...arcPieces(DOOR_HALF_ANGLE, ARC_HALF_ANGLE)],
+  interiorWalls: [
+    ...arcPieces(-ARC_HALF_ANGLE, -DOOR_GAP_HALF_ANGLE, 'a1'),
+    ...arcPieces(DOOR_GAP_HALF_ANGLE, ARC_HALF_ANGLE, 'a0'),
+  ],
   doors: [
     {
       id: 'boss-door',
       ...segmentBox(...arcPoint(-DOOR_HALF_ANGLE), ...arcPoint(DOOR_HALF_ANGLE), 0.16),
       breakStrength: 500,
+      posts: [doorPost(-1), doorPost(1)],
     },
   ],
   greybox: true,
