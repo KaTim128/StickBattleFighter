@@ -25,6 +25,10 @@ export interface AttackDef {
   readonly hitRadiusM: number;
   /** Impact strength against objects (a door breaks at its breakStrength, 500 in the office). */
   readonly strength: number;
+  /** Health damage before Power/Defence (PROVISIONAL, OQ-05). */
+  readonly damage: number;
+  /** Heavy hits knock the target down instead of making it flinch, and hit-stop longer. */
+  readonly heavy: boolean;
   /** Speed a struck body is knocked back at, m/s. */
   readonly knockbackSpeedMps: number;
   /** Ground movement multiplier while attacking (air attacks keep their momentum). */

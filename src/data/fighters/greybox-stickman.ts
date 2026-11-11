@@ -4,6 +4,7 @@
  * own stances, gaits and attacks, REQ-ANI-7). Values are placeholders pending
  * the stat baselines (OQ-05).
  */
+import type { CombatStats } from '../../combat/combatant';
 import type { ComboSet } from '../../combat/combo';
 
 export const GREYBOX_STICKMAN = {
@@ -17,6 +18,18 @@ export const GREYBOX_STICKMAN = {
     jumpSpeedMps: 6.5,
     hopGravityMps2: 20,
   },
+  /** Combat stats (PROVISIONAL baselines pending OQ-05, TD-030). */
+  stats: {
+    maxHp: 1000,
+    maxStamina: 100,
+    staminaRegenPerS: 30,
+    staminaRegenDelayS: 0.7,
+    power: 1,
+    defence: 1,
+    critChance: 0.05,
+    critMultiplier: 1.5,
+    knockbackResistance: 0,
+  } satisfies CombatStats,
   /**
    * Button 1 attacks (owner request, 11/11/2026): ground 1-2-3 combo
    * (jab → hook → heavy finisher) and an aerial flying kick. Stamina-free (REQ-CMB-4).
@@ -34,6 +47,8 @@ export const GREYBOX_STICKMAN = {
       chainAtRecovery: 0.25,
       reachM: 0.72,
       hitRadiusM: 0.4,
+      damage: 40,
+      heavy: false,
       strength: 150,
       knockbackSpeedMps: 1.5,
       moveFactor: 0.45,
@@ -51,6 +66,8 @@ export const GREYBOX_STICKMAN = {
       chainAtRecovery: 0.25,
       reachM: 0.74,
       hitRadiusM: 0.45,
+      damage: 60,
+      heavy: false,
       strength: 230,
       knockbackSpeedMps: 2.5,
       moveFactor: 0.4,
@@ -68,6 +85,8 @@ export const GREYBOX_STICKMAN = {
       chainAtRecovery: 1,
       reachM: 1,
       hitRadiusM: 0.5,
+      damage: 140,
+      heavy: true,
       strength: 720,
       knockbackSpeedMps: 11,
       moveFactor: 0.2,
@@ -85,6 +104,8 @@ export const GREYBOX_STICKMAN = {
       chainAtRecovery: 1,
       reachM: 0.9,
       hitRadiusM: 0.55,
+      damage: 120,
+      heavy: true,
       strength: 820,
       knockbackSpeedMps: 10,
       moveFactor: 1,

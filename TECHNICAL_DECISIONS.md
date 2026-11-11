@@ -225,6 +225,14 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Attack animation** (`src/animation/attack-poses.ts`): each attack overrides only the joints it uses, moving through chamber, then snap, then return, on top of the current stance or jump pose.
 - **Not yet built (Phase 5–6):** damage and health, block (hold Button 1), dodge, stamina, abilities, hit reactions.
 
+### TD-030: Phase 5 combat engine and provisional stats — ACCEPTED (values PROVISIONAL, OQ-05)
+- **`Combatant`** (`src/combat/combatant.ts`): pure rules for HP, stamina, guard, parry, guard break, dodge invulnerability, stun, knockdown, KO and respawn. `receive(hit)` returns outcome, damage, knockback scale and attacker stun, so it is unit-tested without physics or rendering. Critical hits use a **seeded** RNG (mulberry32) so tests and replays are deterministic.
+- **`FighterEntity`** (`src/app/scenes/fighter-entity.ts`): the player and the dummy are the same entity type with the same combo, rules and animation; only the controller differs (intents vs simple dummy logic). This is INV-5 in practice and the base for AI fighters (Phase 10).
+- **Hit-stop:** 0.05 s (light) or 0.09 s (heavy) pauses the simulation on contact. **Combat events** go to the DOM floating-text layer, so presentation never changes gameplay state.
+- **Input queue (bug fix):** Button 1 edges were boolean flags, so two taps between steps (a slow frame or hit-stop) became one and the combo dropped. They are now a queue (max 3 taps), one tap consumed per step.
+- **Provisional baseline (OQ-05 not yet answered):** HP 1000; stamina 100 (regen 30/s after 0.7 s); jab 40, hook 60, heavy 140, flying kick 120 damage; crit 5% × 1.5; block chip 15%, 0.6 stamina per blocked damage; parry window 0.15 s; dodge 25 stamina, 0.24 s, 0.18 s invulnerable. All values are data in `src/data/fighters/` and `DEFENCE`, so owner changes need no code edits.
+- **Alternatives:** Rapier sensors for hit detection (rejected: the capsule query is simpler, deterministic and already tested); per-fighter classes (rejected: one data-driven entity scales to 100 fighters).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

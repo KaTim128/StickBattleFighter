@@ -12,8 +12,10 @@ export const MOVE_KEYS: Readonly<Record<string, Vec2>> = {
   ArrowRight: { x: 1, y: 0 },
 };
 export const JUMP_KEYS: ReadonlySet<string> = new Set(['Space']);
-/** Button 1 melee: J (both presets); left mouse button is handled in attachMouse. */
+/** Button 1 melee: J (both presets); left mouse button is handled in attachMouse. Tap = attack, hold = block. */
 export const MELEE_KEYS: ReadonlySet<string> = new Set(['KeyJ']);
+/** Dodge (CONTROL_SCHEME §4). */
+export const DODGE_KEYS: ReadonlySet<string> = new Set(['ShiftLeft', 'ShiftRight']);
 
 /** Movement vector from the set of held key codes (opposite keys cancel; length ≤ 1). */
 export function moveFromKeys(held: ReadonlySet<string>): Vec2 {
@@ -43,7 +45,11 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
       return;
     }
     if (MELEE_KEYS.has(e.code)) {
-      if (!e.repeat) intents.pressMelee();
+      if (!e.repeat) intents.meleePress();
+      return;
+    }
+    if (DODGE_KEYS.has(e.code)) {
+      if (!e.repeat) intents.pressDodge();
       return;
     }
     if (e.code in MOVE_KEYS) {
@@ -52,12 +58,14 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
     }
   };
   const up = (e: KeyboardEvent): void => {
+    if (MELEE_KEYS.has(e.code)) intents.meleeRelease();
     if (held.delete(e.code)) sync();
   };
   // Releasing keys while the window is unfocused must not leave the fighter running.
   const blur = (): void => {
     held.clear();
     sync();
+    intents.meleeRelease();
   };
   target.addEventListener('keydown', down);
   target.addEventListener('keyup', up);
@@ -72,8 +80,15 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
 /** Keyboard + mouse preset: left click = melee (CONTROL_SCHEME §4). Touch is handled by the touch controls. */
 export function attachMouse(target: HTMLElement, intents: PlayerIntents): () => void {
   const down = (e: PointerEvent): void => {
-    if (e.pointerType === 'mouse' && e.button === 0) intents.pressMelee();
+    if (e.pointerType === 'mouse' && e.button === 0) intents.meleePress();
+  };
+  const up = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' && e.button === 0) intents.meleeRelease();
   };
   target.addEventListener('pointerdown', down);
-  return () => target.removeEventListener('pointerdown', down);
+  window.addEventListener('pointerup', up);
+  return () => {
+    target.removeEventListener('pointerdown', down);
+    window.removeEventListener('pointerup', up);
+  };
 }

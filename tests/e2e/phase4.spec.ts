@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { comboToHeavy } from './combo';
 
 interface Hook {
   scene: string | null;
@@ -44,10 +45,7 @@ test('office: walking into the door keeps it shut; the 1-2-3 combo smashes it; t
   expect(s.player.x).toBeLessThan(26);
 
   // 1-2-3: jab → hook → heavy finisher.
-  for (const step of ['jab', 'hook', 'heavy']) {
-    await page.keyboard.press('KeyJ');
-    await expect.poll(async () => (await hook(page)).player.attack, { timeout: 3000 }).toBe(step);
-  }
+  await comboToHeavy(page, async () => (await hook(page)).player.attack);
   await expect.poll(async () => (await hook(page)).doors[0]!.broken, { timeout: 5000 }).toBe(true);
   s = await hook(page);
   expect(['strike', 'knockback']).toContain(s.doors[0]!.brokenBy);

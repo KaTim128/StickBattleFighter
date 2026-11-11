@@ -62,7 +62,9 @@ Two presets. All keys can be rebound, with conflict prevention and reset to defa
 On desktop, jump has its own key (Space) because keys are plentiful. The contextual pick up and throw moves to G or U, so you can jump while standing next to an object.
 
 ## 4a. Live now (11/11/2026)
-- **Button 1** works: J or left click on desktop, the **MELEE** button on touch. Ground: 1-2-3 combo (jab → hook → heavy finisher); in the air: flying kick. Hold-to-block arrives with Phase 5.
+- **Button 1** works: J or left click on desktop, the **MELEE** button on touch. Ground: 1-2-3 combo (jab → hook → heavy finisher; press once per strike); in the air: flying kick. **Hold** Button 1 (≥ 0.18 s) to block; raise it just before a hit to parry.
+- **Dodge:** Shift (desktop) or a joystick flick (touch).
+- **Practice helpers:** T makes the dummy attack you (toggle); `?scene=training-yard` opens the open yard.
 - **Jump:** Space or the JUMP button. Buttons 2–5 (abilities and ultimate) arrive with Phase 6.
 
 ## 5. Intent model (contract for Phase 2)
@@ -74,4 +76,4 @@ Devices map to these intents, which are all gameplay sees:
 Move → melee → **hold to block** → **flick to dodge** → jump → abilities 1–3 (cooldowns, stamina) → ultimate (charge and "ready" cue) → **pick up and throw** → health and defeat → a free fight with a dummy. Prompts show the player's actual device bindings.
 
 ## 7. Open details (tuning, not blockers)
-Hold threshold (0.2 s), flick window (≤ 0.12 s from under 30% to over 90% deflection), drop-hold (0.6 s): all data-driven, tuned in playtests and recorded in `TECHNICAL_DECISIONS.md` if changed.
+Hold threshold (0.2 s; 0.18 s in the provisional build, TD-030), flick window (≤ 0.12 s from under 30% to over 90% deflection), drop-hold (0.6 s): all data-driven, tuned in playtests and recorded in `TECHNICAL_DECISIONS.md` if changed.

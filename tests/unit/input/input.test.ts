@@ -59,3 +59,31 @@ describe('joystickVector', () => {
     expect(half.x).toBeLessThan(0.6);
   });
 });
+
+describe('melee taps between steps (regression: a slow frame lost the second tap)', () => {
+  it('keeps two quick taps and hands them out one per step', () => {
+    const intents = new PlayerIntents();
+    intents.pressMelee();
+    intents.pressMelee();
+    expect(intents.consumeMeleeEdges()).toEqual({ pressed: true, released: true });
+    expect(intents.consumeMeleeEdges()).toEqual({ pressed: true, released: true });
+    expect(intents.consumeMeleeEdges()).toEqual({ pressed: false, released: false });
+  });
+
+  it('a held press reports only the press until it is released', () => {
+    const intents = new PlayerIntents();
+    intents.meleePress();
+    expect(intents.consumeMeleeEdges()).toEqual({ pressed: true, released: false });
+    expect(intents.meleeHeld).toBe(true);
+    intents.meleeRelease();
+    expect(intents.consumeMeleeEdges()).toEqual({ pressed: false, released: true });
+  });
+
+  it('caps queued mashing at three taps', () => {
+    const intents = new PlayerIntents();
+    for (let i = 0; i < 10; i++) intents.pressMelee();
+    let taps = 0;
+    while (intents.consumeMeleeEdges().pressed) taps++;
+    expect(taps).toBe(3);
+  });
+});

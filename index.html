@@ -37,6 +37,25 @@
         background: rgba(120, 50, 20, 0.7); color: #fff2e6; font: 700 13px system-ui, sans-serif;
         pointer-events: auto; touch-action: none;
       }
+      .combat-text-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+      .combat-text {
+        position: absolute; transform: translate(-50%, -100%); white-space: nowrap;
+        font: 800 18px/1 system-ui, sans-serif; color: #fff; letter-spacing: 0.02em;
+        text-shadow: 0 2px 0 #000, 0 0 6px rgba(0, 0, 0, 0.8);
+        animation: ct-rise 0.9s ease-out forwards;
+      }
+      .ct-crit { color: #ffd23f; font-size: 22px; }
+      .ct-blocked { color: #9fd6ff; font-size: 15px; }
+      .ct-parry { color: #7df9ff; font-size: 20px; }
+      .ct-break { color: #ff8a3d; font-size: 18px; }
+      .ct-dodge { color: #d6ffb0; font-size: 15px; }
+      .ct-ko { color: #ff4d4d; font-size: 34px; }
+      @keyframes ct-rise {
+        0% { opacity: 0; transform: translate(-50%, -60%) scale(0.7); }
+        12% { opacity: 1; transform: translate(-50%, -100%) scale(1.15); }
+        25% { transform: translate(-50%, -110%) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -260%) scale(1); }
+      }
       #debug {
         position: fixed; left: 12px; top: 12px; padding: 6px 10px; border-radius: 6px;
         font: 12px/1.4 ui-monospace, monospace; color: #39ff88; background: rgba(0, 0, 0, 0.6);

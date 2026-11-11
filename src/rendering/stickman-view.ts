@@ -33,8 +33,9 @@ export class StickmanView {
   /**
    * @param facing 1 = right, -1 = left (the figure is mirrored)
    * @param heightM jump hop height; the figure lifts, the shadow stays and shrinks
+   * @param tiltRad rotate the whole figure about its feet (knockdown: lying on the floor)
    */
-  draw(pose: Pose, facing: 1 | -1, heightM: number): void {
+  draw(pose: Pose, facing: 1 | -1, heightM: number, tiltRad = 0): void {
     const s = solveSkeleton(pose, this.bones);
     const { limb, limbBack, outline, limbWidthM: w, outlineWidthM: o } = this.look;
 
@@ -46,6 +47,8 @@ export class StickmanView {
 
     this.figure.scale.x = facing;
     this.figure.y = -heightM;
+    // Falling backwards, away from the facing direction.
+    this.figure.rotation = -facing * tiltRad;
 
     const g = this.body.clear();
     const stroke = (pts: readonly Point[], color: number, width: number): void => {

@@ -6,8 +6,8 @@ Persistent record of project state. Update after every meaningful piece of work 
 
 | Item | Value |
 |---|---|
-| Current phase | **Phase 4: office arena: COMPLETE**, plus owner-requested early combat (11/11/2026) |
-| Next milestone | **Phase 5:** rest of the combat engine (health and damage, block, dodge, stamina, hit reactions) |
+| Current phase | **Phase 5: combat engine: built and tested** (11/11/2026); stats PROVISIONAL until OQ-05 |
+| Next milestone | Owner playtest and OQ-05 values, then **Phase 6:** abilities, ultimate, cooldowns |
 | Branch | `ccr-6b7ad8fe-whr1i5` |
 | Latest commit | see `git log -1` |
 | Runnable game | `npm run dev`: **training yard**, where a jointed greybox stickman walks and hops freely (keyboard or touch) with a follow camera. `?scene=engine-check` opens the physics test. No combat yet. |
@@ -223,6 +223,17 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 
 **Live preview:** GitHub Pages deploy #2 succeeded on 11/11/2026 (Phase 3 build). It is redeployed with this build after the push. This session's network blocks `github.io`, so the live URL could not be opened from here.
 
+### 11/11/2026: Phase 5, combat engine (Master Developer; no specialists used, per TD-019)
+**What changed:** health, damage and critical hits (seeded); HP and stamina bars; floating damage text; block (hold Button 1) with chip damage and stamina cost; parry; guard break; dodge (Shift / flick) with invulnerability; stamina regeneration; flinch, knockdown, get-up, KO and respawn; hit-stop; the dummy shares the player's engine and can attack (T). See TD-030 and REQ-CMB-16..21.
+**Files:** `src/combat/combatant.ts`, `events.ts`, `combo.ts`, `attacks.ts`; `src/app/scenes/fighter-entity.ts`, `fight-arena-scene.ts`; `src/animation/reaction-poses.ts`; `src/rendering/fighter-bars.ts`, `stickman-view.ts`; `src/interface/combat-text.ts`; `src/input/intents.ts`, `keyboard.ts`, `touch-controls.ts`, `debug-keys.ts`; `src/data/fighters/*`; `index.html`; `src/app/bootstrap.ts` (`?playerAt=x,y`).
+**Issues found and fixed:**
+1. Player stopped too slowly after the dummy's settle value leaked into the shared step: each fighter now uses its own deceleration.
+2. Dummy never attacked in the browser: its trigger range was narrower than where the player stops; widened.
+3. **Lost combo taps (real bug):** two taps between simulation steps collapsed into one. Button 1 edges are now queued (regression test added).
+4. Combo e2e tests pressed on fixed real-time gaps, which drift under load; they now press once per strike, reacting to the fighter like a player (`tests/e2e/combo.ts`).
+**Evidence:** lint clean; typecheck 0; `npm test` **152/152**; build clean; `npm run e2e` **96/96** over 6 full-suite repeats. Screenshots: `docs/screenshots/phase5-combo-damage.png`, `phase5-guard.png`.
+**Limitations:** stats are provisional (OQ-05). Feel (parry window, dodge distance) needs an owner playtest.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
@@ -234,10 +245,11 @@ Full list in spec §21. Still open:
 5. **TD-017:** game hosting is GitHub Pages (decided). To publish, enable Pages in the repository settings and run the deploy workflow (or ask me to). Pages is free only for **public** repositories. The Supabase data backend needs approval by Phase 14.
 
 ## Known issues
-- None in code (no code exists).
+- None open in code. Stats are provisional (OQ-05).
 - Documentation limitation: numeric gameplay and economy values are absent from the source material (spec §21).
 
 ## Outstanding tasks (next)
 1. Check GitHub CI and the Pages redeploy for this push.
-2. **Phase 5: combat engine.** Health and damage, hit reactions (flinch, knockdown), block (hold Button 1), dodge (flick or Shift), stamina, and counters, building on TD-029. Needs **OQ-05** (stat, stamina and damage baselines); defaults can be proposed for approval.
+2. Owner playtest of Phase 5 and approval or changes to the provisional stats (OQ-05, TD-030).
+3. **Phase 6:** shared ability framework, three abilities and an ultimate for the greybox fighter, stamina costs and cooldowns (needs OQ-04).
 3. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.

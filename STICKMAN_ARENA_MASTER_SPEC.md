@@ -261,6 +261,12 @@ No numeric values were supplied (OQ-05).
 | REQ-CMB-13 | The **third strike is a heavy-impact finisher** with **strong knockback** (and camera shake and zoom punch). |
 | REQ-CMB-14 | **Aerial attack:** Button 1 while airborne performs a **flying kick** (once per jump) that blends with the jump and **can smash the boss door**. |
 | REQ-CMB-15 | Strikes hit along their whole path (capsule from the body to full reach), not only at the fist. |
+| REQ-CMB-16 | **Health and damage:** every fighter has HP; hits deal data-driven damage scaled by power, defence and a seeded critical roll; HP bars and floating damage numbers show it. At 0 HP the fighter is KO'd (Practice: the dummy gets up after 2.5 s). Values are **provisional** until OQ-05 is answered (TD-030). |
+| REQ-CMB-17 | **Block and parry:** holding Button 1 (≥ 0.18 s) raises the guard; blocked hits deal 15% chip damage, cost stamina and push back less. A block raised within 0.15 s of a hit **parries** it and stuns the attacker; a guard out of stamina breaks (stun). |
+| REQ-CMB-18 | **Dodge:** Shift (or a joystick flick) dashes about 2.4 m with 0.18 s of invulnerability for 25 stamina, cancelling the current attack. Stamina regenerates after 0.7 s; melee never costs stamina (REQ-CMB-4). |
+| REQ-CMB-19 | **Hit reactions:** light hits flinch (short stun); heavy hits knock down (no control, then a short get-up invulnerability); hit-stop on contact sells the impact. |
+| REQ-CMB-20 | **One engine for every fighter (INV-5):** the player and the dummy use the same fighter entity, combat rules and attacks; the dummy can be switched to attack (Practice, T key) for testing defence. |
+| REQ-CMB-21 | **No lost taps:** quick Button 1 taps are queued (up to three) and handled one per simulation step, so a slow frame or hit-stop never swallows a combo input. |
 | REQ-CMB-11 | Pairwise combat and ability regression tests across fighters. | [PB §12 Phase 8–9] |
 
 ## 10. Abilities
@@ -454,6 +460,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Phase 5 combat: health, damage and KO, block and parry, dodge, stamina, hit reactions, one engine for player and dummy, queued taps (REQ-CMB-16..21). Values provisional pending OQ-05 (TD-030). | Master Developer |
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |
 | 11/11/2026 | Owner requests: office layout with 12 cubicles, boss room and breakable door (REQ-ENV-8..11); higher jump with jump stance (REQ-PHY-2a); 1-2-3 combo, heavy finisher, flying kick, capsule hits (REQ-CMB-12..15); unarmed boxer stance as default (REQ-ANI-7). | Master Developer |
 | 11/11/2026 | REQ-ANI-7 extended: fighting stance at all times when idle or moving (owner). | Master Developer |

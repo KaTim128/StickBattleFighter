@@ -62,6 +62,14 @@ export class ComboController {
     this.begin(this.set.jab);
   }
 
+  /** Cancel the current attack (the fighter was hit, parried, or dodged). */
+  interrupt(): void {
+    this.current = null;
+    this.t = 0;
+    this.buffered = false;
+    this.comboStep = 0;
+  }
+
   /** Call when the fighter lands, so the next jump allows another flying kick. */
   landed(): void {
     this.airKickUsed = false;

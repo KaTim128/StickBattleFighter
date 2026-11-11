@@ -13,6 +13,41 @@ export function joystickVector(dx: number, dy: number, radiusPx: number, deadZon
 const RADIUS_PX = 56;
 
 /**
+ * Flick detection for dodge (REQ-CTL-12): the stick goes from near-centre to
+ * near-full deflection within a short window. Ordinary steering ramps up more
+ * slowly and never triggers it.
+ */
+export class FlickDetector {
+  private lowAtMs: number | null = null;
+  private fired = false;
+
+  constructor(
+    private readonly windowMs = 120,
+    private readonly low = 0.3,
+    private readonly high = 0.9,
+  ) {}
+
+  /** Feed the stick magnitude (0..1) with a timestamp; returns true once per flick. */
+  sample(magnitude: number, nowMs: number): boolean {
+    if (magnitude < this.low) {
+      this.lowAtMs = nowMs;
+      this.fired = false;
+      return false;
+    }
+    if (!this.fired && magnitude >= this.high && this.lowAtMs !== null && nowMs - this.lowAtMs <= this.windowMs) {
+      this.fired = true;
+      return true;
+    }
+    return false;
+  }
+
+  reset(): void {
+    this.lowAtMs = null;
+    this.fired = false;
+  }
+}
+
+/**
  * Mobile and tablet controls (CONTROL_SCHEME §3): a floating joystick in the
  * left 40% of the screen and the contextual utility button (jump for now).
  * Hidden until the first touch, so desktop never shows them (REQ-CTL-2).
@@ -33,6 +68,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   const melee = layer.querySelector<HTMLButtonElement>('.melee-button')!;
 
   let stickPointer: number | null = null;
+  const flick = new FlickDetector();
   let origin = { x: 0, y: 0 };
 
   const showForTouch = (e: PointerEvent): void => {
@@ -48,6 +84,8 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     stick.style.top = `${origin.y}px`;
     stick.hidden = false;
     knob.style.transform = 'translate(-50%, -50%)';
+    flick.reset();
+    flick.sample(0, e.timeStamp);
   };
   const onMove = (e: PointerEvent): void => {
     if (e.pointerId !== stickPointer) return;
@@ -57,6 +95,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     const k = Math.min(1, Math.hypot(dx, dy) / RADIUS_PX) / (Math.hypot(dx, dy) || 1);
     knob.style.transform = `translate(calc(-50% + ${dx * k * RADIUS_PX}px), calc(-50% + ${dy * k * RADIUS_PX}px))`;
     intents.setMove('touch', v);
+    if (flick.sample(Math.hypot(v.x, v.y), e.timeStamp)) intents.pressDodge();
   };
   const onUp = (e: PointerEvent): void => {
     if (e.pointerId !== stickPointer) return;
@@ -70,8 +109,9 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   };
   const onMelee = (e: PointerEvent): void => {
     e.preventDefault();
-    intents.pressMelee();
+    intents.meleePress(); // tap = attack, hold = block
   };
+  const onMeleeUp = (): void => intents.meleeRelease();
 
   window.addEventListener('pointerdown', onDown);
   window.addEventListener('pointermove', onMove);
@@ -79,8 +119,14 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   window.addEventListener('pointercancel', onUp);
   util.addEventListener('pointerdown', onUtil);
   melee.addEventListener('pointerdown', onMelee);
+  melee.addEventListener('pointerup', onMeleeUp);
+  melee.addEventListener('pointercancel', onMeleeUp);
+  melee.addEventListener('pointerleave', onMeleeUp);
   return () => {
     melee.removeEventListener('pointerdown', onMelee);
+    melee.removeEventListener('pointerup', onMeleeUp);
+    melee.removeEventListener('pointercancel', onMeleeUp);
+    melee.removeEventListener('pointerleave', onMeleeUp);
     window.removeEventListener('pointerdown', onDown);
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onUp);

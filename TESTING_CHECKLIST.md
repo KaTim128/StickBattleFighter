@@ -45,6 +45,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: **14 passed** in 3 consecutive full runs. New: shoving the dummy against the door keeps it shut, the 1-2-3 combo smashes it, walk into the boss room, camera follows; jump peak > 0.8 m; the touch MELEE button throws the jab.
 - [ ] **Watch:** one earlier full run had a one-off mobile smoke-test failure that did not recur in later runs (cause not captured).
 
+## 0g. Phase 5 combat engine (verified 11/11/2026)
+- [x] Lint, typecheck and build clean
+- [x] `npm test`: **152 tests**. Combatant rules (damage, crit seeding, block chip and stamina, parry, guard break, dodge invulnerability and cost, stamina regen delay, stun, knockdown, KO and respawn); combat scene (combo damages the dummy, block reduces damage, parry stuns the attacker, dodge avoids a hit, KO and respawn, dummy attacks); input queue (two quick taps both kept, one per step; mashing capped at 3).
+- [x] `npm run e2e`: **16 passed**, and **96/96** across 6 repeats of the whole suite (`--repeat-each 6`). New: combo damage with floating numbers, hold J to block, T toggles dummy attacks, an unguarded player takes damage, Shift dodges.
+- [ ] V Owner playtest of feel: block timing, parry window, dodge distance, damage numbers (values provisional, OQ-05)
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

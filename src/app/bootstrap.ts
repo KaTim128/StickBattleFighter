@@ -2,20 +2,28 @@ import type { WebGLRenderer } from 'pixi.js';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
+import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
-import { onDebugImpact, onDebugToggle } from '../input/debug-keys';
+import { onDebugImpact, onDebugToggle, onToggleDummyAttacks } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
-import { attachKeyboard } from '../input/keyboard';
+import { attachKeyboard, attachMouse } from '../input/keyboard';
 import { attachTouchControls } from '../input/touch-controls';
+import { CombatText } from '../interface/combat-text';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
 import { createRenderSurface } from '../rendering/renderer';
 import type { ArenaScene } from './scenes/arena-scene';
 import { EngineCheckScene } from './scenes/engine-check-scene';
-import { type CameraState, type DoorState, FightArenaScene, type PlayerState } from './scenes/fight-arena-scene';
+import {
+  type CameraState,
+  type DoorState,
+  type DummyState,
+  FightArenaScene,
+  type PlayerState,
+} from './scenes/fight-arena-scene';
 
 /** Read-only hook used by the browser tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
@@ -26,7 +34,8 @@ export interface EngineDebugInfo {
   crate: { x: number; y: number; speed: number } | null;
   player: PlayerState | null;
   camera: CameraState | null;
-  dummy: { x: number; y: number; speed: number; knockedBack: boolean } | null;
+  dummy: DummyState | null;
+  dummyAttacks: boolean;
   doors: DoorState[];
   assetFailures: { url: string; message: string }[];
   debugOverlay: { enabled: boolean; segments: number; fps: number };
@@ -46,6 +55,16 @@ export interface BootstrapElements {
   debugPanel: HTMLElement;
 }
 
+/**
+ * Developer option `?playerAt=x,y`: start the player at an exact spot (layout review and
+ * deterministic browser tests). Invalid values are ignored.
+ */
+function withPlayerStart(arena: ArenaLayout, at: string | null): ArenaLayout {
+  const [x, y] = (at ?? '').split(',').map(Number);
+  if (x === undefined || y === undefined || !Number.isFinite(x) || !Number.isFinite(y)) return arena;
+  return { ...arena, playerStart: { x, y } };
+}
+
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   status.textContent = 'Loading…';
@@ -62,6 +81,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
 
   const intents = new PlayerIntents();
   attachKeyboard(window, intents);
+  attachMouse(container, intents);
   attachTouchControls(document.body, intents);
 
   const overlay = new DebugOverlay(debugPanel);
@@ -77,7 +97,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sceneName === 'engine-check'
       ? new EngineCheckScene(app.stage, textures, viewport, optionalTextures)
       : new FightArenaScene(
-          sceneName === 'training-yard' ? TRAINING_YARD : OFFICE,
+          withPlayerStart(sceneName === 'training-yard' ? TRAINING_YARD : OFFICE, params.get('playerAt')),
           app.stage,
           intents,
           viewport,
@@ -88,6 +108,13 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
 
   if (params.has('debug')) overlay.setVisible(true);
   onDebugToggle(window, () => overlay.toggle());
+  const combatText = new CombatText(document.body);
+  const controlsHint = 'move WASD · jump Space · J/click: tap attack, hold block · Shift dodge · T dummy attacks';
+  onToggleDummyAttacks(window, () => {
+    if (!(scene instanceof FightArenaScene)) return;
+    scene.dummyAttacks = !scene.dummyAttacks;
+    status.textContent = `Stickman Arena · dummy attacks ${scene.dummyAttacks ? 'ON' : 'OFF'} · ${controlsHint}`;
+  });
   onDebugImpact(window, () => {
     if (overlay.enabled && scene instanceof FightArenaScene) scene.debugImpact();
   });
@@ -101,6 +128,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     player: null,
     camera: null,
     dummy: null,
+    dummyAttacks: false,
     doors: [],
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
@@ -145,9 +173,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       debug.physicsSteps = physicsSteps;
       if (scene instanceof EngineCheckScene) debug.crate = scene.state.crate;
       if (scene instanceof FightArenaScene) {
-        debug.player = { ...scene.player };
+        debug.player = scene.player;
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
-        debug.dummy = { ...scene.dummy };
+        debug.dummy = scene.dummy;
+        debug.dummyAttacks = scene.dummyAttacks;
+        combatText.show(scene.drainEvents(), (x, y) => scene.worldToScreen(x, y));
         debug.doors = scene.doorStates;
       }
       debug.debugOverlay = { enabled: overlay.enabled, segments: overlay.drawnSegments, fps: fps.fps };
@@ -161,6 +191,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     assetFailures.length > 0
       ? `Stickman Arena · ${scene.name} · ${assetFailures.length} asset(s) failed to load (greybox shown)`
       : scene instanceof FightArenaScene
-        ? `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · move: WASD / arrows · jump: Space · attack: J / click`
+        ? `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · ${controlsHint}`
         : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
 }

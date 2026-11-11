@@ -14,6 +14,9 @@ export function clampToUnit(v: Vec2): Vec2 {
   return len > 1 ? { x: v.x / len, y: v.y / len } : { x: v.x, y: v.y };
 }
 
+/** Up to three taps can wait for the fixed step. */
+const MAX_QUEUED_MELEE_EDGES = 6;
+
 export class PlayerIntents {
   private readonly sources = new Map<string, Vec2>();
   private jumpQueued = false;
@@ -46,22 +49,65 @@ export class PlayerIntents {
     return queued;
   }
 
-  private meleeQueued = false;
+  // ---- Button 1 (melee). Tap = attack, hold = block (CONTROL_SCHEME, REQ-CTL-11).
+  // Devices report press and release; the game decides tap vs hold on its fixed step.
+  // Edges are queued, not flags, so two quick taps landing between two steps (a slow frame
+  // or hit-stop) are both kept: each step consumes at most one press-and-release.
+  private meleeDown = false;
+  private meleeEdges: ('down' | 'up')[] = [];
 
-  /** Button 1 (melee). Latched like jump so quick taps are never lost. */
-  pressMelee(): void {
-    this.meleeQueued = true;
+  meleePress(): void {
+    if (!this.meleeDown) this.queueEdge('down');
+    this.meleeDown = true;
   }
 
-  consumeMelee(): boolean {
-    const queued = this.meleeQueued;
-    this.meleeQueued = false;
+  meleeRelease(): void {
+    if (this.meleeDown) this.queueEdge('up');
+    this.meleeDown = false;
+  }
+
+  /** A quick tap (press and release), e.g. from tests or a tap faster than one step. */
+  pressMelee(): void {
+    this.meleePress();
+    this.meleeRelease();
+  }
+
+  get meleeHeld(): boolean {
+    return this.meleeDown;
+  }
+
+  /** The next press and/or release edge, one tap per step; later taps wait for later steps. */
+  consumeMeleeEdges(): { pressed: boolean; released: boolean } {
+    const pressed = this.meleeEdges[0] === 'down';
+    if (pressed) this.meleeEdges.shift();
+    const released = this.meleeEdges[0] === 'up';
+    if (released) this.meleeEdges.shift();
+    return { pressed, released };
+  }
+
+  private queueEdge(edge: 'down' | 'up'): void {
+    if (this.meleeEdges.length >= MAX_QUEUED_MELEE_EDGES) return; // ignore mashing beyond a few taps
+    this.meleeEdges.push(edge);
+  }
+
+  // ---- Dodge (Shift, double-tap or joystick flick; REQ-CTL-12).
+  private dodgeQueued = false;
+
+  pressDodge(): void {
+    this.dodgeQueued = true;
+  }
+
+  consumeDodge(): boolean {
+    const queued = this.dodgeQueued;
+    this.dodgeQueued = false;
     return queued;
   }
 
   clear(): void {
     this.sources.clear();
     this.jumpQueued = false;
-    this.meleeQueued = false;
+    this.meleeDown = false;
+    this.meleeEdges.length = 0;
+    this.dodgeQueued = false;
   }
 }
