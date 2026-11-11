@@ -204,7 +204,7 @@ Full list in spec §21. Still open:
 - Documentation limitation: numeric gameplay and economy values are absent from the source material (spec §21).
 
 ## Outstanding tasks (next)
-1. Check GitHub CI for the Phase 2 push.
+1. GitHub CI (checked 11/11/2026): Phase 1 `6838a26` **passed** (with the lint step); Phase 2 `876a44f` **passed**; fighting stance `4f65fb9` **passed**. Wide stance `bfb30ab`: check on the next session.
 2. **Phase 3: camera completion.** Auto-zoom so all fighters stay framed (within zoom limits, REQ-CAM-2), a shake and zoom-punch service for impacts (REQ-CAM-4), stability tests. Needs a second body to frame, so it pairs naturally with a training dummy.
 3. **Phase 4: office arena** (greybox), following the `/new-arena` skill.
 4. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.
