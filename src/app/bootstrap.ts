@@ -1,23 +1,29 @@
 import type { WebGLRenderer } from 'pixi.js';
-import { fitRectToView } from '../camera/fit-view';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
-import { ENGINE_CHECK } from '../data/arenas/engine-check';
+import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { onDebugToggle } from '../input/debug-keys';
+import { PlayerIntents } from '../input/intents';
+import { attachKeyboard } from '../input/keyboard';
+import { attachTouchControls } from '../input/touch-controls';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
 import { createRenderSurface } from '../rendering/renderer';
+import type { ArenaScene } from './scenes/arena-scene';
 import { EngineCheckScene } from './scenes/engine-check-scene';
+import { type PlayerState, TrainingYardScene } from './scenes/training-yard-scene';
 
-/** Read-only hook used by the browser smoke tests (tests/e2e). Exposes no gameplay control. */
+/** Read-only hook used by the browser tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
   ready: boolean;
   scene: string | null;
   physicsSteps: number;
   framesRendered: number;
-  crate: { x: number; y: number; speed: number };
+  crate: { x: number; y: number; speed: number } | null;
+  player: PlayerState | null;
+  camera: { x: number; y: number } | null;
   assetFailures: { url: string; message: string }[];
   debugOverlay: { enabled: boolean; segments: number; fps: number };
   /** Render now and return the RGBA of the pixel at fractional canvas coords (0..1, top-left origin). */
@@ -41,7 +47,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   status.textContent = 'Loading…';
 
   // Renderer and physics download in parallel; physics is a separate .wasm (TD-023).
-  const [app] = await Promise.all([createRenderSurface(container, ENGINE_CHECK.colours.background), initPhysics()]);
+  const [app] = await Promise.all([createRenderSurface(container, GREYBOX_COLOURS.background), initPhysics()]);
+  const viewport = () => ({ width: app.screen.width, height: app.screen.height });
 
   const assetFailures: EngineDebugInfo['assetFailures'] = [];
   const textures = createTextureLoader((failure) => {
@@ -49,28 +56,24 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     console.warn(`[assets] could not load ${failure.url}: ${failure.message}`);
   });
 
+  const intents = new PlayerIntents();
+  attachKeyboard(window, intents);
+  attachTouchControls(document.body, intents);
+
   const overlay = new DebugOverlay(debugPanel);
   const fps = new FpsMeter();
-  const scenes = new SceneManager({
-    onError: (name, error) => console.error(`[scene:${name}]`, error),
-  });
+  const scenes = new SceneManager({ onError: (name, error) => console.error(`[scene:${name}]`, error) });
 
-  // `?missingAssetTest` requests a texture that does not exist, to prove a bad asset cannot crash the game.
+  // Default: the Phase 2 training yard. `?scene=engine-check` opens the Phase 0/1 engine check.
+  // `?missingAssetTest` (engine check) requests a texture that does not exist, to prove it cannot crash the game.
+  const sceneName = params.get('scene') ?? 'training-yard';
   const optionalTextures = params.has('missingAssetTest') ? ['assets/does-not-exist.png'] : [];
-  const scene = new EngineCheckScene(app.stage, textures, optionalTextures);
-  if (!(await scenes.switchTo(() => scene))) throw new Error('engine-check scene failed to load');
-  scene.view?.world.addChild(overlay.colliderLayer);
-
-  const { arenaWidthM: w, arenaHeightM: h, wallThicknessM: t } = ENGINE_CHECK;
-  const frameArena = (): void => {
-    const world = scene.view?.world;
-    if (!world) return;
-    const fit = fitRectToView(w + 2 * t, h + 2 * t, app.screen.width, app.screen.height, 16);
-    world.scale.set(fit.scale);
-    world.position.set(fit.offsetX + t * fit.scale, fit.offsetY + t * fit.scale);
-  };
-  frameArena();
-  app.renderer.on('resize', frameArena);
+  const scene: ArenaScene =
+    sceneName === 'engine-check'
+      ? new EngineCheckScene(app.stage, textures, viewport, optionalTextures)
+      : new TrainingYardScene(app.stage, intents, viewport);
+  if (!(await scenes.switchTo(() => scene))) throw new Error(`${scene.name} scene failed to load`);
+  scene.world?.addChild(overlay.colliderLayer);
 
   if (params.has('debug')) overlay.setVisible(true);
   onDebugToggle(window, () => overlay.toggle());
@@ -80,7 +83,9 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     scene: scenes.active?.name ?? null,
     physicsSteps: 0,
     framesRendered: 0,
-    crate: scene.state.crate,
+    crate: null,
+    player: null,
+    camera: null,
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     readPixel(xFrac, yFrac) {
@@ -95,21 +100,25 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   };
   window.__stickmanDebug = debug;
 
+  let physicsSteps = 0;
   let lastFrameMs: number | null = null;
   const loop = new GameLoop({
     update(stepS) {
       scenes.update(stepS);
+      physicsSteps++;
     },
     render(alpha) {
       const now = performance.now();
+      // Clamp so a long stall does not fling animations or the camera.
+      const frameDtS = lastFrameMs === null ? 0 : Math.min(0.1, (now - lastFrameMs) / 1000);
       if (lastFrameMs !== null) fps.addFrame((now - lastFrameMs) / 1000);
       lastFrameMs = now;
 
-      scenes.render(alpha);
+      scenes.render(alpha, frameDtS);
       if (overlay.enabled && scene.physics) {
         overlay.draw(scene.physics.debugLines(), {
           FPS: fps.fps.toFixed(0),
-          'physics steps': scene.state.physicsSteps,
+          ...scene.debugStats(),
           colliders: scene.physics.colliderCount,
           'asset failures': assetFailures.length,
         });
@@ -117,8 +126,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       app.render();
 
       debug.framesRendered++;
-      debug.physicsSteps = scene.state.physicsSteps;
-      debug.crate = scene.state.crate;
+      debug.physicsSteps = physicsSteps;
+      if (scene instanceof EngineCheckScene) debug.crate = scene.state.crate;
+      if (scene instanceof TrainingYardScene) {
+        debug.player = { ...scene.player };
+        debug.camera = scene.camera ? { x: scene.camera.x, y: scene.camera.y } : null;
+      }
       debug.debugOverlay = { enabled: overlay.enabled, segments: overlay.drawnSegments, fps: fps.fps };
     },
   });
@@ -128,6 +141,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   status.dataset.state = 'ready';
   status.textContent =
     assetFailures.length > 0
-      ? `Stickman Arena · 2D engine check · ${assetFailures.length} asset(s) failed to load (greybox shown)`
-      : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
+      ? `Stickman Arena · ${scene.name} · ${assetFailures.length} asset(s) failed to load (greybox shown)`
+      : scene.name === 'training-yard'
+        ? 'Stickman Arena · training yard (greybox) · move: WASD / arrows · jump: Space'
+        : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
 }

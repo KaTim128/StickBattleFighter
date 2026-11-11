@@ -15,7 +15,7 @@ test('debug overlay toggles with the backquote key and shows FPS and collider ou
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m: ConsoleMessage) => m.type() === 'error' && errors.push(m.text()));
 
-  await page.goto('/');
+  await page.goto('/?scene=engine-check');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   expect((await hook(page)).scene).toBe('engine-check');
   await expect(page.locator('#debug')).toBeHidden();
@@ -36,7 +36,7 @@ test('a missing asset is reported but does not crash the game', async ({ page })
   const pageErrors: string[] = [];
   page.on('pageerror', (e) => pageErrors.push(e.message));
 
-  await page.goto('/?missingAssetTest');
+  await page.goto('/?scene=engine-check&missingAssetTest');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.locator('#status')).toContainText('1 asset(s) failed to load');
 

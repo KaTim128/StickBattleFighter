@@ -20,7 +20,7 @@ test('Phase 0: the 2D top-down engine-check scene renders with working physics a
   page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`));
   page.on('requestfailed', (req) => problems.push(`requestfailed: ${req.url()}`));
 
-  await page.goto('/');
+  await page.goto('/?scene=engine-check');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
 
   // The crate slides across the floor (top-down: no gravity), bounces off walls and comes to rest.

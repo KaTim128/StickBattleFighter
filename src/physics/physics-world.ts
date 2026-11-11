@@ -95,6 +95,30 @@ export class PhysicsWorld {
     this.world.step();
   }
 
+  /**
+   * A fighter body (TD-026): dynamic, rotation-locked circle on the floor,
+   * moved by setting its velocity each step so Rapier resolves walls,
+   * sliding and (later) knockback and shoves. Frictionless so it glides along walls.
+   */
+  addCharacterBody(spec: { position: Vec2; radiusM: number; massKg: number }): RapierModule.RigidBody {
+    const RAPIER = rapier();
+    const body = this.world.createRigidBody(
+      RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(spec.position.x, spec.position.y)
+        .lockRotations()
+        .setCcdEnabled(true),
+    );
+    const area = Math.PI * spec.radiusM * spec.radiusM;
+    this.world.createCollider(
+      RAPIER.ColliderDesc.ball(spec.radiusM)
+        .setDensity(spec.massKg / area)
+        .setFriction(0)
+        .setRestitution(0),
+      body,
+    );
+    return body;
+  }
+
   /** Number of colliders in the world (debug overlay, leak checks). */
   get colliderCount(): number {
     let n = 0;

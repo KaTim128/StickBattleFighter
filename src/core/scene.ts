@@ -9,8 +9,11 @@ export interface GameScene {
   load(): Promise<void>;
   /** Advance gameplay by one fixed step (TD-013). */
   update(stepS: number): void;
-  /** Sync visuals to the latest state; `alpha` interpolates between steps. */
-  render(alpha: number): void;
+  /**
+   * Sync visuals to the latest state. `alpha` interpolates between fixed steps;
+   * `frameDtS` is the real time since the previous frame (animation, camera easing).
+   */
+  render(alpha: number, frameDtS: number): void;
   /** Release everything the scene created. Called exactly once per successful load. */
   unload(): void;
 }
@@ -67,8 +70,8 @@ export class SceneManager {
     this.current?.update(stepS);
   }
 
-  render(alpha: number): void {
-    this.current?.render(alpha);
+  render(alpha: number, frameDtS: number): void {
+    this.current?.render(alpha, frameDtS);
   }
 
   /** Unload the active scene, leaving none running. */

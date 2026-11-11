@@ -2,7 +2,7 @@
 
 An original, browser-based, **2D top-down, real-time arena fighting game**: fighters move freely up, down, left and right across the arena.
 
-> **Status:** Phase 1 complete (11/11/2026): 2D engine foundation (scenes, asset loading, physics, debug overlay, depth sorting). No gameplay yet. Next: Phase 2, a movable fighter. Press the backquote key (`) in the game for the debug overlay.
+> **Status:** Phase 2 complete (11/11/2026): a jointed greybox stickman moves freely around a training yard (WASD or arrows, Space to hop; touch joystick and JUMP button on phones), with idle and walk animations and a follow camera. No combat yet. Press the backquote key (`) for the debug overlay. `?scene=engine-check` opens the Phase 0/1 engine check.
 
 ## Run it locally
 Requires Node.js 20.19+ or 22.12+.

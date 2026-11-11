@@ -9,8 +9,8 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 | I | Project initialisation (docs, team, rules, skills, structure) | — | Master Developer | — | ☑ |
 | 0 | Workspace, architecture approval, bootstrap | I | Master Developer | — (stack approved 10/11/2026) | ☑ |
 | 1 | Rendering, physics, main loop, asset pipeline, scenes | 0 | Rendering, Physics | — | ☑ |
-| 2 | Player character, free top-down movement (up/down/left/right), hop, collision | 1 | Physics | — | ☐ |
-| 3 | Top-down camera (follow, auto-zoom framing, shake) | 2 | Rendering | — | ☐ |
+| 2 | Player character, free top-down movement (up/down/left/right), hop, collision | 1 | Physics | — | ☑ |
+| 3 | Top-down camera (follow, auto-zoom framing, shake) | 2 | Rendering | — | ◐ (follow and arena clamping done in Phase 2) |
 | 4 | Office arena (greybox → readable) | 1, 2 ∥3 | Rendering, Physics | — | ☐ |
 | 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-05 | ☐ |
 | 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-04, OQ-05 | ☐ |
@@ -104,4 +104,4 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 **Acceptance:** `/release-check` passes; performance targets (OQ-10) met on real devices; security review; known issues documented; **public deployment only with explicit owner approval**.
 
 ## Next recommended milestone
-**Phase 2: player character and movement.** Phase 1 was verified on 11/11/2026. (Previously: Phase 1: engine foundation; Phase 0 verified 10/11/2026.) Already in place: the fixed-timestep loop and physics initialisation. Remaining: lint and format tooling (deferred from Phase 0), a smaller Rapier bundle, scene lifecycle, an asset loader with error handling, a debug overlay, and collision boundaries. OQ-10 (performance targets) should be answered before Phase 1 ends.
+**Phase 3: camera completion (auto-zoom to frame opponents, shake), then Phase 4: office arena.** Phase 2 was verified on 11/11/2026. Earlier: Phase 2: player character and movement; Phase 1 verified on 11/11/2026. (Previously: Phase 1: engine foundation; Phase 0 verified 10/11/2026.) Already in place: the fixed-timestep loop and physics initialisation. Remaining: lint and format tooling (deferred from Phase 0), a smaller Rapier bundle, scene lifecycle, an asset loader with error handling, a debug overlay, and collision boundaries. OQ-10 (performance targets) should be answered before Phase 1 ends.

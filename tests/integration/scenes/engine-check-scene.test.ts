@@ -18,12 +18,12 @@ describe('EngineCheckScene lifecycle', () => {
     const expectedColliders = 4 + ENGINE_CHECK.pillars.length + 1; // walls + pillars + crate
 
     for (let round = 0; round < 3; round++) {
-      const scene = new EngineCheckScene(stage, textures);
+      const scene = new EngineCheckScene(stage, textures, () => ({ width: 800, height: 600 }));
       await scenes.switchTo(() => scene);
       expect(stage.children).toHaveLength(1);
       expect(scene.physics?.colliderCount).toBe(expectedColliders);
       for (let i = 0; i < 30; i++) scenes.update(1 / 60);
-      scenes.render(0.5);
+      scenes.render(0.5, 1 / 60);
       expect(scene.state.physicsSteps).toBe(30);
 
       scenes.clear();
@@ -42,7 +42,9 @@ describe('EngineCheckScene lifecycle', () => {
       },
       (f) => failures.push(f.url),
     );
-    const scene = new EngineCheckScene(stage, textures, ['assets/does-not-exist.png']);
+    const scene = new EngineCheckScene(stage, textures, () => ({ width: 800, height: 600 }), [
+      'assets/does-not-exist.png',
+    ]);
     const scenes = new SceneManager();
     expect(await scenes.switchTo(() => scene)).toBe(scene);
     expect(failures).toEqual(['assets/does-not-exist.png']);

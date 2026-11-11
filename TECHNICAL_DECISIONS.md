@@ -30,6 +30,7 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 | TD-023 | Rapier 2D non-compat build with a separate .wasm | ACCEPTED (Phase 1) | 11/11/2026 |
 | TD-024 | Biome for lint and format (instead of ESLint + Prettier) | ACCEPTED (Phase 1) | 11/11/2026 |
 | TD-025 | Scene lifecycle, asset loader, debug overlay, y-sorting | ACCEPTED (Phase 1) | 11/11/2026 |
+| TD-026 | Fighter movement: velocity-driven dynamic body, procedural jointed animation | ACCEPTED (Phase 2) | 11/11/2026 |
 
 ---
 
@@ -190,6 +191,13 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Asset loader** (`src/core/asset-loader.ts`, plus a Pixi adapter in `src/rendering/pixi-assets.ts`): loads each URL once and **never throws**. Failures become results, are logged and shown in the status line, and the scene falls back to greybox.
 - **Debug overlay** (`src/rendering/debug-overlay.ts`): Rapier collider outlines plus a panel (FPS, physics steps, collider count, asset failures). Toggle with the backquote key (`src/input/debug-keys.ts`) or start with `?debug`. Hidden by default.
 - **Y-sorting** (`src/rendering/y-sort-layer.ts`): objects sort by the y of their feet, so lower-on-screen draws in front (REQ-VIS-9). Demonstrated with upright greybox pillars.
+
+### TD-026: Fighter movement and animation approach — ACCEPTED (11/11/2026)
+- **Body:** a rotation-locked, frictionless **dynamic** Rapier circle at the feet. Each fixed step sets its velocity from `stepVelocity` (accelerate or turn at `accelMps2`, stop at `decelMps2`, top speed `maxSpeedMps`, diagonals clamped to length 1). Rapier resolves walls and pillars, so sliding along walls is automatic, and knockback, shoves and fighter-vs-fighter contact later use the same body. *Chosen over Rapier's kinematic character controller:* that controller is built around an "up" direction for slopes and floors, which does not fit a gravity-free top-down plane, and it would need custom code for every push and knockback. Steering reads the body's **actual** velocity, so a blocked fighter does not build hidden speed.
+- **Jump hop:** a separate height value (`stepHop`) drawn by lifting the figure over a fixed ground shadow; floor collisions stay 2D. No double jump. Hopping over obstacles is not supported (decide in a later combat or arena phase).
+- **Animation:** the jointed skeleton (`src/animation/skeleton.ts`) is solved with forward kinematics, then grounded so the lowest foot touches the floor (no floating or sinking). Greybox idle, walk and air motions are smooth procedural cycles; the walk phase advances by **distance travelled / stride**, so feet keep pace; weights ease between motions joint by joint. Roster fighters will replace these with their own motion sets (REQ-ANI-7). Tests lock the joint sign convention (knees bend back, elbows forward) after a sign error was caught during development.
+- **Camera:** `FollowCamera` eases towards the player and clamps to the arena; zoom shows 11 m across the screen's short side. Keeping opponents in frame (REQ-CAM-2) and shake (REQ-CAM-4) come in Phase 3.
+- **Input:** `PlayerIntents` merges device vectors (clamped to length 1) and latches jump presses for exactly one step. Keyboard: WASD and arrows, Space; focus loss releases keys. Touch: a floating joystick in the left 40% with a dead zone, plus the utility (JUMP) button; hidden until the first touch (REQ-CTL-2).
 
 ## Unresolved technical questions
 - Performance budgets (OQ-10).

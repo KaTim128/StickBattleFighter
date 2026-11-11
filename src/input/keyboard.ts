@@ -1,0 +1,64 @@
+import type { PlayerIntents, Vec2 } from './intents';
+
+/** Default movement keys for both desktop presets (CONTROL_SCHEME §4). Rebinding arrives in Phase 11. */
+export const MOVE_KEYS: Readonly<Record<string, Vec2>> = {
+  KeyW: { x: 0, y: -1 },
+  ArrowUp: { x: 0, y: -1 },
+  KeyS: { x: 0, y: 1 },
+  ArrowDown: { x: 0, y: 1 },
+  KeyA: { x: -1, y: 0 },
+  ArrowLeft: { x: -1, y: 0 },
+  KeyD: { x: 1, y: 0 },
+  ArrowRight: { x: 1, y: 0 },
+};
+export const JUMP_KEYS: ReadonlySet<string> = new Set(['Space']);
+
+/** Movement vector from the set of held key codes (opposite keys cancel; length ≤ 1). */
+export function moveFromKeys(held: ReadonlySet<string>): Vec2 {
+  let x = 0;
+  let y = 0;
+  for (const code of held) {
+    const dir = MOVE_KEYS[code];
+    if (dir) {
+      x += dir.x;
+      y += dir.y;
+    }
+  }
+  x = Math.sign(x);
+  y = Math.sign(y);
+  const len = Math.hypot(x, y);
+  return len > 0 ? { x: x / len, y: y / len } : { x: 0, y: 0 };
+}
+
+/** Wire the keyboard to player intents. Returns a function that removes the listeners. */
+export function attachKeyboard(target: Window, intents: PlayerIntents): () => void {
+  const held = new Set<string>();
+  const sync = (): void => intents.setMove('keyboard', moveFromKeys(held));
+  const down = (e: KeyboardEvent): void => {
+    if (e.code in MOVE_KEYS || JUMP_KEYS.has(e.code)) e.preventDefault(); // no page scrolling
+    if (JUMP_KEYS.has(e.code)) {
+      if (!e.repeat) intents.pressJump();
+      return;
+    }
+    if (e.code in MOVE_KEYS) {
+      held.add(e.code);
+      sync();
+    }
+  };
+  const up = (e: KeyboardEvent): void => {
+    if (held.delete(e.code)) sync();
+  };
+  // Releasing keys while the window is unfocused must not leave the fighter running.
+  const blur = (): void => {
+    held.clear();
+    sync();
+  };
+  target.addEventListener('keydown', down);
+  target.addEventListener('keyup', up);
+  target.addEventListener('blur', blur);
+  return () => {
+    target.removeEventListener('keydown', down);
+    target.removeEventListener('keyup', up);
+    target.removeEventListener('blur', blur);
+  };
+}

@@ -25,7 +25,7 @@ describe('SceneManager', () => {
     const scenes = new SceneManager();
     await scenes.switchTo(() => fakeScene('a', log));
     scenes.update(1 / 60);
-    scenes.render(0.5);
+    scenes.render(0.5, 1 / 60);
     await scenes.switchTo(() => fakeScene('b', log));
     expect(log).toEqual(['load:a', 'update:a', 'render:a', 'unload:a', 'load:b']);
     expect(scenes.active?.name).toBe('b');

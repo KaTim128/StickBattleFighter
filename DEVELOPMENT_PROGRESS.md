@@ -6,11 +6,11 @@ Persistent record of project state. Update after every meaningful piece of work 
 
 | Item | Value |
 |---|---|
-| Current phase | **Phase 1: engine foundation: COMPLETE** (11/11/2026) |
-| Next milestone | **Phase 2:** player character and free top-down movement |
+| Current phase | **Phase 2: player character and movement: COMPLETE** (11/11/2026) |
+| Next milestone | **Phase 3:** finish the camera (auto-zoom to frame opponents, impact shake); then **Phase 4:** office arena |
 | Branch | `ccr-6b7ad8fe-whr1i5` |
 | Latest commit | see `git log -1` |
-| Runnable game | **2D top-down** engine-check scene only (`npm run dev`): a walled floor and a crate that slides, bounces off the walls and stops. No gameplay. |
+| Runnable game | `npm run dev`: **training yard**, where a jointed greybox stickman walks and hops freely (keyboard or touch) with a follow camera. `?scene=engine-check` opens the physics test. No combat yet. |
 | Installed dependencies | pixi.js 8.22, @dimforge/rapier2d 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, vite-plugin-wasm 3.6, Vitest 5.1, Playwright 1.63.0, Biome 2.6 |
 
 ## Active assignments
@@ -138,6 +138,43 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 | Pages sub-path | `.wasm` and the game load at `/StickBattleFighter/` with no errors |
 | Visual | Debug overlay screenshot inspected: the panel shows FPS, steps, 8 colliders and 0 asset failures; green outlines match the walls, pillar footprints and crate; pillars render upright with shadows |
 
+### 11/11/2026: Phase 2, player character and movement (Master Developer; no specialists used, per TD-019)
+**Acceptance criteria (set before editing):** an input intent layer (keyboard plus touch joystick); free top-down movement with acceleration and deceleration, diagonals no faster, wall sliding, data-driven tuning; a hop with ground shadow; a **jointed** greybox stickman with smooth idle and walk; a follow camera; unit tests with synthetic input; e2e proving keyboard and touch movement, containment and screenshots.
+
+**Delivered (TD-026):**
+- **Input:** `src/input/` (`intents.ts`, `keyboard.ts`, `touch-controls.ts`).
+- **Movement and physics:** `src/physics/movement.ts`; `PhysicsWorld.addCharacterBody`.
+- **Animation:** `src/animation/` (`skeleton.ts`, `greybox-motion.ts`, `animator.ts`).
+- **Rendering and camera:** `src/rendering/stickman-view.ts`, `src/camera/follow-camera.ts`.
+- **Arena and fighter data:** reusable greybox arena helpers (`src/data/arenas/greybox-arena.ts`, `src/arenas/greybox-arena-colliders.ts`, `src/rendering/greybox-arena-view.ts`), the training yard (`src/data/arenas/training-yard.ts`) and test-fighter data (`src/data/fighters/greybox-stickman.ts`).
+- **Scenes:** `TrainingYardScene` with scene selection by URL; scenes now frame their own camera (`render(alpha, frameDtS)`).
+- **Touch styles:** joystick and JUMP button styles in `index.html`.
+
+**Issues found and fixed:**
+1. The first greybox poses had **knees bending forward and elbows backward** (sign error). Caught by comparing against the approved kick sample; fixed, and now locked by a test over every pose.
+2. `satisfies` with extra colour keys failed type-checking. Removed; arena data is still type-checked where it is used.
+3. A type error in the e2e touch helper.
+
+**Ownership note:** the Master Developer wrote the starter code in `src/input`, `src/physics`, `src/animation`, `src/camera` and `src/rendering` for this phase. Each owning specialist takes over from the next phase that needs them.
+
+**Evidence (11/11/2026):**
+
+| Command | Result |
+|---|---|
+| `npm run lint` | clean (62 files) |
+| `npm run typecheck` | exit 0 |
+| `npm test` | 15 files, **67/67 passed** |
+| `npm run build` | exit 0, no warnings |
+| `npm run e2e` | **8 passed**, 2 skipped by design (keyboard test on desktop only, touch test on mobile only) |
+| Pages sub-path | loads and runs at `/StickBattleFighter/` |
+| Visual | Inspected: idle guard, mid-stride walk (bent back knee, arm swing), airborne tuck with the shadow left on the floor, mirrored when walking left, desktop follow camera, mobile joystick plus JUMP. Saved `docs/screenshots/phase2-desktop-walking.png` and `phase2-mobile-joystick.png`. |
+
+**Known follow-ups (not Phase 2 blockers):**
+- The mobile test viewport is portrait; the landscape layout (REQ-CTL-6) is Phase 11.
+- The status line shows keyboard hints on touch devices; real HUD and help come in Phase 11/12.
+- The hop is visual only (cannot clear obstacles); revisit in combat or arena phases.
+- The figure is about 1.4 m on an 11 m-wide view; revisit scale with art direction (OQ-16).
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
@@ -153,6 +190,7 @@ Full list in spec §21. Still open:
 - Documentation limitation: numeric gameplay and economy values are absent from the source material (spec §21).
 
 ## Outstanding tasks (next)
-1. Check GitHub CI for the Phase 1 push (now includes lint).
-2. **Phase 2: player character and movement.** Acceptance: the input intent layer (`src/input`: keyboard WASD/arrows and touch joystick, per CONTROL_SCHEME §5); a kinematic top-down character controller (Rapier 2D: acceleration, deceleration, facing, diagonals not faster, wall sliding, data-driven speed and mobility); a jump hop with ground shadow; a greybox **jointed** stickman (REQ-ANI-6) with a basic idle and walk; the camera follows the player (REQ-CAM-1); unit tests on the controller with synthetic input; e2e: keyboard moves the fighter, it cannot leave the arena, screenshots.
-3. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.
+1. Check GitHub CI for the Phase 2 push.
+2. **Phase 3: camera completion.** Auto-zoom so all fighters stay framed (within zoom limits, REQ-CAM-2), a shake and zoom-punch service for impacts (REQ-CAM-4), stability tests. Needs a second body to frame, so it pairs naturally with a training dummy.
+3. **Phase 4: office arena** (greybox), following the `/new-arena` skill.
+4. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.

@@ -27,6 +27,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: 6/6 pass (desktop and mobile): smoke; debug overlay toggles with the backquote key and draws collider outlines and FPS; `?missingAssetTest` reports the failure in the status line with no page errors and the simulation keeps running
 - [x] GitHub Pages sub-path build loads the physics `.wasm` correctly
 
+## 0d. Phase 2 movement (verified 11/11/2026)
+- [x] Lint, typecheck and build clean
+- [x] `npm test`: 15 files, **67 tests**, including input (WASD/arrows mapping, diagonal = unit length, opposite keys cancel, jump latch, joystick dead zone and rim), movement (acceleration ramp, diagonal no faster, deceleration stop, hop peak and landing, no double jump), skeleton (an elbow and knee on every limb that actually bend; knees bend back and elbows forward in every greybox pose; feet grounded; per-joint blend), animator (eases into walk, air blend, stride-synced cycle), follow camera (scale per short side, clamping and centring, easing), and the training-yard scene with real physics (walk speed and stop, front/back and diagonal, wall containment, **sliding along walls**, pillars block, hop, camera follows, clean unload)
+- [x] `npm run e2e`: 8 passed, 2 correctly skipped (each movement test runs on its own platform). Desktop keyboard: moves right, faces right, stops; moves up; Space hops and lands; cannot pass the left wall; camera follows; **touch controls hidden on desktop**. Mobile: a real touch drag (CDP) shows the joystick and moves the fighter; release stops it and hides the stick; JUMP button hops; no page errors
+- [x] GitHub Pages sub-path build loads and runs
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

@@ -5,6 +5,8 @@
  * World units are metres; floor spans (0,0)–(arenaWidthM, arenaHeightM),
  * +x = right, +y = down. Rendering and physics both read these values.
  */
+import { GREYBOX_COLOURS } from './greybox-arena';
+
 export const ENGINE_CHECK = {
   arenaWidthM: 16,
   arenaHeightM: 10,
@@ -24,17 +26,5 @@ export const ENGINE_CHECK = {
   ],
   pillarFootprintHalf: { x: 0.4, y: 0.3 },
   pillarHeightM: 1.8,
-  colours: {
-    background: 0x141922,
-    floor: 0x4c5563,
-    grid: 0x5f6977,
-    wall: 0x2a303b,
-    wallEdge: 0x7b8594,
-    crate: 0xe0a14a,
-    crateEdge: 0x8a5a1c,
-    shadow: 0x000000,
-    pillarFront: 0x8b93a1,
-    pillarTop: 0xb5bdc9,
-    pillarEdge: 0x2a303b,
-  },
+  colours: { ...GREYBOX_COLOURS, crate: 0xe0a14a, crateEdge: 0x8a5a1c },
 } as const;
