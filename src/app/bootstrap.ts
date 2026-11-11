@@ -1,6 +1,9 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
 import { SoundBoard } from '../audio/sound-board';
+import { readDraft } from '../characters/draft';
+import { BUILT_IN_LIBRARY, withEntries } from '../characters/library';
+import type { CharacterLibrary } from '../characters/schema';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
@@ -93,6 +96,20 @@ function withStarts(arena: ArenaLayout, playerAt: string | null, dummyAt: string
   return { ...arena, ...(p ? { playerStart: p } : {}), ...(d ? { dummyStart: d } : {}) };
 }
 
+/**
+ * `?character=<id>` picks the player's fighter (TD-039); `?opponent=<id>` the
+ * opponent. `?character=draft` plays the admin editor's unsaved draft from this
+ * browser's local storage (local testing only: nothing is published).
+ */
+function castFromParams(params: URLSearchParams): { player?: string; opponent?: string; library?: CharacterLibrary } {
+  const player = params.get('character') ?? undefined;
+  const opponent = params.get('opponent') ?? undefined;
+  if (player !== 'draft') return { player, opponent };
+  const draft = readDraft();
+  if (!draft) return { opponent };
+  return { player: draft.characterId, opponent, library: withEntries(BUILT_IN_LIBRARY, draft.entries) };
+}
+
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   status.textContent = 'Loading…';
@@ -134,6 +151,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           intents,
           viewport,
           params.has('overview'),
+          castFromParams(params),
         );
   if (!(await scenes.switchTo(() => scene))) throw new Error(`${scene.name} scene failed to load`);
   scene.world?.addChild(overlay.colliderLayer);
@@ -270,6 +288,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     assetFailures.length > 0
       ? `Stickman Arena · ${scene.name} · ${assetFailures.length} asset(s) failed to load (greybox shown)`
       : scene instanceof FightArenaScene
-        ? `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · ${controlsHint}`
+        ? scene.characters.player.fellBack
+          ? `Stickman Arena · character "${scene.characters.player.report.id}" is invalid (using the Base Stickman): ${scene.characters.player.report.errors[0] ?? ''}`
+          : `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · ${scene.playerFighter.def.displayName} · ${controlsHint}`
         : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
 }

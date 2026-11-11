@@ -1,0 +1,249 @@
+{
+  "id": "inferno-moveset",
+  "starters": {
+    "tap": "jab",
+    "tap-forward": "front-kick",
+    "air-tap": "jumping-front-kick",
+    "falling-tap": "meteor-kick"
+  },
+  "moves": [
+    {
+      "id": "jab",
+      "displayName": "Jab",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.06,
+      "activeS": 0.07,
+      "recoveryS": 0.17,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 0.72,
+        "radiusM": 0.4
+      },
+      "damage": 40,
+      "strength": 150,
+      "knockbackMps": 1.5,
+      "lungeMps": 0,
+      "moveFactor": 0.45,
+      "impact": "knuckle-light",
+      "shake": 0.12,
+      "zoomPunch": 0,
+      "next": {
+        "tap": "straight",
+        "tap-forward": "roundhouse"
+      },
+      "requires": ["canPunch"]
+    },
+    {
+      "id": "straight",
+      "displayName": "Straight punch",
+      "animationState": "StraightPunch",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.07,
+      "activeS": 0.08,
+      "recoveryS": 0.18,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 0.76,
+        "radiusM": 0.42
+      },
+      "damage": 55,
+      "strength": 220,
+      "knockbackMps": 2.5,
+      "lungeMps": 0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.2,
+      "zoomPunch": 0.01,
+      "next": {
+        "tap": "roundhouse"
+      },
+      "requires": ["canPunch", "canUseCombos"]
+    },
+    {
+      "id": "roundhouse",
+      "displayName": "Fire roundhouse",
+      "animationState": "RoundhouseKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.16,
+      "activeS": 0.1,
+      "recoveryS": 0.32,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.05,
+        "radiusM": 0.5
+      },
+      "damage": 110,
+      "strength": 760,
+      "knockbackMps": 10,
+      "lungeMps": 0.6,
+      "moveFactor": 0.2,
+      "impact": "fire-heavy",
+      "shake": 0.6,
+      "zoomPunch": 0.06,
+      "requires": ["canKick", "canUseCombos"],
+      "effect": "flame-burst-directional",
+      "status": {
+        "burn": {
+          "dps": 12,
+          "durationS": 2
+        }
+      }
+    },
+    {
+      "id": "front-kick",
+      "displayName": "Front kick",
+      "animationState": "FrontKick",
+      "category": "kick",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.09,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 0.95,
+        "radiusM": 0.42
+      },
+      "damage": 45,
+      "strength": 300,
+      "knockbackMps": 3,
+      "lungeMps": 0.5,
+      "moveFactor": 0.3,
+      "impact": "kick",
+      "shake": 0.25,
+      "zoomPunch": 0.01,
+      "next": {
+        "tap": "side-kick",
+        "tap-forward": "side-kick"
+      },
+      "requires": ["canKick"]
+    },
+    {
+      "id": "side-kick",
+      "displayName": "Side kick",
+      "animationState": "SideKick",
+      "category": "kick",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.09,
+      "recoveryS": 0.24,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.45
+      },
+      "damage": 60,
+      "strength": 420,
+      "knockbackMps": 4.5,
+      "lungeMps": 0.6,
+      "moveFactor": 0.25,
+      "impact": "kick",
+      "shake": 0.3,
+      "zoomPunch": 0.02,
+      "next": {
+        "tap": "spinning-kick",
+        "tap-forward": "spinning-kick"
+      },
+      "requires": ["canKick", "canUseCombos"]
+    },
+    {
+      "id": "spinning-kick",
+      "displayName": "Spinning hook kick",
+      "animationState": "SpinningKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.18,
+      "activeS": 0.1,
+      "recoveryS": 0.34,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.1,
+        "radiusM": 0.55
+      },
+      "damage": 115,
+      "strength": 780,
+      "knockbackMps": 10,
+      "lungeMps": 0.5,
+      "moveFactor": 0.2,
+      "impact": "fire-heavy",
+      "shake": 0.6,
+      "zoomPunch": 0.06,
+      "requires": ["canKick", "canUseCombos", "canUseSpinningKick"],
+      "effect": "flame-burst-directional",
+      "status": {
+        "burn": {
+          "dps": 10,
+          "durationS": 1.5
+        }
+      }
+    },
+    {
+      "id": "jumping-front-kick",
+      "displayName": "Jumping front kick",
+      "animationState": "JumpingFrontKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.07,
+      "activeS": 0.2,
+      "recoveryS": 0.22,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.9,
+        "radiusM": 0.55
+      },
+      "damage": 100,
+      "strength": 820,
+      "knockbackMps": 7,
+      "lungeMps": 3.5,
+      "moveFactor": 1,
+      "impact": "kick",
+      "shake": 0.55,
+      "zoomPunch": 0.05,
+      "requires": ["canKick", "canUseAerialKicks", "canJump"],
+      "effect": "flame-burst-small"
+    },
+    {
+      "id": "meteor-kick",
+      "displayName": "Downward fire kick",
+      "animationState": "DownwardAerialKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.08,
+      "activeS": 0.14,
+      "recoveryS": 0.26,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.85,
+        "radiusM": 0.7
+      },
+      "damage": 120,
+      "strength": 900,
+      "knockbackMps": 6,
+      "lungeMps": 1.5,
+      "moveFactor": 0.6,
+      "impact": "fire-heavy",
+      "shake": 0.7,
+      "zoomPunch": 0.07,
+      "requires": ["canKick", "canUseDownwardKick", "canJump"],
+      "effect": "ground-fire-explosion",
+      "status": {
+        "burn": {
+          "dps": 15,
+          "durationS": 2
+        }
+      },
+      "groundBounce": true
+    }
+  ]
+}

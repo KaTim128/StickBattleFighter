@@ -1,0 +1,14 @@
+{
+  "id": "style-taekwondo",
+  "extends": "shared-default",
+  "states": {
+    "Idle": "proc.idle.taekwondo",
+    "FightingStance": "proc.idle.taekwondo",
+    "Turn": "proc.idle.taekwondo",
+    "FrontKick": "tkd.front-kick",
+    "SideKick": "tkd.side-kick",
+    "RoundhouseKick": "tkd.roundhouse",
+    "SpinningKick": "tkd.spinning-hook",
+    "JumpingFrontKick": ["tkd.jump-front-kick", "std.jump-knee"]
+  }
+}

@@ -25,6 +25,10 @@ export interface CombatStats {
   readonly critMultiplier: number;
   /** 0..1 fraction of knockback ignored (spec stat: Knockback Resistance). */
   readonly knockbackResistance: number;
+  /** 0..1: shortens hit stun (character data). */
+  readonly hitStunResistance?: number;
+  /** False: a well-timed block is only a block, never a parry (character capability). */
+  readonly canParry?: boolean;
 }
 
 /** Shared defensive timings and costs (same for every fighter unless a kit overrides them later). */
@@ -208,7 +212,7 @@ export class Combatant {
     const kbKeep = 1 - this.stats.knockbackResistance;
 
     if (this.guardUp && hit.fromFront) {
-      if (this.guardAgeS <= DEFENCE.parryWindowS) {
+      if (this.stats.canParry !== false && this.guardAgeS <= DEFENCE.parryWindowS) {
         return { outcome: 'parried', damage: 0, knockbackScale: 0, attackerStunS: DEFENCE.parryStunS };
       }
       const chip = Math.round(raw * DEFENCE.chipFraction);
@@ -244,7 +248,7 @@ export class Combatant {
     if (hit.heavy) {
       if (this.knockdownS === 0) this.downS = 0; // a fresh fall (a hit while already down keeps the fall going)
       this.knockdownS = DEFENCE.heavyKnockdownS;
-    } else this.stunS = Math.max(this.stunS, DEFENCE.lightStunS);
+    } else this.stunS = Math.max(this.stunS, DEFENCE.lightStunS * (1 - (this.stats.hitStunResistance ?? 0)));
     return { outcome: crit ? 'crit' : 'hit', damage, knockbackScale: kbKeep, attackerStunS: 0 };
   }
 

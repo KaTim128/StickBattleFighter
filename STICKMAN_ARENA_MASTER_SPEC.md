@@ -291,6 +291,12 @@ No numeric values were supplied (OQ-05).
 | REQ-ABL-7 | **Inferno is the first full kit (owner, 11/11/2026):** A1 Fire Bolt (projectile that burns), A2 Flame Dash (dash leaving a burning trail), A3 Eruption (telegraphed fire ring around Inferno, knocks down), Ultimate Meteor Fist (telegraphed leaping slam, heavy area damage). Fire sets flammable furniture alight. | [OWNER 11/11/2026] |
 | REQ-ABL-8 | Ability hits use the same combat rules as melee (block, dodge, parry, crit, knockback, interruption); a hit during an ability's wind-up cancels it, except the ultimate. Projectiles are stopped by walls, doors and furniture. | [INV-5] |
 | REQ-ABL-9 | **Aimed ultimate (owner, 11/11/2026):** Inferno's leap is aimed before launch: a targeting indicator shows the landing zone and the maximum jump range, and the fighter holds a jump-preparation pose while aiming. Touch: hold and drag ULT, release to jump. Desktop: I enters aiming, WASD moves the landing spot, I launches. The indicator shows where the leap will really land (short of walls). |
+| REQ-CHR-1 | **Data-driven characters (owner, 11/11/2026):** every stickman is a Character Definition (JSON) referencing reusable Animation, Moveset, Statistics, Effects, Audio and AI Behaviour profiles, with capability flags and unlock data. Shared systems read the resolved character; no character-name checks in shared code (enforced by a test). |
+| REQ-CHR-2 | **Animation fallback:** each state resolves character profile → combat-style profile → shared default → safe clip with a clear warning; never frozen, invisible or missing. |
+| REQ-CHR-3 | **Moveset separate from look:** moves define inputs, timing (seconds), hit area, damage, knockback, impact feel, combo routes, aerial use, required capabilities, effects and status; the Animation Profile chooses how each looks. |
+| REQ-CHR-4 | **Validation:** values within safe limits; references, clips, routes, starters, required states, effects and sounds checked; invalid data produces clear messages and a safe fallback to the Base Stickman, never a crash. |
+| REQ-CHR-5 | **Base Stickman template and Inferno example:** new characters start by duplicating the Base Stickman; Inferno (fire, taekwondo: punches and kicks, aerial kicks, downward fire kick, Punch Clash with a flame finisher, ember-and-ash defeat, fist flames) is configured entirely from data. |
+| REQ-CHR-6 | **Admin character editor** (`admin.html`): create, duplicate, assign profiles, toggle capabilities, edit stats, moves, animations, effects, sounds and AI, preview animations and hit areas, validate, export JSON, try in game. Local only until server-side admin (REQ-BE-4). |
 
 ## 11. Animation and visual presentation
 
@@ -476,6 +482,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Owner: data-driven character system (REQ-CHR-1..6); Inferno fist flames via its effects profile. | Master Developer |
 | 11/11/2026 | Owner: centre cubicle pairs (REQ-ENV-8 updated), 33 m office (REQ-ENV-12 updated), breakable office equipment and material destruction (REQ-PHY-6b). | Master Developer |
 | 11/11/2026 | Owner: walking and running (REQ-ANI-10); shuffle rule superseded (SUP-05). | Master Developer |
 | 11/11/2026 | Owner: aimed ultimate (REQ-ABL-9); keyboard-only preset A3 moved to O. | Master Developer |

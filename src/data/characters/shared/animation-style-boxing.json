@@ -1,0 +1,8 @@
+{
+  "id": "style-boxing",
+  "extends": "shared-default",
+  "states": {
+    "Idle": "proc.idle.boxer",
+    "FightingStance": "proc.idle.boxer"
+  }
+}

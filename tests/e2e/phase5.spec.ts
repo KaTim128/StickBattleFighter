@@ -13,7 +13,7 @@ async function open(page: Page, errors: string[]) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   // Start right beside the dummy (19,13), facing it: positioning by keyboard is covered by the Phase 2 tests.
-  await page.goto('/?scene=training-yard&playerAt=17.95,13');
+  await page.goto('/?scene=training-yard&playerAt=17.95,13&character=base-stickman'); // shared rules on the Base Stickman
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
 }
 

@@ -1,0 +1,5 @@
+{
+  "id": "base-stickman-animation",
+  "extends": "style-boxing",
+  "states": {}
+}

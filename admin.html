@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stickman Arena · Character Editor</title>
+    <style>
+      :root { color-scheme: dark; --bg: #11151c; --panel: #1a2029; --line: #2c3440; --text: #e8edf5; --muted: #9aa4b2; --accent: #ff8a3d; --bad: #ff6b6b; --warn: #ffd23f; --ok: #6fdc8c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, sans-serif; }
+      header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+      header h1 { font-size: 16px; margin: 0; }
+      header .note { color: var(--muted); font-size: 12px; }
+      main { display: grid; grid-template-columns: 220px 1fr 380px; height: calc(100vh - 50px); }
+      aside, section { overflow: auto; padding: 12px; border-right: 1px solid var(--line); }
+      button { background: #263040; color: var(--text); border: 1px solid #3a4658; border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit; }
+      button:hover { border-color: var(--accent); }
+      button.primary { background: #7a3a14; border-color: var(--accent); }
+      .list button { display: block; width: 100%; text-align: left; margin-bottom: 4px; }
+      .list button.active { border-color: var(--accent); background: #3a2414; }
+      .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+      .tabs button.active { border-color: var(--accent); background: #3a2414; }
+      fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 12px; padding: 8px 10px; }
+      legend { color: var(--accent); font-weight: 700; padding: 0 4px; }
+      label.row { display: grid; grid-template-columns: 190px 1fr; align-items: center; gap: 8px; margin: 3px 0; }
+      label.row span { color: var(--muted); }
+      input, select, textarea { background: #0e1218; color: var(--text); border: 1px solid #3a4658; border-radius: 5px; padding: 3px 6px; font: inherit; }
+      input[type='number'] { width: 110px; }
+      textarea { width: 100%; min-height: 360px; font: 12px/1.35 ui-monospace, monospace; }
+      table { border-collapse: collapse; width: 100%; font-size: 12px; }
+      th, td { border-bottom: 1px solid var(--line); padding: 3px 4px; text-align: left; vertical-align: middle; }
+      th { color: var(--muted); position: sticky; top: 0; background: var(--bg); }
+      td input[type='number'] { width: 64px; }
+      .caps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 10px; }
+      .tier { font-size: 11px; padding: 1px 5px; border-radius: 4px; }
+      .tier.character { background: #2d4a2d; } .tier.style { background: #2d3d4a; } .tier.default { background: #3a3a3a; } .tier.safe { background: #6b2a2a; }
+      #validation .err { color: var(--bad); } #validation .warn { color: var(--warn); } #validation .ok { color: var(--ok); }
+      #validation li { margin: 2px 0; }
+      #preview { width: 100%; height: 300px; background: #1c222c; border-radius: 8px; display: block; }
+      .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Character Editor</h1>
+      <span class="note">Local tool (TD-039): edits stay in this browser until exported as JSON and committed. Nothing is published from here.</span>
+    </header>
+    <main>
+      <aside>
+        <div class="controls"><button type="button" id="new">New from Base</button><button type="button" id="duplicate">Duplicate</button></div>
+        <div class="list" id="list"></div>
+      </aside>
+      <section id="editor"></section>
+      <section>
+        <canvas id="preview"></canvas>
+        <div class="controls">
+          <select id="preview-state"></select>
+          <label><input type="checkbox" id="preview-hitbox" checked /> Show hit area</label>
+        </div>
+        <div class="controls">
+          <button type="button" id="validate">Validate</button>
+          <button type="button" id="export" class="primary">Export JSON</button>
+          <button type="button" id="try">Try in game</button>
+        </div>
+        <div id="validation"></div>
+      </section>
+    </main>
+    <script type="module" src="/src/admin/editor.ts"></script>
+  </body>
+</html>

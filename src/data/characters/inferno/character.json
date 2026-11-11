@@ -1,0 +1,65 @@
+{
+  "id": "inferno",
+  "template": "base-stickman",
+  "displayName": "Inferno",
+  "description": "Fire elemental and taekwondo fighter: fast hands, burning kicks, a falling meteor kick, and a flame uppercut to end a Punch Clash. Defeat leaves only embers and ash.",
+  "characterType": "fighter",
+  "element": "fire",
+  "combatStyle": "taekwondo",
+  "profiles": {
+    "animation": "inferno-taekwondo",
+    "moveset": "inferno-moveset",
+    "stats": "inferno-stats",
+    "effects": "fire-effects",
+    "audio": "inferno-audio",
+    "ai": "default-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#ff5a1f",
+    "colourBack": "#b83a12",
+    "outline": "#1b1b1f",
+    "limbWidthM": 0.075,
+    "outlineWidthM": 0.035
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": true,
+    "usesFireEffects": true,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "inferno-kit"
+}

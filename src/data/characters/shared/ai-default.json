@@ -1,0 +1,8 @@
+{
+  "id": "default-ai",
+  "attackEveryS": 1.6,
+  "aggression": 0.35,
+  "clashMashRate": 6.5,
+  "settleDecelMps2": 14,
+  "reactionS": 0.25
+}

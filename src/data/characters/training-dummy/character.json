@@ -1,0 +1,65 @@
+{
+  "id": "training-dummy",
+  "template": "base-stickman",
+  "displayName": "Training Dummy",
+  "description": "Practice opponent: heavier, never crits, jabs back when switched on.",
+  "characterType": "training",
+  "element": "none",
+  "combatStyle": "boxing",
+  "profiles": {
+    "animation": "base-stickman-animation",
+    "moveset": "base-moveset",
+    "stats": "training-dummy-stats",
+    "effects": "default-effects",
+    "audio": "default-audio",
+    "ai": "training-dummy-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#b9c0cc",
+    "colourBack": "#8a919d",
+    "outline": "#1b1b1f",
+    "limbWidthM": 0.075,
+    "outlineWidthM": 0.035
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": false,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": true
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Practice only."
+  },
+  "abilityKit": null
+}

@@ -1,0 +1,35 @@
+{
+  "id": "inferno-stats",
+  "maxHp": 1000,
+  "maxStamina": 100,
+  "staminaRegenPerS": 30,
+  "staminaRegenDelayS": 0.7,
+  "movement": {
+    "maxSpeedMps": 5,
+    "accelMps2": 50,
+    "decelMps2": 55,
+    "jumpSpeedMps": 6.5,
+    "gravityMps2": 20
+  },
+  "body": {
+    "footRadiusM": 0.32,
+    "massKg": 70
+  },
+  "power": 1,
+  "defence": 1,
+  "critChance": 0.05,
+  "critMultiplier": 1.5,
+  "knockbackResistance": 0,
+  "multipliers": {
+    "attackSpeed": 1.15,
+    "punchDamage": 1,
+    "kickDamage": 1.25,
+    "aerialDamage": 1,
+    "knockback": 1.15,
+    "movementSpeed": 1.05,
+    "jumpForce": 1.1,
+    "clashPower": 1,
+    "specialCharge": 1
+  },
+  "hitStunResistance": 0
+}

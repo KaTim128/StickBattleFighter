@@ -1,0 +1,17 @@
+{
+  "id": "default-audio",
+  "lightPunch": ["punch-light", "punch-light-b"],
+  "heavyPunch": ["punch-heavy"],
+  "lightKick": ["kick-light"],
+  "heavyKick": ["kick-heavy"],
+  "block": ["block"],
+  "parry": ["parry"],
+  "footstep": ["footstep"],
+  "jump": ["jump"],
+  "land": ["land"],
+  "wallImpact": ["wall-thud"],
+  "clash": ["clash-collide"],
+  "finisher": ["clash-break"],
+  "defeat": ["ko"],
+  "disintegration": ["dust"]
+}

@@ -17,6 +17,8 @@ export default defineConfig({
     // limit sits just above it so new growth in our own code still warns.
     chunkSizeWarningLimit: 600,
     rolldownOptions: {
+      // Two pages: the game, and the admin character editor (TD-039).
+      input: { main: 'index.html', admin: 'admin.html' },
       output: {
         codeSplitting: {
           groups: [

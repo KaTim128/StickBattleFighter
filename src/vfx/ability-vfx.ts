@@ -25,12 +25,27 @@ export interface ImpactBurst {
   readonly speedMps: number;
   readonly colour: number;
   readonly burstM: number;
+  /** Fire embers rising from the contact (elemental effects). */
+  readonly embers?: number;
+  /** Leave a scorch mark on the floor, radius metres. */
+  readonly scorchM?: number;
+}
+
+/** Points that burn while a fighter attacks (fists and feet), world x, y and height. */
+export interface LimbFlames {
+  readonly points: readonly { readonly x: number; readonly y: number; readonly z: number }[];
+  /** 0..1 how strongly (peaks at the strike). */
+  readonly strength: number;
 }
 
 /** A KO'd fighter dissolving: dust rises from points along its body (world x, y and height). */
 export interface DustSource {
   readonly points: readonly { readonly x: number; readonly y: number; readonly z: number }[];
   readonly colour: number;
+  /** Dust colours to pick from (an Effects Profile's disintegration look); default: own colour and ash. */
+  readonly colours?: readonly number[];
+  /** Fire embers to release too (ember-and-ash disintegration). */
+  readonly embers?: number;
   /** Particles to release this frame. */
   readonly count: number;
 }
@@ -52,6 +67,8 @@ export interface AbilityVfxInput {
   readonly telegraphs: readonly Telegraph[];
   readonly fx: readonly AbilityFx[];
   readonly burning: readonly BurningThing[];
+  /** Flames on attacking limbs and auras (Effects Profiles, TD-039). */
+  readonly limbFlames?: readonly LimbFlames[];
 }
 
 type ParticleKind = 'ember' | 'spark' | 'dust';
@@ -137,6 +154,12 @@ export class AbilityVfx {
     for (const fx of input.fx) this.onFx(fx);
     for (const hit of input.impacts) this.burst(hit);
     for (const d of input.dust) this.dustFrom(d);
+    for (const lf of input.limbFlames ?? []) {
+      for (const p of lf.points) {
+        const n = this.rand() < 0.5 + lf.strength * 0.5 ? 1 + Math.round(lf.strength * 2) : 0;
+        this.emitAt(p.x, p.y, p.z, n, 0.4, 0.22 + lf.strength * 0.15, 0.06 + lf.strength * 0.04);
+      }
+    }
     for (const p of input.projectiles) this.emitAt(p.x, p.y, BOLT_HEIGHT_M, 2, 0.6, 0.3, 0.09);
     for (const z of input.zones) if (this.rand() < 0.35) this.emitAt(z.x, z.y, 0.1, 1, 0.5, 0.25, 0.08);
     for (const b of input.burning)
@@ -232,12 +255,23 @@ export class AbilityVfx {
       ageS: 0,
       lifeS: 0.16,
     });
+    if (hit.embers) this.emitAt(hit.x, hit.y, 1.0, hit.embers, 3, 0.5, 0.11);
+    if (hit.scorchM) {
+      this.scorches.push({ x: hit.x, y: hit.y, r: hit.scorchM, ageS: 0 });
+      if (this.scorches.length > 12) this.scorches.shift();
+    }
     // A bright contact flash at the point of impact (a few frames).
     this.flashes.push({ x: hit.x, y: hit.y - 1.1, r: hit.burstM * 0.75, ageS: 0, colour: hit.colour });
   }
 
   /** Dust motes leave the body and drift up and away on a light breeze, fading as they go. */
   private dustFrom(d: DustSource): void {
+    if (d.embers && d.points.length > 0) {
+      for (let e = 0; e < d.embers; e++) {
+        const at = d.points[Math.floor(this.rand() * d.points.length)]!;
+        this.emitAt(at.x, at.y, at.z, 1, 0.6, 0.6, 0.06);
+      }
+    }
     for (let n = 0; n < d.count && d.points.length > 0; n++) {
       const p = this.free();
       if (!p) break;
@@ -245,7 +279,12 @@ export class AbilityVfx {
       Object.assign(p, {
         live: true,
         kind: 'dust',
-        colour: this.rand() < 0.65 ? d.colour : 0xd9d4c7,
+        colour:
+          d.colours && d.colours.length > 0 && this.rand() < 0.6
+            ? d.colours[Math.floor(this.rand() * d.colours.length)]!
+            : this.rand() < 0.65
+              ? d.colour
+              : 0xd9d4c7,
         x: at.x + (this.rand() - 0.5) * 0.12,
         y: at.y + (this.rand() - 0.5) * 0.08,
         z: at.z,

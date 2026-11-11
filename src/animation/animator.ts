@@ -1,6 +1,7 @@
 import {
   AIR_FALL_POSE,
   AIR_RISE_POSE,
+  type IdleStyle,
   idlePose,
   landingPose,
   runAmount,
@@ -41,13 +42,22 @@ export class StickmanAnimator {
   private riseWeight = 0;
   private landWeight = 0;
   private wasAirborne = false;
+  /** Footfalls since the last `takeFootfalls()`. */
+  private footfalls = 0;
 
-  constructor(private readonly bones: BoneLengths) {}
+  /** @param idleStyle the stance the Animation Profile assigns to Idle (procedural clip). */
+  constructor(
+    private readonly bones: BoneLengths,
+    private readonly idleStyle: IdleStyle = 'boxer',
+  ) {}
 
   /** Advance by a time step and return the pose to draw. */
   update(dtS: number, motion: MotionInput): Pose {
     this.timeS += dtS;
+    const before = this.walkPhase;
     this.walkPhase = (this.walkPhase + (motion.speedMps * dtS) / strideAt(motion.speedMps)) % 1;
+    // A footfall at the start and middle of each cycle (footstep sounds).
+    if (motion.speedMps > 0.5 && (this.walkPhase < before || (before < 0.5 && this.walkPhase >= 0.5))) this.footfalls++;
 
     // Start stepping almost at once (responsive), and ease into the run as speed builds.
     const walkTarget = Math.min(1, motion.speedMps / (motion.maxSpeedMps * 0.2));
@@ -64,10 +74,17 @@ export class StickmanAnimator {
     this.riseWeight += (riseTarget - this.riseWeight) * smoothing(10, dtS);
 
     const gait = blendPose(walkPose(this.walkPhase, this.bones), runPose(this.walkPhase, this.bones), this.runWeight);
-    const stance = blendPose(idlePose(this.timeS, this.bones), gait, this.walkWeight);
+    const stance = blendPose(idlePose(this.timeS, this.bones, this.idleStyle), gait, this.walkWeight);
     const grounded = blendPose(stance, landingPose(this.bones), this.landWeight * 0.8);
     const air = blendPose(AIR_FALL_POSE, AIR_RISE_POSE, this.riseWeight);
     return blendPose(grounded, air, this.airWeight);
+  }
+
+  /** Footfalls since the last call (for footstep sounds). */
+  takeFootfalls(): number {
+    const n = this.footfalls;
+    this.footfalls = 0;
+    return n;
   }
 
   get weights(): { walk: number; run: number; air: number; rise: number; land: number } {

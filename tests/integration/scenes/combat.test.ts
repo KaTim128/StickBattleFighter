@@ -14,7 +14,9 @@ const A = GREYBOX_STICKMAN.attacks;
 async function setup() {
   const stage = new Container();
   const intents = new PlayerIntents();
-  const scene = new FightArenaScene(TRAINING_YARD, stage, intents, () => ({ width: 1280, height: 720 }));
+  const scene = new FightArenaScene(TRAINING_YARD, stage, intents, () => ({ width: 1280, height: 720 }), false, {
+    player: 'base-stickman',
+  }); // shared rules, tested on the Base Stickman
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
   const run = (seconds: number) => {
@@ -55,7 +57,7 @@ describe('Phase 5 combat in the arena', () => {
     }
     runUntil(() => scene.dummy.state === 'knockdown', 1);
     expect(scene.dummy.state).toBe('knockdown');
-    const base = A.jab.damage + A.hook.damage + A.heavy.damage;
+    const base = A.jab!.damage + A.hook!.damage + A.heavy!.damage;
     expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(base);
     expect(1000 - scene.dummy.hp).toBeLessThanOrEqual(Math.round(base * 1.5));
     const kinds = scene.drainEvents().map((e) => e.kind);
@@ -108,7 +110,8 @@ describe('Phase 5 combat in the arena', () => {
     intents.pressMelee();
     runUntil(() => scene.dummy.hp < 1000, 1);
     expect(scene.dummyFighter.flashS).toBeGreaterThan(0); // white flash for a few frames
-    expect(scene.drainSounds()).toContain('punch-light'); // bare-knuckle contact sound
+    // A bare-knuckle contact sound: one of the Audio Profile's light-punch variations.
+    expect(scene.drainSounds().some((id) => scene.playerFighter.def.audio.lightPunch.includes(id))).toBe(true);
     const vx = scene.playerFighter.body!.linvel().x;
     expect(vx).toBeLessThan(0); // the puncher bounces back off the contact
     // Hit-stop: the next step does not move anything.
@@ -220,7 +223,7 @@ describe('Phase 5 combat in the arena', () => {
     run(0.5); // guard up well past the parry window
     scene.dummyAttacks = true;
     runUntil(() => scene.drainEvents().length > 0 || scene.player.hp < 1000, 2);
-    expect(scene.player.hp).toBe(1000 - Math.round(A.jab.damage * DEFENCE.chipFraction));
+    expect(scene.player.hp).toBe(1000 - Math.round(A.jab!.damage * DEFENCE.chipFraction));
     expect(scene.player.state).toBe('guarding');
     intents.meleeRelease();
     scenes.clear();

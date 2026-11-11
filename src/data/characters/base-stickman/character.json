@@ -1,0 +1,64 @@
+{
+  "id": "base-stickman",
+  "displayName": "Base Stickman",
+  "description": "The template every stickman starts from: an unarmed boxer on the shared systems. Duplicate it to make a new fighter.",
+  "characterType": "fighter",
+  "element": "none",
+  "combatStyle": "boxing",
+  "profiles": {
+    "animation": "base-stickman-animation",
+    "moveset": "base-moveset",
+    "stats": "base-stats",
+    "effects": "default-effects",
+    "audio": "default-audio",
+    "ai": "default-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#ff7a2e",
+    "colourBack": "#c4581f",
+    "outline": "#1b1b1f",
+    "limbWidthM": 0.075,
+    "outlineWidthM": 0.035
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Available from the start."
+  },
+  "abilityKit": null
+}

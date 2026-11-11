@@ -74,3 +74,11 @@ Maintained by the Master Developer. **One owner per system.** Owners make the ch
 |---|---|
 | 10/11/2026 | Initial registry (TD-009 mapping). |
 | 10/11/2026 | 3D Rendering Specialist renamed to Rendering Specialist (2D) (TD-021). |
+
+## Added 11/11/2026 (TD-039)
+| Path | Owner | Notes |
+|---|---|---|
+| `src/characters/`, `src/data/characters/` | Character Development Specialist | Schema, library, resolution, validation; character JSON. Movesets with Combat; animation profiles with Animation. |
+| `src/animation/clips.ts` | Animation Specialist | Clip library (strike and procedural clips). |
+| `src/vfx/effects-library.ts` | Rendering Specialist (2D) | Named effects referenced by Effects Profiles. |
+| `src/admin/`, `admin.html` | Master Developer | Local character editor. |

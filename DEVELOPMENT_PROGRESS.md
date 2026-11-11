@@ -281,6 +281,13 @@ Real walk and run cycles with alternating legs and fists swinging opposite them 
 ### 11/11/2026: Office centre cubicles and breakables (owner request)
 Six back-to-back cubicle pairs in the centre with walkways, steel drawer pedestals, breakable monitors and desk items, tougher tables/drawers/cabinets, material-specific debris, particles and sounds (TD-038, REQ-ENV-8/12, REQ-PHY-6b). Office is now 33 × 12 m (the row of pairs needs the length). Evidence: `npm test` 220/220, e2e, screenshot.
 
+### 11/11/2026: Data-driven character system (owner request; Master Developer, no specialists, per TD-019)
+Characters are JSON definitions plus reusable profiles with capability flags, a 4-tier animation fallback, a data-driven moveset controller, validation with safe limits and a safe fallback, a Base Stickman template, Inferno as the complete example (taekwondo punches and kicks, aerial and downward fire kicks, flame clash finisher, ember-and-ash defeat, **fist flames**: the queued owner request is delivered through its effects profile), and a local admin editor (`admin.html`). See TD-039, REQ-CHR-1..6 and `docs/characters/HOW_TO_CREATE_A_CHARACTER.md`.
+**Files (new):** `src/characters/*`, `src/data/characters/**`, `src/animation/clips.ts`, `src/combat/moves.ts`, `src/vfx/effects-library.ts`, `src/abilities/kits.ts`, `src/admin/*`, `admin.html`, docs. **Changed:** fighter data files (now resolved from JSON), `fighter-def.ts`, `attacks.ts`, `combatant.ts`, `animator.ts`, `greybox-motion.ts` (taekwondo stance), `stickman-view.ts` (flash colour, limb tips), `ability-vfx.ts`, `fight-arena-scene.ts`, `fighter-entity.ts`, `scene-clash.ts`, `scene-abilities.ts`, `sound-board.ts`, `bootstrap.ts`, `vite.config.ts`, `tsconfig.json`. **Removed:** `combo.ts`, `attack-poses.ts` (replaced by the move controller and the clip library).
+**Findings:** the validator caught Inferno's audio profile naming sounds that did not exist yet and fell back safely, exactly as intended; the no-name test caught two hard-coded ids (fallback and editor defaults), moved into the library registration.
+**Evidence:** lint clean; typecheck 0; `npm test` **234/234**; build clean (game + editor); `npm run e2e` **24/24**; screenshots.
+**Limitations:** see TD-039 (new clip shapes need code; several mapped states share motions until art; unlocks server-side later; no voice lines yet).
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

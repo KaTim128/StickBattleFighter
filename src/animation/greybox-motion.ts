@@ -29,6 +29,8 @@ interface StanceShape {
   head: number;
   /** 0..1 small guard bob. */
   guard: number;
+  /** Guard height: 0 = the boxer's high guard, 1 = a lower, looser kicking guard. */
+  guardLow?: number;
 }
 
 /**
@@ -69,15 +71,52 @@ function fightingStance(s: StanceShape, bones: BoneLengths): Pose {
   return {
     lean: deg(s.lean),
     head: deg(s.head),
-    armFront: { root: deg(88 - s.guard * 4), bend: deg(90 + s.guard * 6) },
-    armBack: { root: deg(42 + s.guard * 3), bend: deg(138) },
+    armFront: {
+      root: deg(88 - s.guard * 4 - (s.guardLow ?? 0) * 18),
+      bend: deg(90 + s.guard * 6 - (s.guardLow ?? 0) * 10),
+    },
+    armBack: { root: deg(42 + s.guard * 3 - (s.guardLow ?? 0) * 8), bend: deg(138 - (s.guardLow ?? 0) * 18) },
     legFront: legIk(s.leadFootX, s.pelvisM - (s.leadLiftM ?? 0), bones.thigh, bones.shin),
     legBack: legIk(s.rearFootX, s.pelvisM - (s.rearLiftM ?? 0), bones.thigh, bones.shin),
   };
 }
 
+/**
+ * TAEKWONDO STANCE (style profile `proc.idle.taekwondo`, TD-039): taller and
+ * lighter, more side-on with a longer stagger, hands a little lower and looser
+ * (the legs do the work), bouncing quicker on the balls of the feet.
+ */
+export const TAEKWONDO_STANCE = {
+  leadFootX: 0.3,
+  rearFootX: -0.42,
+  pelvisM: 0.7,
+  lean: -6,
+  head: 10,
+  bounceHz: 2.4,
+  bounceM: 0.035,
+  guardLow: 1,
+} as const;
+
+export type IdleStyle = 'boxer' | 'taekwondo';
+
 /** Idle: planted wide stance with a light bounce on the balls of the feet (1.8 bounces per second). */
-export function idlePose(timeS: number, bones: BoneLengths): Pose {
+export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'taekwondo') {
+    const t = TAEKWONDO_STANCE;
+    const b = 0.5 + 0.5 * Math.sin(timeS * TAU * t.bounceHz);
+    return fightingStance(
+      {
+        pelvisM: t.pelvisM - b * t.bounceM,
+        leadFootX: t.leadFootX,
+        rearFootX: t.rearFootX,
+        lean: t.lean,
+        head: t.head,
+        guard: b,
+        guardLow: t.guardLow,
+      },
+      bones,
+    );
+  }
   const bounce = 0.5 + 0.5 * Math.sin(timeS * TAU * 1.8);
   return fightingStance(
     {

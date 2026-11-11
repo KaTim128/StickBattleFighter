@@ -1,0 +1,17 @@
+{
+  "id": "inferno-audio",
+  "lightPunch": ["punch-light", "punch-light-b"],
+  "heavyPunch": ["punch-heavy", "fire-hit"],
+  "lightKick": ["kick-light"],
+  "heavyKick": ["kick-heavy", "fire-hit"],
+  "block": ["block"],
+  "parry": ["parry"],
+  "footstep": ["footstep"],
+  "jump": ["jump"],
+  "land": ["land"],
+  "wallImpact": ["wall-thud"],
+  "clash": ["clash-collide"],
+  "finisher": ["clash-break", "fire-eruption"],
+  "defeat": ["ko"],
+  "disintegration": ["dust", "fire-hit"]
+}

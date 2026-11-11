@@ -3,13 +3,16 @@ import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster'
 import type { Burn } from '../../abilities/ability-def';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
-import { attackPose } from '../../animation/attack-poses';
+import { strikePose } from '../../animation/clips';
 import { blockPose, dashPose, flinchPose, getUpFrame, knockdownFrame } from '../../animation/reaction-poses';
 import { blendPose, type Pose } from '../../animation/skeleton';
 import { addArenaColliders } from '../../arenas/arena-colliders';
 import { CameraShake } from '../../camera/camera-shake';
 import { fitRectToView } from '../../camera/fit-view';
 import { type CameraView, FollowCamera } from '../../camera/follow-camera';
+import { DEFAULT_CAST } from '../../characters/library';
+import { type LoadedCharacter, loadCharacter } from '../../characters/load';
+import type { AudioProfile, CharacterLibrary } from '../../characters/schema';
 import {
   type AttackDef,
   attackDuration,
@@ -17,13 +20,10 @@ import {
   distanceToCapsule,
   hitCapsule,
 } from '../../combat/attacks';
-import { type CombatState, DEFENCE, seededRandom } from '../../combat/combatant';
+import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
 import type { CombatEvent } from '../../combat/events';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
-import { GREYBOX_STICKMAN } from '../../data/fighters/greybox-stickman';
-import { INFERNO } from '../../data/fighters/inferno';
-import { TRAINING_DUMMY } from '../../data/fighters/training-dummy';
 import type { Material } from '../../data/objects/props';
 import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
@@ -34,7 +34,14 @@ import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
 import { OcclusionFader } from '../../rendering/occlusion-fader';
 import { tallestPropM } from '../../rendering/prop-view';
-import { AbilityVfx, type BurningThing, type DustSource, type ImpactBurst } from '../../vfx/ability-vfx';
+import {
+  AbilityVfx,
+  type BurningThing,
+  type DustSource,
+  type ImpactBurst,
+  type LimbFlames,
+} from '../../vfx/ability-vfx';
+import { EFFECTS, type EffectDef } from '../../vfx/effects-library';
 import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
 import { SceneAbilities } from './scene-abilities';
@@ -110,6 +117,23 @@ const RECOIL_BOUNCE_S = 0.14;
 /** KO: lie still, then dissolve into dust over this window (seconds after the KO), then respawn. */
 const KO_DISSOLVE_FROM_S = 1.0;
 const KO_DISSOLVE_S = 1.6;
+type AudioKey = Exclude<keyof AudioProfile, 'id' | 'voice'>;
+
+const colourOf = (hex: string): number => Number.parseInt(hex.replace('#', ''), 16);
+
+/** The non-elemental version of an effect (no embers or scorch) for fighters without elemental effects. */
+function withoutElements(e: EffectDef): EffectDef {
+  return { sparks: e.sparks, ring: e.ring };
+}
+
+/** An impact profile's sparks and ring as a VFX burst. */
+function burstFromProfile(x: number, y: number, dir: { x: number; y: number }, p: ImpactProfile): ImpactBurst {
+  return { x, y, dir, sparks: p.sparks, speedMps: p.sparkSpeedMps, colour: p.sparkColour, burstM: p.burstM };
+}
+
+/** Phase shape for a Punch Clash exchange beat (the clip is scaled to fit the beat). */
+const GROUND = { airborne: false, falling: false, forward: false } as const;
+const CLASH_BEAT_TIMING = { windupS: 0.06, activeS: 0.07, recoveryS: 0.17 } as const;
 /** Sound for a prop being hit or breaking, by material (src/audio recipes). */
 const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
   wood: { hit: 'hit-wood', break: 'break-wood' },
@@ -153,9 +177,15 @@ export class FightArenaScene implements ArenaScene {
   readonly dummyFighter: FighterEntity;
   private readonly events: CombatEvent[] = [];
   /** Contacts this frame, for sparks and bursts (presentation). */
-  private readonly impacts: { x: number; y: number; dir: { x: number; y: number }; profile: ImpactProfile }[] = [];
+  private readonly impacts: ImpactBurst[] = [];
+  /** Limb flames and aura embers this frame (filled while drawing fighters). */
+  private readonly frameFlames: LimbFlames[] = [];
   /** KO dust to release this frame (filled while drawing fighters, used by the VFX). */
   private readonly frameDust: DustSource[] = [];
+  /** Strongest limb flame drawn last frame (0 = none): Effects Profile trails (tests, debug hook). */
+  limbFlameStrength = 0;
+  /** Knocked-back fighters that hit a wall (tests and the debug hook). */
+  wallHits = 0;
   /** Sounds waiting to be played by the sound board (with loudness). */
   private readonly sounds: { id: string; gain: number }[] = [];
   /** Simulation time (hit-stop excluded), seconds. */
@@ -172,8 +202,10 @@ export class FightArenaScene implements ArenaScene {
   lastAbilityBlock: CastBlock | null = null;
   private view: ArenaView | null = null;
   private overlay: Container | null = null;
-  private readonly peakHopM =
-    GREYBOX_STICKMAN.movement.jumpSpeedMps ** 2 / (2 * GREYBOX_STICKMAN.movement.hopGravityMps2);
+  /** Validation reports for the fighters in this scene (shown when a character fell back). */
+  readonly characters: { readonly player: LoadedCharacter; readonly opponent: LoadedCharacter };
+  /** Presentation-only randomness (sound and effect variations), separate from combat rolls. */
+  private readonly fxRng = seededRandom(98765);
 
   constructor(
     readonly arena: ArenaLayout,
@@ -182,14 +214,19 @@ export class FightArenaScene implements ArenaScene {
     private readonly viewport: Viewport,
     /** Show the whole arena at once (layout review, `?overview`), instead of the follow camera. */
     private readonly overview = false,
+    /** Which characters fight (Character Definition ids, TD-039) and where their data comes from. */
+    cast: { player?: string; opponent?: string; library?: CharacterLibrary } = {},
   ) {
     this.name = arena.id;
-    this.playerFighter = new FighterEntity('player', INFERNO, arena.playerStart, true);
-    this.dummyFighter = new FighterEntity('dummy', TRAINING_DUMMY, arena.dummyStart, false);
+    const player = loadCharacter(cast.player ?? DEFAULT_CAST.player, cast.library);
+    const opponent = loadCharacter(cast.opponent ?? DEFAULT_CAST.opponent, cast.library);
+    this.characters = { player, opponent };
+    this.playerFighter = new FighterEntity('player', player.def, arena.playerStart, true);
+    this.dummyFighter = new FighterEntity('dummy', opponent.def, arena.dummyStart, false);
     this.clashes = new SceneClash({
       player: this.playerFighter,
       opponent: this.dummyFighter,
-      opponentMashRate: TRAINING_DUMMY.clashMashRate,
+      opponentMashRate: opponent.def.ai.clashMashRate * opponent.def.multipliers.clashPower,
       random: () => this.rng(),
       takeMashPresses: () => {
         // During a clash Button 1 is the mash button; other buttons do nothing.
@@ -213,7 +250,9 @@ export class FightArenaScene implements ArenaScene {
           profile: f.profile,
         }),
       sound: (id, gain) => this.queueSound(id, gain),
-      impact: (x, y, dir, profile) => this.impacts.push({ x, y, dir, profile }),
+      impact: (x, y, dir, profile) => this.impacts.push(burstFromProfile(x, y, dir, profile)),
+      effect: (f, key, x, y, dir, scale) => this.pushEffect(x, y, dir, f.def.effects[key], scale),
+      characterSound: (f, key, gain) => this.characterSound(f, key, gain),
       shake: (trauma, punch) => {
         this.shake.addTrauma(trauma);
         if (punch > 0) this.shake.punch(punch);
@@ -367,7 +406,7 @@ export class FightArenaScene implements ArenaScene {
     for (const f of this.fighters) {
       if (f.scriptedAttack) {
         f.scriptedAttack.t += stepS;
-        if (f.scriptedAttack.t >= attackDuration(f.scriptedAttack.def)) f.scriptedAttack = null;
+        if (f.scriptedAttack.t >= attackDuration(f.scriptedAttack.timing)) f.scriptedAttack = null;
       }
       const wasKo = f.combatant.isKo;
       const burned = f.combatant.update(stepS);
@@ -397,11 +436,13 @@ export class FightArenaScene implements ArenaScene {
       Object.assign(f.prev, f.curr);
       f.prevHop = f.hop.heightM;
     }
+    const flying = this.fighters.map((f) => (f.knockFlightS > 0 && f.body ? { f, v: f.body.linvel() } : null));
     this.physics.step(stepS);
     for (const f of this.fighters) {
       const p = f.body?.translation();
       if (p) Object.assign(f.curr, { x: p.x, y: p.y });
     }
+    for (const fl of flying) if (fl) this.wallImpact(fl.f, fl.v);
   }
 
   /** Movement, jump, Button 1 (tap = attack, hold = block) and dodge for the player. */
@@ -417,11 +458,16 @@ export class FightArenaScene implements ArenaScene {
     }
     if (f.meleeTracking && this.intents.meleeHeld && !released) {
       f.meleeHoldS += stepS;
-      if (f.meleeHoldS >= DEFENCE.blockHoldS && !air && !f.combo.attack && !f.caster?.cast) c.setGuard(true);
+      const canGuard = f.def.capabilities.canBlock && !air && !f.combo.attack && !f.caster?.cast;
+      if (f.meleeHoldS >= DEFENCE.blockHoldS && canGuard) c.setGuard(true);
     }
     if (released && f.meleeTracking) {
       const wasGuarding = c.state === 'guarding' || f.meleeHoldS >= DEFENCE.blockHoldS;
-      if (!wasGuarding && c.canAct && !f.caster?.cast) f.combo.press(air);
+      if (!wasGuarding && c.canAct && !f.caster?.cast) {
+        // Which input: a firm push towards where you face is "forward" (kick strings on some movesets).
+        const m = this.intents.move;
+        f.combo.press({ airborne: air, falling: air && f.hop.verticalSpeedMps < 0, forward: m.x * f.facing > 0.7 });
+      }
       f.meleeTracking = false;
     }
     if (!this.intents.meleeHeld && c.state === 'guarding') c.setGuard(false);
@@ -446,7 +492,12 @@ export class FightArenaScene implements ArenaScene {
     }
 
     const jump =
-      this.intents.consumeJump() && c.canAct && c.state !== 'guarding' && !(f.combo.attack && !air) && !f.caster?.cast;
+      this.intents.consumeJump() &&
+      f.def.capabilities.canJump &&
+      c.canAct &&
+      c.state !== 'guarding' &&
+      !(f.combo.attack && !air) &&
+      !f.caster?.cast;
     this.stepFighter(f, stepS, this.intents.move, jump);
   }
 
@@ -549,11 +600,11 @@ export class FightArenaScene implements ArenaScene {
       Math.abs(p.x - f.x) < 1.35 &&
       Math.abs(p.y - f.y) < 0.6
     ) {
-      f.combo.press(false);
-      if (this.rng() < 0.35) f.combo.press(false); // sometimes a jab–hook pair
-      f.attackCooldownS = TRAINING_DUMMY.attackEveryS;
+      f.combo.press(GROUND);
+      if (this.rng() < f.def.ai.aggression) f.combo.press(GROUND); // sometimes a follow-up (AI profile)
+      f.attackCooldownS = f.def.ai.attackEveryS;
     }
-    this.stepFighter(f, stepS, { x: 0, y: 0 }, false, TRAINING_DUMMY.settleDecelMps2);
+    this.stepFighter(f, stepS, { x: 0, y: 0 }, false, f.def.ai.settleDecelMps2);
   }
 
   /** Shared per-fighter step: attacks, movement by state, jump, landing. */
@@ -605,9 +656,23 @@ export class FightArenaScene implements ArenaScene {
     }
     body.setLinvel(next, true);
 
-    if (jump && !air) f.jumps++;
+    if (jump && !air) {
+      f.jumps++;
+      f.airJumpReady = f.def.capabilities.canDoubleJump;
+      this.characterSound(f, 'jump', 0.7);
+    } else if (jump && air && f.airJumpReady) {
+      // Double jump (capability): a second, slightly smaller push in the air.
+      f.airJumpReady = false;
+      f.jumps++;
+      f.hop = { heightM: f.hop.heightM, verticalSpeedMps: tuning.jumpSpeedMps * 0.85 };
+      this.characterSound(f, 'jump', 0.7);
+    }
     f.hop = stepHop(f.hop, jump, tuning, stepS);
-    if (air && !f.airborne) f.combo.landed();
+    if (air && !f.airborne) {
+      f.combo.landed();
+      f.airJumpReady = false;
+      this.characterSound(f, 'land', 0.6);
+    }
 
     if (ev.hit) this.resolveHit(f, ev.hit);
   }
@@ -635,6 +700,12 @@ export class FightArenaScene implements ArenaScene {
       unblockable?: boolean;
       /** Use this impact feel instead of the blow's profile (scaled finishers). */
       profile?: ImpactProfile;
+      /** Punch or kick (picks the attacker's impact effect and sound). */
+      category?: 'punch' | 'kick';
+      /** An effect on contact instead of the profile's default (Effects library id). */
+      effect?: string | null;
+      /** The target bounces off the floor. */
+      groundBounce?: boolean;
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
@@ -658,7 +729,10 @@ export class FightArenaScene implements ArenaScene {
     if (result.outcome === 'dodged') return false;
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
     const profile = s.profile ?? (guarded ? IMPACTS.blocked : IMPACTS[s.impact]);
-    this.impactFeel(attacker, target, s, profile, result.outcome === 'ko');
+    this.impactFeel(attacker, target, s, profile, result.outcome, guarded);
+    if (s.groundBounce && !guarded && target.combatant.state !== 'ko') {
+      target.hop = { heightM: Math.max(0.02, target.hop.heightM), verticalSpeedMps: 3.6 }; // bounced off the floor
+    }
     if (s.melee) this.clashes.contact(attacker, this.simTimeS); // a sustained exchange becomes a Punch Clash
 
     if (result.outcome === 'parried') {
@@ -696,25 +770,116 @@ export class FightArenaScene implements ArenaScene {
   private impactFeel(
     attacker: FighterEntity,
     target: FighterEntity,
-    s: { dir: { x: number; y: number }; melee: boolean },
+    s: {
+      dir: { x: number; y: number };
+      melee: boolean;
+      heavy: boolean;
+      category?: 'punch' | 'kick';
+      effect?: string | null;
+    },
     profile: ImpactProfile,
-    ko: boolean,
+    outcome: HitOutcome,
+    guarded: boolean,
   ): void {
     const len = Math.hypot(s.dir.x, s.dir.y) || 1;
     const dir = { x: s.dir.x / len, y: s.dir.y / len };
-    target.flashS = Math.max(target.flashS, profile.flashS);
-    this.hitstopS = Math.max(this.hitstopS, profile.hitstopS);
-    this.shake.addTrauma(profile.shake);
-    this.impacts.push({ x: target.x - dir.x * 0.2, y: target.y, dir, profile });
+    const fx = attacker.def.effects;
+    if (!guarded) {
+      target.flashS = Math.max(target.flashS, profile.flashS);
+      target.flashColour = colourOf(fx.flashColour);
+    }
+    this.hitstopS = Math.max(this.hitstopS, profile.hitstopS * fx.hitstopScale);
+    this.shake.addTrauma(profile.shake * fx.shakeScale);
+    // The look of the contact comes from the attacker's Effects Profile (TD-039).
+    const effectId = guarded
+      ? fx.blockImpact
+      : (s.effect ?? (s.heavy ? fx.heavyImpact : s.category === 'kick' ? fx.kickImpact : fx.punchImpact));
+    const elemental = attacker.def.capabilities.usesElementalEffects;
+    const effect = EFFECTS[effectId] ?? EFFECTS['impact-light']!;
+    this.pushEffect(target.x - dir.x * 0.2, target.y, dir, elemental ? effect : withoutElements(effect));
     // Ability hits already play their own impact sound from the ability's hooks.
-    if (s.melee) this.queueSound(profile.sound);
-    if (ko) this.queueSound('ko');
+    if (s.melee) {
+      const key: AudioKey =
+        outcome === 'parried'
+          ? 'parry'
+          : guarded
+            ? 'block'
+            : s.category === 'kick'
+              ? s.heavy
+                ? 'heavyKick'
+                : 'lightKick'
+              : s.heavy
+                ? 'heavyPunch'
+                : 'lightPunch';
+      this.characterSound(guarded ? target : attacker, key);
+    }
+    if (outcome === 'ko') this.characterSound(target, 'defeat');
     if (s.melee && profile.recoilMps > 0 && attacker.body) {
       // The striker bounces back a little off the contact.
       const v = attacker.body.linvel();
       attacker.body.setLinvel({ x: v.x - dir.x * profile.recoilMps, y: v.y - dir.y * profile.recoilMps }, true);
       attacker.recoilS = RECOIL_BOUNCE_S;
     }
+  }
+
+  /**
+   * A knocked-back fighter slammed into a wall (its speed collapsed this step):
+   * it bounces off (capability canWallBounce) or stops dead, with a thud.
+   */
+  private wallImpact(f: FighterEntity, before: { x: number; y: number }): void {
+    const body = f.body;
+    if (!body) return;
+    const speed = Math.hypot(before.x, before.y);
+    const after = body.linvel();
+    if (speed < 3 || Math.hypot(after.x, after.y) > speed * 0.4) return;
+    const dir = { x: before.x / speed, y: before.y / speed };
+    const ahead = {
+      x: f.x + dir.x * (f.def.body.footRadiusM + 0.25),
+      y: f.y + dir.y * (f.def.body.footRadiusM + 0.25),
+    };
+    if (!this.physics?.castWorldRay({ x: f.x, y: f.y }, ahead)) return; // stopped by something else (a fighter)
+    if (f.def.capabilities.canWallBounce) {
+      body.setLinvel({ x: -before.x * 0.45, y: -before.y * 0.45 }, true);
+      f.knockFlightS = Math.max(f.knockFlightS, 0.3);
+    } else {
+      body.setLinvel({ x: 0, y: 0 }, true);
+      f.knockFlightS = 0;
+    }
+    this.characterSound(f, 'wallImpact', Math.min(1.4, speed / 7));
+    this.shake.addTrauma(Math.min(0.5, speed / 20));
+    f.flashS = Math.max(f.flashS, 0.06);
+    this.pushEffect(ahead.x, ahead.y, { x: -dir.x, y: -dir.y }, 'impact-heavy', 0.7);
+    this.wallHits++;
+  }
+
+  /** Spawn a library effect (sparks, embers, ring, scorch) at a contact point. */
+  private pushEffect(
+    x: number,
+    y: number,
+    dir: { x: number; y: number },
+    effectId: string | EffectDef,
+    scale = 1,
+  ): void {
+    const e = typeof effectId === 'string' ? EFFECTS[effectId] : effectId;
+    if (!e) return;
+    this.impacts.push({
+      x,
+      y,
+      dir,
+      sparks: Math.round((e.sparks?.count ?? 0) * scale),
+      speedMps: e.sparks?.speedMps ?? 5,
+      colour: e.sparks?.colour ?? e.ring?.colour ?? 0xffffff,
+      burstM: (e.ring?.sizeM ?? 0.3) * Math.sqrt(scale),
+      embers: e.embers ? Math.round(e.embers * scale) : undefined,
+      scorchM: e.scorchM,
+    });
+  }
+
+  /** Play one of a fighter's sounds for an event (its Audio Profile; variations picked at random). */
+  private characterSound(f: FighterEntity, key: AudioKey, gain = 1): void {
+    const list = f.def.audio[key];
+    if (!list || list.length === 0) return;
+    this.queueSound(list[Math.floor(this.fxRng() * list.length)]!, gain);
   }
 
   private queueSound(id: string, gain = 1): void {
@@ -779,6 +944,10 @@ export class FightArenaScene implements ArenaScene {
         knockbackMps: a.knockbackSpeedMps,
         melee: true,
         impact: a.impact,
+        category: a.category,
+        effect: a.effect,
+        groundBounce: a.groundBounce,
+        burn: a.burn ?? undefined,
       };
       if (this.applyStrike(attacker, target, { ...strike, dir: { x: facing, y: sideways } })) {
         connected = true;
@@ -915,7 +1084,7 @@ export class FightArenaScene implements ArenaScene {
           sparkColour: e.material === 'metal' ? 0xffd27a : 0xd8f6ff,
           burstM: big ? 0.5 : 0.25,
         };
-        this.impacts.push({ x: e.x, y: e.y + (1.1 - e.z), dir, profile: spark });
+        this.impacts.push(burstFromProfile(e.x, e.y + (1.1 - e.z), dir, spark));
       }
       if (big && e.material !== 'metal' && e.material !== 'glass') {
         // A puff of sawdust, stuffing or soil where it broke.
@@ -974,17 +1143,12 @@ export class FightArenaScene implements ArenaScene {
       if (p.burnS > 0 && !p.broken) burning.push({ x: p.pose.x, y: p.pose.y, heightM: p.size.h + 0.35 });
     }
     const world = this.abilities.world;
-    const impacts: ImpactBurst[] = this.impacts.splice(0, this.impacts.length).map((h) => ({
-      x: h.x,
-      y: h.y,
-      dir: h.dir,
-      sparks: h.profile.sparks,
-      speedMps: h.profile.sparkSpeedMps,
-      colour: h.profile.sparkColour,
-      burstM: h.profile.burstM,
-    }));
+    const impacts = this.impacts.splice(0, this.impacts.length);
     const dust = this.frameDust.splice(0, this.frameDust.length);
+    const limbFlames = this.frameFlames.splice(0, this.frameFlames.length);
+    this.limbFlameStrength = limbFlames.reduce((m, l) => Math.max(m, l.strength), 0);
     this.vfx.update(frameDtS, {
+      limbFlames,
       aim: this.ultAim,
       impacts,
       dust,
@@ -1001,6 +1165,11 @@ export class FightArenaScene implements ArenaScene {
     return this.props?.states ?? [];
   }
 
+  /** Peak jump height (animation blending), from the fighter's own data. */
+  private peakHop(f: FighterEntity): number {
+    return f.def.movement.jumpSpeedMps ** 2 / (2 * f.def.movement.hopGravityMps2);
+  }
+
   /** Pose, reactions, knockdown tilt and bars for one fighter; returns its drawn position. */
   private renderFighter(f: FighterEntity, alpha: number, frameDtS: number): { x: number; y: number } {
     const x = f.prev.x + (f.curr.x - f.prev.x) * alpha;
@@ -1015,14 +1184,14 @@ export class FightArenaScene implements ArenaScene {
       speedMps: down || c.state === 'stunned' || c.state === 'gettingUp' ? 0 : Math.hypot(v.x, v.y),
       maxSpeedMps: f.def.movement.maxSpeedMps,
       heightM,
-      peakHeightM: this.peakHopM,
+      peakHeightM: this.peakHop(f),
       verticalSpeedMps: f.hop.verticalSpeedMps,
     });
     const attack = f.combo.attack;
-    if (attack) pose = attackPose(pose, attack, f.combo.progress, f.combo.variant);
+    if (attack) pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
     if (f.scriptedAttack) {
       const sa = f.scriptedAttack;
-      pose = attackPose(pose, sa.def, Math.min(1, sa.t / attackDuration(sa.def)));
+      pose = strikePose(pose, sa.clip, Math.min(1, sa.t / attackDuration(sa.timing)), sa.timing);
     }
     pose = this.clashPose(f, pose);
     if (f === this.playerFighter && this.ultAimPoint) {
@@ -1064,7 +1233,9 @@ export class FightArenaScene implements ArenaScene {
     // The striker's little bounce off a landed blow.
     const bounce = f.recoilS > 0 ? 0.07 * Math.sin(Math.PI * (1 - f.recoilS / RECOIL_BOUNCE_S)) : 0;
     const drawnHeight = heightM + lift + f.abilityLift + bounce;
-    f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash);
+    f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, f.flashColour);
+    this.limbEffects(f, x, y);
+    for (let n = f.animator.takeFootfalls(); n > 0; n--) this.characterSound(f, 'footstep', 0.5);
     f.view.root.position.set(x, y);
     this.koDissolve(f, x, y, drawnHeight, frameDtS);
     f.bars?.draw(
@@ -1085,10 +1256,41 @@ export class FightArenaScene implements ArenaScene {
     const side = f === this.playerFighter ? 'a' : 'b';
     if (c.phase === 'intro' || !beat) return blockPose(pose);
     if (beat.by !== side && beat.by !== 'both') return blockPose(pose);
-    const strike = beat.index % 2 === 0 ? f.def.attacks.jab : f.def.attacks.hook;
+    // The Animation Profile's ClashLoop clips alternate beat by beat.
+    const clip = f.strikeClip('ClashLoop', beat.index);
     // Fit a whole punch (snap and return) into the beat: faster as the clash speeds up.
     const p = 0.22 + 0.7 * Math.min(1, beat.t / beat.intervalS);
-    return attackPose(pose, strike, p, beat.index % 3);
+    return strikePose(pose, clip, p, CLASH_BEAT_TIMING);
+  }
+
+  /**
+   * Effects Profile limb trail and aura (TD-039): flames around the striking
+   * fists or feet while attacking (Inferno: owner request "visible flames around
+   * Inferno's fists during punches and combos"), and embers drifting off the body.
+   */
+  private limbEffects(f: FighterEntity, x: number, y: number): void {
+    if (!f.view || !f.def.capabilities.usesElementalEffects || f.combatant.isKo) return;
+    const trail = f.def.effects.limbTrail ? EFFECTS[f.def.effects.limbTrail] : undefined;
+    const aura = f.def.effects.aura ? EFFECTS[f.def.effects.aura] : undefined;
+    const attack = f.combo.attack;
+    if (trail?.limbFlames && (attack || f.scriptedAttack)) {
+      const tips = f.view.limbTips();
+      const limbs = attack?.category === 'kick' ? tips.feet : tips.fists;
+      // Strongest at the strike, gentler in the wind-up and recovery.
+      const pr = attack ? f.combo.progress : 0.5;
+      const strength = Math.max(0.25, 1 - Math.abs(pr - 0.4) * 1.6);
+      this.frameFlames.push({ points: limbs.map((p) => ({ x: x + p.x, y: y + p.y, z: p.z })), strength });
+    } else if (trail?.limbFlames && f.def.capabilities.usesFireEffects) {
+      // A faint glow on the fists in the guard.
+      const tips = f.view.limbTips();
+      this.frameFlames.push({ points: tips.fists.map((p) => ({ x: x + p.x, y: y + p.y, z: p.z })), strength: 0.05 });
+    }
+    if (aura?.bodyEmbers && this.fxRng() < 0.12) {
+      this.frameFlames.push({
+        points: [{ x: x + (this.fxRng() - 0.5) * 0.5, y, z: 0.3 + this.fxRng() * 1.3 }],
+        strength: 0.1,
+      });
+    }
   }
 
   /**
@@ -1103,12 +1305,16 @@ export class FightArenaScene implements ArenaScene {
       view.root.alpha = 1;
       return;
     }
+    if (!f.def.capabilities.canDisintegrate) {
+      view.root.alpha = 1; // stays down until it gets up again (capability off)
+      return;
+    }
     const k = Math.min(1, Math.max(0, (c.koAge - KO_DISSOLVE_FROM_S) / KO_DISSOLVE_S));
     view.root.alpha = 1 - k * k * (3 - 2 * k);
     if (k <= 0 || k >= 1) return;
     if (!f.dustSounded) {
       f.dustSounded = true;
-      this.queueSound('dust');
+      this.characterSound(f, 'disintegration');
     }
     // Points along the (tilted) body from the feet to the head, as floor position plus height.
     const rot = -f.facing * f.tilt;
@@ -1119,7 +1325,15 @@ export class FightArenaScene implements ArenaScene {
     }
     // Most dust leaves early, thinning out as the last of the body fades.
     const count = Math.round(260 * frameDtS * (1.2 - k));
-    this.frameDust.push({ points, colour: f.def.look.limb, count });
+    // The look of the dust comes from the fighter's Effects Profile (grey dust, or embers and ash).
+    const fx = EFFECTS[f.def.effects.disintegration];
+    this.frameDust.push({
+      points,
+      colour: f.def.look.limb,
+      colours: fx?.dust,
+      embers: fx?.embers ? Math.round((fx.embers * frameDtS) / 1.6) : 0,
+      count,
+    });
   }
 
   debugStats(): Record<string, string | number> {

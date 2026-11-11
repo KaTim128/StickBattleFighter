@@ -1,0 +1,141 @@
+{
+  "id": "base-moveset",
+  "starters": {
+    "tap": "jab",
+    "tap-forward": "front-kick",
+    "air-tap": "flyingKick"
+  },
+  "moves": [
+    {
+      "id": "jab",
+      "displayName": "Left jab",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.06,
+      "activeS": 0.07,
+      "recoveryS": 0.17,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 0.72,
+        "radiusM": 0.4
+      },
+      "damage": 40,
+      "strength": 150,
+      "knockbackMps": 1.5,
+      "lungeMps": 0,
+      "moveFactor": 0.45,
+      "impact": "knuckle-light",
+      "shake": 0.12,
+      "zoomPunch": 0,
+      "next": {
+        "tap": "hook"
+      },
+      "requires": ["canPunch"]
+    },
+    {
+      "id": "hook",
+      "displayName": "Right hook",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.08,
+      "activeS": 0.08,
+      "recoveryS": 0.19,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 0.74,
+        "radiusM": 0.45
+      },
+      "damage": 60,
+      "strength": 230,
+      "knockbackMps": 2.5,
+      "lungeMps": 0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.2,
+      "zoomPunch": 0.01,
+      "next": {
+        "tap": "heavy"
+      },
+      "requires": ["canPunch", "canUseCombos"]
+    },
+    {
+      "id": "heavy",
+      "displayName": "Heavy finisher",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.17,
+      "activeS": 0.1,
+      "recoveryS": 0.34,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.5
+      },
+      "damage": 140,
+      "strength": 720,
+      "knockbackMps": 11,
+      "lungeMps": 0,
+      "moveFactor": 0.2,
+      "impact": "knuckle-heavy",
+      "shake": 0.6,
+      "zoomPunch": 0.06,
+      "requires": ["canPunch", "canUseCombos"]
+    },
+    {
+      "id": "front-kick",
+      "displayName": "Front kick",
+      "animationState": "FrontKick",
+      "category": "kick",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.24,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.95,
+        "radiusM": 0.42
+      },
+      "damage": 55,
+      "strength": 320,
+      "knockbackMps": 4,
+      "lungeMps": 0.5,
+      "moveFactor": 0.3,
+      "impact": "kick",
+      "shake": 0.25,
+      "zoomPunch": 0.01,
+      "requires": ["canKick"]
+    },
+    {
+      "id": "flyingKick",
+      "displayName": "Flying kick",
+      "animationState": "JumpingFrontKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.07,
+      "activeS": 0.2,
+      "recoveryS": 0.22,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.9,
+        "radiusM": 0.55
+      },
+      "damage": 120,
+      "strength": 820,
+      "knockbackMps": 7,
+      "lungeMps": 3.5,
+      "moveFactor": 1,
+      "impact": "kick",
+      "shake": 0.55,
+      "zoomPunch": 0.05,
+      "requires": ["canKick", "canUseAerialKicks", "canJump"]
+    }
+  ]
+}

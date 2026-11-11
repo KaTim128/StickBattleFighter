@@ -1,13 +1,30 @@
 import type { AbilityKit } from '../../abilities/ability-def';
 import type { Weapon } from '../../animation/greybox-motion';
 import type { BoneLengths } from '../../animation/skeleton';
+import type { ResolvedAnimation } from '../../characters/resolve';
+import type {
+  AiProfile,
+  AudioProfile,
+  Capabilities,
+  EffectsProfile,
+  MoveInput,
+  StatsProfile,
+} from '../../characters/schema';
+import type { AttackDef } from '../../combat/attacks';
 import type { CombatStats } from '../../combat/combatant';
-import type { ComboSet } from '../../combat/combo';
 import type { HopTuning, MovementTuning } from '../../physics/movement';
 
-/** Everything that defines a fighter (REQ-ARC-3, data-driven). Every fighter runs the same engine. */
+/**
+ * A fighter as the shared systems use it at runtime: a Character Definition
+ * with its profiles resolved (src/characters/resolve.ts, TD-039). Every
+ * fighter runs the same engine; nothing in shared code checks which one it is.
+ */
 export interface FighterDef {
   readonly id: string;
+  readonly displayName: string;
+  readonly element: string;
+  readonly combatStyle: string;
+  readonly characterType: string;
   readonly weapon: Weapon;
   readonly movement: MovementTuning & HopTuning;
   readonly body: { readonly footRadiusM: number; readonly massKg: number };
@@ -20,7 +37,20 @@ export interface FighterDef {
     readonly outlineWidthM: number;
   };
   readonly stats: CombatStats;
-  readonly attacks: ComboSet;
+  readonly multipliers: StatsProfile['multipliers'];
+  /** Available moves by id (after capability filtering and multipliers). */
+  readonly moves: Readonly<Record<string, AttackDef>>;
+  /** Same as `moves` (kept for older call sites and tests). */
+  readonly attacks: Readonly<Record<string, AttackDef>>;
+  /** The first move for each input. */
+  readonly starters: Partial<Record<MoveInput, string>>;
+  readonly animation: ResolvedAnimation;
+  readonly capabilities: Capabilities;
+  readonly effects: EffectsProfile;
+  readonly audio: AudioProfile;
+  readonly ai: AiProfile;
   /** Three abilities and an ultimate (REQ-ABL-2); null for training dummies. */
   readonly abilities: AbilityKit | null;
+  /** Fallbacks and switched-off moves noticed while resolving (shown in dev builds and the editor). */
+  readonly warnings: readonly string[];
 }

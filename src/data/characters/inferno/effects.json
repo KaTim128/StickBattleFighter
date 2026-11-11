@@ -1,0 +1,15 @@
+{
+  "id": "fire-effects",
+  "punchImpact": "flame-burst-small",
+  "kickImpact": "flame-burst-directional",
+  "heavyImpact": "flame-burst-large",
+  "blockImpact": "block-guard",
+  "limbTrail": "flame-limbs",
+  "aura": "fire-aura",
+  "clash": "clash-fire",
+  "finisher": "finisher-fire",
+  "disintegration": "ember-ash",
+  "flashColour": "#fff1c4",
+  "shakeScale": 1.1,
+  "hitstopScale": 1
+}

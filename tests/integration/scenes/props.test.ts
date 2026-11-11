@@ -25,7 +25,14 @@ function room(props: PropPlacement[]): ArenaLayout {
 
 async function setup(props: PropPlacement[]) {
   const intents = new PlayerIntents();
-  const scene = new FightArenaScene(room(props), new Container(), intents, () => ({ width: 1280, height: 720 }));
+  const scene = new FightArenaScene(
+    room(props),
+    new Container(),
+    intents,
+    () => ({ width: 1280, height: 720 }),
+    false,
+    { player: 'base-stickman' },
+  );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
   const run = (seconds: number) => {

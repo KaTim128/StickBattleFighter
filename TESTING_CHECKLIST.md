@@ -95,6 +95,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: office door flow from the open area before the door.
 - [x] V Screenshot: `docs/screenshots/office-centre-cubicles.png`.
 
+## 0p. Data-driven characters (verified 11/11/2026)
+- [x] `npm test`: **234 tests**. Owner's seven cases: Base Stickman with shared profiles; Inferno (fire, taekwondo, its own and fallback animations, moveset, multipliers, effects, audio, kit); aerial attacks disabled (moves and starters removed, still valid, nothing happens in the air); Punch Clash disabled (a sustained exchange never clashes, in the arena); missing custom animation (style then default); fallback animations (safe clip with a warning; unknown clip skipped and reported); invalid moves (clear messages; the game falls back to the Base Stickman without crashing). Plus validation limits and references, impossible combo routes, all built-ins valid, MoveController routes, inputs, aerial once per jump and variants, and **no character names in shared code**. In the arena: Inferno's fist flames, forward-tap kick string, burning fire roundhouse, downward fire kick with ground bounce, jump/block/disintegration off, wall bounce.
+- [x] `npm run e2e`: **24 passed** (new: editor validates, capability toggle, clear stat error, Try in game plays the draft; `?character=` picks the fighter; an unknown character shows a message and stays playable).
+- [x] V Screenshots: `docs/screenshots/character-editor.png`, `docs/screenshots/inferno-data-driven.png`.
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

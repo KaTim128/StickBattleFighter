@@ -190,7 +190,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     intents.pressAbility('ult');
     run(STEP);
     expect(scene.ultAim).not.toBeNull();
-    scene.dummyFighter.combo.press(false);
+    scene.dummyFighter.combo.press({ airborne: false, falling: false, forward: false });
     run(0.4);
     expect(scene.ultAim).toBeNull();
     expect(scene.player.meter).toBeGreaterThanOrEqual(100);
@@ -208,7 +208,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
 
   it('a hit during the wind-up interrupts the cast: no bolt is fired', async () => {
     const { intents, scene, scenes, run } = await setup({ x: 17.95, y: 13 });
-    scene.dummyFighter.combo.press(false); // the dummy jabs (wind-up 0.06 s)…
+    scene.dummyFighter.combo.press({ airborne: false, falling: false, forward: false }); // the dummy jabs (wind-up 0.06 s)…
     intents.pressAbility('a1'); // …while the bolt winds up for 0.18 s
     run(0.5);
     expect(scene.player.ability).toBeNull();

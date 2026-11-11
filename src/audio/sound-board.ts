@@ -43,6 +43,37 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.05, gain: 0.55, type: 'bandpass', freq: 2300, q: 1.1 } },
     { noise: { dur: 0.012, gain: 0.3, type: 'highpass', freq: 5000 } },
   ],
+  // A second light punch with a drier, higher slap (variety, TD-039 audio profiles).
+  'punch-light-b': [
+    { tone: { wave: 'sine', f0: 190, f1: 85, dur: 0.06, gain: 0.5 } },
+    { noise: { dur: 0.045, gain: 0.5, type: 'bandpass', freq: 2900, q: 1.4 } },
+    { noise: { dur: 0.01, gain: 0.25, type: 'highpass', freq: 6000 } },
+  ],
+  // A light kick: a flat, slapping thump (shin on body).
+  'kick-light': [
+    { tone: { wave: 'sine', f0: 140, f1: 60, dur: 0.11, gain: 0.6 } },
+    { noise: { dur: 0.07, gain: 0.45, type: 'lowpass', freq: 1800, freqEnd: 600 } },
+  ],
+  // Parry: a bright, ringing deflection.
+  parry: [
+    { tone: { wave: 'triangle', f0: 1400, f1: 1350, dur: 0.25, gain: 0.18 } },
+    { noise: { dur: 0.03, gain: 0.35, type: 'bandpass', freq: 4000, q: 2 } },
+  ],
+  // Movement: soft footfalls, a jump push-off and a landing thud.
+  footstep: [
+    { tone: { wave: 'sine', f0: 95, f1: 60, dur: 0.05, gain: 0.12 } },
+    { noise: { dur: 0.03, gain: 0.06, type: 'lowpass', freq: 900 } },
+  ],
+  jump: [{ noise: { dur: 0.14, gain: 0.16, type: 'bandpass', freq: 700, freqEnd: 1600, q: 1, attack: 0.03 } }],
+  land: [
+    { tone: { wave: 'sine', f0: 110, f1: 55, dur: 0.1, gain: 0.35 } },
+    { noise: { dur: 0.06, gain: 0.18, type: 'lowpass', freq: 800 } },
+  ],
+  // A body slamming into a wall.
+  'wall-thud': [
+    { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.22, gain: 0.8 } },
+    { noise: { dur: 0.12, gain: 0.45, type: 'lowpass', freq: 700 } },
+  ],
   // Bare knuckles, heavy: a deep thud with a crunchy snap on top.
   'punch-heavy': [
     { tone: { wave: 'sine', f0: 125, f1: 38, dur: 0.24, gain: 0.95 } },

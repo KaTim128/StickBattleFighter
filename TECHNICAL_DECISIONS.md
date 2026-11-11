@@ -292,6 +292,17 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - `ArenaProps`: desk items on a standing desk are hittable (they shatter, or are knocked off if they survive); a `BREAKUP` table per material sets piece count, size, speed and shape (rect or triangular shard); `PropEvent`s (hit/break with material, position, size) drive sounds and particles in the scene (steel/glass: sparks or glints; wood/fabric/plant: dust); new synthesised sounds `hit-wood`, `break-wood`, `hit-metal`, `break-metal`, `break-glass`, `hit-plastic`, `break-plastic`, `hit-soft`, `break-soft`.
 - `?dummyAt=x,y` joins `?playerAt=` for tests and practice.
 
+### TD-039: Data-driven character configuration — ACCEPTED (owner request 11/11/2026)
+- **Engine-native form:** this is a web game, so characters are **JSON** (`src/data/characters/`) validated at load, plus a **local admin editor** page (`admin.html`) rather than an external tool.
+- **Schema** (`src/characters/schema.ts`): Character Definition (identity, element, combat style, profile ids, rig, capabilities, unlock, ability kit, optional `template`), Animation Profile (state → clip ids, `extends`), Moveset Profile (moves with seconds-based timing, hit area, damage, knockback, impact, routes, requirements, effects, status; starters per input), Stats, Effects, Audio, AI profiles; `LIMITS`.
+- **Resolution** (`resolve.ts`): template merge; capability filtering of moves and routes; stat multipliers; the 4-tier animation fallback with warnings. `FighterDef` is now the resolved character.
+- **Clip library** (`src/animation/clips.ts`): strike clips (keyframed shapes; the old attack shapes moved here unchanged, so the Base Stickman plays exactly as before) and procedural clips (stances, gait, jumps, guard, reactions, falls). New: standard and taekwondo kicks, Inferno's clips, a taekwondo stance, and safe fallbacks.
+- **MoveController** (`src/combat/moves.ts`) replaces the hard-coded 1-2-3 ComboController with data routes and four Button 1 inputs (tap, forward tap, air, falling), keeping INV-9 (five combat buttons).
+- **Profiles wired into shared systems:** impact visuals by punch/kick/heavy/block and limb trails or auras (Effects), sounds per event with variations (Audio), Practice AI (AI), capabilities (jump, double jump, block, parry, Punch Clash, wall and ground bounce, disintegration, elemental effects), flash colour, effect and hit-stop scaling. New sounds: punch-light-b, kick-light, parry, footstep, jump, land, wall-thud.
+- **Safety:** `loadCharacter` validates first; invalid data falls back to the Base Stickman with the report in the status bar. A unit test fails if shared code mentions a character name.
+- **Alternatives:** TypeScript-only configs (rejected: the owner wants admin-editable files); a server CMS (later, with Phase 14 admin auth).
+- **Limits today:** new clip *shapes* need a code addition in `clips.ts`; several mapped states (StartRun, Turn, HardLand, BlockMid/Low, AirborneHit, ClashEntry/Win/Lose/Stalemate…) share procedural motions until art (Phase 8); unlock data is display-only (server-validated in Phase 14); voice lines not yet supported.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

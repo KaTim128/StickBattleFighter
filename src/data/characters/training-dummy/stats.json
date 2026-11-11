@@ -1,0 +1,35 @@
+{
+  "id": "training-dummy-stats",
+  "maxHp": 1000,
+  "maxStamina": 100,
+  "staminaRegenPerS": 30,
+  "staminaRegenDelayS": 0.7,
+  "movement": {
+    "maxSpeedMps": 5,
+    "accelMps2": 50,
+    "decelMps2": 55,
+    "jumpSpeedMps": 6.5,
+    "gravityMps2": 20
+  },
+  "body": {
+    "footRadiusM": 0.32,
+    "massKg": 140
+  },
+  "power": 1,
+  "defence": 1,
+  "critChance": 0,
+  "critMultiplier": 1.5,
+  "knockbackResistance": 0,
+  "multipliers": {
+    "attackSpeed": 1,
+    "punchDamage": 1,
+    "kickDamage": 1,
+    "aerialDamage": 1,
+    "knockback": 1,
+    "movementSpeed": 1,
+    "jumpForce": 1,
+    "clashPower": 1,
+    "specialCharge": 1
+  },
+  "hitStunResistance": 0
+}

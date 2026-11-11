@@ -14,7 +14,9 @@ const MAX = GREYBOX_STICKMAN.movement.maxSpeedMps;
 async function setup() {
   const stage = new Container();
   const intents = new PlayerIntents();
-  const scene = new FightArenaScene(TRAINING_YARD, stage, intents, () => ({ width: 1280, height: 720 }));
+  const scene = new FightArenaScene(TRAINING_YARD, stage, intents, () => ({ width: 1280, height: 720 }), false, {
+    player: 'base-stickman',
+  }); // shared rules, tested on the Base Stickman
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
   const run = (seconds: number) => {

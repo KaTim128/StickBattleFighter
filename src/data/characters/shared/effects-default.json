@@ -1,0 +1,15 @@
+{
+  "id": "default-effects",
+  "punchImpact": "impact-light",
+  "kickImpact": "impact-kick",
+  "heavyImpact": "impact-heavy",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#ffffff",
+  "shakeScale": 1,
+  "hitstopScale": 1
+}

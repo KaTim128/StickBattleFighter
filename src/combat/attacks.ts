@@ -1,10 +1,12 @@
+import type { AnimationState, MoveInput } from '../characters/schema';
 import type { ImpactId } from '../data/combat/impacts';
 /**
  * Attack definitions (data-driven, Combat specialist). An attack has three
  * phases: wind-up (anticipation), a short active window where the hit is
  * checked once, and recovery. Values live in each fighter's data.
  */
-export type AttackId = 'jab' | 'hook' | 'heavy' | 'flyingKick';
+/** A move id from the fighter's Moveset Profile (TD-039). */
+export type AttackId = string;
 
 /** What kind of blow it is: `kick` and heavy `strike`s can break doors if strong enough. */
 export type BlowKind = 'strike' | 'kick';
@@ -41,9 +43,25 @@ export interface AttackDef {
   readonly impact: ImpactId;
   readonly trauma: number;
   readonly zoomPunch: number;
+  /** Which animation state shows it (the fighter's Animation Profile picks the clip). */
+  readonly animationState: AnimationState;
+  readonly category: 'punch' | 'kick';
+  readonly aerial: boolean;
+  /** Combo routes: the move that follows on each input. */
+  readonly next: Partial<Record<MoveInput, string>>;
+  /** Extra effect on contact (Effects library id). */
+  readonly effect: string | null;
+  /** Burn applied to the target on a clean hit. */
+  readonly burn: { readonly dps: number; readonly durationS: number } | null;
+  /** The target bounces off the floor. */
+  readonly groundBounce: boolean;
 }
 
-export function attackDuration(a: AttackDef): number {
+export function attackDuration(a: {
+  readonly windupS: number;
+  readonly activeS: number;
+  readonly recoveryS: number;
+}): number {
   return a.windupS + a.activeS + a.recoveryS;
 }
 

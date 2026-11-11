@@ -24,6 +24,8 @@ async function setup() {
       width: 1280,
       height: 720,
     }),
+    false,
+    { player: 'base-stickman' },
   );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);

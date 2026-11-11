@@ -2,9 +2,11 @@ import type { RigidBody } from '@dimforge/rapier2d';
 import type { Container } from 'pixi.js';
 import { AbilityCaster } from '../../abilities/ability-caster';
 import { StickmanAnimator } from '../../animation/animator';
-import type { AttackDef } from '../../combat/attacks';
+import type { Clip, StrikeClip } from '../../animation/clips';
+import { CLIPS } from '../../animation/clips';
+import type { AnimationState } from '../../characters/schema';
 import { Combatant, seededRandom } from '../../combat/combatant';
-import { ComboController } from '../../combat/combo';
+import { MoveController } from '../../combat/moves';
 import type { FighterDef } from '../../data/fighters/fighter-def';
 import { type HopState, isAirborne } from '../../physics/movement';
 import type { PhysicsWorld } from '../../physics/physics-world';
@@ -13,13 +15,17 @@ import { StickmanView } from '../../rendering/stickman-view';
 import type { YSortLayer } from '../../rendering/y-sort-layer';
 
 /**
- * One fighter in a scene: the shared combat engine (Combatant, ComboController),
+ * One fighter in a scene (the shared character controller, TD-039): the
+ * shared combat engine (Combatant, MoveController) configured from its
+ * resolved Character Definition,
  * its physics body, animation and views. The player and the dummy are both
  * FighterEntities, so every fighter plays by exactly the same rules (INV-5).
  */
+const SAFE_STRIKE = CLIPS['safe.strike'] as StrikeClip;
+
 export class FighterEntity {
   readonly combatant: Combatant;
-  readonly combo: ComboController;
+  readonly combo: MoveController;
   readonly animator: StickmanAnimator;
   /** Abilities and the ultimate meter (null for fighters without a kit, e.g. the training dummy). */
   readonly caster: AbilityCaster | null;
@@ -30,9 +36,16 @@ export class FighterEntity {
   /** Burn damage not yet shown as a floating number. */
   burnShown = 0;
   /** An attack animation played outside the combo (the Punch Clash finisher). */
-  scriptedAttack: { def: AttackDef; t: number } | null = null;
-  /** Hit flash time left (white figure), seconds. */
+  scriptedAttack: {
+    clip: StrikeClip;
+    timing: { windupS: number; activeS: number; recoveryS: number };
+    t: number;
+  } | null = null;
+  /** A second jump is still available (capability canDoubleJump). */
+  airJumpReady = false;
+  /** Hit flash time left, seconds, and the colour it flashes (the striker's Effects Profile). */
   flashS = 0;
+  flashColour = 0xffffff;
   /** Recoil bounce time left after landing a blow, seconds. */
   recoilS = 0;
   /** KO presentation: the boom and the dusting sound play once per KO. */
@@ -69,9 +82,25 @@ export class FighterEntity {
     readonly showStamina: boolean,
   ) {
     this.combatant = new Combatant(def.stats);
-    this.combo = new ComboController(def.attacks, seededRandom(name.length * 7919 + 17));
-    this.animator = new StickmanAnimator(def.bones);
+    this.combo = new MoveController(def.moves, def.starters, seededRandom(name.length * 7919 + 17));
+    const idle = def.animation.clips.Idle[0];
+    this.animator = new StickmanAnimator(
+      def.bones,
+      idle?.kind === 'procedural' && idle.id === 'proc.idle.taekwondo' ? 'taekwondo' : 'boxer',
+    );
     this.caster = def.abilities ? new AbilityCaster(def.abilities) : null;
+  }
+
+  /** The clip the Animation Profile assigns to a state (varied looks pick by `variant`). */
+  clip(state: AnimationState, variant = 0): Clip {
+    const list = this.def.animation.clips[state];
+    return list[((variant % list.length) + list.length) % list.length]!;
+  }
+
+  /** A strike clip for a state (falls back to the safe strike if a profile mapped something else). */
+  strikeClip(state: AnimationState, variant = 0): StrikeClip {
+    const c = this.clip(state, variant);
+    return c.kind === 'strike' ? c : SAFE_STRIKE;
   }
 
   get airborne(): boolean {

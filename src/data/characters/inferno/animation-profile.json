@@ -1,0 +1,10 @@
+{
+  "id": "inferno-taekwondo",
+  "extends": "style-taekwondo",
+  "states": {
+    "RoundhouseKick": "inferno.fire-roundhouse",
+    "DownwardAerialKick": "inferno.meteor-kick",
+    "ClashFinisher": "inferno.flame-uppercut",
+    "ClashWin": "inferno.flame-uppercut"
+  }
+}

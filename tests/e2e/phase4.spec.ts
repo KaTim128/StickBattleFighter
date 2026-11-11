@@ -34,7 +34,7 @@ test('office: walking into the door keeps it shut; the 1-2-3 combo smashes it; t
   test.setTimeout(60_000);
   const errors: string[] = [];
   // Start in the open area before the boss door (the cubicles fill the centre since 11/11/2026).
-  await open(page, errors, '?playerAt=22.3,6&dummyAt=23.5,6');
+  await open(page, errors, '?playerAt=22.3,6&dummyAt=23.5,6&character=base-stickman'); // shared rules on the Base Stickman
 
   // Walk right along the door's row, shoving the dummy all the way to the door, and keep pushing.
   await page.keyboard.down('KeyD');

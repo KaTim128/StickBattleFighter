@@ -20,6 +20,17 @@ export interface ClashHost {
     s: { damage: number; knockbackMps: number; profile: ImpactProfile },
   ): void;
   sound(id: string, gain: number): void;
+  /** A fighter's own effect for a clash moment (its Effects Profile), scaled. */
+  effect(
+    f: FighterEntity,
+    key: 'clash' | 'finisher',
+    x: number,
+    y: number,
+    dir: { x: number; y: number },
+    scale: number,
+  ): void;
+  /** A fighter's own sound for an event (its Audio Profile). */
+  characterSound(f: FighterEntity, key: 'clash' | 'finisher' | 'block' | 'lightPunch', gain: number): void;
   impact(x: number, y: number, dir: { x: number; y: number }, profile: ImpactProfile): void;
   shake(trauma: number, punch: number): void;
   hitstop(seconds: number): void;
@@ -61,6 +72,9 @@ export interface ClashBanner {
  * camera ever closer, then plays the scaled finisher or the stalemate and
  * hands the camera back.
  */
+/** Phase lengths the finisher clip is played over. */
+const FINISHER_TIMING = { windupS: 0.17, activeS: 0.1, recoveryS: 0.34 } as const;
+
 export class SceneClash {
   readonly trigger = new ClashTrigger();
   clash: PunchClash | null = null;
@@ -192,6 +206,7 @@ export class SceneClash {
 
   private eligible(f: FighterEntity): boolean {
     const c = f.combatant;
+    if (!f.def.capabilities.canUsePunchClash) return false; // capability (TD-039)
     return (
       !c.isKo &&
       (c.state === 'free' || c.state === 'guarding' || c.state === 'stunned') &&
@@ -237,8 +252,12 @@ export class SceneClash {
     } else {
       defender.flashS = Math.max(defender.flashS, 0.03 + 0.04 * i);
     }
+    // Each fighter's own clash effect and sounds (Effects and Audio Profiles, TD-039).
+    this.host.effect(striker, 'clash', at.x, at.y, dir, 0.3 + 0.7 * Math.min(1, i));
     const gain = 0.6 + 0.7 * Math.min(1.3, i);
-    this.host.sound(by === 'both' ? 'clash-collide' : this.beats % 3 === 0 ? 'punch-light' : 'block', gain);
+    if (by === 'both') this.host.characterSound(striker, 'clash', gain);
+    else if (this.beats % 3 === 0) this.host.characterSound(striker, 'lightPunch', gain);
+    else this.host.characterSound(defender, 'block', gain);
     this.host.shake(0.07 + 0.16 * i, by === 'both' ? 0.01 + 0.015 * i : 0);
   }
 
@@ -270,8 +289,10 @@ export class SceneClash {
       };
       this.host.impact(mid.x, mid.y, { x: 1, y: 0 }, profile);
       this.host.impact(mid.x, mid.y, { x: -1, y: 0 }, profile);
-      this.host.sound('clash-collide', 1.5);
-      this.host.sound('punch-heavy', 1.2);
+      this.host.characterSound(a, 'clash', 1.5);
+      this.host.characterSound(b, 'clash', 1.2);
+      this.host.effect(a, 'clash', mid.x, mid.y, { x: -1, y: 0 }, 1.5);
+      this.host.effect(b, 'clash', mid.x, mid.y, { x: 1, y: 0 }, 1.5);
       this.host.shake(0.65, 0.07);
       this.host.hitstop(0.08);
       this.banner = { text: 'STALEMATE!', ageS: 0 };
@@ -290,13 +311,15 @@ export class SceneClash {
       hitstopS: scaleBy(CLASH.finishHitstopS, g),
       shake: scaleBy(CLASH.finishShake, g),
     };
-    winner.scriptedAttack = { def: winner.def.attacks.heavy, t: 0 };
+    // The winner's ClashFinisher animation (from its Animation Profile).
+    winner.scriptedAttack = { clip: winner.strikeClip('ClashFinisher'), timing: FINISHER_TIMING, t: 0 };
     this.host.finisher(winner, loser, {
       damage: scaleBy(CLASH.finishDamage, g),
       knockbackMps: scaleBy(CLASH.finishKnockbackMps, g),
       profile,
     });
-    this.host.sound('clash-break', 1 + 0.5 * g);
+    this.host.characterSound(winner, 'finisher', 1 + 0.5 * g);
+    this.host.effect(winner, 'finisher', loser.x, loser.y, { x: winner.facing, y: 0 }, 0.7 + 0.6 * g);
     this.host.shake(0, 0.06 + 0.05 * g);
     this.banner = { text: result.winner === 'a' ? 'CLASH WON!' : 'CLASH LOST!', ageS: 0 };
   }
