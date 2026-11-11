@@ -11,5 +11,6 @@
   "disintegration": "ember-ash",
   "flashColour": "#fff1c4",
   "shakeScale": 1.1,
-  "hitstopScale": 1
+  "hitstopScale": 1,
+  "head": "flame"
 }

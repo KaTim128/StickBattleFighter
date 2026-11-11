@@ -24,7 +24,19 @@ export class PlayerIntents {
   private readonly sources = new Map<string, Vec2>();
   private jumpQueued = false;
 
-  /** Each device reports its own movement vector (+x right, +y down the screen). */
+  /**
+   * How a direction on screen maps to the world. Movement intents are WORLD directions (what the
+   * simulation uses); devices report SCREEN directions through `setMoveFromScreen`, which this
+   * maps. Identity for a top-down view; the 2.5D view turns it (TD-045) so W walks up the screen.
+   */
+  screenToWorld: (v: Vec2) => Vec2 = (v) => v;
+
+  /** A device's stick or keys, as a screen direction (+x right, +y down the screen). */
+  setMoveFromScreen(source: string, v: Vec2): void {
+    this.setMove(source, this.screenToWorld(clampToUnit(v)));
+  }
+
+  /** Each source's movement as a world direction (devices use `setMoveFromScreen`; tests may set this directly). */
   setMove(source: string, v: Vec2): void {
     if (v.x === 0 && v.y === 0) this.sources.delete(source);
     else this.sources.set(source, clampToUnit(v));
@@ -108,6 +120,11 @@ export class PlayerIntents {
   // ---- Ultimate aiming by drag (touch: hold ULT and drag). A vector of length ≤ 1:
   // its direction is where to land, its length the fraction of the maximum range.
   private ultDragValue: Vec2 | null = null;
+
+  /** The ultimate drag as a screen vector (touch), mapped to the world like movement. */
+  setUltDragFromScreen(v: Vec2 | null): void {
+    this.setUltDrag(v ? this.screenToWorld(clampToUnit(v)) : null);
+  }
 
   setUltDrag(v: Vec2 | null): void {
     this.ultDragValue = v ? clampToUnit(v) : null;

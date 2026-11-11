@@ -1,4 +1,4 @@
-import { Container } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
 import type { Burn } from '../../abilities/ability-def';
 import { abilityPose } from '../../animation/ability-poses';
@@ -43,6 +43,7 @@ import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
 import { OcclusionFader } from '../../rendering/occlusion-fader';
+import { iso, isoBounds, screenSideToWorld } from '../../rendering/projection';
 import { tallestPropM } from '../../rendering/prop-view';
 import {
   AbilityVfx,
@@ -117,6 +118,8 @@ export interface DoorState {
 }
 
 const KNOCK_FLIGHT_S = 0.8;
+/** Starting an attack turns toward an opponent within this distance (soft lock, TD-016). */
+const SOFT_LOCK_M = 2.8;
 /** While flying from a heavy knockback a fighter slides further before stopping. */
 const KNOCK_FLIGHT_DECEL = 9; // was 5: knockdowns slid 10 m+, too far for the compact office
 /** Knockback at or above this speed counts as heavy (door-smashing) knockback. */
@@ -140,6 +143,12 @@ const colourOf = (hex: string): number => Number.parseInt(hex.replace('#', ''), 
 /** The non-elemental version of an effect (no embers or scorch) for fighters without elemental effects. */
 function withoutElements(e: EffectDef): EffectDef {
   return { sparks: e.sparks, ring: e.ring };
+}
+
+/** A world point that sits `side` metres beside (x, y) on screen, `z` up: effects on a billboarded fighter. */
+function besideOnScreen(x: number, y: number, side: number, z: number): { x: number; y: number; z: number } {
+  const o = screenSideToWorld(side);
+  return { x: x + o.x, y: y + o.y, z };
 }
 
 /** An impact profile's sparks and ring as a VFX burst. */
@@ -180,6 +189,7 @@ export class FightArenaScene implements ArenaScene {
   /** Furniture that moves or breaks when hit (owner, 11/11/2026). */
   props: ArenaProps | null = null;
   private debrisView: DebrisView | null = null;
+  private fireLight: Graphics | null = null;
   /** The shared ability framework in this arena (Phase 6). */
   abilities: SceneAbilities | null = null;
   private vfx: AbilityVfx | null = null;
@@ -259,7 +269,7 @@ export class FightArenaScene implements ArenaScene {
           damage: f.damage,
           heavy: true,
           knockbackMps: f.knockbackMps,
-          dir: { x: winner.facing, y: 0 },
+          dir: { x: winner.aim.x, y: winner.aim.y },
           melee: true,
           impact: 'knuckle-heavy',
           unblockable: true,
@@ -297,6 +307,11 @@ export class FightArenaScene implements ArenaScene {
 
   get world(): Container | null {
     return this.view?.world ?? null;
+  }
+
+  /** The floor layer (world metres through the floor projection): debug collider outlines go here. */
+  get floorLayer(): Container | null {
+    return this.view?.floor ?? null;
   }
 
   get player(): PlayerState {
@@ -355,11 +370,19 @@ export class FightArenaScene implements ArenaScene {
     return this.events.splice(0, this.events.length);
   }
 
-  /** Screen position (CSS px) of a world point under the current camera. */
-  worldToScreen(x: number, y: number): { x: number; y: number } | null {
+  /** Screen position (CSS px) of a world point (z metres up) under the current camera. */
+  worldToScreen(x: number, y: number, z = 0): { x: number; y: number } | null {
     const w = this.view?.world;
     if (!w) return null;
-    return { x: w.position.x + x * w.scale.x, y: w.position.y + y * w.scale.y };
+    const p = iso(x, y, z);
+    return { x: w.position.x + p.x * w.scale.x, y: w.position.y + p.y * w.scale.y };
+  }
+
+  /** The whole arena (walls and the tallest props included) in view units: camera limits and overview. */
+  private viewBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
+    const t = this.arena.wallThicknessM;
+    const tall = Math.max(2.4, tallestPropM(this.arena.props));
+    return isoBounds(-t, -t, this.arena.widthM + t, this.arena.heightM + t, 0, tall);
   }
 
   async load(): Promise<void> {
@@ -383,20 +406,14 @@ export class FightArenaScene implements ArenaScene {
     for (const node of this.view.occluders) this.occlusion.add(node);
     for (const node of this.view.props.values()) this.occlusion.add(node);
     this.vfx = new AbilityVfx();
-    this.vfx.attach(this.view.world, this.view.actors.container);
+    this.vfx.attach(this.view.floor, this.view.world, this.view.actors.container);
     this.overlay = new Container();
     this.overlay.label = 'fighter-overlay';
     for (const f of this.fighters) f.attach(physics, this.view.actors, this.overlay);
     this.view.world.addChild(this.overlay);
     this.parent.addChild(this.view.world);
 
-    const t = arena.wallThicknessM;
-    this.camera = new FollowCamera(arena.playerStart, {
-      minX: -t,
-      minY: -t - tallestPropM(arena.props), // room to see tall props along the top wall
-      maxX: arena.widthM + t,
-      maxY: arena.heightM + t,
-    });
+    this.camera = new FollowCamera(iso(arena.playerStart.x, arena.playerStart.y), this.viewBounds());
   }
 
   /** Put the dummy back on its feet at a spot, at rest and healthy (Practice Zone respawn, REQ-MOD-5; tests). */
@@ -489,7 +506,7 @@ export class FightArenaScene implements ArenaScene {
       if (this.intents.consumeDodge() && !air && c.tryDodge()) {
         const m = this.intents.move;
         const len = Math.hypot(m.x, m.y);
-        Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.facing, y: 0 });
+        Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.aim.x, y: -f.aim.y });
       }
       const slow = THROWING.carrySpeedFactor(f.carrying.kind.massKg);
       const m = this.intents.move;
@@ -514,7 +531,12 @@ export class FightArenaScene implements ArenaScene {
       if (!wasGuarding && c.canAct && !f.caster?.cast) {
         // Which input: a firm push towards where you face is "forward" (kick strings on some movesets).
         const m = this.intents.move;
-        f.combo.press({ airborne: air, falling: air && f.hop.verticalSpeedMps < 0, forward: m.x * f.facing > 0.7 });
+        this.softLock(f);
+        f.combo.press({
+          airborne: air,
+          falling: air && f.hop.verticalSpeedMps < 0,
+          forward: m.x * f.aim.x + m.y * f.aim.y > 0.7,
+        });
       }
       f.meleeTracking = false;
     }
@@ -536,7 +558,7 @@ export class FightArenaScene implements ArenaScene {
       f.combo.interrupt();
       const m = this.intents.move;
       const len = Math.hypot(m.x, m.y);
-      Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.facing, y: 0 });
+      Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.aim.x, y: -f.aim.y });
     }
 
     const jump =
@@ -589,13 +611,12 @@ export class FightArenaScene implements ArenaScene {
 
   /** Where a carried object rides: over the head, a touch in front so it draws over the fighter. */
   private holdPoint(f: FighterEntity): { x: number; y: number; heightM: number } {
-    return { x: f.x + f.facing * 0.08, y: f.y + 0.02, heightM: THROWING.holdHeightM + f.hop.heightM };
+    return { x: f.x + f.aim.x * 0.08, y: f.y + f.aim.y * 0.08 + 0.02, heightM: THROWING.holdHeightM + f.hop.heightM };
   }
 
   private pickupFor(f: FighterEntity): ArenaProp | null {
     return (
-      this.props?.pickupCandidate(f.x, f.y, f.facing, THROWING.reachM + f.def.body.footRadiusM, THROWING.behindM) ??
-      null
+      this.props?.pickupCandidate(f.x, f.y, f.aim, THROWING.reachM + f.def.body.footRadiusM, THROWING.behindM) ?? null
     );
   }
 
@@ -605,16 +626,16 @@ export class FightArenaScene implements ArenaScene {
     if (!prop || !this.props) return;
     const target = this.fighters.find((o) => o !== f && !o.combatant.isKo);
     const m = this.intents.move;
-    let dir = Math.hypot(m.x, m.y) > 0.3 ? { x: m.x, y: m.y } : { x: f.facing, y: 0 };
+    let dir = Math.hypot(m.x, m.y) > 0.3 ? { x: m.x, y: m.y } : { x: f.aim.x, y: f.aim.y };
     if (target) {
       const dx = target.x - f.x;
       const dy = target.y - f.y;
       const d = Math.hypot(dx, dy);
-      if (d > 0.01 && d < THROWING.aimRangeM && dx * f.facing > -0.2) dir = { x: dx, y: dy };
+      if (d > 0.01 && d < THROWING.aimRangeM && (dx * f.aim.x + dy * f.aim.y) / d > -0.2) dir = { x: dx, y: dy };
     }
     const len = Math.hypot(dir.x, dir.y) || 1;
     const speed = THROWING.speedFor(prop.kind.massKg);
-    if (Math.abs(dir.x) > 0.1) f.facing = dir.x > 0 ? 1 : -1;
+    f.faceToward(dir.x, dir.y);
     this.props.release(
       prop,
       { x: (dir.x / len) * speed, y: (dir.y / len) * speed },
@@ -634,7 +655,13 @@ export class FightArenaScene implements ArenaScene {
     f.carrying = null;
     f.interactTracking = false;
     if (!prop || !this.props || prop.broken) return;
-    this.props.release(prop, { x: f.facing * forwardMps, y: 0 }, THROWING.holdHeightM * 0.6, 0, false);
+    this.props.release(
+      prop,
+      { x: f.aim.x * forwardMps, y: f.aim.y * forwardMps },
+      THROWING.holdHeightM * 0.6,
+      0,
+      false,
+    );
   }
 
   /** Thrown objects hit fighters they fly into (not the thrower), once each. */
@@ -666,6 +693,27 @@ export class FightArenaScene implements ArenaScene {
         this.props.thrownHit(prop, i, Math.max(5, mass * 3), { x: -dir.x, y: -dir.y });
       }
     }
+  }
+
+  /**
+   * Soft target lock (TD-016): starting an attack turns the fighter to an opponent close enough to
+   * be hit soon, unless they are well behind. Free movement in the 2.5D view needs it: you rarely
+   * line up exactly with your opponent.
+   */
+  private softLock(f: FighterEntity): void {
+    let best: FighterEntity | null = null;
+    let bestD = SOFT_LOCK_M;
+    for (const o of this.fighters) {
+      if (o === f || o.combatant.isKo) continue;
+      const dx = o.x - f.x;
+      const dy = o.y - f.y;
+      const d = Math.hypot(dx, dy);
+      if (d < bestD && d > 1e-3 && (dx * f.aim.x + dy * f.aim.y) / d > -0.35) {
+        best = o;
+        bestD = d;
+      }
+    }
+    if (best) f.faceToward(best.x - f.x, best.y - f.y);
   }
 
   /** I / F / ULT: start aiming the leap, or launch it at the aimed spot (owner, 11/11/2026). */
@@ -707,7 +755,8 @@ export class FightArenaScene implements ArenaScene {
       next = { x: aim.x + m.x * ULT_AIM_SPEED_MPS * stepS, y: aim.y + m.y * ULT_AIM_SPEED_MPS * stepS };
     }
     this.ultAimPoint = this.clampToRange(f, next);
-    if (Math.abs(this.ultAimPoint.x - f.x) > 0.1) f.facing = this.ultAimPoint.x > f.x ? 1 : -1;
+    if (Math.hypot(this.ultAimPoint.x - f.x, this.ultAimPoint.y - f.y) > 0.1)
+      f.faceToward(this.ultAimPoint.x - f.x, this.ultAimPoint.y - f.y);
   }
 
   private ultRange(f: FighterEntity): number {
@@ -756,7 +805,7 @@ export class FightArenaScene implements ArenaScene {
   private controlDummy(f: FighterEntity, stepS: number): void {
     const p = this.playerFighter;
     const c = f.combatant;
-    if (c.canAct && !f.combo.attack) f.facing = p.x >= f.x ? 1 : -1;
+    if (c.canAct && !f.combo.attack) f.faceToward(p.x - f.x, p.y - f.y);
     if (
       this.dummyAttacks &&
       c.state === 'free' &&
@@ -823,7 +872,8 @@ export class FightArenaScene implements ArenaScene {
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
       next = stepVelocity(v, move, { ...tuning, decelMps2: decel }, stepS);
-      if (!attack && !cast && Math.abs(moveIn.x) > 0.1 && f === this.playerFighter) f.facing = moveIn.x > 0 ? 1 : -1;
+      if (!attack && !cast && Math.hypot(moveIn.x, moveIn.y) > 0.1 && f === this.playerFighter)
+        f.faceToward(moveIn.x, moveIn.y);
     }
     body.setLinvel(next, true);
 
@@ -882,7 +932,8 @@ export class FightArenaScene implements ArenaScene {
     if (!target.body || target.combatant.isKo) return false;
     const t = target.body.translation();
     // A block only works when facing the attacker.
-    const fromFront = !s.unblockable && target.facing === (attacker.x >= t.x ? 1 : -1);
+    // In front: the attacker is on the side the target faces (any direction in the 2.5D view).
+    const fromFront = !s.unblockable && (attacker.x - t.x) * target.aim.x + (attacker.y - t.y) * target.aim.y > 0;
     const result = target.combatant.receive(
       {
         baseDamage: s.damage,
@@ -1093,22 +1144,28 @@ export class FightArenaScene implements ArenaScene {
   private resolveHit(attacker: FighterEntity, a: AttackDef): void {
     const body = attacker.body;
     if (!body) return;
-    const facing = attacker.facing;
+    const dir = { x: attacker.aim.x, y: attacker.aim.y };
     const p = body.translation();
-    const capsule = hitCapsule(p, facing, a);
+    const capsule = hitCapsule(p, dir, a);
     let connected = false;
     let hitFighter = false; // fighter contacts shake through their impact profile
 
     if (a.lungeMps > 0) {
       const v = body.linvel();
-      body.setLinvel({ x: v.x + facing * a.lungeMps, y: v.y }, true);
+      body.setLinvel({ x: v.x + dir.x * a.lungeMps, y: v.y + dir.y * a.lungeMps }, true);
     }
 
     for (const target of this.fighters) {
       if (target === attacker || !target.body || target.combatant.isKo) continue;
       const t = target.body.translation();
       if (distanceToCapsule(capsule, t.x, t.y) > a.hitRadiusM + target.def.body.footRadiusM) continue;
-      const sideways = Math.max(-0.4, Math.min(0.4, t.y - p.y));
+      // Knocked back along the blow, nudged a little toward where the target actually stands.
+      const tx = t.x - p.x;
+      const ty = t.y - p.y;
+      const tl = Math.hypot(tx, ty) || 1;
+      const kx = dir.x * 0.75 + (tx / tl) * 0.25;
+      const ky = dir.y * 0.75 + (ty / tl) * 0.25;
+      const kl = Math.hypot(kx, ky) || 1;
       const strike = {
         damage: a.damage,
         heavy: a.heavy,
@@ -1120,7 +1177,7 @@ export class FightArenaScene implements ArenaScene {
         groundBounce: a.groundBounce,
         burn: a.burn ?? undefined,
       };
-      if (this.applyStrike(attacker, target, { ...strike, dir: { x: facing, y: sideways } })) {
+      if (this.applyStrike(attacker, target, { ...strike, dir: { x: kx / kl, y: ky / kl } })) {
         connected = true;
         hitFighter = true;
       }
@@ -1132,7 +1189,7 @@ export class FightArenaScene implements ArenaScene {
       const broke = door.applyImpact({
         kind: a.blow === 'kick' ? 'kick' : 'strike',
         strength: a.strength,
-        direction: { x: facing, y: 0 },
+        direction: { x: dir.x, y: dir.y },
       });
       if (broke) {
         this.shake.addTrauma(0.75);
@@ -1145,7 +1202,7 @@ export class FightArenaScene implements ArenaScene {
       blow: a.blow === 'kick' ? 'kick' : 'strike',
       damage: a.damage * attacker.def.stats.power,
       strength: a.strength,
-      direction: { x: facing, y: 0 },
+      direction: { x: dir.x, y: dir.y },
     });
     if (props && props.hit > 0) {
       connected = true;
@@ -1198,6 +1255,7 @@ export class FightArenaScene implements ArenaScene {
       else view.showSwing(door.swing, door.swingSide);
     }
     this.renderProps();
+    this.renderFireLight();
     this.renderAbilityFx(frameDtS);
     this.view.actors.update();
     // Keep both fighters visible: fade whatever stands in front of them.
@@ -1208,25 +1266,25 @@ export class FightArenaScene implements ArenaScene {
 
     // Frame the player and the dummy (aiming at torsos), then apply impact shake.
     const { width, height } = this.viewport();
+    const focus = this.clashes.focus();
     const cam = this.camera.update(
-      { x: me.x, y: me.y - 0.8 },
-      [{ x: other.x, y: other.y - 0.8 }],
+      iso(me.x, me.y, 0.8),
+      [iso(other.x, other.y, 0.8)],
       frameDtS,
       width,
       height,
-      this.clashes.focus(),
+      focus ? { ...focus, ...iso(focus.x, focus.y, 0.9) } : null,
     );
     const shake = this.shake.update(frameDtS);
     let scale = cam.scale * shake.zoom;
     let cx = cam.x + shake.offsetX;
     let cy = cam.y + shake.offsetY;
     if (this.overview) {
-      const t = this.arena.wallThicknessM;
-      const top = t + tallestPropM(this.arena.props);
-      const fit = fitRectToView(this.arena.widthM + 2 * t, this.arena.heightM + t + top, width, height, 8);
+      const b = this.viewBounds();
+      const fit = fitRectToView(b.maxX - b.minX, b.maxY - b.minY, width, height, 8);
       scale = fit.scale;
-      cx = this.arena.widthM / 2;
-      cy = (this.arena.heightM + t - top) / 2;
+      cx = (b.minX + b.maxX) / 2;
+      cy = (b.minY + b.maxY) / 2;
     }
     this.view.world.scale.set(scale);
     this.view.world.position.set(width / 2 - cx * scale, height / 2 - cy * scale);
@@ -1239,6 +1297,30 @@ export class FightArenaScene implements ArenaScene {
       shakeOffset: Math.hypot(shake.offsetX, shake.offsetY),
       zoom: shake.zoom,
     };
+  }
+
+  /**
+   * Firelight (TD-045, owner-approved mockup): a flame-headed fighter casts a warm, flickering
+   * pool of light on the floor around it, drawn additively in the floor layer.
+   */
+  private renderFireLight(): void {
+    const view = this.view;
+    if (!view) return;
+    if (!this.fireLight) {
+      this.fireLight = new Graphics();
+      this.fireLight.blendMode = 'add';
+      view.floor.addChild(this.fireLight);
+    }
+    const g = this.fireLight.clear();
+    const t = this.simTimeS;
+    for (const f of this.fighters) {
+      if (!f.view || f.combatant.isKo || !f.def.capabilities.usesFireEffects || f.def.effects.head !== 'flame')
+        continue;
+      const flick = 0.9 + Math.sin(t * 11) * 0.05 + Math.sin(t * 17.7) * 0.05;
+      for (let i = 0; i < 7; i++) {
+        g.circle(f.x, f.y, (0.5 + i * 0.42) * flick).fill({ color: 0xff8a2a, alpha: 0.045 });
+      }
+    }
   }
 
   /** Furniture sounds and particles by material: splinters and sawdust, sparks off steel, glints off glass. */
@@ -1284,8 +1366,11 @@ export class FightArenaScene implements ArenaScene {
         continue;
       }
       const pose = prop.pose;
-      node.position.set(pose.x, pose.y);
-      node.rotation = pose.angle;
+      const at = iso(pose.x, pose.y);
+      node.position.set(at.x, at.y);
+      // Furniture keeps its upright drawing when it slides (a spin would tilt the whole picture);
+      // small loose items still tumble.
+      node.rotation = prop.kind.solid ? 0 : pose.angle * 0.3;
       this.occlusion?.setExempt(node, prop.held !== null || prop.flight !== null);
       const lift = prop.held?.heightM ?? prop.looseFall?.heightM ?? null;
       if (lift === null && this.grounded.has(prop.index)) node.pivot.y = 0; // replanted furniture
@@ -1420,11 +1505,14 @@ export class FightArenaScene implements ArenaScene {
     f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, f.flashColour);
     this.limbEffects(f, x, y);
     for (let n = f.animator.takeFootfalls(); n > 0; n--) this.characterSound(f, 'footstep', 0.5);
-    f.view.root.position.set(x, y);
+    const at = iso(x, y);
+    f.view.root.position.set(at.x, at.y);
+    const vel = f.body?.linvel();
+    f.view.motion = vel ? Math.min(1, Math.hypot(vel.x, vel.y) / Math.max(1, f.def.movement.maxSpeedMps)) : 0;
     this.koDissolve(f, x, y, drawnHeight, frameDtS);
     f.bars?.draw(
-      x,
-      y - heightM - HEAD_TOP_M * Math.cos(f.tilt),
+      at.x,
+      at.y - heightM - HEAD_TOP_M * Math.cos(f.tilt),
       c.hp / c.stats.maxHp,
       c.stamina / c.stats.maxStamina,
       !c.isKo,
@@ -1463,15 +1551,15 @@ export class FightArenaScene implements ArenaScene {
       // Strongest at the strike, gentler in the wind-up and recovery.
       const pr = attack ? f.combo.progress : 0.5;
       const strength = Math.max(0.25, 1 - Math.abs(pr - 0.4) * 1.6);
-      this.frameFlames.push({ points: limbs.map((p) => ({ x: x + p.x, y: y + p.y, z: p.z })), strength });
+      this.frameFlames.push({ points: limbs.map((p) => besideOnScreen(x, y, p.x, p.z)), strength });
     } else if (trail?.limbFlames && f.def.capabilities.usesFireEffects) {
       // A faint glow on the fists in the guard.
       const tips = f.view.limbTips();
-      this.frameFlames.push({ points: tips.fists.map((p) => ({ x: x + p.x, y: y + p.y, z: p.z })), strength: 0.05 });
+      this.frameFlames.push({ points: tips.fists.map((p) => besideOnScreen(x, y, p.x, p.z)), strength: 0.05 });
     }
     if (aura?.bodyEmbers && this.fxRng() < 0.12) {
       this.frameFlames.push({
-        points: [{ x: x + (this.fxRng() - 0.5) * 0.5, y, z: 0.3 + this.fxRng() * 1.3 }],
+        points: [besideOnScreen(x, y, (this.fxRng() - 0.5) * 0.5, 0.3 + this.fxRng() * 1.3)],
         strength: 0.1,
       });
     }
@@ -1505,7 +1593,7 @@ export class FightArenaScene implements ArenaScene {
     const points: { x: number; y: number; z: number }[] = [];
     for (let i = 0; i <= 6; i++) {
       const d = (HEAD_TOP_M * i) / 6;
-      points.push({ x: x + d * Math.sin(rot), y, z: Math.max(0, heightM + d * Math.cos(rot)) });
+      points.push(besideOnScreen(x, y, d * Math.sin(rot), Math.max(0, heightM + d * Math.cos(rot))));
     }
     // Most dust leaves early, thinning out as the last of the body fades.
     const count = Math.round(260 * frameDtS * (1.2 - k));
@@ -1547,6 +1635,7 @@ export class FightArenaScene implements ArenaScene {
     this.abilities = null;
     this.occlusion = null;
     this.vfx = null; // destroyed with the arena view
+    this.fireLight = null; // destroyed with the arena view
     this.debrisView?.destroy();
     this.debrisView = null;
     this.grounded.clear();

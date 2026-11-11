@@ -76,7 +76,7 @@ export class SceneAbilities implements AbilityHost {
     if (aimAt) this.aimOverrides.set(f.name, aimAt);
     // Face the aimed spot (or the soft-locked target) as the wind-up begins.
     const aim = aimAt ?? this.aimFor(f, def);
-    if (Math.abs(aim.x - f.x) > 0.05) f.facing = aim.x > f.x ? 1 : -1;
+    if (Math.hypot(aim.x - f.x, aim.y - f.y) > 0.05) f.faceToward(aim.x - f.x, aim.y - f.y);
     this.emit({ kind: 'cast', ability: def.id, vfx: def.vfx, sfx: def.sfx.cast, x: f.x, y: f.y });
     return null;
   }
@@ -143,7 +143,7 @@ export class SceneAbilities implements AbilityHost {
     }
     if (best) return { x: best.x, y: best.y };
     const ahead = def.delivery.type === 'leap' ? def.delivery.maxRangeM * 0.6 : 5;
-    return { x: f.x + f.facing * ahead, y: f.y };
+    return { x: f.x + f.aim.x * ahead, y: f.y + f.aim.y * ahead };
   }
 
   // ---- AbilityHost

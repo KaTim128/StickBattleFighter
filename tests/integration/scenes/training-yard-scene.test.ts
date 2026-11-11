@@ -6,6 +6,7 @@ import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { GREYBOX_STICKMAN } from '../../../src/data/fighters/greybox-stickman';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
+import { ISO_C } from '../../../src/rendering/projection';
 
 const STEP = 1 / 60;
 const R = GREYBOX_STICKMAN.body.footRadiusM;
@@ -105,7 +106,8 @@ describe('TrainingYardScene: free top-down movement (Phase 2)', () => {
     const cx = scene.camera!.x;
     intents.setMove('test', { x: 1, y: 0 });
     run(1.5);
-    expect(scene.camera!.x).toBeGreaterThan(cx + 3);
+    // The camera works in the 2.5D view (TD-045): world +x moves it right by ISO_C per metre.
+    expect(scene.camera!.x).toBeGreaterThan(cx + 3 * ISO_C);
     scenes.clear();
   });
 

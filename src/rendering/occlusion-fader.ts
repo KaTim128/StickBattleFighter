@@ -33,6 +33,8 @@ interface Box {
 
 export class OcclusionFader {
   private readonly targets: FadeTarget[] = [];
+  private readonly shapes = new Map<Container, Box>();
+  private frame = 0;
   private readonly exempt = new Set<Container>();
 
   /** Never fade this node (e.g. an object carried overhead: it belongs to the fighter). */
@@ -56,10 +58,15 @@ export class OcclusionFader {
   }
 
   update(viewers: readonly Viewer[], dtS: number): void {
+    // Compare in the parent's space (the world container), not on screen: a target's shape is
+    // cached (furniture never changes shape) and moved by its position, so ~200 targets cost
+    // little per frame (TD-045 performance). Shapes refresh every so often (door leaves swing).
+    this.frame++;
+    const refresh = this.frame % 30 === 0;
     // Shrink the fighter's box a little so a prop merely brushing its edge does not fade.
     const boxes = viewers
       .filter((v) => v.node.visible && v.node.alpha > 0.05)
-      .map((v) => ({ box: inset(v.node.getBounds(), 0.08), depth: v.depth() }));
+      .map((v) => ({ box: inset(placed(v.node, v.node.getLocalBounds()), 0.08), depth: v.depth() }));
     const step = dtS / FADE_S;
     for (const t of this.targets) {
       const node = t.node;
@@ -67,7 +74,13 @@ export class OcclusionFader {
       let blocking = false;
       if (boxes.length > 0 && !this.exempt.has(node)) {
         const depth = t.depth();
-        const b = node.getBounds();
+        let local = this.shapes.get(node);
+        if (!local || refresh) {
+          const r = node.getLocalBounds();
+          local = { minX: r.minX, minY: r.minY, maxX: r.maxX, maxY: r.maxY };
+          this.shapes.set(node, local);
+        }
+        const b = placed(node, local);
         for (const v of boxes) {
           if (depth > v.depth && overlaps(b, v.box)) {
             blocking = true;
@@ -81,6 +94,19 @@ export class OcclusionFader {
       node.alpha = a < goal ? Math.min(goal, a + step) : Math.max(goal, a - step);
     }
   }
+}
+
+/** A node's local box moved to where it stands in its parent (scale and pivot included; rotation ignored). */
+function placed(node: Container, local: Box): Box {
+  const sx = node.scale.x;
+  const sy = node.scale.y;
+  const ox = node.position.x - node.pivot.x * sx;
+  const oy = node.position.y - node.pivot.y * sy;
+  const x0 = ox + local.minX * sx;
+  const x1 = ox + local.maxX * sx;
+  const y0 = oy + local.minY * sy;
+  const y1 = oy + local.maxY * sy;
+  return { minX: Math.min(x0, x1), maxX: Math.max(x0, x1), minY: Math.min(y0, y1), maxY: Math.max(y0, y1) };
 }
 
 function inset(b: Box, k: number): Box {

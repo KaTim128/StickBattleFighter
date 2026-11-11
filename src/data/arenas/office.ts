@@ -34,8 +34,8 @@ const PAIRS_X0 = 1.3;
 /** Depth of one cubicle, from the shared back panel to its open side. */
 const CUBE_D = 2.3;
 const WALL_THICK_M = 0.4;
-/** The curved wall's face shows on the office side, so it takes the office's blue-grey. */
-const OFFICE_WALL_FACE = 0x4b5566;
+/** The curved wall's face shows on the office side: warm white like the outer walls. */
+const OFFICE_WALL_FACE = 0xd9d1c4;
 const DOOR_LEN_M = 1.3;
 const WIDTH = 33;
 const HEIGHT = 12;
@@ -244,13 +244,25 @@ export const OFFICE: ArenaLayout = {
   ],
   look: {
     background: 0x141922,
-    floor: 0x59606e, // main office carpet tiles
-    floorLines: 0x626a79,
+    // 2.5D look (owner-approved mockups, TD-045): light-wood planks and warm white walls.
+    floor: 0xe2bf8a,
+    floorLines: null,
     floorLineSpacingM: 2,
-    wall: 0x2c323d,
-    wallEdge: 0x8a94a3,
+    wall: 0xe9e2d6,
+    wallEdge: 0xfbf8f3,
   },
   floorZones: [
+    // Main office: light-wood planks.
+    {
+      x0: 0,
+      y0: 0,
+      x1: WIDTH,
+      y1: HEIGHT,
+      floor: 0xe2bf8a,
+      lines: 0xc9a26c,
+      lineSpacingM: 0.25,
+      planks: true,
+    },
     // Boss room: warm wood planks and darker panelled walls.
     {
       x0: ARC_END_X,

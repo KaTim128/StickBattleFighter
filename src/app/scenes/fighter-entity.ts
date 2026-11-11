@@ -56,7 +56,24 @@ export class FighterEntity {
   body: RigidBody | null = null;
   view: StickmanView | null = null;
   bars: FighterBars | null = null;
+  /**
+   * Where the fighter faces: a world unit vector, any direction (TD-045: in the 2.5D view fighters
+   * turn freely; attacks, lunges, knockback, blocks and throws all go this way).
+   */
+  readonly aim = { x: 1, y: 0 };
+  /** Which way the drawn figure looks on screen: +1 right, −1 left (follows `aim`). */
   facing: 1 | -1 = 1;
+
+  /** Turn to face a world direction (ignored if it is zero). */
+  faceToward(dx: number, dy: number): void {
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return;
+    this.aim.x = dx / len;
+    this.aim.y = dy / len;
+    // On screen, x grows with (x − y) in the 2.5D view.
+    const sx = this.aim.x - this.aim.y;
+    if (Math.abs(sx) > 1e-3) this.facing = sx > 0 ? 1 : -1;
+  }
   hop: HopState = { heightM: 0, verticalSpeedMps: 0 };
   prevHop = 0;
   readonly prev = { x: 0, y: 0 };
@@ -131,7 +148,11 @@ export class FighterEntity {
       radiusM: this.def.body.footRadiusM,
       massKg: this.def.body.massKg,
     });
-    this.view = new StickmanView(this.def.bones, this.def.look);
+    this.view = new StickmanView(
+      this.def.bones,
+      this.def.look,
+      this.def.capabilities.usesFireEffects ? (this.def.effects.head ?? 'round') : 'round',
+    );
     actors.add(this.view.root, 0);
     this.bars = new FighterBars(this.showStamina);
     overlay.addChild(this.bars.node);

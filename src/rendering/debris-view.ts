@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import type { DebrisPiece } from '../environment/debris';
+import { iso } from './projection';
 import type { YSortLayer } from './y-sort-layer';
 
 /**
@@ -34,7 +35,8 @@ export class DebrisView {
         this.nodes.set(p.id, node);
         this.actors.add(node, 0);
       }
-      const at = p.body.translation();
+      const w = p.body.translation();
+      const at = iso(w.x, w.y);
       node.position.set(at.x, at.y);
       const block = node.children[1];
       if (block) {

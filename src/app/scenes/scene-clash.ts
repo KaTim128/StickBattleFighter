@@ -119,19 +119,21 @@ export class SceneClash {
     this.outroS = 0;
     // Lock up face to face, level, at clash distance.
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    const aLeft = a.x <= b.x;
-    const half = CLASH.gapM / 2;
+    // Side by side on screen (2.5D view, TD-045): along the world direction that runs straight across it.
+    const across = { x: Math.SQRT1_2, y: -Math.SQRT1_2 };
+    const aLeft = a.x - a.y <= b.x - b.y;
+    const half = (CLASH.gapM / 2) * (aLeft ? 1 : -1);
     this.spots = {
-      a: { x: mid.x + (aLeft ? -half : half), y: mid.y },
-      b: { x: mid.x + (aLeft ? half : -half), y: mid.y },
+      a: { x: mid.x - across.x * half, y: mid.y - across.y * half },
+      b: { x: mid.x + across.x * half, y: mid.y + across.y * half },
     };
-    a.facing = aLeft ? 1 : -1;
-    b.facing = aLeft ? -1 : 1;
+    a.faceToward(this.spots.b.x - this.spots.a.x, this.spots.b.y - this.spots.a.y);
+    b.faceToward(this.spots.a.x - this.spots.b.x, this.spots.a.y - this.spots.b.y);
     for (const f of [a, b]) {
       this.host.lockUp(f);
       f.combatant.grantInvulnerability(CLASH.introS + CLASH.mashS + 0.2); // nothing from outside interrupts it
     }
-    this.focusAt = { x: mid.x, y: mid.y - 0.9 };
+    this.focusAt = { x: mid.x, y: mid.y }; // the floor point between them (the scene adds the height)
     this.host.sound('clash-start', 1);
     this.host.shake(0.3, 0.04);
   }
@@ -235,7 +237,8 @@ export class SceneClash {
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     const striker = by === 'b' ? b : a;
     const defender = by === 'b' ? a : b;
-    const dir = by === 'both' ? { x: 0, y: -1 } : { x: Math.sign(defender.x - striker.x) || 1, y: 0 };
+    // Toward the defender (any direction in the 2.5D view); a collision bursts up-screen (world −x −y).
+    const dir = by === 'both' ? { x: -Math.SQRT1_2, y: -Math.SQRT1_2 } : { x: striker.aim.x, y: striker.aim.y };
     const base = by === 'both' ? IMPACTS['knuckle-heavy'] : IMPACTS.blocked;
     const profile: ImpactProfile = {
       ...base,
@@ -244,7 +247,7 @@ export class SceneClash {
       sparkColour: by === 'a' ? 0xffb060 : by === 'b' ? 0xfff4d6 : 0xffffff,
       burstM: 0.3 + 0.35 * i,
     };
-    const at = by === 'both' ? mid : { x: mid.x + dir.x * 0.15, y: mid.y };
+    const at = by === 'both' ? mid : { x: mid.x + dir.x * 0.15, y: mid.y + dir.y * 0.15 };
     this.host.impact(at.x, at.y, dir, profile);
     if (by === 'both') {
       a.flashS = Math.max(a.flashS, 0.04 + 0.04 * i);
@@ -287,12 +290,12 @@ export class SceneClash {
         sparkColour: 0xffffff,
         burstM: 1.1,
       };
-      this.host.impact(mid.x, mid.y, { x: 1, y: 0 }, profile);
-      this.host.impact(mid.x, mid.y, { x: -1, y: 0 }, profile);
+      this.host.impact(mid.x, mid.y, { x: a.aim.x, y: a.aim.y }, profile);
+      this.host.impact(mid.x, mid.y, { x: b.aim.x, y: b.aim.y }, profile);
       this.host.characterSound(a, 'clash', 1.5);
       this.host.characterSound(b, 'clash', 1.2);
-      this.host.effect(a, 'clash', mid.x, mid.y, { x: -1, y: 0 }, 1.5);
-      this.host.effect(b, 'clash', mid.x, mid.y, { x: 1, y: 0 }, 1.5);
+      this.host.effect(a, 'clash', mid.x, mid.y, { x: b.aim.x, y: b.aim.y }, 1.5);
+      this.host.effect(b, 'clash', mid.x, mid.y, { x: a.aim.x, y: a.aim.y }, 1.5);
       this.host.shake(0.65, 0.07);
       this.host.hitstop(0.08);
       this.banner = { text: 'STALEMATE!', ageS: 0 };
@@ -319,7 +322,7 @@ export class SceneClash {
       profile,
     });
     this.host.characterSound(winner, 'finisher', 1 + 0.5 * g);
-    this.host.effect(winner, 'finisher', loser.x, loser.y, { x: winner.facing, y: 0 }, 0.7 + 0.6 * g);
+    this.host.effect(winner, 'finisher', loser.x, loser.y, { x: winner.aim.x, y: winner.aim.y }, 0.7 + 0.6 * g);
     this.host.shake(0, 0.06 + 0.05 * g);
     this.banner = { text: result.winner === 'a' ? 'CLASH WON!' : 'CLASH LOST!', ageS: 0 };
   }

@@ -53,7 +53,7 @@ export function moveFromKeys(held: ReadonlySet<string>): Vec2 {
 /** Wire the keyboard to player intents. Returns a function that removes the listeners. */
 export function attachKeyboard(target: Window, intents: PlayerIntents): () => void {
   const held = new Set<string>();
-  const sync = (): void => intents.setMove('keyboard', moveFromKeys(held));
+  const sync = (): void => intents.setMoveFromScreen('keyboard', moveFromKeys(held));
   const down = (e: KeyboardEvent): void => {
     if (e.code in MOVE_KEYS || JUMP_KEYS.has(e.code)) e.preventDefault(); // no page scrolling
     if (JUMP_KEYS.has(e.code)) {

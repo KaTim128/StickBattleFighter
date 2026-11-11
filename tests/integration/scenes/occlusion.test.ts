@@ -8,15 +8,22 @@ import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
 import { OCCLUDED_ALPHA } from '../../../src/rendering/occlusion-fader';
+import { iso } from '../../../src/rendering/projection';
 
 const STEP = 1 / 60;
 
 async function setup(playerAt: { x: number; y: number }, arena: ArenaLayout = TRAINING_YARD) {
   const intents = new PlayerIntents();
-  const scene = new FightArenaScene({ ...arena, playerStart: playerAt }, new Container(), intents, () => ({
-    width: 1280,
-    height: 720,
-  }));
+  // The dummy waits in open floor, so only what stands in front of the player fades.
+  const scene = new FightArenaScene(
+    { ...arena, playerStart: playerAt, dummyStart: { x: 19, y: 9 } },
+    new Container(),
+    intents,
+    () => ({
+      width: 1280,
+      height: 720,
+    }),
+  );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
   const run = (seconds: number) => {
@@ -34,10 +41,11 @@ describe('dynamic wall transparency (owner, 11/11/2026)', () => {
   });
 
   it('a pillar in front of a fighter fades smoothly to see-through; the other pillars stay solid', async () => {
-    // Just behind (north of) the pillar at (8, 6): it is drawn in front of the player and covers them.
-    const { scene, scenes, run } = await setup({ x: 8, y: 5.3 });
+    // Just behind the pillar at (8, 6) in the 2.5D view (TD-045): it is drawn in front of the player and covers them.
+    const { scene, scenes, run } = await setup({ x: 7.6, y: 5.6 });
     const nodes = [...scene.arenaView!.props.values()];
-    const pillar = nodes.find((n) => Math.abs(n.x - 8) < 0.01 && Math.abs(n.y - 6) < 0.01)!;
+    const at = iso(8, 6);
+    const pillar = nodes.find((n) => Math.abs(n.x - at.x) < 0.01 && Math.abs(n.y - at.y) < 0.01)!;
     run(0.07);
     expect(pillar.alpha).toBeLessThan(1); // fading…
     expect(pillar.alpha).toBeGreaterThan(OCCLUDED_ALPHA); // …smoothly, not popping
@@ -48,7 +56,7 @@ describe('dynamic wall transparency (owner, 11/11/2026)', () => {
   });
 
   it('restores the pillar to full opacity once the fighter moves away', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 8, y: 5.3 });
+    const { intents, scene, scenes, run } = await setup({ x: 7.6, y: 5.6 });
     run(0.4);
     expect(scene.occlusion!.fadedCount).toBe(1);
     intents.setMove('t', { x: 0, y: -1 });

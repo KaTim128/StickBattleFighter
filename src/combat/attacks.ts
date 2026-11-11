@@ -24,7 +24,7 @@ export interface AttackDef {
    * the next combo attack, so strings flow without returning to stance.
    */
   readonly chainAtRecovery: number;
-  /** Distance from the body to the centre of the hit circle, along the facing direction. */
+  /** Distance from the body to the centre of the hit circle, along the fighter's aim. */
   readonly reachM: number;
   readonly hitRadiusM: number;
   /** Impact strength against objects (a door breaks at its breakStrength, 500 in the office). */
@@ -79,8 +79,14 @@ export interface HitCapsule {
   readonly radius: number;
 }
 
-export function hitCapsule(pos: { x: number; y: number }, facing: 1 | -1, a: AttackDef): HitCapsule {
-  return { ax: pos.x + facing * 0.15, ay: pos.y, bx: pos.x + facing * a.reachM, by: pos.y, radius: a.hitRadiusM };
+export function hitCapsule(pos: { x: number; y: number }, dir: { x: number; y: number }, a: AttackDef): HitCapsule {
+  return {
+    ax: pos.x + dir.x * 0.15,
+    ay: pos.y + dir.y * 0.15,
+    bx: pos.x + dir.x * a.reachM,
+    by: pos.y + dir.y * a.reachM,
+    radius: a.hitRadiusM,
+  };
 }
 
 /** Distance from a point to the capsule's centre segment. */

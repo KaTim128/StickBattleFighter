@@ -1,5 +1,6 @@
 import { type Container, Graphics } from 'pixi.js';
 import type { AbilityFx, FireZone, Projectile, Telegraph } from '../abilities/ability-world';
+import { ISO_T, iso } from '../rendering/projection';
 
 /**
  * Fire effects for abilities (GREYBOX vector VFX, PRS targets in spec §11.2):
@@ -92,6 +93,8 @@ interface Ring {
   colour: number;
   x: number;
   y: number;
+  /** Height above the floor: 0 = a floor ring (shockwave), else a burst ring in the air. */
+  z: number;
   r0: number;
   r1: number;
   ageS: number;
@@ -118,7 +121,7 @@ export class AbilityVfx {
   private readonly particles: Particle[] = [];
   private readonly rings: Ring[] = [];
   private readonly scorches: Scorch[] = [];
-  private readonly flashes: { x: number; y: number; r: number; ageS: number; colour: number }[] = [];
+  private readonly flashes: { x: number; y: number; z: number; r: number; ageS: number; colour: number }[] = [];
   private timeS = 0;
   private seed = 1;
 
@@ -143,9 +146,12 @@ export class AbilityVfx {
     }
   }
 
-  /** Put the floor layer under the arena's y-sorted actors and the air layer above them. */
-  attach(world: Container, actors: Container): void {
-    world.addChildAt(this.floor, world.getChildIndex(actors));
+  /**
+   * The floor layer goes into the arena's floor (drawn in world metres through the floor
+   * projection); the air layer sits above the y-sorted actors (drawn at projected points, TD-045).
+   */
+  attach(floor: Container, world: Container, actors: Container): void {
+    floor.addChild(this.floor);
     world.addChildAt(this.air, world.getChildIndex(actors) + 1);
   }
 
@@ -195,6 +201,7 @@ export class AbilityVfx {
           colour: FIRE.bright,
           x: fx.x,
           y: fx.y,
+          z: 0,
           r0: r * 0.2,
           r1: r * (big ? 1.15 : 1.6),
           ageS: 0,
@@ -205,6 +212,7 @@ export class AbilityVfx {
             colour: FIRE.bright,
             x: fx.x,
             y: fx.y,
+            z: 0,
             r0: r * 0.5,
             r1: r * 1.5,
             ageS: -0.08,
@@ -239,7 +247,7 @@ export class AbilityVfx {
         y: hit.y,
         z: 0.9 + this.rand() * 0.5,
         vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp * 0.6,
+        vy: Math.sin(a) * sp,
         vz: (this.rand() - 0.3) * 3,
         ageS: 0,
         lifeS: 0.14 + this.rand() * 0.18,
@@ -249,7 +257,8 @@ export class AbilityVfx {
     this.rings.push({
       colour: hit.colour,
       x: hit.x,
-      y: hit.y - 1.1,
+      y: hit.y,
+      z: 1.1,
       r0: hit.burstM * 0.2,
       r1: hit.burstM,
       ageS: 0,
@@ -261,7 +270,7 @@ export class AbilityVfx {
       if (this.scorches.length > 12) this.scorches.shift();
     }
     // A bright contact flash at the point of impact (a few frames).
-    this.flashes.push({ x: hit.x, y: hit.y - 1.1, r: hit.burstM * 0.75, ageS: 0, colour: hit.colour });
+    this.flashes.push({ x: hit.x, y: hit.y, z: 1.1, r: hit.burstM * 0.75, ageS: 0, colour: hit.colour });
   }
 
   /** Dust motes leave the body and drift up and away on a light breeze, fading as they go. */
@@ -317,7 +326,7 @@ export class AbilityVfx {
         y,
         z,
         vx: Math.cos(a) * s,
-        vy: Math.sin(a) * s * 0.6,
+        vy: Math.sin(a) * s,
         vz: 1 + this.rand() * 2.5,
         ageS: 0,
         lifeS: lifeS * (0.6 + this.rand() * 0.8),
@@ -367,109 +376,121 @@ export class AbilityVfx {
   }
 
   private draw(input: AbilityVfxInput, _dtS: number): void {
+    // `f` draws flat on the floor in world metres (the floor layer projects it);
+    // `g` draws in the air at projected points (P), heights straight up the screen.
     const f = this.floor.clear();
     const g = this.air.clear();
     const t = this.timeS;
+    const P = iso;
 
     for (const s of this.scorches) {
       const a = 0.45 * (1 - s.ageS / SCORCH_LIFE_S);
-      f.ellipse(s.x, s.y, s.r, s.r * 0.6).fill({ color: 0x15100c, alpha: a });
+      f.circle(s.x, s.y, s.r).fill({ color: 0x15100c, alpha: a });
     }
 
     // Ultimate aiming: the maximum-range ring, a dotted arc to the spot and the landing zone.
     if (input.aim) {
       const a = input.aim;
       const pulse = 0.6 + 0.4 * Math.sin(t * 9);
-      f.ellipse(a.from.x, a.from.y, a.maxRangeM, a.maxRangeM * 0.6).stroke({
-        width: 0.05,
-        color: 0xffd23f,
-        alpha: 0.35,
-      });
+      f.circle(a.from.x, a.from.y, a.maxRangeM).stroke({ width: 0.05, color: 0xffd23f, alpha: 0.35 });
       const n = 12;
       for (let i = 1; i < n; i++) {
         const k = i / n;
-        const x = a.from.x + (a.to.x - a.from.x) * k;
-        const y = a.from.y + (a.to.y - a.from.y) * k - Math.sin(Math.PI * k) * 1.4; // the arc of the leap
-        g.circle(x, y, 0.06).fill({ color: FIRE.bright, alpha: 0.85 });
+        const q = P(
+          a.from.x + (a.to.x - a.from.x) * k,
+          a.from.y + (a.to.y - a.from.y) * k,
+          Math.sin(Math.PI * k) * 1.4,
+        );
+        g.circle(q.x, q.y, 0.06).fill({ color: FIRE.bright, alpha: 0.85 });
       }
-      f.ellipse(a.to.x, a.to.y, a.radiusM, a.radiusM * 0.6).fill({ color: FIRE.hot, alpha: 0.15 + 0.1 * pulse });
-      f.ellipse(a.to.x, a.to.y, a.radiusM, a.radiusM * 0.6).stroke({ width: 0.08, color: 0xffd23f, alpha: 0.9 });
-      f.ellipse(a.to.x, a.to.y, 0.35, 0.21).fill({ color: 0xffffff, alpha: 0.7 * pulse });
+      f.circle(a.to.x, a.to.y, a.radiusM).fill({ color: FIRE.hot, alpha: 0.15 + 0.1 * pulse });
+      f.circle(a.to.x, a.to.y, a.radiusM).stroke({ width: 0.08, color: 0xffd23f, alpha: 0.9 });
+      f.circle(a.to.x, a.to.y, 0.35).fill({ color: 0xffffff, alpha: 0.7 * pulse });
     }
 
     // Telegraphs (REQ-ABL-6): a clear ring where it will land, filling as the moment approaches.
     for (const tg of input.telegraphs) {
       const k = Math.min(1, tg.ageS / tg.durationS);
       const pulse = 0.75 + 0.25 * Math.sin(t * 22);
-      f.ellipse(tg.x, tg.y, tg.radiusM, tg.radiusM * 0.6).fill({ color: FIRE.deep, alpha: 0.14 });
-      f.ellipse(tg.x, tg.y, tg.radiusM * k, tg.radiusM * 0.6 * k).fill({ color: FIRE.hot, alpha: 0.22 });
-      f.ellipse(tg.x, tg.y, tg.radiusM, tg.radiusM * 0.6).stroke({ width: 0.07, color: FIRE.bright, alpha: pulse });
+      f.circle(tg.x, tg.y, tg.radiusM).fill({ color: FIRE.deep, alpha: 0.14 });
+      f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: FIRE.hot, alpha: 0.22 });
+      f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: FIRE.bright, alpha: pulse });
     }
 
     // Burning floor patches (Flame Dash trail).
     for (const z of input.zones) {
       const life = 1 - z.ageS / z.lifeS;
       const flick = 0.85 + 0.15 * Math.sin(t * 30 + z.x * 7);
-      f.ellipse(z.x, z.y, z.radiusM, z.radiusM * 0.55).fill({ color: FIRE.deep, alpha: 0.35 * life });
-      f.ellipse(z.x, z.y, z.radiusM * 0.6 * flick, z.radiusM * 0.33 * flick).fill({
-        color: FIRE.hot,
-        alpha: 0.5 * life,
-      });
-      this.flame(g, z.x, z.y, z.radiusM * 0.9 * life * flick, 0.5 * life + 0.15, t + z.y);
+      f.circle(z.x, z.y, z.radiusM).fill({ color: FIRE.deep, alpha: 0.35 * life });
+      f.circle(z.x, z.y, z.radiusM * 0.6 * flick).fill({ color: FIRE.hot, alpha: 0.5 * life });
+      const base = P(z.x, z.y);
+      this.flame(g, base.x, base.y, z.radiusM * 0.9 * life * flick, 0.5 * life + 0.15, t + z.y);
     }
 
     for (const r of this.rings) {
       if (r.ageS < 0) continue;
       const k = r.ageS / r.lifeS;
       const rad = r.r0 + (r.r1 - r.r0) * (1 - (1 - k) * (1 - k));
-      f.ellipse(r.x, r.y, rad, rad * 0.6).stroke({ width: 0.12 * (1 - k) + 0.02, color: r.colour, alpha: 1 - k });
+      const stroke = { width: 0.12 * (1 - k) + 0.02, color: r.colour, alpha: 1 - k };
+      if (r.z <= 0) f.circle(r.x, r.y, rad).stroke(stroke);
+      else {
+        const c = P(r.x, r.y, r.z);
+        g.ellipse(c.x, c.y, rad, rad * ISO_T).stroke(stroke);
+      }
     }
 
     // Fireballs: glow, body, white-hot core and a fading trail; a shadow on the floor.
     for (const p of input.projectiles) {
       const radius = p.def.delivery.type === 'projectile' ? p.def.delivery.radiusM : 0.3;
-      f.ellipse(p.x, p.y, radius, radius * 0.45).fill({ color: 0x000000, alpha: 0.25 });
+      f.circle(p.x, p.y, radius * 0.8).fill({ color: 0x000000, alpha: 0.25 });
       p.trail.forEach((q, i) => {
         const k = (i + 1) / (p.trail.length + 1);
-        g.circle(q.x, q.y - BOLT_HEIGHT_M, radius * 0.8 * k).fill({ color: FIRE.hot, alpha: 0.35 * k });
+        const c = P(q.x, q.y, BOLT_HEIGHT_M);
+        g.circle(c.x, c.y, radius * 0.8 * k).fill({ color: FIRE.hot, alpha: 0.35 * k });
       });
-      const y = p.y - BOLT_HEIGHT_M;
+      const c = P(p.x, p.y, BOLT_HEIGHT_M);
       const wob = 1 + 0.08 * Math.sin(t * 40);
-      g.circle(p.x, y, radius * 1.7 * wob).fill({ color: FIRE.hot, alpha: 0.22 });
-      g.circle(p.x, y, radius * wob).fill({ color: FIRE.bright, alpha: 0.95 });
-      g.circle(p.x, y, radius * 0.5).fill({ color: FIRE.core, alpha: 1 });
+      g.circle(c.x, c.y, radius * 1.7 * wob).fill({ color: FIRE.hot, alpha: 0.22 });
+      g.circle(c.x, c.y, radius * wob).fill({ color: FIRE.bright, alpha: 0.95 });
+      g.circle(c.x, c.y, radius * 0.5).fill({ color: FIRE.core, alpha: 1 });
     }
 
     // Contact flashes: a white-hot star that shrinks away in a few frames.
     for (const fl of this.flashes) {
       const k = fl.ageS / CONTACT_FLASH_S;
       const r = fl.r * (1 - k * 0.5);
-      g.circle(fl.x, fl.y, r).fill({ color: fl.colour, alpha: 0.55 * (1 - k) });
-      g.circle(fl.x, fl.y, r * 0.5).fill({ color: 0xffffff, alpha: 0.95 * (1 - k) });
-      g.moveTo(fl.x - r * 1.6, fl.y)
-        .lineTo(fl.x + r * 1.6, fl.y)
+      const c = P(fl.x, fl.y, fl.z);
+      g.circle(c.x, c.y, r).fill({ color: fl.colour, alpha: 0.55 * (1 - k) });
+      g.circle(c.x, c.y, r * 0.5).fill({ color: 0xffffff, alpha: 0.95 * (1 - k) });
+      g.moveTo(c.x - r * 1.6, c.y)
+        .lineTo(c.x + r * 1.6, c.y)
         .stroke({ width: 0.04, color: 0xffffff, alpha: 1 - k });
-      g.moveTo(fl.x, fl.y - r * 1.2)
-        .lineTo(fl.x, fl.y + r * 1.2)
+      g.moveTo(c.x, c.y - r * 1.2)
+        .lineTo(c.x, c.y + r * 1.2)
         .stroke({ width: 0.035, color: 0xffffff, alpha: 1 - k });
     }
 
     // Flames on burning fighters and furniture.
-    for (const b of input.burning) this.flame(g, b.x, b.y, 0.35, b.heightM, t + b.x * 3);
+    for (const b of input.burning) {
+      const base = P(b.x, b.y);
+      this.flame(g, base.x, base.y, 0.35, b.heightM, t + b.x * 3);
+    }
 
     for (const p of this.particles) {
       if (!p.live) continue;
       const k = p.ageS / p.lifeS;
+      const c = P(p.x, p.y, p.z);
       if (p.kind === 'spark') {
         // A short bright streak along its motion.
-        g.moveTo(p.x, p.y - p.z)
-          .lineTo(p.x - p.vx * 0.045, p.y - p.z - p.vy * 0.045 + p.vz * 0.045)
+        const e = P(p.x - p.vx * 0.045, p.y - p.vy * 0.045, p.z - p.vz * 0.045);
+        g.moveTo(c.x, c.y)
+          .lineTo(e.x, e.y)
           .stroke({ width: p.size, color: p.colour, alpha: 1 - k * 0.7, cap: 'round' });
       } else if (p.kind === 'dust') {
-        g.circle(p.x, p.y - p.z, p.size * (1 - k * 0.5)).fill({ color: p.colour, alpha: 0.85 * (1 - k) });
+        g.circle(c.x, c.y, p.size * (1 - k * 0.5)).fill({ color: p.colour, alpha: 0.85 * (1 - k) });
       } else {
         const color = k < 0.3 ? FIRE.core : k < 0.6 ? FIRE.bright : FIRE.hot;
-        g.circle(p.x, p.y - p.z, p.size * (1 - k * 0.6)).fill({ color, alpha: 1 - k });
+        g.circle(c.x, c.y, p.size * (1 - k * 0.6)).fill({ color, alpha: 1 - k });
       }
     }
   }

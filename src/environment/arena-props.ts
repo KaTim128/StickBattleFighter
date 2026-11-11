@@ -330,7 +330,13 @@ export class ArenaProps {
    * The throwable object nearest a fighter's feet within reach, in front of them (not behind),
    * or null. Standing furniture, items on desks and loose items lying on the floor all count.
    */
-  pickupCandidate(x: number, y: number, facing: number, reachM: number, behindM: number): ArenaProp | null {
+  pickupCandidate(
+    x: number,
+    y: number,
+    aim: { readonly x: number; readonly y: number },
+    reachM: number,
+    behindM: number,
+  ): ArenaProp | null {
     let best: ArenaProp | null = null;
     let bestD = Number.POSITIVE_INFINITY;
     for (const prop of this.props) {
@@ -343,7 +349,8 @@ export class ArenaProps {
       const dy = Math.max(r.y0 - y, 0, y - r.y1);
       const d = Math.hypot(dx, dy);
       const cx = (r.x0 + r.x1) / 2;
-      if (d > reachM || (cx - x) * facing < -behindM) continue;
+      const cy = (r.y0 + r.y1) / 2;
+      if (d > reachM || (cx - x) * aim.x + (cy - y) * aim.y < -behindM) continue;
       if (d < bestD) {
         best = prop;
         bestD = d;

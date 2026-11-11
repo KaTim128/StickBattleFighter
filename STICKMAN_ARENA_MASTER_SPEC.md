@@ -28,6 +28,7 @@ The playbook says the master specification should hold "the complete original St
 | REQ-VIS-3 | **No** side-scrolling, side view or single fighting lane: the arena is viewed from above and fighters can go anywhere on it. (The playbook's ban on "flat 2D sprite combat" is superseded, SUP-04.) | [PB §4.3, §4.4, §14.1] [OWNER] |
 | REQ-VIS-4 | Players can circle, retreat, approach from behind, reposition, dodge and use obstacles tactically. | [PB §14.1] |
 | REQ-VIS-9 | **Depth in 2D:** objects lower on the screen draw in front (y-sorting); jumping, thrown objects and airborne attacks show height with a ground shadow. | [TD-021] |
+| REQ-VIS-11 | **2.5D pseudo-isometric look (owner approved the mockups, 11/11/2026):** the arena is drawn on a 2:1 isometric grid (about 26.6°) with light-wood floors, bevelled furniture and walls lit from the top-left, soft drop shadows and ambient occlusion; back walls stand tall with windows, front walls are low ledges; fighters are upright stick figures with volume; Inferno's head is a living flame that lights the floor around it. The simulation stays top-down in metres (REQ-VIS-1 still holds for gameplay: free 2D movement on the floor). Keys and the joystick move along the screen; fighters face any direction and attacks soft-lock toward nearby opponents. Depth sorting uses x + y (REQ-VIS-9). Mockups: `docs/mockups/`. |
 | REQ-VIS-10 | **Dynamic wall transparency (owner, 11/11/2026):** any wall section, door, pillar or prop drawn in front of a fighter and covering it fades to about 30% opacity over about 0.2 s, and restores smoothly when no longer covering; only the covering sections fade; it works continuously, including between rooms and for moving furniture, so combat is never hidden. |
 | REQ-VIS-5 | All characters, abilities, VFX, animations, UI, arenas, progression and identity must be original. References are for learning only. | [PB §4.4] [OWNER] |
 | REQ-VIS-6 | Stickman Arena is **not** a Pokémon game, a creature-collection game, or a turn-based battle game. No Pokémon branding or implied affiliation. | [PB §4.5] [OWNER] |
@@ -489,6 +490,7 @@ Browser verification uses the documented dev command and browser automation: tes
 |---|---|---|
 | 11/11/2026 | Owner: data-driven character system (REQ-CHR-1..6); Inferno fist flames via its effects profile. | Master Developer |
 | 11/11/2026 | Owner: centre cubicle pairs (REQ-ENV-8 updated), 33 m office (REQ-ENV-12 updated), breakable office equipment and material destruction (REQ-PHY-6b). | Master Developer |
+| 11/11/2026 | Owner approved the 2.5D mockups: REQ-VIS-11 (isometric presentation, fire head, free facing with soft lock). | Master Developer |
 | 11/11/2026 | Owner: furnished office (REQ-ENV-14). | Master Developer |
 | 11/11/2026 | Owner: curved (first diagonal) boss-room wall, rearranged furniture, small visible door that swings open when walked into (REQ-ENV-13, REQ-ENV-11 updated, SUP-07). | Master Developer |
 | 11/11/2026 | Owner: strong, confident walk and run (REQ-ANI-11); crouched guard-up walk superseded (SUP-06). | Master Developer |

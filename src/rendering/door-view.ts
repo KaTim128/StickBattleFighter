@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import { fromBoxFrame } from '../core/oriented-rect';
 import type { DoorSpec } from '../data/arenas/arena-layout';
 import { drawPrism, type PrismLook } from './prism';
+import { iso } from './projection';
 
 export interface DoorPiece {
   x: number;
@@ -72,7 +73,8 @@ export class DoorView {
     this.leaf.label = `door-leaf-${spec.id}`;
     this.leaf.addChild(this.leafG);
     const hinge = fromBoxFrame(spec, cx, spec.y0);
-    this.leaf.position.set(hinge.x, hinge.y);
+    const hingeAt = iso(hinge.x, hinge.y);
+    this.leaf.position.set(hingeAt.x, hingeAt.y);
     this.leaf.visible = false;
     this.parts.push({ node: this.leaf, footOffset: 0.2 });
 
@@ -110,10 +112,11 @@ export class DoorView {
       fromBoxFrame(s, x1, y0),
       fromBoxFrame(s, x1, y1),
       fromBoxFrame(s, x0, y1),
-    ].map((p) => ({ x: p.x - centre.x, y: p.y - centre.y }));
+    ].map((p) => iso(p.x - centre.x, p.y - centre.y));
     const node = new Container();
     node.addChild(drawPrism(new Graphics(), rel, heightM, look));
-    node.position.set(centre.x, centre.y);
+    const at = iso(centre.x, centre.y);
+    node.position.set(at.x, at.y);
     return { node, footOffset: Math.max(...rel.map((p) => p.y)) };
   }
 
@@ -174,7 +177,7 @@ export class DoorView {
     ] as const;
     const corners = local.map(([x, y]) => {
       const p = fromBoxFrame(sp, x, y);
-      return { x: p.x - hinge.x, y: p.y - hinge.y };
+      return iso(p.x - hinge.x, p.y - hinge.y);
     });
     this.leafG.clear();
     drawPrism(this.leafG, corners, h, { front: WOOD_FRONT, top: WOOD_TOP, edge: WOOD_EDGE, edgeWidth: 0.025 });
@@ -206,7 +209,8 @@ export class DoorView {
     pieces.forEach((p, i) => {
       const plank = this.planks[i];
       if (!plank) return;
-      plank.position.set(p.x, p.y);
+      const at = iso(p.x, p.y);
+      plank.position.set(at.x, at.y);
       const body = plank.children[1];
       if (body) {
         body.rotation = p.angle;

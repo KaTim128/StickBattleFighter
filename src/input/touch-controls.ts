@@ -106,7 +106,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     const v = joystickVector(dx, dy, RADIUS_PX);
     const k = Math.min(1, Math.hypot(dx, dy) / RADIUS_PX) / (Math.hypot(dx, dy) || 1);
     knob.style.transform = `translate(calc(-50% + ${dx * k * RADIUS_PX}px), calc(-50% + ${dy * k * RADIUS_PX}px))`;
-    intents.setMove('touch', v);
+    intents.setMoveFromScreen('touch', v);
     if (flick.sample(Math.hypot(v.x, v.y), e.timeStamp)) intents.pressDodge();
   };
   const onUp = (e: PointerEvent): void => {
@@ -149,7 +149,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     const dx = e.clientX - ultOrigin.x;
     const dy = e.clientY - ultOrigin.y;
     if (Math.hypot(dx, dy) < ULT_DRAG_DEADZONE_PX) return;
-    intents.setUltDrag({ x: dx / ULT_DRAG_FULL_PX, y: dy / ULT_DRAG_FULL_PX });
+    intents.setUltDragFromScreen({ x: dx / ULT_DRAG_FULL_PX, y: dy / ULT_DRAG_FULL_PX });
   };
   const onUltUp = (e: PointerEvent): void => {
     if (e.pointerId !== ultPointer) return;

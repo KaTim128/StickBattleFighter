@@ -1,305 +1,332 @@
 import { Container, Graphics } from 'pixi.js';
 import { footprint, kindOf, PROP_KINDS, type PropPlacement } from '../data/objects/props';
+import { face, faceQuad, isoBlock, isoCylinder, isoShadow, shade } from './iso-draw';
+import { iso } from './projection';
 
 /**
- * GREYBOX drawings for office and test props, top-down with a slight
- * three-quarter view: each prop shows its top face lifted by its height and
- * a front face down to the floor, plus a soft shadow (REQ-VIS-9). Origin =
- * centre of the footprint on the floor. Readable placeholders, not final art.
+ * Office and test props in the 2.5D style (TD-045, owner-approved mockups): bevelled blocks lit
+ * from the top-left, soft shadows, ambient occlusion and a few crisp details on the faces the
+ * camera sees. Original designs. Origin = centre of the footprint on the floor; a node is placed
+ * at its projected centre. GREYBOX art until the art pass (Phase 8), but in the final style.
  */
-const EDGE = 0x1f242d;
-const SHADOW = 0x000000;
+const DARK = 0x2a2d33;
 
-interface BoxColours {
-  top: number;
-  front: number;
-  alpha?: number;
-}
-
-/** A box w × d footprint, h tall, standing on the floor (or lifted by `lift`). */
-function box(g: Graphics, w: number, d: number, h: number, c: BoxColours, lift = 0, edge = EDGE): Graphics {
-  const a = c.alpha ?? 1;
-  return g
-    .rect(-w / 2, d / 2 - h - lift, w, h)
-    .fill({ color: c.front, alpha: a })
-    .stroke({ width: 0.03, color: edge, alpha: Math.min(1, a + 0.3) })
-    .rect(-w / 2, -d / 2 - h - lift, w, d)
-    .fill({ color: c.top, alpha: a })
-    .stroke({ width: 0.03, color: edge, alpha: Math.min(1, a + 0.3) });
-}
-
-function shadow(g: Graphics, w: number, d: number): void {
-  g.rect(-w / 2 + 0.08, -d / 2 + 0.1, w, d).fill({ color: SHADOW, alpha: 0.22 });
+/** Leg posts under a raised top (tables, desks). */
+function legs(g: Graphics, w: number, d: number, h: number, colour: number, inset = 0.05, size = 0.05): void {
+  // Back legs first, then front, so the front ones overlap.
+  for (const [lx, ly] of [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ] as const) {
+    const cx = lx * (w / 2 - inset - size / 2);
+    const cy = ly * (d / 2 - inset - size / 2);
+    isoBlock(g, cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2, 0, h, { colour, edge: 0.25 });
+  }
 }
 
 export function buildPropView(p: PropPlacement): Container {
   const { w, d, h } = footprint(p);
-  const lift = p.elevationM ?? 0;
+  const z = p.elevationM ?? 0;
+  const x0 = -w / 2;
+  const y0 = -d / 2;
+  const x1 = w / 2;
+  const y1 = d / 2;
   const root = new Container();
   root.label = `prop-${p.kind}`;
   const g = new Graphics();
   root.addChild(g);
-  if (lift === 0 && !kindOf(p.kind).decal) shadow(g, w, d);
+  const kind = kindOf(p.kind);
+  if (kind.decal) {
+    // Decals are drawn in floor space (inside the floor layer): plain world metres.
+    g.roundRect(x0, y0, w, d, 0.15).fill(0x7a2632).stroke({ width: 0.08, color: 0xc9a227 });
+    g.roundRect(x0 + 0.3, y0 + 0.3, w - 0.6, d - 0.6, 0.1).stroke({ width: 0.04, color: 0xd8b25a });
+    root.position.set(p.x, p.y);
+    return root;
+  }
+  if (z === 0) isoShadow(g, x0, y0, x1, y1, h);
 
   switch (p.kind) {
     case 'pillar':
-      box(g, w, d, h, { top: 0xb5bdc9, front: 0x8b93a1 });
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0xd9d4cc });
       break;
     case 'desk': {
-      box(g, w, d, 0.06, { top: 0xc89b66, front: 0x9c7446 }, h - 0.06);
-      // legs
-      for (const sx of [-1, 1]) g.rect(sx * (w / 2 - 0.06) - 0.03, d / 2 - h + 0.06, 0.06, h - 0.06).fill(0x5e4630);
+      legs(g, w, d, h - 0.05, 0x4a4f57);
+      isoBlock(g, x0, y0, x1, y1, h - 0.05, h, { colour: 0xf2efe9, noAo: true });
       break;
     }
     case 'meeting-table':
-      box(g, w, d, 0.08, { top: 0x8f6a45, front: 0x6d4f32 }, h - 0.08);
-      g.rect(-0.12, d / 2 - h + 0.08, 0.24, h - 0.08).fill(0x4b3726);
+      isoBlock(g, -0.12, -0.12, 0.12, 0.12, 0, h - 0.06, { colour: 0x3e3f44 });
+      isoBlock(g, x0, y0, x1, y1, h - 0.06, h, { colour: 0xf4f1ec, noAo: true });
       break;
     case 'office-chair': {
-      g.circle(0, 0, 0.27).fill({ color: SHADOW, alpha: 0.2 });
-      g.rect(-0.03, -0.45, 0.06, 0.45).fill(0x2a2d33); // stem
-      box(g, w * 0.9, d * 0.8, 0.08, { top: 0x3b4a63, front: 0x2b364a }, 0.45);
-      box(g, w * 0.9, 0.1, 0.45, { top: 0x3b4a63, front: 0x33405a }, 0.5); // backrest
+      // Five-star base, gas lift, seat and a see-through mesh back.
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + 0.3;
+        const c = iso(0, 0, 0.08);
+        const e = iso(Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0.04);
+        g.moveTo(c.x, c.y).lineTo(e.x, e.y).stroke({ width: 0.04, color: DARK, cap: 'round' });
+        g.circle(e.x, e.y + 0.02, 0.025).fill(0x15171a);
+      }
+      isoCylinder(g, 0, 0, 0.08, 0.03, 0.34, 0x9aa0a8);
+      isoBlock(g, -0.24, -0.22, 0.24, 0.22, 0.42, 0.5, { colour: 0x3b3f46 });
+      const back = face.left(-0.2);
+      faceQuad(g, back, -0.24, 0.52, 0.24, 1.0)
+        .fill({ color: 0x2a2e36, alpha: 0.75 })
+        .stroke({ width: 0.03, color: 0x1c1f24 });
+      for (let i = 1; i < 6; i++) {
+        const u = -0.24 + i * 0.08;
+        const a = back(u, 0.54);
+        const b = back(u, 0.98);
+        g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 0.008, color: 0x8a93a1, alpha: 0.6 });
+      }
       break;
     }
-    case 'computer':
-      box(g, w, d * 0.5, h, { top: 0x2a2e36, front: 0x1c2026 }, lift);
-      g.rect(-w / 2 + 0.04, d * 0.25 - h - lift + 0.04, w - 0.08, h - 0.1).fill(0x5fb6ff); // screen glow
+    case 'computer': {
+      isoBlock(g, -0.08, -0.05, 0.08, 0.05, z, z + 0.02, { colour: 0x3a3e45, noAo: true });
+      isoBlock(g, -0.02, -0.02, 0.02, 0.02, z + 0.02, z + 0.14, { colour: 0x3a3e45, noAo: true });
+      isoBlock(g, x0, -0.03, x1, 0.03, z + 0.12, z + h, { colour: 0x26292e, noAo: true });
+      faceQuad(g, face.left(0.03), x0 + 0.03, z + 0.15, x1 - 0.03, z + h - 0.03).fill(0x5fb0ea);
+      faceQuad(g, face.left(0.03), x0 + 0.05, z + h - 0.12, x0 + 0.2, z + h - 0.05).fill({
+        color: 0xffffff,
+        alpha: 0.35,
+      });
       break;
+    }
     case 'keyboard':
-      box(g, w, d, h, { top: 0x3a3f48, front: 0x23272e }, lift);
+      isoBlock(g, x0, y0, x1, y1, z, z + h, { colour: 0xd9dbe0, noAo: true });
       break;
     case 'mouse':
-      g.ellipse(0, -lift - h / 2, w / 2, d / 2)
-        .fill(0x3a3f48)
-        .stroke({ width: 0.015, color: EDGE });
+      isoBlock(g, x0, y0, x1, y1, z, z + h, { colour: 0xd9dbe0, noAo: true });
       break;
     case 'coffee-cup':
-      box(g, w, d, h, { top: 0x6b3f22, front: 0xf2efe8 }, lift);
+      isoCylinder(g, 0, 0, z, w / 2, h, 0xe2643a);
       break;
     case 'cabinet': {
-      box(g, w, d, h, { top: 0x9aa4b1, front: 0x7d8794 });
-      for (let i = 1; i < 4; i++) {
-        const y = d / 2 - h + (h / 4) * i;
-        g.moveTo(-w / 2 + 0.06, y)
-          .lineTo(w / 2 - 0.06, y)
-          .stroke({ width: 0.025, color: EDGE });
-        g.rect(-0.08, y - h / 8 - 0.02, 0.16, 0.04).fill(0xd9dee5);
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x9aa4b1 });
+      const front = w >= d ? face.left(y1) : face.right(x1);
+      const [a0, a1] = w >= d ? [x0, x1] : [y0, y1];
+      for (let i = 0; i < 4; i++) {
+        const v0 = 0.06 + (i * (h - 0.1)) / 4;
+        const v1 = v0 + (h - 0.1) / 4 - 0.04;
+        faceQuad(g, front, a0 + 0.05, v0, a1 - 0.05, v1).stroke({ width: 0.012, color: 0x55606e, alpha: 0.8 });
+        const m = (a0 + a1) / 2;
+        faceQuad(g, front, m - 0.08, v1 - 0.06, m + 0.08, v1 - 0.03).fill(0xe6eaef);
+      }
+      break;
+    }
+    case 'drawer-unit': {
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x8c96a3 });
+      const front = face.right(x1);
+      for (let i = 0; i < 3; i++) {
+        const v1 = 0.05 + ((i + 1) * (h - 0.08)) / 3;
+        const p = front(0, v1 - 0.05);
+        g.moveTo(p.x - 0.05, p.y + 0.02)
+          .lineTo(p.x + 0.05, p.y - 0.02)
+          .stroke({ width: 0.02, color: 0xe6eaef });
       }
       break;
     }
     case 'glass-partition':
-      box(g, w, d, h, { top: 0xcfe8ff, front: 0x9fd0ff, alpha: 0.35 }, 0, 0x6c8fb3);
-      g.rect(-w / 2, d / 2 - h, w, 0.06).fill({ color: 0x6c8fb3, alpha: 0.9 }); // top rail
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0xbfe0ff, alpha: 0.3, edge: 0.6, noAo: true });
+      isoBlock(g, x0, y0, x1, y1, h - 0.05, h, { colour: 0x8aa6c0 });
       break;
     case 'plant': {
-      box(g, w * 0.7, d * 0.7, 0.45, { top: 0x7a4b30, front: 0x5f3a24 });
-      for (const [lx, ly, r] of [
-        [0, -0.85, 0.32],
-        [-0.2, -0.65, 0.24],
-        [0.22, -0.68, 0.24],
-        [0, -1.1, 0.2],
-      ] as const) {
-        g.circle(lx, ly, r).fill(0x3f8f4a).stroke({ width: 0.03, color: 0x23552b });
+      isoCylinder(g, 0, 0, 0, 0.2, 0.42, 0xf2efe9);
+      const top = iso(0, 0, 0.42);
+      g.ellipse(top.x, top.y, 0.16, 0.08).fill(0x5a3f2b);
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2;
+        const len = 0.4 + (i % 4) * 0.1;
+        const lift = 0.5 + (i % 3) * 0.18;
+        const tx = top.x + Math.cos(a) * len;
+        const ty = top.y - lift + Math.sin(a) * len * 0.35;
+        g.moveTo(top.x, top.y)
+          .quadraticCurveTo(top.x + Math.cos(a) * len * 0.3 - 0.05, ty - 0.22, tx, ty)
+          .quadraticCurveTo(top.x + Math.cos(a) * len * 0.3 + 0.05, ty - 0.1, top.x, top.y)
+          .fill(i % 2 ? 0x3f8f4f : 0x56a85f);
       }
       break;
     }
-    case 'water-dispenser':
-      box(g, w, d, 0.95, { top: 0xe8ecf1, front: 0xc9d0d9 });
-      g.roundRect(-w * 0.35, d / 2 - h - 0.05, w * 0.7, 0.42, 0.08)
-        .fill({ color: 0x6fc3ff, alpha: 0.8 })
-        .stroke({ width: 0.03, color: 0x3a7fb8 });
+    case 'water-dispenser': {
+      isoBlock(g, x0, y0, x1, y1, 0, 0.95, { colour: 0xf1f2f4 });
+      faceQuad(g, face.left(y1), x0 + 0.07, 0.6, x1 - 0.07, 0.78).fill(0xc9ccd2);
+      isoCylinder(g, 0, 0, 0.95, 0.13, 0.4, 0x6fc0f0, 0.85);
       break;
+    }
     case 'bin':
-      box(g, w, d, h, { top: 0x2f353f, front: 0x4a525e });
+      isoCylinder(g, 0, 0, 0, w / 2, h, 0x4a525e);
       break;
-    case 'printer':
-      box(g, w, d, h, { top: 0xdcdfe4, front: 0xb8bdc6 });
-      g.rect(-w * 0.3, -d / 2 - h + 0.08, w * 0.6, 0.12).fill(0xffffff);
-      break;
-    case 'drawer-unit': {
-      // Steel pedestal: brushed grey with three drawer fronts and handles.
-      box(g, w, d, h, { top: 0xa3acb8, front: 0x838d9a });
-      for (let i = 1; i < 3; i++) {
-        const y = d / 2 - h + (h / 3) * i;
-        g.moveTo(-w / 2 + 0.04, y)
-          .lineTo(w / 2 - 0.04, y)
-          .stroke({ width: 0.02, color: EDGE });
-      }
-      for (let i = 0; i < 3; i++) g.rect(-0.07, d / 2 - h + (h / 3) * (i + 0.5) - 0.015, 0.14, 0.03).fill(0xdfe4ea);
+    case 'printer': {
+      isoBlock(g, x0, y0, x1, y1, 0, h - 0.25, { colour: 0x8a929e });
+      isoBlock(g, x0 + 0.04, y0 + 0.04, x1 - 0.04, y1 - 0.04, h - 0.25, h, { colour: 0xe6e8eb });
+      isoBlock(g, -0.2, y0 + 0.1, 0.2, y0 + 0.35, h, h + 0.02, { colour: 0xffffff, noAo: true }); // paper
+      faceQuad(g, face.left(y1), x0 + 0.08, 0.2, x1 - 0.08, 0.3).fill(0x5c6470);
       break;
     }
     case 'cubicle-panel': {
-      box(g, w, d, h, { top: 0x8c95a6, front: 0x6f7889 });
-      // fabric texture stripes on the visible face
-      const vertical = d > w;
-      if (!vertical)
-        for (let x = -w / 2 + 0.3; x < w / 2; x += 0.3) g.moveTo(x, d / 2 - h + 0.08).lineTo(x, d / 2 - 0.05);
-      g.stroke({ width: 0.012, color: 0x5d6575 });
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x9aa3b4 });
+      isoBlock(g, x0, y0, x1, y1, h - 0.04, h, { colour: 0xd6dbe2, noAo: true });
       break;
     }
     case 'executive-desk': {
-      // Heavy mahogany desk with a modesty panel and a leather writing pad.
-      box(g, w, d, h, { top: 0x5b2f1f, front: 0x4a2618 });
-      g.rect(-w / 2 + 0.12, -d / 2 - h + 0.15, w - 0.24, d * 0.5)
-        .fill({ color: 0x1f3b2c, alpha: 0.9 })
-        .stroke({ width: 0.02, color: 0xc9a227 });
-      g.rect(-w / 2, d / 2 - h, w, 0.05).fill(0xc9a227); // brass trim
+      isoBlock(g, x0, y0, x1, y1, 0, h - 0.05, { colour: 0x5b3322 });
+      isoBlock(g, x0 - 0.02, y0 - 0.02, x1 + 0.02, y1 + 0.02, h - 0.05, h, { colour: 0x6e3f2a, noAo: true });
+      faceQuad(g, face.top(h + 0.001), x0 + 0.15, y0 + 0.15, x1 - 0.15, y1 - 0.15).fill({
+        color: 0x1f3b2c,
+        alpha: 0.85,
+      });
       break;
     }
     case 'boss-chair': {
-      g.rect(-0.04, -0.5, 0.08, 0.5).fill(0x222222);
-      box(g, w, d * 0.85, 0.12, { top: 0x2b1a14, front: 0x1c110d }, 0.45);
-      box(g, w * 0.95, 0.16, 0.75, { top: 0x3a231a, front: 0x2b1a14 }, 0.55); // tall leather back
-      g.rect(-w / 2 + 0.05, -0.16 - 1.25, w - 0.1, 0.05).fill(0xc9a227);
+      isoCylinder(g, 0, 0, 0.05, 0.04, 0.4, 0x222222);
+      isoBlock(g, x0 + 0.05, y0 + 0.05, x1 - 0.05, y1 - 0.05, 0.42, 0.55, { colour: 0x3a231a });
+      isoBlock(g, x0 + 0.06, y1 - 0.2, x1 - 0.06, y1 - 0.06, 0.55, 1.3, { colour: 0x3a231a });
       break;
     }
     case 'visitor-chair': {
-      for (const sx of [-1, 1]) g.rect(sx * (w / 2 - 0.05) - 0.025, d / 2 - 0.45, 0.05, 0.45).fill(0x4a2e1e);
-      box(g, w, d * 0.85, 0.08, { top: 0x8a2e2e, front: 0x6b2323 }, 0.42); // red cushion
-      box(g, w, 0.08, 0.45, { top: 0x6b4228, front: 0x5a3720 }, 0.5);
+      legs(g, w - 0.08, d - 0.08, 0.42, 0x4a2e1e, 0, 0.04);
+      isoBlock(g, x0 + 0.04, y0 + 0.04, x1 - 0.04, y1 - 0.04, 0.42, 0.5, { colour: 0x8a2e2e, noAo: true });
+      isoBlock(g, x1 - 0.12, y0 + 0.04, x1 - 0.04, y1 - 0.04, 0.5, 0.95, { colour: 0x6b4228, noAo: true });
       break;
     }
     case 'bookshelf': {
-      box(g, w, d, h, { top: 0x6b4228, front: 0x553420 });
-      const shelves = 4;
-      const palette = [0xb23a3a, 0x3a6fb2, 0xd6b13a, 0x3a9a5b, 0x8a5ab8, 0xe0e0d8];
-      for (let s = 0; s < shelves; s++) {
-        const y0 = d / 2 - h + 0.08 + (s * (h - 0.12)) / shelves;
-        const rowH = (h - 0.12) / shelves;
-        g.rect(-w / 2 + 0.05, y0 + rowH - 0.04, w - 0.1, 0.04).fill(0x3d2617);
-        for (let x = -w / 2 + 0.08, k = s; x < w / 2 - 0.12; x += 0.11, k++) {
-          g.rect(x, y0 + 0.06 + ((k * 7) % 3) * 0.02, 0.09, rowH - 0.12 - ((k * 7) % 3) * 0.02).fill(
+      const wood = 0xcfa36c;
+      const along = w >= d;
+      const front = along ? face.left(y1) : face.right(x1);
+      const [a0, a1] = along ? [x0, x1] : [y0, y1];
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: shade(wood, 0.75) });
+      const palette = [0xc0504d, 0x3e6e9e, 0xe3b23c, 0x5b8c5a, 0x7d5ba6, 0xe07b39, 0x2f4858];
+      for (let s = 0; s < 4; s++) {
+        const v0 = 0.06 + (s * (h - 0.1)) / 4;
+        const v1 = v0 + (h - 0.1) / 4;
+        faceQuad(g, front, a0 + 0.04, v0, a1 - 0.04, v1 - 0.04).fill(0x3a2a1c);
+        for (let u = a0 + 0.07, k = s * 5; u < a1 - 0.1; u += 0.09, k++) {
+          const bh = v1 - v0 - 0.1 - ((k * 7) % 3) * 0.04;
+          faceQuad(g, front, u, v0 + 0.01, u + 0.075, v0 + 0.01 + bh).fill(palette[k % palette.length]!);
+        }
+        faceQuad(g, front, a0 + 0.02, v1 - 0.04, a1 - 0.02, v1).fill(wood);
+      }
+      break;
+    }
+    case 'kitchen-counter': {
+      isoBlock(g, x0, y0, x1, y1, 0, h - 0.05, { colour: 0xc89a66 });
+      isoBlock(g, x0 - 0.02, y0, x1 + 0.02, y1 + 0.03, h - 0.05, h, { colour: 0xece8e0, noAo: true });
+      const doors = Math.max(2, Math.round(w / 0.6));
+      for (let i = 0; i < doors; i++) {
+        const u0 = x0 + (w / doors) * i + 0.03;
+        const u1 = x0 + (w / doors) * (i + 1) - 0.03;
+        faceQuad(g, face.left(y1), u0, 0.1, u1, h - 0.1).stroke({ width: 0.012, color: 0x8a6440, alpha: 0.8 });
+        faceQuad(g, face.left(y1), (u0 + u1) / 2 - 0.05, h - 0.2, (u0 + u1) / 2 + 0.05, h - 0.17).fill(0xd9dee5);
+      }
+      break;
+    }
+    case 'coffee-machine': {
+      isoBlock(g, x0, y0, x1, y1, z, z + h, { colour: 0x2b2d33, noAo: true });
+      faceQuad(g, face.left(y1), x0 + 0.04, z + h - 0.14, x1 - 0.04, z + h - 0.04).fill(0xa9b0ba);
+      faceQuad(g, face.left(y1), -0.07, z + 0.03, 0.07, z + 0.18).fill(0x111216);
+      const light = face.left(y1)(x1 - 0.07, z + h - 0.09);
+      g.circle(light.x, light.y, 0.02).fill(0xff4d3d);
+      isoCylinder(g, 0, y1 - 0.06, z + 0.03, 0.03, 0.06, 0xf2efe8);
+      break;
+    }
+    case 'microwave':
+      isoBlock(g, x0, y0, x1, y1, z, z + h, { colour: 0xd9dde3, noAo: true });
+      faceQuad(g, face.left(y1), x0 + 0.04, z + 0.04, x0 + w * 0.65, z + h - 0.04).fill(0x23272e);
+      faceQuad(g, face.left(y1), x1 - w * 0.25, z + 0.06, x1 - 0.04, z + h - 0.06).fill(0x8a929e);
+      break;
+    case 'snack-shelf': {
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x9aa3ad });
+      const palette = [0xe8b23a, 0xd9443b, 0x3a8fd9, 0x45a85a, 0xf07c2a, 0xb04ad0, 0xf2e4a0];
+      for (let s = 0; s < 4; s++) {
+        const v0 = 0.06 + (s * (h - 0.1)) / 4;
+        const v1 = v0 + (h - 0.1) / 4;
+        faceQuad(g, face.left(y1), x0 + 0.03, v0, x1 - 0.03, v1 - 0.03).fill(0x4a525c);
+        for (let u = x0 + 0.06, k = s * 3; u < x1 - 0.13; u += 0.14, k++) {
+          faceQuad(g, face.left(y1), u, v0 + 0.01, u + 0.11, v1 - 0.06 - ((k * 5) % 3) * 0.04).fill(
             palette[k % palette.length]!,
           );
         }
       }
       break;
     }
-    case 'kitchen-counter': {
-      // Laminate top over wooden cupboards with doors, handles and a dark kick plate.
-      box(g, w, d, h, { top: 0xe9e4da, front: 0xb98a5a });
-      g.rect(-w / 2, d / 2 - 0.08, w, 0.08).fill(0x3a2a1c);
-      const doors = Math.max(2, Math.round(w / 0.6));
-      for (let i = 1; i < doors; i++) {
-        const x = -w / 2 + (w / doors) * i;
-        g.moveTo(x, d / 2 - h + 0.06).lineTo(x, d / 2 - 0.1);
-      }
-      g.stroke({ width: 0.02, color: 0x7a5636 });
-      for (let i = 0; i < doors; i++)
-        g.rect(-w / 2 + (w / doors) * (i + 0.5) - 0.06, d / 2 - h + 0.18, 0.12, 0.03).fill(0xd9dee5);
-      break;
-    }
-    case 'coffee-machine':
-      box(g, w, d, h, { top: 0x2b2d33, front: 0x1d1f24 }, lift);
-      g.rect(-w / 2 + 0.05, d / 2 - h - lift + 0.05, w - 0.1, 0.12).fill(0xa9b0ba); // brushed panel
-      g.circle(w / 2 - 0.08, d / 2 - h - lift + 0.11, 0.025).fill(0xff4d3d); // power light
-      g.rect(-0.06, d / 2 - lift - 0.16, 0.12, 0.12).fill(0x111216); // cup bay
-      g.rect(-0.035, d / 2 - lift - 0.1, 0.07, 0.07).fill(0xf2efe8); // a cup waiting
-      break;
-    case 'microwave':
-      box(g, w, d, h, { top: 0xd9dde3, front: 0xbfc5ce }, lift);
-      g.rect(-w / 2 + 0.04, d / 2 - h - lift + 0.05, w * 0.62, h - 0.1).fill(0x23272e); // door window
-      g.rect(w / 2 - w * 0.28, d / 2 - h - lift + 0.06, w * 0.2, h - 0.12).fill(0x8a929e); // keypad
-      break;
-    case 'snack-shelf': {
-      // Wire shelving stacked with colourful snack boxes, bags and drinks.
-      box(g, w, d, h, { top: 0xaeb6c1, front: 0x8b939e });
-      const palette = [0xe8b23a, 0xd9443b, 0x3a8fd9, 0x45a85a, 0xf07c2a, 0xb04ad0, 0xf2e4a0];
-      const shelves = 4;
-      const rowH = (h - 0.1) / shelves;
-      for (let s = 0; s < shelves; s++) {
-        const y0 = d / 2 - h + 0.06 + s * rowH;
-        g.rect(-w / 2 + 0.03, y0 + rowH - 0.03, w - 0.06, 0.03).fill(0x6c747f);
-        for (let x = -w / 2 + 0.06, k = s * 3; x < w / 2 - 0.14; x += 0.15, k++) {
-          const tall = rowH - 0.1 - ((k * 5) % 3) * 0.05;
-          g.roundRect(x, y0 + rowH - 0.03 - tall, 0.12, tall, 0.02).fill(palette[k % palette.length]!);
-        }
-      }
-      break;
-    }
     case 'vending-machine': {
-      // Red cabinet, a glass front showing rows of snacks, and a keypad with a coin slot.
-      box(g, w, d, h, { top: 0x8e1d24, front: 0xb3262e });
-      const gx = -w / 2 + 0.06;
-      const gw = w * 0.62;
-      const gy = d / 2 - h + 0.1;
-      const gh = h * 0.72;
-      g.rect(gx, gy, gw, gh).fill(0x1d2a38);
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0xc0303a });
+      const f = face.left(y1);
+      faceQuad(g, f, x0 + 0.06, 0.5, x0 + w * 0.68, h - 0.12).fill(0x1d2a38);
       const colours = [0xe8b23a, 0x45a85a, 0x3a8fd9, 0xf07c2a, 0xd9e3ef];
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 4; c++) {
-          g.rect(
-            gx + 0.04 + (c * (gw - 0.08)) / 4,
-            gy + 0.05 + (r * (gh - 0.1)) / 5,
-            (gw - 0.08) / 4 - 0.03,
-            (gh - 0.1) / 5 - 0.06,
-          ).fill(colours[(r + c) % colours.length]!);
+          const u = x0 + 0.1 + c * ((w * 0.68 - 0.12) / 4);
+          const v = 0.56 + r * ((h - 0.7) / 5);
+          faceQuad(g, f, u, v, u + 0.1, v + 0.17).fill(colours[(r + c) % colours.length]!);
         }
       }
-      g.rect(gx, gy, gw, gh).fill({ color: 0xbfe6ff, alpha: 0.18 }).stroke({ width: 0.02, color: 0x6c8fb3 });
-      g.rect(w / 2 - w * 0.26, gy + 0.1, w * 0.18, 0.3).fill(0x2a2d33); // keypad
-      g.rect(w / 2 - w * 0.22, gy + 0.5, w * 0.1, 0.04).fill(0xd9dee5); // coin slot
-      g.rect(gx, d / 2 - 0.25, gw, 0.14).fill(0x111216); // pickup flap
+      faceQuad(g, f, x0 + 0.06, 0.5, x0 + w * 0.68, h - 0.12).fill({ color: 0xbfe6ff, alpha: 0.15 });
+      faceQuad(g, f, x1 - w * 0.25, 1.1, x1 - 0.06, 1.45).fill(0x2a2d33);
+      faceQuad(g, f, x0 + 0.06, 0.18, x0 + w * 0.68, 0.36).fill(0x111216);
       break;
     }
     case 'phone-booth': {
-      // A one-person acoustic pod: dark frame, glass front, a stool and a phone shelf inside, a light on top.
-      box(g, w, d, h, { top: 0x3a4048, front: 0x2f343c });
-      const fx = -w / 2 + 0.08;
-      const fw = w - 0.16;
-      const fy = d / 2 - h + 0.12;
-      g.rect(fx, fy, fw, h - 0.18).fill(0x46505c); // inside, felt lined
-      g.rect(fx + 0.08, fy + 0.7, fw - 0.16, 0.06).fill(0x9c7446); // phone shelf
-      g.rect(fx + fw / 2 - 0.12, fy + 0.62, 0.24, 0.08).fill(0x1d1f24); // phone
-      g.rect(fx + fw / 2 - 0.16, d / 2 - 0.62, 0.32, 0.08).fill(0x6b2323); // stool seat
-      g.rect(fx + fw / 2 - 0.025, d / 2 - 0.54, 0.05, 0.48).fill(0x22252a); // stool post
-      g.rect(fx, fy, fw, h - 0.18)
+      // An acoustic pod: frame, felt-lined inside, glass front, stool and phone shelf, a "free" light.
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x3a4048 });
+      const f = face.left(y1);
+      faceQuad(g, f, x0 + 0.08, 0.08, x1 - 0.08, h - 0.1).fill(0x56606c);
+      faceQuad(g, f, x0 + 0.18, 0.95, x1 - 0.18, 1.0).fill(0x9c7446);
+      faceQuad(g, f, -0.1, 1.0, 0.1, 1.06).fill(0x1d1f24);
+      faceQuad(g, f, -0.15, 0.5, 0.15, 0.56).fill(0x8a2e2e);
+      faceQuad(g, f, -0.02, 0.08, 0.02, 0.5).fill(0x22252a);
+      faceQuad(g, f, x0 + 0.08, 0.08, x1 - 0.08, h - 0.1)
         .fill({ color: 0xcfe8ff, alpha: 0.22 })
-        .stroke({ width: 0.03, color: 0x8fb3d9 });
-      g.moveTo(fx + fw * 0.2, fy + 0.15)
-        .lineTo(fx + fw * 0.45, fy + 0.15)
-        .stroke({ width: 0.03, color: 0xffffff, alpha: 0.5 });
-      g.circle(0, -d / 2 - h + 0.12, 0.05).fill(0x5fdc6a); // "free" light
+        .stroke({ width: 0.02, color: 0x9fc4e6 });
+      const l = iso(0, 0, h + 0.03);
+      g.circle(l.x, l.y, 0.05).fill(0x5fdc6a);
       break;
     }
     case 'sofa': {
-      box(g, w, d, 0.42, { top: 0x5a6b8c, front: 0x47566f });
-      box(g, w, 0.2, 0.4, { top: 0x66789b, front: 0x52617d }, 0.4); // back
-      for (const sx of [-1, 1]) {
-        // Arms at each end: a front face down to the seat and a top.
-        const ax = sx * (w / 2 - 0.09) - 0.09;
-        g.rect(ax, d / 2 - 0.65, 0.18, 0.65)
-          .fill(0x52617d)
-          .stroke({ width: 0.03, color: EDGE });
-        g.rect(ax, -d / 2 - 0.65, 0.18, d)
-          .fill(0x66789b)
-          .stroke({ width: 0.03, color: EDGE });
+      const c = 0xcfd3d8;
+      isoBlock(g, x0, y0, x1, y1, 0.06, 0.38, { colour: c });
+      isoBlock(g, x0, y0, x1, y0 + 0.22, 0.38, 0.8, { colour: shade(c, 0.96) });
+      isoBlock(g, x0, y0 + 0.22, x0 + 0.2, y1, 0.38, 0.6, { colour: c });
+      isoBlock(g, x1 - 0.2, y0 + 0.22, x1, y1, 0.38, 0.6, { colour: c });
+      for (let i = 0; i < 2; i++) {
+        const u = x0 + 0.22 + i * ((w - 0.44) / 2);
+        isoBlock(g, u, y0 + 0.24, u + (w - 0.44) / 2 - 0.02, y1 - 0.04, 0.38, 0.5, { colour: 0xe2e5e9, noAo: true });
       }
-      for (const sx of [0, 1])
-        g.rect(-w / 2 + 0.22 + sx * (w / 2 - 0.22), -d / 2 - 0.42 + 0.22, w / 2 - 0.26, d - 0.3).fill(0x6c7fa3); // cushions
-      g.rect(-w / 2 + 0.3, -d / 2 - 0.78, 0.3, 0.26).fill(0xe0763a); // an accent pillow
+      isoBlock(g, x0 + 0.3, y0 + 0.24, x0 + 0.62, y0 + 0.36, 0.5, 0.76, { colour: 0xe2643a, noAo: true });
       break;
     }
     case 'rug':
-      g.roundRect(-w / 2, -d / 2, w, d, 0.15)
-        .fill(0x6e1f2b)
-        .stroke({ width: 0.08, color: 0xc9a227 });
-      g.roundRect(-w / 2 + 0.3, -d / 2 + 0.3, w - 0.6, d - 0.6, 0.1).stroke({ width: 0.04, color: 0xd8b25a });
       break;
     default: {
-      const kind: never = p.kind;
-      throw new Error(`no drawing for prop kind ${String(kind)}`);
+      const k: never = p.kind;
+      throw new Error(`no drawing for prop kind ${String(k)}`);
     }
   }
-  root.position.set(p.x, p.y);
+  const at = iso(p.x, p.y);
+  root.position.set(at.x, at.y);
   return root;
 }
 
-/** Depth-sort key offset for a placed prop: its front edge, or its host's when it sits on one. */
-export function propFootOffset(p: PropPlacement): number {
-  if (p.sortY !== undefined) return p.sortY - p.y;
-  return footprint(p).d / 2;
+/**
+ * Depth-sort key offset for a placed prop, in view units: its nearest corner (largest x + y).
+ * Items on a desk sort just after their host, so they draw on top of it.
+ */
+export function propFootOffset(p: PropPlacement, all: readonly PropPlacement[] = []): number {
+  const { w, d } = footprint(p);
+  const own = iso(w / 2, d / 2).y;
+  if ((p.elevationM ?? 0) === 0) return own;
+  const host = all.find((q) => {
+    if ((q.elevationM ?? 0) > 0 || !PROP_KINDS[q.kind].solid) return false;
+    const f = footprint(q);
+    return Math.abs(p.x - q.x) <= f.w / 2 && Math.abs(p.y - q.y) <= f.d / 2;
+  });
+  if (!host) return own;
+  const hf = footprint(host);
+  const hostKey = iso(host.x + hf.w / 2, host.y + hf.d / 2).y;
+  const order = p.sortY !== undefined ? (p.sortY % 1) * 0.01 : 0;
+  return hostKey + 0.002 + order - iso(p.x, p.y).y;
 }
 
 /** Tallest thing in the arena, so the camera can show it against the top wall. */

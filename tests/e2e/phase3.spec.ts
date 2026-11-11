@@ -20,7 +20,11 @@ const state = (page: Page) =>
     return { cam: d.camera!, player: d.player!, dummy: d.dummy! };
   });
 
-/** Screen position (CSS px) of a world point under the current camera. */
+/** A world point (z metres up) in the 2.5D view's units (TD-045); the camera works in these. */
+const C = Math.SQRT1_2;
+const iso = (p: P, z = 0) => ({ x: (p.x - p.y) * C, y: (p.x + p.y) * C * 0.5 - z });
+
+/** Screen position (CSS px) of a view-space point under the current camera. */
 function toScreen(cam: Cam, p: P, view: { width: number; height: number }) {
   return { x: view.width / 2 + (p.x - cam.x) * cam.scale, y: view.height / 2 + (p.y - cam.y) * cam.scale };
 }
@@ -34,19 +38,16 @@ test('camera zooms out to keep the player and the dummy on screen, within limits
   await expect.poll(async () => (await state(page)).cam.framed).toBe(1);
   const before = (await state(page)).cam.shortSideM;
 
-  // Walk up-left, away from the dummy (clear of pillars), until over 9 m of height separates them
-  // (that gap needs a clear zoom-out: 9 m + 2 × 1.8 m padding > 11 m closest zoom + 1 m).
+  // Walk straight up the screen, away from the dummy (clear of pillars), until the on-screen height
+  // between them needs a clear zoom-out: 8.6 view units + 2 × 1.8 padding > 11 (closest zoom) + 1.
   // Hold by distance, not time: slow software rendering in CI runs fewer steps per second.
+  // (The camera works in the 2.5D view's units, TD-045.)
   await page.keyboard.down('KeyW');
-  await page.keyboard.down('KeyA');
-  // Tight loop so the keys are released as soon as the gap is reached (no overshoot past the
-  // 16 m framing range, which would make the camera correctly stop framing the dummy).
   const deadline = Date.now() + 15_000;
   for (;;) {
     const s = await state(page);
-    if (s.dummy.y - s.player.y > 9 || Date.now() > deadline) break;
+    if (iso(s.dummy).y - iso(s.player).y > 8.6 || Date.now() > deadline) break;
   }
-  await page.keyboard.up('KeyA');
   await page.keyboard.up('KeyW');
   await expect.poll(async () => (await state(page)).cam.shortSideM, { timeout: 5000 }).toBeGreaterThan(before + 1);
   await page.waitForTimeout(800);
@@ -54,14 +55,13 @@ test('camera zooms out to keep the player and the dummy on screen, within limits
   const view = page.viewportSize()!;
   const s = await state(page);
   expect(s.cam.shortSideM).toBeLessThanOrEqual(17.01);
-  // Both fighters must be on screen: a 9–13 m gap fits within the widest zoom (17 m) with padding.
-  // Fighters more than 16 m away are deliberately not framed (DEFAULT_FRAMING.maxFrameDistanceM).
-  const gap = s.dummy.y - s.player.y;
-  const distance = Math.hypot(s.dummy.x - s.player.x, s.dummy.y - s.player.y);
-  expect(gap, JSON.stringify(s)).toBeGreaterThan(9);
+  // Both fighters must be on screen; fighters more than 16 view units apart are deliberately not framed.
+  const gap = iso(s.dummy).y - iso(s.player).y;
+  const distance = Math.hypot(iso(s.dummy).x - iso(s.player).x, gap);
+  expect(gap, JSON.stringify(s)).toBeGreaterThan(8.6);
   expect(distance, JSON.stringify(s)).toBeLessThan(16); // the scenario this test is about
   expect(s.cam.framed).toBe(1);
-  const mustShow = [s.player, { x: s.dummy.x, y: s.dummy.y - 1.6 }, s.dummy];
+  const mustShow = [iso(s.player), iso(s.dummy, 1.6), iso(s.dummy)];
   for (const p of mustShow) {
     const sp = toScreen(s.cam, p, view);
     const where = `point ${JSON.stringify(p)} → screen ${JSON.stringify(sp)}; state ${JSON.stringify(s)}`;

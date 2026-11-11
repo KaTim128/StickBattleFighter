@@ -212,7 +212,12 @@ export interface EffectsProfile {
   readonly flashColour: string;
   readonly shakeScale: number;
   readonly hitstopScale: number;
+  /** How the head is drawn: a plain round head (default) or a living flame that lights the room (TD-045). */
+  readonly head?: HeadStyle;
 }
+
+export const HEAD_STYLES = ['round', 'flame'] as const;
+export type HeadStyle = (typeof HEAD_STYLES)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */
 export interface AudioProfile {

@@ -14,6 +14,10 @@ type DebugWindow = Window & {
 };
 const player = (page: Page) => page.evaluate(() => (window as DebugWindow).__stickmanDebug!.player!);
 const camera = (page: Page) => page.evaluate(() => (window as DebugWindow).__stickmanDebug!.camera!);
+/** Where a world point lands on screen in the 2.5D view (TD-045): x across, y down. */
+const C = Math.SQRT1_2;
+const screenX = (p: { x: number; y: number }) => (p.x - p.y) * C;
+const screenY = (p: { x: number; y: number }) => (p.x + p.y) * C * 0.5;
 
 async function open(page: Page, errors: string[]) {
   page.on('pageerror', (e) => errors.push(e.message));
@@ -33,8 +37,9 @@ test('keyboard moves the stickman front/back/left/right, it jumps, and the camer
 
   const start = await player(page);
   const cam0 = await camera(page);
+  // Keys move along the screen in the 2.5D view: D walks right on screen.
   await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await player(page)).x).toBeGreaterThan(start.x + 3);
+  await expect.poll(async () => screenX(await player(page))).toBeGreaterThan(screenX(start) + 2);
   expect((await player(page)).facing).toBe(1);
   await page.screenshot({ path: testInfo.outputPath('walking.png') });
   await page.keyboard.up('KeyD');
@@ -43,7 +48,7 @@ test('keyboard moves the stickman front/back/left/right, it jumps, and the camer
 
   const mid = await player(page);
   await page.keyboard.down('KeyW');
-  await expect.poll(async () => (await player(page)).y).toBeLessThan(mid.y - 2);
+  await expect.poll(async () => screenY(await player(page))).toBeLessThan(screenY(mid) - 1);
   await page.keyboard.up('KeyW');
 
   await page.keyboard.press('Space');
@@ -54,7 +59,9 @@ test('keyboard moves the stickman front/back/left/right, it jumps, and the camer
   await page.keyboard.down('ArrowLeft');
   await page.waitForTimeout(4500);
   await page.keyboard.up('ArrowLeft');
-  expect((await player(page)).x).toBeGreaterThan(0.25);
+  const end = await player(page);
+  expect(end.x).toBeGreaterThan(0.25); // inside the west wall…
+  expect(end.y).toBeLessThan(20 - 0.25); // …and the south wall
   expect(errors).toEqual([]);
 });
 

@@ -9,6 +9,7 @@ const TRAINING_YARD_DUMMY_START = TRAINING_YARD.dummyStart;
 
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
+import { iso, screenDirToWorld } from '../../../src/rendering/projection';
 
 const STEP = 1 / 60;
 const VIEW = { width: 1280, height: 720 };
@@ -32,11 +33,12 @@ async function setup() {
   return { stage, intents, scene, scenes, run, runUntil };
 }
 
-/** Is a world point inside the current camera view? */
+/** Is a world point inside the current camera view (the camera works in the 2.5D view, TD-045)? */
 function onScreen(scene: FightArenaScene, p: { x: number; y: number }): boolean {
   const cam = scene.cameraState!;
   const { w, h } = visibleSize(cam.shortSideM, VIEW.width, VIEW.height);
-  return Math.abs(p.x - cam.x) <= w / 2 && Math.abs(p.y - cam.y) <= h / 2;
+  const q = iso(p.x, p.y);
+  return Math.abs(q.x - cam.x) <= w / 2 && Math.abs(q.y - cam.y) <= h / 2;
 }
 
 describe('Training yard camera (Phase 3)', () => {
@@ -52,8 +54,9 @@ describe('Training yard camera (Phase 3)', () => {
     expect(onScreen(scene, scene.player)).toBe(true);
     expect(onScreen(scene, scene.dummy)).toBe(true);
 
-    intents.setMove('test', { x: -Math.SQRT1_2, y: -Math.SQRT1_2 }); // up-left, away from the dummy (clear of pillars)
-    run(1.6);
+    // Up-left on screen, away from the dummy (clear of pillars); the camera works in the 2.5D view.
+    intents.setMove('test', screenDirToWorld(-Math.SQRT1_2, -Math.SQRT1_2));
+    run(2.6); // the 2.5D view packs distance tighter on screen, so walk further apart
     intents.setMove('test', { x: 0, y: 0 });
     run(1.5);
     expect(scene.cameraState!.shortSideM).toBeGreaterThan(closeZoom + 1);

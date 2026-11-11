@@ -3,7 +3,9 @@ import { fromBoxFrame } from '../core/oriented-rect';
 import type { ArenaLayout, Rect } from '../data/arenas/arena-layout';
 import { kindOf } from '../data/objects/props';
 import { DoorView } from './door-view';
+import { face, faceQuad, isoBlock, shade } from './iso-draw';
 import { drawPrism } from './prism';
+import { FLOOR_MATRIX, iso } from './projection';
 import { buildPropView, propFootOffset } from './prop-view';
 import { YSortLayer } from './y-sort-layer';
 
@@ -13,6 +15,8 @@ export interface ArenaView {
   /** Props, walls and fighters, drawn in depth order (REQ-VIS-9). */
   readonly actors: YSortLayer;
   readonly doors: ReadonlyMap<string, DoorView>;
+  /** Flat things on the floor, in world metres through the floor projection (VFX scorch marks, rings). */
+  readonly floor: Container;
   readonly propCount: number;
   /** Standing props' views by their index in `arena.props`, so moving or broken props can follow the simulation. */
   readonly props: Map<number, Container>;
@@ -30,6 +34,9 @@ export interface ArenaView {
 export const INTERIOR_WALL_HEIGHT_M = 0.8;
 /** Long walls are drawn in short blocks so fighters beside them still depth-sort correctly. */
 const WALL_CHUNK_M = 0.5;
+/** Back walls stand tall (they never hide the fight); front walls are cut to a low ledge. */
+const BACK_WALL_M = 2.4;
+const FRONT_LEDGE_M = 0.3;
 /** A light skirting board along the foot of interior walls. */
 const SKIRTING = 0xd8d2c2;
 const SKIRTING_M = 0.07;
@@ -74,7 +81,7 @@ function wallBlocks(r: Rect, top: number, front: number): { node: Container; foo
       fromBoxFrame(r, lx0, ly1),
     ];
     const centre = fromBoxFrame(r, (lx0 + lx1) / 2, (ly0 + ly1) / 2);
-    const rel = corners.map((p) => ({ x: p.x - centre.x, y: p.y - centre.y }));
+    const rel = corners.map((p) => iso(p.x - centre.x, p.y - centre.y));
     const c = new Container();
     c.label = 'interior-wall';
     const g = drawPrism(new Graphics(), rel, INTERIOR_WALL_HEIGHT_M, { front, top, edge: 0x14181f, edgeWidth: 0 });
@@ -102,7 +109,8 @@ function wallBlocks(r: Rect, top: number, front: number): { node: Container; foo
         .stroke({ width: 0.025, color: 0x14181f, alpha: 0.7 });
     }
     c.addChild(g);
-    c.position.set(centre.x, centre.y);
+    const at = iso(centre.x, centre.y);
+    c.position.set(at.x, at.y);
     blocks.push({ node: c, footOffset: Math.max(...rel.map((p) => p.y)) });
   }
   return blocks;
@@ -113,13 +121,19 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   const { widthM: w, heightM: h, wallThicknessM: t, look } = arena;
   const world = new Container();
   world.label = `world-${arena.id}`;
+  // Everything flat on the floor is drawn in world metres through the floor projection (TD-045).
+  const floorLayer = new Container();
+  floorLayer.label = 'floor';
+  floorLayer.setFromMatrix(FLOOR_MATRIX);
+  world.addChild(floorLayer);
 
-  const floor = new Graphics().rect(0, 0, w, h).fill(look.floor);
-  world.addChild(floor);
+  // The base floor (skipped when a floor zone already covers the whole room: no double overdraw).
+  const covered = (arena.floorZones ?? []).some((z) => !z.polygon && z.x0 <= 0 && z.y0 <= 0 && z.x1 >= w && z.y1 >= h);
+  if (!covered) floorLayer.addChild(new Graphics().rect(0, 0, w, h).fill(look.floor));
   if (look.floorLines !== null) {
     const lines = new Graphics();
     floorLines(lines, { x0: 0, y0: 0, x1: w, y1: h }, look.floorLineSpacingM, false);
-    world.addChild(lines.stroke({ width: 0.03, color: look.floorLines }));
+    floorLayer.addChild(lines.stroke({ width: 0.03, color: look.floorLines }));
   }
   for (const z of arena.floorZones ?? []) {
     const zone = new Container();
@@ -137,39 +151,59 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
         lines.mask = mask;
       }
     }
-    world.addChild(zone);
+    floorLayer.addChild(zone);
   }
+  // Ambient occlusion where the floor meets the back walls: two thin bands (cheap: no full-floor overdraw).
+  const ao = new Graphics()
+    .rect(0, 0, w, 0.45)
+    .fill({ color: 0x000000, alpha: 0.06 })
+    .rect(0, 0, 0.45, h)
+    .fill({ color: 0x000000, alpha: 0.06 })
+    .rect(0, 0, w, 0.18)
+    .fill({ color: 0x000000, alpha: 0.07 })
+    .rect(0, 0, 0.18, h)
+    .fill({ color: 0x000000, alpha: 0.07 });
+  floorLayer.addChild(ao);
 
   // Rugs and other floor decals lie under everything that stands.
-  for (const p of arena.props) if (kindOf(p.kind).decal) world.addChild(buildPropView(p));
+  for (const p of arena.props) if (kindOf(p.kind).decal) floorLayer.addChild(buildPropView(p));
 
-  const walls = new Graphics()
-    .rect(-t, -t, w + 2 * t, t)
-    .rect(-t, h, w + 2 * t, t)
-    .rect(-t, 0, t, h)
-    .rect(w, 0, t, h)
-    .fill(look.wall);
+  // Outer walls: the two at the back (north, west) stand tall with windows; the two in front are
+  // cut down to a low ledge so they never hide the fight.
+  const walls = new Graphics();
+  isoBlock(walls, -t, -t, w + t, 0, 0, BACK_WALL_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
+  isoBlock(walls, -t, 0, 0, h + t, 0, BACK_WALL_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
   for (const win of arena.windows ?? []) {
-    walls.rect(win.x0, -t + 0.08, win.x1 - win.x0, t - 0.16).fill({ color: 0x9fd6ff, alpha: 0.85 });
+    const at = face.left(0);
+    faceQuad(walls, at, win.x0, 0.9, win.x1, 2.0)
+      .fill({ color: 0xbfe6ff, alpha: 0.9 })
+      .stroke({ width: 0.04, color: 0xf2f6fa });
     for (let x = win.x0 + 1.2; x < win.x1 - 0.1; x += 1.2)
-      walls.rect(x - 0.03, -t + 0.08, 0.06, t - 0.16).fill(look.wall);
+      faceQuad(walls, at, x - 0.03, 0.9, x + 0.03, 2.0).fill(0xf2f6fa);
+    faceQuad(walls, at, win.x0 + 0.15, 1.75, win.x0 + 0.6, 1.95).fill({ color: 0xffffff, alpha: 0.45 }); // glint
   }
-  walls.rect(0, 0, w, h).stroke({ width: 0.06, color: look.wallEdge });
+  // Skirting along the back walls' room faces.
+  faceQuad(walls, face.left(0), 0, 0, w, SKIRTING_M).fill(SKIRTING);
+  faceQuad(walls, face.right(0), 0, 0, h, SKIRTING_M).fill(shade(SKIRTING, 0.85));
   world.addChild(walls);
+  const front = new Graphics();
+  isoBlock(front, -t, h, w + t, h + t, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
+  isoBlock(front, w, -t, w + t, h, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
 
   const actors = new YSortLayer();
   world.addChild(actors.container);
+  world.addChild(front); // the low front ledges draw over everything standing inside the room
   const props = new Map<number, Container>();
   arena.props.forEach((p, i) => {
     if (kindOf(p.kind).decal) return;
     const view = buildPropView(p);
     props.set(i, view);
-    actors.add(view, propFootOffset(p));
+    actors.add(view, propFootOffset(p, arena.props));
   });
 
   const occluders: Container[] = [];
   for (const r of arena.interiorWalls ?? []) {
-    for (const b of wallBlocks(r, 0x9aa3b2, r.colour ?? wallColour(arena, r))) {
+    for (const b of wallBlocks(r, 0xf4f0ea, r.colour ?? wallColour(arena, r))) {
       actors.add(b.node, b.footOffset);
       occluders.push(b.node);
     }
@@ -179,7 +213,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   for (const spec of arena.doors ?? []) {
     const view = new DoorView(spec, INTERIOR_WALL_HEIGHT_M);
     doors.set(spec.id, view);
-    world.addChildAt(view.floor, world.getChildIndex(actors.container)); // mats lie under everything standing
+    floorLayer.addChild(view.floor); // mats lie on the floor
     for (const part of view.parts) {
       actors.add(part.node, part.footOffset);
       occluders.push(part.node);
@@ -189,6 +223,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   return {
     world,
     actors,
+    floor: floorLayer,
     doors,
     propCount: arena.props.length,
     props,

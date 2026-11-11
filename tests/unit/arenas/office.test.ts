@@ -58,8 +58,9 @@ describe('office arena content (owner layout, 11/11/2026)', () => {
   });
 
   it('the two rooms look different (distinct floor and walls)', () => {
-    const zone = OFFICE.floorZones![0]!;
-    expect(zone.floor).not.toBe(OFFICE.look.floor);
+    const zone = OFFICE.floorZones!.find((z) => z.wall !== undefined)!; // the boss room
+    const main = OFFICE.floorZones![0]!; // the main office's light-wood planks (TD-045)
+    expect(zone.floor).not.toBe(main.floor);
     expect(zone.wall).toBeDefined();
     expect(zone.wall).not.toBe(OFFICE.look.wall);
     expect(zone.planks).toBe(true);

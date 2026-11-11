@@ -23,6 +23,7 @@ import { CombatText } from '../interface/combat-text';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
+import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
 import type { ArenaScene } from './scenes/arena-scene';
 import { EngineCheckScene } from './scenes/engine-check-scene';
@@ -158,7 +159,9 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           castFromParams(params),
         );
   if (!(await scenes.switchTo(() => scene))) throw new Error(`${scene.name} scene failed to load`);
-  scene.world?.addChild(overlay.colliderLayer);
+  // Fight arenas are drawn in the 2.5D view: keys and the joystick move along the screen (TD-045).
+  if (scene instanceof FightArenaScene) intents.screenToWorld = (v) => screenDirToWorld(v.x, v.y);
+  (scene instanceof FightArenaScene ? scene.floorLayer : scene.world)?.addChild(overlay.colliderLayer);
 
   if (params.has('debug')) overlay.setVisible(true);
   onDebugToggle(window, () => overlay.toggle());

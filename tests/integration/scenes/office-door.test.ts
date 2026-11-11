@@ -6,6 +6,7 @@ import { OFFICE } from '../../../src/data/arenas/office';
 import { GREYBOX_STICKMAN } from '../../../src/data/fighters/greybox-stickman';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
+import { ISO_C, iso } from '../../../src/rendering/projection';
 
 const STEP = 1 / 60;
 const R = GREYBOX_STICKMAN.body.footRadiusM;
@@ -204,8 +205,8 @@ describe('office door (owner request, 11/11/2026)', () => {
     expect(scene.player.x).toBeGreaterThan(DOOR.x1 + 1.5);
     // Looking into the boss room: the camera has followed right (to the arena edge clamp) and the player is well in view.
     const cam = scene.cameraState!;
-    expect(cam.x).toBeGreaterThan(OFFICE.playerStart.x + 6);
-    expect(scene.player.x).toBeLessThan(cam.x + 640 / cam.scale - 1);
+    expect(cam.x).toBeGreaterThan(iso(OFFICE.playerStart.x, OFFICE.playerStart.y).x + 6 * ISO_C);
+    expect(iso(scene.player.x, scene.player.y).x).toBeLessThan(cam.x + 640 / cam.scale - 1); // in view (2.5D, TD-045)
     expect(maxStep).toBeLessThan(0.3); // smooth: no jump between frames
     scenes.clear();
   });

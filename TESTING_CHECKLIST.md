@@ -115,6 +115,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm test` 248/248 with the new furniture: aisles walkable end to end, no solid props overlapping, every area connected, every prop kind has material, mass and durability.
 - [x] `npm run e2e` 26/26. V Screenshot: `docs/screenshots/office-furnished.png`.
 
+## 0v. 2.5D isometric view (verified 11/11/2026)
+- [x] `npm test`: **253 tests** (new: projection round trip and floor matrix, height straight up, depth = x + y, screen-relative keys at full speed, sideways screen offsets). Camera, occlusion and office tests updated to the view's units; combat suite unchanged and passing with free facing and soft lock.
+- [x] `npm run e2e`: **26 passed** (movement tests now in screen terms: D right, W up, D+S into the door; camera zoom-out by on-screen gap; touch ultimate leap up the screen from a clear spot).
+- [x] V Screenshots: `docs/screenshots/iso-office-overview.png`, `docs/screenshots/iso-office-play.png`.
+- [ ] Owner on a phone: frame rate and readability; the fire head; walking feel with screen-relative controls.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

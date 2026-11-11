@@ -9,6 +9,7 @@ import {
   CAPABILITY_KEYS,
   type CharacterDefinition,
   type CharacterLibrary,
+  HEAD_STYLES,
   LIMITS,
   MOVE_INPUTS,
   type MoveInput,
@@ -267,6 +268,9 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
     hex(`${e}.flashColour`, fx.flashColour);
     num(`${e}.shakeScale`, fx.shakeScale, 'shakeScale');
     num(`${e}.hitstopScale`, fx.hitstopScale, 'hitstopScale');
+    if (fx.head !== undefined && !(HEAD_STYLES as readonly string[]).includes(fx.head)) {
+      errors.push(`${e}.head: unknown head style "${fx.head}" (use ${HEAD_STYLES.join(' or ')}).`);
+    }
     if ((fx.limbTrail || fx.aura) && !cap('usesElementalEffects')) {
       warnings.push(
         `${e}: elemental trail/aura effects are set but usesElementalEffects is off, so they will not show.`,
