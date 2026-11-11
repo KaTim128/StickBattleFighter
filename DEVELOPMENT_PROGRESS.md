@@ -306,6 +306,9 @@ Original mockups of the proposed pseudo-isometric look: an office corner (plank 
 ### 11/11/2026: Phase 7 started: pickup, carry and throw (first slice)
 G or U (desktop) or the contextual utility button (touch: GRAB / THROW / JUMP) picks up a nearby throwable, carries it overhead and throws it at the locked target; hold to put it down. Thrown objects fly over furniture, bounce off walls, hit fighters by mass and speed, take damage, and glass shatters (TD-044). **Files:** `src/data/combat/throwing.ts` (new), `src/environment/arena-props.ts`, `src/physics/physics-world.ts` (FURNITURE collision group), `src/input/intents.ts`, `keyboard.ts`, `touch-controls.ts`, `src/animation/reaction-poses.ts` (carry and throw poses), `src/rendering/occlusion-fader.ts`, `fight-arena-scene.ts`, `fighter-entity.ts`, `bootstrap.ts`, tests (`tests/integration/scenes/throwing.test.ts`, `tests/unit/input/interact.test.ts`, `tests/e2e/phase7.spec.ts`). Also fixed: the mockup HTML tripped the linter. **Evidence:** lint clean; typecheck 0; `npm test` 248/248; `npm run e2e` 26/26; browser frames. **Next task:** Phase 7 slice 2: fighter-specific interactions by data, more throwables (REQ-PHY-9), a throw aim indicator; then Phase 8 (first polished fighter, which the 2.5D style decision TD-043 feeds).
 
+### 11/11/2026: CI stabilised
+CI e2e had become intermittent: every test renders WebGL in software, and two in parallel on the GitHub runner ran the game slower than real time, so real-time waits timed out across unrelated tests. CI now runs browser tests one at a time (`playwright.config.ts`), and automated browsers skip background music unless `?music=` asks for it. Run on a3268f4: **success**.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
