@@ -98,6 +98,8 @@ export interface DoorState {
   id: string;
   broken: boolean;
   brokenBy: string | null;
+  /** Swung open by someone walking through (REQ-ENV-13). */
+  open: boolean;
 }
 
 const KNOCK_FLIGHT_S = 0.8;
@@ -329,7 +331,7 @@ export class FightArenaScene implements ArenaScene {
   }
 
   get doorStates(): DoorState[] {
-    return this.doors.map((d) => ({ id: d.spec.id, broken: d.broken, brokenBy: d.brokenBy }));
+    return this.doors.map((d) => ({ id: d.spec.id, broken: d.broken, brokenBy: d.brokenBy, open: d.open }));
   }
 
   /** Combat events since the last call (for floating numbers and callouts). */
@@ -428,6 +430,17 @@ export class FightArenaScene implements ArenaScene {
     }
     if (this.abilities) this.abilities.world.update(stepS, this.abilities);
     for (const f of this.fighters) this.checkDoorImpact(f, stepS);
+    if (this.doors.length > 0) {
+      const traffic = this.fighters.map((f) => ({
+        x: f.x,
+        y: f.y,
+        radiusM: f.def.body.footRadiusM,
+        // Only a fighter on their feet pushes a door open (a flying kick still smashes it).
+        moveX: f.airborne ? 0 : f.moveIntent.x,
+        moveY: f.airborne ? 0 : f.moveIntent.y,
+      }));
+      for (const door of this.doors) door.updateTraffic(traffic, stepS);
+    }
     for (const door of this.doors) door.update(stepS);
     this.props?.update(stepS);
     this.propFeedback();
@@ -630,6 +643,8 @@ export class FightArenaScene implements ArenaScene {
     const v = body.linvel();
 
     let next: { x: number; y: number };
+    f.moveIntent.x = 0;
+    f.moveIntent.y = 0;
     if (f.driveVelocity) {
       next = f.driveVelocity; // dash or leap: the ability world moves the body
     } else if (c.state === 'dodging') {
@@ -648,6 +663,8 @@ export class FightArenaScene implements ArenaScene {
             ? attack.moveFactor
             : 1;
       move = { x: move.x * factor, y: move.y * factor };
+      f.moveIntent.x = move.x;
+      f.moveIntent.y = move.y;
       const isIdle = move.x === 0 && move.y === 0;
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
@@ -1022,7 +1039,9 @@ export class FightArenaScene implements ArenaScene {
 
     for (const door of this.doors) {
       const view = this.view.doors.get(door.spec.id);
-      if (door.broken && view) view.showBroken(door.pieces, (node) => this.view?.actors.add(node, 0));
+      if (!view) continue;
+      if (door.broken) view.showBroken(door.pieces, (node) => this.view?.actors.add(node, 0));
+      else view.showSwing(door.swing, door.swingSide);
     }
     this.renderProps();
     this.renderAbilityFx(frameDtS);
@@ -1345,7 +1364,7 @@ export class FightArenaScene implements ArenaScene {
       state: `${p.state}/${this.dummy.state}`,
       attack: p.attack ?? '-',
       zoom: this.cameraState ? `${this.cameraState.shortSideM.toFixed(1)} m` : '-',
-      doors: this.doors.map((d) => (d.broken ? 'broken' : 'closed')).join(',') || '-',
+      doors: this.doors.map((d) => (d.broken ? 'broken' : d.open ? 'open' : 'closed')).join(',') || '-',
       'dummy attacks': this.dummyAttacks ? 'on' : 'off',
     };
   }

@@ -227,7 +227,7 @@ export function runPose(phase: number, bones: BoneLengths): Pose {
     lean: -13,
     sway: 3,
     head: 6,
-    arms: { lead: { x: 0.1, y: 0.28 }, rear: { x: 0.06, y: 0.3 }, swingX: 0.27, swingY: 0.12 },
+    arms: { lead: { x: 0.1, y: 0.28 }, rear: { x: 0.06, y: 0.3 }, swingX: 0.29, swingY: 0.12 },
   });
 }
 

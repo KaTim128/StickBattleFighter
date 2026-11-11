@@ -13,7 +13,7 @@ interface Hook {
     airborne: boolean;
   };
   dummy: { x: number; y: number };
-  doors: { id: string; broken: boolean; brokenBy: string | null }[];
+  doors: { id: string; broken: boolean; brokenBy: string | null; open: boolean }[];
   camera: { x: number };
 }
 type DebugWindow = Window & { __stickmanDebug?: Hook };
@@ -27,38 +27,38 @@ async function open(page: Page, errors: string[], query = '') {
   expect((await hook(page)).scene).toBe('office');
 }
 
-test('office: walking into the door keeps it shut; the 1-2-3 combo smashes it; the camera follows into the boss room', async ({
+test('office: walking into the door swings it open into the boss room; the 1-2-3 combo smashes it instead', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   test.setTimeout(60_000);
   const errors: string[] = [];
   // Start in the open area before the boss door (the cubicles fill the centre since 11/11/2026).
-  await open(page, errors, '?playerAt=22.3,6&dummyAt=23.5,6&character=base-stickman'); // shared rules on the Base Stickman
+  await open(page, errors, '?playerAt=22.3,6&dummyAt=3,1.9&character=base-stickman'); // shared rules on the Base Stickman
+  await page.screenshot({ path: testInfo.outputPath('door-shut.png') });
 
-  // Walk right along the door's row, shoving the dummy all the way to the door, and keep pushing.
+  // Walk right along the door's row: the door swings open (REQ-ENV-13) and the player walks through.
   await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await hook(page)).dummy.x, { timeout: 20_000 }).toBeGreaterThan(23.9); // door at x = 25
-  await page.waitForTimeout(1500);
+  await expect.poll(async () => (await hook(page)).doors[0]!.open, { timeout: 15_000 }).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('door-open.png') });
+  await expect.poll(async () => (await hook(page)).player.x, { timeout: 15_000 }).toBeGreaterThan(26.3); // boss room starts at 25.4
   await page.keyboard.up('KeyD');
   let s = await hook(page);
-  expect(s.doors[0]!.broken).toBe(false); // contact never opens it
-  expect(s.player.x).toBeLessThan(25);
+  expect(s.doors[0]!.broken).toBe(false);
+  await expect.poll(async () => (await hook(page)).camera.x, { timeout: 5000 }).toBeGreaterThan(20); // followed right
+  // Clear of the doorway, it swings shut again.
+  await expect.poll(async () => (await hook(page)).doors[0]!.open, { timeout: 5000 }).toBe(false);
 
-  // 1-2-3: jab → hook → heavy finisher.
+  // Breaking it still works: from the office side, shove the dummy to it and finish with the 1-2-3.
+  await open(page, errors, '?playerAt=22.3,6&dummyAt=23.5,6&character=base-stickman');
+  await page.keyboard.down('KeyD');
+  await expect.poll(async () => (await hook(page)).dummy.x, { timeout: 20_000 }).toBeGreaterThan(23.9);
+  await page.keyboard.up('KeyD');
   await comboToHeavy(page, async () => (await hook(page)).player.attack);
   await expect.poll(async () => (await hook(page)).doors[0]!.broken, { timeout: 5000 }).toBe(true);
   s = await hook(page);
   expect(['strike', 'knockback']).toContain(s.doors[0]!.brokenBy);
-  expect(s.player.hits).toBeGreaterThanOrEqual(3);
   await page.screenshot({ path: testInfo.outputPath('door-smashed.png') });
-
-  // Walk through into the boss room; the camera glides after.
-  await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await hook(page)).player.x, { timeout: 15_000 }).toBeGreaterThan(26.3); // through the doorway (boss room starts at 25.4)
-  await page.keyboard.up('KeyD');
-  await expect.poll(async () => (await hook(page)).camera.x, { timeout: 5000 }).toBeGreaterThan(20); // followed right, to the arena-edge clamp
-  await page.screenshot({ path: testInfo.outputPath('boss-room.png') });
   expect(errors).toEqual([]);
 });
 

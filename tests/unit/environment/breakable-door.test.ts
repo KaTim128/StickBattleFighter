@@ -4,7 +4,7 @@ import { circleTouchesRect, impactBreaksDoor } from '../../../src/environment/br
 const dir = { x: 1, y: 0 };
 
 describe('door break rule (owner request)', () => {
-  it('walking, pushing or brushing against it never opens it, however hard', () => {
+  it('walking, pushing or brushing against it never BREAKS it, however hard (walking swings it open instead, REQ-ENV-13)', () => {
     expect(impactBreaksDoor({ kind: 'contact', strength: 1e9, direction: dir }, 500)).toBe(false);
   });
 

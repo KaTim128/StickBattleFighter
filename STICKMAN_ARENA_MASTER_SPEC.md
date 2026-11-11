@@ -123,7 +123,8 @@ Selected stack (TD-021, after the switch to 2D): TypeScript + Vite, **PixiJS 8**
 | REQ-ENV-9 | A separate **boss room** with an **executive desk, a boss chair behind it and a visitor chair opposite**. Each room has its own look (floor, walls, decor). |
 | REQ-ENV-10 | The camera follows smoothly between rooms, keeping active characters in view, with **no hard cuts**. |
 | REQ-ENV-12 | **Compact office (owner, 11/11/2026):** the office is tight, with no large empty space in the centre and a short overall length (29 m × 12 m; aisle ≤ 7.5 m between cubicle rows). | *Updated 11/11/2026:* 33 m × 12 m to fit the centre cubicle block and an open area before the boss door.
-| REQ-ENV-11 | The rooms are joined by a **closed door that blocks the way**. Walking or normal movement never opens it. It **only breaks** (shatters violently, clearing the path) when a fighter lands a **kick** or a **heavy-impact knockback attack** against it. Implemented as: kick, combo finisher (heavy strike) or a body knocked into it, at ≥ the door's break strength. |
+| REQ-ENV-11 | The rooms are joined by a door that starts **closed and blocks the way**. *(Updated 11/11/2026, owner: walking into it now swings it open, REQ-ENV-13; the 'walking never opens it' rule is SUP-07.)* It **breaks** (shatters violently, clearing the path) when a fighter lands a **kick** or a **heavy-impact knockback attack** against it. Implemented as: kick, combo finisher (heavy strike) or a body knocked into it, at ≥ the door's break strength. |
+| REQ-ENV-13 | **Easy-to-find, walk-through door (owner, 11/11/2026):** the boss-room wall runs **diagonally** (top wall at x 23.5 m to bottom wall at x 28.5 m, as sketched by the owner) so its face and the door can be seen; the door is **small** (1.3 m) with a bright frame, red mats on both sides and a floor arrow. A firm walk into it swings it open away from the walker; it swings shut once the doorway is clear; it can still be smashed. Interior walls are drawn cut away (0.8 m) so doorways show where they are on the floor. |
 
 Design sheet: `docs/design/arenas/office.md`.
 
@@ -479,6 +480,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | SUP-03 | Playbook §8: "create the first group [of workers] after the architecture has been approved". | Owner instructed creating all specialists during initialisation (10/11/2026). | 10/11/2026 |
 | SUP-05 | REQ-ANI-7 (owner, 11/11/2026): moving as a fighting shuffle, feet never crossing, arms only bobbing in guard ("never a casual walk with loose swinging arms"). | REQ-ANI-10: real alternating steps with each fist swinging opposite its leg, elbows bent; a run cycle. Owner: "smooth walking animations with alternating arm and leg movements". | 11/11/2026 |
 | SUP-06 | REQ-ANI-10 (owner, 11/11/2026): walking with the fists held up near the chin in guard, low crouched hips and a hunched lean. | REQ-ANI-11: an upright, confident walk with freely swinging fists and a powerful upright run. Owner: "it looks weird and not confident ... it should be strong and confident". | 11/11/2026 |
+| SUP-07 | REQ-ENV-11 (owner, 11/11/2026): walking or normal movement never opens the door; only breaking it clears the way. | REQ-ENV-13: walking into the door swings it open (breaking still works). Owner: "the player can just break the door or walk to the next room without breaking the door". | 11/11/2026 |
 
 ## 23. Change log
 
@@ -486,6 +488,7 @@ Browser verification uses the documented dev command and browser automation: tes
 |---|---|---|
 | 11/11/2026 | Owner: data-driven character system (REQ-CHR-1..6); Inferno fist flames via its effects profile. | Master Developer |
 | 11/11/2026 | Owner: centre cubicle pairs (REQ-ENV-8 updated), 33 m office (REQ-ENV-12 updated), breakable office equipment and material destruction (REQ-PHY-6b). | Master Developer |
+| 11/11/2026 | Owner: diagonal boss-room wall, small visible door that swings open when walked into (REQ-ENV-13, REQ-ENV-11 updated, SUP-07). | Master Developer |
 | 11/11/2026 | Owner: strong, confident walk and run (REQ-ANI-11); crouched guard-up walk superseded (SUP-06). | Master Developer |
 | 11/11/2026 | Owner: walking and running (REQ-ANI-10); shuffle rule superseded (SUP-05). | Master Developer |
 | 11/11/2026 | Owner: aimed ultimate (REQ-ABL-9); keyboard-only preset A3 moved to O. | Master Developer |

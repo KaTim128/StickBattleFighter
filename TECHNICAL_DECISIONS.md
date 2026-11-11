@@ -309,6 +309,12 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** keep the guard up while walking (rejected: the owner's newest instruction; SUP-06); angle-driven arm swing (rejected earlier, TD-037: fists rise instead of swinging forward).
 - **Trade-offs:** the guard drops while walking; the idle↔walk blend (already eased) covers the change. Per-fighter gaits remain possible via the procedural clip ids (REQ-ANI-7).
 
+### TD-041: Turned walls and doors, swinging door, cut-away interior walls — ACCEPTED (owner request 11/11/2026)
+- **Context:** the owner could not find the office door. In the top-down view height is drawn up the screen, so the 2.4 m wall south of the doorway covered the opening and showed the door about 2 m above where you walk through. The owner sketched a diagonal wall and asked for a smaller door that can also be walked through.
+- **Decision:** `Rect` gains an optional `angleRad`; `src/core/oriented-rect.ts` holds the box-frame transforms, the circle/point distance and `segmentBox` (a wall along a segment). Physics (`addStaticBox` rotation), navigation, strike capsules, ability blasts, door contact and drawing (`src/rendering/prism.ts`: any footprint raised as a block, camera-facing sides only) all use it, so a turned wall blocks, is hit and is drawn in the same place. `BreakableDoor` adds an open state: a firm push (0.12 s, cos > 0.4 into the door, feet on the floor) removes its collider and swings the leaf away from the pusher; 1.4 s with nobody within 0.6 m swings it shut and restores the collider. Interior walls draw cut away at 0.8 m. Floor zones may have a polygon outline (the wooden boss floor).
+- **Alternatives:** keep the straight wall and only lower it (tried; the owner preferred the diagonal); a stepped wall of axis-aligned boxes (rejected: jagged look, more colliders).
+- **Trade-offs:** the closed door no longer seals the boss room during play (it opens on contact), so "fight in the main room" depends on AI behaviour later (Phase 10). Props are still axis-aligned.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

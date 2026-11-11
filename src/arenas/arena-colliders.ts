@@ -16,6 +16,7 @@ export function addArenaColliders(physics: PhysicsWorld, arena: ArenaLayout, inc
     physics.addStaticBox({
       halfExtents: { x: (r.x1 - r.x0) / 2, y: (r.y1 - r.y0) / 2 },
       position: { x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 },
+      angleRad: r.angleRad ?? 0,
     });
   }
   // Doors are added by BreakableDoor (src/environment) so they can be removed when broken.

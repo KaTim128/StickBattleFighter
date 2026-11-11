@@ -1,4 +1,5 @@
 import type { ArenaLayout } from '../data/arenas/arena-layout';
+import { distanceSqToBox } from '../core/oriented-rect';
 import { footprint, PROP_KINDS } from '../data/objects/props';
 
 /**
@@ -40,11 +41,7 @@ export function buildNavGrid(
         continue;
       }
       // Circle-vs-box: distance from the cell centre to the nearest point of each box.
-      const hit = boxes.some((b) => {
-        const dx = Math.max(b.x0 - x, 0, x - b.x1);
-        const dy = Math.max(b.y0 - y, 0, y - b.y1);
-        return dx * dx + dy * dy < agentRadiusM * agentRadiusM;
-      });
+      const hit = boxes.some((b) => distanceSqToBox(b, x, y) < agentRadiusM * agentRadiusM);
       if (!hit) free[r * cols + c] = 1;
     }
   }

@@ -30,7 +30,7 @@ export interface ArenaLayout {
   /** Areas with their own floor (e.g. a room with wood instead of carpet), drawn over the base floor. */
   readonly floorZones?: readonly FloorZone[];
   /** Solid walls inside the arena (rect, metres). Drawn as wall blocks and given colliders. */
-  readonly interiorWalls?: readonly Rect[];
+  readonly interiorWalls?: readonly WallRect[];
   /** Doors in gaps of the interior walls. */
   readonly doors?: readonly DoorSpec[];
 }
@@ -40,6 +40,13 @@ export interface Rect {
   readonly y0: number;
   readonly x1: number;
   readonly y1: number;
+  /** Turned about its centre (walls and doors only; see src/core/oriented-rect.ts). */
+  readonly angleRad?: number;
+}
+
+/** An interior wall: a (possibly turned) box, optionally in its own colour. */
+export interface WallRect extends Rect {
+  readonly colour?: number;
 }
 
 export interface FloorZone extends Rect {
@@ -51,6 +58,8 @@ export interface FloorZone extends Rect {
   readonly planks?: boolean;
   /** Wall colour for interior walls bordering this zone (rooms look different). */
   readonly wall?: number;
+  /** The zone's real outline when it is not the whole rect (x, y pairs, metres); the rect is its bounds. */
+  readonly polygon?: readonly number[];
 }
 
 /**

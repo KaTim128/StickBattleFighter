@@ -1,7 +1,9 @@
 import { Container, Graphics } from 'pixi.js';
 import type { ArenaLayout, Rect } from '../data/arenas/arena-layout';
+import { fromBoxFrame } from '../core/oriented-rect';
 import { kindOf } from '../data/objects/props';
 import { DoorView } from './door-view';
+import { drawPrism } from './prism';
 import { buildPropView, propFootOffset } from './prop-view';
 import { YSortLayer } from './y-sort-layer';
 
@@ -19,7 +21,13 @@ export interface ArenaView {
   destroy(): void;
 }
 
-export const INTERIOR_WALL_HEIGHT_M = 2.4;
+/**
+ * Interior walls are drawn CUT AWAY (owner, 11/11/2026: "the player can't find the door"):
+ * a top-down view draws height up the screen, so a full 2.4 m wall south of a doorway
+ * covered the opening and showed the door 2 m above where you walk through. Low walls
+ * keep doorways where they really are on the floor (REQ-ENV-13).
+ */
+export const INTERIOR_WALL_HEIGHT_M = 0.8;
 /** Long walls are drawn in short blocks so fighters beside them still depth-sort correctly. */
 const WALL_CHUNK_M = 0.5;
 
@@ -41,20 +49,36 @@ function wallColour(arena: ArenaLayout, r: Rect): number {
   return zone?.wall ?? arena.look.wall;
 }
 
-function wallChunk(x: number, y: number, w: number, d: number, top: number, front: number): Container {
-  const h = INTERIOR_WALL_HEIGHT_M;
-  const g = new Graphics()
-    .rect(-w / 2, d / 2 - h, w, h)
-    .fill(front)
-    .rect(-w / 2, -d / 2 - h, w, d)
-    .fill(top)
-    .rect(-w / 2, -d / 2 - h, w, d + h)
-    .stroke({ width: 0.02, color: 0x14181f, alpha: 0.6 });
-  const c = new Container();
-  c.label = 'interior-wall';
-  c.addChild(g);
-  c.position.set(x, y);
-  return c;
+/**
+ * Cut an interior wall (turned or not) into short blocks along its length, so
+ * fighters beside it still depth-sort correctly. Each block is drawn as a prism
+ * on its own footprint, so a turned wall shows its sloping face.
+ */
+function wallBlocks(r: Rect, top: number, front: number): { node: Container; footOffset: number }[] {
+  const alongY = r.y1 - r.y0 >= r.x1 - r.x0;
+  const length = alongY ? r.y1 - r.y0 : r.x1 - r.x0;
+  const n = Math.max(1, Math.ceil(length / WALL_CHUNK_M - 1e-6));
+  const blocks: { node: Container; footOffset: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const a0 = (alongY ? r.y0 : r.x0) + (length * i) / n;
+    const a1 = (alongY ? r.y0 : r.x0) + (length * (i + 1)) / n;
+    const local = alongY ? [r.x0, a0, r.x1, a1] : [a0, r.y0, a1, r.y1];
+    const [lx0, ly0, lx1, ly1] = local as [number, number, number, number];
+    const corners = [
+      fromBoxFrame(r, lx0, ly0),
+      fromBoxFrame(r, lx1, ly0),
+      fromBoxFrame(r, lx1, ly1),
+      fromBoxFrame(r, lx0, ly1),
+    ];
+    const centre = fromBoxFrame(r, (lx0 + lx1) / 2, (ly0 + ly1) / 2);
+    const rel = corners.map((p) => ({ x: p.x - centre.x, y: p.y - centre.y }));
+    const c = new Container();
+    c.label = 'interior-wall';
+    c.addChild(drawPrism(new Graphics(), rel, INTERIOR_WALL_HEIGHT_M, { front, top, edge: 0x14181f }));
+    c.position.set(centre.x, centre.y);
+    blocks.push({ node: c, footOffset: Math.max(...rel.map((p) => p.y)) });
+  }
+  return blocks;
 }
 
 /** Floor, floor zones, outer walls with windows, interior walls, doors and y-sorted props. */
@@ -71,12 +95,22 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     world.addChild(lines.stroke({ width: 0.03, color: look.floorLines }));
   }
   for (const z of arena.floorZones ?? []) {
-    world.addChild(new Graphics().rect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0).fill(z.floor));
+    const zone = new Container();
+    const shape = () =>
+      z.polygon ? new Graphics().poly([...z.polygon]) : new Graphics().rect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0);
+    zone.addChild(shape().fill(z.floor));
     if (z.lines !== null) {
       const lines = new Graphics();
       floorLines(lines, z, z.lineSpacingM, z.planks ?? false);
-      world.addChild(lines.stroke({ width: 0.025, color: z.lines }));
+      zone.addChild(lines.stroke({ width: 0.025, color: z.lines }));
+      if (z.polygon) {
+        // Lines are drawn over the bounds; the zone's outline trims them.
+        const mask = shape().fill(0xffffff);
+        zone.addChild(mask);
+        lines.mask = mask;
+      }
     }
+    world.addChild(zone);
   }
 
   // Rugs and other floor decals lie under everything that stands.
@@ -108,14 +142,9 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
 
   const occluders: Container[] = [];
   for (const r of arena.interiorWalls ?? []) {
-    const front = wallColour(arena, r);
-    const top = 0x9aa3b2;
-    const ww = r.x1 - r.x0;
-    for (let y = r.y0; y < r.y1 - 1e-6; y += WALL_CHUNK_M) {
-      const d = Math.min(WALL_CHUNK_M, r.y1 - y);
-      const chunk = wallChunk((r.x0 + r.x1) / 2, y + d / 2, ww, d, top, front);
-      actors.add(chunk, d / 2);
-      occluders.push(chunk);
+    for (const b of wallBlocks(r, 0x9aa3b2, r.colour ?? wallColour(arena, r))) {
+      actors.add(b.node, b.footOffset);
+      occluders.push(b.node);
     }
   }
 
@@ -123,6 +152,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   for (const spec of arena.doors ?? []) {
     const view = new DoorView(spec, INTERIOR_WALL_HEIGHT_M);
     doors.set(spec.id, view);
+    world.addChildAt(view.floor, world.getChildIndex(actors.container)); // mats lie under everything standing
     for (const part of view.parts) {
       actors.add(part.node, part.footOffset);
       occluders.push(part.node);

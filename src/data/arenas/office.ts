@@ -1,3 +1,4 @@
+import { segmentBox } from '../../core/oriented-rect';
 import type { PropPlacement } from '../objects/props';
 import type { ArenaLayout } from './arena-layout';
 
@@ -17,8 +18,10 @@ import type { ArenaLayout } from './arena-layout';
  *
  * Each cubicle: desk against the back panel, a steel drawer pedestal, a
  * chair, monitor, keyboard, mouse (some a coffee cup); all breakable.
- * The rooms are joined by a wooden door that only breaks from a kick or a
- * heavy impact (src/environment/breakable-door.ts).
+ * Owner update (11/11/2026, sketch): the boss-room wall runs DIAGONALLY, from the
+ * top wall at x 23.5 m down to the bottom wall at x 28.5 m, so its face and the
+ * door in it can be seen. The door is small (1.3 m), in the middle of the wall:
+ * walk into it to swing it open, or smash it (src/environment/breakable-door.ts).
  */
 const DESK_TOP_M = 0.75;
 /** Width of one back-to-back pair, the gap (walkway) between pairs, and where the row starts. */
@@ -27,14 +30,22 @@ const PAIR_GAP = 1.0;
 const PAIRS_X0 = 1.3;
 /** Depth of one cubicle, from the shared back panel to its open side. */
 const CUBE_D = 2.3;
-const MAIN_W = 25;
-const WALL_X0 = 25;
-const WALL_X1 = 25.4;
+const WALL_TOP_X = 23.5;
+const WALL_BOTTOM_X = 28.5;
+const WALL_THICK_M = 0.4;
+const DOOR_LEN_M = 1.3;
 const WIDTH = 33;
 const HEIGHT = 12;
 const MID_Y = HEIGHT / 2;
-const DOOR_Y0 = MID_Y - 1;
-const DOOR_Y1 = MID_Y + 1;
+/** A point on the diagonal wall's centre line, `sM` metres from where it meets the top wall. */
+const WALL_LEN_M = Math.hypot(WALL_BOTTOM_X - WALL_TOP_X, HEIGHT);
+function onWall(sM: number): [number, number] {
+  return [WALL_TOP_X + ((WALL_BOTTOM_X - WALL_TOP_X) * sM) / WALL_LEN_M, (HEIGHT * sM) / WALL_LEN_M];
+}
+const DOOR_S0 = WALL_LEN_M / 2 - DOOR_LEN_M / 2;
+const DOOR_S1 = WALL_LEN_M / 2 + DOOR_LEN_M / 2;
+/** The wall reaches a little into the outer walls so no gap is left at its ends. */
+const WALL_OVERRUN_M = 0.3;
 
 /** Desk items sit on the desk and draw on top of it. */
 function onDesk(kind: PropPlacement['kind'], x: number, y: number, deskFront: number, order: number): PropPlacement {
@@ -78,16 +89,17 @@ function cubiclePair(i: number): PropPlacement[] {
 const CUBICLES: PropPlacement[] = [0, 1, 2, 3, 4, 5].flatMap(cubiclePair);
 
 const MAIN_EXTRAS: PropPlacement[] = [
-  { kind: 'water-dispenser', x: MAIN_W - 0.6, y: 0.9 },
-  { kind: 'bin', x: MAIN_W - 1.3, y: 0.7 },
-  { kind: 'printer', x: MAIN_W - 0.6, y: HEIGHT - 0.6 },
+  { kind: 'water-dispenser', x: WALL_TOP_X - 1.3, y: 0.6 },
+  { kind: 'bin', x: WALL_TOP_X - 2, y: 0.6 },
+  { kind: 'printer', x: WALL_BOTTOM_X - 2.6, y: HEIGHT - 0.6 },
   { kind: 'plant', x: 0.6, y: 0.7 },
   { kind: 'plant', x: 0.6, y: HEIGHT - 0.7 },
   { kind: 'cabinet', x: 2.6, y: 0.35 },
   { kind: 'cabinet', x: 3.55, y: 0.35 },
 ];
 
-const BOSS_X0 = WALL_X1;
+/** Where the boss room's furniture is measured from (the door is at x ≈ 26). */
+const BOSS_X0 = 25.4;
 const BOSS_ROOM: PropPlacement[] = [
   { kind: 'rug', x: BOSS_X0 + 4, y: MID_Y },
   // Executive desk turned to face the door; boss chair behind it, visitor chair opposite.
@@ -98,7 +110,7 @@ const BOSS_ROOM: PropPlacement[] = [
   onDesk('coffee-cup', BOSS_X0 + 4.7, MID_Y + 0.8, MID_Y + 1.2, 2),
   { kind: 'bookshelf', x: BOSS_X0 + 2.8, y: 0.25 },
   { kind: 'bookshelf', x: BOSS_X0 + 6.3, y: 0.25, w: 1.4 },
-  { kind: 'plant', x: BOSS_X0 + 0.6, y: HEIGHT - 0.7 },
+  { kind: 'plant', x: WALL_TOP_X + 2.1, y: 0.7 },
   { kind: 'plant', x: WIDTH - 0.7, y: HEIGHT - 0.7 },
   { kind: 'cabinet', x: WIDTH - 0.5, y: HEIGHT - 3, rotated: true },
 ];
@@ -114,8 +126,8 @@ export const OFFICE: ArenaLayout = {
   playerStart: { x: 7, y: 1.9 },
   dummyStart: { x: 12, y: 1.9 },
   windows: [
-    { x0: 0.6, x1: MAIN_W - 0.6 },
-    { x0: BOSS_X0 + 0.5, x1: WIDTH - 0.5 },
+    { x0: 0.6, x1: WALL_TOP_X - 0.6 },
+    { x0: WALL_TOP_X + 0.6, x1: WIDTH - 0.5 },
   ],
   look: {
     background: 0x141922,
@@ -128,7 +140,7 @@ export const OFFICE: ArenaLayout = {
   floorZones: [
     // Boss room: warm wood planks and darker panelled walls.
     {
-      x0: BOSS_X0,
+      x0: WALL_TOP_X,
       y0: 0,
       x1: WIDTH,
       y1: HEIGHT,
@@ -137,12 +149,13 @@ export const OFFICE: ArenaLayout = {
       lineSpacingM: 0.6,
       planks: true,
       wall: 0x3a2a22,
+      polygon: [WALL_TOP_X, 0, WIDTH, 0, WIDTH, HEIGHT, WALL_BOTTOM_X, HEIGHT],
     },
   ],
   interiorWalls: [
-    { x0: WALL_X0, y0: 0, x1: WALL_X1, y1: DOOR_Y0 },
-    { x0: WALL_X0, y0: DOOR_Y1, x1: WALL_X1, y1: HEIGHT },
+    { ...segmentBox(...onWall(-WALL_OVERRUN_M), ...onWall(DOOR_S0), WALL_THICK_M), colour: 0x3a2a22 },
+    { ...segmentBox(...onWall(DOOR_S1), ...onWall(WALL_LEN_M + WALL_OVERRUN_M), WALL_THICK_M), colour: 0x3a2a22 },
   ],
-  doors: [{ id: 'boss-door', x0: WALL_X0 + 0.12, y0: DOOR_Y0, x1: WALL_X1 - 0.12, y1: DOOR_Y1, breakStrength: 500 }],
+  doors: [{ id: 'boss-door', ...segmentBox(...onWall(DOOR_S0), ...onWall(DOOR_S1), 0.16), breakStrength: 500 }],
   greybox: true,
 };

@@ -38,13 +38,14 @@ async function setup() {
   const runUntil = (done: () => boolean, limitS = 8) => {
     for (let i = 0; i < limitS / STEP && !done(); i++) run(STEP);
   };
-  /** Walk onto the door's row, then up to the door, facing it. */
+  /** Walk onto the door's row, then up to just short of the door, facing it (not pushing it open). */
   const walkToDoor = () => {
     intents.setMove('t', { x: 0, y: Math.sign(DOOR_Y - scene.player.y) });
     runUntil(() => Math.abs(scene.player.y - DOOR_Y) < 0.15);
     intents.setMove('t', { x: 1, y: 0 });
-    runUntil(() => scene.player.x > DOOR.x0 - R - 0.08);
-    run(0.5); // keep pushing against it
+    runUntil(() => scene.player.x > DOOR.x0 - R - 0.3);
+    intents.setMove('t', { x: 0, y: 0 });
+    run(0.3);
   };
   return { intents, scene, scenes, run, runUntil, walkToDoor };
 }
@@ -54,13 +55,41 @@ describe('office door (owner request, 11/11/2026)', () => {
     await initPhysics();
   });
 
-  it('starts closed and blocks the way; walking and pushing into it never opens it', async () => {
-    const { intents, scene, scenes, run, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 3, y: 1.9 }); // out of the way: these tests hit the door directly
+  it('starts shut and solid; walking into it swings it open, through into the boss room, and it shuts behind (REQ-ENV-13)', async () => {
+    const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
+    scene.respawnDummy({ x: 3, y: 1.9 }); // out of the way
     walkToDoor();
-    run(2); // push for two more seconds
+    expect(scene.doorStates[0]).toEqual({ id: 'boss-door', broken: false, brokenBy: null, open: false });
+    // Walk on into it: it swings open (not broken) and the player walks straight through.
+    intents.setMove('t', { x: 1, y: 0 });
+    runUntil(() => scene.doorStates[0]!.open, 1);
+    expect(scene.doorStates[0]!.open).toBe(true);
     expect(scene.doorStates[0]!.broken).toBe(false);
-    expect(scene.player.x).toBeLessThan(DOOR.x0); // still on the office side
+    runUntil(() => scene.player.x > DOOR.x1 + 1.2, 3);
+    expect(scene.player.x).toBeGreaterThan(DOOR.x1 + 1.2);
+    // Stand clear: it swings shut and blocks again.
+    intents.setMove('t', { x: 1, y: 0 });
+    run(0.4);
+    intents.setMove('t', { x: 0, y: 0 });
+    runUntil(() => !scene.doorStates[0]!.open, 4);
+    expect(scene.doorStates[0]!.open).toBe(false);
+    // And it opens again from the other side.
+    intents.setMove('t', { x: -1, y: 0 });
+    runUntil(() => scene.doorStates[0]!.open, 4);
+    expect(scene.doorStates[0]!.open).toBe(true);
+    runUntil(() => scene.player.x < DOOR.x0 - 1, 3);
+    expect(scene.player.x).toBeLessThan(DOOR.x0 - 1);
+    intents.setMove('t', { x: 0, y: 0 });
+    scenes.clear();
+  });
+
+  it('a brush along it, or a shove that is not into it, does not open it', async () => {
+    const { intents, scene, scenes, run, walkToDoor } = await setup();
+    scene.respawnDummy({ x: 3, y: 1.9 });
+    walkToDoor();
+    intents.setMove('t', { x: 0.25, y: 1 }); // mostly along the wall
+    run(0.6);
+    expect(scene.doorStates[0]!.open).toBe(false);
     intents.setMove('t', { x: 0, y: 0 });
     scenes.clear();
   });
@@ -81,7 +110,7 @@ describe('office door (owner request, 11/11/2026)', () => {
     intents.pressMelee();
     runUntil(() => scene.player.attack === 'heavy');
     run(0.4);
-    expect(scene.doorStates[0]).toEqual({ id: 'boss-door', broken: true, brokenBy: 'strike' });
+    expect(scene.doorStates[0]).toEqual({ id: 'boss-door', broken: true, brokenBy: 'strike', open: false });
     // splinters do not block: walk straight through into the boss room
     intents.setMove('t', { x: 1, y: 0 });
     run(1.5);
@@ -102,7 +131,7 @@ describe('office door (owner request, 11/11/2026)', () => {
     intents.pressMelee();
     runUntil(() => scene.player.attack === 'flyingKick', 1);
     run(0.35);
-    expect(scene.doorStates[0]).toEqual({ id: 'boss-door', broken: true, brokenBy: 'kick' });
+    expect(scene.doorStates[0]).toEqual({ id: 'boss-door', broken: true, brokenBy: 'kick', open: false });
     scenes.clear();
   });
 

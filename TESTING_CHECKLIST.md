@@ -94,6 +94,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm test`: **231 tests** (the four "walk keeps the guard up" cases replaced by one confident-gait test, SUP-06). Walk and run, sampled at 40 phases: hips high (walk > 0.70 m, run > 0.66 m), chest near upright (walk > −6°, run > −17°), head level (< 10°), fists between hips and head and within 0.4 m of the chest, elbows bent; legs still alternate, no locked knees, the run out-strides the walk.
 - [x] V Frames: `docs/screenshots/confident-gait.png` (pose sheet and in-game run).
 
+## 0r. Diagonal wall and walk-through door (verified 11/11/2026)
+- [x] `npm test`: **232 tests**. The door starts shut and solid; a walk into it swings it open (not broken), the player walks through into the boss room, it swings shut once clear and opens again from the other side; a brush along it does not open it; jab and hook still do not break it; the finisher, a flying kick and a knocked-back body still smash it; office layout tests (connected rooms, no pockets, enterable cubicles) pass with the diagonal wall.
+- [x] `npm run e2e`: **24 passed**. Walk into the door → open → boss room → it shuts; the 1-2-3 combo still smashes it.
+- [x] V Screenshots: `docs/screenshots/office-diagonal-door.png`, `docs/screenshots/office-door-walkthrough.png`.
+- [ ] Owner on a phone: the door is easy to spot and walking through feels natural.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

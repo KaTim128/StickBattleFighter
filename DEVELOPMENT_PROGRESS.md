@@ -291,6 +291,9 @@ Characters are JSON definitions plus reusable profiles with capability flags, a 
 ### 11/11/2026: Confident walk and run (owner request)
 Owner: the gait "looks weird and not confident". Walk and run rebuilt upright and proud: tall hips, chest up, head level, long steps with a springy bounce and chest roll, fists swinging freely; the run drives from the chest with high knees and a strong arm drive (TD-040, REQ-ANI-11; the guard-up walk is SUP-06). **Files:** `src/animation/greybox-motion.ts`, `tests/unit/animation/skeleton.test.ts`, docs. **Evidence:** lint clean; typecheck 0; `npm test` 231/231; build clean; in-game frame capture (`docs/screenshots/confident-gait.png`). **Next task:** Phase 7, pickup, carry and throw.
 
+### 11/11/2026: Diagonal boss-room wall and walk-through door (owner request)
+Owner: "the player can't find the door"; then a sketch of a diagonal wall and "make sure the door is smaller". Root cause: tall walls drawn up the screen hid the doorway. Now the wall runs diagonally, the door is 1.3 m with a bright frame, mats and a floor arrow, interior walls are cut away, and walking into the door swings it open (it still breaks from a kick, finisher or a body). TD-041, REQ-ENV-13, SUP-07. **Files:** `src/core/oriented-rect.ts` (new), `src/rendering/prism.ts` (new), `breakable-door.ts`, `door-view.ts`, `arena-view.ts`, `arena-colliders.ts`, `navigation.ts`, `attacks.ts`, `physics-world.ts`, `arena-layout.ts`, `office.ts`, `fight-arena-scene.ts`, `fighter-entity.ts`, door tests. Also fixed the run arm drive (the gait commit had left one test failing). **Evidence:** lint clean; typecheck 0; `npm test` 232/232; `npm run e2e` 24/24; screenshots. **Next task:** Phase 7, pickup, carry and throw.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

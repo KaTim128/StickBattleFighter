@@ -60,6 +60,8 @@ export class FighterEntity {
   prevHop = 0;
   readonly prev = { x: 0, y: 0 };
   readonly curr = { x: 0, y: 0 };
+  /** The move this step asked for (doors swing open for a firm push, REQ-ENV-13). */
+  readonly moveIntent = { x: 0, y: 0 };
   /** Time left flying from a heavy knockback (can smash doors). */
   knockFlightS = 0;
   readonly dodgeDir = { x: 0, y: 0 };

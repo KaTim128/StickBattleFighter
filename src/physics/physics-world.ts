@@ -46,6 +46,8 @@ export interface BoxSpec {
   /** Half extents in metres. */
   readonly halfExtents: Vec2;
   readonly position: Vec2;
+  /** Turned about its centre (angled walls and doors). */
+  readonly angleRad?: number;
 }
 
 export interface DynamicBoxSpec extends BoxSpec {
@@ -72,7 +74,9 @@ export class PhysicsWorld {
   addStaticBox(spec: BoxSpec): RapierModule.Collider {
     const RAPIER = rapier();
     const body = this.world.createRigidBody(
-      RAPIER.RigidBodyDesc.fixed().setTranslation(spec.position.x, spec.position.y),
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(spec.position.x, spec.position.y)
+        .setRotation(spec.angleRad ?? 0),
     );
     return this.world.createCollider(
       RAPIER.ColliderDesc.cuboid(spec.halfExtents.x, spec.halfExtents.y).setCollisionGroups(

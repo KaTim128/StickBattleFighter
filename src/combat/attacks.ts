@@ -1,5 +1,6 @@
 import type { AnimationState, MoveInput } from '../characters/schema';
 import type { ImpactId } from '../data/combat/impacts';
+import { distanceSqToBox, type OrientedRect } from '../core/oriented-rect';
 /**
  * Attack definitions (data-driven, Combat specialist). An attack has three
  * phases: wind-up (anticipation), a short active window where the hit is
@@ -92,15 +93,13 @@ export function distanceToCapsule(c: HitCapsule, x: number, y: number): number {
 }
 
 /** Does the capsule touch an axis-aligned rectangle? (Sampled along the segment; exact enough for 0.4 m+ radii.) */
-export function capsuleTouchesRect(c: HitCapsule, r: { x0: number; y0: number; x1: number; y1: number }): boolean {
+export function capsuleTouchesRect(c: HitCapsule, r: OrientedRect): boolean {
   const samples = 6;
   for (let i = 0; i <= samples; i++) {
     const t = i / samples;
     const x = c.ax + (c.bx - c.ax) * t;
     const y = c.ay + (c.by - c.ay) * t;
-    const dx = Math.max(r.x0 - x, 0, x - r.x1);
-    const dy = Math.max(r.y0 - y, 0, y - r.y1);
-    if (dx * dx + dy * dy <= c.radius * c.radius) return true;
+    if (distanceSqToBox(r, x, y) <= c.radius * c.radius) return true;
   }
   return false;
 }
