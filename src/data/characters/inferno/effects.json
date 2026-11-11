@@ -12,5 +12,6 @@
   "flashColour": "#fff1c4",
   "shakeScale": 1.1,
   "hitstopScale": 1,
-  "head": "flame"
+  "head": "flame",
+  "body": "flame"
 }

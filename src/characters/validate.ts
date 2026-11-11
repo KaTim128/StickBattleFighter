@@ -6,6 +6,7 @@ import { animationChain, expandTemplate, moveRequirements, resolveAnimation, STR
 import {
   ANIMATION_STATES,
   type AnimationState,
+  BODY_STYLES,
   CAPABILITY_KEYS,
   type CharacterDefinition,
   type CharacterLibrary,
@@ -272,6 +273,9 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
     hex(`${e}.flashColour`, fx.flashColour);
     num(`${e}.shakeScale`, fx.shakeScale, 'shakeScale');
     num(`${e}.hitstopScale`, fx.hitstopScale, 'hitstopScale');
+    if (fx.body !== undefined && !(BODY_STYLES as readonly string[]).includes(fx.body)) {
+      errors.push(`${e}.body: unknown body style "${fx.body}" (use ${BODY_STYLES.join(' or ')}).`);
+    }
     if (fx.head !== undefined && !(HEAD_STYLES as readonly string[]).includes(fx.head)) {
       errors.push(`${e}.head: unknown head style "${fx.head}" (use ${HEAD_STYLES.join(' or ')}).`);
     }

@@ -52,6 +52,7 @@ import type { DodgeLook } from '../../rendering/stickman-view';
 import {
   AbilityVfx,
   type BurningThing,
+  type ChargeFx,
   type DustSource,
   type ImpactBurst,
   type LimbFlames,
@@ -145,6 +146,12 @@ const HITSTOP_KO_S = 0.18;
 const RECOIL_BOUNCE_S = 0.14;
 /** KO: lie still, then dissolve into dust over this window (seconds after the KO), then respawn. */
 const KO_DISSOLVE_FROM_S = 1.0;
+/** A body burned by fire chars to this before it crumbles to ash. */
+const CHARCOAL = 0x2a1c14;
+/** Every fighter killed by fire crumbles into embers and ash (Effects library id). */
+const FIRE_DEATH_EFFECT = 'ember-ash';
+/** Smoke keeps rising this long after a burn goes out. */
+const BURN_SMOKE_S = 1.2;
 const KO_DISSOLVE_S = 1.6;
 type AudioKey = Exclude<keyof AudioProfile, 'id' | 'voice'>;
 
@@ -239,6 +246,9 @@ export class FightArenaScene implements ArenaScene {
   private readonly frameFlames: LimbFlames[] = [];
   /** KO dust to release this frame (filled while drawing fighters, used by the VFX). */
   private readonly frameDust: DustSource[] = [];
+  /** Flames burning on bodies this frame (a fighter burning away to ash). */
+  private readonly frameBurning: BurningThing[] = [];
+  private readonly frameSmoke: { x: number; y: number; z: number; count: number }[] = [];
   /** Strongest limb flame drawn last frame (0 = none): Effects Profile trails (tests, debug hook). */
   limbFlameStrength = 0;
   /** Knocked-back fighters that hit a wall (tests and the debug hook). */
@@ -1058,6 +1068,8 @@ export class FightArenaScene implements ArenaScene {
       effect?: string | null;
       /** The target bounces off the floor. */
       groundBounce?: boolean;
+      /** The target's body flashes this colour instead of the attacker's flash colour. */
+      flashColour?: number;
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
@@ -1113,6 +1125,8 @@ export class FightArenaScene implements ArenaScene {
     target.knockFlightS = speed >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : 0;
     target.wallSlammed = false; // a new flight may chip a wall again
     if (result.outcome === 'ko') {
+      // Finished off by fire: the body burns away to ash (owner, 11/11/2026).
+      if (s.impact === 'fire' || s.impact === 'fire-heavy' || s.burn) target.koByFire = true;
       this.hitstopS = Math.max(this.hitstopS, HITSTOP_KO_S); // a longer, cinematic freeze on the final blow
       this.shake.addTrauma(0.7);
       this.shake.punch(0.08);
@@ -1130,6 +1144,7 @@ export class FightArenaScene implements ArenaScene {
       heavy: boolean;
       category?: 'punch' | 'kick';
       effect?: string | null;
+      flashColour?: number;
     },
     profile: ImpactProfile,
     outcome: HitOutcome,
@@ -1139,8 +1154,12 @@ export class FightArenaScene implements ArenaScene {
     const dir = { x: s.dir.x / len, y: s.dir.y / len };
     const fx = attacker.def.effects;
     if (!guarded) {
-      target.flashS = Math.max(target.flashS, profile.flashS);
-      target.flashColour = colourOf(fx.flashColour);
+      // A magic attack flashes the body white a little longer, so the hit reads clearly (owner, 11/11/2026).
+      target.flashS = Math.max(
+        target.flashS,
+        s.flashColour !== undefined ? Math.max(profile.flashS, 0.12) : profile.flashS,
+      );
+      target.flashColour = s.flashColour ?? colourOf(fx.flashColour);
     }
     this.hitstopS = Math.max(this.hitstopS, profile.hitstopS * fx.hitstopScale);
     this.shake.addTrauma(profile.shake * fx.shakeScale);
@@ -1612,9 +1631,59 @@ export class FightArenaScene implements ArenaScene {
       this.shake.addTrauma((e.radiusM ?? 0) >= 2.8 ? 0.85 : 0.5); // the Eruption slam hits hardest
       this.shake.punch(0.06);
     }
-    const burning: BurningThing[] = [];
+    const charges: ChargeFx[] = [];
+    const burning: BurningThing[] = this.frameBurning.splice(0, this.frameBurning.length);
+    const smoke = this.frameSmoke.splice(0, this.frameSmoke.length);
     for (const f of this.fighters) {
-      if (f.combatant.burning) burning.push({ x: f.x, y: f.y, heightM: 1.4 });
+      const c = f.combatant;
+      if (c.burning) {
+        // Burning aftermath (owner, 11/11/2026): flames all over the body, shrinking as the burn
+        // runs out, embers flying off, then smoke that fades after it goes out.
+        f.burnTotalS = Math.max(f.burnTotalS, c.burnLeftS);
+        const left = f.burnTotalS > 0 ? c.burnLeftS / f.burnTotalS : 1;
+        const h = f.hop.heightM;
+        burning.push({ x: f.x, y: f.y, heightM: h + 0.7 + 0.9 * left, baseM: h });
+        const o = screenSideToWorld(0.18 * f.facing);
+        burning.push({ x: f.x + o.x, y: f.y + o.y, heightM: h + 0.9 + 0.7 * left, baseM: h + 0.6 });
+        if (this.fxRng() < 0.35) {
+          this.frameFlames.push({
+            points: [besideOnScreen(f.x, f.y, (this.fxRng() - 0.5) * 0.4, h + 0.3 + this.fxRng() * 1.2)],
+            strength: 0.35 * left + 0.1,
+          });
+        }
+        if (this.fxRng() < 0.25) smoke.push({ x: f.x, y: f.y, z: h + 1.4, count: 1 });
+        f.smokeS = BURN_SMOKE_S;
+      } else {
+        f.burnTotalS = 0;
+        if (f.smokeS > 0 && !c.isKo) {
+          f.smokeS = Math.max(0, f.smokeS - frameDtS);
+          if (this.fxRng() < 0.5 * (f.smokeS / BURN_SMOKE_S))
+            smoke.push({ x: f.x, y: f.y, z: 1 + this.fxRng() * 0.5, count: 1 });
+        }
+      }
+      // Casts charging (Magic Attack VFX Standard): the element gathers to the hand, and around
+      // the body for beams and leaps.
+      const cast = f.caster?.cast;
+      if (cast?.phase === 'windup' && cast.def.look?.charge && f.view && !c.isKo) {
+        const tip = f.view.limbTips().fists[0];
+        const hand = tip ? besideOnScreen(f.x, f.y, tip.x, tip.z) : { x: f.x, y: f.y, z: 1 };
+        charges.push({
+          x: f.x,
+          y: f.y,
+          hand,
+          progress: f.caster!.phaseProgress,
+          look: cast.def.look,
+          body: cast.def.delivery.type !== 'projectile',
+        });
+      }
+      // Eruption in the air: the whole body wrapped in flames and glowing embers.
+      if (f.abilityLift > 0.05) {
+        const pts = [0.2, 0.6, 1.0, 1.4].map((z) =>
+          besideOnScreen(f.x, f.y, (this.fxRng() - 0.5) * 0.3, f.abilityLift + z),
+        );
+        this.frameFlames.push({ points: pts, strength: 1 });
+        burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.7, baseM: f.abilityLift });
+      }
     }
     for (const p of this.props?.props ?? []) {
       if (p.burnS > 0 && !p.broken) {
@@ -1637,6 +1706,9 @@ export class FightArenaScene implements ArenaScene {
       telegraphs: world.telegraphs,
       fx,
       burning,
+      charges,
+      beams: world.beams,
+      smoke,
     });
   }
 
@@ -1723,7 +1795,16 @@ export class FightArenaScene implements ArenaScene {
     f.tilt += (tiltTarget - f.tilt) * smoothing(frame ? 40 : 12, frameDtS);
 
     // Hit flash: white for a few frames, fading out at the end.
-    const flash = f.flashS > 0 ? Math.min(1, f.flashS / 0.04) : 0;
+    let flash = f.flashS > 0 ? Math.min(1, f.flashS / 0.04) : 0;
+    let flashColour = f.flashColour;
+    if (c.isKo && (f.koByFire || c.koByBurn)) {
+      // Death by fire: the body chars dark as the flames take it, before it crumbles to ash.
+      const char = Math.min(1, Math.max(0, c.koAge / (KO_DISSOLVE_FROM_S + 0.4)));
+      if (char > flash) {
+        flash = char * 0.9;
+        flashColour = CHARCOAL;
+      }
+    }
     // The striker's little bounce off a landed blow.
     const bounce = f.recoilS > 0 ? 0.07 * Math.sin(Math.PI * (1 - f.recoilS / RECOIL_BOUNCE_S)) : 0;
     const drawnHeight = heightM + lift + f.abilityLift + bounce;
@@ -1750,7 +1831,7 @@ export class FightArenaScene implements ArenaScene {
         dodge.dash = { amount, dirX: sx, dirY: sy };
       }
     }
-    f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, f.flashColour, dodge);
+    f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, flashColour, dodge);
     this.limbEffects(f, x, y);
     for (let n = f.animator.takeFootfalls(); n > 0; n--) this.characterSound(f, 'footstep', 0.5);
     const at = iso(x, y);
@@ -1845,8 +1926,15 @@ export class FightArenaScene implements ArenaScene {
     }
     // Most dust leaves early, thinning out as the last of the body fades.
     const count = Math.round(260 * frameDtS * (1.2 - k));
+    // Death by fire (owner, 11/11/2026): the charred body burns away into ash and embers, flames
+    // licking over it as it goes and smoke rising, whatever the fighter's own dust look.
+    const byFire = f.koByFire || c.koByBurn;
+    if (byFire) {
+      if (k < 0.75) this.frameBurning.push({ x, y, heightM: heightM + 0.9 * (1 - k) + 0.3 });
+      if (this.fxRng() < 0.6) this.frameSmoke.push({ x, y, z: heightM + 0.3 + this.fxRng() * 0.8, count: 1 });
+    }
     // The look of the dust comes from the fighter's Effects Profile (grey dust, or embers and ash).
-    const fx = EFFECTS[f.def.effects.disintegration];
+    const fx = EFFECTS[byFire ? FIRE_DEATH_EFFECT : f.def.effects.disintegration];
     this.frameDust.push({
       points,
       colour: f.def.look.limb,

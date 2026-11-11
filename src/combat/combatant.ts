@@ -113,6 +113,7 @@ export class Combatant {
   private sinceStaminaUseS = 0;
   private koAgeS = -1;
   private burnS = 0;
+  private burnKo = false;
   private burnDps = 0;
 
   constructor(readonly stats: CombatStats) {
@@ -224,6 +225,16 @@ export class Combatant {
     return this.burnS > 0;
   }
 
+  /** Seconds of burning left (flames shrink as it runs out). */
+  get burnLeftS(): number {
+    return this.burnS;
+  }
+
+  /** The KO came from burning (the burn finished the fighter off). */
+  get koByBurn(): boolean {
+    return this.burnKo;
+  }
+
   /** Stun this fighter (e.g. its attack was parried). */
   stun(seconds: number): void {
     this.guardUp = false;
@@ -330,6 +341,7 @@ export class Combatant {
       this.knockdownS = 0;
       this.getUpS = 0;
       this.burnS = 0;
+      this.burnKo = true;
     }
     return damage;
   }
@@ -349,6 +361,7 @@ export class Combatant {
     this.koAgeS = -1;
     this.burnS = 0;
     this.burnDps = 0;
+    this.burnKo = false;
   }
 }
 

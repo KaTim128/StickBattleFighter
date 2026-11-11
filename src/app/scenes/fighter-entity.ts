@@ -52,6 +52,12 @@ export class FighterEntity {
   /** KO presentation: the boom and the dusting sound play once per KO. */
   koSounded = false;
   dustSounded = false;
+  /** KO'd by fire (a fire hit or the burn): the body burns away to ash instead of dust. */
+  koByFire = false;
+  /** Seconds of smoke still rising after a burn went out. */
+  smokeS = 0;
+  /** The burn's starting length, so the flames can shrink as it runs out. */
+  burnTotalS = 0;
   burnTextS = 0;
   body: RigidBody | null = null;
   view: StickmanView | null = null;
@@ -156,6 +162,7 @@ export class FighterEntity {
       this.def.bones,
       this.def.look,
       this.def.capabilities.usesFireEffects ? (this.def.effects.head ?? 'round') : 'round',
+      this.def.capabilities.usesFireEffects ? (this.def.effects.body ?? 'solid') : 'solid',
     );
     actors.add(this.view.root, 0);
     this.bars = new FighterBars(this.showStamina);
@@ -183,6 +190,8 @@ export class FighterEntity {
     this.caster?.reset();
     this.koSounded = false;
     this.dustSounded = false;
+    this.koByFire = false;
+    this.smokeS = 0;
     if (this.view) this.view.root.alpha = 1;
     this.placeAt(this.spawn);
   }

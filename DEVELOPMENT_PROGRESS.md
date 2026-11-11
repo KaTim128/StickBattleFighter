@@ -345,6 +345,20 @@ The run was the walk's sine stride made bigger. It is now its own cycle (`runnin
 ### 11/11/2026: Doorway no longer clips the curved wall (owner)
 The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), drawn wider and taller than the wall, and the wall pieces beside the door overlapped 0.1 m into the doorway. Now the wall stops 0.14 m short of the glass leaf on each side, its door-side ends are not padded, and each post (`DoorSpec.posts`) is a quad that exactly fills the gap from the leaf's straight end to the wall piece's angled end face, at wall thickness and wall height; posts are solid (colliders, navigation) and stay when the leaf opens or breaks. **Tests:** two geometry tests (posts flush with leaf and wall; no wall in the doorway). **Evidence:** `npm test` 284/284; door e2e passes; checked from the office side, the boss-room side and at 3× zoom (`docs/screenshots/doorway-office-side.png`, `doorway-boss-side.png`).
 
+### 11/11/2026: Inferno redesign, Fireball, Magic Attack VFX Standard (owner)
+- **Abilities:**
+  - Fire Beam replaces the ring-of-fire Eruption: 2 s charge, then a continuous 6.5 m beam that walls stop.
+  - Meteor Fist is renamed Eruption: a squat-and-charge, a flaming jump and a 3.2 m blast.
+  - Distance-based damage applies to both.
+  - The Fireball has its full sequence: charge, core, trail, impact, white flash, charge/whoosh/boom sounds, burning aftermath and death by fire.
+- **Look:** a living-flame body and a fiery face (the blue base is removed); the flame dodge is smaller and has no grey.
+- **Standard:** `docs/design/MAGIC_VFX_STANDARD.md` (TD-050, REQ-ABL-11..13, REQ-ANI-14).
+- **Tests:** Fire Beam (charge, ticks, push, burn, sounds, falloff, range), the falloff rule, Inferno's numbers, beam duration and walls stopping it. The old ring-of-fire tests were replaced because that ability no longer exists.
+- **Evidence:**
+  - lint clean; typecheck 0; `npm test` 289/289; no browser errors;
+  - stills of every stage: `docs/screenshots/inferno-fx-sheet-1.png` and `inferno-fx-sheet-2.png`.
+- **Limitation:** the reference image of Inferno did not come through, so the look was designed from his in-game appearance.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

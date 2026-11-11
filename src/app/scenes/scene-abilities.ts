@@ -26,6 +26,8 @@ export type StrikeFn = (
     melee: boolean;
     burn?: Burn;
     impact: ImpactId;
+    /** The target's body flashes this colour (magic attacks: white), instead of the attacker's. */
+    flashColour?: number;
   },
 ) => boolean;
 
@@ -160,7 +162,7 @@ export class SceneAbilities implements AbilityHost {
     }));
   }
 
-  hitFighter(casterId: string, targetId: string, payload: AbilityPayload, dir: Vec2): boolean {
+  hitFighter(casterId: string, targetId: string, payload: AbilityPayload, dir: Vec2, hitFlash?: number): boolean {
     const attacker = this.byName(casterId);
     const target = this.byName(targetId);
     if (!attacker || !target) return false;
@@ -172,6 +174,7 @@ export class SceneAbilities implements AbilityHost {
       melee: false,
       burn: payload.burn,
       impact: payload.impact ?? (payload.heavy ? 'fire-heavy' : 'fire'),
+      flashColour: hitFlash,
     });
   }
 

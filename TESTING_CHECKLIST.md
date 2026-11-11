@@ -150,6 +150,16 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V `docs/screenshots/run-sprint-cycle.png`, `docs/screenshots/sprint-in-game.png`.
 - [ ] Owner: run and sprint feel in the browser.
 
+## 0zb. Inferno redesign and Magic Attack VFX Standard (verified 11/11/2026)
+- [x] `npm test` **289**:
+  - Fire Beam charges for 2 s with no damage, then hits at least 5 times, pushes and burns;
+  - close hits deal more than 1.5× far hits; it does not reach 8.5 m;
+  - walls stop it; the falloff rule is bounded and never rises with distance;
+  - Inferno's numbers: Eruption 300 to 135, Fire Beam about 135 to 60.
+- [x] Doorway: the posts meet the leaf and the wall flush; no wall reaches into the doorway.
+- [x] V `docs/screenshots/inferno-fx-sheet-1.png`, `inferno-fx-sheet-2.png`, `inferno-flame-body.png`, `doorway-office-side.png`, `doorway-boss-side.png`.
+- [ ] Owner: the feel of the Fireball, Fire Beam and Eruption; Inferno's new look; death by fire.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

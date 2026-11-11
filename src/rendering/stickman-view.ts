@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
-import type { HeadStyle } from '../characters/schema';
+import type { BodyStyle, HeadStyle } from '../characters/schema';
 
 export interface StickmanLook {
   readonly limb: number;
@@ -26,6 +26,9 @@ export interface DodgeLook {
   dash?: { amount: number; dirX: number; dirY: number };
 }
 
+/** Living-flame body colours (Inferno, owner 11/11/2026). */
+const FLAME = { glow: 0xff5a14, ember: 0x6a1404, deep: 0xd8320c, core: 0xffd56a } as const;
+
 export class StickmanView {
   private last: { s: ReturnType<typeof solveSkeleton>; facing: 1 | -1; heightM: number; rot: number } | null = null;
   readonly root = new Container();
@@ -45,6 +48,7 @@ export class StickmanView {
     private readonly bones: BoneLengths,
     private readonly look: StickmanLook,
     private readonly head: HeadStyle = 'round',
+    private readonly bodyStyle: BodyStyle = 'solid',
   ) {
     this.root.label = 'stickman';
     this.fire.blendMode = 'add';
@@ -128,31 +132,51 @@ export class StickmanView {
     this.body.alpha = 1 - flame;
 
     const g = this.body.clear();
-    const stroke = (pts: readonly Point[], color: number, width: number): void => {
+    this.fire.clear();
+    this.fireCore.clear();
+    this.fire.alpha = 1;
+    this.fireCore.alpha = 1;
+    const stroke = (pts: readonly Point[], color: number, width: number, alpha = 1): void => {
       const [first, ...rest] = pts;
       if (!first) return;
       g.moveTo(first.x, first.y);
       for (const p of rest) g.lineTo(p.x, p.y);
-      g.stroke({ width, color, cap: 'round', join: 'round' });
+      g.stroke({ width, color, alpha, cap: 'round', join: 'round' });
     };
-    const limbStroke = (pts: readonly Point[], color: number): void => {
-      stroke(pts, outline, w + o * 2);
-      stroke(pts, color, w);
-    };
-
+    const fiery = this.bodyStyle === 'flame';
+    const t = this.clockS;
+    const limbs: [readonly Point[], number][] = [
+      [s.armBack, limbBack],
+      [s.legBack, limbBack],
+      [[s.pelvis, s.chest, s.neck], limb],
+      [s.legFront, limb],
+      [s.armFront, limb],
+    ];
+    if (fiery) {
+      // A living flame (owner, 11/11/2026): a soft glow around the whole body first.
+      for (const [pts] of limbs) stroke(pts, FLAME.glow, w * 3.4, 0.16);
+    }
     // Back limbs first (darker), then torso, front limbs, head.
-    limbStroke(s.armBack, limbBack);
-    limbStroke(s.legBack, limbBack);
-    limbStroke([s.pelvis, s.chest, s.neck], limb);
-    limbStroke(s.legFront, limb);
-    limbStroke(s.armFront, limb);
+    limbs.forEach(([pts, colour], i) => {
+      if (!fiery) {
+        stroke(pts, outline, w + o * 2);
+        stroke(pts, colour, w);
+        return;
+      }
+      const edge = toward(FLAME.ember, flashColour, flash * 0.85);
+      stroke(pts, edge, w + o * 1.6); // ember-dark edges instead of a black outline
+      stroke(pts, colour, w);
+      this.charStreaks(g, pts, w, t + i * 1.7, edge);
+      // A white-hot core that flickers along the limb.
+      const pulse = 0.55 + 0.25 * Math.sin(t * 11 + i * 2.3) + 0.2 * Math.sin(t * 23 + i);
+      stroke(pts, toward(FLAME.core, flashColour, flash), w * 0.42, Math.min(1, pulse));
+    });
+    if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
     if (flame > 0.01) {
-      // The whole fighter as one big flame at chest height, trailing forward as it rushes back.
-      this.flameHead(0, -0.8, 0.34 + 0.12 * flame, flash, 1.6 * flame, flame);
+      // Dodge: the body becomes a small, quick streak of flame at chest height (owner: smaller, no grey).
+      this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
     } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
     else {
-      this.fire.clear();
-      this.fireCore.clear();
       g.circle(s.head.x, s.head.y, this.bones.headRadius)
         .fill(limb)
         .stroke({ width: o * 1.4, color: outline });
@@ -182,7 +206,7 @@ export class StickmanView {
   /**
    * A living flame for a head (owner-approved mockup, TD-045): layered tongues (red, orange,
    * yellow) that flicker on their own rhythms and stream back as the fighter moves, a glowing
-   * ball of fire, a blue base on the neck, rising embers and two calm white eyes.
+   * ball of fire with a deep-red rim at the neck, rising embers and two bright ember-rimmed eyes.
    * Original procedural design; drawn in the figure's frame (it mirrors with the facing).
    */
   private flameHead(x: number, y: number, r: number, flash: number, lean?: number, alpha = 1): void {
@@ -191,7 +215,7 @@ export class StickmanView {
     const back = lean ?? -this.motion;
     this.fire.alpha = alpha;
     this.fireCore.alpha = alpha;
-    const f = this.fire.clear();
+    const f = this.fire;
     // Halo.
     for (let i = 0; i < 4; i++) f.circle(x, y, r * (3.2 - i * 0.55)).fill({ color: 0xff6a1a, alpha: 0.05 });
     const layers = [
@@ -227,16 +251,80 @@ export class StickmanView {
         alpha: 1 - k,
       });
     }
-    const c = this.fireCore.clear();
-    // The ball of fire, a white-hot centre and a blue base where it sits on the neck.
-    c.circle(x, y, r).fill({ color: 0xff8c1e, alpha: 0.9 });
+    const c = this.fireCore;
+    // The ball of fire: deep red at the rim where it meets the neck, orange, amber, then a
+    // white-hot centre (owner, 11/11/2026: no grey or blue anywhere on the face).
+    c.ellipse(x, y + r * 0.62, r * 0.66, r * 0.34).fill({ color: FLAME.deep, alpha: 0.85 });
+    c.circle(x, y, r).fill({ color: 0xff8c1e, alpha: 0.95 });
     c.circle(x - r * 0.15, y - r * 0.12, r * 0.68).fill({ color: 0xffc94a, alpha: 0.95 });
     c.circle(x - r * 0.2, y - r * 0.2, r * 0.35).fill({ color: 0xfff6d2, alpha: 0.95 });
-    c.ellipse(x, y + r * 0.72, r * 0.62, r * 0.3).fill({ color: 0x6ea8ff, alpha: 0.55 });
-    // Eyes: two calm white slits in the fire.
-    c.ellipse(x + r * 0.28, y - r * 0.05, r * 0.1, r * 0.22).fill(0xffffff);
-    c.ellipse(x + r * 0.62, y - r * 0.02, r * 0.09, r * 0.2).fill(0xffffff);
+    // Eyes: two bright slits rimmed in ember red, burning out of the fire.
+    for (const [ex, ey, ew, eh] of [
+      [0.28, -0.05, 0.1, 0.22],
+      [0.62, -0.02, 0.09, 0.2],
+    ] as const) {
+      c.ellipse(x + r * ex, y + r * ey, r * (ew + 0.05), r * (eh + 0.05)).fill({ color: FLAME.ember, alpha: 0.85 });
+      c.ellipse(x + r * ex, y + r * ey, r * ew, r * eh).fill(0xfffbe6);
+    }
     if (flash > 0) c.circle(x, y, r).fill({ color: 0xffffff, alpha: flash * 0.6 });
+  }
+
+  /** Charred streaks: short dark flecks drifting along a limb, so the fire has darker detail. */
+  private charStreaks(g: Graphics, pts: readonly Point[], w: number, phase: number, colour: number): void {
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const a = pts[i]!;
+      const b = pts[i + 1]!;
+      for (let k = 0; k < 2; k++) {
+        const u = (phase * 0.35 + k * 0.5 + i * 0.27) % 1;
+        const u2 = Math.min(1, u + 0.16);
+        const off = (k === 0 ? 1 : -1) * w * 0.22;
+        const nx = -(b.y - a.y);
+        const ny = b.x - a.x;
+        const nl = Math.hypot(nx, ny) || 1;
+        g.moveTo(a.x + (b.x - a.x) * u + (nx / nl) * off, a.y + (b.y - a.y) * u + (ny / nl) * off)
+          .lineTo(a.x + (b.x - a.x) * u2 + (nx / nl) * off, a.y + (b.y - a.y) * u2 + (ny / nl) * off)
+          .stroke({ width: w * 0.22, color: colour, alpha: 0.55 * Math.sin(Math.PI * u), cap: 'round' });
+      }
+    }
+  }
+
+  /**
+   * Flame tongues licking up from the shoulders, elbows, hips, knees and back (Inferno's
+   * living-flame body): small layered teardrops (red, orange, yellow) that flicker on their own
+   * rhythms and stream back as he moves. Drawn additively with the head's flames.
+   */
+  private bodyTongues(s: ReturnType<typeof solveSkeleton>, t: number, w: number): void {
+    const f = this.fire;
+    const back = -this.motion;
+    const spots: [Point, number][] = [
+      [s.neck, 1.15],
+      [s.chest, 1],
+      [{ x: (s.chest.x + s.pelvis.x) / 2, y: (s.chest.y + s.pelvis.y) / 2 }, 0.9],
+      [s.pelvis, 0.85],
+      [s.armFront[1], 0.8],
+      [s.armBack[1], 0.7],
+      [s.legFront[1], 0.75],
+      [s.legBack[1], 0.65],
+      [s.armFront[2], 0.7],
+    ];
+    spots.forEach(([p, scale], i) => {
+      const flick = 0.6 + 0.4 * Math.abs(Math.sin(t * (7 + i) + i * 1.9));
+      const h = 0.24 * scale * flick;
+      for (const [colour, k, a] of [
+        [FLAME.deep, 1, 0.55],
+        [0xff8c1e, 0.72, 0.65],
+        [0xffd95a, 0.45, 0.75],
+      ] as const) {
+        const hw = w * 0.85 * scale * k;
+        const tipX = p.x + (back * 0.6 + Math.sin(t * 13 + i) * 0.25) * h;
+        const tipY = p.y - h * k * 1.2;
+        f.moveTo(p.x - hw, p.y)
+          .quadraticCurveTo(p.x - hw * 0.7, p.y - h * k * 0.6, tipX, tipY)
+          .quadraticCurveTo(p.x + hw * 0.7, p.y - h * k * 0.6, p.x + hw, p.y)
+          .closePath()
+          .fill({ color: colour, alpha: a });
+      }
+    });
   }
 
   /**

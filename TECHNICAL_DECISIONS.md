@@ -366,6 +366,16 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** keeping both desktop presets with secondary keys (rejected: ambiguous conflicts when rebinding); a separate pause system (rejected for now: time scale 0 already freezes the fixed step; a proper pause menu arrives with menus).
 - **Limitation:** there is no main menu yet, so Settings opens in game only; the store is ready for the menu to reuse.
 
+### TD-050: Magic Attack VFX Standard; beam delivery; distance falloff; flame body style — ACCEPTED (owner request 11/11/2026)
+- **Look as data:** `AbilityDef.look` (`MagicLook`: palette, charge, flight, impact, hitFlash) drives the shared `AbilityVfx` (gathering motes, swelling cores, projectile tails, beams, flash-first impacts, flame rings, delayed smoke). FX events carry the look. Abilities without a look keep the earlier default fire effects.
+- **Beam delivery:** `BeamDelivery` in the shared ability world. A beam is re-aimed from the caster every step, cut short by `host.blocked`, and hits on a fixed tick. It is cancelled with the caster.
+- **Falloff:** `DamageFalloff`, `falloffFactor` and `payloadAt` are pure functions applied by the world before the shared hit path, so the combat rules (block, dodge, crit) still apply.
+- **Hit flash:** an optional colour on the hit path (white for magic).
+- **Fire KO:** `FighterEntity.koByFire` (set by fire hits) and `Combatant.koByBurn` select the ember-ash dissolve, charring and flames.
+- **Body style:** Effects Profile `body: 'solid' | 'flame'`, validated; `StickmanView` draws the flame body.
+- **Alternatives:** an animated sprite sheet per ability (rejected: no art pipeline yet, and procedural effects stay consistent with the vector style); per-ability effect classes (rejected: duplicated logic, against the data-driven rule).
+- **Trade-off:** the 2 s beam charge and the 0.4 s Fireball charge make both easier to interrupt. That is intended (the wind-up is the counterplay).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

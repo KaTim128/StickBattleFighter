@@ -231,10 +231,18 @@ export interface EffectsProfile {
   readonly hitstopScale: number;
   /** How the head is drawn: a plain round head (default) or a living flame that lights the room (TD-045). */
   readonly head?: HeadStyle;
+  /**
+   * How the body is drawn: plain outlined limbs (default) or a living flame (owner, 11/11/2026:
+   * Inferno's "entire body should look genuinely fiery"): glowing layered limbs with ember-dark
+   * edges, charred streaks, a white-hot core and flame tongues licking up from the joints.
+   */
+  readonly body?: BodyStyle;
 }
 
 export const HEAD_STYLES = ['round', 'flame'] as const;
 export type HeadStyle = (typeof HEAD_STYLES)[number];
+export const BODY_STYLES = ['solid', 'flame'] as const;
+export type BodyStyle = (typeof BODY_STYLES)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */
 export interface AudioProfile {

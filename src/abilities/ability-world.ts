@@ -1,4 +1,4 @@
-import { type AbilityDef, type AbilityPayload, type Burn, payloadAt } from './ability-def';
+import { type AbilityDef, type AbilityPayload, type Burn, type MagicLook, payloadAt } from './ability-def';
 
 /**
  * Ability deliveries in the arena (REQ-ABL-1): projectiles, dashes with fire
@@ -33,12 +33,17 @@ export interface AbilityFx {
   readonly x: number;
   readonly y: number;
   readonly radiusM?: number;
+  /** The ability's look (Magic Attack VFX Standard), so effects match the element. */
+  readonly look?: MagicLook;
 }
 
 export interface AbilityHost {
   fighters(): readonly AbilityTarget[];
-  /** Apply an ability hit to a fighter. Returns true if it connected (not dodged or ignored). */
-  hitFighter(casterId: string, targetId: string, payload: AbilityPayload, dir: Vec2): boolean;
+  /**
+   * Apply an ability hit to a fighter. Returns true if it connected (not dodged or ignored).
+   * `hitFlash` = the colour the target's body flashes (the ability's look; default the caster's).
+   */
+  hitFighter(casterId: string, targetId: string, payload: AbilityPayload, dir: Vec2, hitFlash?: number): boolean;
   /**
    * Hit furniture and doors touching a circle. `continuous` = a body brushing
    * past (one blow per prop per moment), otherwise a single impact.
@@ -177,7 +182,15 @@ export class AbilityWorld {
   release(casterId: string, def: AbilityDef, aim: Vec2, host: AbilityHost): void {
     const at = host.position(casterId);
     const dir = norm({ x: aim.x - at.x, y: aim.y - at.y });
-    host.emit({ kind: 'release', ability: def.id, vfx: def.vfx, sfx: def.sfx.release, x: at.x, y: at.y });
+    host.emit({
+      kind: 'release',
+      ability: def.id,
+      look: def.look,
+      vfx: def.vfx,
+      sfx: def.sfx.release,
+      x: at.x,
+      y: at.y,
+    });
     const d = def.delivery;
     switch (d.type) {
       case 'projectile':
@@ -219,6 +232,7 @@ export class AbilityWorld {
         host.emit({
           kind: 'telegraph',
           ability: def.id,
+          look: def.look,
           vfx: def.vfx,
           sfx: null,
           x: at.x,
@@ -264,6 +278,7 @@ export class AbilityWorld {
         host.emit({
           kind: 'telegraph',
           ability: def.id,
+          look: def.look,
           vfx: def.vfx,
           sfx: null,
           x: to.x,
@@ -288,7 +303,7 @@ export class AbilityWorld {
       const t = this.telegraphs[i]!;
       if (t.casterId !== casterId) continue;
       this.telegraphs.splice(i, 1);
-      host.emit({ kind: 'fizzle', ability: t.def.id, vfx: t.def.vfx, sfx: null, x: t.x, y: t.y });
+      host.emit({ kind: 'fizzle', ability: t.def.id, look: t.def.look, vfx: t.def.vfx, sfx: null, x: t.x, y: t.y });
     }
   }
 
@@ -314,7 +329,7 @@ export class AbilityWorld {
       for (const f of host.fighters()) {
         if (f.id === p.casterId || !f.hittable) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
-        if (!host.hitFighter(p.casterId, f.id, p.def.payload, p.dir)) continue; // dodged: flies on
+        if (!host.hitFighter(p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash)) continue; // dodged: flies on
         this.impact(p, f, host);
         done = true;
         break;
@@ -339,7 +354,7 @@ export class AbilityWorld {
       p.travelledM += step;
       if (p.travelledM >= d.maxRangeM) {
         this.projectiles.splice(i, 1);
-        host.emit({ kind: 'fizzle', ability: p.def.id, vfx: p.def.vfx, sfx: null, x: p.x, y: p.y });
+        host.emit({ kind: 'fizzle', ability: p.def.id, look: p.def.look, vfx: p.def.vfx, sfx: null, x: p.x, y: p.y });
       }
     }
   }
@@ -348,6 +363,7 @@ export class AbilityWorld {
     host.emit({
       kind: 'impact',
       ability: p.def.id,
+      look: p.def.look,
       vfx: p.def.vfx,
       sfx: p.def.sfx.impact,
       x: at.x,
@@ -377,7 +393,15 @@ export class AbilityWorld {
       b.ageS += dtS;
       if (b.ageS >= d.durationS) {
         this.beams.splice(i, 1);
-        host.emit({ kind: 'fizzle', ability: b.def.id, vfx: b.def.vfx, sfx: null, x: b.to.x, y: b.to.y });
+        host.emit({
+          kind: 'fizzle',
+          ability: b.def.id,
+          look: b.def.look,
+          vfx: b.def.vfx,
+          sfx: null,
+          x: b.to.x,
+          y: b.to.y,
+        });
         continue;
       }
       this.aimBeam(b, host);
@@ -391,12 +415,21 @@ export class AbilityWorld {
         if (f.id === b.casterId || !f.hittable) continue;
         if (segmentDistance(b.from, b.to, f) > d.widthM / 2 + f.radiusM) continue;
         const dist = Math.hypot(f.x - caster.x, f.y - caster.y);
-        if (!host.hitFighter(b.casterId, f.id, payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M), b.dir))
+        if (
+          !host.hitFighter(
+            b.casterId,
+            f.id,
+            payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M),
+            b.dir,
+            b.def.look?.hitFlash,
+          )
+        )
           continue;
         b.touching.push(f.id);
         host.emit({
           kind: 'impact',
           ability: b.def.id,
+          look: b.def.look,
           vfx: b.def.vfx,
           sfx: b.landed ? null : b.def.sfx.impact,
           x: f.x,
@@ -445,10 +478,11 @@ export class AbilityWorld {
       if (f.id === a.casterId || !f.hittable || a.hit.has(f.id)) continue;
       if (Math.hypot(f.x - at.x, f.y - at.y) > d.hitRadiusM + f.radiusM) continue;
       a.hit.add(f.id);
-      if (host.hitFighter(a.casterId, f.id, a.def.payload, a.dir)) {
+      if (host.hitFighter(a.casterId, f.id, a.def.payload, a.dir, a.def.look?.hitFlash)) {
         host.emit({
           kind: 'impact',
           ability: a.def.id,
+          look: a.def.look,
           vfx: a.def.vfx,
           sfx: a.def.sfx.impact,
           x: f.x,
@@ -512,10 +546,19 @@ export class AbilityWorld {
       if (dist > radiusM + f.radiusM) continue;
       // Closer to the centre of the blast hits harder (distance falloff, owner 11/11/2026).
       const payload = payloadAt(def.payload, dist, radiusM + f.radiusM);
-      host.hitFighter(casterId, f.id, payload, norm({ x: f.x - at.x, y: f.y - at.y }));
+      host.hitFighter(casterId, f.id, payload, norm({ x: f.x - at.x, y: f.y - at.y }), def.look?.hitFlash);
     }
     host.hitEnvironment(casterId, at, radiusM, def.payload, { x: 0, y: 0 }, false);
-    host.emit({ kind: 'impact', ability: def.id, vfx: def.vfx, sfx: def.sfx.impact, x: at.x, y: at.y, radiusM });
+    host.emit({
+      kind: 'impact',
+      ability: def.id,
+      look: def.look,
+      vfx: def.vfx,
+      sfx: def.sfx.impact,
+      x: at.x,
+      y: at.y,
+      radiusM,
+    });
   }
 
   private updateZones(dtS: number, host: AbilityHost): void {
