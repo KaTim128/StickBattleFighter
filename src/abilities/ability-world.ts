@@ -1,4 +1,4 @@
-import type { AbilityDef, AbilityPayload, Burn } from './ability-def';
+import { type AbilityDef, type AbilityPayload, type Burn, payloadAt } from './ability-def';
 
 /**
  * Ability deliveries in the arena (REQ-ABL-1): projectiles, dashes with fire
@@ -73,6 +73,23 @@ export interface Projectile {
   readonly trail: Vec2[];
 }
 
+/** A continuous beam pouring from a caster (Fire Beam). Origin and end are refreshed every step. */
+export interface Beam {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly dir: Vec2;
+  ageS: number;
+  /** Time since the last damage tick. */
+  sinceTickS: number;
+  /** Where it starts (in front of the caster's hands) and where it ends (its reach, or a wall). */
+  from: Vec2;
+  to: Vec2;
+  /** Fighters it touched on the last tick (presentation: burning contact points). */
+  touching: string[];
+  /** It has hit someone already (the first contact plays the impact sound). */
+  landed: boolean;
+}
+
 export interface FireZone {
   readonly casterId: string;
   readonly x: number;
@@ -123,6 +140,8 @@ const TRAIL_SPACING_M = 0.45;
 const TRAIL_POINTS = 8;
 /** A projectile flies at chest height: it starts this far in front of the caster. */
 const MUZZLE_M = 0.5;
+/** A beam pours from just in front of the caster's hands. */
+const BEAM_MUZZLE_M = 0.45;
 
 const norm = (v: Vec2): Vec2 => {
   const l = Math.hypot(v.x, v.y);
@@ -131,6 +150,7 @@ const norm = (v: Vec2): Vec2 => {
 
 export class AbilityWorld {
   readonly projectiles: Projectile[] = [];
+  readonly beams: Beam[] = [];
   readonly zones: FireZone[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -207,6 +227,22 @@ export class AbilityWorld {
         });
         break;
       }
+      case 'beam': {
+        const beam: Beam = {
+          casterId,
+          def,
+          dir,
+          ageS: 0,
+          sinceTickS: d.tickS, // the first tick lands at once
+          from: at,
+          to: at,
+          touching: [],
+          landed: false,
+        };
+        this.aimBeam(beam, host);
+        this.beams.push(beam);
+        break;
+      }
       case 'leap': {
         // Land on the target (within range), short of any wall or furniture in the way.
         const want = Math.min(d.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
@@ -240,8 +276,9 @@ export class AbilityWorld {
     }
   }
 
-  /** The caster was interrupted or KO'd: stop its dash or leap and any ring still warming up. */
+  /** The caster was interrupted or KO'd: stop its dash, leap or beam and any ring still warming up. */
   cancel(casterId: string, host: AbilityHost): void {
+    for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
       this.actions.splice(i, 1);
@@ -257,6 +294,7 @@ export class AbilityWorld {
 
   update(dtS: number, host: AbilityHost): void {
     this.updateProjectiles(dtS, host);
+    this.updateBeams(dtS, host);
     this.updateActions(dtS, host);
     this.updateTelegraphs(dtS, host);
     this.updateZones(dtS, host);
@@ -316,6 +354,60 @@ export class AbilityWorld {
       y: at.y,
       radiusM: 0.6,
     });
+  }
+
+  /** The beam starts at the caster's hands and runs to its reach, or to the first wall, door or furniture. */
+  private aimBeam(b: Beam, host: AbilityHost): void {
+    const d = b.def.delivery;
+    if (d.type !== 'beam') return;
+    const at = host.position(b.casterId);
+    const from = { x: at.x + b.dir.x * BEAM_MUZZLE_M, y: at.y + b.dir.y * BEAM_MUZZLE_M };
+    const far = { x: from.x + b.dir.x * d.rangeM, y: from.y + b.dir.y * d.rangeM };
+    const block = host.blocked(from, far);
+    const reach = d.rangeM * (block ?? 1);
+    b.from = from;
+    b.to = { x: from.x + b.dir.x * reach, y: from.y + b.dir.y * reach };
+  }
+
+  private updateBeams(dtS: number, host: AbilityHost): void {
+    for (let i = this.beams.length - 1; i >= 0; i--) {
+      const b = this.beams[i]!;
+      const d = b.def.delivery;
+      if (d.type !== 'beam') continue;
+      b.ageS += dtS;
+      if (b.ageS >= d.durationS) {
+        this.beams.splice(i, 1);
+        host.emit({ kind: 'fizzle', ability: b.def.id, vfx: b.def.vfx, sfx: null, x: b.to.x, y: b.to.y });
+        continue;
+      }
+      this.aimBeam(b, host);
+      b.sinceTickS += dtS;
+      if (b.sinceTickS < d.tickS) continue;
+      b.sinceTickS -= d.tickS;
+      // A tick: everyone in the beam is hit, harder the closer they stand (distance falloff).
+      const caster = host.position(b.casterId);
+      b.touching = [];
+      for (const f of host.fighters()) {
+        if (f.id === b.casterId || !f.hittable) continue;
+        if (segmentDistance(b.from, b.to, f) > d.widthM / 2 + f.radiusM) continue;
+        const dist = Math.hypot(f.x - caster.x, f.y - caster.y);
+        if (!host.hitFighter(b.casterId, f.id, payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M), b.dir))
+          continue;
+        b.touching.push(f.id);
+        host.emit({
+          kind: 'impact',
+          ability: b.def.id,
+          vfx: b.def.vfx,
+          sfx: b.landed ? null : b.def.sfx.impact,
+          x: f.x,
+          y: f.y,
+          radiusM: 0.35,
+        });
+        b.landed = true;
+      }
+      // The end of the beam scorches whatever stopped it (sets furniture alight, chips doors and walls).
+      host.hitEnvironment(b.casterId, b.to, 0.3, b.def.payload, b.dir, true);
+    }
   }
 
   private updateActions(dtS: number, host: AbilityHost): void {
@@ -418,7 +510,9 @@ export class AbilityWorld {
       if (f.id === casterId || !f.hittable) continue;
       const dist = Math.hypot(f.x - at.x, f.y - at.y);
       if (dist > radiusM + f.radiusM) continue;
-      host.hitFighter(casterId, f.id, def.payload, norm({ x: f.x - at.x, y: f.y - at.y }));
+      // Closer to the centre of the blast hits harder (distance falloff, owner 11/11/2026).
+      const payload = payloadAt(def.payload, dist, radiusM + f.radiusM);
+      host.hitFighter(casterId, f.id, payload, norm({ x: f.x - at.x, y: f.y - at.y }));
     }
     host.hitEnvironment(casterId, at, radiusM, def.payload, { x: 0, y: 0 }, false);
     host.emit({ kind: 'impact', ability: def.id, vfx: def.vfx, sfx: def.sfx.impact, x: at.x, y: at.y, radiusM });

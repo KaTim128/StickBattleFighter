@@ -97,9 +97,7 @@ test('Inferno ultimate: F, hover the mouse over the spot, left click jumps there
   await page.screenshot({ path: testInfo.outputPath('ult-mouse-aim.png') });
   await page.mouse.down();
   await page.mouse.up();
-  await expect
-    .poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] })
-    .toBe('meteorFist');
+  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
   expect((await hook(page)).player.attack).toBeNull(); // the click launched; it did not punch
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull();
   const end = await hook(page);

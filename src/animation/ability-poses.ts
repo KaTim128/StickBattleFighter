@@ -18,6 +18,8 @@ interface CastShape {
   release: Partial<Pose>;
   /** Fraction of the recovery spent easing back to the stance (at the end). */
   settle: number;
+  /** Held while a leap carries the fighter through the air (then the release is the landing slam). */
+  air?: Partial<Pose>;
 }
 
 const CROUCH: Partial<Pose> = { legFront: limb(50, -95), legBack: limb(-20, -70) };
@@ -36,33 +38,41 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-40), head: deg(30), armFront: limb(96, 8), armBack: limb(-35, 40) },
     settle: 0.35,
   },
-  // Both fists raised high, then slammed into the floor; held while the ring warns, then rise.
+  // Fire Beam (owner, 11/11/2026): planted wide and low, both palms drawn back to the hip as flames
+  // gather around the body; then both palms thrust forward together, held while the beam pours out.
+  fireBeam: {
+    windup: { lean: deg(10), head: deg(4), armFront: limb(20, 120), armBack: limb(12, 128), ...CROUCH },
+    release: { lean: deg(-12), head: deg(10), armFront: limb(86, 10), armBack: limb(80, 22), ...CROUCH },
+    settle: 0.2,
+  },
+  // Eruption (owner, 11/11/2026): squat deep and gather fire, spring up wrapped in flame (AIR),
+  // then crash down fist-first into the floor (the release is the landing slam, held briefly).
   eruption: {
-    windup: { lean: deg(8), head: deg(-10), armFront: limb(168, 30), armBack: limb(160, 40) },
-    release: { lean: deg(-42), head: deg(32), armFront: limb(22, 10), armBack: limb(14, 16), ...CROUCH },
-    settle: 0.3,
-  },
-  // Deep crouch to spring; in the air it uses METEOR_AIR, then this release pose is the landing slam.
-  meteorFist: {
-    windup: { lean: deg(-18), head: deg(18), armFront: limb(40, 110), armBack: limb(-20, 100), ...CROUCH },
-    release: { lean: deg(-44), head: deg(34), armBack: limb(30, 6), armFront: limb(60, 110), ...CROUCH },
+    windup: {
+      lean: deg(-22),
+      head: deg(18),
+      armFront: limb(30, 120),
+      armBack: limb(-30, 110),
+      legFront: limb(70, -130),
+      legBack: limb(-10, -120),
+    },
+    release: { lean: deg(-46), head: deg(34), armBack: limb(30, 6), armFront: limb(60, 110), ...CROUCH },
     settle: 0.2, // most of the recovery is the leap; the landing slam is held briefly at the end
+    // In the air: rear fist cocked overhead, lead arm reaching, knees tucked.
+    air: {
+      lean: deg(-10),
+      head: deg(14),
+      armBack: limb(178, 55),
+      armFront: limb(105, 20),
+      legFront: limb(70, -120),
+      legBack: limb(30, -110),
+    },
   },
-};
-
-/** In the air during Meteor Fist: rear fist cocked overhead, lead arm reaching, knees tucked. */
-const METEOR_AIR: Partial<Pose> = {
-  lean: deg(-10),
-  head: deg(14),
-  armBack: limb(178, 55),
-  armFront: limb(105, 20),
-  legFront: limb(70, -120),
-  legBack: limb(30, -110),
 };
 
 /**
  * Pose for an ability cast. `airborne` is true while a leap carries the fighter
- * (Meteor Fist shows its air pose, then the landing slam).
+ * (a leap shows its air pose, then the landing slam).
  */
 export function abilityPose(
   base: Pose,
@@ -75,7 +85,7 @@ export function abilityPose(
   if (!shape) return base;
   const windup = { ...base, ...shape.windup };
   if (phase === 'windup') return blendPose(base, windup, ease(progress * 1.6));
-  if (abilityId === 'meteorFist' && airborne) return { ...base, ...METEOR_AIR };
+  if (shape.air && airborne) return { ...base, ...shape.air };
   const release = { ...base, ...shape.release };
   // Snap into the release quickly, hold it, then ease back to the stance.
   const settleFrom = 1 - shape.settle;

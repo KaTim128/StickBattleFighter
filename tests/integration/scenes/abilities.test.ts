@@ -100,27 +100,47 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
-  it('Eruption: telegraphed first (no damage yet), then knocks down anyone inside the ring', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 17.6, y: 13 });
+  it('Fire Beam (owner, 11/11/2026): a 2 s charge with no damage, then a continuous beam that hits again and again, burns and pushes', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 17.4, y: 13 });
     intents.pressAbility('a3');
-    run(K.a3.castS + 0.1);
-    expect(scene.abilities!.world.telegraphs).toHaveLength(1);
-    expect(scene.dummy.hp).toBe(1000); // still only a warning (REQ-ABL-6)
-    run(0.6);
-    expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(K.a3.payload.damage);
-    expect(['knockdown', 'gettingUp']).toContain(scene.dummy.state);
+    run(STEP);
+    expect(scene.player.ability).toBe('fireBeam');
+    run(K.a3.castS - 0.1);
+    expect(scene.dummy.hp).toBe(1000); // still charging
+    expect(scene.abilities!.world.beams).toHaveLength(0);
+    const x0 = scene.dummy.x;
+    let hits = 0;
+    let last = 1000;
+    runUntil(() => {
+      if (scene.dummy.hp < last) hits++;
+      last = scene.dummy.hp;
+      return scene.abilities!.world.beams.length === 0 && scene.player.ability === null;
+    }, 4);
+    expect(hits).toBeGreaterThanOrEqual(5); // a continuous beam, not one blast
+    expect(scene.dummy.burning || scene.dummy.hp < 1000 - 5 * 15).toBe(true);
+    expect(scene.dummy.x).toBeGreaterThan(x0 + 0.3); // pushed back along the beam
+    expect(scene.abilities!.sfxLog).toEqual(expect.arrayContaining(['beam-charge', 'beam-roar', 'beam-sear']));
     scenes.clear();
   });
 
-  it('Eruption does not reach a dummy outside the ring', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 });
-    intents.pressAbility('a3');
-    run(1.2);
-    expect(scene.dummy.hp).toBe(1000);
-    scenes.clear();
+  it('Fire Beam: closer hurts more (distance falloff), and it does not reach past its medium range', async () => {
+    const dealt = async (x: number) => {
+      const { intents, scene, scenes, run } = await setup({ x, y: 13 });
+      intents.pressAbility('a3');
+      run(K.a3.castS + K.a3.recoveryS + 0.1);
+      const d = 1000 - scene.dummy.hp;
+      scenes.clear();
+      return d;
+    };
+    const close = await dealt(17.6); // about 1.4 m away
+    const far = await dealt(13.6); // about 5.4 m away
+    const outOfRange = await dealt(10.5); // about 8.5 m away
+    expect(close).toBeGreaterThan(far * 1.5);
+    expect(far).toBeGreaterThan(0);
+    expect(outOfRange).toBe(0);
   });
 
-  it('the ultimate needs a full meter; Meteor Fist then leaps (untouchable), lands on the dummy and empties the meter', async () => {
+  it('the ultimate needs a full meter; Eruption then leaps (untouchable), lands on the dummy and empties the meter', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
     intents.pressAbility('ult');
     run(STEP);
@@ -130,7 +150,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     run(STEP);
     intents.pressAbility('ult'); // …and launch
     run(STEP);
-    expect(scene.player.ability).toBe('meteorFist');
+    expect(scene.player.ability).toBe('eruption');
     expect(scene.player.meter).toBe(0);
     runUntil(() => scene.playerFighter.abilityLift > 1, 1);
     expect(scene.playerFighter.abilityLift).toBeGreaterThan(1); // in the air
@@ -168,7 +188,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     run(STEP);
     intents.meleeRelease();
     expect(scene.ultAim).toBeNull();
-    expect(scene.player.ability).toBe('meteorFist');
+    expect(scene.player.ability).toBe('eruption');
     expect(scene.player.attack).toBeNull();
     runUntil(() => scene.player.ability === null, 3);
     expect(Math.hypot(scene.player.x - want.x, scene.player.y - want.y)).toBeLessThan(0.8); // landed where hovered
@@ -234,7 +254,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     intents.pressAbility('ult'); // launch
     run(STEP);
     expect(scene.ultAim).toBeNull();
-    expect(scene.player.ability).toBe('meteorFist');
+    expect(scene.player.ability).toBe('eruption');
     runUntil(() => scene.player.ability === null, 3);
     expect(Math.hypot(scene.player.x - aim1.to.x, scene.player.y - aim1.to.y)).toBeLessThan(0.8); // landed on the spot
     expect(scene.dummy.hp).toBe(1000); // away from the dummy: untouched

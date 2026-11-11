@@ -1609,7 +1609,7 @@ export class FightArenaScene implements ArenaScene {
     const fx = this.abilities.drainFx();
     for (const e of fx) {
       if (e.kind !== 'impact' || (e.radiusM ?? 0) < 2) continue;
-      this.shake.addTrauma((e.radiusM ?? 0) >= 2.8 ? 0.85 : 0.5); // Meteor Fist hits hardest
+      this.shake.addTrauma((e.radiusM ?? 0) >= 2.8 ? 0.85 : 0.5); // the Eruption slam hits hardest
       this.shake.punch(0.06);
     }
     const burning: BurningThing[] = [];
@@ -1677,7 +1677,13 @@ export class FightArenaScene implements ArenaScene {
     if (f === this.playerFighter && this.ultAimPoint) {
       // Jump preparation: a deep, springy crouch held (with a little bounce) while aiming.
       this.aimPrepT += frameDtS;
-      pose = abilityPose(pose, 'meteorFist', 'windup', 0.85 + 0.15 * Math.sin(this.aimPrepT * 7), false);
+      pose = abilityPose(
+        pose,
+        f.caster?.def('ult').id ?? '',
+        'windup',
+        0.85 + 0.15 * Math.sin(this.aimPrepT * 7),
+        false,
+      );
     }
     const cast = f.caster?.cast;
     if (cast && f.caster) {

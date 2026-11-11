@@ -32,6 +32,38 @@ export interface AbilityPayload {
   readonly ignites?: boolean;
   /** How a hit feels (flash, sparks, hit-stop); defaults to 'fire', or 'fire-heavy' when heavy. */
   readonly impact?: ImpactId;
+  /** Closer hits deal more (owner, 11/11/2026): see `falloffFactor`. Absent = the same at any range. */
+  readonly falloff?: DamageFalloff;
+}
+
+/**
+ * Distance-based damage (owner, 11/11/2026, Fire Beam and Eruption): full damage within
+ * `fullWithinM` of the source, easing down linearly to `minFactor` of it at the ability's reach.
+ * Knockback eases the same way (but never below half). Bounded both ways, so point-blank hits
+ * are never more than the listed damage and edge hits never less than `minFactor` of it.
+ */
+export interface DamageFalloff {
+  readonly fullWithinM: number;
+  readonly minFactor: number;
+}
+
+/** 0..1 damage factor at `distanceM` from the source, for an ability reaching `reachM`. */
+export function falloffFactor(distanceM: number, falloff: DamageFalloff | undefined, reachM: number): number {
+  if (!falloff) return 1;
+  const span = Math.max(1e-6, reachM - falloff.fullWithinM);
+  const t = Math.min(1, Math.max(0, (distanceM - falloff.fullWithinM) / span));
+  return 1 - (1 - falloff.minFactor) * t;
+}
+
+/** The payload as it lands at this distance (damage and knockback scaled by its falloff). */
+export function payloadAt(payload: AbilityPayload, distanceM: number, reachM: number): AbilityPayload {
+  if (!payload.falloff) return payload;
+  const k = falloffFactor(distanceM, payload.falloff, reachM);
+  return {
+    ...payload,
+    damage: Math.round(payload.damage * k),
+    knockbackMps: payload.knockbackMps * (0.5 + 0.5 * k),
+  };
 }
 
 /** A shot that flies until it hits a fighter, a wall or solid furniture, or runs out of range. */
@@ -67,7 +99,21 @@ export interface LeapDelivery {
   readonly radiusM: number;
 }
 
-export type Delivery = ProjectileDelivery | DashDelivery | NovaDelivery | LeapDelivery;
+/**
+ * A continuous beam from the caster's hands (Fire Beam, owner 11/11/2026): it fires straight
+ * ahead for `durationS` (the caster is rooted), stopped short by walls, doors and furniture,
+ * and every `tickS` hits each fighter within `widthM / 2` of it with the payload (scaled by
+ * distance if the payload has a falloff).
+ */
+export interface BeamDelivery {
+  readonly type: 'beam';
+  readonly rangeM: number;
+  readonly widthM: number;
+  readonly durationS: number;
+  readonly tickS: number;
+}
+
+export type Delivery = ProjectileDelivery | DashDelivery | NovaDelivery | LeapDelivery | BeamDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,

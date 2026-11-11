@@ -213,6 +213,39 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.7, gain: 0.12, type: 'highpass', freq: 4500, attack: 0.12, delay: 0.18 } },
     { crackle: { dur: 0.9, gain: 0.3, count: 18 } },
   ],
+  // Fire Beam (owner, 11/11/2026). The 2 s charge: flames gathering round the body, a long swell
+  // of roaring air over a rising hum, crackling hotter as it builds.
+  'beam-charge': [
+    { noise: { dur: 2, gain: 0.32, type: 'bandpass', freq: 220, freqEnd: 1300, q: 0.9, attack: 1.6, flutter: 14 } },
+    { tone: { wave: 'sine', f0: 50, f1: 110, dur: 2, gain: 0.24, attack: 1.4 } },
+    { tone: { wave: 'triangle', f0: 260, f1: 760, dur: 2, gain: 0.05, attack: 1.7 } },
+    { crackle: { dur: 2, gain: 0.14, count: 22 } },
+  ],
+  // The beam: a sustained, concentrated roar of flame for its 1.4 s, gritty and fluttering.
+  'beam-roar': [
+    {
+      noise: {
+        dur: 1.45,
+        gain: 0.7,
+        type: 'bandpass',
+        freq: 520,
+        freqEnd: 420,
+        q: 0.6,
+        attack: 0.04,
+        flutter: 26,
+        drive: 0.4,
+      },
+    },
+    { noise: { dur: 1.45, gain: 0.16, type: 'highpass', freq: 3400, attack: 0.05 } },
+    { tone: { wave: 'sawtooth', f0: 82, f1: 70, dur: 1.4, gain: 0.12, attack: 0.04, drive: 0.3 } },
+    { crackle: { dur: 1.45, gain: 0.22, count: 20 } },
+  ],
+  // The beam reaching someone: a searing hiss and a punch of heat.
+  'beam-sear': [
+    { tone: { wave: 'sine', f0: 120, f1: 50, dur: 0.18, gain: 0.55, drive: 0.2 } },
+    { noise: { dur: 0.45, gain: 0.35, type: 'highpass', freq: 2600, freqEnd: 5200, attack: 0.01 } },
+    { crackle: { dur: 0.5, gain: 0.2, count: 9 } },
+  ],
   'fire-charge': [
     { noise: { dur: 0.28, gain: 0.22, type: 'bandpass', freq: 400, freqEnd: 1700, q: 1.5, attack: 0.16 } },
   ],
@@ -264,7 +297,7 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.75, gain: 0.8, type: 'lowpass', freq: 1400, freqEnd: 300 } },
     { crackle: { dur: 0.7, gain: 0.3, count: 12 } },
   ],
-  // Meteor Fist (owner: "doesn't feel that fire, no excitement"): a growling build-up while
+  // Eruption landing (owner: "doesn't feel that fire, no excitement"): a growling build-up while
   // aiming, a rushing launch, and a double explosion with a long, crackling, sizzling tail.
   'fire-roar': [
     {

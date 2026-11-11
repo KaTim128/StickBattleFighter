@@ -26,9 +26,10 @@ describe('Inferno kit data (REQ-ABL-2)', () => {
     expect(INFERNO_KIT.ult.interruptible).toBe(false);
   });
 
-  it('telegraphed areas warn before they land (REQ-ABL-6)', () => {
-    const a3 = INFERNO_KIT.a3.delivery;
-    expect(a3.type === 'nova' && a3.telegraphS >= 0.4).toBe(true);
+  it('telegraphed areas warn before they land (REQ-ABL-6); the beam charges for 2 s first (owner)', () => {
+    const a3 = INFERNO_KIT.a3;
+    expect(a3.delivery.type).toBe('beam');
+    expect(a3.castS).toBe(2);
     const ult = INFERNO_KIT.ult.delivery;
     expect(ult.type === 'leap' && ult.airS >= 0.5).toBe(true);
   });
@@ -80,7 +81,7 @@ describe('AbilityCaster', () => {
     c.fillMeter();
     c.start('ult');
     expect(c.interrupt()).toBe(false);
-    expect(c.cast?.def.id).toBe('meteorFist');
+    expect(c.cast?.def.id).toBe('eruption');
   });
 
   it('once released, an ability cannot be interrupted (the shot is already out)', () => {
