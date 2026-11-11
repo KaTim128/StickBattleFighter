@@ -6,6 +6,8 @@ import {
   landingPose,
   runAmount,
   runPose,
+  sprintAmount,
+  sprintPose,
   strideAt,
   walkPose,
 } from './greybox-motion';
@@ -38,6 +40,7 @@ export class StickmanAnimator {
   private walkPhase = 0;
   private walkWeight = 0;
   private runWeight = 0;
+  private sprintWeight = 0;
   private airWeight = 0;
   private riseWeight = 0;
   private landWeight = 0;
@@ -63,6 +66,7 @@ export class StickmanAnimator {
     const walkTarget = Math.min(1, motion.speedMps / (motion.maxSpeedMps * 0.2));
     this.walkWeight += (walkTarget - this.walkWeight) * smoothing(16, dtS);
     this.runWeight += (runAmount(motion.speedMps) - this.runWeight) * smoothing(10, dtS);
+    this.sprintWeight += (sprintAmount(motion.speedMps) - this.sprintWeight) * smoothing(8, dtS);
     const airTarget = motion.peakHeightM > 0 ? Math.min(1, motion.heightM / (motion.peakHeightM * 0.4)) : 0;
     this.airWeight += (airTarget - this.airWeight) * smoothing(18, dtS);
 
@@ -73,7 +77,12 @@ export class StickmanAnimator {
     const riseTarget = (motion.verticalSpeedMps ?? 0) > 0 ? 1 : 0;
     this.riseWeight += (riseTarget - this.riseWeight) * smoothing(10, dtS);
 
-    const gait = blendPose(walkPose(this.walkPhase, this.bones), runPose(this.walkPhase, this.bones), this.runWeight);
+    const running = blendPose(
+      runPose(this.walkPhase, this.bones),
+      sprintPose(this.walkPhase, this.bones),
+      this.sprintWeight,
+    );
+    const gait = blendPose(walkPose(this.walkPhase, this.bones), running, this.runWeight);
     const stance = blendPose(idlePose(this.timeS, this.bones, this.idleStyle), gait, this.walkWeight);
     const grounded = blendPose(stance, landingPose(this.bones), this.landWeight * 0.8);
     const air = blendPose(AIR_FALL_POSE, AIR_RISE_POSE, this.riseWeight);
@@ -87,10 +96,11 @@ export class StickmanAnimator {
     return n;
   }
 
-  get weights(): { walk: number; run: number; air: number; rise: number; land: number } {
+  get weights(): { walk: number; run: number; sprint: number; air: number; rise: number; land: number } {
     return {
       walk: this.walkWeight,
       run: this.runWeight,
+      sprint: this.sprintWeight,
       air: this.airWeight,
       rise: this.riseWeight,
       land: this.landWeight,

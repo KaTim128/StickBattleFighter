@@ -145,6 +145,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/quick-dodge-forward-back-side.png`, `docs/screenshots/settings-controls-conflict.png`.
 - [ ] Owner: feel of sprint, quick dodge and four-hit combo; settings layout; physical mouse right click in your browser.
 
+## 0za. Running and sprinting (verified 11/11/2026)
+- [x] `npm test`: run and sprint have a flight phase, heel kick, knee drive and arm pump, never lock the knees; sprint leans harder, strides longer and blends in at sprint speed; feet keep pace with the ground.
+- [x] V `docs/screenshots/run-sprint-cycle.png`, `docs/screenshots/sprint-in-game.png`.
+- [ ] Owner: run and sprint feel in the browser.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

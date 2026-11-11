@@ -211,29 +211,134 @@ export function walkPose(phase: number, bones: BoneLengths): Pose {
   });
 }
 
+/** A running stride's shape (run and sprint share the cycle, with different strength). */
+interface RunStyle {
+  /** Hip height at mid-stance and how far it rises into the flight, metres. */
+  pelvisM: number;
+  bob: number;
+  /** Where the foot lands ahead of the hips and where it pushes off behind, metres. */
+  reachM: number;
+  pushM: number;
+  /** Fraction of each leg's cycle spent on the ground (under 0.5 leaves a flight phase). */
+  stance: number;
+  /** How high the swinging foot rises: heel kicked up behind, then the knee driven through. */
+  swingLiftM: number;
+  lean: number;
+  /** Extra forward lean at push-off, degrees. */
+  drive: number;
+  head: number;
+  /**
+   * The arm pump as joint angles, degrees (shoulder from straight down, + forward; elbow bend):
+   * in front the fist drives up towards the chin, behind the elbow drives back past the hip.
+   */
+  pumpFront: { shoulder: number; elbow: number };
+  pumpBack: { shoulder: number; elbow: number };
+}
+
+const smooth = (u: number): number => {
+  const c = Math.min(1, Math.max(0, u));
+  return c * c * (3 - 2 * c);
+};
+
 /**
- * POWER RUN: driving from the chest (a firm forward lean, head up), high
- * knees, long bounding strides, and a strong elbows-bent arm drive with the
- * fists punching up to chin height and back past the hip.
+ * One leg through a running cycle, `q` 0..1 from foot strike: on the ground the foot sweeps
+ * back under the hips to push off behind; in the air the heel kicks up towards the seat, the
+ * knee drives forward high, and the foot reaches out ahead to land. Returns the foot's
+ * position ahead of the hips and its height off the ground.
  */
+function runFoot(q: number, r: RunStyle): { x: number; lift: number } {
+  if (q < r.stance) {
+    const u = q / r.stance;
+    return { x: r.reachM - (r.reachM + r.pushM) * u, lift: 0 };
+  }
+  const u = (q - r.stance) / (1 - r.stance);
+  // The foot lingers behind as the heel folds up, then whips through and forward.
+  const x = -r.pushM + (r.reachM + r.pushM) * smooth((u - 0.12) / 0.78);
+  // Lifts straight off the ground after toe-off (heel kicked up behind), then drops to land.
+  const lift = r.swingLiftM * Math.sin(Math.PI * u ** 0.7);
+  return { x, lift };
+}
+
+/**
+ * RUNNING CYCLE (owner, 11/11/2026: "it should have a better running movement", not a sped-up
+ * walk): foot strike ahead, push-off behind, a flight phase with both feet off the ground, the
+ * heel kicked up behind and the knee driven high, the chest leaning into it with an extra push
+ * at each drive, and a strong elbows-bent arm pump (fists to the chin in front, past the hip
+ * behind), each arm opposite its leg. Phase 0.25 = lead foot striking (matches the walk).
+ */
+function runningPose(phase: number, bones: BoneLengths, r: RunStyle): Pose {
+  const q = (((phase - 0.25) % 1) + 1) % 1; // lead leg: 0 at its foot strike
+  const lead = runFoot(q, r);
+  const rear = runFoot((q + 0.5) % 1, r);
+  // Hips lowest mid-stance, highest mid-flight (twice per cycle).
+  const pelvisM = r.pelvisM + r.bob * (1 - Math.cos(TAU * 2 * (q - r.stance / 2))) * 0.5;
+  // Push-off (late stance) leans the chest into the stride.
+  const pushing = (k: number) => (k < r.stance ? smooth(k / r.stance) * (1 - smooth((k - r.stance * 0.85) / 0.1)) : 0);
+  const drive = Math.max(pushing(q), pushing((q + 0.5) % 1));
+  // Arm pump: the lead fist is back when the lead foot strikes, forward when the rear foot does.
+  const pump = (k: number) => smooth(0.5 - 0.5 * Math.cos(TAU * k));
+  const arm = (k: number) => {
+    const t = pump(k);
+    return {
+      root: deg(r.pumpBack.shoulder + (r.pumpFront.shoulder - r.pumpBack.shoulder) * t),
+      bend: deg(r.pumpBack.elbow + (r.pumpFront.elbow - r.pumpBack.elbow) * t),
+    };
+  };
+  return {
+    lean: deg(r.lean - r.drive * drive),
+    head: deg(r.head),
+    armFront: arm(q),
+    armBack: arm((q + 0.5) % 1),
+    legFront: legIk(lead.x, pelvisM - lead.lift, bones.thigh, bones.shin),
+    legBack: legIk(rear.x, pelvisM - rear.lift, bones.thigh, bones.shin),
+    // The solver grounds the lowest foot; give back its real height so the flight shows.
+    liftM: Math.min(lead.lift, rear.lift),
+  };
+}
+
+const RUN: RunStyle = {
+  pelvisM: 0.665,
+  bob: 0.035,
+  reachM: 0.34,
+  pushM: 0.36,
+  stance: 0.38,
+  swingLiftM: 0.42,
+  lean: -11,
+  drive: 4,
+  head: 5,
+  pumpFront: { shoulder: 62, elbow: 105 },
+  pumpBack: { shoulder: -38, elbow: 80 },
+};
+
+/** Sprinting (hold Shift): lower and leaning harder, longer bounding strides, heels kicked high, a bigger pump. */
+const SPRINT_STYLE: RunStyle = {
+  pelvisM: 0.65,
+  bob: 0.045,
+  reachM: 0.34,
+  pushM: 0.38,
+  stance: 0.32,
+  swingLiftM: 0.5,
+  lean: -15,
+  drive: 5,
+  head: 7,
+  pumpFront: { shoulder: 75, elbow: 100 },
+  pumpBack: { shoulder: -50, elbow: 85 },
+};
+
+/** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths): Pose {
-  return gaitPose(phase, bones, {
-    pelvisM: 0.71,
-    bob: 0.04,
-    leadX: 0.04,
-    rearX: -0.04,
-    reach: 0.35,
-    lift: 0.24,
-    lean: -13,
-    sway: 3,
-    head: 6,
-    arms: { lead: { x: 0.1, y: 0.28 }, rear: { x: 0.06, y: 0.3 }, swingX: 0.29, swingY: 0.12 },
-  });
+  return runningPose(phase, bones, RUN);
+}
+
+/** SPRINT: the running cycle at full effort. */
+export function sprintPose(phase: number, bones: BoneLengths): Pose {
+  return runningPose(phase, bones, SPRINT_STYLE);
 }
 
 /** Distance (m) covered by one walk cycle (two steps) and one run cycle. */
 export const WALK_STRIDE_M = 1.1;
 export const RUN_STRIDE_M = 2.2;
+export const SPRINT_STRIDE_M = 3.0;
 /** Walking blends into running between these speeds, m/s. */
 export const RUN_FROM_MPS = 2.6;
 export const RUN_FULL_MPS = 4.2;
@@ -243,9 +348,19 @@ export function runAmount(speedMps: number): number {
   return Math.min(1, Math.max(0, (speedMps - RUN_FROM_MPS) / (RUN_FULL_MPS - RUN_FROM_MPS)));
 }
 
-/** Distance per gait cycle at this speed (walk stride blending into run stride). */
+/** Running blends into sprinting between these speeds, m/s (sprint tops out near 7.3 m/s). */
+export const SPRINT_FROM_MPS = 5.3;
+export const SPRINT_FULL_MPS = 6.8;
+
+/** 0 = running, 1 = sprinting, by ground speed. */
+export function sprintAmount(speedMps: number): number {
+  return Math.min(1, Math.max(0, (speedMps - SPRINT_FROM_MPS) / (SPRINT_FULL_MPS - SPRINT_FROM_MPS)));
+}
+
+/** Distance per gait cycle at this speed (walk stride into run stride into sprint stride). */
 export function strideAt(speedMps: number): number {
-  return WALK_STRIDE_M + (RUN_STRIDE_M - WALK_STRIDE_M) * runAmount(speedMps);
+  const run = WALK_STRIDE_M + (RUN_STRIDE_M - WALK_STRIDE_M) * runAmount(speedMps);
+  return run + (SPRINT_STRIDE_M - RUN_STRIDE_M) * sprintAmount(speedMps);
 }
 
 /**

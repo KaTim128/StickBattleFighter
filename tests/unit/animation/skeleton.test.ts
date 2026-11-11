@@ -7,6 +7,7 @@ import {
   BOXER_STANCE,
   idlePose,
   runPose,
+  sprintPose,
   stanceFor,
   strideAt,
   walkPose,
@@ -114,6 +115,38 @@ describe('jointed skeleton (REQ-ANI-6)', () => {
     }
   });
 
+  it('running is a real run, not a fast walk (owner, 11/11/2026): flight phase, heel kick, knee drive, arm pump', () => {
+    for (const gait of [runPose, sprintPose]) {
+      const frames = Array.from({ length: 80 }, (_, i) => solveSkeleton(gait(i / 80, BONES), BONES));
+      // A flight phase: some frames have both feet off the floor.
+      expect(frames.some((s) => Math.max(s.legFront[2].y, s.legBack[2].y) < -0.015)).toBe(true);
+      // Heel kick: the swinging foot rises well up behind the hips.
+      expect(frames.some((s) => s.legBack[2].x < s.pelvis.x - 0.1 && s.legBack[2].y < -0.3)).toBe(true);
+      // Knee drive: the swinging thigh comes up towards horizontal in front.
+      expect(frames.some((s) => s.legFront[1].x > s.pelvis.x + 0.25 && s.legFront[1].y < s.pelvis.y + 0.2)).toBe(true);
+      // Arm pump: the fist drives up near the chin in front; behind, the elbow drives back past the hip.
+      expect(frames.some((s) => s.armFront[2].x > s.chest.x + 0.12 && s.armFront[2].y < s.chest.y + 0.05)).toBe(true);
+      expect(frames.some((s) => s.armFront[1].x < s.pelvis.x - 0.05)).toBe(true);
+      for (const s of frames) {
+        for (const [hip, , foot] of [s.legFront, s.legBack]) {
+          expect(Math.hypot(foot.x - hip.x, foot.y - hip.y)).toBeLessThan(BONES.thigh + BONES.shin - 0.012); // no locked knees
+        }
+      }
+    }
+  });
+
+  it('sprinting leans harder and strides longer than running; the animator blends into it at sprint speed', () => {
+    expect(sprintPose(0, BONES).lean).toBeLessThan(runPose(0, BONES).lean);
+    expect(strideAt(7)).toBeGreaterThan(strideAt(5) + 0.5);
+    const anim = new StickmanAnimator(BONES);
+    const settle = (speedMps: number) => {
+      for (let i = 0; i < 90; i++) anim.update(1 / 60, { speedMps, maxSpeedMps: 7.25, heightM: 0, peakHeightM: 0.4 });
+      return anim.weights;
+    };
+    expect(settle(5).sprint).toBeLessThan(0.05); // normal top speed: a run
+    expect(settle(7.2).sprint).toBeGreaterThan(0.9); // holding sprint
+  });
+
   it('idle is a wide, low, planted stance: both feet on the floor about 0.74 m apart, knees bent', () => {
     for (const t of [0, 0.1, 0.2, 0.3, 0.4]) {
       const s = solveSkeleton(idlePose(t, BONES), BONES);
@@ -214,7 +247,7 @@ describe('StickmanAnimator', () => {
         a.update(1 / 60, m);
         b.update(1 / 60, m);
       }
-      for (let i = 0; i < Math.round((strideAt(speedMps) / speedMps) * 60); i++) b.update(1 / 60, m);
+      b.update(strideAt(speedMps) / speedMps, m); // exactly one stride's time (whole frames would round it off)
       expect(b.update(0, m).legFront.root).toBeCloseTo(a.update(0, m).legFront.root, 1);
     }
     expect(strideAt(5)).toBeGreaterThan(strideAt(1.5)); // running covers more ground per cycle

@@ -22,6 +22,11 @@ export interface Pose {
   armBack: Limb;
   legFront: Limb;
   legBack: Limb;
+  /**
+   * Raise the whole figure this far after its lowest foot is put on the floor, metres: the
+   * flight phase of a run, when both feet are off the ground (owner, 11/11/2026). Default 0.
+   */
+  liftM?: number;
 }
 
 export interface BoneLengths {
@@ -89,7 +94,7 @@ export function solveSkeleton(pose: Pose, bones: BoneLengths): SolvedSkeleton {
     legBack: leg(pose.legBack),
   };
 
-  const lowestFoot = Math.max(solved.legFront[2].y, solved.legBack[2].y);
+  const lowestFoot = Math.max(solved.legFront[2].y, solved.legBack[2].y) + (pose.liftM ?? 0);
   const lift = (p: Point): void => {
     p.y -= lowestFoot;
   };
@@ -113,6 +118,7 @@ export function blendPose(a: Pose, b: Pose, t: number): Pose {
     armBack: limb(a.armBack, b.armBack),
     legFront: limb(a.legFront, b.legFront),
     legBack: limb(a.legBack, b.legBack),
+    ...(a.liftM || b.liftM ? { liftM: m(a.liftM ?? 0, b.liftM ?? 0) } : {}),
   };
 }
 

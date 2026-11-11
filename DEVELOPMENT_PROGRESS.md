@@ -339,6 +339,9 @@ The default stickman's roll now turns about the tucked body's centre while its l
 - **Limitation:** there is no main menu yet, so Settings opens in game only. Not checked on a real phone or with a physical mouse (headless Chromium only).
 - **Next task:** owner playtest of the new controls, then Phase 8 (first polished fighter).
 
+### 11/11/2026: Real running and sprinting (owner request)
+The run was the walk's sine stride made bigger. It is now its own cycle (`runningPose` in `src/animation/greybox-motion.ts`): foot strike ahead, push-off behind, a flight phase (new optional `Pose.liftM` keeps the body up while both feet are off the floor), heel kick, knee drive, a lean that pushes at each drive, and an elbows-bent arm pump set by joint angles. A sprint style blends in from 5.3 to 6.8 m/s (sprint reaches 7.25 m/s), with stride 3.0 m. **Tests:** new flight, heel-kick, knee-drive, arm-pump, no-locked-knee and sprint-blend checks. The stride-timing test now steps exactly one stride's time instead of whole frames: the frame rounding error was larger than its tolerance once the run's legs moved faster. **Evidence:** lint clean; typecheck 0; `npm test` 282/282; in-game sprint at 7.25 m/s with no console errors; `docs/screenshots/run-sprint-cycle.png`, `docs/screenshots/sprint-in-game.png`. **Next task:** finish the Fireball (TD-050).
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
