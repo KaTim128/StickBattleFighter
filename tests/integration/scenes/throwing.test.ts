@@ -29,10 +29,10 @@ const ROOM: ArenaLayout = {
   dummyStart: { x: 8.5, y: 4 },
 };
 
-async function setup(arena: ArenaLayout = ROOM) {
+async function setup(arena: ArenaLayout = ROOM, player = 'base-stickman') {
   const intents = new PlayerIntents();
   const scene = new FightArenaScene(arena, new Container(), intents, () => ({ width: 1280, height: 720 }), false, {
-    player: 'base-stickman',
+    player,
   });
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
@@ -149,6 +149,65 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
     run(0.15);
     intents.interactRelease();
     expect(scene.player.airborne).toBe(true);
+    scenes.clear();
+  });
+
+  it('each fighter lifts up to its own limit (Stats Profile objects.maxLiftKg, Phase 7 slice 2)', async () => {
+    const { scene, scenes, run } = await setup();
+    run(0.1);
+    expect(scene.player.utility).toBe('pickup'); // a 12 kg chair: fine for the default 15 kg limit
+    Object.assign(scene.playerFighter.def.objects, { maxLiftKg: 5 });
+    expect(scene.player.utility).toBe('jump'); // too heavy now
+    scenes.clear();
+  });
+
+  it('while carrying, the aim indicator points at the target and lands within the throw range', async () => {
+    const { scene, scenes, run, tap } = await setup();
+    run(0.1);
+    tap();
+    const aim = scene.throwAim!;
+    expect(aim).not.toBeNull();
+    const toDummy = Math.atan2(scene.dummy.y - aim.from.y, scene.dummy.x - aim.from.x);
+    const toLanding = Math.atan2(aim.to.y - aim.from.y, aim.to.x - aim.from.x);
+    expect(Math.abs(toDummy - toLanding)).toBeLessThan(0.05);
+    const reach = Math.hypot(aim.to.x - aim.from.x, aim.to.y - aim.from.y);
+    expect(reach).toBeGreaterThan(3);
+    expect(reach).toBeLessThan(12);
+    scenes.clear();
+  });
+
+  it("Inferno's throws catch fire: the chair hits the dummy and sets it alight", async () => {
+    const { scene, scenes, run, runUntil, tap } = await setup(ROOM, 'inferno');
+    run(0.1);
+    tap();
+    tap();
+    runUntil(() => scene.dummy.hp < 1000, 2);
+    expect(scene.dummy.hp).toBeLessThan(1000);
+    expect(scene.dummy.burning).toBe(true);
+    scenes.clear();
+  });
+
+  it('a fire extinguisher bursts into foam when it breaks', async () => {
+    const { scene, scenes, run, tap, runUntil } = await setup({
+      ...ROOM,
+      props: [{ kind: 'fire-extinguisher', x: 4.0, y: 4 }],
+      dummyStart: { x: 1, y: 1 },
+    });
+    run(0.1);
+    tap(); // pick it up
+    expect(scene.player.carrying).toBe('fire-extinguisher');
+    scene.drainSounds();
+    tap(); // throw it into the far wall (it is metal: it may need more than one landing)
+    const broke = () => scene.propStates.find((p) => p.kind === 'fire-extinguisher')!.broken;
+    runUntil(broke, 3);
+    // Not every throw breaks steel; hit it until it does.
+    for (let i = 0; i < 12 && !broke(); i++) {
+      scene.props!.hitWhere(() => true, { blow: 'kick', damage: 60, strength: 200, direction: { x: 1, y: 0 } });
+      run(0.05);
+    }
+    expect(broke()).toBe(true);
+    run(0.1);
+    expect(scene.drainSounds()).toContain('foam-burst');
     scenes.clear();
   });
 });

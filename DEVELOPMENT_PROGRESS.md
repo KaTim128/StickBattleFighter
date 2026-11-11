@@ -318,6 +318,9 @@ The whole game is now drawn in the approved 2.5D style over the unchanged top-do
 ### 11/11/2026: Dodge button, character dodges, tough metal (owner request)
 Touch DODGE button with a refilling cooldown; cooldown by body weight; the default stickman rolls backwards and Inferno bursts into a flame (data: Animation Profile `Dodge`); metal takes 45% damage (TD-046, REQ-CTL-16, REQ-PHY-6c). **Evidence:** lint clean; typecheck 0; `npm test` 256/256; `npm run e2e` 27/27; frames. One touch-ultimate e2e wait got more headroom (it flaked only under full parallel load; passes ×3 alone).
 
+### 11/11/2026: Phase 7 slice 2 — throwables, aim indicator, fighter object styles
+Books, staplers, bottles and paper stacks on every desk; fire extinguishers (foam burst); a throw arc and landing ring while carrying; per-fighter lifting limit, throw power and fire throws (Inferno) as Stats Profile data (TD-047, REQ-PHY-9b). **Evidence:** lint clean; typecheck 0; `npm test` 261/261; `npm run e2e` 27/27; screenshots. **Phase 7 status:** objects can be picked up, carried, aimed, thrown, collide, bounce, break by material, and fighters handle them their own way; AI object use waits for Phase 10. **Next task:** Phase 8 (first polished fighter: Inferno to the full quality bar), or the owner's phone check first.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

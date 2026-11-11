@@ -8,6 +8,7 @@ import type {
   Capabilities,
   EffectsProfile,
   MoveInput,
+  ObjectHandling,
   StatsProfile,
 } from '../../characters/schema';
 import type { AttackDef } from '../../combat/attacks';
@@ -38,6 +39,8 @@ export interface FighterDef {
   };
   readonly stats: CombatStats;
   readonly multipliers: StatsProfile['multipliers'];
+  /** How this fighter lifts and throws objects (Phase 7). */
+  readonly objects: ObjectHandling;
   /** Available moves by id (after capability filtering and multipliers). */
   readonly moves: Readonly<Record<string, AttackDef>>;
   /** Same as `moves` (kept for older call sites and tests). */

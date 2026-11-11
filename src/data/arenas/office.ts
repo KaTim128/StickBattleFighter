@@ -125,6 +125,9 @@ function cubicle(cx: number, x0: number, s: 1 | -1, index: number): PropPlacemen
     { kind: 'cubicle-panel', x: x0 + PAIR_W, y: MID_Y + s * (CUBE_D / 2), rotated: true, w: CUBE_D - 0.1 },
   ];
   if (index % 3 === 1) parts.push(onDesk('coffee-cup', deskX - 0.65, deskY + s * 0.1, deskFront, 4));
+  // Something else to grab and throw on every desk (Phase 7, REQ-PHY-9), varied along the row.
+  const extra = (['book', 'stapler', 'water-bottle', 'paper-stack'] as const)[index % 4]!;
+  parts.push(onDesk(extra, deskX + 0.55, deskY - s * 0.12, deskFront, 5));
   return parts;
 }
 
@@ -157,6 +160,7 @@ const MAIN_EXTRAS: PropPlacement[] = [
   { kind: 'cabinet', x: 2.6, y: 0.35 },
   { kind: 'cabinet', x: 3.55, y: 0.35 },
   { kind: 'cabinet', x: 4.5, y: 0.35 },
+  { kind: 'fire-extinguisher', x: 5.3, y: 0.25 },
   { kind: 'bookshelf', x: 6.6, y: 0.25 },
   { kind: 'printer', x: 8.6, y: 0.35 },
   { kind: 'bin', x: 9.35, y: 0.3 },
@@ -175,6 +179,7 @@ const MAIN_EXTRAS: PropPlacement[] = [
   { kind: 'phone-booth', x: 3.3, y: HEIGHT - 0.52 },
   { kind: 'cabinet', x: 5.1, y: HEIGHT - 0.35 },
   { kind: 'cabinet', x: 6.05, y: HEIGHT - 0.35 },
+  { kind: 'fire-extinguisher', x: 7.0, y: HEIGHT - 0.25 },
   { kind: 'bookshelf', x: 8.2, y: HEIGHT - 0.25 },
   { kind: 'printer', x: 10.4, y: HEIGHT - 0.35 },
   { kind: 'bin', x: 11.15, y: HEIGHT - 0.3 },
@@ -214,6 +219,7 @@ const BOSS_ROOM: PropPlacement[] = [
   { kind: 'bookshelf', x: 25.8, y: 0.25 },
   { kind: 'bookshelf', x: 27.9, y: 0.25 },
   { kind: 'plant', x: WIDTH - 0.6, y: 0.7 },
+  { kind: 'fire-extinguisher', x: WIDTH - 0.25, y: 4.6 },
   { kind: 'cabinet', x: WIDTH - 0.32, y: 5.6, rotated: true },
   { kind: 'cabinet', x: WIDTH - 0.32, y: 6.6, rotated: true },
   besideWall('plant', 2.6, 1),

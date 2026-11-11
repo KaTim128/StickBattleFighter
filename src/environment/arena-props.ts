@@ -57,6 +57,8 @@ export interface PropEvent {
   readonly dir: Vec2;
   /** Rough size of the prop, metres (bigger props make bigger bursts). */
   readonly sizeM: number;
+  /** Which kind of prop (special breaks, e.g. an extinguisher bursts into foam). */
+  readonly prop?: string;
 }
 
 export interface PropState {
@@ -132,6 +134,8 @@ const BREAKUP: Record<
   stone: { min: 4, max: 7, speed: 0.8, shape: 'rect', size: (_w, _d, i) => ({ x: 0.09 + (i % 2) * 0.04, y: 0.07 }) },
 };
 const BURN_S = 5;
+/** A fire thrower's object burns this long (visible flames in flight; flammable ones keep burning). */
+const FIRE_THROW_BURN_S = 1.5;
 
 export const MATERIAL_COLOURS: Record<Material, number> = {
   wood: 0x9c7446,
@@ -157,7 +161,7 @@ export class ArenaProp {
   held: { x: number; y: number; heightM: number } | null = null;
   carrier: number | null = null;
   /** In flight after a throw: who threw it and which fighters it has already hit. */
-  flight: { by: number; hit: Set<number> } | null = null;
+  flight: { by: number; hit: Set<number>; power: number; fire: boolean } | null = null;
   /** Currently flying above furniture height (passes over desks and chairs). */
   flyingHigh = false;
   private settleS = 0;
@@ -343,11 +347,14 @@ export class ArenaProps {
     aim: { readonly x: number; readonly y: number },
     reachM: number,
     behindM: number,
+    /** The fighter's lifting limit (Stats Profile `objects.maxLiftKg`). */
+    maxLiftKg = Number.POSITIVE_INFINITY,
   ): ArenaProp | null {
     let best: ArenaProp | null = null;
     let bestD = Number.POSITIVE_INFINITY;
     for (const prop of this.props) {
       if (!prop.kind.throwable || prop.broken || prop.held || prop.flight || prop.kind.decal) continue;
+      if (prop.kind.massKg > maxLiftKg) continue;
       const loose = prop.looseFall;
       if (loose && (loose.heightM > 0 || (prop.body && Math.hypot(prop.body.linvel().x, prop.body.linvel().y) > 0.5)))
         continue;
@@ -386,7 +393,14 @@ export class ArenaProps {
    * Let go of it: thrown (a flight that can hit fighters) or put down (`velocity` near zero).
    * It flies as a physical body that bounces off walls and furniture, under a height arc.
    */
-  release(prop: ArenaProp, velocity: Vec2, heightM: number, upMps: number, thrown: boolean): void {
+  release(
+    prop: ArenaProp,
+    velocity: Vec2,
+    heightM: number,
+    upMps: number,
+    thrown: boolean,
+    style: { power: number; fire: boolean } = { power: 1, fire: false },
+  ): void {
     const from = prop.held;
     if (!from) return;
     const { w, d } = prop.size;
@@ -402,7 +416,12 @@ export class ArenaProps {
     if (thrown) prop.body.setLinearDamping(0.15);
     prop.looseFall = { heightM, vz: upMps };
     prop.flyingHigh = false; // set on the next update from the height
-    prop.flight = thrown && prop.carrier !== null ? { by: prop.carrier, hit: new Set() } : null;
+    prop.flight =
+      thrown && prop.carrier !== null
+        ? { by: prop.carrier, hit: new Set(), power: style.power, fire: style.fire }
+        : null;
+    // A fire thrower's throw catches alight (flammable things keep burning after it lands).
+    if (thrown && style.fire) prop.burnS = Math.max(prop.burnS, FIRE_THROW_BURN_S);
     prop.carrier = null;
   }
 
@@ -417,7 +436,13 @@ export class ArenaProps {
    */
   thrownHit(prop: ArenaProp, fighterId: number, damage: number, dir: Vec2): boolean {
     prop.flight?.hit.add(fighterId);
-    const broke = this.applyHit(prop, { blow: 'knockback', damage, strength: 0, direction: dir });
+    const broke = this.applyHit(prop, {
+      blow: 'knockback',
+      damage,
+      strength: 0,
+      direction: dir,
+      ignites: prop.flight?.fire ?? false,
+    });
     const body = prop.body;
     if (!broke && body) {
       const v = body.linvel();
@@ -508,6 +533,7 @@ export class ArenaProps {
       if (prop.hp === 0) {
         this.pending.push({
           kind: 'break',
+          prop: prop.placement.kind,
           material: prop.kind.material,
           ...evAt(),
           dir: hit.direction,

@@ -197,10 +197,16 @@ export class PhysicsWorld {
    * First wall, door or furniture collider along a segment (fighters and debris
    * are ignored): the fraction 0..1 along it and the body hit, or null if clear.
    */
-  castWorldRay(from: Vec2, to: Vec2): { fraction: number; body: RapierModule.RigidBody | null } | null {
+  castWorldRay(
+    from: Vec2,
+    to: Vec2,
+    /** False: only walls and doors stop it (a throw flies over furniture). */
+    furniture = true,
+  ): { fraction: number; body: RapierModule.RigidBody | null } | null {
     const RAPIER = rapier();
     const ray = new RAPIER.Ray(from, { x: to.x - from.x, y: to.y - from.y });
-    const hit = this.world.castRay(ray, 1, true, undefined, groups(0xffff, GROUP.WORLD | GROUP.FURNITURE));
+    const filter = GROUP.WORLD | (furniture ? GROUP.FURNITURE : 0);
+    const hit = this.world.castRay(ray, 1, true, undefined, groups(0xffff, filter));
     if (!hit) return null;
     return { fraction: hit.timeOfImpact, body: hit.collider.parent() };
   }

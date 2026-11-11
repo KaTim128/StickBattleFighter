@@ -344,6 +344,12 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Toughness:** `MATERIAL_TOUGHNESS` in `src/data/objects/props.ts` scales the durability damage a prop takes (metal 0.45, stone 0.6, others 1). Durability values are unchanged; metal simply resists.
 - **Alternatives:** raising every metal durability (rejected: easy to miss new metal props; toughness applies to all of them).
 
+### TD-047: Phase 7 slice 2 — throwables, aim indicator, per-fighter object handling — ACCEPTED (11/11/2026)
+- **Data:** new prop kinds `book`, `stapler`, `water-bottle`, `paper-stack` (desk items) and `fire-extinguisher` (floor, solid, metal). Stats Profile `objects?: { maxLiftKg, throwPower, ignitesThrown }` (defaults 15 kg, ×1, false; limits validated); resolved into `FighterDef.objects`. Inferno: 15 kg, ×1.1, fire.
+- **Behaviour:** pickup skips objects heavier than the fighter can lift; throw speed × √power, impact damage × power; a fire throw sets the object burning (flames drawn on the object in the air), its hits burn the target (12 dps for 2 s) and ignite flammable props. A broken extinguisher plays `foam-burst` and releases a white foam cloud.
+- **Aim indicator:** `FightArenaScene.throwAim` predicts the landing point from the launch arc and throw speed, cut short only by walls and doors (`castWorldRay(…, furniture = false)`), drawn with the ultimate's arc renderer (no range ring).
+- **Not yet:** AI using objects (Phase 10); further roster styles (Titan heavy lifts, Shadowfang rapid light throws) arrive with those fighters (Phase 9) through the same `objects` data.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

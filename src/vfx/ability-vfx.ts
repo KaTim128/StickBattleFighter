@@ -15,6 +15,8 @@ export interface BurningThing {
   readonly y: number;
   /** Height of the flames' top above the floor, metres. */
   readonly heightM: number;
+  /** Height the flames start from (a burning object in the air); default the floor. */
+  readonly baseM?: number;
 }
 
 /** A blow landing (melee or ability): sparks fly along the blow and a burst ring pops. */
@@ -392,7 +394,8 @@ export class AbilityVfx {
     if (input.aim) {
       const a = input.aim;
       const pulse = 0.6 + 0.4 * Math.sin(t * 9);
-      f.circle(a.from.x, a.from.y, a.maxRangeM).stroke({ width: 0.05, color: 0xffd23f, alpha: 0.35 });
+      if (a.maxRangeM > 0)
+        f.circle(a.from.x, a.from.y, a.maxRangeM).stroke({ width: 0.05, color: 0xffd23f, alpha: 0.35 });
       const n = 12;
       for (let i = 1; i < n; i++) {
         const k = i / n;
@@ -472,8 +475,9 @@ export class AbilityVfx {
 
     // Flames on burning fighters and furniture.
     for (const b of input.burning) {
-      const base = P(b.x, b.y);
-      this.flame(g, base.x, base.y, 0.35, b.heightM, t + b.x * 3);
+      const z0 = b.baseM ?? 0;
+      const base = P(b.x, b.y, z0);
+      this.flame(g, base.x, base.y, 0.35, b.heightM - z0, t + b.x * 3);
     }
 
     for (const p of this.particles) {

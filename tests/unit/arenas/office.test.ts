@@ -187,3 +187,13 @@ describe('office zones', () => {
     expect(OFFICE.heightM).toBeLessThanOrEqual(12);
   });
 });
+
+describe('Phase 7 throwables in the office (REQ-PHY-9)', () => {
+  it('every cubicle desk has something extra to grab, and extinguishers stand by the walls', () => {
+    const desks = OFFICE.props.filter((p) => p.kind === 'desk');
+    const extras = OFFICE.props.filter((p) => ['book', 'stapler', 'water-bottle', 'paper-stack'].includes(p.kind));
+    expect(extras.length).toBe(desks.length);
+    for (const e of extras) expect(PROP_KINDS[e.kind].throwable).toBe(true);
+    expect(OFFICE.props.filter((p) => p.kind === 'fire-extinguisher').length).toBeGreaterThanOrEqual(3);
+  });
+});

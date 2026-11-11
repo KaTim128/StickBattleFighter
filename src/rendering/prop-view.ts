@@ -297,6 +297,41 @@ export function buildPropView(p: PropPlacement): Container {
       isoBlock(g, x0 + 0.3, y0 + 0.24, x0 + 0.62, y0 + 0.36, 0.5, 0.76, { colour: 0xe2643a, noAo: true });
       break;
     }
+    case 'book': {
+      const covers = [0xc0504d, 0x3e6e9e, 0x5b8c5a, 0x7d5ba6];
+      isoBlock(g, x0, y0, x1, y1, z, z + h, {
+        colour: covers[Math.round(p.x * 7 + p.y * 3) % covers.length]!,
+        noAo: true,
+      });
+      faceQuad(g, face.left(y1), x0 + 0.01, z + 0.008, x1 - 0.02, z + h - 0.008).fill(0xf4efe2); // pages
+      break;
+    }
+    case 'stapler':
+      isoBlock(g, x0, y0, x1, y1, z, z + 0.025, { colour: 0x2b2d33, noAo: true });
+      isoBlock(g, x0, y0, x1 - 0.02, y1, z + 0.03, z + h, { colour: 0xd23b3b, noAo: true });
+      break;
+    case 'water-bottle':
+      isoCylinder(g, 0, 0, z, 0.04, h - 0.04, 0x6fc0f0, 0.8);
+      isoCylinder(g, 0, 0, z + h - 0.04, 0.02, 0.04, 0x2b6fb0);
+      break;
+    case 'paper-stack': {
+      isoBlock(g, x0, y0, x1, y1, z, z + h, { colour: 0xf4f2ec, noAo: true });
+      for (let i = 1; i < 4; i++)
+        faceQuad(g, face.left(y1), x0, z + (h * i) / 4, x1, z + (h * i) / 4 + 0.004).fill(0xd8d4c8);
+      break;
+    }
+    case 'fire-extinguisher': {
+      isoCylinder(g, 0, 0, 0, 0.09, 0.46, 0xd42a2a);
+      isoCylinder(g, 0, 0, 0.46, 0.04, 0.05, 0x2b2d33);
+      const top = iso(0, 0, 0.53);
+      const nozzle = iso(0.06, 0.12, 0.3);
+      g.moveTo(top.x, top.y)
+        .quadraticCurveTo(top.x + 0.14, top.y + 0.08, nozzle.x, nozzle.y)
+        .stroke({ width: 0.025, color: 0x1d1f24 });
+      g.rect(top.x - 0.07, top.y - 0.03, 0.14, 0.025).fill(0xc9ccd2); // handle
+      faceQuad(g, face.left(0.09), -0.06, 0.2, 0.06, 0.32).fill(0xf2efe9); // label
+      break;
+    }
     case 'rug':
       break;
     default: {

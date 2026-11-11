@@ -116,6 +116,10 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
     num(`${s}.critMultiplier`, stats.critMultiplier, 'critMultiplier');
     num(`${s}.knockbackResistance`, stats.knockbackResistance, 'knockbackResistance');
     num(`${s}.hitStunResistance`, stats.hitStunResistance, 'hitStunResistance');
+    if (stats.objects) {
+      num(`${s}.objects.maxLiftKg`, stats.objects.maxLiftKg, 'maxLiftKg');
+      num(`${s}.objects.throwPower`, stats.objects.throwPower, 'throwPower');
+    }
     for (const [k, v] of Object.entries(stats.multipliers ?? {})) num(`${s}.multipliers.${k}`, v, 'multiplier');
   }
 

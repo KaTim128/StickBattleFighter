@@ -191,7 +191,23 @@ export interface StatsProfile {
   };
   /** 0..1: shortens hit stun. */
   readonly hitStunResistance: number;
+  /**
+   * Handling objects (Phase 7, spec §6.3 and §8: each fighter interacts with objects its own way):
+   * the heaviest thing it can lift, how hard it throws, and whether what it throws catches fire.
+   * Optional; defaults: 15 kg, ×1, no fire.
+   */
+  readonly objects?: ObjectHandling;
 }
+
+export interface ObjectHandling {
+  readonly maxLiftKg: number;
+  /** Multiplies throw speed (square root) and impact damage. */
+  readonly throwPower: number;
+  /** Thrown objects burst into flame: flammable ones burn, hits set the target alight. */
+  readonly ignitesThrown?: boolean;
+}
+
+export const DEFAULT_OBJECT_HANDLING: ObjectHandling = { maxLiftKg: 15, throwPower: 1, ignitesThrown: false };
 
 // ---------------------------------------------------------------- effects and audio
 
@@ -384,4 +400,6 @@ export const LIMITS = {
   shakeScale: [0, 3],
   hitstopScale: [0, 3],
   boneM: [0.02, 1.5],
+  maxLiftKg: [0, 500],
+  throwPower: [0.2, 3],
 } as const satisfies Record<string, readonly [number, number]>;

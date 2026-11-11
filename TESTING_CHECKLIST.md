@@ -127,6 +127,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Frames: `docs/screenshots/dodge-roll-and-flame.png`.
 - [ ] Owner: dodge feel on a phone; the roll and the flame.
 
+## 0x. Phase 7 slice 2 (verified 11/11/2026)
+- [x] `npm test`: **261 tests**. Lift limit (a 5 kg limit cannot lift a 12 kg chair); the aim indicator points at the target and lands within throw range; Inferno's thrown chair hits and sets the dummy alight; a broken extinguisher plays the foam sound; every desk has an extra throwable and extinguishers stand by the walls.
+- [x] `npm run e2e`: **27 passed**.
+- [x] V Screenshots: `docs/screenshots/throw-aim-indicator.png`, `docs/screenshots/fire-throw.png`.
+- [ ] Owner playtest: throw arc readability; fire throws; foam.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

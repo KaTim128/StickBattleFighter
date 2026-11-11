@@ -122,6 +122,8 @@ export interface DoorState {
 const KNOCK_FLIGHT_S = 0.8;
 /** Starting an attack turns toward an opponent within this distance (soft lock, TD-016). */
 const SOFT_LOCK_M = 2.8;
+/** A burning object thrown by a fire fighter sets whoever it hits alight (TD-047). */
+const THROWN_FIRE_BURN = { dps: 12, durationS: 2 } as const;
 /** While flying from a heavy knockback a fighter slides further before stopping. */
 const KNOCK_FLIGHT_DECEL = 9; // was 5: knockdowns slid 10 m+, too far for the compact office
 /** Knockback at or above this speed counts as heavy (door-smashing) knockback. */
@@ -619,14 +621,19 @@ export class FightArenaScene implements ArenaScene {
 
   private pickupFor(f: FighterEntity): ArenaProp | null {
     return (
-      this.props?.pickupCandidate(f.x, f.y, f.aim, THROWING.reachM + f.def.body.footRadiusM, THROWING.behindM) ?? null
+      this.props?.pickupCandidate(
+        f.x,
+        f.y,
+        f.aim,
+        THROWING.reachM + f.def.body.footRadiusM,
+        THROWING.behindM,
+        f.def.objects.maxLiftKg,
+      ) ?? null
     );
   }
 
-  /** Throw at the locked target if it is roughly ahead and in range, else the way the fighter faces or moves. */
-  private throwCarried(f: FighterEntity): void {
-    const prop = f.carrying;
-    if (!prop || !this.props) return;
+  /** Where a throw goes: the locked target if roughly ahead and in range, else the way the fighter moves or faces. */
+  private throwDir(f: FighterEntity): { x: number; y: number } {
     const target = this.fighters.find((o) => o !== f && !o.combatant.isKo);
     const m = this.intents.move;
     let dir = Math.hypot(m.x, m.y) > 0.3 ? { x: m.x, y: m.y } : { x: f.aim.x, y: f.aim.y };
@@ -637,19 +644,63 @@ export class FightArenaScene implements ArenaScene {
       if (d > 0.01 && d < THROWING.aimRangeM && (dx * f.aim.x + dy * f.aim.y) / d > -0.2) dir = { x: dx, y: dy };
     }
     const len = Math.hypot(dir.x, dir.y) || 1;
-    const speed = THROWING.speedFor(prop.kind.massKg);
+    return { x: dir.x / len, y: dir.y / len };
+  }
+
+  /** Throw speed for this fighter and object: lighter flies faster; throw power (data) adds. */
+  private throwSpeed(f: FighterEntity, prop: ArenaProp): number {
+    return THROWING.speedFor(prop.kind.massKg) * Math.sqrt(f.def.objects.throwPower);
+  }
+
+  /** Throw the carried object (TD-044) in the fighter's own style (TD-047: power, fire). */
+  private throwCarried(f: FighterEntity): void {
+    const prop = f.carrying;
+    if (!prop || !this.props) return;
+    const dir = this.throwDir(f);
+    const speed = this.throwSpeed(f, prop);
     f.faceToward(dir.x, dir.y);
+    const fire = !!f.def.objects.ignitesThrown && f.def.capabilities.usesFireEffects;
     this.props.release(
       prop,
-      { x: (dir.x / len) * speed, y: (dir.y / len) * speed },
+      { x: dir.x * speed, y: dir.y * speed },
       THROWING.launchHeightM,
       THROWING.launchUpMps,
       true,
+      {
+        power: f.def.objects.throwPower,
+        fire,
+      },
     );
     f.carrying = null;
     f.interactTracking = false;
     f.throwFollowS = 0.28;
     this.characterSound(f, 'jump', 0.8);
+    if (fire) this.queueSound('fire-whoosh', 0.8);
+  }
+
+  /**
+   * Where the carried object would land if thrown now (the aim indicator): the height arc's flight
+   * time times the throw speed, stopping short of walls and furniture.
+   */
+  get throwAim(): {
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    radiusM: number;
+    maxRangeM: number;
+  } | null {
+    const f = this.playerFighter;
+    const prop = f.carrying;
+    if (!prop || !this.physics) return null;
+    const dir = this.throwDir(f);
+    const g = THROWING.gravityMps2;
+    const up = THROWING.launchUpMps;
+    const airS = (up + Math.sqrt(up * up + 2 * g * THROWING.launchHeightM)) / g;
+    let range = this.throwSpeed(f, prop) * airS;
+    const from = { x: f.x, y: f.y };
+    // A throw flies over furniture, so only walls and doors cut the arc short.
+    const hit = this.physics.castWorldRay(from, { x: f.x + dir.x * range, y: f.y + dir.y * range }, false);
+    if (hit) range = Math.max(0.3, range * hit.fraction - 0.2);
+    return { from, to: { x: f.x + dir.x * range, y: f.y + dir.y * range }, radiusM: 0.45, maxRangeM: 0 };
   }
 
   /** Put it down in front (or let it fall when hit). */
@@ -685,8 +736,10 @@ export class FightArenaScene implements ArenaScene {
         const thrower = this.fighters[flight.by] ?? target;
         const mass = prop.kind.massKg;
         const dir = { x: v.x / speed, y: v.y / speed };
+        const fire = flight.fire;
         this.applyStrike(thrower, target, {
-          damage: THROWING.damageFor(mass, speed),
+          damage: THROWING.damageFor(mass, speed) * flight.power,
+          burn: fire ? THROWN_FIRE_BURN : undefined,
           heavy: mass >= THROWING.heavyFromKg,
           knockbackMps: THROWING.knockbackFor(mass),
           dir,
@@ -1329,6 +1382,16 @@ export class FightArenaScene implements ArenaScene {
   /** Furniture sounds and particles by material: splinters and sawdust, sparks off steel, glints off glass. */
   private propFeedback(): void {
     for (const e of this.props?.drainEvents() ?? []) {
+      if (e.kind === 'break' && e.prop === 'fire-extinguisher') {
+        // A burst extinguisher: a hiss and a big white cloud of foam (Phase 7).
+        this.queueSound('foam-burst', 1);
+        const pts = Array.from({ length: 10 }, (_, k) => ({
+          x: e.x + ((k % 3) - 1) * 0.3,
+          y: e.y + ((k % 4) - 1.5) * 0.25,
+          z: 0.2 + (k % 5) * 0.25,
+        }));
+        this.frameDust.push({ points: pts, colour: 0xf4f6f8, colours: [0xffffff, 0xe6ecf2, 0xd9e2ea], count: 160 });
+      }
       const sound = PROP_SOUNDS[e.material]?.[e.kind];
       if (sound) this.queueSound(sound, e.kind === 'break' ? Math.min(1.4, 0.8 + e.sizeM * 0.3) : 0.7);
       const len = Math.hypot(e.dir.x, e.dir.y) || 1;
@@ -1404,7 +1467,10 @@ export class FightArenaScene implements ArenaScene {
       if (f.combatant.burning) burning.push({ x: f.x, y: f.y, heightM: 1.4 });
     }
     for (const p of this.props?.props ?? []) {
-      if (p.burnS > 0 && !p.broken) burning.push({ x: p.pose.x, y: p.pose.y, heightM: p.size.h + 0.35 });
+      if (p.burnS > 0 && !p.broken) {
+        const lift = p.held?.heightM ?? p.looseFall?.heightM ?? 0;
+        burning.push({ x: p.pose.x, y: p.pose.y, heightM: lift + p.size.h + 0.35, baseM: lift });
+      }
     }
     const world = this.abilities.world;
     const impacts = this.impacts.splice(0, this.impacts.length);
@@ -1413,7 +1479,7 @@ export class FightArenaScene implements ArenaScene {
     this.limbFlameStrength = limbFlames.reduce((m, l) => Math.max(m, l.strength), 0);
     this.vfx.update(frameDtS, {
       limbFlames,
-      aim: this.ultAim,
+      aim: this.ultAim ?? this.throwAim,
       impacts,
       dust,
       projectiles: world.projectiles,

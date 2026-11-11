@@ -11,6 +11,7 @@ import {
   type CapabilityKey,
   type CharacterDefinition,
   type CharacterLibrary,
+  DEFAULT_OBJECT_HANDLING,
   type MoveDef,
   type MoveInput,
 } from './schema';
@@ -268,6 +269,7 @@ export function resolveCharacter(id: string, lib: CharacterLibrary): FighterDef 
       massKg: stats.body.massKg,
     },
     multipliers: { ...mult },
+    objects: { ...DEFAULT_OBJECT_HANDLING, ...stats.objects },
     moves,
     attacks: moves,
     starters,

@@ -349,6 +349,12 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 120, f1: 60, dur: 0.18, gain: 0.5 } },
     { noise: { dur: 0.25, gain: 0.35, type: 'bandpass', freq: 900, freqEnd: 1600, q: 1.2 } },
   ],
+  // A burst fire extinguisher: a sharp pop and a long, fading hiss of foam.
+  'foam-burst': [
+    { tone: { wave: 'sine', f0: 160, f1: 60, dur: 0.12, gain: 0.5 } },
+    { noise: { dur: 1.2, gain: 0.45, type: 'highpass', freq: 2500, freqEnd: 5000, attack: 0.02 } },
+    { noise: { dur: 0.9, gain: 0.2, type: 'bandpass', freq: 900, q: 0.6, attack: 0.05 } },
+  ],
   // KO: a heavy, final boom.
   ko: [
     { tone: { wave: 'sine', f0: 95, f1: 28, dur: 0.65, gain: 1 } },
