@@ -105,6 +105,18 @@ export class PlayerIntents {
     return this.abilityQueue.shift() ?? null;
   }
 
+  // ---- Ultimate aiming by drag (touch: hold ULT and drag). A vector of length ≤ 1:
+  // its direction is where to land, its length the fraction of the maximum range.
+  private ultDragValue: Vec2 | null = null;
+
+  setUltDrag(v: Vec2 | null): void {
+    this.ultDragValue = v ? clampToUnit(v) : null;
+  }
+
+  get ultDrag(): Vec2 | null {
+    return this.ultDragValue;
+  }
+
   // ---- Dodge (Shift, double-tap or joystick flick; REQ-CTL-12).
   private dodgeQueued = false;
 
@@ -125,5 +137,6 @@ export class PlayerIntents {
     this.meleeEdges.length = 0;
     this.dodgeQueued = false;
     this.abilityQueue.length = 0;
+    this.ultDragValue = null;
   }
 }

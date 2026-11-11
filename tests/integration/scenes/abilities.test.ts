@@ -124,7 +124,9 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     run(STEP);
     expect(scene.lastAbilityBlock).toBe('meter');
     scene.playerFighter.caster!.fillMeter();
-    intents.pressAbility('ult');
+    intents.pressAbility('ult'); // aim (the soft lock puts the spot on the dummy)…
+    run(STEP);
+    intents.pressAbility('ult'); // …and launch
     run(STEP);
     expect(scene.player.ability).toBe('meteorFist');
     expect(scene.player.meter).toBe(0);
@@ -135,6 +137,63 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(K.ult.payload.damage);
     expect(Math.hypot(scene.player.x - 19, scene.player.y - 13)).toBeLessThan(2.5);
     expect(scene.abilities!.sfxLog).toContain('meteor-impact');
+    scenes.clear();
+  });
+
+  it('aiming the ultimate (owner): I enters aim mode in a jump-prep crouch; WASD moves the spot, not the fighter', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
+    scene.playerFighter.caster!.fillMeter();
+    intents.pressAbility('ult');
+    run(STEP);
+    const aim0 = scene.ultAim!;
+    expect(aim0).not.toBeNull();
+    expect(Math.hypot(aim0.to.x - 19, aim0.to.y - 13)).toBeLessThan(0.6); // starts on the soft-locked dummy
+    expect(scene.player.meter).toBeGreaterThanOrEqual(100); // nothing spent yet
+    const x0 = scene.player.x;
+    intents.setMove('t', { x: 0, y: -1 });
+    run(0.9); // well away from the dummy (outside the 3 m blast)
+    intents.setMove('t', { x: 0, y: 0 });
+    expect(Math.abs(scene.player.x - x0)).toBeLessThan(0.05); // the fighter stays put
+    const aim1 = scene.ultAim!;
+    expect(aim1.to.y).toBeLessThan(aim0.to.y - 2); // the spot moved up
+    intents.pressAbility('ult'); // launch
+    run(STEP);
+    expect(scene.ultAim).toBeNull();
+    expect(scene.player.ability).toBe('meteorFist');
+    runUntil(() => scene.player.ability === null, 3);
+    expect(Math.hypot(scene.player.x - aim1.to.x, scene.player.y - aim1.to.y)).toBeLessThan(0.8); // landed on the spot
+    expect(scene.dummy.hp).toBe(1000); // away from the dummy: untouched
+    scenes.clear();
+  });
+
+  it('the aimed spot never goes beyond the maximum jump range; a touch drag places it directly', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 14, y: 10 });
+    scene.playerFighter.caster!.fillMeter();
+    intents.pressAbility('ult');
+    run(STEP);
+    intents.setMove('t', { x: -1, y: 0 });
+    run(3);
+    intents.setMove('t', { x: 0, y: 0 });
+    const a = scene.ultAim!;
+    expect(Math.hypot(a.to.x - a.from.x, a.to.y - a.from.y)).toBeLessThanOrEqual(a.maxRangeM + 1e-6);
+    intents.setUltDrag({ x: 0, y: 0.5 }); // drag down, half range
+    run(STEP);
+    const b = scene.ultAim!;
+    expect(b.to.x).toBeCloseTo(b.from.x, 3);
+    expect(b.to.y - b.from.y).toBeCloseTo(b.maxRangeM / 2, 1);
+    scenes.clear();
+  });
+
+  it('getting hit while aiming calls the jump off and keeps the meter', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 17.95, y: 13 });
+    scene.playerFighter.caster!.fillMeter();
+    intents.pressAbility('ult');
+    run(STEP);
+    expect(scene.ultAim).not.toBeNull();
+    scene.dummyFighter.combo.press(false);
+    run(0.4);
+    expect(scene.ultAim).toBeNull();
+    expect(scene.player.meter).toBeGreaterThanOrEqual(100);
     scenes.clear();
   });
 

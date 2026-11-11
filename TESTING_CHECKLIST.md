@@ -81,6 +81,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm test`: **211 tests**. A pillar in front of a fighter fades smoothly (mid-fade seen, then 30%) while the other pillars stay solid; it restores to 100% when the fighter walks away; in the open office doorway only the covering wall sections fade; nothing fades when nothing covers a fighter.
 - [x] V Screenshots: `docs/screenshots/wall-transparency.png`.
 
+## 0m. Aimed ultimate (verified 11/11/2026)
+- [x] `npm test`: **214 tests**. I enters aiming at the soft-locked target with the meter untouched; WASD moves the spot, not the fighter; I launches and the leap lands on the spot (within 0.8 m) away from the dummy, which is unharmed; the spot is clamped to the maximum range; a drag places it directly; a hit while aiming cancels it and keeps the meter; keys K/L/O/I.
+- [x] `npm run e2e`: desktop I → W → I lands up the screen; touch hold–drag–release on ULT jumps where dragged.
+- [x] V Screenshots: `docs/screenshots/ultimate-aiming.png` (aim at the target, aim moved, mid-leap).
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

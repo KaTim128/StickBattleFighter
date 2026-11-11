@@ -35,7 +35,16 @@ export interface DustSource {
   readonly count: number;
 }
 
+/** The leaping ultimate being aimed: range ring, path and landing zone. */
+export interface AimIndicator {
+  readonly from: { readonly x: number; readonly y: number };
+  readonly to: { readonly x: number; readonly y: number };
+  readonly radiusM: number;
+  readonly maxRangeM: number;
+}
+
 export interface AbilityVfxInput {
+  readonly aim?: AimIndicator | null;
   readonly impacts: readonly ImpactBurst[];
   readonly dust: readonly DustSource[];
   readonly projectiles: readonly Projectile[];
@@ -326,6 +335,27 @@ export class AbilityVfx {
     for (const s of this.scorches) {
       const a = 0.45 * (1 - s.ageS / SCORCH_LIFE_S);
       f.ellipse(s.x, s.y, s.r, s.r * 0.6).fill({ color: 0x15100c, alpha: a });
+    }
+
+    // Ultimate aiming: the maximum-range ring, a dotted arc to the spot and the landing zone.
+    if (input.aim) {
+      const a = input.aim;
+      const pulse = 0.6 + 0.4 * Math.sin(t * 9);
+      f.ellipse(a.from.x, a.from.y, a.maxRangeM, a.maxRangeM * 0.6).stroke({
+        width: 0.05,
+        color: 0xffd23f,
+        alpha: 0.35,
+      });
+      const n = 12;
+      for (let i = 1; i < n; i++) {
+        const k = i / n;
+        const x = a.from.x + (a.to.x - a.from.x) * k;
+        const y = a.from.y + (a.to.y - a.from.y) * k - Math.sin(Math.PI * k) * 1.4; // the arc of the leap
+        g.circle(x, y, 0.06).fill({ color: FIRE.bright, alpha: 0.85 });
+      }
+      f.ellipse(a.to.x, a.to.y, a.radiusM, a.radiusM * 0.6).fill({ color: FIRE.hot, alpha: 0.15 + 0.1 * pulse });
+      f.ellipse(a.to.x, a.to.y, a.radiusM, a.radiusM * 0.6).stroke({ width: 0.08, color: 0xffd23f, alpha: 0.9 });
+      f.ellipse(a.to.x, a.to.y, 0.35, 0.21).fill({ color: 0xffffff, alpha: 0.7 * pulse });
     }
 
     // Telegraphs (REQ-ABL-6): a clear ring where it will land, filling as the moment approaches.

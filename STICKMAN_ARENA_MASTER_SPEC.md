@@ -289,6 +289,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ABL-6 | Telegraphing: where an ability has a delayed area, show it before it lands so it can be avoided. *Adopted by the owner 10/11/2026 (OQ-15).* | [REF-CC] [REF-VIDEO] [OWNER] |
 | REQ-ABL-7 | **Inferno is the first full kit (owner, 11/11/2026):** A1 Fire Bolt (projectile that burns), A2 Flame Dash (dash leaving a burning trail), A3 Eruption (telegraphed fire ring around Inferno, knocks down), Ultimate Meteor Fist (telegraphed leaping slam, heavy area damage). Fire sets flammable furniture alight. | [OWNER 11/11/2026] |
 | REQ-ABL-8 | Ability hits use the same combat rules as melee (block, dodge, parry, crit, knockback, interruption); a hit during an ability's wind-up cancels it, except the ultimate. Projectiles are stopped by walls, doors and furniture. | [INV-5] |
+| REQ-ABL-9 | **Aimed ultimate (owner, 11/11/2026):** Inferno's leap is aimed before launch: a targeting indicator shows the landing zone and the maximum jump range, and the fighter holds a jump-preparation pose while aiming. Touch: hold and drag ULT, release to jump. Desktop: I enters aiming, WASD moves the landing spot, I launches. The indicator shows where the leap will really land (short of walls). |
 
 ## 11. Animation and visual presentation
 
@@ -472,6 +473,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Owner: aimed ultimate (REQ-ABL-9); keyboard-only preset A3 moved to O. | Master Developer |
 | 11/11/2026 | Owner: dynamic wall transparency (REQ-VIS-10). | Master Developer |
 | 11/11/2026 | Owner: Punch Clash (REQ-CMB-25). | Master Developer |
 | 11/11/2026 | Owner: hit feel for every blow (REQ-CMB-24) and the KO dust dissolve (REQ-ANI-9); OQ-17 partly answered (synthesised original SFX, TD-033). | Master Developer |

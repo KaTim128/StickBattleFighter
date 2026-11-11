@@ -109,6 +109,8 @@ const RECOIL_BOUNCE_S = 0.14;
 /** KO: lie still, then dissolve into dust over this window (seconds after the KO), then respawn. */
 const KO_DISSOLVE_FROM_S = 1.0;
 const KO_DISSOLVE_S = 1.6;
+/** How fast WASD slides the ultimate's landing spot while aiming, m/s. */
+const ULT_AIM_SPEED_MPS = 7;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
 const HEAD_TOP_M = 1.75;
 
@@ -152,6 +154,9 @@ export class FightArenaScene implements ArenaScene {
   private readonly shake = new CameraShake();
   private readonly rng = seededRandom(1234);
   private hitstopS = 0;
+  /** Where the player is aiming the leaping ultimate, while aiming (else null). */
+  private ultAimPoint: { x: number; y: number } | null = null;
+  private aimPrepT = 0;
   /** Why the player's last ability press did not cast (HUD feedback), or null. */
   lastAbilityBlock: CastBlock | null = null;
   private view: ArenaView | null = null;
@@ -409,9 +414,16 @@ export class FightArenaScene implements ArenaScene {
     }
     if (!this.intents.meleeHeld && c.state === 'guarding') c.setGuard(false);
 
-    // Buttons 2–5: abilities and the ultimate.
+    // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
     const slot = this.intents.consumeAbility();
-    if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
+    if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
+    else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
+    if (this.ultAimPoint) {
+      // Aiming: Inferno crouches to spring; WASD (or a drag) moves the landing spot instead of the fighter.
+      this.steerUltimateAim(f, stepS);
+      this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
+      return;
+    }
 
     // Dodge (Shift / flick): a quick invulnerable dash, cancelling an attack (not an ability already cast).
     if (this.intents.consumeDodge() && !air && !f.caster?.cast && c.tryDodge()) {
@@ -424,6 +436,90 @@ export class FightArenaScene implements ArenaScene {
     const jump =
       this.intents.consumeJump() && c.canAct && c.state !== 'guarding' && !(f.combo.attack && !air) && !f.caster?.cast;
     this.stepFighter(f, stepS, this.intents.move, jump);
+  }
+
+  /** I / F / ULT: start aiming the leap, or launch it at the aimed spot (owner, 11/11/2026). */
+  private ultimatePress(f: FighterEntity): void {
+    if (!this.abilities || !f.caster) return;
+    if (this.ultAimPoint) {
+      const target = this.ultAim?.to ?? this.ultAimPoint;
+      this.ultAimPoint = null;
+      this.lastAbilityBlock = this.abilities.tryCast(f, 'ult', target);
+      return;
+    }
+    const block = f.caster.check('ult', {
+      canAct: f.combatant.canAct && !f.combo.attack,
+      stamina: f.combatant.stamina,
+      airborne: f.airborne,
+    });
+    this.lastAbilityBlock = block;
+    if (block) return;
+    const start = this.abilities.aimFor(f, f.caster.def('ult'));
+    this.ultAimPoint = this.clampToRange(f, start);
+  }
+
+  /** Move the aimed spot: a touch drag places it directly; keys slide it; always within the leap's range. */
+  private steerUltimateAim(f: FighterEntity, stepS: number): void {
+    const aim = this.ultAimPoint;
+    const caster = f.caster;
+    if (!aim || !caster) return;
+    if (!f.combatant.canAct) {
+      this.ultAimPoint = null; // hit while aiming: the jump is called off (the meter is kept)
+      return;
+    }
+    const range = this.ultRange(f);
+    const drag = this.intents.ultDrag;
+    let next = aim;
+    if (drag) {
+      next = { x: f.x + drag.x * range, y: f.y + drag.y * range };
+    } else {
+      const m = this.intents.move;
+      next = { x: aim.x + m.x * ULT_AIM_SPEED_MPS * stepS, y: aim.y + m.y * ULT_AIM_SPEED_MPS * stepS };
+    }
+    this.ultAimPoint = this.clampToRange(f, next);
+    if (Math.abs(this.ultAimPoint.x - f.x) > 0.1) f.facing = this.ultAimPoint.x > f.x ? 1 : -1;
+  }
+
+  private ultRange(f: FighterEntity): number {
+    const d = f.caster?.def('ult').delivery;
+    return d?.type === 'leap' ? d.maxRangeM : 0;
+  }
+
+  private clampToRange(f: FighterEntity, p: { x: number; y: number }): { x: number; y: number } {
+    const range = this.ultRange(f);
+    const dx = p.x - f.x;
+    const dy = p.y - f.y;
+    const len = Math.hypot(dx, dy);
+    if (len <= range) return p;
+    return { x: f.x + (dx / len) * range, y: f.y + (dy / len) * range };
+  }
+
+  /**
+   * The ultimate's aiming state (indicator and tests): from the fighter to where it will
+   * actually land (short of any wall or furniture in the way), the blast radius and the
+   * maximum range.
+   */
+  get ultAim(): {
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    radiusM: number;
+    maxRangeM: number;
+  } | null {
+    const aim = this.ultAimPoint;
+    const f = this.playerFighter;
+    const d = f.caster?.def('ult').delivery;
+    if (!aim || d?.type !== 'leap' || !this.physics) return null;
+    const from = { x: f.x, y: f.y };
+    const want = Math.hypot(aim.x - from.x, aim.y - from.y);
+    let to = aim;
+    if (want > 0.05) {
+      const hit = this.physics.castWorldRay(from, aim);
+      if (hit) {
+        const reach = Math.max(0, want * hit.fraction - 0.5);
+        to = { x: from.x + ((aim.x - from.x) / want) * reach, y: from.y + ((aim.y - from.y) / want) * reach };
+      }
+    }
+    return { from, to, radiusM: d.radiusM, maxRangeM: d.maxRangeM };
   }
 
   /** The dummy holds its ground and faces you; with "dummy attacks" on it jabs back when you are close. */
@@ -846,6 +942,7 @@ export class FightArenaScene implements ArenaScene {
     }));
     const dust = this.frameDust.splice(0, this.frameDust.length);
     this.vfx.update(frameDtS, {
+      aim: this.ultAim,
       impacts,
       dust,
       projectiles: world.projectiles,
@@ -885,6 +982,11 @@ export class FightArenaScene implements ArenaScene {
       pose = attackPose(pose, sa.def, Math.min(1, sa.t / attackDuration(sa.def)));
     }
     pose = this.clashPose(f, pose);
+    if (f === this.playerFighter && this.ultAimPoint) {
+      // Jump preparation: a deep, springy crouch held (with a little bounce) while aiming.
+      this.aimPrepT += frameDtS;
+      pose = abilityPose(pose, 'meteorFist', 'windup', 0.85 + 0.15 * Math.sin(this.aimPrepT * 7), false);
+    }
     const cast = f.caster?.cast;
     if (cast && f.caster) {
       pose = abilityPose(pose, cast.def.id, cast.phase, f.caster.phaseProgress, f.abilityLift > 0.05);

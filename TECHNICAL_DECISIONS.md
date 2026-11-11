@@ -275,6 +275,12 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - *Alternatives:* ray casts from a virtual 3D camera (no 3D camera exists in 2D top-down); hiding objects outright (rejected by the owner: smooth fade, not disappearing).
 - Cost: about 110 bounds checks per frame in the office; measured no visible frame-time change in the browser runs.
 
+### TD-036: Aimed leaping ultimate — ACCEPTED (owner request 11/11/2026)
+- The ultimate press is a toggle for leap ultimates: the first press (if the meter is full) enters aiming; the second launches. Aiming state lives in the scene (`ultAimPoint`); `SceneAbilities.tryCast(f, slot, aimAt)` passes the spot to the release instead of the soft lock. Touch sends a press on ULT down and another on up, with `PlayerIntents.setUltDrag` (a vector of length ≤ 1 × max range) while dragging, so both devices share one flow (INV-6).
+- While aiming the fighter is rooted, faces the spot and holds the Meteor Fist wind-up crouch with a bounce; the indicator (range ring, dotted arc, landing zone) uses the same wall clamp as the leap, so it is honest.
+- **Bug found and fixed:** ending a dash or leap left the body's velocity, so the fighter slid on about 1.2 m after landing; releasing the drive now stops the body.
+- Keys: I = ultimate (owner); in the keyboard-only preset A3 moved to O.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

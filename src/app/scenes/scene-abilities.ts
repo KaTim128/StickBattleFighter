@@ -38,6 +38,8 @@ const MAX_FX_LOG = 60;
  */
 export class SceneAbilities implements AbilityHost {
   readonly world = new AbilityWorld();
+  /** Spots chosen by aiming (the ultimate), used at release instead of the soft lock. */
+  private readonly aimOverrides = new Map<string, Vec2>();
   /** FX events not yet consumed by the VFX layer. */
   private readonly pending: AbilityFx[] = [];
   /** Recent sound-hook ids, newest last (tests and the debug hook; audio arrives with OQ-17). */
@@ -57,7 +59,7 @@ export class SceneAbilities implements AbilityHost {
   ) {}
 
   /** Try to cast from a fighter; returns why it could not, or null when the cast started. */
-  tryCast(f: FighterEntity, slot: AbilitySlot): CastBlock | null {
+  tryCast(f: FighterEntity, slot: AbilitySlot, aimAt?: Vec2): CastBlock | null {
     const caster = f.caster;
     if (!caster) return 'unavailable';
     const c = f.combatant;
@@ -71,8 +73,9 @@ export class SceneAbilities implements AbilityHost {
     if (slot !== 'ult' && !c.spendStamina(def.staminaCost)) return 'stamina';
     c.setGuard(false);
     caster.start(slot);
-    // Face the soft-locked target as the wind-up begins.
-    const aim = this.aimFor(f, def);
+    if (aimAt) this.aimOverrides.set(f.name, aimAt);
+    // Face the aimed spot (or the soft-locked target) as the wind-up begins.
+    const aim = aimAt ?? this.aimFor(f, def);
     if (Math.abs(aim.x - f.x) > 0.05) f.facing = aim.x > f.x ? 1 : -1;
     this.emit({ kind: 'cast', ability: def.id, vfx: def.vfx, sfx: def.sfx.cast, x: f.x, y: f.y });
     return null;
@@ -86,7 +89,9 @@ export class SceneAbilities implements AbilityHost {
     if (ev.released) {
       const def = ev.released;
       if (def.delivery.type === 'leap') f.combatant.grantInvulnerability(def.delivery.airS + 0.1); // airborne: untouchable
-      this.world.release(f.name, def, this.aimFor(f, def), this);
+      const aim = this.aimOverrides.get(f.name) ?? this.aimFor(f, def);
+      this.aimOverrides.delete(f.name);
+      this.world.release(f.name, def, aim, this);
     }
   }
 
@@ -207,6 +212,8 @@ export class SceneAbilities implements AbilityHost {
   drive(casterId: string, velocity: Vec2 | null, heightM: number): void {
     const f = this.byName(casterId);
     if (!f) return;
+    // Released (a dash or leap ended): stop on the spot instead of sliding on, so the leap lands where it was aimed.
+    if (!velocity && f.driveVelocity) f.body?.setLinvel({ x: 0, y: 0 }, true);
     f.driveVelocity = velocity ? { x: velocity.x, y: velocity.y } : null;
     f.abilityLift = heightM;
   }

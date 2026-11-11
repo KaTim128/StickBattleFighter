@@ -14,7 +14,10 @@ export const MOVE_KEYS: Readonly<Record<string, Vec2>> = {
 export const JUMP_KEYS: ReadonlySet<string> = new Set(['Space']);
 /** Button 1 melee: J (both presets); left mouse button is handled in attachMouse. Tap = attack, hold = block. */
 export const MELEE_KEYS: ReadonlySet<string> = new Set(['KeyJ']);
-/** Abilities and ultimate: Q/E/R/F (keyboard + mouse) and K/L/I/O (keyboard only), CONTROL_SCHEME §4. */
+/**
+ * Abilities and ultimate: Q/E/R/F (keyboard + mouse) and K/L/O/I (keyboard only), CONTROL_SCHEME §4.
+ * I is the ultimate (owner, 11/11/2026: "press I to aim, I again to launch"), so A3 moved to O.
+ */
 export const ABILITY_KEYS: Readonly<Record<string, AbilityPress>> = {
   KeyQ: 'a1',
   KeyE: 'a2',
@@ -22,8 +25,8 @@ export const ABILITY_KEYS: Readonly<Record<string, AbilityPress>> = {
   KeyF: 'ult',
   KeyK: 'a1',
   KeyL: 'a2',
-  KeyI: 'a3',
-  KeyO: 'ult',
+  KeyO: 'a3',
+  KeyI: 'ult',
 };
 /** Dodge (CONTROL_SCHEME §4). */
 export const DODGE_KEYS: ReadonlySet<string> = new Set(['ShiftLeft', 'ShiftRight']);

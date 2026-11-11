@@ -53,6 +53,11 @@ export class FlickDetector {
  * Hidden until the first touch, so desktop never shows them (REQ-CTL-2).
  * Five combat buttons (REQ-CTL-1, INV-9): MELEE plus A1, A2, A3 and ULT in an arc; JUMP sits apart.
  */
+/** Dragging this far from where the ULT press started aims at the maximum range. */
+const ULT_DRAG_FULL_PX = 120;
+/** Smaller drags are ignored (a plain tap aims at the soft-locked target). */
+const ULT_DRAG_DEADZONE_PX = 10;
+
 export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): () => void {
   const layer = document.createElement('div');
   layer.className = 'touch-controls';
@@ -122,9 +127,37 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   const onAbility = (e: PointerEvent): void => {
     e.preventDefault();
     const slot = (e.currentTarget as HTMLElement).dataset.slot;
-    if (slot === 'a1' || slot === 'a2' || slot === 'a3' || slot === 'ult') intents.pressAbility(slot);
+    if (slot === 'a1' || slot === 'a2' || slot === 'a3') intents.pressAbility(slot);
   };
   for (const b of abilityButtons) b.addEventListener('pointerdown', onAbility);
+
+  // ULT: press to start aiming, drag to place the landing spot, release to jump (owner, 11/11/2026).
+  const ult = layer.querySelector<HTMLButtonElement>('.ability-button.ult')!;
+  let ultPointer: number | null = null;
+  let ultOrigin = { x: 0, y: 0 };
+  const onUltDown = (e: PointerEvent): void => {
+    e.preventDefault();
+    ultPointer = e.pointerId;
+    ultOrigin = { x: e.clientX, y: e.clientY };
+    intents.setUltDrag(null);
+    intents.pressAbility('ult'); // start aiming
+  };
+  const onUltMove = (e: PointerEvent): void => {
+    if (e.pointerId !== ultPointer) return;
+    const dx = e.clientX - ultOrigin.x;
+    const dy = e.clientY - ultOrigin.y;
+    if (Math.hypot(dx, dy) < ULT_DRAG_DEADZONE_PX) return;
+    intents.setUltDrag({ x: dx / ULT_DRAG_FULL_PX, y: dy / ULT_DRAG_FULL_PX });
+  };
+  const onUltUp = (e: PointerEvent): void => {
+    if (e.pointerId !== ultPointer) return;
+    ultPointer = null;
+    intents.pressAbility('ult'); // launch (the drag, if any, sets where)
+  };
+  ult.addEventListener('pointerdown', onUltDown);
+  window.addEventListener('pointermove', onUltMove);
+  window.addEventListener('pointerup', onUltUp);
+  window.addEventListener('pointercancel', onUltUp);
   // A long press (holding MELEE to block) must not select the label or open the context menu.
   const noDefault = (e: Event): void => e.preventDefault();
   layer.addEventListener('contextmenu', noDefault);
@@ -140,6 +173,10 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   melee.addEventListener('pointercancel', onMeleeUp);
   melee.addEventListener('pointerleave', onMeleeUp);
   return () => {
+    ult.removeEventListener('pointerdown', onUltDown);
+    window.removeEventListener('pointermove', onUltMove);
+    window.removeEventListener('pointerup', onUltUp);
+    window.removeEventListener('pointercancel', onUltUp);
     for (const b of abilityButtons) b.removeEventListener('pointerdown', onAbility);
     layer.removeEventListener('contextmenu', noDefault);
     layer.removeEventListener('selectstart', noDefault);

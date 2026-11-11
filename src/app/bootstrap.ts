@@ -54,6 +54,8 @@ export interface EngineDebugInfo {
   clash: ClashHudState | null;
   /** Practice/testing: start a Punch Clash now. */
   startClash(): void;
+  /** Practice/testing: fill the player's ultimate meter. */
+  fillMeter(): void;
   /** Props summary: how many are broken, and how many are moving right now. */
   props: { total: number; broken: number; awake: number };
   assetFailures: { url: string; message: string }[];
@@ -139,7 +141,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sound.muted = !sound.muted;
   });
   const controlsHint =
-    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F ultimate · Shift dodge · T dummy attacks · M mute';
+    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F or I ultimate (aim with WASD, press again) · Shift dodge · T dummy attacks · M mute';
   onToggleDummyAttacks(window, () => {
     if (!(scene instanceof FightArenaScene)) return;
     scene.dummyAttacks = !scene.dummyAttacks;
@@ -167,6 +169,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     setDummyHp() {}, // replaced once the scene exists
     clash: null,
     startClash() {}, // replaced once the scene exists
+    fillMeter() {}, // replaced once the scene exists
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     setTimeScale() {}, // replaced once the loop exists
@@ -239,6 +242,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   });
   if (scene instanceof FightArenaScene) {
     debug.startClash = () => scene.startClash();
+    debug.fillMeter = () => scene.playerFighter.caster?.fillMeter();
     debug.setDummyHp = (hp: number) => {
       scene.dummyFighter.combatant.hp = Math.max(1, Math.min(scene.dummyFighter.combatant.stats.maxHp, hp));
     };

@@ -99,14 +99,14 @@ describe('ability buttons (Buttons 2–5)', () => {
     expect(intents.consumeAbility()).toBeNull();
   });
 
-  it('maps Q/E/R/F and K/L/I/O to the four slots (CONTROL_SCHEME §4)', () => {
+  it('maps Q/E/R/F and K/L/O/I to the four slots; I is the ultimate (owner, CONTROL_SCHEME §4)', () => {
     expect([ABILITY_KEYS.KeyQ, ABILITY_KEYS.KeyE, ABILITY_KEYS.KeyR, ABILITY_KEYS.KeyF]).toEqual([
       'a1',
       'a2',
       'a3',
       'ult',
     ]);
-    expect([ABILITY_KEYS.KeyK, ABILITY_KEYS.KeyL, ABILITY_KEYS.KeyI, ABILITY_KEYS.KeyO]).toEqual([
+    expect([ABILITY_KEYS.KeyK, ABILITY_KEYS.KeyL, ABILITY_KEYS.KeyO, ABILITY_KEYS.KeyI]).toEqual([
       'a1',
       'a2',
       'a3',
