@@ -288,6 +288,9 @@ Characters are JSON definitions plus reusable profiles with capability flags, a 
 **Evidence:** lint clean; typecheck 0; `npm test` **234/234**; build clean (game + editor); `npm run e2e` **24/24**; screenshots.
 **Limitations:** see TD-039 (new clip shapes need code; several mapped states share motions until art; unlocks server-side later; no voice lines yet).
 
+### 11/11/2026: Confident walk and run (owner request)
+Owner: the gait "looks weird and not confident". Walk and run rebuilt upright and proud: tall hips, chest up, head level, long steps with a springy bounce and chest roll, fists swinging freely; the run drives from the chest with high knees and a strong arm drive (TD-040, REQ-ANI-11; the guard-up walk is SUP-06). **Files:** `src/animation/greybox-motion.ts`, `tests/unit/animation/skeleton.test.ts`, docs. **Evidence:** lint clean; typecheck 0; `npm test` 231/231; build clean; in-game frame capture (`docs/screenshots/confident-gait.png`). **Next task:** Phase 7, pickup, carry and throw.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

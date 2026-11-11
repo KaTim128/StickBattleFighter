@@ -90,6 +90,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm test`: **216 tests**. Legs alternate and each fist swings opposite its leg; the swinging foot lifts; running strides wider, leans more and pumps the arms harder, with no locked knees; one stride of distance = one cycle at walk and run speeds; idle → walk → run weights blend by speed and ease rather than snap; the walk keeps the guard up.
 - [x] V Frames: `docs/screenshots/walk-run-gait.png` (run cycle; turn and start-up).
 
+## 0q. Confident gait (verified 11/11/2026)
+- [x] `npm test`: **231 tests** (the four "walk keeps the guard up" cases replaced by one confident-gait test, SUP-06). Walk and run, sampled at 40 phases: hips high (walk > 0.70 m, run > 0.66 m), chest near upright (walk > −6°, run > −17°), head level (< 10°), fists between hips and head and within 0.4 m of the chest, elbows bent; legs still alternate, no locked knees, the run out-strides the walk.
+- [x] V Frames: `docs/screenshots/confident-gait.png` (pose sheet and in-game run).
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

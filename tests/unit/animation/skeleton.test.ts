@@ -45,8 +45,9 @@ describe('jointed skeleton (REQ-ANI-6)', () => {
     expect(s.head.y).toBeLessThan(s.pelvis.y); // head above hips (up the screen)
   });
 
-  // The fighting stance applies whenever standing or moving; the jump has its own stance (owner request).
-  it.each(samplePoses.filter(([n]) => n !== 'air'))(
+  // The guard is up whenever standing; the jump has its own stance (owner request). Walking and running
+  // swing the arms freely instead (owner, 11/11/2026: "strong and confident", SUP-06).
+  it.each(samplePoses.filter(([n]) => n.startsWith('idle')))(
     '%s: guard is up, both fists near the chin, never hanging down',
     (_name, pose) => {
       const s = solveSkeleton(pose, BONES);
@@ -69,6 +70,30 @@ describe('jointed skeleton (REQ-ANI-6)', () => {
     // The swinging foot is lifted off the floor mid-swing.
     const swing = solveSkeleton(walkPose(0, BONES), BONES); // lead leg passing forward
     expect(swing.legFront[2].y).toBeLessThan(-0.05);
+  });
+
+  it('walk and run are strong and confident (owner, 11/11/2026): tall hips, chest up, head level, fists in control', () => {
+    const deg = (r: number) => (r * 180) / Math.PI;
+    const cases: [typeof walkPose, number, number][] = [
+      [walkPose, 0.7, -6], // hips >= 0.7 m on 0.8 m legs, chest within 6 degrees of upright
+      [runPose, 0.66, -17], // the run drives from the chest but never hunches over
+    ];
+    for (const [gait, minHipM, minLeanDeg] of cases) {
+      for (let i = 0; i < 40; i++) {
+        const pose = gait(i / 40, BONES);
+        const s = solveSkeleton(pose, BONES);
+        expect(-s.pelvis.y).toBeGreaterThan(minHipM);
+        expect(deg(pose.lean)).toBeGreaterThan(minLeanDeg);
+        expect(Math.abs(deg(pose.head))).toBeLessThan(10); // chin up, not tucked
+        for (const arm of [s.armFront, s.armBack]) {
+          const [, , hand] = arm;
+          expect(hand.y).toBeLessThan(s.pelvis.y); // fists never hang below the hips
+          expect(hand.y).toBeGreaterThan(s.head.y); // nor flail above the head
+          expect(Math.abs(hand.x - s.chest.x)).toBeLessThan(0.4); // they swing, controlled
+        }
+        for (const arm of [pose.armFront, pose.armBack]) expect(deg(arm.bend)).toBeGreaterThan(15); // elbows bent
+      }
+    }
   });
 
   it('running: longer strides, higher knees, more lean and a bigger arm pump than walking', () => {

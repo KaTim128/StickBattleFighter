@@ -303,6 +303,12 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** TypeScript-only configs (rejected: the owner wants admin-editable files); a server CMS (later, with Phase 14 admin auth).
 - **Limits today:** new clip *shapes* need a code addition in `clips.ts`; several mapped states (StartRun, Turn, HardLand, BlockMid/Low, AirborneHit, ClashEntry/Win/Lose/Stalemate…) share procedural motions until art (Phase 8); unlock data is display-only (server-validated in Phase 14); voice lines not yet supported.
 
+### TD-040: Confident gait — ACCEPTED (owner request 11/11/2026)
+- **Context:** the owner said the walk and run looked "not confident ... like it needs to go to the bathroom". Cause: the gait reused the boxer crouch (hips 0.63–0.67 m on 0.8 m legs, 13–24° hunch, chin tucked, fists clutched at the chin, feet stepping in a narrow stagger).
+- **Decision:** `walkPose`/`runPose` in `src/animation/greybox-motion.ts` get their own upright shape: walk hips 0.735 m, lean −3° with a 2.5° chest roll per step, head level, 0.52 m foot sweep, fists swinging freely (arm IK) between hip and chest; run hips 0.71 m, lean −13°, high knees (0.24 m lift), 0.70 m sweep, elbows-bent arm drive. A `sway` gait parameter adds the chest roll. Walk stride per cycle 1.2 → 1.1 m so planted feet keep pace with the shorter, upright legs. Idle stances and attacks are unchanged (guard still up when standing or fighting).
+- **Alternatives:** keep the guard up while walking (rejected: the owner's newest instruction; SUP-06); angle-driven arm swing (rejected earlier, TD-037: fists rise instead of swinging forward).
+- **Trade-offs:** the guard drops while walking; the idle↔walk blend (already eased) covers the change. Per-fighter gaits remain possible via the procedural clip ids (REQ-ANI-7).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).
