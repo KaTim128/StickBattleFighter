@@ -35,7 +35,7 @@ export class TrainingYardScene implements ArenaScene {
   private view: GreyboxArenaView | null = null;
   private stickman: StickmanView | null = null;
   private body: ReturnType<PhysicsWorld['addCharacterBody']> | null = null;
-  private readonly animator = new StickmanAnimator();
+  private readonly animator = new StickmanAnimator(GREYBOX_STICKMAN.bones);
   private hop: HopState = { heightM: 0, verticalSpeedMps: 0 };
   private prevHop = 0;
   private readonly prev = { x: 0, y: 0 };

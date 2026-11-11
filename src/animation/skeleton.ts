@@ -115,3 +115,20 @@ export function blendPose(a: Pose, b: Pose, t: number): Pose {
     legBack: limb(a.legBack, b.legBack),
   };
 }
+
+/**
+ * Two-bone leg IK (TD-022): angles that put the foot exactly at (footX, footY)
+ * relative to the pelvis (+x towards facing, +y down), with the knee bending
+ * forward over the toes like a real leg. Out-of-reach targets are approached
+ * along the same line with the leg almost straight.
+ */
+export function legIk(footX: number, footY: number, thigh: number, shin: number): Limb {
+  const reach = Math.min(Math.hypot(footX, footY), thigh + shin - 1e-4);
+  const toFoot = Math.atan2(footX, footY);
+  const cosHip = (thigh * thigh + reach * reach - shin * shin) / (2 * thigh * reach);
+  const thighAngle = toFoot + Math.acos(Math.min(1, Math.max(-1, cosHip)));
+  const kneeX = Math.sin(thighAngle) * thigh;
+  const kneeY = Math.cos(thighAngle) * thigh;
+  const shinAngle = Math.atan2(footX - kneeX, footY - kneeY);
+  return { root: thighAngle, bend: shinAngle - thighAngle };
+}

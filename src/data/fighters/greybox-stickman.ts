@@ -25,8 +25,8 @@ export const GREYBOX_STICKMAN = {
     headRadius: 0.16,
     upperArm: 0.28,
     foreArm: 0.26,
-    thigh: 0.36,
-    shin: 0.36,
+    thigh: 0.4,
+    shin: 0.4,
   },
   look: {
     limb: 0xff7a2e,

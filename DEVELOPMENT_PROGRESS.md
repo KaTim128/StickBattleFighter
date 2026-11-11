@@ -175,6 +175,13 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 - The hop is visual only (cannot clear obstacles); revisit in combat or arena phases.
 - The figure is about 1.4 m on an 11 m-wide view; revisit scale with art direction (OQ-16).
 
+### 11/11/2026: Wider, lower fighting stance with planted feet (owner request)
+**Owner:** "It should have a wider leg stance and more fighter feel."
+**Change:** added **two-bone leg IK** (`legIk` in `src/animation/skeleton.ts`), so stances are defined by where the feet stand and the knees solve themselves (always bending forward over the toes, with both feet planted). Greybox stance: about 0.74 m stagger (lead foot 0.30 m ahead, rear foot 0.44 m behind); the rear leg long and nearly straight, driving; the lead knee bent; hips at 0.62 m; deeper lean and tucked chin; idle bounces lightly on the balls of the feet (1.8 bounces per second). Test-fighter legs lengthened (thigh and shin 0.36 → 0.40 m) so a wide stance does not force a kneeling crouch.
+**Iterations (honest record):** (1) fixed-angle wide pose: the rear foot floated off the floor, which led to the IK; (2) IK at a 0.54 m crouch: a test caught the lead leg locking straight at full stride; (3) it then looked like a kneeling lunge, so the legs were lengthened; (4) the rear knee still dipped, so the rear foot was moved further back. Each step was checked with in-game captures.
+**New tests (79 total, all passing):** IK puts the foot exactly on target with the knee forward, and handles out-of-reach targets; idle has both feet on the floor at least 0.6 m apart with the hips crouched; the shuffle keeps at least 0.45 m of stagger throughout; **knees never lock fully straight** across idle and 40 shuffle phases.
+**Verified:** lint, typecheck, build and e2e pass; in-game captures in `docs/screenshots/phase2-fighting-stance.png`.
+
 ### 11/11/2026: Fighting stance at all times (owner request)
 **Owner:** "Ensure arms and body are not awkward when walking; the stickman should have a fighting walking stance at all times."
 **Change:** the greybox idle, walk and air poses were rewritten (`src/animation/greybox-motion.ts`). Guard up (lead fist forward at chin height, rear fist tucked), knees always bent, staggered feet with the lead foot ahead, torso leaning in. Walking became a **boxer shuffle**: the lead foot steps, the rear follows a quarter-cycle later, feet stay low and never cross, and the guard only bobs slightly (no arm swing). Stride is now 1.1 m. Spec REQ-ANI-7 extended.

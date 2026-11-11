@@ -1,5 +1,5 @@
 import { AIR_POSE, idlePose, WALK_STRIDE_M, walkPose } from './greybox-motion';
-import { blendPose, type Pose } from './skeleton';
+import { type BoneLengths, blendPose, type Pose } from './skeleton';
 
 /** Exponential smoothing factor for a time step (frame-rate independent). */
 export function smoothing(rate: number, dtS: number): number {
@@ -26,6 +26,8 @@ export class StickmanAnimator {
   private walkWeight = 0;
   private airWeight = 0;
 
+  constructor(private readonly bones: BoneLengths) {}
+
   /** Advance by a time step and return the pose to draw. */
   update(dtS: number, motion: MotionInput): Pose {
     this.timeS += dtS;
@@ -36,7 +38,7 @@ export class StickmanAnimator {
     const airTarget = motion.peakHeightM > 0 ? Math.min(1, motion.heightM / (motion.peakHeightM * 0.4)) : 0;
     this.airWeight += (airTarget - this.airWeight) * smoothing(18, dtS);
 
-    const grounded = blendPose(idlePose(this.timeS), walkPose(this.walkPhase), this.walkWeight);
+    const grounded = blendPose(idlePose(this.timeS, this.bones), walkPose(this.walkPhase, this.bones), this.walkWeight);
     return blendPose(grounded, AIR_POSE, this.airWeight);
   }
 

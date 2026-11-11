@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { StickmanAnimator } from '../../../src/animation/animator';
 import { AIR_POSE, idlePose, WALK_STRIDE_M, walkPose } from '../../../src/animation/greybox-motion';
-import { blendPose, type Pose, solveSkeleton } from '../../../src/animation/skeleton';
+import { blendPose, legIk, type Pose, solveSkeleton } from '../../../src/animation/skeleton';
 import { GREYBOX_STICKMAN } from '../../../src/data/fighters/greybox-stickman';
 
 const BONES = GREYBOX_STICKMAN.bones;
 const samplePoses: [string, Pose][] = [
-  ['idle 0s', idlePose(0)],
-  ['idle 1.3s', idlePose(1.3)],
-  ...[0, 0.25, 0.5, 0.75].map((p): [string, Pose] => [`walk ${p}`, walkPose(p)]),
+  ['idle 0s', idlePose(0, BONES)],
+  ['idle bounce', idlePose(0.14, BONES)],
+  ...[0, 0.25, 0.5, 0.75].map((p): [string, Pose] => [`walk ${p}`, walkPose(p, BONES)]),
   ['air', AIR_POSE],
 ];
 
 describe('jointed skeleton (REQ-ANI-6)', () => {
   it('has a real elbow and knee on every limb, and they actually bend', () => {
-    const s = solveSkeleton(walkPose(0.25), BONES);
+    const s = solveSkeleton(walkPose(0.25, BONES), BONES);
     for (const limb of [s.armFront, s.armBack, s.legFront, s.legBack]) {
       expect(limb).toHaveLength(3); // root → middle joint → end
       const [a, b, c] = limb;
@@ -45,16 +45,59 @@ describe('jointed skeleton (REQ-ANI-6)', () => {
 
   it('fighting shuffle: feet stay staggered (lead foot ahead) and never cross at any point in the cycle', () => {
     for (let i = 0; i < 40; i++) {
-      const s = solveSkeleton(walkPose(i / 40), BONES);
-      expect(s.legFront[2].x - s.legBack[2].x).toBeGreaterThan(0.12);
+      const s = solveSkeleton(walkPose(i / 40, BONES), BONES);
+      expect(s.legFront[2].x - s.legBack[2].x).toBeGreaterThan(0.45); // wide even mid-step
     }
-    const idle = solveSkeleton(idlePose(0), BONES);
-    expect(idle.legFront[2].x - idle.legBack[2].x).toBeGreaterThan(0.12);
+  });
+
+  it('idle is a wide, low, planted stance: both feet on the floor about 0.74 m apart, knees bent', () => {
+    for (const t of [0, 0.1, 0.2, 0.3, 0.4]) {
+      const s = solveSkeleton(idlePose(t, BONES), BONES);
+      expect(s.legFront[2].y).toBeCloseTo(0, 3);
+      expect(s.legBack[2].y).toBeCloseTo(0, 3);
+      expect(s.legFront[2].x - s.legBack[2].x).toBeGreaterThan(0.6);
+      // crouched: hips clearly lower than a straight-legged stand
+      expect(-s.pelvis.y).toBeLessThan(BONES.thigh + BONES.shin - 0.08);
+    }
+  });
+
+  it('knees never lock fully straight while standing or shuffling (no stiff legs)', () => {
+    const straight = BONES.thigh + BONES.shin;
+    const poses = [
+      ...[0, 0.1, 0.2, 0.3].map((t) => idlePose(t, BONES)),
+      ...Array.from({ length: 40 }, (_, i) => walkPose(i / 40, BONES)),
+    ];
+    for (const pose of poses) {
+      const s = solveSkeleton(pose, BONES);
+      for (const [hip, , foot] of [s.legFront, s.legBack]) {
+        expect(Math.hypot(foot.x - hip.x, foot.y - hip.y)).toBeLessThan(straight - 0.012);
+      }
+    }
   });
 
   it('blends joint by joint', () => {
-    const mid = blendPose(idlePose(0), AIR_POSE, 0.5);
-    expect(mid.legFront.bend).toBeCloseTo((idlePose(0).legFront.bend + AIR_POSE.legFront.bend) / 2, 9);
+    const mid = blendPose(idlePose(0, BONES), AIR_POSE, 0.5);
+    expect(mid.legFront.bend).toBeCloseTo((idlePose(0, BONES).legFront.bend + AIR_POSE.legFront.bend) / 2, 9);
+  });
+});
+
+describe('legIk', () => {
+  it('puts the foot exactly on the target with the knee bent forward', () => {
+    const leg = legIk(0.3, 0.6, BONES.thigh, BONES.shin);
+    const kneeX = Math.sin(leg.root) * BONES.thigh;
+    const kneeY = Math.cos(leg.root) * BONES.thigh;
+    const footX = kneeX + Math.sin(leg.root + leg.bend) * BONES.shin;
+    const footY = kneeY + Math.cos(leg.root + leg.bend) * BONES.shin;
+    expect(footX).toBeCloseTo(0.3, 6);
+    expect(footY).toBeCloseTo(0.6, 6);
+    expect(leg.bend).toBeLessThan(0); // knee flexes like a real knee
+    expect(kneeX).toBeGreaterThan(0.3 * (kneeY / 0.6)); // knee sits forward of the hip–foot line
+  });
+
+  it('reaches as far as it can towards an out-of-range target without breaking', () => {
+    const leg = legIk(2, 2, BONES.thigh, BONES.shin);
+    expect(Number.isFinite(leg.root)).toBe(true);
+    expect(Math.abs(leg.bend)).toBeLessThan(0.05); // nearly straight
   });
 });
 
@@ -62,7 +105,7 @@ describe('StickmanAnimator', () => {
   const motion = { speedMps: 5, maxSpeedMps: 5, heightM: 0, peakHeightM: 0.4 };
 
   it('eases into the walk instead of snapping', () => {
-    const anim = new StickmanAnimator();
+    const anim = new StickmanAnimator(BONES);
     anim.update(1 / 60, motion);
     expect(anim.weights.walk).toBeGreaterThan(0);
     expect(anim.weights.walk).toBeLessThan(0.3);
@@ -71,7 +114,7 @@ describe('StickmanAnimator', () => {
   });
 
   it('blends towards the airborne pose with hop height and back on landing', () => {
-    const anim = new StickmanAnimator();
+    const anim = new StickmanAnimator(BONES);
     for (let i = 0; i < 30; i++) anim.update(1 / 60, { ...motion, speedMps: 0, heightM: 0.4 });
     expect(anim.weights.air).toBeGreaterThan(0.95);
     for (let i = 0; i < 30; i++) anim.update(1 / 60, { ...motion, speedMps: 0, heightM: 0 });
@@ -81,8 +124,8 @@ describe('StickmanAnimator', () => {
   it('a stride of walking distance advances exactly one walk cycle (feet keep pace)', () => {
     expect(WALK_STRIDE_M).toBeGreaterThan(0);
     // One stride of distance returns the cycle to its starting pose.
-    const a = new StickmanAnimator();
-    const b = new StickmanAnimator();
+    const a = new StickmanAnimator(BONES);
+    const b = new StickmanAnimator(BONES);
     for (let i = 0; i < 120; i++) {
       a.update(1 / 60, motion);
       b.update(1 / 60, motion);
