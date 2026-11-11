@@ -13,12 +13,12 @@ const hook = (page: Page) => page.evaluate(() => (window as DebugWindow).__stick
 async function open(page: Page, errors: string[], playerAt = '14,13') {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-  // Default: five metres from the training dummy (19, 13), facing it: inside Fire Bolt's lock range.
+  // Default: five metres from the training dummy (19, 13), facing it: inside the Fireball's lock range.
   await page.goto(`/?scene=training-yard&playerAt=${playerAt}`);
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
 }
 
-test('abilities: Q fires a Fire Bolt that hits and burns the dummy; the ability bar shows the cooldown', async ({
+test('abilities: Q fires a Fireball that hits and burns the dummy; the ability bar shows the cooldown', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
@@ -30,9 +30,9 @@ test('abilities: Q fires a Fire Bolt that hits and burns the dummy; the ability 
 
   await page.keyboard.press('KeyQ');
   await expect.poll(async () => (await hook(page)).dummy.hp, { timeout: 5000 }).toBeLessThan(1000);
-  expect((await hook(page)).sfx).toEqual(expect.arrayContaining(['fire-charge', 'fireball-cast']));
+  expect((await hook(page)).sfx).toEqual(expect.arrayContaining(['fireball-charge', 'fireball-cast']));
   await expect(page.locator('.ability-slot[data-slot="a1"]')).toHaveClass(/cooling/);
-  await page.screenshot({ path: testInfo.outputPath('fire-bolt.png') });
+  await page.screenshot({ path: testInfo.outputPath('fireball.png') });
 
   // The ultimate is not ready at the start (charge meter, OQ-04).
   await page.keyboard.press('KeyF');
@@ -41,7 +41,7 @@ test('abilities: Q fires a Fire Bolt that hits and burns the dummy; the ability 
   expect(errors).toEqual([]);
 });
 
-test('touch: five combat buttons (MELEE, A1–A3, ULT); A1 casts the Fire Bolt', async ({ page }, testInfo) => {
+test('touch: five combat buttons (MELEE, A1–A3, ULT); A1 casts the Fireball', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'touch test');
   const errors: string[] = [];
   await open(page, errors);

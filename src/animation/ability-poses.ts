@@ -23,9 +23,10 @@ interface CastShape {
 const CROUCH: Partial<Pose> = { legFront: limb(50, -95), legBack: limb(-20, -70) };
 
 const SHAPES: Record<string, CastShape> = {
-  // Both hands draw back to the hip, gathering fire, then thrust forward palms-out.
-  fireBolt: {
-    windup: { lean: deg(6), head: deg(10), armFront: limb(15, 125), armBack: limb(5, 135) },
+  // Fireball: the lead palm opens out to the side, drawing fire in from the air while the rear fist
+  // pulls back to the hip; then the palm thrusts forward and the ball is hurled.
+  fireball: {
+    windup: { lean: deg(8), head: deg(6), armFront: limb(70, 35), armBack: limb(10, 130), legFront: limb(26, -20) },
     release: { lean: deg(-20), head: deg(16), armFront: limb(92, 8), armBack: limb(84, 18) },
     settle: 0.6,
   },

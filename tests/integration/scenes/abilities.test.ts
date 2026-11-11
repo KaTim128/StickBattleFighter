@@ -40,11 +40,11 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     await initPhysics();
   });
 
-  it('Fire Bolt: costs stamina, flies to the soft-locked dummy, damages and burns it, firing every hook', async () => {
+  it('Fireball: costs stamina, flies to the soft-locked dummy, damages and burns it, firing every hook', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
     intents.pressAbility('a1');
     run(STEP);
-    expect(scene.player.ability).toBe('fireBolt');
+    expect(scene.player.ability).toBe('fireball');
     expect(scene.player.stamina).toBeCloseTo(100 - K.a1.staminaCost, 0);
     runUntil(() => scene.dummy.hp < 1000, 1.5);
     expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(K.a1.payload.damage);
@@ -53,19 +53,19 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     expect(scene.dummy.burning).toBe(false);
     expect(scene.drainEvents().some((e) => e.kind === 'burn')).toBe(true);
     expect(scene.abilities!.sfxLog).toEqual(
-      expect.arrayContaining(['fire-charge', 'fireball-cast', 'fireball-impact']),
+      expect.arrayContaining(['fireball-charge', 'fireball-cast', 'fireball-boom']),
     );
     scenes.clear();
   });
 
-  it('Fire Bolt is stopped by a pillar in the way (real hit detection, REQ-CMB-2)', async () => {
+  it('Fireball is stopped by a pillar in the way (real hit detection, REQ-CMB-2)', async () => {
     // Facing right at a pillar (8, 6); the dummy is out of lock range, so the bolt flies straight ahead.
     const { intents, scene, scenes, run } = await setup({ x: 5, y: 6 });
     intents.pressAbility('a1');
     run(1);
     expect(scene.abilities!.world.projectiles).toHaveLength(0);
     expect(scene.dummy.hp).toBe(1000);
-    const impact = scene.abilities!.recentFx.find((f) => f.kind === 'impact' && f.ability === 'fireBolt');
+    const impact = scene.abilities!.recentFx.find((f) => f.kind === 'impact' && f.ability === 'fireball');
     expect(impact).toBeDefined();
     expect(impact!.x).toBeGreaterThan(7);
     expect(impact!.x).toBeLessThan(8);
@@ -75,7 +75,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
   it('cooldown and stamina gate casting', async () => {
     const { intents, scene, scenes, run } = await setup({ x: 5, y: 6 });
     intents.pressAbility('a1');
-    run(0.6);
+    run(K.a1.castS + K.a1.recoveryS + 0.05); // the cast is over, the cooldown is not
     intents.pressAbility('a1');
     run(STEP);
     expect(scene.lastAbilityBlock).toBe('cooldown');

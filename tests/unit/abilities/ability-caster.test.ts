@@ -40,8 +40,8 @@ describe('AbilityCaster', () => {
     expect(c.check('a1', READY)).toBeNull();
     c.start('a1');
     const ev = run(c, INFERNO_KIT.a1.castS + INFERNO_KIT.a1.recoveryS + 0.05);
-    expect(ev.released).toEqual(['fireBolt']);
-    expect(ev.ended).toEqual(['fireBolt']);
+    expect(ev.released).toEqual(['fireball']);
+    expect(ev.ended).toEqual(['fireball']);
     expect(c.cast).toBeNull();
   });
 
@@ -52,7 +52,7 @@ describe('AbilityCaster', () => {
     expect(c.check('a1', { ...READY, airborne: true })).toBe('airborne');
     c.start('a1');
     expect(c.check('a2', READY)).toBe('busy'); // one cast at a time
-    run(c, 0.5);
+    run(c, INFERNO_KIT.a1.castS + INFERNO_KIT.a1.recoveryS + 0.05); // the cast is over, the cooldown is not
     expect(c.check('a1', READY)).toBe('cooldown');
     run(c, INFERNO_KIT.a1.cooldownS);
     expect(c.check('a1', READY)).toBeNull();

@@ -69,6 +69,38 @@ export interface LeapDelivery {
 
 export type Delivery = ProjectileDelivery | DashDelivery | NovaDelivery | LeapDelivery;
 
+/**
+ * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,
+ * `docs/design/MAGIC_VFX_STANDARD.md`; benchmark: Inferno's Fireball, owner 11/11/2026).
+ * Every stage is optional: an ability uses the stages that fit its delivery, in its own
+ * element's colours. Purely presentation: none of it changes damage or timing.
+ */
+export interface MagicLook {
+  /** The element's colours, darkest to hottest (fire: red, orange, amber, white-yellow). */
+  readonly palette: { readonly deep: number; readonly hot: number; readonly bright: number; readonly core: number };
+  /** Wind-up: motes drawn in from the air to the casting hand while a core swells in the palm. */
+  readonly charge?: {
+    /** How far out the motes start, metres. */
+    readonly gatherRadiusM: number;
+    readonly motesPerS: number;
+    /** Core radius in the palm at release, metres. */
+    readonly coreMaxM: number;
+  };
+  /** In flight: a streaming trail of element particles and sparks; heat shimmer around the core. */
+  readonly flight?: { readonly trailPerS: number; readonly sparksPerS: number; readonly shimmer: boolean };
+  /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
+  readonly impact?: {
+    readonly flashM: number;
+    readonly sparks: number;
+    readonly motes: number;
+    readonly ringM: number;
+    readonly scorchM?: number;
+    readonly smoke?: number;
+  };
+  /** The target's body flashes this colour on contact (white for the Fireball). */
+  readonly hitFlash?: number;
+}
+
 export interface AbilityDef {
   readonly id: string;
   readonly name: string;
@@ -93,6 +125,8 @@ export interface AbilityDef {
   /** Presentation hooks (REQ-ABL-1): VFX profile and sound-effect ids fired on cast events. */
   readonly vfx: string;
   readonly sfx: { readonly cast: string; readonly release: string; readonly impact: string };
+  /** The ability's look under the Magic Attack VFX Standard (optional: older looks fall back to defaults). */
+  readonly look?: MagicLook;
 }
 
 /** How the ultimate meter fills (OQ-04 answered by the owner 11/11/2026: a charge meter). */

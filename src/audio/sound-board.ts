@@ -164,31 +164,54 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.5, gain: 0.12, type: 'highpass', freq: 3600, attack: 0.08, delay: 0.12 } },
     { crackle: { dur: 0.55, gain: 0.28, count: 12 } },
   ],
-  // Fire Bolt: a fireball launched with a swelling whoosh…
-  'fireball-cast': [
-    { noise: { dur: 0.5, gain: 0.55, type: 'bandpass', freq: 220, freqEnd: 760, q: 0.7, attack: 0.16, flutter: 22 } },
-    { noise: { dur: 0.42, gain: 0.14, type: 'highpass', freq: 2600, freqEnd: 4200, attack: 0.12 } },
-    { tone: { wave: 'sine', f0: 70, f1: 120, dur: 0.35, gain: 0.25, attack: 0.12 } },
-    { crackle: { dur: 0.45, gain: 0.15, count: 6 } },
+  // Fireball (owner, 11/11/2026). The charge: air rushing into the palm, a rising magical shimmer
+  // over a swelling low hum, crackling as the core heats.
+  'fireball-charge': [
+    { noise: { dur: 0.42, gain: 0.3, type: 'bandpass', freq: 300, freqEnd: 1900, q: 1.2, attack: 0.3, flutter: 16 } },
+    { tone: { wave: 'triangle', f0: 320, f1: 980, dur: 0.42, gain: 0.08, attack: 0.3 } },
+    { tone: { wave: 'sine', f0: 55, f1: 95, dur: 0.42, gain: 0.22, attack: 0.25 } },
+    { crackle: { dur: 0.4, gain: 0.1, count: 5 } },
   ],
-  // …and bursting on contact: a whoomph, a roar that rolls out, crackle and sizzle.
-  'fireball-impact': [
-    { tone: { wave: 'sine', f0: 95, f1: 34, dur: 0.42, gain: 0.95, drive: 0.25 } },
+  // The release: a powerful magical whoosh as the ball is hurled, a bright shimmer riding it.
+  'fireball-cast': [
     {
       noise: {
-        dur: 0.75,
-        gain: 0.75,
-        type: 'lowpass',
-        freq: 1400,
-        freqEnd: 230,
-        attack: 0.015,
-        flutter: 21,
-        drive: 0.35,
+        dur: 0.5,
+        gain: 0.7,
+        type: 'bandpass',
+        freq: 900,
+        freqEnd: 180,
+        q: 0.7,
+        attack: 0.02,
+        flutter: 22,
+        drive: 0.3,
       },
     },
-    { noise: { dur: 0.12, gain: 0.35, type: 'bandpass', freq: 520, q: 1 } },
-    { noise: { dur: 0.6, gain: 0.13, type: 'highpass', freq: 4200, attack: 0.1, delay: 0.15 } },
-    { crackle: { dur: 0.8, gain: 0.28, count: 16 } },
+    { noise: { dur: 0.35, gain: 0.18, type: 'highpass', freq: 4200, freqEnd: 2400, attack: 0.01 } },
+    { tone: { wave: 'sine', f0: 140, f1: 60, dur: 0.3, gain: 0.35, drive: 0.2 } },
+    { tone: { wave: 'triangle', f0: 1200, f1: 600, dur: 0.22, gain: 0.06 } },
+    { crackle: { dur: 0.45, gain: 0.18, count: 7 } },
+  ],
+  // The connection: a deep explosive boom: a sub drop, a blast of roaring air, debris crackle and
+  // a sizzling tail.
+  'fireball-boom': [
+    { tone: { wave: 'sine', f0: 78, f1: 26, dur: 0.6, gain: 1, drive: 0.35 } },
+    { tone: { wave: 'triangle', f0: 160, f1: 45, dur: 0.22, gain: 0.45, drive: 0.3 } },
+    {
+      noise: {
+        dur: 0.9,
+        gain: 0.85,
+        type: 'lowpass',
+        freq: 1700,
+        freqEnd: 180,
+        attack: 0.005,
+        flutter: 19,
+        drive: 0.45,
+      },
+    },
+    { noise: { dur: 0.08, gain: 0.5, type: 'bandpass', freq: 1800, q: 0.8 } },
+    { noise: { dur: 0.7, gain: 0.12, type: 'highpass', freq: 4500, attack: 0.12, delay: 0.18 } },
+    { crackle: { dur: 0.9, gain: 0.3, count: 18 } },
   ],
   'fire-charge': [
     { noise: { dur: 0.28, gain: 0.22, type: 'bandpass', freq: 400, freqEnd: 1700, q: 1.5, attack: 0.16 } },
