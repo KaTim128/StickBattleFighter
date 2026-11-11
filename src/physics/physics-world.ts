@@ -14,7 +14,11 @@ type Rapier = typeof RapierModule;
  * touch only if each one's membership is in the other's filter.
  * Door splinters hit walls and each other but never block fighters.
  */
-export const GROUP = { WORLD: 0x1, FIGHTER: 0x2, DEBRIS: 0x4 } as const;
+/**
+ * Collision groups. WORLD = walls and doors; FURNITURE = arena props (desks, chairs…), separate so a
+ * thrown object can fly OVER low furniture while still hitting walls (Phase 7).
+ */
+export const GROUP = { WORLD: 0x1, FIGHTER: 0x2, DEBRIS: 0x4, FURNITURE: 0x8 } as const;
 const groups = (member: number, filter: number): number => (member << 16) | filter;
 
 let RAPIER: Rapier | null = null;
@@ -117,7 +121,7 @@ export class PhysicsWorld {
         .setDensity(spec.massKg / area)
         .setRestitution(0.3)
         .setFriction(0.4)
-        .setCollisionGroups(groups(GROUP.DEBRIS, GROUP.WORLD | GROUP.DEBRIS)),
+        .setCollisionGroups(groups(GROUP.DEBRIS, GROUP.WORLD | GROUP.DEBRIS | GROUP.FURNITURE)),
       body,
     );
     return body;
@@ -163,10 +167,19 @@ export class PhysicsWorld {
         .setDensity(spec.massKg / area)
         .setFriction(0.4)
         .setRestitution(0.15)
-        .setCollisionGroups(groups(GROUP.WORLD, 0xffff)),
+        .setCollisionGroups(groups(GROUP.FURNITURE, 0xffff)),
       body,
     );
     return body;
+  }
+
+  /**
+   * A thrown object high in the air passes over furniture (it still hits walls and doors);
+   * once it comes down low it collides with furniture again.
+   */
+  setFlyingHigh(body: RapierModule.RigidBody, high: boolean): void {
+    const filter = GROUP.WORLD | GROUP.DEBRIS | (high ? 0 : GROUP.FURNITURE);
+    for (let i = 0; i < body.numColliders(); i++) body.collider(i).setCollisionGroups(groups(GROUP.DEBRIS, filter));
   }
 
   /** Wake a planted prop (it becomes dynamic) or plant it again (fixed). */
@@ -187,7 +200,7 @@ export class PhysicsWorld {
   castWorldRay(from: Vec2, to: Vec2): { fraction: number; body: RapierModule.RigidBody | null } | null {
     const RAPIER = rapier();
     const ray = new RAPIER.Ray(from, { x: to.x - from.x, y: to.y - from.y });
-    const hit = this.world.castRay(ray, 1, true, undefined, groups(0xffff, GROUP.WORLD));
+    const hit = this.world.castRay(ray, 1, true, undefined, groups(0xffff, GROUP.WORLD | GROUP.FURNITURE));
     if (!hit) return null;
     return { fraction: hit.timeOfImpact, body: hit.collider.parent() };
   }
@@ -217,7 +230,7 @@ export class PhysicsWorld {
         .setDensity(spec.massKg / area)
         .setFriction(0)
         .setRestitution(0)
-        .setCollisionGroups(groups(GROUP.FIGHTER, GROUP.WORLD | GROUP.FIGHTER)),
+        .setCollisionGroups(groups(GROUP.FIGHTER, GROUP.WORLD | GROUP.FIGHTER | GROUP.FURNITURE)),
       body,
     );
     return body;

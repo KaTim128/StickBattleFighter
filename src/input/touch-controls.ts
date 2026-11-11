@@ -115,10 +115,12 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     stick.hidden = true;
     intents.setMove('touch', { x: 0, y: 0 });
   };
+  // The contextual utility button: jump, or pick up / throw when there is something to grab or carry.
   const onUtil = (e: PointerEvent): void => {
     e.preventDefault();
-    intents.pressJump();
+    intents.interactPress(true);
   };
+  const onUtilUp = (): void => intents.interactRelease();
   const onMelee = (e: PointerEvent): void => {
     e.preventDefault();
     intents.meleePress(); // tap = attack, hold = block
@@ -168,6 +170,8 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   window.addEventListener('pointerup', onUp);
   window.addEventListener('pointercancel', onUp);
   util.addEventListener('pointerdown', onUtil);
+  util.addEventListener('pointerup', onUtilUp);
+  util.addEventListener('pointercancel', onUtilUp);
   melee.addEventListener('pointerdown', onMelee);
   melee.addEventListener('pointerup', onMeleeUp);
   melee.addEventListener('pointercancel', onMeleeUp);
@@ -189,6 +193,22 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     window.removeEventListener('pointerup', onUp);
     window.removeEventListener('pointercancel', onUp);
     util.removeEventListener('pointerdown', onUtil);
+    util.removeEventListener('pointerup', onUtilUp);
+    util.removeEventListener('pointercancel', onUtilUp);
     layer.remove();
   };
+}
+
+/** What the contextual utility button does right now (CONTROL_SCHEME: its icon changes). */
+export type UtilityAction = 'jump' | 'pickup' | 'throw';
+
+const UTILITY_LABELS: Readonly<Record<UtilityAction, string>> = { jump: 'JUMP', pickup: 'GRAB', throw: 'THROW' };
+
+/** Relabel the utility button (cheap: touches the DOM only when the action changes). */
+export function showUtilityAction(root: ParentNode, action: UtilityAction): void {
+  const util = root.querySelector<HTMLButtonElement>('.util-button');
+  if (!util || util.dataset.action === action) return;
+  util.dataset.action = action;
+  util.textContent = UTILITY_LABELS[action];
+  util.setAttribute('aria-label', action === 'jump' ? 'Jump' : action === 'pickup' ? 'Pick up' : 'Throw');
 }

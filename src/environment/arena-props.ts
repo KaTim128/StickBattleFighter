@@ -1,5 +1,6 @@
 import type { RigidBody } from '@dimforge/rapier2d';
 import type { ArenaLayout } from '../data/arenas/arena-layout';
+import { THROWING } from '../data/combat/throwing';
 import { footprint, kindOf, type Material, type PropKind, type PropPlacement } from '../data/objects/props';
 import type { PhysicsWorld, Vec2 } from '../physics/physics-world';
 import { Debris } from './debris';
@@ -145,6 +146,13 @@ export class ArenaProp {
   looseFall: { heightM: number; vz: number } | null = null;
   /** Seconds of fire left (flammable props hit by fire). */
   burnS = 0;
+  /** Carried overhead (Phase 7): where it is, and who holds it. */
+  held: { x: number; y: number; heightM: number } | null = null;
+  carrier: number | null = null;
+  /** In flight after a throw: who threw it and which fighters it has already hit. */
+  flight: { by: number; hit: Set<number> } | null = null;
+  /** Currently flying above furniture height (passes over desks and chairs). */
+  flyingHigh = false;
   private settleS = 0;
   private lastHitS = -Infinity;
 
@@ -167,6 +175,7 @@ export class ArenaProp {
 
   /** Current centre and rotation (riding along with the parent for desk items). */
   get pose(): { x: number; y: number; angle: number } {
+    if (this.held) return { x: this.held.x, y: this.held.y, angle: 0 };
     if (this.body) {
       const p = this.body.translation();
       return { x: p.x, y: p.y, angle: this.body.rotation() };
@@ -193,7 +202,7 @@ export class ArenaProp {
 
   /** Can be struck: a standing floor prop with a body. */
   get hittable(): boolean {
-    if (this.broken || this.kind.decal || this.looseFall !== null) return false;
+    if (this.broken || this.kind.decal || this.looseFall !== null || this.held !== null) return false;
     // Floor props with a body, and items still sitting on a standing desk (monitors, keyboards, cups).
     return this.body !== null || (this.parent !== null && !this.parent.broken);
   }
@@ -286,9 +295,25 @@ export class ArenaProps {
       }
       if (prop.looseFall) {
         const f = prop.looseFall;
+        const high = f.heightM > THROWING.overFurnitureM;
+        if (prop.body && high !== prop.flyingHigh) {
+          prop.flyingHigh = high;
+          this.physics.setFlyingHigh(prop.body, high);
+        }
         if (f.heightM > 0 || f.vz > 0) {
           f.vz -= 18 * stepS;
           f.heightM = Math.max(0, f.heightM + f.vz * stepS);
+          if (f.heightM === 0 && f.vz < 0) this.land(prop, -f.vz);
+        }
+        // A thrown object stops being dangerous once it has slowed down on the floor.
+        if (f.heightM === 0 && prop.flight && prop.body) {
+          const v = prop.body.linvel();
+          if (Math.hypot(v.x, v.y) < THROWING.hitMinSpeedMps) prop.flight = null;
+        }
+        // Thrown or dropped furniture becomes furniture again once it has come to rest.
+        if (f.heightM === 0 && !prop.flight && prop.kind.solid && prop.body && !prop.broken) {
+          const v = prop.body.linvel();
+          if (Math.hypot(v.x, v.y) < 0.15) this.replant(prop);
         }
       }
       if (prop.body && prop.settle(stepS) && !prop.looseFall) {
@@ -297,6 +322,94 @@ export class ArenaProps {
       }
     }
     this.debris.update(stepS);
+  }
+
+  // ---------------- Pickup, carry and throw (Phase 7, REQ-PHY-8..10) ----------------
+
+  /**
+   * The throwable object nearest a fighter's feet within reach, in front of them (not behind),
+   * or null. Standing furniture, items on desks and loose items lying on the floor all count.
+   */
+  pickupCandidate(x: number, y: number, facing: number, reachM: number, behindM: number): ArenaProp | null {
+    let best: ArenaProp | null = null;
+    let bestD = Number.POSITIVE_INFINITY;
+    for (const prop of this.props) {
+      if (!prop.kind.throwable || prop.broken || prop.held || prop.flight || prop.kind.decal) continue;
+      const loose = prop.looseFall;
+      if (loose && (loose.heightM > 0 || (prop.body && Math.hypot(prop.body.linvel().x, prop.body.linvel().y) > 0.5)))
+        continue;
+      const r = prop.rect;
+      const dx = Math.max(r.x0 - x, 0, x - r.x1);
+      const dy = Math.max(r.y0 - y, 0, y - r.y1);
+      const d = Math.hypot(dx, dy);
+      const cx = (r.x0 + r.x1) / 2;
+      if (d > reachM || (cx - x) * facing < -behindM) continue;
+      if (d < bestD) {
+        best = prop;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  /** Lift it overhead: it stops being furniture (no collider) until thrown or put down. */
+  pickUp(prop: ArenaProp, carrier: number, at: { x: number; y: number; heightM: number }): void {
+    if (prop.body) this.physics.removeBody(prop.body);
+    prop.body = null;
+    prop.awake = false;
+    prop.looseFall = null;
+    prop.burnS = 0;
+    prop.carrier = carrier;
+    prop.held = { ...at };
+  }
+
+  /** Follow the carrier. */
+  carry(prop: ArenaProp, at: { x: number; y: number; heightM: number }): void {
+    if (prop.held) Object.assign(prop.held, at);
+  }
+
+  /**
+   * Let go of it: thrown (a flight that can hit fighters) or put down (`velocity` near zero).
+   * It flies as a physical body that bounces off walls and furniture, under a height arc.
+   */
+  release(prop: ArenaProp, velocity: Vec2, heightM: number, upMps: number, thrown: boolean): void {
+    const from = prop.held;
+    if (!from) return;
+    const { w, d } = prop.size;
+    prop.held = null;
+    prop.body = this.physics.addDebris({
+      position: { x: from.x, y: from.y },
+      halfExtents: { x: Math.max(0.05, w / 2), y: Math.max(0.05, d / 2) },
+      velocity,
+      spin: thrown ? (prop.index % 2 ? 1 : -1) * 7 : 0,
+      massKg: Math.max(0.1, prop.kind.massKg),
+    });
+    // Thrown things travel far: less floor drag while airborne (restored once it lands).
+    if (thrown) prop.body.setLinearDamping(0.15);
+    prop.looseFall = { heightM, vz: upMps };
+    prop.flyingHigh = false; // set on the next update from the height
+    prop.flight = thrown && prop.carrier !== null ? { by: prop.carrier, hit: new Set() } : null;
+    prop.carrier = null;
+  }
+
+  /** Objects flying low and fast enough to hurt (the scene tests them against fighters). */
+  get flying(): ArenaProp[] {
+    return this.props.filter((p) => p.flight !== null && p.body !== null && !p.broken);
+  }
+
+  /**
+   * A thrown object struck a fighter: it takes damage (it may break) and bounces back off them.
+   * Returns true if it broke.
+   */
+  thrownHit(prop: ArenaProp, fighterId: number, damage: number, dir: Vec2): boolean {
+    prop.flight?.hit.add(fighterId);
+    const broke = this.applyHit(prop, { blow: 'knockback', damage, strength: 0, direction: dir });
+    const body = prop.body;
+    if (!broke && body) {
+      const v = body.linvel();
+      body.setLinvel({ x: -v.x * 0.25, y: -v.y * 0.25 }, true);
+    }
+    return broke;
   }
 
   /** Hits and breaks since the last call (sounds, sparks, dust). */
@@ -319,6 +432,45 @@ export class ArenaProps {
         burning: p.burnS > 0,
       };
     });
+  }
+
+  /** It hit the floor: fragile things shatter if it came down hard; anything thrown stops flying. */
+  private land(prop: ArenaProp, fallMps: number): void {
+    const body = prop.body;
+    const v = body ? body.linvel() : { x: 0, y: 0 };
+    const along = Math.hypot(v.x, v.y);
+    const speed = along + fallMps * 0.5;
+    if (body) body.setLinearDamping(2.2); // floor friction again (it can still skid into someone)
+    if (!prop.flight) return;
+    const dir = along > 0.01 ? { x: v.x / along, y: v.y / along } : { x: 0, y: 1 };
+    const fragile = prop.kind.material === 'glass' || prop.kind.material === 'ceramic';
+    if (fragile && speed > THROWING.fragileBreakMps) {
+      this.applyHit(prop, { blow: 'knockback', damage: prop.hp ?? 0, strength: 0, direction: dir });
+      return;
+    }
+    this.pending.push({
+      kind: 'hit',
+      material: prop.kind.material,
+      x: prop.pose.x,
+      y: prop.pose.y,
+      z: 0,
+      dir,
+      sizeM: Math.max(prop.size.w, prop.size.d, prop.size.h),
+    });
+  }
+
+  /** Back to a planted piece of furniture where it came to rest. */
+  private replant(prop: ArenaProp): void {
+    const at = prop.pose;
+    if (prop.body) this.physics.removeBody(prop.body);
+    const { w, d } = prop.size;
+    prop.body = this.physics.addPropBody({
+      position: { x: at.x, y: at.y },
+      halfExtents: { x: w / 2, y: d / 2 },
+      massKg: prop.kind.massKg,
+    });
+    prop.looseFall = null;
+    prop.awake = false;
   }
 
   /** Returns true if this hit broke the prop. */
@@ -400,7 +552,7 @@ export class ArenaProps {
     const lift = prop.placement.elevationM ?? 0;
     // Where the items on it are now (they ride along with it until it breaks).
     const riders = this.props
-      .filter((item) => item.parent === prop && !item.broken && item.looseFall === null)
+      .filter((item) => item.parent === prop && !item.broken && item.looseFall === null && !item.held && !item.body)
       .map((item) => ({ item, at: item.pose }));
     prop.broken = true;
     if (prop.body) this.physics.removeBody(prop.body);

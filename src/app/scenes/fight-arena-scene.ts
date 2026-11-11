@@ -4,7 +4,15 @@ import type { Burn } from '../../abilities/ability-def';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
-import { blockPose, dashPose, flinchPose, getUpFrame, knockdownFrame } from '../../animation/reaction-poses';
+import {
+  blockPose,
+  carryPose,
+  dashPose,
+  flinchPose,
+  getUpFrame,
+  knockdownFrame,
+  throwPose,
+} from '../../animation/reaction-poses';
 import { blendPose, type Pose } from '../../animation/skeleton';
 import { addArenaColliders } from '../../arenas/arena-colliders';
 import { CameraShake } from '../../camera/camera-shake';
@@ -24,7 +32,9 @@ import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../
 import type { CombatEvent } from '../../combat/events';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
+import { THROWING } from '../../data/combat/throwing';
 import type { Material } from '../../data/objects/props';
+import type { ArenaProp } from '../../environment/arena-props';
 import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
 import type { PlayerIntents } from '../../input/intents';
@@ -70,6 +80,10 @@ export interface PlayerState {
   /** Ultimate meter, 0..100. */
   meter: number;
   burning: boolean;
+  /** Kind of object carried overhead (Phase 7), or null. */
+  carrying: string | null;
+  /** What the contextual utility button does now: jump, pick up or throw. */
+  utility: 'jump' | 'pickup' | 'throw';
 }
 
 export interface DummyState {
@@ -305,6 +319,8 @@ export class FightArenaScene implements ArenaScene {
       ability: f.caster?.cast?.def.id ?? null,
       meter: f.caster?.meter ?? 0,
       burning: f.combatant.burning,
+      carrying: f.carrying?.placement.kind ?? null,
+      utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
     };
   }
 
@@ -442,6 +458,7 @@ export class FightArenaScene implements ArenaScene {
       for (const door of this.doors) door.updateTraffic(traffic, stepS);
     }
     for (const door of this.doors) door.update(stepS);
+    this.checkThrownHits();
     this.props?.update(stepS);
     this.propFeedback();
 
@@ -462,6 +479,24 @@ export class FightArenaScene implements ArenaScene {
   private controlPlayer(f: FighterEntity, stepS: number): void {
     const c = f.combatant;
     const air = f.airborne;
+    const jumpFromUtility = this.stepInteract(f, stepS);
+    if (f.carrying) {
+      // Hands full: the combat buttons do nothing until it is thrown or put down (CONTROL_SCHEME §2).
+      this.intents.consumeMeleeEdges();
+      this.intents.consumeAbility();
+      if (c.state === 'guarding') c.setGuard(false);
+      f.meleeTracking = false;
+      if (this.intents.consumeDodge() && !air && c.tryDodge()) {
+        const m = this.intents.move;
+        const len = Math.hypot(m.x, m.y);
+        Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.facing, y: 0 });
+      }
+      const slow = THROWING.carrySpeedFactor(f.carrying.kind.massKg);
+      const m = this.intents.move;
+      const jump = (this.intents.consumeJump() || jumpFromUtility) && f.def.capabilities.canJump && c.canAct;
+      this.stepFighter(f, stepS, { x: m.x * slow, y: m.y * slow }, jump);
+      return;
+    }
 
     // Button 1: decide tap vs hold on the fixed step.
     const { pressed, released } = this.intents.consumeMeleeEdges();
@@ -505,13 +540,132 @@ export class FightArenaScene implements ArenaScene {
     }
 
     const jump =
-      this.intents.consumeJump() &&
+      (this.intents.consumeJump() || jumpFromUtility) &&
       f.def.capabilities.canJump &&
       c.canAct &&
       c.state !== 'guarding' &&
       !(f.combo.attack && !air) &&
       !f.caster?.cast;
     this.stepFighter(f, stepS, this.intents.move, jump);
+  }
+
+  /**
+   * Pick up / throw / put down (Phase 7, REQ-PHY-8, TD-016). Press near an object to lift it;
+   * while carrying, a short press throws it at the locked target and holding puts it down.
+   * The touch utility button jumps when there is nothing to grab or carry: returns true then.
+   */
+  private stepInteract(f: FighterEntity, stepS: number): boolean {
+    let jump = false;
+    const edge = this.intents.consumeInteract();
+    const props = this.props;
+    if (f.carrying && (f.carrying.broken || !f.combatant.canAct)) this.dropCarried(f, 0); // hit while carrying: it falls
+    if (edge?.down) {
+      if (f.carrying) {
+        f.interactTracking = true;
+        f.interactHoldS = 0;
+      } else {
+        const grab = this.pickupFor(f);
+        if (grab && props && !f.airborne && !f.combo.attack && !f.caster?.cast) {
+          props.pickUp(grab, this.fighters.indexOf(f), this.holdPoint(f));
+          f.carrying = grab;
+          f.interactTracking = false; // this press was the pickup, not a throw
+          this.characterSound(f, 'jump', 0.5);
+        } else if (edge.orJump) {
+          jump = true;
+        }
+      }
+    }
+    if (f.carrying && f.interactTracking) {
+      if (this.intents.interactHeld) {
+        f.interactHoldS += stepS;
+        if (f.interactHoldS >= THROWING.dropHoldS) this.dropCarried(f, 0.8);
+      } else if (edge && !edge.down) {
+        this.throwCarried(f);
+      }
+    }
+    if (f.carrying && props) props.carry(f.carrying, this.holdPoint(f));
+    return jump;
+  }
+
+  /** Where a carried object rides: over the head, a touch in front so it draws over the fighter. */
+  private holdPoint(f: FighterEntity): { x: number; y: number; heightM: number } {
+    return { x: f.x + f.facing * 0.08, y: f.y + 0.02, heightM: THROWING.holdHeightM + f.hop.heightM };
+  }
+
+  private pickupFor(f: FighterEntity): ArenaProp | null {
+    return (
+      this.props?.pickupCandidate(f.x, f.y, f.facing, THROWING.reachM + f.def.body.footRadiusM, THROWING.behindM) ??
+      null
+    );
+  }
+
+  /** Throw at the locked target if it is roughly ahead and in range, else the way the fighter faces or moves. */
+  private throwCarried(f: FighterEntity): void {
+    const prop = f.carrying;
+    if (!prop || !this.props) return;
+    const target = this.fighters.find((o) => o !== f && !o.combatant.isKo);
+    const m = this.intents.move;
+    let dir = Math.hypot(m.x, m.y) > 0.3 ? { x: m.x, y: m.y } : { x: f.facing, y: 0 };
+    if (target) {
+      const dx = target.x - f.x;
+      const dy = target.y - f.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 0.01 && d < THROWING.aimRangeM && dx * f.facing > -0.2) dir = { x: dx, y: dy };
+    }
+    const len = Math.hypot(dir.x, dir.y) || 1;
+    const speed = THROWING.speedFor(prop.kind.massKg);
+    if (Math.abs(dir.x) > 0.1) f.facing = dir.x > 0 ? 1 : -1;
+    this.props.release(
+      prop,
+      { x: (dir.x / len) * speed, y: (dir.y / len) * speed },
+      THROWING.launchHeightM,
+      THROWING.launchUpMps,
+      true,
+    );
+    f.carrying = null;
+    f.interactTracking = false;
+    f.throwFollowS = 0.28;
+    this.characterSound(f, 'jump', 0.8);
+  }
+
+  /** Put it down in front (or let it fall when hit). */
+  private dropCarried(f: FighterEntity, forwardMps: number): void {
+    const prop = f.carrying;
+    f.carrying = null;
+    f.interactTracking = false;
+    if (!prop || !this.props || prop.broken) return;
+    this.props.release(prop, { x: f.facing * forwardMps, y: 0 }, THROWING.holdHeightM * 0.6, 0, false);
+  }
+
+  /** Thrown objects hit fighters they fly into (not the thrower), once each. */
+  private checkThrownHits(): void {
+    if (!this.props) return;
+    for (const prop of this.props.flying) {
+      const fall = prop.looseFall;
+      const body = prop.body;
+      const flight = prop.flight;
+      if (!fall || !body || !flight || fall.heightM > THROWING.hitMaxHeightM) continue;
+      const v = body.linvel();
+      const speed = Math.hypot(v.x, v.y);
+      if (speed < THROWING.hitMinSpeedMps) continue;
+      for (let i = 0; i < this.fighters.length; i++) {
+        const target = this.fighters[i]!;
+        if (i === flight.by || flight.hit.has(i) || target.combatant.isKo || !target.body) continue;
+        if (!circleTouchesRect(target, target.def.body.footRadiusM + 0.1, prop.rect)) continue;
+        const thrower = this.fighters[flight.by] ?? target;
+        const mass = prop.kind.massKg;
+        const dir = { x: v.x / speed, y: v.y / speed };
+        this.applyStrike(thrower, target, {
+          damage: THROWING.damageFor(mass, speed),
+          heavy: mass >= THROWING.heavyFromKg,
+          knockbackMps: THROWING.knockbackFor(mass),
+          dir,
+          melee: false,
+          impact: mass >= THROWING.heavyFromKg ? 'knuckle-heavy' : 'knuckle-light',
+        });
+        this.props.thrownHit(prop, i, Math.max(5, mass * 3), { x: -dir.x, y: -dir.y });
+      }
+    }
   }
 
   /** I / F / ULT: start aiming the leap, or launch it at the aimed spot (owner, 11/11/2026). */
@@ -1132,9 +1286,12 @@ export class FightArenaScene implements ArenaScene {
       const pose = prop.pose;
       node.position.set(pose.x, pose.y);
       node.rotation = pose.angle;
-      if (prop.looseFall) {
-        // The drawing has its desk height built in: drop it to the current fall height.
-        node.pivot.y = prop.looseFall.heightM - (prop.placement.elevationM ?? 0);
+      this.occlusion?.setExempt(node, prop.held !== null || prop.flight !== null);
+      const lift = prop.held?.heightM ?? prop.looseFall?.heightM ?? null;
+      if (lift === null && this.grounded.has(prop.index)) node.pivot.y = 0; // replanted furniture
+      if (lift !== null) {
+        // The drawing has its desk height built in: draw it at its carried or falling height instead.
+        node.pivot.y = lift - (prop.placement.elevationM ?? 0);
         if (!this.grounded.has(prop.index)) {
           this.grounded.add(prop.index);
           view.actors.remove(node);
@@ -1221,6 +1378,14 @@ export class FightArenaScene implements ArenaScene {
     const cast = f.caster?.cast;
     if (cast && f.caster) {
       pose = abilityPose(pose, cast.def.id, cast.phase, f.caster.phaseProgress, f.abilityLift > 0.05);
+    }
+
+    // Carrying overhead: arms up (blended); a throw whips them forward for a moment.
+    f.carryWeight += ((f.carrying ? 1 : 0) - f.carryWeight) * smoothing(16, frameDtS);
+    if (f.carryWeight > 0.01) pose = blendPose(pose, carryPose(pose), f.carryWeight);
+    if (f.throwFollowS > 0) {
+      f.throwFollowS = Math.max(0, f.throwFollowS - frameDtS);
+      pose = blendPose(pose, throwPose(pose), Math.min(1, f.throwFollowS / 0.12));
     }
 
     // Reactions blend in and out smoothly.

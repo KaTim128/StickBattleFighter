@@ -33,6 +33,13 @@ interface Box {
 
 export class OcclusionFader {
   private readonly targets: FadeTarget[] = [];
+  private readonly exempt = new Set<Container>();
+
+  /** Never fade this node (e.g. an object carried overhead: it belongs to the fighter). */
+  setExempt(node: Container, exempt: boolean): void {
+    if (exempt) this.exempt.add(node);
+    else this.exempt.delete(node);
+  }
 
   add(node: Container): void {
     this.targets.push({ node, depth: () => node.zIndex });
@@ -58,7 +65,7 @@ export class OcclusionFader {
       const node = t.node;
       if (!node.visible || node.destroyed) continue;
       let blocking = false;
-      if (boxes.length > 0) {
+      if (boxes.length > 0 && !this.exempt.has(node)) {
         const depth = t.depth();
         const b = node.getBounds();
         for (const v of boxes) {

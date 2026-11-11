@@ -130,7 +130,34 @@ export class PlayerIntents {
     return queued;
   }
 
+  // ---- Pick up / throw (REQ-CTL-13, TD-016): one contextual button. Desktop G or U is a pure
+  // interact key; the touch utility button also jumps when there is nothing to pick up or throw.
+  // Press = pick up or (on release) throw; hold while carrying = put down. Edges are queued.
+  private interactDown = false;
+  private readonly interactEdges: { down: boolean; orJump: boolean }[] = [];
+
+  interactPress(orJump = false): void {
+    if (!this.interactDown && this.interactEdges.length < 4) this.interactEdges.push({ down: true, orJump });
+    this.interactDown = true;
+  }
+
+  interactRelease(): void {
+    if (this.interactDown && this.interactEdges.length < 4) this.interactEdges.push({ down: false, orJump: false });
+    this.interactDown = false;
+  }
+
+  get interactHeld(): boolean {
+    return this.interactDown;
+  }
+
+  /** The next press or release, one per step. */
+  consumeInteract(): { down: boolean; orJump: boolean } | null {
+    return this.interactEdges.shift() ?? null;
+  }
+
   clear(): void {
+    this.interactDown = false;
+    this.interactEdges.length = 0;
     this.sources.clear();
     this.jumpQueued = false;
     this.meleeDown = false;

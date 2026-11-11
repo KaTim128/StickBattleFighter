@@ -16,7 +16,7 @@ import { MUSIC_TRACKS } from '../data/audio/music-tracks';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse } from '../input/keyboard';
-import { attachTouchControls } from '../input/touch-controls';
+import { attachTouchControls, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
@@ -182,7 +182,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     music.setMuted(sound.muted);
   });
   const controlsHint =
-    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F or I ultimate (aim with WASD, press again) · Shift dodge · T dummy attacks · M mute';
+    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F or I ultimate (aim with WASD, press again) · G pick up / throw (hold: put down) · Shift dodge · T dummy attacks · M mute';
   onToggleDummyAttacks(window, () => {
     if (!(scene instanceof FightArenaScene)) return;
     scene.dummyAttacks = !scene.dummyAttacks;
@@ -257,6 +257,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       if (scene instanceof EngineCheckScene) debug.crate = scene.state.crate;
       if (scene instanceof FightArenaScene) {
         debug.player = scene.player;
+        showUtilityAction(document.body, debug.player.utility);
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;

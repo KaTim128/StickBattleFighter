@@ -8,6 +8,7 @@ import type { AnimationState } from '../../characters/schema';
 import { Combatant, seededRandom } from '../../combat/combatant';
 import { MoveController } from '../../combat/moves';
 import type { FighterDef } from '../../data/fighters/fighter-def';
+import type { ArenaProp } from '../../environment/arena-props';
 import { type HopState, isAirborne } from '../../physics/movement';
 import type { PhysicsWorld } from '../../physics/physics-world';
 import { FighterBars } from '../../rendering/fighter-bars';
@@ -62,6 +63,13 @@ export class FighterEntity {
   readonly curr = { x: 0, y: 0 };
   /** The move this step asked for (doors swing open for a firm push, REQ-ENV-13). */
   readonly moveIntent = { x: 0, y: 0 };
+  /** The object carried overhead (Phase 7), and how long the interact button has been held. */
+  carrying: ArenaProp | null = null;
+  /** Presentation: how far into the arms-up carry pose (0..1), and time left in a throw follow-through. */
+  carryWeight = 0;
+  throwFollowS = 0;
+  interactHoldS = 0;
+  interactTracking = false;
   /** Time left flying from a heavy knockback (can smash doors). */
   knockFlightS = 0;
   readonly dodgeDir = { x: 0, y: 0 };

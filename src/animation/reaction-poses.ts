@@ -17,6 +17,16 @@ export function flinchPose(base: Pose): Pose {
   return { ...base, lean: deg(14), head: deg(-18), armFront: limb(35, 45), armBack: limb(-15, 70) };
 }
 
+/** Carrying overhead (Phase 7): both arms up, elbows slightly bent, chest up under the load. */
+export function carryPose(base: Pose): Pose {
+  return { ...base, lean: deg(-2), head: deg(4), armFront: limb(168, 18), armBack: limb(160, 26) };
+}
+
+/** Throw follow-through: arms whipped forward and down, leaning into it. */
+export function throwPose(base: Pose): Pose {
+  return { ...base, lean: deg(-22), head: deg(14), armFront: limb(100, 8), armBack: limb(84, 18) };
+}
+
 /** Dodge dash: low and leaning hard into the direction of travel, guard tucked. */
 export function dashPose(base: Pose): Pose {
   return { ...base, lean: deg(-34), head: deg(28), armFront: limb(82, 112), armBack: limb(40, 140) };

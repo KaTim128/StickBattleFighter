@@ -14,6 +14,8 @@ export const MOVE_KEYS: Readonly<Record<string, Vec2>> = {
 export const JUMP_KEYS: ReadonlySet<string> = new Set(['Space']);
 /** Button 1 melee: J (both presets); left mouse button is handled in attachMouse. Tap = attack, hold = block. */
 export const MELEE_KEYS: ReadonlySet<string> = new Set(['KeyJ']);
+/** Pick up and throw (CONTROL_SCHEME §4: G on the WASD preset, U on the keyboard-only preset). */
+export const INTERACT_KEYS: ReadonlySet<string> = new Set(['KeyG', 'KeyU']);
 /**
  * Abilities and ultimate: Q/E/R/F (keyboard + mouse) and K/L/O/I (keyboard only), CONTROL_SCHEME §4.
  * I is the ultimate (owner, 11/11/2026: "press I to aim, I again to launch"), so A3 moved to O.
@@ -62,6 +64,10 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
       if (!e.repeat) intents.meleePress();
       return;
     }
+    if (INTERACT_KEYS.has(e.code)) {
+      if (!e.repeat) intents.interactPress();
+      return;
+    }
     const ability = ABILITY_KEYS[e.code];
     if (ability) {
       if (!e.repeat) intents.pressAbility(ability);
@@ -78,6 +84,7 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
   };
   const up = (e: KeyboardEvent): void => {
     if (MELEE_KEYS.has(e.code)) intents.meleeRelease();
+    if (INTERACT_KEYS.has(e.code)) intents.interactRelease();
     if (held.delete(e.code)) sync();
   };
   // Releasing keys while the window is unfocused must not leave the fighter running.
@@ -85,6 +92,7 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
     held.clear();
     sync();
     intents.meleeRelease();
+    intents.interactRelease();
   };
   target.addEventListener('keydown', down);
   target.addEventListener('keyup', up);

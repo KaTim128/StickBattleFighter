@@ -98,9 +98,17 @@ function shadow(ctx, o, x, y, w, d, h, strength = 0.28) {
 }
 
 // ---------- environment ----------
+/** A small repeatable random sequence (so the mockup looks the same every time). */
+function seededRandom(start) {
+  let seed = start;
+  return () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+}
 function floor(ctx, o, W, D) {
   // Light-wood planks: 0.2 m wide boards along x, staggered ends, per-board tone variation, satin sheen.
-  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const rnd = seededRandom(3);
   const tones = ['#e7c48f', '#e2bc84', '#ecc999', '#ddb67d', '#e9c690'];
   for (let j = 0; j < D / 0.2; j++) {
     let x = -rnd() * 1.4;
@@ -192,7 +200,7 @@ function shelving(ctx, o, x, y) {
   shadow(ctx, o, x, y, w, d, h, .3);
   box(ctx, o, x, y, 0, .05, d, h, '#cfa36c'); box(ctx, o, x + w - .05, y, 0, .05, d, h, '#cfa36c');
   box(ctx, o, x, y - .02, 0, w, .02, h, '#b98d58');
-  let seed = 9; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const rnd = seededRandom(9);
   const book = ['#c0504d', '#3e6e9e', '#e3b23c', '#5b8c5a', '#7d5ba6', '#e07b39', '#2f4858'];
   for (const z of [0, .48, .96, 1.44]) {
     box(ctx, o, x + .05, y, z, w - .1, d, .04, '#e0b47c');
