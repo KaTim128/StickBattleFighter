@@ -9,6 +9,8 @@ interface Hook {
     attack: string | null;
     jumps: number;
     airborne: boolean;
+    dodgeReady: number;
+    speed: number;
     x: number;
     y: number;
   };
@@ -63,15 +65,20 @@ test('right click dodges in the direction of the held movement key', async ({ pa
   const screenX = (s: { x: number; y: number }) => s.x - s.y; // iso: right on screen is +(x − y)
   await page.keyboard.down('KeyD');
   await page.mouse.click(p.x, p.y, { button: 'right' });
-  await page.waitForTimeout(250);
+  // Game time, not wall time: a software-rendered CI browser runs slower than real time.
+  await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000, intervals: [10] }).toBe('dodging');
+  await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000 }).not.toBe('dodging');
   await page.keyboard.up('KeyD');
   expect(screenX((await hook(page)).player)).toBeGreaterThan(screenX(before.player) + 1.5);
-  // No key held: a back-step, away from where the fighter faces (it now faces right).
-  await page.waitForTimeout(900);
+  // No key held: a back-step, away from where the fighter faces (it now faces right). Wait for the
+  // weight-based dodge cooldown and for the fighter to stop first.
+  await expect.poll(async () => (await hook(page)).player.dodgeReady, { timeout: 5000 }).toBe(1);
+  await expect.poll(async () => (await hook(page)).player.speed, { timeout: 3000 }).toBeLessThan(0.05);
   const mid = await hook(page);
   await page.mouse.click(p.x, p.y, { button: 'right' });
-  await page.waitForTimeout(300);
-  expect(screenX((await hook(page)).player)).toBeLessThan(screenX(mid.player) - 1);
+  await expect
+    .poll(async () => screenX((await hook(page)).player), { timeout: 3000 })
+    .toBeLessThan(screenX(mid.player) - 1);
   expect(errors).toEqual([]);
 });
 
