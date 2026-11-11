@@ -16,6 +16,8 @@ export const TRAINING_DUMMY = {
   settleDecelMps2: 14,
   /** How often it may attack when "dummy attacks" are on, seconds. */
   attackEveryS: 1.6,
+  /** Punch Clash: how fast it mashes, presses per second (a quick human manages about 7–10). */
+  clashMashRate: 6.5,
   look: {
     limb: 0xb9c0cc,
     limbBack: 0x8a919d,

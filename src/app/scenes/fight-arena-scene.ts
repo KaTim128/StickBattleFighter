@@ -5,12 +5,18 @@ import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { attackPose } from '../../animation/attack-poses';
 import { blockPose, dashPose, flinchPose, getUpFrame, knockdownFrame } from '../../animation/reaction-poses';
-import { blendPose } from '../../animation/skeleton';
+import { blendPose, type Pose } from '../../animation/skeleton';
 import { addArenaColliders } from '../../arenas/arena-colliders';
 import { CameraShake } from '../../camera/camera-shake';
 import { fitRectToView } from '../../camera/fit-view';
 import { type CameraView, FollowCamera } from '../../camera/follow-camera';
-import { type AttackDef, capsuleTouchesRect, distanceToCapsule, hitCapsule } from '../../combat/attacks';
+import {
+  type AttackDef,
+  attackDuration,
+  capsuleTouchesRect,
+  distanceToCapsule,
+  hitCapsule,
+} from '../../combat/attacks';
 import { type CombatState, DEFENCE, seededRandom } from '../../combat/combatant';
 import type { CombatEvent } from '../../combat/events';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
@@ -30,6 +36,7 @@ import { AbilityVfx, type BurningThing, type DustSource, type ImpactBurst } from
 import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
 import { SceneAbilities } from './scene-abilities';
+import { type ClashBanner, type ClashHudState, SceneClash } from './scene-clash';
 
 /** Live player state for the debug overlay and browser tests. */
 export interface PlayerState {
@@ -133,8 +140,12 @@ export class FightArenaScene implements ArenaScene {
   private readonly impacts: { x: number; y: number; dir: { x: number; y: number }; profile: ImpactProfile }[] = [];
   /** KO dust to release this frame (filled while drawing fighters, used by the VFX). */
   private readonly frameDust: DustSource[] = [];
-  /** Sounds waiting to be played by the sound board. */
-  private readonly sounds: string[] = [];
+  /** Sounds waiting to be played by the sound board (with loudness). */
+  private readonly sounds: { id: string; gain: number }[] = [];
+  /** Simulation time (hit-stop excluded), seconds. */
+  private simTimeS = 0;
+  /** The Punch Clash (owner, 11/11/2026). */
+  readonly clashes: SceneClash;
   private readonly shake = new CameraShake();
   private readonly rng = seededRandom(1234);
   private hitstopS = 0;
@@ -156,6 +167,49 @@ export class FightArenaScene implements ArenaScene {
     this.name = arena.id;
     this.playerFighter = new FighterEntity('player', INFERNO, arena.playerStart, true);
     this.dummyFighter = new FighterEntity('dummy', TRAINING_DUMMY, arena.dummyStart, false);
+    this.clashes = new SceneClash({
+      player: this.playerFighter,
+      opponent: this.dummyFighter,
+      opponentMashRate: TRAINING_DUMMY.clashMashRate,
+      random: () => this.rng(),
+      takeMashPresses: () => {
+        // During a clash Button 1 is the mash button; other buttons do nothing.
+        const { pressed } = this.intents.consumeMeleeEdges();
+        while (this.intents.consumeAbility()) {
+          /* ignored during a clash */
+        }
+        this.intents.consumeDodge();
+        this.intents.consumeJump();
+        return pressed ? 1 : 0;
+      },
+      finisher: (winner, loser, f) =>
+        this.applyStrike(winner, loser, {
+          damage: f.damage,
+          heavy: true,
+          knockbackMps: f.knockbackMps,
+          dir: { x: winner.facing, y: 0 },
+          melee: true,
+          impact: 'knuckle-heavy',
+          unblockable: true,
+          profile: f.profile,
+        }),
+      sound: (id, gain) => this.queueSound(id, gain),
+      impact: (x, y, dir, profile) => this.impacts.push({ x, y, dir, profile }),
+      shake: (trauma, punch) => {
+        this.shake.addTrauma(trauma);
+        if (punch > 0) this.shake.punch(punch);
+      },
+      hitstop: (seconds) => {
+        this.hitstopS = Math.max(this.hitstopS, seconds);
+      },
+      lockUp: (f) => {
+        f.combo.interrupt();
+        this.abilities?.interrupt(f, true);
+        f.combatant.setGuard(false);
+        f.driveVelocity = null;
+        f.knockFlightS = 0;
+      },
+    });
   }
 
   private get fighters(): FighterEntity[] {
@@ -282,7 +336,12 @@ export class FightArenaScene implements ArenaScene {
       return;
     }
 
+    this.simTimeS += stepS;
     for (const f of this.fighters) {
+      if (f.scriptedAttack) {
+        f.scriptedAttack.t += stepS;
+        if (f.scriptedAttack.t >= attackDuration(f.scriptedAttack.def)) f.scriptedAttack = null;
+      }
       const wasKo = f.combatant.isKo;
       const burned = f.combatant.update(stepS);
       if (burned > 0) this.showBurn(f, burned);
@@ -295,8 +354,12 @@ export class FightArenaScene implements ArenaScene {
       if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS) f.respawn();
     }
 
-    this.controlPlayer(this.playerFighter, stepS);
-    this.controlDummy(this.dummyFighter, stepS);
+    // A Punch Clash takes over both fighters while it runs.
+    if (!this.clashes.step(stepS, this.simTimeS)) {
+      this.controlPlayer(this.playerFighter, stepS);
+      this.controlDummy(this.dummyFighter, stepS);
+      this.clashes.maybeStart(this.simTimeS);
+    }
     if (this.abilities) this.abilities.world.update(stepS, this.abilities);
     for (const f of this.fighters) this.checkDoorImpact(f, stepS);
     for (const door of this.doors) door.update(stepS);
@@ -449,12 +512,16 @@ export class FightArenaScene implements ArenaScene {
       melee: boolean;
       burn?: Burn;
       impact: ImpactId;
+      /** Breaks through any guard (the Punch Clash finisher). */
+      unblockable?: boolean;
+      /** Use this impact feel instead of the blow's profile (scaled finishers). */
+      profile?: ImpactProfile;
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
     const t = target.body.translation();
     // A block only works when facing the attacker.
-    const fromFront = target.facing === (attacker.x >= t.x ? 1 : -1);
+    const fromFront = !s.unblockable && target.facing === (attacker.x >= t.x ? 1 : -1);
     const result = target.combatant.receive(
       {
         baseDamage: s.damage,
@@ -471,7 +538,9 @@ export class FightArenaScene implements ArenaScene {
 
     if (result.outcome === 'dodged') return false;
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
-    this.impactFeel(attacker, target, s, guarded ? IMPACTS.blocked : IMPACTS[s.impact], result.outcome === 'ko');
+    const profile = s.profile ?? (guarded ? IMPACTS.blocked : IMPACTS[s.impact]);
+    this.impactFeel(attacker, target, s, profile, result.outcome === 'ko');
+    if (s.melee) this.clashes.contact(attacker, this.simTimeS); // a sustained exchange becomes a Punch Clash
 
     if (result.outcome === 'parried') {
       if (s.melee) {
@@ -529,15 +598,30 @@ export class FightArenaScene implements ArenaScene {
     }
   }
 
-  private queueSound(id: string): void {
-    this.sounds.push(id);
-    if (this.sounds.length > 32) this.sounds.shift();
+  private queueSound(id: string, gain = 1): void {
+    this.sounds.push({ id, gain });
+    if (this.sounds.length > 48) this.sounds.shift();
   }
 
-  /** Sound ids to play now (melee contacts, KOs, dusting and ability hooks), oldest first. */
-  drainSounds(): string[] {
-    const ability = this.abilities?.drainSounds() ?? [];
+  /** Sounds to play now (melee contacts, clash beats, KOs, dusting and ability hooks), oldest first. */
+  drainSoundCues(): { id: string; gain: number }[] {
+    const ability = (this.abilities?.drainSounds() ?? []).map((id) => ({ id, gain: 1 }));
     return [...this.sounds.splice(0, this.sounds.length), ...ability];
+  }
+
+  /** Sound ids to play now (tests). */
+  drainSounds(): string[] {
+    return this.drainSoundCues().map((c) => c.id);
+  }
+
+  /** The Punch Clash HUD: live power and timer, and the result banner. */
+  get clashHud(): { state: ClashHudState | null; banner: ClashBanner | null } {
+    return { state: this.clashes.hud(), banner: this.clashes.banner };
+  }
+
+  /** Start a Punch Clash now (Practice option and tests). */
+  startClash(): void {
+    this.clashes.start();
   }
 
   /** Burn damage shows as small floating numbers, at most twice a second; it also charges the ultimate. */
@@ -664,6 +748,7 @@ export class FightArenaScene implements ArenaScene {
       frameDtS,
       width,
       height,
+      this.clashes.focus(),
     );
     const shake = this.shake.update(frameDtS);
     let scale = cam.scale * shake.zoom;
@@ -779,6 +864,11 @@ export class FightArenaScene implements ArenaScene {
     });
     const attack = f.combo.attack;
     if (attack) pose = attackPose(pose, attack, f.combo.progress, f.combo.variant);
+    if (f.scriptedAttack) {
+      const sa = f.scriptedAttack;
+      pose = attackPose(pose, sa.def, Math.min(1, sa.t / attackDuration(sa.def)));
+    }
+    pose = this.clashPose(f, pose);
     const cast = f.caster?.cast;
     if (cast && f.caster) {
       pose = abilityPose(pose, cast.def.id, cast.phase, f.caster.phaseProgress, f.abilityLift > 0.05);
@@ -824,6 +914,20 @@ export class FightArenaScene implements ArenaScene {
       !c.isKo,
     );
     return { x, y };
+  }
+
+  /** During a Punch Clash: the striker punches (jab and hook alternate), the other blocks; both swing on a collision. */
+  private clashPose(f: FighterEntity, pose: Pose): Pose {
+    const c = this.clashes.clash;
+    if (!c) return pose;
+    const beat = this.clashes.beat;
+    const side = f === this.playerFighter ? 'a' : 'b';
+    if (c.phase === 'intro' || !beat) return blockPose(pose);
+    if (beat.by !== side && beat.by !== 'both') return blockPose(pose);
+    const strike = beat.index % 2 === 0 ? f.def.attacks.jab : f.def.attacks.hook;
+    // Fit a whole punch (snap and return) into the beat: faster as the clash speeds up.
+    const p = 0.22 + 0.7 * Math.min(1, beat.t / beat.intervalS);
+    return attackPose(pose, strike, p, beat.index % 3);
   }
 
   /**

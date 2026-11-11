@@ -96,6 +96,24 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.08, gain: 0.6, type: 'bandpass', freq: 3000, q: 1 } },
     { crackle: { dur: 1, gain: 0.3, count: 16 } },
   ],
+  // Punch Clash: a rising rush as the fighters lock up…
+  'clash-start': [
+    { noise: { dur: 0.45, gain: 0.35, type: 'bandpass', freq: 500, freqEnd: 2600, q: 1.2, attack: 0.3 } },
+    { tone: { wave: 'sawtooth', f0: 110, f1: 220, dur: 0.4, gain: 0.08, attack: 0.25 } },
+  ],
+  // …fists meeting head-on: a bright double crack…
+  'clash-collide': [
+    { noise: { dur: 0.06, gain: 0.6, type: 'bandpass', freq: 2800, q: 1.5 } },
+    { noise: { dur: 0.05, gain: 0.45, type: 'bandpass', freq: 4200, q: 2, delay: 0.025 } },
+    { tone: { wave: 'sine', f0: 160, f1: 70, dur: 0.12, gain: 0.5 } },
+  ],
+  // …and the guard breaking: a huge thump with a cracking tail.
+  'clash-break': [
+    { tone: { wave: 'sine', f0: 90, f1: 26, dur: 0.7, gain: 1.2 } },
+    { noise: { dur: 0.5, gain: 0.8, type: 'lowpass', freq: 1800, freqEnd: 250 } },
+    { noise: { dur: 0.05, gain: 0.6, type: 'bandpass', freq: 3500, q: 1.2 } },
+    { crackle: { dur: 0.35, gain: 0.2, count: 6 } },
+  ],
   // KO: a heavy, final boom.
   ko: [
     { tone: { wave: 'sine', f0: 95, f1: 28, dur: 0.65, gain: 1 } },
@@ -140,14 +158,15 @@ export class SoundBoard {
     void ctx.resume();
   }
 
-  play(id: string): void {
+  /** Play a sound; `gain` scales its loudness (the Punch Clash builds it up). */
+  play(id: string, gain = 1): void {
     const ctx = this.ctx;
     const out = this.out;
     const recipe = RECIPES[id];
     if (!ctx || !out || !recipe || this.muted) return;
     const t = ctx.currentTime + 0.005;
     const pitch = 0.94 + this.rand() * 0.12;
-    const level = 0.88 + this.rand() * 0.24;
+    const level = (0.88 + this.rand() * 0.24) * gain;
     for (const layer of recipe) {
       if ('tone' in layer) this.tone(ctx, out, t, layer.tone, pitch, level);
       else if ('noise' in layer) this.noiseLayer(ctx, out, t, layer.noise, pitch, level);

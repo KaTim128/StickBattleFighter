@@ -43,6 +43,13 @@ export function clampCamera(
   return { x: clampAxis(x, halfViewW, b.minX, b.maxX), y: clampAxis(y, halfViewH, b.minY, b.maxY) };
 }
 
+/** A cinematic camera target: look here with this much of the world on the short side. */
+export interface CameraFocus {
+  readonly x: number;
+  readonly y: number;
+  readonly shortSideM: number;
+}
+
 export class FollowCamera {
   x: number;
   y: number;
@@ -64,9 +71,22 @@ export class FollowCamera {
     this.shortSideM = framing.minShortSideM;
   }
 
-  /** Ease towards framing the player (and nearby others) for a screen of the given size. */
-  update(player: Point, others: readonly Point[], dtS: number, viewWidthPx: number, viewHeightPx: number): CameraView {
-    const goal = frameTargets(player, others, viewWidthPx, viewHeightPx, this.framing);
+  /**
+   * Ease towards framing the player (and nearby others) for a screen of the given size.
+   * `focus` overrides the framing (cinematic moments such as a Punch Clash); the same
+   * smoothing and speed caps apply, so zooming in and returning afterwards both glide.
+   */
+  update(
+    player: Point,
+    others: readonly Point[],
+    dtS: number,
+    viewWidthPx: number,
+    viewHeightPx: number,
+    focus?: CameraFocus | null,
+  ): CameraView {
+    const goal = focus
+      ? { x: focus.x, y: focus.y, shortSideM: focus.shortSideM, framed: others.length }
+      : frameTargets(player, others, viewWidthPx, viewHeightPx, this.framing);
     const zoomStep = (goal.shortSideM - this.shortSideM) * smoothing(this.zoomRate, dtS);
     const maxZoomStep = this.maxZoomSpeedMps * dtS;
     this.shortSideM += Math.max(-maxZoomStep, Math.min(maxZoomStep, zoomStep));

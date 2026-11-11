@@ -67,6 +67,7 @@ On desktop, jump has its own key (Space) because keys are plentiful. The context
 - **Abilities (Phase 6):** Q / E / R (or K / L / I) = Fire Bolt, Flame Dash, Eruption; F (or O) = Meteor Fist when the meter is full. Touch: A1, A2, A3 and ULT around MELEE (five combat buttons); JUMP moved above the arc. Desktop shows an ability bar with cooldowns, stamina costs and the meter; touch draws them on the buttons.
 - **Practice helpers:** T makes the dummy attack you (toggle); `?scene=training-yard` opens the open yard; `?slowmo=0.25` plays in slow motion to study animations.
 - Touch buttons never select or highlight their label when held (REQ-CTL-16).
+- **Punch Clash:** trade punches and blocks with an opponent and a clash starts; mash Button 1 (J, click or MELEE) as fast as you can for 4 s.
 - **Sound:** starts after your first key press or tap (browser rule); **M** mutes; `?mute` starts muted.
 - **Jump:** Space or the JUMP button. Buttons 2–5 (abilities and ultimate) arrive with Phase 6.
 

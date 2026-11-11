@@ -263,6 +263,13 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
   - *Alternatives:* recorded or commissioned SFX (better realism, needs sourcing and licensing, can replace recipes later without code changes elsewhere); a free SFX pack (licence review, less control).
 - **Debug hook additions:** `sounds` (recently played), `setDummyHp` (see a KO quickly).
 
+### TD-034: Punch Clash — ACCEPTED (owner request 11/11/2026)
+- **Rules** (`src/combat/clash.ts`, pure): `ClashTrigger` (rolling window of melee contacts per side, range check, cooldown) and `PunchClash` (intro → mash → done; power per press; opponent mashes at a data rate with a seeded uneven rhythm, +15% in the final stretch; exchange beats speed up 4 → 9 per second, 15 in the final stretch; `decideClash` with a 5% stalemate band). Tuning in `src/data/combat/clash.ts`.
+- **Scene glue** (`src/app/scenes/scene-clash.ts`, `SceneClash` behind a `ClashHost`): locks both fighters on spots 1.05 m apart and makes them untouchable from outside; Button 1 becomes the mash button; each beat spawns sparks, flashes, a sound with rising gain and shake scaled by intensity; the camera uses a new `FollowCamera` focus override (10 → 6.5 m view, 5 m in the final stretch, held 0.6 s after, then the normal smoothing glides it back); the finisher goes through the shared `applyStrike` path as an unblockable heavy with a scaled impact profile; the stalemate throws both back and stuns them. Contacts are recorded in `applyStrike` (melee only).
+- **Presentation:** clash poses (striker punches with alternating jab/hook looks, the other blocks; both swing on a collision); `ClashHud` (tug-of-war bar, both scores, timer, device-specific prompt, red final stretch, result banner); new synthesised sounds `clash-start`, `clash-collide`, `clash-break`; sound cues now carry a gain.
+- **Alternatives:** a separate mini-game scene (rejected: breaks continuity; the owner wanted one cinematic gameplay event); random winner on ties (rejected by the owner: stalemate).
+- **Practice/test hooks:** `startClash()` on the scene and the debug hook.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

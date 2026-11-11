@@ -177,6 +177,11 @@ export class Combatant {
     this.invulnS = Math.max(this.invulnS, seconds);
   }
 
+  /** End any invulnerability now (a Punch Clash ends: the finisher must land). */
+  clearInvulnerability(): void {
+    this.invulnS = 0;
+  }
+
   /** Set on fire: damage over time; a new burn refreshes the timer and keeps the stronger rate. */
   ignite(dps: number, durationS: number): void {
     if (this.isKo) return;

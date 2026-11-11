@@ -262,6 +262,13 @@ Also added `?slowmo=` and a freeze hook for exact animation screenshots.
 **Evidence:** lint clean; typecheck 0; `npm test` **194/194**; build clean; `npm run e2e` **36/36** (2 repeats); frozen-frame screenshots; played-sound log.
 **Limitations:** sound quality needs a listening check by the owner; music is still open (OQ-17).
 
+### 11/11/2026: Punch Clash (owner request; Master Developer, no specialists, per TD-019)
+**What changed:** the full flow (sustained exchange → trigger → rapid exchange → 4 s mash with live power for both → camera closing in → final-stretch spike → comparison → scaled finisher or stalemate → camera returns; 8 s cooldown). See TD-034 and REQ-CMB-25.
+**Files:** `src/combat/clash.ts`, `src/data/combat/clash.ts`, `src/app/scenes/scene-clash.ts`, `fight-arena-scene.ts`, `fighter-entity.ts`, `src/camera/follow-camera.ts`, `src/interface/clash-hud.ts`, `src/audio/sound-board.ts`, `src/combat/combatant.ts`, `src/data/fighters/training-dummy.ts`, `src/app/bootstrap.ts`, `index.html`.
+**Issues found and fixed:** constant jabbing never triggers a clash because the dummy stays stunned and is pushed away, so the trigger test now plays like a person (jab, then block the reply), which triggers it reliably; the clash HUD overlapped the fighters' bars at the tightest zoom and was moved up.
+**Evidence:** lint clean; typecheck 0; `npm test` **207/207**; build clean; `npm run e2e` **19/19**; screenshots of every stage.
+**Next queued owner requests:** dynamic wall transparency; Inferno ultimate aiming (I / drag); walking and running animation; office centre cubicle pairs and breakables; Inferno fist flames.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

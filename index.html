@@ -77,6 +77,36 @@
       .ab-key { position: absolute; left: 4px; top: 2px; font-weight: 800; color: #ffd8b0; }
       .ab-name { margin-top: 8px; font-weight: 700; white-space: nowrap; }
       .ab-cost { font-size: 10px; opacity: 0.85; }
+      .clash-hud {
+        position: fixed; left: 50%; top: 46px; transform: translateX(-50%); pointer-events: none;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        font: 800 14px system-ui, sans-serif; color: #fff; text-shadow: 0 2px 0 #000;
+      }
+      .clash-hud[hidden], .clash-banner[hidden] { display: none; }
+      .clash-title { font-size: 20px; letter-spacing: 0.12em; color: #ffd23f; }
+      .clash-row { display: flex; align-items: center; gap: 10px; }
+      .clash-power { min-width: 34px; text-align: center; font-size: 22px; }
+      .clash-a { color: #ff9a4d; } .clash-b { color: #d6dbe4; }
+      .clash-bar {
+        position: relative; width: min(46vw, 420px); height: 18px; border-radius: 9px; overflow: hidden;
+        background: #c8ced8; border: 2px solid rgba(0, 0, 0, 0.6);
+        box-shadow: 0 0 calc(var(--intensity, 0) * 18px) rgba(255, 140, 40, 0.9);
+      }
+      .clash-fill { height: 100%; width: 50%; background: linear-gradient(90deg, #ff4d1a, #ffb04d); transition: width 0.08s linear; }
+      .clash-timer { font-size: 26px; }
+      .clash-prompt { font-size: 15px; color: #ffe8a0; animation: clash-pulse 0.25s ease-in-out infinite alternate; }
+      .clash-hud.final .clash-timer { color: #ff4d4d; font-size: 32px; }
+      .clash-hud.final .clash-title { color: #ff4d4d; }
+      @keyframes clash-pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+      .clash-banner {
+        position: fixed; left: 50%; top: 30%; transform: translate(-50%, -50%); pointer-events: none;
+        font: 900 44px system-ui, sans-serif; letter-spacing: 0.06em; text-shadow: 0 3px 0 #000, 0 0 18px rgba(0, 0, 0, 0.8);
+        animation: clash-banner 1.6s ease-out forwards;
+      }
+      .clash-banner[data-kind='win'] { color: #ffd23f; }
+      .clash-banner[data-kind='lose'] { color: #ff6b6b; }
+      .clash-banner[data-kind='tie'] { color: #9fd6ff; }
+      @keyframes clash-banner { 0% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } 12% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
       .combat-text-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
       .combat-text {
         position: absolute; transform: translate(-50%, -100%); white-space: nowrap;

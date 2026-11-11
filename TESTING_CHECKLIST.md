@@ -71,6 +71,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Browser (frozen frames): white flash with contact star on a jab; KO blow; lying; dissolving into dust; gone (`docs/screenshots/hit-feel-and-ko-dissolve.png`). Played sounds confirmed in order (`punch-light`, `ko`, `dust`), no console errors.
 - [ ] Owner listening check on real speakers or headphones (sound cannot be judged in headless tests).
 
+## 0k. Punch Clash (verified 11/11/2026)
+- [x] `npm test`: **207 tests**. Trigger (both sides required, window, range, cooldown); rules (mash duration and final stretch within the owner's ranges, presses count only while mashing, both build power, exchange speeds up and spikes, 5% stalemate band, finisher scaling and 3–6 frame hit-stop). In the arena: a natural exchange (jabs, blocking the dummy's replies) triggers a clash; fast mashing wins (camera closes in, finisher damage, loser knocked down and back, camera returns); no mashing loses; a near-tie is a stalemate (both thrown back, no damage); beats sound louder as it builds; contacts cleared after.
+- [x] `npm run e2e`: **19 passed** (new: real keyboard mashing fills the bar, result banner, clash sounds).
+- [x] V Screenshots: `docs/screenshots/punch-clash.png` (normal, lock-up, mid, final stretch, finisher, camera back).
+- [ ] Owner playtest: is 6.5 presses/s the right challenge for the training dummy?
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

@@ -272,6 +272,7 @@ No numeric values were supplied (OQ-05).
 | REQ-CMB-22 | **Combo variations (owner, 11/11/2026):** each strike (jab, hook, finisher, flying kick) has several animations with **identical damage, reach and timing**; the look changes every press (never the same twice in a row), so the combo does not look identical each time. |
 | REQ-CMB-23 | **Kick distance (owner, 11/11/2026):** the flying kick knocks down but does not send the target far (about 3 m, previously about 10 m); knockdown slides brake harder in general. |
 | REQ-CMB-24 | **Powerful, responsive hits (owner, 11/11/2026):** every landed blow (melee or ability) flashes the target white for a few frames, plays a sharp contact sound matched to the blow (bare knuckles light or heavy, kick, block, fire; weapons later), throws sparks along the blow with a contact flash, knocks the target back along the hit direction, bounces the striker back slightly, adds a subtle screen shake and freezes the action briefly (hit-stop). Tuning lives in impact profiles (`src/data/combat/impacts.ts`). |
+| REQ-CMB-25 | **Punch Clash (owner, 11/11/2026):** a sustained exchange of punches and blocks (6 contacts within 5 s, at least 2 from each fighter, within 1.9 m) triggers a clash: the fighters lock face to face and trade rapid punches, blocks and fist collisions while both build Clash Power for 4 s (the player by mashing Button 1; the opponent by its data-driven rate). Power shows live for both; the camera starts at normal distance and closes in, tightest in the final 0.9 s, where the exchange, sparks, sound, flashes and shake spike. Higher power wins: the winner breaks through with a finisher whose damage, knockback, sparks, shake and hit-stop (3–6 frames) scale with the gap; the loser is knocked back, the winner recoils. Within 5% is a stalemate: fists collide and both are thrown back. The camera then glides back; an 8 s cooldown prevents an immediate repeat. |
 | REQ-CMB-21 | **No lost taps:** quick Button 1 taps are queued (up to three) and handled one per simulation step, so a slow frame or hit-stop never swallows a combo input. |
 | REQ-CMB-11 | Pairwise combat and ability regression tests across fighters. | [PB §12 Phase 8–9] |
 
@@ -470,6 +471,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Owner: Punch Clash (REQ-CMB-25). | Master Developer |
 | 11/11/2026 | Owner: hit feel for every blow (REQ-CMB-24) and the KO dust dissolve (REQ-ANI-9); OQ-17 partly answered (synthesised original SFX, TD-033). | Master Developer |
 | 11/11/2026 | Phase 6: OQ-04 resolved (charge-meter ultimate, REQ-ABL-3); Inferno kit (REQ-ABL-7); abilities share melee rules (REQ-ABL-8). | Master Developer |
 | 11/11/2026 | Owner feedback: compact office (REQ-ENV-12), furniture moves or breaks by durability (REQ-PHY-6a), fall and get-up animation (REQ-ANI-8), combo variations (REQ-CMB-22), shorter kick knockback (REQ-CMB-23), no button highlight on touch (REQ-CTL-16). | Master Developer |

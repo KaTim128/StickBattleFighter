@@ -2,6 +2,7 @@ import type { RigidBody } from '@dimforge/rapier2d';
 import type { Container } from 'pixi.js';
 import { AbilityCaster } from '../../abilities/ability-caster';
 import { StickmanAnimator } from '../../animation/animator';
+import type { AttackDef } from '../../combat/attacks';
 import { Combatant, seededRandom } from '../../combat/combatant';
 import { ComboController } from '../../combat/combo';
 import type { FighterDef } from '../../data/fighters/fighter-def';
@@ -28,6 +29,8 @@ export class FighterEntity {
   abilityLift = 0;
   /** Burn damage not yet shown as a floating number. */
   burnShown = 0;
+  /** An attack animation played outside the combo (the Punch Clash finisher). */
+  scriptedAttack: { def: AttackDef; t: number } | null = null;
   /** Hit flash time left (white figure), seconds. */
   flashS = 0;
   /** Recoil bounce time left after landing a blow, seconds. */

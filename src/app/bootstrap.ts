@@ -13,6 +13,7 @@ import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse } from '../input/keyboard';
 import { attachTouchControls } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
+import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
@@ -27,6 +28,7 @@ import {
   FightArenaScene,
   type PlayerState,
 } from './scenes/fight-arena-scene';
+import type { ClashHudState } from './scenes/scene-clash';
 
 /** Read-only hook used by the browser tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
@@ -48,6 +50,10 @@ export interface EngineDebugInfo {
   sounds: string[];
   /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
   setDummyHp(hp: number): void;
+  /** The Punch Clash in progress (power, timer), or null. */
+  clash: ClashHudState | null;
+  /** Practice/testing: start a Punch Clash now. */
+  startClash(): void;
   /** Props summary: how many are broken, and how many are moving right now. */
   props: { total: number; broken: number; awake: number };
   assetFailures: { url: string; message: string }[];
@@ -125,6 +131,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   onDebugToggle(window, () => overlay.toggle());
   const combatText = new CombatText(document.body);
   const abilityHud = new AbilityHud(document.body); // after the touch controls: it paints their ability buttons
+  const clashHud = new ClashHud(document.body);
   const sound = new SoundBoard();
   sound.muted = params.has('mute');
   onFirstInput(window, () => sound.unlock());
@@ -158,6 +165,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sfx: [],
     sounds: [],
     setDummyHp() {}, // replaced once the scene exists
+    clash: null,
+    startClash() {}, // replaced once the scene exists
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     setTimeScale() {}, // replaced once the loop exists
@@ -208,8 +217,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         debug.dummyAttacks = scene.dummyAttacks;
         combatText.show(scene.drainEvents(), (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
-        for (const id of scene.drainSounds()) {
-          sound.play(id);
+        clashHud.update(scene.clashHud);
+        debug.clash = scene.clashHud.state;
+        for (const { id, gain } of scene.drainSoundCues()) {
+          sound.play(id, gain);
           debug.sounds.push(id);
           if (debug.sounds.length > 16) debug.sounds.shift();
         }
@@ -227,6 +238,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
   });
   if (scene instanceof FightArenaScene) {
+    debug.startClash = () => scene.startClash();
     debug.setDummyHp = (hp: number) => {
       scene.dummyFighter.combatant.hp = Math.max(1, Math.min(scene.dummyFighter.combatant.stats.maxHp, hp));
     };
