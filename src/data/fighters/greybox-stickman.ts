@@ -13,8 +13,8 @@ export const GREYBOX_STICKMAN = {
   weapon: null,
   movement: {
     maxSpeedMps: 5,
-    accelMps2: 32,
-    decelMps2: 40,
+    accelMps2: 50, // owner 11/11/2026: more responsive (was 32)
+    decelMps2: 55, // (was 40)
     jumpSpeedMps: 6.5,
     hopGravityMps2: 20,
   },

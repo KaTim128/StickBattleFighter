@@ -1,4 +1,4 @@
-import { type BoneLengths, legIk, type Pose } from './skeleton';
+import { armIk, type BoneLengths, legIk, type Pose } from './skeleton';
 
 /**
  * GREYBOX idle, walk and airborne motion for the Phase 2 test stickman.
@@ -93,30 +93,106 @@ export function idlePose(timeS: number, bones: BoneLengths): Pose {
 }
 
 /**
- * Fighting shuffle, sampled by phase (0..1 per cycle). The caller advances the
- * phase by distance travelled / stride, so feet keep pace with the ground.
- * The lead foot steps, the rear foot follows a quarter-cycle later; feet stay
- * low, keep the wide stagger and never cross. The guard only bobs.
+ * Arms for walking and running (owner, 11/11/2026): where each FIST sits, relative to the
+ * shoulder in the torso's frame (+x forward, +y down), at the middle of its swing, and how far
+ * it swings forward and back (and up and down). Arm IK turns these into joint angles.
  */
-export function walkPose(phase: number, bones: BoneLengths): Pose {
-  const a = phase * TAU;
-  return fightingStance(
-    {
-      pelvisM: CROUCH_M - 0.015 * Math.sin(2 * a),
-      leadFootX: LEAD_FOOT_X + 0.06 * Math.sin(a),
-      rearFootX: REAR_FOOT_X + 0.02 * Math.sin(a - Math.PI / 2),
-      leadLiftM: 0.07 * Math.max(0, Math.cos(a)),
-      rearLiftM: 0.07 * Math.max(0, Math.cos(a - Math.PI / 2)),
-      lean: BOXER_STANCE.walkLean,
-      head: BOXER_STANCE.head + 1,
-      guard: 0.5 + 0.5 * Math.sin(2 * a),
-    },
-    bones,
-  );
+interface ArmSwing {
+  lead: { x: number; y: number };
+  rear: { x: number; y: number };
+  swingX: number;
+  swingY: number;
 }
 
-/** Distance (m) covered by one full shuffle cycle (lead step + rear follow). */
-export const WALK_STRIDE_M = 1.1;
+/**
+ * A real stride, sampled by phase (0..1 per cycle = two steps). The caller
+ * advances the phase by distance travelled / stride, so feet keep pace with
+ * the ground. Legs move in opposition (one plants while the other swings
+ * through with its foot lifted), and each arm swings opposite its leg,
+ * elbows bent so the fists stay up like a fighter's.
+ */
+function gaitPose(
+  phase: number,
+  bones: BoneLengths,
+  g: {
+    pelvisM: number;
+    bob: number;
+    leadX: number;
+    rearX: number;
+    reach: number;
+    lift: number;
+    lean: number;
+    head: number;
+    arms: ArmSwing;
+  },
+): Pose {
+  const a = phase * TAU;
+  const s = Math.sin(a);
+  const c = Math.cos(a);
+  // Lead leg forward when s > 0 and swinging (lifted) while it moves forward (c > 0); the rear leg is opposite.
+  const leadFootX = g.leadX + g.reach * s;
+  const rearFootX = g.rearX - g.reach * s;
+  const leadLift = g.lift * Math.max(0, c);
+  const rearLift = g.lift * Math.max(0, -c);
+  const pelvisM = g.pelvisM + g.bob * Math.cos(2 * a); // up at mid-stance, down as the feet pass
+  const arms = g.arms;
+  return {
+    lean: deg(g.lean),
+    head: deg(g.head),
+    // Each fist swings opposite its leg: the lead fist forward as the rear leg comes forward (s < 0).
+    armFront: armIk(arms.lead.x - arms.swingX * s, arms.lead.y + arms.swingY * s, bones.upperArm, bones.foreArm),
+    armBack: armIk(arms.rear.x + arms.swingX * s, arms.rear.y - arms.swingY * s, bones.upperArm, bones.foreArm),
+    legFront: legIk(leadFootX, pelvisM - leadLift, bones.thigh, bones.shin),
+    legBack: legIk(rearFootX, pelvisM - rearLift, bones.thigh, bones.shin),
+  };
+}
+
+/** Walking: alternating steps, arms pumping opposite the legs with the guard still up. */
+export function walkPose(phase: number, bones: BoneLengths): Pose {
+  return gaitPose(phase, bones, {
+    pelvisM: CROUCH_M,
+    bob: 0.018,
+    leadX: 0.08,
+    rearX: -0.12,
+    reach: 0.22,
+    lift: 0.1,
+    lean: BOXER_STANCE.walkLean,
+    head: BOXER_STANCE.head + 1,
+    arms: { lead: { x: 0.32, y: -0.03 }, rear: { x: 0.17, y: -0.06 }, swingX: 0.07, swingY: 0.02 },
+  });
+}
+
+/** Running: longer strides with a high knee, more lean, and a strong elbows-bent arm pump. */
+export function runPose(phase: number, bones: BoneLengths): Pose {
+  return gaitPose(phase, bones, {
+    pelvisM: CROUCH_M - 0.04,
+    bob: 0.035,
+    leadX: 0.08,
+    rearX: -0.1,
+    reach: 0.32,
+    lift: 0.2,
+    lean: -24,
+    head: 24,
+    arms: { lead: { x: 0.24, y: 0.08 }, rear: { x: 0.1, y: 0.1 }, swingX: 0.19, swingY: 0.05 },
+  });
+}
+
+/** Distance (m) covered by one walk cycle (two steps) and one run cycle. */
+export const WALK_STRIDE_M = 1.2;
+export const RUN_STRIDE_M = 2.2;
+/** Walking blends into running between these speeds, m/s. */
+export const RUN_FROM_MPS = 2.6;
+export const RUN_FULL_MPS = 4.2;
+
+/** 0 = walking, 1 = running, by ground speed. */
+export function runAmount(speedMps: number): number {
+  return Math.min(1, Math.max(0, (speedMps - RUN_FROM_MPS) / (RUN_FULL_MPS - RUN_FROM_MPS)));
+}
+
+/** Distance per gait cycle at this speed (walk stride blending into run stride). */
+export function strideAt(speedMps: number): number {
+  return WALK_STRIDE_M + (RUN_STRIDE_M - WALK_STRIDE_M) * runAmount(speedMps);
+}
 
 /**
  * JUMP STANCE (owner request, 11/11/2026), its own look rather than a squashed

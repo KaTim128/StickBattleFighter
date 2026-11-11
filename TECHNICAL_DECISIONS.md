@@ -281,6 +281,11 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Bug found and fixed:** ending a dash or leap left the body's velocity, so the fighter slid on about 1.2 m after landing; releasing the drive now stops the body.
 - Keys: I = ultimate (owner); in the keyboard-only preset A3 moved to O.
 
+### TD-037: Walk/run gait with arm IK — ACCEPTED (owner request 11/11/2026)
+- `gaitPose` (`src/animation/greybox-motion.ts`): legs in opposition with leg IK (swing foot lifted while it moves forward), pelvis bob, lean; arms placed by a new **arm IK** (`armIk` in `skeleton.ts`) from fist targets in the torso frame, so each fist really moves opposite its leg whatever the elbow bend and lean (angle-driven swings were found to move the fist up instead of forward). Walk and run share the cycle; `runAmount(speed)` blends them (2.6 → 4.2 m/s) and `strideAt(speed)` keeps the feet in pace (1.2 m walk, 2.2 m run per cycle).
+- Animator: walk weight rises sooner (starts stepping almost at once), run weight eases in.
+- Movement: acceleration 32 → 50 m/s², deceleration 40 → 55 m/s² (snappier starts, stops and turns).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

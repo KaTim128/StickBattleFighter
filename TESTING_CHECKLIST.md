@@ -86,6 +86,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: desktop I → W → I lands up the screen; touch hold–drag–release on ULT jumps where dragged.
 - [x] V Screenshots: `docs/screenshots/ultimate-aiming.png` (aim at the target, aim moved, mid-leap).
 
+## 0n. Walking and running (verified 11/11/2026)
+- [x] `npm test`: **216 tests**. Legs alternate and each fist swings opposite its leg; the swinging foot lifts; running strides wider, leans more and pumps the arms harder, with no locked knees; one stride of distance = one cycle at walk and run speeds; idle → walk → run weights blend by speed and ease rather than snap; the walk keeps the guard up.
+- [x] V Frames: `docs/screenshots/walk-run-gait.png` (run cycle; turn and start-up).
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

@@ -275,6 +275,9 @@ Walls, door sections, pillars and props that cover a fighter fade to 30% over 0.
 ### 11/11/2026: Aimed Meteor Fist (owner request)
 I / F (or hold ULT) aims with a range ring, arc and landing zone while Inferno crouches; WASD or a drag moves it; I or releasing launches (TD-036, REQ-ABL-9). Fixed: fighters slid about 1.2 m after a dash or leap ended. Keyboard-only preset A3 moved from I to O. Evidence: `npm test` 214/214; e2e for both devices; screenshots.
 
+### 11/11/2026: Walking and running (owner request)
+Real walk and run cycles with alternating legs and fists swinging opposite them (arm IK), smooth idle/walk/run blending, snappier acceleration and turning (TD-037, REQ-ANI-10; the earlier shuffle rule is SUP-05). Finding: driving arm swings by shoulder angle moved the fist up rather than forward, so arms now use IK on fist positions. Evidence: `npm test` 216/216; frame captures.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

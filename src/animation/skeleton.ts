@@ -132,3 +132,23 @@ export function legIk(footX: number, footY: number, thigh: number, shin: number)
   const shinAngle = Math.atan2(footX - kneeX, footY - kneeY);
   return { root: thighAngle, bend: shinAngle - thighAngle };
 }
+
+/**
+ * Arm IK: shoulder and elbow angles that put the fist on a target, given
+ * relative to the shoulder in the torso's frame (+x towards the facing side,
+ * +y down the torso). The elbow points down and back with the forearm folding
+ * forward (positive bend), like a guard. Used for gait arm swings so the FIST
+ * moves where intended whatever the lean.
+ */
+export function armIk(handX: number, handY: number, upperArm: number, foreArm: number): Limb {
+  const reach = Math.max(1e-4, Math.min(Math.hypot(handX, handY), upperArm + foreArm - 1e-4));
+  const toHand = Math.atan2(handX, handY);
+  const cosShoulder = (upperArm * upperArm + reach * reach - foreArm * foreArm) / (2 * upperArm * reach);
+  const upper = toHand - Math.acos(Math.min(1, Math.max(-1, cosShoulder)));
+  const elbowX = Math.sin(upper) * upperArm;
+  const elbowY = Math.cos(upper) * upperArm;
+  const fore = Math.atan2(handX - elbowX, handY - elbowY);
+  let bend = fore - upper;
+  if (bend < 0) bend += Math.PI * 2;
+  return { root: upper, bend };
+}
