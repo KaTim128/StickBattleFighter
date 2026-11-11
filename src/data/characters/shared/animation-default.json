@@ -50,6 +50,7 @@
     "ClashStalemate": "proc.flinch",
     "Faint": "proc.knockdown",
     "Defeat": "proc.knockdown",
-    "Disintegration": "proc.knockdown"
+    "Disintegration": "proc.knockdown",
+    "Dodge": "proc.dodge.roll"
   }
 }

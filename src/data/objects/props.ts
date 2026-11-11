@@ -8,6 +8,22 @@
  */
 export type Material = 'wood' | 'metal' | 'glass' | 'plastic' | 'plant' | 'paper' | 'fabric' | 'stone' | 'ceramic';
 
+/**
+ * How much of a blow's damage a material actually takes (owner, 11/11/2026: "make metal objects
+ * harder to break"). Metal shrugs off most of it; everything else takes it in full.
+ */
+export const MATERIAL_TOUGHNESS: Readonly<Record<Material, number>> = {
+  metal: 0.45,
+  stone: 0.6,
+  wood: 1,
+  glass: 1,
+  plastic: 1,
+  plant: 1,
+  paper: 1,
+  fabric: 1,
+  ceramic: 1,
+};
+
 export interface PropKind {
   readonly label: string;
   readonly w: number;

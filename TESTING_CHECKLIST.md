@@ -121,6 +121,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/iso-office-overview.png`, `docs/screenshots/iso-office-play.png`.
 - [ ] Owner on a phone: frame rate and readability; the fire head; walking feel with screen-relative controls.
 
+## 0w. Dodge button and tough metal (verified 11/11/2026)
+- [x] `npm test`: **256 tests**. Dodge cooldown grows with weight (55 < 70 < 140 kg; the heavy fighter still waits when the light one can dodge again); the default stickman's Dodge clip is the roll and Inferno's the flame; weight flows from the stats profile; a steel drawer takes 45% of each blow and needs more combos than wood; a steel cabinet keeps 450 − 45% of a combo.
+- [x] `npm run e2e`: **27 passed** (new: the touch DODGE button dodges and refills).
+- [x] V Frames: `docs/screenshots/dodge-roll-and-flame.png`.
+- [ ] Owner: dodge feel on a phone; the roll and the flame.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

@@ -339,6 +339,11 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** a skew of the whole world container (rejected: heights would skew); keeping axis-aligned combat (rejected: in this view you rarely line up on a world axis).
 - **Trade-offs:** sliding furniture keeps its upright drawing (no spin), small loose items still tumble; prop drawings are greybox-quality in the final style until the art pass (Phase 8).
 
+### TD-046: Dodge button, weight-based cooldown, data-driven dodge clips; material toughness — ACCEPTED (owner request 11/11/2026)
+- **Dodge:** `dodgeCooldownFor(massKg)` in `src/combat/combatant.ts` (base 0.15 s + 0.0055 s/kg, clamped 0.3–1.5 s); `CombatStats.massKg` comes from the Stats Profile's body. New animation state `Dodge` with procedural clips `proc.dodge.roll` (shared default: a tucked ball turning a full circle backwards about its centre) and `proc.dodge.flame` (Inferno: the body fades into a forward-trailing flame with an ember trail, then reforms). A touch `.dodge-button` (non-combat, like UTIL) fills as the cooldown recovers; debug state `dodgeReady`.
+- **Toughness:** `MATERIAL_TOUGHNESS` in `src/data/objects/props.ts` scales the durability damage a prop takes (metal 0.45, stone 0.6, others 1). Durability values are unchanged; metal simply resists.
+- **Alternatives:** raising every metal durability (rejected: easy to miss new metal props; toughness applies to all of them).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

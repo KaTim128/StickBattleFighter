@@ -17,6 +17,19 @@ export function flinchPose(base: Pose): Pose {
   return { ...base, lean: deg(14), head: deg(-18), armFront: limb(35, 45), armBack: limb(-15, 70) };
 }
 
+/** Dodge roll (owner, 11/11/2026): tucked into a ball, knees to chest, arms hugging the shins. */
+export function tuckPose(base: Pose): Pose {
+  return {
+    ...base,
+    lean: deg(-40),
+    head: deg(40),
+    armFront: limb(55, 95),
+    armBack: limb(40, 110),
+    legFront: limb(105, -150),
+    legBack: limb(95, -150),
+  };
+}
+
 /** Carrying overhead (Phase 7): both arms up, elbows slightly bent, chest up under the load. */
 export function carryPose(base: Pose): Pose {
   return { ...base, lean: deg(-2), head: deg(4), armFront: limb(168, 18), armBack: limb(160, 26) };

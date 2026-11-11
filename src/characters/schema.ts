@@ -47,6 +47,7 @@ export const ANIMATION_STATES = [
   'BlockMid',
   'BlockLow',
   'Parry',
+  'Dodge',
   'LightHit',
   'HeavyHit',
   'AirborneHit',

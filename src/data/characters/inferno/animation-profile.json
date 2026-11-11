@@ -5,6 +5,7 @@
     "RoundhouseKick": "inferno.fire-roundhouse",
     "DownwardAerialKick": "inferno.meteor-kick",
     "ClashFinisher": "inferno.flame-uppercut",
-    "ClashWin": "inferno.flame-uppercut"
+    "ClashWin": "inferno.flame-uppercut",
+    "Dodge": "proc.dodge.flame"
   }
 }

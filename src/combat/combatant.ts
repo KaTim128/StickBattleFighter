@@ -29,6 +29,16 @@ export interface CombatStats {
   readonly hitStunResistance?: number;
   /** False: a well-timed block is only a block, never a parry (character capability). */
   readonly canParry?: boolean;
+  /** Body weight: heavier fighters recover from a dodge more slowly (owner, 11/11/2026). */
+  readonly massKg?: number;
+}
+
+/**
+ * Dodge cooldown by weight (owner, 11/11/2026: "the dodge cooldown depends on the weight of the
+ * stickman"): a light 55 kg fighter waits about 0.45 s, a 70 kg one 0.54 s, a 140 kg one 0.92 s.
+ */
+export function dodgeCooldownFor(massKg: number): number {
+  return Math.min(1.5, Math.max(0.3, DEFENCE.dodgeCooldownBaseS + massKg * DEFENCE.dodgeCooldownPerKgS));
 }
 
 /** Shared defensive timings and costs (same for every fighter unless a kit overrides them later). */
@@ -49,7 +59,9 @@ export const DEFENCE = {
   dodgeDurationS: 0.24,
   dodgeInvulnS: 0.18,
   dodgeSpeedMps: 10,
-  dodgeCooldownS: 0.35,
+  /** Cooldown after a dodge = base + per-kilogram × body weight (see dodgeCooldownFor). */
+  dodgeCooldownBaseS: 0.15,
+  dodgeCooldownPerKgS: 0.0055,
   lightStunS: 0.22,
   /** Time on the floor after a heavy hit (the fall plus lying still). */
   heavyKnockdownS: 1.1,
@@ -164,8 +176,23 @@ export class Combatant {
     this.sinceStaminaUseS = 0;
     this.dodgeS = DEFENCE.dodgeDurationS;
     this.invulnS = Math.max(this.invulnS, DEFENCE.dodgeInvulnS);
-    this.dodgeCooldownS = DEFENCE.dodgeDurationS + DEFENCE.dodgeCooldownS;
+    this.dodgeCooldownS = this.dodgeCooldownTotalS;
     return true;
+  }
+
+  /** Full cooldown after starting a dodge (its own duration plus the weight-based wait). */
+  get dodgeCooldownTotalS(): number {
+    return DEFENCE.dodgeDurationS + dodgeCooldownFor(this.stats.massKg ?? 70);
+  }
+
+  /** Seconds until the next dodge is allowed (HUD). */
+  get dodgeCooldownLeftS(): number {
+    return this.dodgeCooldownS;
+  }
+
+  /** 0..1 through the current dodge (animation); 0 when not dodging. */
+  get dodgeProgress(): number {
+    return this.dodgeS > 0 ? 1 - this.dodgeS / DEFENCE.dodgeDurationS : 0;
   }
 
   /** Spend stamina for an ability (REQ-ABL-1). Returns false, spending nothing, if there is not enough. */

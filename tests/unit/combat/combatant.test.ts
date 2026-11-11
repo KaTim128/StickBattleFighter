@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Combatant, type CombatStats, DEFENCE, seededRandom } from '../../../src/combat/combatant';
+import { Combatant, type CombatStats, DEFENCE, dodgeCooldownFor, seededRandom } from '../../../src/combat/combatant';
 
 const STATS: CombatStats = {
   maxHp: 1000,
@@ -135,8 +135,24 @@ describe('Combatant: defence', () => {
     expect(c.state).toBe('dodging');
     expect(c.receive(HIT).outcome).toBe('dodged');
     expect(c.tryDodge()).toBe(false); // cooldown
-    tick(c, DEFENCE.dodgeDurationS + DEFENCE.dodgeCooldownS + 0.02);
+    tick(c, c.dodgeCooldownTotalS + 0.02);
     expect(c.tryDodge()).toBe(true);
+  });
+
+  it('dodge cooldown depends on body weight (owner, 11/11/2026): heavier fighters wait longer', () => {
+    const light = new Combatant({ ...STATS, massKg: 55 });
+    const mid = new Combatant({ ...STATS, massKg: 70 });
+    const heavy = new Combatant({ ...STATS, massKg: 140 });
+    expect(light.dodgeCooldownTotalS).toBeLessThan(mid.dodgeCooldownTotalS);
+    expect(mid.dodgeCooldownTotalS).toBeLessThan(heavy.dodgeCooldownTotalS);
+    expect(dodgeCooldownFor(70)).toBeCloseTo(0.535, 3);
+    expect(dodgeCooldownFor(140)).toBeCloseTo(0.92, 3);
+    // The heavy fighter is still waiting when the light one can already dodge again.
+    for (const c of [light, heavy]) c.tryDodge();
+    tick(light, light.dodgeCooldownTotalS + 0.02);
+    tick(heavy, light.dodgeCooldownTotalS + 0.02);
+    expect(light.tryDodge()).toBe(true);
+    expect(heavy.tryDodge()).toBe(false);
   });
 
   it('cannot dodge without enough stamina', () => {

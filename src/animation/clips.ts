@@ -38,6 +38,9 @@ export const PROCEDURAL_CLIPS = [
   'proc.knockdown',
   'proc.getup',
   'proc.safe',
+  // Dodges (owner, 11/11/2026): a backward roll by default; Inferno turns into a streaking flame.
+  'proc.dodge.roll',
+  'proc.dodge.flame',
 ] as const;
 export type ProceduralClipId = (typeof PROCEDURAL_CLIPS)[number];
 

@@ -325,3 +325,20 @@ describe('no character-name checks in shared code (owner)', () => {
     }
   });
 });
+
+describe('dodge animation per character (owner, 11/11/2026)', () => {
+  const LIB2 = BUILT_IN_LIBRARY;
+  it('the default stickman rolls back; Inferno turns into a flame', () => {
+    const base = resolveCharacter('base-stickman', LIB2);
+    const inferno = resolveCharacter('inferno', LIB2);
+    expect(base.animation.clips.Dodge[0]).toMatchObject({ kind: 'procedural', id: 'proc.dodge.roll' });
+    expect(inferno.animation.clips.Dodge[0]).toMatchObject({ kind: 'procedural', id: 'proc.dodge.flame' });
+  });
+
+  it('the dodge cooldown follows body weight from the stats profile', () => {
+    const base = resolveCharacter('base-stickman', LIB2);
+    const dummy = resolveCharacter('training-dummy', LIB2);
+    expect(base.stats.massKg).toBe(base.body.massKg);
+    expect(dummy.stats.massKg).toBeGreaterThan(base.stats.massKg!);
+  });
+});

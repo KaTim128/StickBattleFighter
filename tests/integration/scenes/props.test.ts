@@ -5,6 +5,7 @@ import { SceneManager } from '../../../src/core/scene';
 import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import type { PropPlacement } from '../../../src/data/objects/props';
+import { MATERIAL_TOUGHNESS } from '../../../src/data/objects/props';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
 
@@ -161,28 +162,45 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
     scenes.clear();
   });
 
-  it('a steel drawer pedestal takes more than a full combo, rings when hit and breaks with sparks (owner)', async () => {
-    const { scene, scenes, run, prop, combo, approach } = await setup([{ kind: 'drawer-unit', x: 6.0, y: 5 }]);
+  it('a steel drawer pedestal is hard to break (metal takes 45% of each blow), rings when hit and breaks with sparks (owner)', async () => {
+    const { intents, scene, scenes, run, runUntil, prop, combo } = await setup([{ kind: 'drawer-unit', x: 6.0, y: 5 }]);
     scene.drainSounds();
-    combo(3); // 240 of its 260
+    combo(3); // 240 of damage, of which steel takes 45%
     const d = prop('drawer-unit');
     expect(d.broken).toBe(false);
+    expect(d.hp).toBeCloseTo(260 - 240 * MATERIAL_TOUGHNESS.metal, 6);
     expect(scene.drainSounds()).toContain('hit-metal');
-    approach();
-    combo(1);
+    // It takes more full 1-2-3 combos than wood would (a 260-point wooden prop goes in two).
+    let more = 0;
+    while (!prop('drawer-unit').broken && more < 8) {
+      // Walk up to wherever the shoved drawer is now, then go again.
+      runUntil(() => {
+        const t = prop('drawer-unit');
+        const dx = t.x - scene.player.x;
+        const dy = t.y - scene.player.y;
+        const d = Math.hypot(dx, dy);
+        intents.setMove('t', d > 0.75 ? { x: dx / d, y: dy / d } : { x: 0, y: 0 });
+        return d <= 0.75;
+      }, 3);
+      intents.setMove('t', { x: 0, y: 0 });
+      run(0.1);
+      combo(3);
+      more++;
+    }
     expect(prop('drawer-unit').broken).toBe(true);
+    expect(1 + more).toBeGreaterThanOrEqual(3);
     expect(scene.drainSounds()).toContain('break-metal');
     run(0.2);
     scenes.clear();
   });
 
-  it('a steel filing cabinet is very tough (450) but still moves under heavy blows', async () => {
+  it('a steel filing cabinet is very tough (450, metal) but still moves under heavy blows', async () => {
     const { scenes, prop, combo } = await setup([{ kind: 'cabinet', x: 6.2, y: 5 }]);
     const x0 = prop('cabinet').x;
     combo(3);
     const c = prop('cabinet');
     expect(c.broken).toBe(false);
-    expect(c.hp).toBe(450 - 240);
+    expect(c.hp).toBeCloseTo(450 - 240 * MATERIAL_TOUGHNESS.metal, 6);
     expect(c.x).toBeGreaterThan(x0 + 0.05);
     scenes.clear();
   });

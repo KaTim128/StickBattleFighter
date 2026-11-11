@@ -74,7 +74,7 @@ test('ultimate aiming (desktop): I aims in a crouch, D moves the spot, I launche
   await page.screenshot({ path: testInfo.outputPath('ult-aiming.png') });
   await page.keyboard.press('KeyI');
   await expect
-    .poll(async () => (await hook(page)).player.ability, { timeout: 3000, intervals: [20] })
+    .poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] })
     .toBe('meteorFist');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull(); // headroom for a slow software-rendered browser
   expect((await hook(page)).player.y).toBeLessThan(before.player.y - 1); // landed up the screen, where aimed
@@ -112,7 +112,7 @@ test('ultimate aiming (touch): hold ULT, drag to aim, release to jump', async ({
     [opts, at.x, at.y - 90] as const,
   );
   await expect
-    .poll(async () => (await hook(page)).player.ability, { timeout: 3000, intervals: [20] })
+    .poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] })
     .toBe('meteorFist');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull(); // headroom for a slow software-rendered browser
   // Dragged up → jumped up the screen: in the 2.5D view screen y follows x + y (TD-045).

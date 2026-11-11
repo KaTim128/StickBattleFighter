@@ -65,6 +65,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   layer.innerHTML = `
     <div class="joystick" hidden><div class="joystick-knob"></div></div>
     <button class="util-button" type="button" aria-label="Jump">JUMP</button>
+    <button class="dodge-button" type="button" aria-label="Dodge">DODGE</button>
     <button class="melee-button" type="button" aria-label="Melee">MELEE</button>
     <button class="ability-button" data-slot="a1" type="button" aria-label="Ability 1">A1</button>
     <button class="ability-button" data-slot="a2" type="button" aria-label="Ability 2">A2</button>
@@ -74,6 +75,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   const stick = layer.querySelector<HTMLElement>('.joystick')!;
   const knob = layer.querySelector<HTMLElement>('.joystick-knob')!;
   const util = layer.querySelector<HTMLButtonElement>('.util-button')!;
+  const dodge = layer.querySelector<HTMLButtonElement>('.dodge-button')!;
   const melee = layer.querySelector<HTMLButtonElement>('.melee-button')!;
   const abilityButtons = [...layer.querySelectorAll<HTMLButtonElement>('.ability-button')];
 
@@ -121,6 +123,11 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     intents.interactPress(true);
   };
   const onUtilUp = (): void => intents.interactRelease();
+  // Dodge: the way the stick points, or backwards when it is centred.
+  const onDodge = (e: PointerEvent): void => {
+    e.preventDefault();
+    intents.pressDodge();
+  };
   const onMelee = (e: PointerEvent): void => {
     e.preventDefault();
     intents.meleePress(); // tap = attack, hold = block
@@ -170,6 +177,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   window.addEventListener('pointerup', onUp);
   window.addEventListener('pointercancel', onUp);
   util.addEventListener('pointerdown', onUtil);
+  dodge.addEventListener('pointerdown', onDodge);
   util.addEventListener('pointerup', onUtilUp);
   util.addEventListener('pointercancel', onUtilUp);
   melee.addEventListener('pointerdown', onMelee);
@@ -193,6 +201,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     window.removeEventListener('pointerup', onUp);
     window.removeEventListener('pointercancel', onUp);
     util.removeEventListener('pointerdown', onUtil);
+    dodge.removeEventListener('pointerdown', onDodge);
     util.removeEventListener('pointerup', onUtilUp);
     util.removeEventListener('pointercancel', onUtilUp);
     layer.remove();
@@ -211,4 +220,12 @@ export function showUtilityAction(root: ParentNode, action: UtilityAction): void
   util.dataset.action = action;
   util.textContent = UTILITY_LABELS[action];
   util.setAttribute('aria-label', action === 'jump' ? 'Jump' : action === 'pickup' ? 'Pick up' : 'Throw');
+}
+
+/** Show the dodge cooldown on the DODGE button: 1 = ready, 0 = just used (cheap: only on change). */
+export function showDodgeReady(root: ParentNode, ready: number): void {
+  const button = root.querySelector<HTMLButtonElement>('.dodge-button');
+  if (!button) return;
+  const pct = `${Math.round(Math.max(0, Math.min(1, ready)) * 100)}%`;
+  if (button.style.getPropertyValue('--fill') !== pct) button.style.setProperty('--fill', pct);
 }

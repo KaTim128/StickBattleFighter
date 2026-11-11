@@ -16,7 +16,7 @@ import { MUSIC_TRACKS } from '../data/audio/music-tracks';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse } from '../input/keyboard';
-import { attachTouchControls, showUtilityAction } from '../input/touch-controls';
+import { attachTouchControls, showDodgeReady, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
@@ -265,6 +265,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       if (scene instanceof FightArenaScene) {
         debug.player = scene.player;
         showUtilityAction(document.body, debug.player.utility);
+        showDodgeReady(document.body, debug.player.dodgeReady);
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;

@@ -265,6 +265,7 @@ export function resolveCharacter(id: string, lib: CharacterLibrary): FighterDef 
       knockbackResistance: stats.knockbackResistance,
       hitStunResistance: stats.hitStunResistance,
       canParry: caps.canParry,
+      massKg: stats.body.massKg,
     },
     multipliers: { ...mult },
     moves,

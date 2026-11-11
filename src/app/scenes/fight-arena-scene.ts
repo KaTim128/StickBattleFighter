@@ -7,11 +7,11 @@ import { strikePose } from '../../animation/clips';
 import {
   blockPose,
   carryPose,
-  dashPose,
   flinchPose,
   getUpFrame,
   knockdownFrame,
   throwPose,
+  tuckPose,
 } from '../../animation/reaction-poses';
 import { blendPose, type Pose } from '../../animation/skeleton';
 import { addArenaColliders } from '../../arenas/arena-colliders';
@@ -85,6 +85,8 @@ export interface PlayerState {
   carrying: string | null;
   /** What the contextual utility button does now: jump, pick up or throw. */
   utility: 'jump' | 'pickup' | 'throw';
+  /** 1 = a dodge is ready, falling to 0 just after one (weight-based cooldown). */
+  dodgeReady: number;
 }
 
 export interface DummyState {
@@ -336,6 +338,7 @@ export class FightArenaScene implements ArenaScene {
       burning: f.combatant.burning,
       carrying: f.carrying?.placement.kind ?? null,
       utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
+      dodgeReady: 1 - f.combatant.dodgeCooldownLeftS / f.combatant.dodgeCooldownTotalS,
     };
   }
 
@@ -1474,12 +1477,12 @@ export class FightArenaScene implements ArenaScene {
     }
 
     // Reactions blend in and out smoothly.
-    const reaction =
-      c.state === 'guarding' ? 'block' : c.state === 'stunned' ? 'flinch' : c.state === 'dodging' ? 'dash' : null;
+    // Dodging plays the character's own Dodge clip below (roll or flame), not a reaction pose.
+    const reaction = c.state === 'guarding' ? 'block' : c.state === 'stunned' ? 'flinch' : null;
     if (reaction) f.lastReaction = reaction;
     f.reactWeight += ((reaction ? 1 : 0) - f.reactWeight) * smoothing(reaction === 'flinch' ? 30 : 18, frameDtS);
     if (f.lastReaction && f.reactWeight > 0.01) {
-      const fn = f.lastReaction === 'block' ? blockPose : f.lastReaction === 'flinch' ? flinchPose : dashPose;
+      const fn = f.lastReaction === 'block' ? blockPose : flinchPose;
       pose = blendPose(pose, fn(pose), f.reactWeight);
     }
     // Falling, lying and getting up are keyed animations (owner, 11/11/2026); tilt is smoothed so a KO from any pose blends in.
@@ -1502,7 +1505,21 @@ export class FightArenaScene implements ArenaScene {
     // The striker's little bounce off a landed blow.
     const bounce = f.recoilS > 0 ? 0.07 * Math.sin(Math.PI * (1 - f.recoilS / RECOIL_BOUNCE_S)) : 0;
     const drawnHeight = heightM + lift + f.abilityLift + bounce;
-    f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, f.flashColour);
+    // Dodge (owner, 11/11/2026): each character's own Dodge clip from its Animation Profile.
+    const dodge: { roll?: number; flame?: number } = {};
+    if (c.state === 'dodging') {
+      const p = c.dodgeProgress;
+      const clip = f.def.animation.clips.Dodge[0];
+      if (clip?.kind === 'procedural' && clip.id === 'proc.dodge.flame') {
+        dodge.flame = Math.min(1, p / 0.2, (1 - p) / 0.2);
+        const o = screenSideToWorld(f.facing * 0.3);
+        this.frameFlames.push({ points: [{ x: x + o.x, y: y + o.y, z: 0.8 }], strength: 0.9 });
+      } else {
+        pose = blendPose(pose, tuckPose(pose), Math.min(1, p / 0.15, (1 - p) / 0.15));
+        dodge.roll = p;
+      }
+    }
+    f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, f.flashColour, dodge);
     this.limbEffects(f, x, y);
     for (let n = f.animator.takeFootfalls(); n > 0; n--) this.characterSound(f, 'footstep', 0.5);
     const at = iso(x, y);

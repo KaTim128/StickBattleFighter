@@ -16,6 +16,9 @@ export interface StickmanLook {
  * outlined figure lifted by its hop height over a ground shadow (REQ-VIS-9).
  * Origin = the point between the feet on the floor.
  */
+/** Height of the tucked ball's centre during a dodge roll, metres. */
+const ROLL_CENTRE_M = 0.38;
+
 export class StickmanView {
   private last: { s: ReturnType<typeof solveSkeleton>; facing: 1 | -1; heightM: number; rot: number } | null = null;
   readonly root = new Container();
@@ -51,7 +54,15 @@ export class StickmanView {
    * @param tiltRad rotate the whole figure about its feet (knockdown: lying on the floor)
    * @param flash 0..1 hit flash: the whole figure blends to `flashColour` (a few frames on impact)
    */
-  draw(pose: Pose, facing: 1 | -1, heightM: number, tiltRad = 0, flash = 0, flashColour = 0xffffff): void {
+  draw(
+    pose: Pose,
+    facing: 1 | -1,
+    heightM: number,
+    tiltRad = 0,
+    flash = 0,
+    flashColour = 0xffffff,
+    dodge: { roll?: number; flame?: number } = {},
+  ): void {
     const s = solveSkeleton(pose, this.bones);
     this.last = { s, facing, heightM, rot: -facing * tiltRad };
     const { limbWidthM: w, outlineWidthM: o } = this.look;
@@ -73,9 +84,22 @@ export class StickmanView {
     }
 
     this.figure.scale.x = facing;
-    this.figure.y = -heightM;
-    // Falling backwards, away from the facing direction.
-    this.figure.rotation = -facing * tiltRad;
+    const roll = dodge.roll ?? 0;
+    if (roll > 0) {
+      // Dodge roll: the tucked ball turns a full circle backwards about its own centre.
+      const c = ROLL_CENTRE_M;
+      this.figure.pivot.set(0, -c);
+      this.figure.y = -heightM - c;
+      this.figure.rotation = -facing * Math.PI * 2 * roll;
+    } else {
+      this.figure.pivot.set(0, 0);
+      this.figure.y = -heightM;
+      // Falling backwards, away from the facing direction.
+      this.figure.rotation = -facing * tiltRad;
+    }
+    // Flame dodge: the body burns away into a streaking flame, then reforms.
+    const flame = dodge.flame ?? 0;
+    this.body.alpha = 1 - flame;
 
     const g = this.body.clear();
     const stroke = (pts: readonly Point[], color: number, width: number): void => {
@@ -96,7 +120,10 @@ export class StickmanView {
     limbStroke([s.pelvis, s.chest, s.neck], limb);
     limbStroke(s.legFront, limb);
     limbStroke(s.armFront, limb);
-    if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
+    if (flame > 0.01) {
+      // The whole fighter as one big flame at chest height, trailing forward as it rushes back.
+      this.flameHead(0, -0.8, 0.34 + 0.12 * flame, flash, 1.6 * flame, flame);
+    } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
     else {
       this.fire.clear();
       this.fireCore.clear();
@@ -112,9 +139,12 @@ export class StickmanView {
    * ball of fire, a blue base on the neck, rising embers and two calm white eyes.
    * Original procedural design; drawn in the figure's frame (it mirrors with the facing).
    */
-  private flameHead(x: number, y: number, r: number, flash: number): void {
+  private flameHead(x: number, y: number, r: number, flash: number, lean?: number, alpha = 1): void {
     const t = this.clockS;
-    const back = -this.motion; // the figure is mirrored by facing, so "back" is always -x here
+    // The figure is mirrored by facing, so "back" is always −x here; `lean` overrides (+ = forward).
+    const back = lean ?? -this.motion;
+    this.fire.alpha = alpha;
+    this.fireCore.alpha = alpha;
     const f = this.fire.clear();
     // Halo.
     for (let i = 0; i < 4; i++) f.circle(x, y, r * (3.2 - i * 0.55)).fill({ color: 0xff6a1a, alpha: 0.05 });

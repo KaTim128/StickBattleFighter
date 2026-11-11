@@ -36,6 +36,14 @@
         background: rgba(30, 36, 48, 0.7); color: #e8edf5; font: 700 12px system-ui, sans-serif;
         pointer-events: auto; touch-action: none;
       }
+      /* Dodge (owner, 11/11/2026): a movement button like UTIL (not one of the five combat buttons);
+         it fills back up as the weight-based cooldown runs out. */
+      .dodge-button {
+        position: fixed; right: calc(24px + env(safe-area-inset-right)); bottom: 266px;
+        width: 64px; height: 64px; border-radius: 18px; border: 3px solid rgba(140, 200, 255, 0.75);
+        color: #e8f4ff; font: 700 12px system-ui, sans-serif; pointer-events: auto; touch-action: none;
+        background: conic-gradient(rgba(40, 110, 170, 0.8) var(--fill, 100%), rgba(20, 22, 28, 0.85) 0);
+      }
       .melee-button {
         position: fixed; right: calc(110px + env(safe-area-inset-right)); bottom: 40px;
         width: 84px; height: 84px; border-radius: 50%; border: 3px solid rgba(255, 170, 110, 0.85);

@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 interface Hook {
-  player: { carrying: string | null; utility: 'jump' | 'pickup' | 'throw' };
+  player: { carrying: string | null; utility: 'jump' | 'pickup' | 'throw'; state: string; dodgeReady: number };
   dummy: { hp: number };
 }
 type DebugWindow = Window & { __stickmanDebug?: Hook };
@@ -45,5 +45,19 @@ test('Phase 7 (touch): the utility button reads GRAB near an object, THROW while
   await util.dispatchEvent('pointerup', { pointerType: 'touch', pointerId: 3, isPrimary: true, bubbles: true });
   await expect.poll(async () => (await hook(page)).player.carrying, { timeout: 5000 }).toBe('office-chair');
   await expect(util).toHaveText('THROW');
+  expect(errors).toEqual([]);
+});
+
+test('touch: the DODGE button dodges and refills as its weight-based cooldown runs out', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'touch test');
+  const errors: string[] = [];
+  await open(page, errors, '?scene=training-yard&playerAt=15,10');
+  await page.touchscreen.tap(30, 30); // shows the touch controls
+  const dodge = page.locator('.dodge-button');
+  await expect(dodge).toBeVisible();
+  await dodge.dispatchEvent('pointerdown', { pointerType: 'touch', pointerId: 5, isPrimary: true, bubbles: true });
+  await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000, intervals: [10] }).toBe('dodging');
+  await expect.poll(async () => (await hook(page)).player.dodgeReady, { timeout: 3000 }).toBeLessThan(1);
+  await expect.poll(async () => (await hook(page)).player.dodgeReady, { timeout: 5000 }).toBe(1);
   expect(errors).toEqual([]);
 });

@@ -1,7 +1,14 @@
 import type { RigidBody } from '@dimforge/rapier2d';
 import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { THROWING } from '../data/combat/throwing';
-import { footprint, kindOf, type Material, type PropKind, type PropPlacement } from '../data/objects/props';
+import {
+  footprint,
+  kindOf,
+  MATERIAL_TOUGHNESS,
+  type Material,
+  type PropKind,
+  type PropPlacement,
+} from '../data/objects/props';
 import type { PhysicsWorld, Vec2 } from '../physics/physics-world';
 import { Debris } from './debris';
 
@@ -497,7 +504,7 @@ export class ArenaProps {
       return { x: p.x, y: p.y, z: (prop.placement.elevationM ?? 0) + prop.size.h / 2 };
     };
     if (prop.hp !== null) {
-      prop.hp = Math.max(0, prop.hp - hit.damage);
+      prop.hp = Math.max(0, prop.hp - hit.damage * MATERIAL_TOUGHNESS[prop.kind.material]);
       if (prop.hp === 0) {
         this.pending.push({
           kind: 'break',
