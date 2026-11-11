@@ -324,6 +324,9 @@ Books, staplers, bottles and paper stacks on every desk; fire extinguishers (foa
 ### 11/11/2026: Furniture facing, tall glass-door wall, breakable wall (owner request)
 Wall-side furniture faces into the room and chairs face their desks; the curved wall is full height with a glass door; its 24 sections can be chipped through one at a time (TD-048, REQ-ENV-15, SUP-08). Also: CI for e024ef0 failed installing the browser's system packages (an apt download error on the runner, not our code) and was re-run. **Evidence:** lint clean; typecheck 0; `npm test` 263/263; `npm run e2e` 27/27; screenshots. **Next task:** Phase 8 (first polished fighter).
 
+### 11/11/2026: Dodge roll on the ground (owner)
+The default stickman's roll now turns about the tucked body's centre while its lowest point stays on the floor every frame (no floating). Frames: `docs/screenshots/dodge-roll-grounded.png`. Evidence: lint, typecheck, `npm test`, `npm run e2e` green.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

@@ -16,9 +16,6 @@ export interface StickmanLook {
  * outlined figure lifted by its hop height over a ground shadow (REQ-VIS-9).
  * Origin = the point between the feet on the floor.
  */
-/** Height of the tucked ball's centre during a dodge roll, metres. */
-const ROLL_CENTRE_M = 0.38;
-
 export class StickmanView {
   private last: { s: ReturnType<typeof solveSkeleton>; facing: 1 | -1; heightM: number; rot: number } | null = null;
   readonly root = new Container();
@@ -86,12 +83,28 @@ export class StickmanView {
     this.figure.scale.x = facing;
     const roll = dodge.roll ?? 0;
     if (roll > 0) {
-      // Dodge roll: the tucked ball turns a full circle backwards about its own centre.
-      const c = ROLL_CENTRE_M;
-      this.figure.pivot.set(0, -c);
-      this.figure.y = -heightM - c;
-      this.figure.rotation = -facing * Math.PI * 2 * roll;
+      // Dodge roll ON THE GROUND (owner, 11/11/2026: "rolling on the ground, not floating"): the
+      // tucked ball turns a full circle backwards about its own centre, and is lowered every frame
+      // so its lowest point (a foot, a knee, the head or a shoulder) always touches the floor.
+      const rot = -facing * Math.PI * 2 * roll;
+      const pts = [s.pelvis, s.chest, s.neck, s.head, ...s.armFront, ...s.armBack, ...s.legFront, ...s.legBack];
+      const cx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
+      const cy = pts.reduce((a, p) => a + p.y, 0) / pts.length;
+      const cos = Math.cos(rot);
+      const sin = Math.sin(rot);
+      let lowest = Number.NEGATIVE_INFINITY;
+      for (const p of pts) {
+        const lx = (p.x - cx) * facing; // mirrored by facing, then turned
+        const ly = p.y - cy;
+        const r = p === s.head ? this.bones.headRadius : this.look.limbWidthM / 2;
+        lowest = Math.max(lowest, lx * sin + ly * cos + r);
+      }
+      this.figure.pivot.set(cx, cy);
+      this.figure.x = cx * facing;
+      this.figure.y = -lowest; // the floor is y = 0 at the fighter's feet
+      this.figure.rotation = rot;
     } else {
+      this.figure.x = 0;
       this.figure.pivot.set(0, 0);
       this.figure.y = -heightM;
       // Falling backwards, away from the facing direction.
