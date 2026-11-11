@@ -97,7 +97,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ## 0r. Diagonal wall and walk-through door (verified 11/11/2026)
 - [x] `npm test`: **232 tests**. The door starts shut and solid; a walk into it swings it open (not broken), the player walks through into the boss room, it swings shut once clear and opens again from the other side; a brush along it does not open it; jab and hook still do not break it; the finisher, a flying kick and a knocked-back body still smash it; office layout tests (connected rooms, no pockets, enterable cubicles) pass with the diagonal wall.
 - [x] `npm run e2e`: **24 passed**. Walk into the door → open → boss room → it shuts; the 1-2-3 combo still smashes it.
-- [x] V Screenshots: `docs/screenshots/office-diagonal-door.png`, `docs/screenshots/office-door-walkthrough.png`.
+- [x] V Screenshots: `docs/screenshots/office-curved-wall.png`, `docs/screenshots/office-door-walkthrough.png`.
 - [ ] Owner on a phone: the door is easy to spot and walking through feels natural.
 
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)

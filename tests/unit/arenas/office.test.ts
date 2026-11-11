@@ -37,7 +37,7 @@ describe('office arena content (owner layout, 11/11/2026)', () => {
     }
   });
 
-  it('boss room: executive desk with the boss chair behind it and a visitor chair opposite, facing the door', () => {
+  it('boss room: executive desk with the boss chair behind it and two visitor chairs opposite, facing the door', () => {
     const one = (kind: PropKindId) => {
       const found = OFFICE.props.filter((p) => p.kind === kind);
       expect(found, kind).toHaveLength(1);
@@ -45,13 +45,16 @@ describe('office arena content (owner layout, 11/11/2026)', () => {
     };
     const desk = one('executive-desk');
     const boss = one('boss-chair');
-    const visitor = one('visitor-chair');
+    const visitors = OFFICE.props.filter((p) => p.kind === 'visitor-chair'); // owner rearrangement, 11/11/2026
+    expect(visitors).toHaveLength(2);
     const door = OFFICE.doors![0]!;
     expect(desk.x).toBeGreaterThan(door.x1); // in the boss room
     expect(boss.x).toBeGreaterThan(desk.x); // behind the desk (far side from the door)
-    expect(visitor.x).toBeLessThan(desk.x); // opposite side, nearer the door
     expect(Math.abs(boss.y - desk.y)).toBeLessThan(0.3);
-    expect(Math.abs(visitor.y - desk.y)).toBeLessThan(0.3);
+    for (const v of visitors) {
+      expect(v.x).toBeLessThan(desk.x); // opposite side, nearer the door
+      expect(Math.abs(v.y - desk.y)).toBeLessThan(1); // either side of the desk's centre
+    }
   });
 
   it('the two rooms look different (distinct floor and walls)', () => {
@@ -134,7 +137,7 @@ describe('office zones', () => {
     const c = regionOf(closed);
     const o = regionOf(open);
     const main = OFFICE.playerStart;
-    const boss = { x: OFFICE.doors![0]!.x1 + 3, y: 9 };
+    const boss = { x: OFFICE.doors![0]!.x1 + 3, y: OFFICE.heightM / 2 }; // the open floor kept clear in front of the door
     expect(isWalkable(closed, boss.x, boss.y)).toBe(true);
     expect(c(boss.x, boss.y)).not.toBe(c(main.x, main.y));
     expect(o(boss.x, boss.y)).toBe(o(main.x, main.y));

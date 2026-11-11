@@ -67,13 +67,15 @@ test('ultimate aiming (desktop): I aims in a crouch, D moves the spot, I launche
   await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
   await page.keyboard.press('KeyI');
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(2500); // the aim moves in game time; a software-rendered browser runs slower than real time
   await page.keyboard.up('KeyW');
   const before = await hook(page);
   expect(before.player.ability).toBeNull(); // still aiming
   await page.screenshot({ path: testInfo.outputPath('ult-aiming.png') });
   await page.keyboard.press('KeyI');
-  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 3000 }).toBe('meteorFist');
+  await expect
+    .poll(async () => (await hook(page)).player.ability, { timeout: 3000, intervals: [20] })
+    .toBe('meteorFist');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 5000 }).toBeNull();
   expect((await hook(page)).player.y).toBeLessThan(before.player.y - 1); // landed up the screen, where aimed
   expect(errors).toEqual([]);
@@ -108,7 +110,9 @@ test('ultimate aiming (touch): hold ULT, drag to aim, release to jump', async ({
       ),
     [opts, at.x, at.y - 90] as const,
   );
-  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 3000 }).toBe('meteorFist');
+  await expect
+    .poll(async () => (await hook(page)).player.ability, { timeout: 3000, intervals: [20] })
+    .toBe('meteorFist');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 5000 }).toBeNull();
   expect((await hook(page)).player.y).toBeLessThan(y0 - 2); // dragged up → jumped up the screen
   expect(errors).toEqual([]);

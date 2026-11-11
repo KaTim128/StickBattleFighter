@@ -1,6 +1,6 @@
 import { segmentBox } from '../../core/oriented-rect';
-import type { PropPlacement } from '../objects/props';
-import type { ArenaLayout } from './arena-layout';
+import { PROP_KINDS, type PropPlacement } from '../objects/props';
+import type { ArenaLayout, WallRect } from './arena-layout';
 
 /**
  * The office arena (owner layout, 11/11/2026). GREYBOX art. 33 m × 12 m.
@@ -19,7 +19,8 @@ import type { ArenaLayout } from './arena-layout';
  * Each cubicle: desk against the back panel, a steel drawer pedestal, a
  * chair, monitor, keyboard, mouse (some a coffee cup); all breakable.
  * Owner update (11/11/2026, sketch): the boss-room wall runs DIAGONALLY, from the
- * top wall at x 23.5 m down to the bottom wall at x 28.5 m, so its face and the
+ * top wall down to the bottom wall (owner's sketches; now CURVED, see the arc below),
+ * so its face and the
  * door in it can be seen. The door is small (1.3 m), in the middle of the wall:
  * walk into it to swing it open, or smash it (src/environment/breakable-door.ts).
  */
@@ -30,22 +31,65 @@ const PAIR_GAP = 1.0;
 const PAIRS_X0 = 1.3;
 /** Depth of one cubicle, from the shared back panel to its open side. */
 const CUBE_D = 2.3;
-const WALL_TOP_X = 23.5;
-const WALL_BOTTOM_X = 28.5;
 const WALL_THICK_M = 0.4;
+/** The curved wall's face shows on the office side, so it takes the office's blue-grey. */
+const OFFICE_WALL_FACE = 0x4b5566;
 const DOOR_LEN_M = 1.3;
 const WIDTH = 33;
 const HEIGHT = 12;
 const MID_Y = HEIGHT / 2;
-/** A point on the diagonal wall's centre line, `sM` metres from where it meets the top wall. */
-const WALL_LEN_M = Math.hypot(WALL_BOTTOM_X - WALL_TOP_X, HEIGHT);
-function onWall(sM: number): [number, number] {
-  return [WALL_TOP_X + ((WALL_BOTTOM_X - WALL_TOP_X) * sM) / WALL_LEN_M, (HEIGHT * sM) / WALL_LEN_M];
+
+/**
+ * CURVED BOSS-ROOM WALL (owner sketch, 11/11/2026): an arc that meets the top and
+ * bottom walls near x 23.6 m and bows out into the boss room to x 26.2 m at its
+ * middle, where the door is. Built from short straight pieces along the arc.
+ */
+const ARC_END_X = 23.65;
+const ARC_APEX_X = 26.2;
+const ARC_SAG_M = ARC_APEX_X - ARC_END_X;
+const ARC_R = (MID_Y * MID_Y + ARC_SAG_M * ARC_SAG_M) / (2 * ARC_SAG_M);
+const ARC_CX = ARC_APEX_X - ARC_R;
+/** Angle (from the centre, 0 = the apex) where the arc meets the top and bottom walls, plus a little overrun. */
+const ARC_HALF_ANGLE = Math.asin(MID_Y / ARC_R) + 0.02;
+const DOOR_HALF_ANGLE = DOOR_LEN_M / 2 / ARC_R;
+const WALL_PIECES_PER_HALF = 12;
+
+function arcPoint(angle: number): [number, number] {
+  return [ARC_CX + ARC_R * Math.cos(angle), MID_Y + ARC_R * Math.sin(angle)];
 }
-const DOOR_S0 = WALL_LEN_M / 2 - DOOR_LEN_M / 2;
-const DOOR_S1 = WALL_LEN_M / 2 + DOOR_LEN_M / 2;
-/** The wall reaches a little into the outer walls so no gap is left at its ends. */
-const WALL_OVERRUN_M = 0.3;
+
+/** x of the curved wall's centre line at height y. */
+function wallX(y: number): number {
+  const dy = Math.max(-ARC_R, Math.min(ARC_R, y - MID_Y));
+  return ARC_CX + Math.sqrt(ARC_R * ARC_R - dy * dy);
+}
+
+/** Short straight wall pieces along the arc from angle a0 to a1 (each overlaps the next a little). */
+function arcPieces(a0: number, a1: number): WallRect[] {
+  const pieces: WallRect[] = [];
+  for (let i = 0; i < WALL_PIECES_PER_HALF; i++) {
+    const t0 = a0 + ((a1 - a0) * i) / WALL_PIECES_PER_HALF;
+    const t1 = a0 + ((a1 - a0) * (i + 1)) / WALL_PIECES_PER_HALF;
+    const pad = 0.012; // overlap so the outside of the bend has no gaps
+    pieces.push({
+      ...segmentBox(...arcPoint(t0 - pad), ...arcPoint(t1 + pad), WALL_THICK_M),
+      colour: OFFICE_WALL_FACE,
+    });
+  }
+  return pieces;
+}
+
+/**
+ * A prop standing against the curved wall at height y, on the office side
+ * (side −1) or the boss-room side (+1), clear of the wall along its whole depth.
+ */
+function besideWall(kind: PropPlacement['kind'], y: number, side: -1 | 1): PropPlacement {
+  const f = PROP_KINDS[kind];
+  const xs = [y - f.d / 2, y, y + f.d / 2].map(wallX);
+  const edge = side < 0 ? Math.min(...xs) : Math.max(...xs);
+  const halfWall = (WALL_THICK_M / 2) * 1.15; // a bend reads a little thicker across x
+  return { kind, x: edge + side * (halfWall + 0.06 + f.w / 2), y };
+}
 
 /** Desk items sit on the desk and draw on top of it. */
 function onDesk(kind: PropPlacement['kind'], x: number, y: number, deskFront: number, order: number): PropPlacement {
@@ -89,31 +133,62 @@ function cubiclePair(i: number): PropPlacement[] {
 const CUBICLES: PropPlacement[] = [0, 1, 2, 3, 4, 5].flatMap(cubiclePair);
 
 const MAIN_EXTRAS: PropPlacement[] = [
-  { kind: 'water-dispenser', x: WALL_TOP_X - 1.3, y: 0.6 },
-  { kind: 'bin', x: WALL_TOP_X - 2, y: 0.6 },
-  { kind: 'printer', x: WALL_BOTTOM_X - 2.6, y: HEIGHT - 0.6 },
+  // Pantry corner: the water dispenser, bin and a plant step down along the diagonal wall.
+  besideWall('water-dispenser', 0.9, -1),
+  besideWall('bin', 1.6, -1),
+  besideWall('plant', 2.6, -1),
+  // Copy corner, tucked into the angle by the bottom wall.
+  besideWall('printer', HEIGHT - 0.4, -1),
+  { kind: 'cabinet', x: wallX(HEIGHT) - 1.9, y: HEIGHT - 0.35 },
+  besideWall('plant', HEIGHT - 1.9, -1),
   { kind: 'plant', x: 0.6, y: 0.7 },
   { kind: 'plant', x: 0.6, y: HEIGHT - 0.7 },
   { kind: 'cabinet', x: 2.6, y: 0.35 },
   { kind: 'cabinet', x: 3.55, y: 0.35 },
 ];
 
-/** Where the boss room's furniture is measured from (the door is at x ≈ 26). */
-const BOSS_X0 = 25.4;
+/**
+ * Boss room (owner, 11/11/2026: "the desk and chairs look too close to the door,
+ * make sure it's arranged well"). Three zones, with the floor in front of the
+ * door left open:
+ *  - top right: the executive desk on its rug, set back in the corner, boss chair
+ *    against the far wall, two visitor chairs facing it;
+ *  - bottom right: a meeting table with four chairs;
+ *  - along the walls: bookshelves on the top wall, cabinets on the far wall
+ *    between the two zones, plants in the corners and against the curve.
+ */
+const DESK_X = 31;
+const DESK_Y = 3.1;
+const TABLE_X = 30.2;
+const TABLE_Y = 9.6;
 const BOSS_ROOM: PropPlacement[] = [
-  { kind: 'rug', x: BOSS_X0 + 4, y: MID_Y },
-  // Executive desk turned to face the door; boss chair behind it, visitor chair opposite.
-  { kind: 'executive-desk', x: BOSS_X0 + 5, y: MID_Y, rotated: true },
-  { kind: 'boss-chair', x: BOSS_X0 + 6.3, y: MID_Y },
-  { kind: 'visitor-chair', x: BOSS_X0 + 3.3, y: MID_Y },
-  onDesk('computer', BOSS_X0 + 5.4, MID_Y - 0.6, MID_Y + 1.2, 1),
-  onDesk('coffee-cup', BOSS_X0 + 4.7, MID_Y + 0.8, MID_Y + 1.2, 2),
-  { kind: 'bookshelf', x: BOSS_X0 + 2.8, y: 0.25 },
-  { kind: 'bookshelf', x: BOSS_X0 + 6.3, y: 0.25, w: 1.4 },
-  { kind: 'plant', x: WALL_TOP_X + 2.1, y: 0.7 },
-  { kind: 'plant', x: WIDTH - 0.7, y: HEIGHT - 0.7 },
-  { kind: 'cabinet', x: WIDTH - 0.5, y: HEIGHT - 3, rotated: true },
+  { kind: 'rug', x: DESK_X - 0.9, y: DESK_Y },
+  { kind: 'executive-desk', x: DESK_X, y: DESK_Y, rotated: true },
+  { kind: 'boss-chair', x: DESK_X + 1.25, y: DESK_Y },
+  { kind: 'visitor-chair', x: DESK_X - 1.6, y: DESK_Y - 0.65 },
+  { kind: 'visitor-chair', x: DESK_X - 1.6, y: DESK_Y + 0.65 },
+  onDesk('computer', DESK_X + 0.4, DESK_Y - 0.6, DESK_Y + 1.2, 1),
+  onDesk('coffee-cup', DESK_X - 0.3, DESK_Y + 0.8, DESK_Y + 1.2, 2),
+  { kind: 'meeting-table', x: TABLE_X, y: TABLE_Y, w: 3 },
+  { kind: 'office-chair', x: TABLE_X - 0.8, y: TABLE_Y - 1.2 },
+  { kind: 'office-chair', x: TABLE_X + 0.8, y: TABLE_Y - 1.2 },
+  { kind: 'office-chair', x: TABLE_X - 0.8, y: TABLE_Y + 1.2 },
+  { kind: 'office-chair', x: TABLE_X + 0.8, y: TABLE_Y + 1.2 },
+  { kind: 'bookshelf', x: 25.8, y: 0.25 },
+  { kind: 'bookshelf', x: 27.9, y: 0.25 },
+  { kind: 'plant', x: WIDTH - 0.6, y: 0.7 },
+  { kind: 'cabinet', x: WIDTH - 0.32, y: 5.6, rotated: true },
+  { kind: 'cabinet', x: WIDTH - 0.32, y: 6.6, rotated: true },
+  besideWall('plant', 2.6, 1),
+  besideWall('plant', HEIGHT - 1.4, 1),
+  { kind: 'plant', x: WIDTH - 0.6, y: HEIGHT - 0.7 },
 ];
+
+/** The boss room's floor edge along the wall, bottom to top. */
+const ARC_OUTLINE: number[] = Array.from({ length: 33 }, (_, i) => {
+  const y = HEIGHT - (HEIGHT * i) / 32;
+  return [wallX(y), y];
+}).flat();
 
 export const OFFICE: ArenaLayout = {
   id: 'office',
@@ -126,8 +201,8 @@ export const OFFICE: ArenaLayout = {
   playerStart: { x: 7, y: 1.9 },
   dummyStart: { x: 12, y: 1.9 },
   windows: [
-    { x0: 0.6, x1: WALL_TOP_X - 0.6 },
-    { x0: WALL_TOP_X + 0.6, x1: WIDTH - 0.5 },
+    { x0: 0.6, x1: ARC_END_X - 0.6 },
+    { x0: ARC_END_X + 0.6, x1: WIDTH - 0.5 },
   ],
   look: {
     background: 0x141922,
@@ -140,7 +215,7 @@ export const OFFICE: ArenaLayout = {
   floorZones: [
     // Boss room: warm wood planks and darker panelled walls.
     {
-      x0: WALL_TOP_X,
+      x0: ARC_END_X,
       y0: 0,
       x1: WIDTH,
       y1: HEIGHT,
@@ -149,13 +224,16 @@ export const OFFICE: ArenaLayout = {
       lineSpacingM: 0.6,
       planks: true,
       wall: 0x3a2a22,
-      polygon: [WALL_TOP_X, 0, WIDTH, 0, WIDTH, HEIGHT, WALL_BOTTOM_X, HEIGHT],
+      polygon: [WIDTH, 0, WIDTH, HEIGHT, ...ARC_OUTLINE],
     },
   ],
-  interiorWalls: [
-    { ...segmentBox(...onWall(-WALL_OVERRUN_M), ...onWall(DOOR_S0), WALL_THICK_M), colour: 0x3a2a22 },
-    { ...segmentBox(...onWall(DOOR_S1), ...onWall(WALL_LEN_M + WALL_OVERRUN_M), WALL_THICK_M), colour: 0x3a2a22 },
+  interiorWalls: [...arcPieces(-ARC_HALF_ANGLE, -DOOR_HALF_ANGLE), ...arcPieces(DOOR_HALF_ANGLE, ARC_HALF_ANGLE)],
+  doors: [
+    {
+      id: 'boss-door',
+      ...segmentBox(...arcPoint(-DOOR_HALF_ANGLE), ...arcPoint(DOOR_HALF_ANGLE), 0.16),
+      breakStrength: 500,
+    },
   ],
-  doors: [{ id: 'boss-door', ...segmentBox(...onWall(DOOR_S0), ...onWall(DOOR_S1), 0.16), breakStrength: 500 }],
   greybox: true,
 };

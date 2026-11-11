@@ -1,5 +1,4 @@
 import { expect, type Page, test } from '@playwright/test';
-import { comboToHeavy } from './combo';
 
 interface Hook {
   scene: string | null;
@@ -49,14 +48,26 @@ test('office: walking into the door swings it open into the boss room; the 1-2-3
   // Clear of the doorway, it swings shut again.
   await expect.poll(async () => (await hook(page)).doors[0]!.open, { timeout: 5000 }).toBe(false);
 
-  // Breaking it still works: from the office side, shove the dummy to it and finish with the 1-2-3.
-  await open(page, errors, '?playerAt=22.3,6&dummyAt=23.5,6&character=base-stickman');
+  // Breaking it still works: stand just short of the door (not pushing it) and land the 1-2-3.
+  // The door is at x ≈ 26.2 (the apex of the curved wall).
+  await open(page, errors, '?playerAt=25.3,6&dummyAt=3,1.9&character=base-stickman');
+  // Face the door with a short step (too short to push it open): hold D until the player has
+  // actually moved, so a loaded browser cannot drop the tap and leave them facing away.
+  const startX = (await hook(page)).player.x;
   await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await hook(page)).dummy.x, { timeout: 20_000 }).toBeGreaterThan(23.9);
+  await expect
+    .poll(async () => (await hook(page)).player.x, { timeout: 3000, intervals: [10] })
+    .toBeGreaterThan(startX + 0.03);
   await page.keyboard.up('KeyD');
-  await comboToHeavy(page, async () => (await hook(page)).player.attack);
-  await expect.poll(async () => (await hook(page)).doors[0]!.broken, { timeout: 5000 }).toBe(true);
+  await page.waitForTimeout(300);
+  // Keep pressing through the 1-2-3 until the door gives (a loaded browser can poll too slowly
+  // to see the short finisher frame, so wait on the outcome rather than the animation state).
+  for (let i = 0; i < 60 && !(await hook(page)).doors[0]!.broken; i++) {
+    await page.keyboard.press('KeyJ');
+    await page.waitForTimeout(110);
+  }
   s = await hook(page);
+  expect(s.doors[0]!.broken).toBe(true);
   expect(['strike', 'knockback']).toContain(s.doors[0]!.brokenBy);
   await page.screenshot({ path: testInfo.outputPath('door-smashed.png') });
   expect(errors).toEqual([]);

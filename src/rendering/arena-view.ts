@@ -1,6 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
-import type { ArenaLayout, Rect } from '../data/arenas/arena-layout';
 import { fromBoxFrame } from '../core/oriented-rect';
+import type { ArenaLayout, Rect } from '../data/arenas/arena-layout';
 import { kindOf } from '../data/objects/props';
 import { DoorView } from './door-view';
 import { drawPrism } from './prism';
@@ -30,6 +30,9 @@ export interface ArenaView {
 export const INTERIOR_WALL_HEIGHT_M = 0.8;
 /** Long walls are drawn in short blocks so fighters beside them still depth-sort correctly. */
 const WALL_CHUNK_M = 0.5;
+/** A light skirting board along the foot of interior walls. */
+const SKIRTING = 0xd8d2c2;
+const SKIRTING_M = 0.07;
 
 function floorLines(g: Graphics, r: Rect, spacing: number, planks: boolean): void {
   if (!planks) for (let x = r.x0 + spacing; x < r.x1; x += spacing) g.moveTo(x, r.y0).lineTo(x, r.y1);
@@ -74,7 +77,31 @@ function wallBlocks(r: Rect, top: number, front: number): { node: Container; foo
     const rel = corners.map((p) => ({ x: p.x - centre.x, y: p.y - centre.y }));
     const c = new Container();
     c.label = 'interior-wall';
-    c.addChild(drawPrism(new Graphics(), rel, INTERIOR_WALL_HEIGHT_M, { front, top, edge: 0x14181f }));
+    const g = drawPrism(new Graphics(), rel, INTERIOR_WALL_HEIGHT_M, { front, top, edge: 0x14181f, edgeWidth: 0 });
+    // Seamless: outline and trim only the wall's long sides, never the joins between blocks.
+    const hM = INTERIOR_WALL_HEIGHT_M;
+    const long: [number, number][] = alongY
+      ? [
+          [1, 2],
+          [3, 0],
+        ]
+      : [
+          [0, 1],
+          [2, 3],
+        ];
+    for (const [i, j] of long) {
+      const p = rel[i]!;
+      const q = rel[j]!;
+      // The side nearer the camera shows its face: give it a skirting board and a floor line.
+      if ((p.y + q.y) / 2 > 0) {
+        g.poly([p.x, p.y, q.x, q.y, q.x, q.y - SKIRTING_M, p.x, p.y - SKIRTING_M]).fill(SKIRTING);
+        g.moveTo(p.x, p.y).lineTo(q.x, q.y).stroke({ width: 0.02, color: 0x14181f, alpha: 0.6 });
+      }
+      g.moveTo(p.x, p.y - hM)
+        .lineTo(q.x, q.y - hM)
+        .stroke({ width: 0.025, color: 0x14181f, alpha: 0.7 });
+    }
+    c.addChild(g);
     c.position.set(centre.x, centre.y);
     blocks.push({ node: c, footOffset: Math.max(...rel.map((p) => p.y)) });
   }

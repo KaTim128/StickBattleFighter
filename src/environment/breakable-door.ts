@@ -1,7 +1,7 @@
 import type { Collider } from '@dimforge/rapier2d';
+import { distanceSqToBox, fromBoxFrame, toBoxFrame } from '../core/oriented-rect';
 import type { DoorSpec, Rect } from '../data/arenas/arena-layout';
 import type { PhysicsWorld, Vec2 } from '../physics/physics-world';
-import { distanceSqToBox, fromBoxFrame, toBoxFrame } from '../core/oriented-rect';
 import { Debris } from './debris';
 
 /**

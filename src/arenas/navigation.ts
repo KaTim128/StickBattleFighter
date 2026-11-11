@@ -1,5 +1,5 @@
-import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { distanceSqToBox } from '../core/oriented-rect';
+import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { footprint, PROP_KINDS } from '../data/objects/props';
 
 /**

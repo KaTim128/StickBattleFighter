@@ -1,6 +1,6 @@
 import type { AnimationState, MoveInput } from '../characters/schema';
-import type { ImpactId } from '../data/combat/impacts';
 import { distanceSqToBox, type OrientedRect } from '../core/oriented-rect';
+import type { ImpactId } from '../data/combat/impacts';
 /**
  * Attack definitions (data-driven, Combat specialist). An attack has three
  * phases: wind-up (anticipation), a short active window where the hit is

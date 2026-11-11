@@ -195,6 +195,7 @@ describe('office door (owner request, 11/11/2026)', () => {
     let prev = scene.cameraState!.x;
     let maxStep = 0;
     runUntil(() => scene.player.x > DOOR.x1 + 2, 4);
+    intents.setMove('t', { x: 0, y: 0 }); // stop inside the boss room (not run on into the far wall)
     for (let i = 0; i < 60; i++) {
       run(STEP);
       maxStep = Math.max(maxStep, Math.abs(scene.cameraState!.x - prev));

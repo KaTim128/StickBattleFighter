@@ -6,6 +6,7 @@ export interface PrismLook {
   readonly front: number;
   readonly top: number;
   readonly edge: number;
+  /** Outline width; 0 = no outline (the caller draws its own, e.g. a seamless wall). */
   readonly edgeWidth?: number;
 }
 
@@ -30,13 +31,11 @@ export function drawPrism(g: Graphics, corners: readonly Point[], heightM: numbe
     // Outward normal of edge p→q.
     const ny = -(q.x - p.x) * outward;
     if (ny <= 1e-6) continue;
-    g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM])
-      .fill(look.front)
-      .stroke({ width: look.edgeWidth ?? 0.02, color: look.edge, alpha: 0.7 });
+    g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM]).fill(look.front);
+    if (look.edgeWidth !== 0) g.stroke({ width: look.edgeWidth ?? 0.02, color: look.edge, alpha: 0.7 });
   }
   const top = corners.flatMap((p) => [p.x, p.y - heightM]);
-  return g
-    .poly(top)
-    .fill(look.top)
-    .stroke({ width: look.edgeWidth ?? 0.02, color: look.edge, alpha: 0.8 });
+  g.poly(top).fill(look.top);
+  if (look.edgeWidth !== 0) g.stroke({ width: look.edgeWidth ?? 0.02, color: look.edge, alpha: 0.8 });
+  return g;
 }
