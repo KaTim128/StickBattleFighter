@@ -175,6 +175,13 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 - The hop is visual only (cannot clear obstacles); revisit in combat or arena phases.
 - The figure is about 1.4 m on an 11 m-wide view; revisit scale with art direction (OQ-16).
 
+### 11/11/2026: Fighting stance at all times (owner request)
+**Owner:** "Ensure arms and body are not awkward when walking; the stickman should have a fighting walking stance at all times."
+**Change:** the greybox idle, walk and air poses were rewritten (`src/animation/greybox-motion.ts`). Guard up (lead fist forward at chin height, rear fist tucked), knees always bent, staggered feet with the lead foot ahead, torso leaning in. Walking became a **boxer shuffle**: the lead foot steps, the rear follows a quarter-cycle later, feet stay low and never cross, and the guard only bobs slightly (no arm swing). Stride is now 1.1 m. Spec REQ-ANI-7 extended.
+**Process:** the poses were previewed as stills first. The first attempt still looked wrong (hands too low and crossed, lunging back leg, high back kick, feet crossing), so it was revised before going into the game.
+**New tests (75 total, all passing):** in every idle, walk and air pose both fists are at or above chest height and in front of the body; across 40 points of the shuffle cycle (and idle) the lead foot stays at least 12 cm ahead of the rear foot.
+**Verified:** lint, typecheck and build clean; e2e all pass; in-game captures (standing, shuffling right and left, moving up) saved as `docs/screenshots/phase2-fighting-stance.png`.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

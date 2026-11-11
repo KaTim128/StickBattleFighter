@@ -11,48 +11,57 @@ const TAU = Math.PI * 2;
 // Sign guide (see skeleton.ts): positive root = towards the facing side; elbows bend
 // positive (forearm forward), knees bend negative (shin backward), like real joints.
 
-/** Idle: relaxed guard with a slow breathing sway (period 2.6 s); knees flex slightly on each breath. */
+/**
+ * FIGHTING STANCE at all times (owner, 11/11/2026): hands up in a guard by the
+ * chin (lead fist forward, rear fist tucked), knees bent, feet staggered with
+ * the lead foot ahead, torso leaning into the fight. Idle breathes inside the
+ * stance; it never relaxes into a casual pose.
+ */
 export function idlePose(timeS: number): Pose {
-  const breath = Math.sin((timeS / 2.6) * TAU); // -1..1
+  const breath = 0.5 + 0.5 * Math.sin((timeS / 2.4) * TAU); // 0..1
   return {
-    lean: deg(-4 - breath * 1.2),
-    head: deg(2 + breath * 1),
-    armFront: { root: deg(45 - breath * 3), bend: deg(75 + breath * 4) },
-    armBack: { root: deg(-25 + breath * 2), bend: deg(65) },
-    legFront: { root: deg(12), bend: deg(-10 - (breath + 1) * 2) },
-    legBack: { root: deg(-12), bend: deg(-6 - (breath + 1) * 2) },
+    lean: deg(-10 - breath * 1.5),
+    head: deg(10),
+    armFront: { root: deg(84 - breath * 3), bend: deg(94 + breath * 4) },
+    armBack: { root: deg(36), bend: deg(140 + breath * 2) },
+    legFront: { root: deg(16), bend: deg(-26 - breath * 4) },
+    legBack: { root: deg(-15), bend: deg(-16 - breath * 4) },
   };
 }
 
 /**
- * Walk cycle sampled by phase (0..1 per two steps). The caller advances the
+ * Fighting shuffle, sampled by phase (0..1 per cycle). The caller advances the
  * phase by distance travelled / stride, so feet keep pace with the ground.
- * The knee folds while a leg swings through; arms counter-swing.
+ * Boxer footwork: the lead foot steps, the rear foot follows a quarter-cycle
+ * later; feet stay low, keep their stagger and never cross. The guard stays up
+ * with only a small bob: no swinging arms.
  */
 export function walkPose(phase: number): Pose {
   const a = phase * TAU;
-  const s = Math.sin(a);
-  const frontSwinging = Math.max(0, Math.cos(a)); // front leg moving forward
-  const backSwinging = Math.max(0, -Math.cos(a));
+  const lead = Math.sin(a);
+  const rear = Math.sin(a - Math.PI / 2);
+  const leadLift = Math.max(0, Math.cos(a));
+  const rearLift = Math.max(0, Math.cos(a - Math.PI / 2));
+  const bob = 0.5 + 0.5 * Math.sin(2 * a);
   return {
-    lean: deg(-9),
-    head: deg(4),
-    armFront: { root: deg(15 - s * 30), bend: deg(35 + Math.max(0, -s) * 25) },
-    armBack: { root: deg(15 + s * 30), bend: deg(35 + Math.max(0, s) * 25) },
-    legFront: { root: deg(s * 28), bend: deg(-8 - frontSwinging * 55) },
-    legBack: { root: deg(-s * 28), bend: deg(-8 - backSwinging * 55) },
+    lean: deg(-13),
+    head: deg(11),
+    armFront: { root: deg(84 - bob * 4), bend: deg(94 + bob * 6) },
+    armBack: { root: deg(36 + bob * 3), bend: deg(140) },
+    legFront: { root: deg(17 + lead * 9), bend: deg(-26 - leadLift * 22) },
+    legBack: { root: deg(-16 + rear * 9), bend: deg(-16 - rearLift * 22) },
   };
 }
 
-/** Distance (m) covered by one full walk cycle (two steps). */
-export const WALK_STRIDE_M = 1.5;
+/** Distance (m) covered by one full shuffle cycle (lead step + rear follow). */
+export const WALK_STRIDE_M = 1.1;
 
-/** Airborne tuck: knees up, arms rise for balance. */
+/** Airborne tuck: knees up, guard kept up. */
 export const AIR_POSE: Pose = {
-  lean: deg(-6),
-  head: deg(-2),
-  armFront: { root: deg(120), bend: deg(30) },
-  armBack: { root: deg(-60), bend: deg(40) },
+  lean: deg(-8),
+  head: deg(6),
+  armFront: { root: deg(95), bend: deg(85) },
+  armBack: { root: deg(45), bend: deg(130) },
   legFront: { root: deg(60), bend: deg(-95) },
   legBack: { root: deg(15), bend: deg(-75) },
 };

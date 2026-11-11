@@ -35,6 +35,23 @@ describe('jointed skeleton (REQ-ANI-6)', () => {
     expect(s.head.y).toBeLessThan(s.pelvis.y); // head above hips (up the screen)
   });
 
+  it.each(samplePoses)('%s: guard is up, both fists near the chin, never hanging down', (_name, pose) => {
+    const s = solveSkeleton(pose, BONES);
+    for (const hand of [s.armFront[2], s.armBack[2]]) {
+      expect(hand.y).toBeLessThan(s.chest.y + 0.05); // at or above chest height
+      expect(hand.x).toBeGreaterThan(s.chest.x); // in front of the body
+    }
+  });
+
+  it('fighting shuffle: feet stay staggered (lead foot ahead) and never cross at any point in the cycle', () => {
+    for (let i = 0; i < 40; i++) {
+      const s = solveSkeleton(walkPose(i / 40), BONES);
+      expect(s.legFront[2].x - s.legBack[2].x).toBeGreaterThan(0.12);
+    }
+    const idle = solveSkeleton(idlePose(0), BONES);
+    expect(idle.legFront[2].x - idle.legBack[2].x).toBeGreaterThan(0.12);
+  });
+
   it('blends joint by joint', () => {
     const mid = blendPose(idlePose(0), AIR_POSE, 0.5);
     expect(mid.legFront.bend).toBeCloseTo((idlePose(0).legFront.bend + AIR_POSE.legFront.bend) / 2, 9);
@@ -63,14 +80,14 @@ describe('StickmanAnimator', () => {
 
   it('a stride of walking distance advances exactly one walk cycle (feet keep pace)', () => {
     expect(WALK_STRIDE_M).toBeGreaterThan(0);
-    // 0.3 s at 5 m/s = 1.5 m = one stride → the cycle returns to its starting pose.
+    // One stride of distance returns the cycle to its starting pose.
     const a = new StickmanAnimator();
     const b = new StickmanAnimator();
     for (let i = 0; i < 120; i++) {
       a.update(1 / 60, motion);
       b.update(1 / 60, motion);
     }
-    for (let i = 0; i < 18; i++) b.update(1 / 60, motion);
+    for (let i = 0; i < Math.round((WALK_STRIDE_M / motion.speedMps) * 60); i++) b.update(1 / 60, motion);
     const pa = a.update(0, motion);
     const pb = b.update(0, motion);
     expect(pb.legFront.root).toBeCloseTo(pa.legFront.root, 1);
