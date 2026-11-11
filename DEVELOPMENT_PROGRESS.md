@@ -309,6 +309,9 @@ G or U (desktop) or the contextual utility button (touch: GRAB / THROW / JUMP) p
 ### 11/11/2026: CI stabilised
 CI e2e had become intermittent: every test renders WebGL in software, and two in parallel on the GitHub runner ran the game slower than real time, so real-time waits timed out across unrelated tests. CI now runs browser tests one at a time (`playwright.config.ts`), and automated browsers skip background music unless `?music=` asks for it. Run on a3268f4: **success**.
 
+### 11/11/2026: Office furnished (owner request)
+New prop kinds (`src/data/objects/props.ts`, drawings in `src/rendering/prop-view.ts`): kitchen counter, coffee machine, microwave, snack shelf, vending machine, phone booth, sofa. The office walls now hold file cabinets, bookshelves, two print stations, a kitchenette, a two-booth calling room and a lounge, with both combat aisles clear (REQ-ENV-14). **Evidence:** lint clean; typecheck 0; `npm test` 248/248; `npm run e2e` 26/26; screenshot.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

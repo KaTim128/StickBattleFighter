@@ -111,6 +111,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Frames: carry overhead (arms up), flight over the table, the dummy floored.
 - [ ] Owner playtest: throw feel (speed, range, damage), carry speed, the GRAB/THROW button on a phone.
 
+## 0u. Furnished office (verified 11/11/2026)
+- [x] `npm test` 248/248 with the new furniture: aisles walkable end to end, no solid props overlapping, every area connected, every prop kind has material, mass and durability.
+- [x] `npm run e2e` 26/26. V Screenshot: `docs/screenshots/office-furnished.png`.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

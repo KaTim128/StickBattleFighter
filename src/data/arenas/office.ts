@@ -25,6 +25,8 @@ import type { ArenaLayout, WallRect } from './arena-layout';
  * walk into it to swing it open, or smash it (src/environment/breakable-door.ts).
  */
 const DESK_TOP_M = 0.75;
+/** Kitchen counter height: the coffee machine and microwave sit on it. */
+const COUNTER_TOP_M = 0.9;
 /** Width of one back-to-back pair, the gap (walkway) between pairs, and where the row starts. */
 const PAIR_W = 2.6;
 const PAIR_GAP = 1.0;
@@ -92,8 +94,15 @@ function besideWall(kind: PropPlacement['kind'], y: number, side: -1 | 1): PropP
 }
 
 /** Desk items sit on the desk and draw on top of it. */
-function onDesk(kind: PropPlacement['kind'], x: number, y: number, deskFront: number, order: number): PropPlacement {
-  return { kind, x, y, elevationM: DESK_TOP_M, sortY: deskFront + 0.001 * order };
+function onDesk(
+  kind: PropPlacement['kind'],
+  x: number,
+  y: number,
+  deskFront: number,
+  order: number,
+  topM = DESK_TOP_M,
+): PropPlacement {
+  return { kind, x, y, elevationM: topM, sortY: deskFront + 0.001 * order };
 }
 
 /**
@@ -143,8 +152,36 @@ const MAIN_EXTRAS: PropPlacement[] = [
   besideWall('plant', HEIGHT - 1.9, -1),
   { kind: 'plant', x: 0.6, y: 0.7 },
   { kind: 'plant', x: 0.6, y: HEIGHT - 0.7 },
+  // ---- Filling the walls (owner, 11/11/2026), leaving both combat aisles clear. ----
+  // North wall: file cabinets, a bookshelf, a print station, the kitchenette, then shelves.
   { kind: 'cabinet', x: 2.6, y: 0.35 },
   { kind: 'cabinet', x: 3.55, y: 0.35 },
+  { kind: 'cabinet', x: 4.5, y: 0.35 },
+  { kind: 'bookshelf', x: 6.6, y: 0.25 },
+  { kind: 'printer', x: 8.6, y: 0.35 },
+  { kind: 'bin', x: 9.35, y: 0.3 },
+  // Kitchenette: a counter with the coffee machine and microwave, a snack shelf and a vending machine.
+  { kind: 'kitchen-counter', x: 12.2, y: 0.32 },
+  onDesk('coffee-machine', 11.5, 0.3, 0.62, 1, COUNTER_TOP_M),
+  onDesk('microwave', 12.6, 0.3, 0.62, 2, COUNTER_TOP_M),
+  onDesk('coffee-cup', 11.9, 0.42, 0.62, 3, COUNTER_TOP_M),
+  { kind: 'snack-shelf', x: 14.3, y: 0.25 },
+  { kind: 'vending-machine', x: 15.6, y: 0.4 },
+  { kind: 'plant', x: 16.7, y: 0.6 },
+  { kind: 'bookshelf', x: 18.6, y: 0.25, w: 1.6 },
+  // South wall: the calling room (two phone booths), file cabinets, a second print station,
+  // a small lounge, and shelves.
+  { kind: 'phone-booth', x: 2.1, y: HEIGHT - 0.52 },
+  { kind: 'phone-booth', x: 3.3, y: HEIGHT - 0.52 },
+  { kind: 'cabinet', x: 5.1, y: HEIGHT - 0.35 },
+  { kind: 'cabinet', x: 6.05, y: HEIGHT - 0.35 },
+  { kind: 'bookshelf', x: 8.2, y: HEIGHT - 0.25 },
+  { kind: 'printer', x: 10.4, y: HEIGHT - 0.35 },
+  { kind: 'bin', x: 11.15, y: HEIGHT - 0.3 },
+  { kind: 'plant', x: 13.1, y: HEIGHT - 0.6 },
+  { kind: 'sofa', x: 14.8, y: HEIGHT - 0.48 },
+  { kind: 'plant', x: 16.5, y: HEIGHT - 0.6 },
+  { kind: 'bookshelf', x: 18.6, y: HEIGHT - 0.25, w: 1.6 },
 ];
 
 /**
