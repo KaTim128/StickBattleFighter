@@ -350,6 +350,12 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Aim indicator:** `FightArenaScene.throwAim` predicts the landing point from the launch arc and throw speed, cut short only by walls and doors (`castWorldRay(…, furniture = false)`), drawn with the ultimate's arc renderer (no range ring).
 - **Not yet:** AI using objects (Phase 10); further roster styles (Titan heavy lifts, Shadowfang rapid light throws) arrive with those fighters (Phase 9) through the same `objects` data.
 
+### TD-048: Prop facing; full-height glass-door wall; breakable wall sections — ACCEPTED (owner request 11/11/2026)
+- **Facing:** `PropPlacement.facing` (n/s/e/w). Fronts facing the camera (s, e) show their details; fronts facing away (n, w) leave the plain back; chairs put the backrest opposite their facing; the sofa's back follows. Office data sets facings for the bottom-wall pieces, the boss room's wall cabinets, cubicle chairs on the south side, the meeting table's south chairs, and the visitor and boss chairs.
+- **Wall:** interior walls 2.2 m again (SUP-08); door leaf glass (alpha prisms) in a dark metal frame.
+- **Breakable sections:** `WallRect.durability`; `src/environment/breakable-wall.ts` gives each section its own collider and hit points (stone toughness 0.6). A hit with an impact point chips only the nearest section touched (melee uses the capsule tip, slams the body, blasts their centre), so damage digs one hole. Blasts deal ×3. Breaking removes the collider, hides that section's blocks, throws rubble and plaster dust, plays `break-wall`; chips thud and add crack lines at 66% and 33%. Debug hook `damageWall(index, damage)`.
+- **Trade-offs:** navigation still treats sections as solid (AI pathing through holes comes with Phase 10).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

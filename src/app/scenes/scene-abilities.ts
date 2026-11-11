@@ -10,6 +10,7 @@ import {
 import type { ImpactId } from '../../data/combat/impacts';
 import type { ArenaProps } from '../../environment/arena-props';
 import { type BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
+import type { BreakableWalls } from '../../environment/breakable-wall';
 import type { PhysicsWorld } from '../../physics/physics-world';
 import type { FighterEntity } from './fighter-entity';
 
@@ -56,6 +57,7 @@ export class SceneAbilities implements AbilityHost {
     private readonly props: ArenaProps | null,
     private readonly doors: readonly BreakableDoor[],
     private readonly onEnvironmentBreak: () => void,
+    private readonly walls: BreakableWalls | null = null,
   ) {}
 
   /** Try to cast from a fighter; returns why it could not, or null when the cast started. */
@@ -197,6 +199,14 @@ export class SceneAbilities implements AbilityHost {
       const away = radial ? { x: Math.sign(cx - at.x) || 1, y: 0 } : dir;
       if (door.applyImpact({ kind: 'strike', strength: payload.strength, direction: away })) broke = true;
     }
+    // Breakable wall sections: blasts chip them harder than fists, but only the sections in reach.
+    const w = this.walls?.hitWhere((r) => circleTouchesRect(at, radiusM, r), {
+      damage: payload.damage,
+      blast: !continuous,
+      direction: radial ? { x: 0, y: 1 } : dir,
+      at, // the blast cracks the section nearest its centre, never the whole wall
+    });
+    if (w && w.broke > 0) broke = true;
     if (broke) this.onEnvironmentBreak();
   }
 

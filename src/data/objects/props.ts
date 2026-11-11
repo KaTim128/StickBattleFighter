@@ -455,6 +455,12 @@ export interface PropPlacement {
   readonly y: number;
   /** Rotate the footprint 90° (swap width and depth). */
   readonly rotated?: boolean;
+  /**
+   * Which way its front faces (owner, 11/11/2026: furniture against a wall faces into the room,
+   * chairs face their desk): n = up the map, s = down, e = right, w = left. Default: s for pieces
+   * wider than deep, e otherwise; chairs default to s.
+   */
+  readonly facing?: 'n' | 's' | 'e' | 'w';
   /** Override width (e.g. long glass partitions or table runs). */
   readonly w?: number;
   /** Height above the floor it sits at (e.g. 0.75 for items on a desk). */

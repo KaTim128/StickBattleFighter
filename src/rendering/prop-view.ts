@@ -26,6 +26,38 @@ function legs(g: Graphics, w: number, d: number, h: number, colour: number, inse
   }
 }
 
+/**
+ * The face its front shows on, if the camera can see it (the +y and +x faces), as a face mapper and
+ * the span along it; null when the front faces away (n or w): then we see the back, which stays plain.
+ */
+function frontOf(
+  p: PropPlacement,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+): { at: (u: number, v: number) => { x: number; y: number }; a0: number; a1: number } | null {
+  const facing = p.facing ?? (x1 - x0 >= y1 - y0 ? 's' : 'e');
+  if (facing === 's') return { at: face.left(y1), a0: x0, a1: x1 };
+  if (facing === 'e') return { at: face.right(x1), a0: y0, a1: y1 };
+  return null;
+}
+
+/** For a chair: the box its backrest occupies (the side opposite where it faces). */
+function backrestBox(
+  facing: 'n' | 's' | 'e' | 'w',
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  t: number,
+): [number, number, number, number] {
+  if (facing === 's') return [x0, y0, x1, y0 + t];
+  if (facing === 'n') return [x0, y1 - t, x1, y1];
+  if (facing === 'e') return [x0, y0, x0 + t, y1];
+  return [x1 - t, y0, x1, y1];
+}
+
 export function buildPropView(p: PropPlacement): Container {
   const { w, d, h } = footprint(p);
   const z = p.elevationM ?? 0;
@@ -71,7 +103,10 @@ export function buildPropView(p: PropPlacement): Container {
       }
       isoCylinder(g, 0, 0, 0.08, 0.03, 0.34, 0x9aa0a8);
       isoBlock(g, -0.24, -0.22, 0.24, 0.22, 0.42, 0.5, { colour: 0x3b3f46 });
-      const back = face.left(-0.2);
+      // The mesh back stands on the side away from where the chair faces (its desk or table).
+      const facing = p.facing ?? 's';
+      const along = facing === 'n' || facing === 's';
+      const back = along ? face.left(facing === 's' ? -0.2 : 0.2) : face.right(facing === 'e' ? -0.2 : 0.2);
       faceQuad(g, back, -0.24, 0.52, 0.24, 1.0)
         .fill({ color: 0x2a2e36, alpha: 0.75 })
         .stroke({ width: 0.03, color: 0x1c1f24 });
@@ -105,8 +140,9 @@ export function buildPropView(p: PropPlacement): Container {
       break;
     case 'cabinet': {
       isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x9aa4b1 });
-      const front = w >= d ? face.left(y1) : face.right(x1);
-      const [a0, a1] = w >= d ? [x0, x1] : [y0, y1];
+      const fr = frontOf(p, x0, y0, x1, y1);
+      if (!fr) break; // facing into the room: we see its plain back
+      const { at: front, a0, a1 } = fr;
       for (let i = 0; i < 4; i++) {
         const v0 = 0.06 + (i * (h - 0.1)) / 4;
         const v1 = v0 + (h - 0.1) / 4 - 0.04;
@@ -162,7 +198,8 @@ export function buildPropView(p: PropPlacement): Container {
       isoBlock(g, x0, y0, x1, y1, 0, h - 0.25, { colour: 0x8a929e });
       isoBlock(g, x0 + 0.04, y0 + 0.04, x1 - 0.04, y1 - 0.04, h - 0.25, h, { colour: 0xe6e8eb });
       isoBlock(g, -0.2, y0 + 0.1, 0.2, y0 + 0.35, h, h + 0.02, { colour: 0xffffff, noAo: true }); // paper
-      faceQuad(g, face.left(y1), x0 + 0.08, 0.2, x1 - 0.08, 0.3).fill(0x5c6470);
+      const pf = frontOf(p, x0, y0, x1, y1);
+      if (pf) faceQuad(g, pf.at, pf.a0 + 0.08, 0.2, pf.a1 - 0.08, 0.3).fill(0x5c6470);
       break;
     }
     case 'cubicle-panel': {
@@ -182,21 +219,23 @@ export function buildPropView(p: PropPlacement): Container {
     case 'boss-chair': {
       isoCylinder(g, 0, 0, 0.05, 0.04, 0.4, 0x222222);
       isoBlock(g, x0 + 0.05, y0 + 0.05, x1 - 0.05, y1 - 0.05, 0.42, 0.55, { colour: 0x3a231a });
-      isoBlock(g, x0 + 0.06, y1 - 0.2, x1 - 0.06, y1 - 0.06, 0.55, 1.3, { colour: 0x3a231a });
+      const [bx0, by0, bx1, by1] = backrestBox(p.facing ?? 's', x0 + 0.06, y0 + 0.06, x1 - 0.06, y1 - 0.06, 0.14);
+      isoBlock(g, bx0, by0, bx1, by1, 0.55, 1.3, { colour: 0x3a231a });
       break;
     }
     case 'visitor-chair': {
       legs(g, w - 0.08, d - 0.08, 0.42, 0x4a2e1e, 0, 0.04);
       isoBlock(g, x0 + 0.04, y0 + 0.04, x1 - 0.04, y1 - 0.04, 0.42, 0.5, { colour: 0x8a2e2e, noAo: true });
-      isoBlock(g, x1 - 0.12, y0 + 0.04, x1 - 0.04, y1 - 0.04, 0.5, 0.95, { colour: 0x6b4228, noAo: true });
+      const [bx0, by0, bx1, by1] = backrestBox(p.facing ?? 's', x0 + 0.04, y0 + 0.04, x1 - 0.04, y1 - 0.04, 0.08);
+      isoBlock(g, bx0, by0, bx1, by1, 0.5, 0.95, { colour: 0x6b4228, noAo: true });
       break;
     }
     case 'bookshelf': {
       const wood = 0xcfa36c;
-      const along = w >= d;
-      const front = along ? face.left(y1) : face.right(x1);
-      const [a0, a1] = along ? [x0, x1] : [y0, y1];
       isoBlock(g, x0, y0, x1, y1, 0, h, { colour: shade(wood, 0.75) });
+      const fr = frontOf(p, x0, y0, x1, y1);
+      if (!fr) break; // its back panel faces us
+      const { at: front, a0, a1 } = fr;
       const palette = [0xc0504d, 0x3e6e9e, 0xe3b23c, 0x5b8c5a, 0x7d5ba6, 0xe07b39, 0x2f4858];
       for (let s = 0; s < 4; s++) {
         const v0 = 0.06 + (s * (h - 0.1)) / 4;
@@ -238,6 +277,7 @@ export function buildPropView(p: PropPlacement): Container {
       break;
     case 'snack-shelf': {
       isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x9aa3ad });
+      if (!frontOf(p, x0, y0, x1, y1)) break; // shelves face into the room
       const palette = [0xe8b23a, 0xd9443b, 0x3a8fd9, 0x45a85a, 0xf07c2a, 0xb04ad0, 0xf2e4a0];
       for (let s = 0; s < 4; s++) {
         const v0 = 0.06 + (s * (h - 0.1)) / 4;
@@ -253,6 +293,7 @@ export function buildPropView(p: PropPlacement): Container {
     }
     case 'vending-machine': {
       isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0xc0303a });
+      if (!frontOf(p, x0, y0, x1, y1)) break;
       const f = face.left(y1);
       faceQuad(g, f, x0 + 0.06, 0.5, x0 + w * 0.68, h - 0.12).fill(0x1d2a38);
       const colours = [0xe8b23a, 0x45a85a, 0x3a8fd9, 0xf07c2a, 0xd9e3ef];
@@ -271,6 +312,9 @@ export function buildPropView(p: PropPlacement): Container {
     case 'phone-booth': {
       // An acoustic pod: frame, felt-lined inside, glass front, stool and phone shelf, a "free" light.
       isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x3a4048 });
+      const l = iso(0, 0, h + 0.03);
+      g.circle(l.x, l.y, 0.05).fill(0x5fdc6a); // the "free" light on top
+      if (!frontOf(p, x0, y0, x1, y1)) break; // its glass door opens into the room
       const f = face.left(y1);
       faceQuad(g, f, x0 + 0.08, 0.08, x1 - 0.08, h - 0.1).fill(0x56606c);
       faceQuad(g, f, x0 + 0.18, 0.95, x1 - 0.18, 1.0).fill(0x9c7446);
@@ -280,21 +324,27 @@ export function buildPropView(p: PropPlacement): Container {
       faceQuad(g, f, x0 + 0.08, 0.08, x1 - 0.08, h - 0.1)
         .fill({ color: 0xcfe8ff, alpha: 0.22 })
         .stroke({ width: 0.02, color: 0x9fc4e6 });
-      const l = iso(0, 0, h + 0.03);
-      g.circle(l.x, l.y, 0.05).fill(0x5fdc6a);
       break;
     }
     case 'sofa': {
       const c = 0xcfd3d8;
+      // Its back against the wall: facing north (into the room from the south wall) puts the back at +y.
+      const backSouth = p.facing === 'n';
+      const [b0, b1] = backSouth ? [y1 - 0.22, y1] : [y0, y0 + 0.22];
+      const [s0, s1] = backSouth ? [y0 + 0.04, y1 - 0.24] : [y0 + 0.24, y1 - 0.04];
       isoBlock(g, x0, y0, x1, y1, 0.06, 0.38, { colour: c });
-      isoBlock(g, x0, y0, x1, y0 + 0.22, 0.38, 0.8, { colour: shade(c, 0.96) });
-      isoBlock(g, x0, y0 + 0.22, x0 + 0.2, y1, 0.38, 0.6, { colour: c });
-      isoBlock(g, x1 - 0.2, y0 + 0.22, x1, y1, 0.38, 0.6, { colour: c });
+      if (!backSouth) isoBlock(g, x0, b0, x1, b1, 0.38, 0.8, { colour: shade(c, 0.96) });
+      isoBlock(g, x0, Math.min(s0, b0), x0 + 0.2, Math.max(s1, b1), 0.38, 0.6, { colour: c });
+      isoBlock(g, x1 - 0.2, Math.min(s0, b0), x1, Math.max(s1, b1), 0.38, 0.6, { colour: c });
       for (let i = 0; i < 2; i++) {
         const u = x0 + 0.22 + i * ((w - 0.44) / 2);
-        isoBlock(g, u, y0 + 0.24, u + (w - 0.44) / 2 - 0.02, y1 - 0.04, 0.38, 0.5, { colour: 0xe2e5e9, noAo: true });
+        isoBlock(g, u, s0, u + (w - 0.44) / 2 - 0.02, s1, 0.38, 0.5, { colour: 0xe2e5e9, noAo: true });
       }
-      isoBlock(g, x0 + 0.3, y0 + 0.24, x0 + 0.62, y0 + 0.36, 0.5, 0.76, { colour: 0xe2643a, noAo: true });
+      isoBlock(g, x0 + 0.3, backSouth ? b0 - 0.12 : b1, x0 + 0.62, backSouth ? b0 : b1 + 0.12, 0.5, 0.76, {
+        colour: 0xe2643a,
+        noAo: true,
+      });
+      if (backSouth) isoBlock(g, x0, b0, x1, b1, 0.38, 0.8, { colour: shade(c, 0.96) }); // nearer the camera: drawn last
       break;
     }
     case 'book': {

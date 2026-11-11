@@ -37,6 +37,7 @@ import type { Material } from '../../data/objects/props';
 import type { ArenaProp } from '../../environment/arena-props';
 import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
+import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
 import { stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
@@ -122,6 +123,8 @@ export interface DoorState {
 const KNOCK_FLIGHT_S = 0.8;
 /** Starting an attack turns toward an opponent within this distance (soft lock, TD-016). */
 const SOFT_LOCK_M = 2.8;
+/** A fighter knocked into a breakable wall chips it by this much per unit of slam (mass × speed). */
+const WALL_SLAM_PER_STRENGTH = 0.1;
 /** A burning object thrown by a fire fighter sets whoever it hits alight (TD-047). */
 const THROWN_FIRE_BURN = { dps: 12, durationS: 2 } as const;
 /** While flying from a heavy knockback a fighter slides further before stopping. */
@@ -147,6 +150,23 @@ const colourOf = (hex: string): number => Number.parseInt(hex.replace('#', ''), 
 /** The non-elemental version of an effect (no embers or scorch) for fighters without elemental effects. */
 function withoutElements(e: EffectDef): EffectDef {
   return { sparks: e.sparks, ring: e.ring };
+}
+
+/** Crack lines drawn over a weakened wall block (deterministic per section, deeper at level 2). */
+function wallCracks(level: number, seed: number): Graphics {
+  const g = new Graphics();
+  const n = level === 2 ? 3 : 1;
+  for (let i = 0; i < n; i++) {
+    let x = ((seed * 37 + i * 53) % 20) / 100 - 0.1;
+    let y = -0.4 - ((seed * 11 + i * 29) % 120) / 100;
+    g.moveTo(x, y);
+    for (let k = 0; k < 4; k++) {
+      x += (((seed + k * 7 + i * 3) % 5) - 2) * 0.04;
+      y += 0.12 + ((seed + k) % 3) * 0.05;
+      g.lineTo(x, y);
+    }
+  }
+  return g.stroke({ width: level === 2 ? 0.025 : 0.018, color: 0x6e6559, alpha: 0.85 });
 }
 
 /** A world point that sits `side` metres beside (x, y) on screen, `z` up: effects on a billboarded fighter. */
@@ -194,6 +214,10 @@ export class FightArenaScene implements ArenaScene {
   props: ArenaProps | null = null;
   private debrisView: DebrisView | null = null;
   private fireLight: Graphics | null = null;
+  /** Breakable interior wall sections (owner, 11/11/2026). */
+  walls: BreakableWalls | null = null;
+  /** Cracks already drawn per wall section (0, 1 or 2 levels). */
+  private readonly wallCracks = new Map<number, number>();
   /** The shared ability framework in this arena (Phase 6). */
   abilities: SceneAbilities | null = null;
   private vfx: AbilityVfx | null = null;
@@ -397,6 +421,7 @@ export class FightArenaScene implements ArenaScene {
     addArenaColliders(physics, arena, false); // props get their own bodies: they move and break
     this.props = new ArenaProps(arena, physics);
     this.doors = (arena.doors ?? []).map((spec) => new BreakableDoor(spec, physics));
+    this.walls = new BreakableWalls(arena.interiorWalls ?? [], physics);
     this.abilities = new SceneAbilities(
       () => this.fighters,
       (attacker, target, strike) => this.applyStrike(attacker, target, strike),
@@ -404,6 +429,7 @@ export class FightArenaScene implements ArenaScene {
       this.props,
       this.doors,
       () => this.shake.addTrauma(0.35),
+      this.walls,
     );
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
@@ -1036,6 +1062,7 @@ export class FightArenaScene implements ArenaScene {
     const speed = s.knockbackMps * result.knockbackScale;
     target.body.setLinvel({ x: s.dir.x * speed, y: s.dir.y * speed }, true);
     target.knockFlightS = speed >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : 0;
+    target.wallSlammed = false; // a new flight may chip a wall again
     if (result.outcome === 'ko') {
       this.hitstopS = Math.max(this.hitstopS, HITSTOP_KO_S); // a longer, cinematic freeze on the final blow
       this.shake.addTrauma(0.7);
@@ -1253,6 +1280,14 @@ export class FightArenaScene implements ArenaScene {
       }
     }
 
+    // Breakable wall sections: every blow chips the section it lands on (owner, 11/11/2026).
+    const wallHit = this.walls?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
+      damage: a.damage * attacker.def.stats.power,
+      direction: { x: dir.x, y: dir.y },
+      at: { x: capsule.bx, y: capsule.by },
+    });
+    if (wallHit && wallHit.hit > 0) connected = true;
+
     // Furniture: moves or breaks depending on its durability.
     const props = this.props?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
       blow: a.blow === 'kick' ? 'kick' : 'strike',
@@ -1289,6 +1324,15 @@ export class FightArenaScene implements ArenaScene {
       direction,
     });
     if (props && props.broke > 0) this.shake.addTrauma(0.35);
+    // A body slammed into the wall chips it too (once per flight).
+    if (!f.wallSlammed) {
+      const slam = this.walls?.hitWhere((r) => circleTouchesRect(pos, reach, r), {
+        damage: strength * WALL_SLAM_PER_STRENGTH,
+        direction,
+        at: pos,
+      });
+      if (slam && slam.hit > 0) f.wallSlammed = true;
+    }
     for (const door of this.doors) {
       if (door.broken || !circleTouchesRect(pos, reach, door.spec)) continue;
       const broke = door.applyImpact({ kind: 'knockback', strength, direction });
@@ -1311,6 +1355,7 @@ export class FightArenaScene implements ArenaScene {
       else view.showSwing(door.swing, door.swingSide);
     }
     this.renderProps();
+    this.renderWalls();
     this.renderFireLight();
     this.renderAbilityFx(frameDtS);
     this.view.actors.update();
@@ -1353,6 +1398,62 @@ export class FightArenaScene implements ArenaScene {
       shakeOffset: Math.hypot(shake.offsetX, shake.offsetY),
       zoom: shake.zoom,
     };
+  }
+
+  /**
+   * Breakable wall sections: dust and a thud on every chip, cracks as a section weakens, and a hole
+   * with rubble when one gives way (owner, 11/11/2026).
+   */
+  private renderWalls(): void {
+    const view = this.view;
+    if (!view || !this.walls) return;
+    for (const e of this.walls.drainEvents()) {
+      const nodes = view.walls[e.index] ?? [];
+      const puff = Array.from({ length: 6 }, (_, k) => ({
+        x: e.x + ((k % 3) - 1) * 0.12,
+        y: e.y,
+        z: 0.4 + (k % 3) * 0.45,
+      }));
+      if (e.kind === 'break') {
+        for (const n of nodes) n.visible = false;
+        this.queueSound('break-wall', 1.2);
+        this.shake.addTrauma(0.4);
+        this.frameDust.push({ points: puff, colour: 0xe6ded2, colours: [0xd9d1c4, 0xbfb6a8, 0xf4f0ea], count: 140 });
+        this.props?.debris.add({
+          position: { x: e.x, y: e.y },
+          halfExtents: { x: 0.1, y: 0.06 },
+          velocity: { x: e.dir.x * 2.5, y: e.dir.y * 2.5 },
+          spin: 5,
+          massKg: 3,
+          colour: 0xd9d1c4,
+          heightM: 1,
+          verticalSpeedMps: 1.5,
+        });
+        for (let k = 0; k < 7; k++) {
+          this.props?.debris.add({
+            position: { x: e.x + ((k % 3) - 1) * 0.15, y: e.y + ((k % 2) - 0.5) * 0.15 },
+            halfExtents: { x: 0.05 + (k % 3) * 0.03, y: 0.04 },
+            velocity: {
+              x: e.dir.x * (1.5 + k * 0.3) - e.dir.y * ((k % 3) - 1),
+              y: e.dir.y * (1.5 + k * 0.3) + e.dir.x * ((k % 3) - 1),
+            },
+            spin: (k % 2 ? 1 : -1) * (4 + k),
+            massKg: 1,
+            colour: k % 2 ? 0xbfb6a8 : 0xe6ded2,
+            heightM: 0.4 + (k % 4) * 0.4,
+            verticalSpeedMps: 1 + (k % 3) * 0.6,
+          });
+        }
+      } else {
+        this.queueSound('wall-thud', 0.5);
+        this.frameDust.push({ points: puff.slice(0, 3), colour: 0xe6ded2, count: 14 });
+        const level = e.left < 0.33 ? 2 : e.left < 0.66 ? 1 : 0;
+        if (level > (this.wallCracks.get(e.index) ?? 0)) {
+          this.wallCracks.set(e.index, level);
+          for (const n of nodes) n.addChild(wallCracks(level, e.index));
+        }
+      }
+    }
   }
 
   /**

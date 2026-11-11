@@ -349,6 +349,13 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 120, f1: 60, dur: 0.18, gain: 0.5 } },
     { noise: { dur: 0.25, gain: 0.35, type: 'bandpass', freq: 900, freqEnd: 1600, q: 1.2 } },
   ],
+  // A wall section giving way: a crunching crack, a heavy thump and plaster raining down.
+  'break-wall': [
+    { noise: { dur: 0.08, gain: 0.7, type: 'bandpass', freq: 1500, q: 1.2 } },
+    { tone: { wave: 'sine', f0: 90, f1: 32, dur: 0.45, gain: 0.9 } },
+    { noise: { dur: 0.6, gain: 0.45, type: 'lowpass', freq: 1200, freqEnd: 250, delay: 0.03 } },
+    { crackle: { dur: 0.7, gain: 0.3, count: 18 } },
+  ],
   // A burst fire extinguisher: a sharp pop and a long, fading hiss of foam.
   'foam-burst': [
     { tone: { wave: 'sine', f0: 160, f1: 60, dur: 0.12, gain: 0.5 } },

@@ -55,6 +55,11 @@ const ARC_CX = ARC_APEX_X - ARC_R;
 const ARC_HALF_ANGLE = Math.asin(MID_Y / ARC_R) + 0.02;
 const DOOR_HALF_ANGLE = DOOR_LEN_M / 2 / ARC_R;
 const WALL_PIECES_PER_HALF = 12;
+/**
+ * Each section of the curved wall can be chipped through (owner, 11/11/2026): about six or seven
+ * full 1-2-3 combos at one spot open a small hole; two neighbouring holes make a gap to walk through.
+ */
+const WALL_SECTION_HP = 900;
 
 function arcPoint(angle: number): [number, number] {
   return [ARC_CX + ARC_R * Math.cos(angle), MID_Y + ARC_R * Math.sin(angle)];
@@ -76,6 +81,7 @@ function arcPieces(a0: number, a1: number): WallRect[] {
     pieces.push({
       ...segmentBox(...arcPoint(t0 - pad), ...arcPoint(t1 + pad), WALL_THICK_M),
       colour: OFFICE_WALL_FACE,
+      durability: WALL_SECTION_HP,
     });
   }
   return pieces;
@@ -116,7 +122,8 @@ function cubicle(cx: number, x0: number, s: 1 | -1, index: number): PropPlacemen
   const parts: PropPlacement[] = [
     { kind: 'desk', x: deskX, y: deskY },
     { kind: 'drawer-unit', x: cx + 0.72, y: MID_Y + s * 0.335 },
-    { kind: 'office-chair', x: deskX - 0.25, y: MID_Y + s * 1.35 }, // leaves room to step in beside it
+    // Leaves room to step in beside it; faces its desk (owner, 11/11/2026).
+    { kind: 'office-chair', x: deskX - 0.25, y: MID_Y + s * 1.35, facing: s > 0 ? 'n' : 's' },
     onDesk('computer', deskX, deskY - s * 0.15, deskFront, 1),
     onDesk('keyboard', deskX, deskY + s * 0.18, deskFront, 2),
     onDesk('mouse', deskX + 0.38, deskY + s * 0.18, deskFront, 3),
@@ -150,8 +157,8 @@ const MAIN_EXTRAS: PropPlacement[] = [
   besideWall('bin', 1.6, -1),
   besideWall('plant', 2.6, -1),
   // Copy corner, tucked into the angle by the bottom wall.
-  besideWall('printer', HEIGHT - 0.4, -1),
-  { kind: 'cabinet', x: wallX(HEIGHT) - 1.9, y: HEIGHT - 0.35 },
+  { ...besideWall('printer', HEIGHT - 0.4, -1), facing: 'n' },
+  { kind: 'cabinet', x: wallX(HEIGHT) - 1.9, y: HEIGHT - 0.35, facing: 'n' },
   besideWall('plant', HEIGHT - 1.9, -1),
   { kind: 'plant', x: 0.6, y: 0.7 },
   { kind: 'plant', x: 0.6, y: HEIGHT - 0.7 },
@@ -175,18 +182,18 @@ const MAIN_EXTRAS: PropPlacement[] = [
   { kind: 'bookshelf', x: 18.6, y: 0.25, w: 1.6 },
   // South wall: the calling room (two phone booths), file cabinets, a second print station,
   // a small lounge, and shelves.
-  { kind: 'phone-booth', x: 2.1, y: HEIGHT - 0.52 },
-  { kind: 'phone-booth', x: 3.3, y: HEIGHT - 0.52 },
-  { kind: 'cabinet', x: 5.1, y: HEIGHT - 0.35 },
-  { kind: 'cabinet', x: 6.05, y: HEIGHT - 0.35 },
+  { kind: 'phone-booth', x: 2.1, y: HEIGHT - 0.52, facing: 'n' },
+  { kind: 'phone-booth', x: 3.3, y: HEIGHT - 0.52, facing: 'n' },
+  { kind: 'cabinet', x: 5.1, y: HEIGHT - 0.35, facing: 'n' },
+  { kind: 'cabinet', x: 6.05, y: HEIGHT - 0.35, facing: 'n' },
   { kind: 'fire-extinguisher', x: 7.0, y: HEIGHT - 0.25 },
-  { kind: 'bookshelf', x: 8.2, y: HEIGHT - 0.25 },
-  { kind: 'printer', x: 10.4, y: HEIGHT - 0.35 },
+  { kind: 'bookshelf', x: 8.2, y: HEIGHT - 0.25, facing: 'n' },
+  { kind: 'printer', x: 10.4, y: HEIGHT - 0.35, facing: 'n' },
   { kind: 'bin', x: 11.15, y: HEIGHT - 0.3 },
   { kind: 'plant', x: 13.1, y: HEIGHT - 0.6 },
-  { kind: 'sofa', x: 14.8, y: HEIGHT - 0.48 },
+  { kind: 'sofa', x: 14.8, y: HEIGHT - 0.48, facing: 'n' },
   { kind: 'plant', x: 16.5, y: HEIGHT - 0.6 },
-  { kind: 'bookshelf', x: 18.6, y: HEIGHT - 0.25, w: 1.6 },
+  { kind: 'bookshelf', x: 18.6, y: HEIGHT - 0.25, w: 1.6, facing: 'n' },
 ];
 
 /**
@@ -206,22 +213,22 @@ const TABLE_Y = 9.6;
 const BOSS_ROOM: PropPlacement[] = [
   { kind: 'rug', x: DESK_X - 0.9, y: DESK_Y },
   { kind: 'executive-desk', x: DESK_X, y: DESK_Y, rotated: true },
-  { kind: 'boss-chair', x: DESK_X + 1.25, y: DESK_Y },
-  { kind: 'visitor-chair', x: DESK_X - 1.6, y: DESK_Y - 0.65 },
-  { kind: 'visitor-chair', x: DESK_X - 1.6, y: DESK_Y + 0.65 },
+  { kind: 'boss-chair', x: DESK_X + 1.25, y: DESK_Y, facing: 'w' },
+  { kind: 'visitor-chair', x: DESK_X - 1.6, y: DESK_Y - 0.65, facing: 'e' },
+  { kind: 'visitor-chair', x: DESK_X - 1.6, y: DESK_Y + 0.65, facing: 'e' },
   onDesk('computer', DESK_X + 0.4, DESK_Y - 0.6, DESK_Y + 1.2, 1),
   onDesk('coffee-cup', DESK_X - 0.3, DESK_Y + 0.8, DESK_Y + 1.2, 2),
   { kind: 'meeting-table', x: TABLE_X, y: TABLE_Y, w: 3 },
   { kind: 'office-chair', x: TABLE_X - 0.8, y: TABLE_Y - 1.2 },
   { kind: 'office-chair', x: TABLE_X + 0.8, y: TABLE_Y - 1.2 },
-  { kind: 'office-chair', x: TABLE_X - 0.8, y: TABLE_Y + 1.2 },
-  { kind: 'office-chair', x: TABLE_X + 0.8, y: TABLE_Y + 1.2 },
+  { kind: 'office-chair', x: TABLE_X - 0.8, y: TABLE_Y + 1.2, facing: 'n' },
+  { kind: 'office-chair', x: TABLE_X + 0.8, y: TABLE_Y + 1.2, facing: 'n' },
   { kind: 'bookshelf', x: 25.8, y: 0.25 },
   { kind: 'bookshelf', x: 27.9, y: 0.25 },
   { kind: 'plant', x: WIDTH - 0.6, y: 0.7 },
   { kind: 'fire-extinguisher', x: WIDTH - 0.25, y: 4.6 },
-  { kind: 'cabinet', x: WIDTH - 0.32, y: 5.6, rotated: true },
-  { kind: 'cabinet', x: WIDTH - 0.32, y: 6.6, rotated: true },
+  { kind: 'cabinet', x: WIDTH - 0.32, y: 5.6, rotated: true, facing: 'w' },
+  { kind: 'cabinet', x: WIDTH - 0.32, y: 6.6, rotated: true, facing: 'w' },
   besideWall('plant', 2.6, 1),
   besideWall('plant', HEIGHT - 1.4, 1),
   { kind: 'plant', x: WIDTH - 0.6, y: HEIGHT - 0.7 },

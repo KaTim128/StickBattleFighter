@@ -13,6 +13,7 @@ export function addArenaColliders(physics: PhysicsWorld, arena: ArenaLayout, inc
   physics.addStaticBox({ halfExtents: { x: t / 2, y: h / 2 }, position: { x: -t / 2, y: h / 2 } });
   physics.addStaticBox({ halfExtents: { x: t / 2, y: h / 2 }, position: { x: w + t / 2, y: h / 2 } });
   for (const r of arena.interiorWalls ?? []) {
+    if (r.durability !== undefined) continue; // breakable sections get their own colliders (BreakableWalls)
     physics.addStaticBox({
       halfExtents: { x: (r.x1 - r.x0) / 2, y: (r.y1 - r.y0) / 2 },
       position: { x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 },

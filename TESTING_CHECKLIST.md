@@ -133,6 +133,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/throw-aim-indicator.png`, `docs/screenshots/fire-throw.png`.
 - [ ] Owner playtest: throw arc readability; fire throws; foam.
 
+## 0y. Furniture facing, glass door, breakable wall (verified 11/11/2026)
+- [x] `npm test`: **263 tests**. A full combo chips one wall section a little; it takes at least five combos to break it, and only that section breaks; one broken section stops a fighter; two side by side let them walk into the boss room.
+- [x] `npm run e2e`: **27 passed**.
+- [x] V Screenshots: `docs/screenshots/office-tall-glass-door.png`, `docs/screenshots/wall-hole-and-cracks.png`.
+- [ ] Owner: furniture now faces the room; the wall height and glass door; punching a hole.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

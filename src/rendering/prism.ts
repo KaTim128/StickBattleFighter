@@ -8,6 +8,8 @@ export interface PrismLook {
   readonly edge: number;
   /** Outline width; 0 = no outline (the caller draws its own, e.g. a seamless wall). */
   readonly edgeWidth?: number;
+  /** Fill opacity (glass). */
+  readonly alpha?: number;
 }
 
 /**
@@ -31,11 +33,14 @@ export function drawPrism(g: Graphics, corners: readonly Point[], heightM: numbe
     // Outward normal of edge p→q.
     const ny = -(q.x - p.x) * outward;
     if (ny <= 1e-6) continue;
-    g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM]).fill(look.front);
+    g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM]).fill({
+      color: look.front,
+      alpha: look.alpha ?? 1,
+    });
     if (look.edgeWidth !== 0) g.stroke({ width: look.edgeWidth ?? 0.02, color: look.edge, alpha: 0.7 });
   }
   const top = corners.flatMap((p) => [p.x, p.y - heightM]);
-  g.poly(top).fill(look.top);
+  g.poly(top).fill({ color: look.top, alpha: look.alpha ?? 1 });
   if (look.edgeWidth !== 0) g.stroke({ width: look.edgeWidth ?? 0.02, color: look.edge, alpha: 0.8 });
   return g;
 }

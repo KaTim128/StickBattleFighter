@@ -80,6 +80,8 @@ export class FighterEntity {
   readonly curr = { x: 0, y: 0 };
   /** The move this step asked for (doors swing open for a firm push, REQ-ENV-13). */
   readonly moveIntent = { x: 0, y: 0 };
+  /** Already slammed into a breakable wall during this knockback flight (one chip per flight). */
+  wallSlammed = false;
   /** The object carried overhead (Phase 7), and how long the interact button has been held. */
   carrying: ArenaProp | null = null;
   /** Presentation: how far into the arms-up carry pose (0..1), and time left in a throw follow-through. */

@@ -12,11 +12,16 @@ export interface DoorPiece {
   heightM: number;
 }
 
-const WOOD_FRONT = 0xc0782f;
-const WOOD_TOP = 0xe8a050;
-const WOOD_EDGE = 0x3b2412;
-const FRAME = 0xf4e6bf;
-const FRAME_EDGE = 0x6b5a32;
+// A glass door (owner, 11/11/2026: "the door could be glass") in a dark metal frame.
+const GLASS_FRONT = 0x9fd3f2;
+const GLASS_TOP = 0xd6eefc;
+const GLASS_EDGE = 0x2f3640;
+const GLASS_ALPHA = 0.42;
+const WOOD_FRONT = GLASS_FRONT;
+const WOOD_TOP = GLASS_TOP;
+const WOOD_EDGE = GLASS_EDGE;
+const FRAME = 0x4a525e;
+const FRAME_EDGE = 0x22262c;
 const MAT = 0x8c2f2f;
 const ARROW = 0xffd23f;
 const HANDLE = 0xffd700;
@@ -55,7 +60,12 @@ export class DoorView {
     for (let i = 0; i < chunks; i++) {
       const ya = spec.y0 + (along * i) / chunks;
       const yb = spec.y0 + (along * (i + 1)) / chunks;
-      const block = this.block(spec.x0, ya, spec.x1, yb, h, { front: WOOD_FRONT, top: WOOD_TOP, edge: WOOD_EDGE });
+      const block = this.block(spec.x0, ya, spec.x1, yb, h, {
+        front: WOOD_FRONT,
+        top: WOOD_TOP,
+        edge: WOOD_EDGE,
+        alpha: GLASS_ALPHA,
+      });
       block.node.label = `door-${spec.id}`;
       if (i === Math.floor(chunks / 2)) {
         block.node.addChild(
@@ -87,7 +97,7 @@ export class DoorView {
     ] as const) {
       const post = this.block(spec.x0 - wide, ya, spec.x1 + wide, yb, heightM + 0.08, {
         front: FRAME,
-        top: 0xfff6dc,
+        top: 0x5c6470,
         edge: FRAME_EDGE,
         edgeWidth: 0.025,
       });
@@ -180,7 +190,13 @@ export class DoorView {
       return iso(p.x - hinge.x, p.y - hinge.y);
     });
     this.leafG.clear();
-    drawPrism(this.leafG, corners, h, { front: WOOD_FRONT, top: WOOD_TOP, edge: WOOD_EDGE, edgeWidth: 0.025 });
+    drawPrism(this.leafG, corners, h, {
+      front: WOOD_FRONT,
+      top: WOOD_TOP,
+      edge: WOOD_EDGE,
+      edgeWidth: 0.025,
+      alpha: GLASS_ALPHA,
+    });
     const tip = corners[1]!;
     this.leafG.circle(tip.x * 0.82, tip.y * 0.82 - h * 0.5, 0.06).fill(HANDLE);
   }

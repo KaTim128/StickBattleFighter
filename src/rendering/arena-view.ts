@@ -20,18 +20,19 @@ export interface ArenaView {
   readonly propCount: number;
   /** Standing props' views by their index in `arena.props`, so moving or broken props can follow the simulation. */
   readonly props: Map<number, Container>;
+  /** The drawn blocks of each interior wall, by its index in `arena.interiorWalls` (cracks, holes). */
+  readonly walls: readonly (readonly Container[])[];
   /** Interior wall sections and door sections that can stand in front of a fighter (wall transparency). */
   readonly occluders: Container[];
   destroy(): void;
 }
 
 /**
- * Interior walls are drawn CUT AWAY (owner, 11/11/2026: "the player can't find the door"):
- * a top-down view draws height up the screen, so a full 2.4 m wall south of a doorway
- * covered the opening and showed the door 2 m above where you walk through. Low walls
- * keep doorways where they really are on the floor (REQ-ENV-13).
+ * Interior walls stand full height (owner, 11/11/2026: "a short wall makes the player think they can
+ * jump over it"). In the 2.5D view a wall shows its face and the door is glass, so the doorway stays
+ * easy to find (earlier the same day the walls were cut down to 0.8 m when the old view hid the door).
  */
-export const INTERIOR_WALL_HEIGHT_M = 0.8;
+export const INTERIOR_WALL_HEIGHT_M = 2.2;
 /** Long walls are drawn in short blocks so fighters beside them still depth-sort correctly. */
 const WALL_CHUNK_M = 0.5;
 /** Back walls stand tall (they never hide the fight); front walls are cut to a low ledge. */
@@ -202,11 +203,15 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   });
 
   const occluders: Container[] = [];
+  const wallNodes: Container[][] = [];
   for (const r of arena.interiorWalls ?? []) {
+    const nodes: Container[] = [];
     for (const b of wallBlocks(r, 0xf4f0ea, r.colour ?? wallColour(arena, r))) {
       actors.add(b.node, b.footOffset);
       occluders.push(b.node);
+      nodes.push(b.node);
     }
+    wallNodes.push(nodes);
   }
 
   const doors = new Map<string, DoorView>();
@@ -224,6 +229,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     world,
     actors,
     floor: floorLayer,
+    walls: wallNodes,
     doors,
     propCount: arena.props.length,
     props,

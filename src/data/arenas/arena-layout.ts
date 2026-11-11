@@ -49,6 +49,8 @@ export interface Rect {
 /** An interior wall: a (possibly turned) box, optionally in its own colour. */
 export interface WallRect extends Rect {
   readonly colour?: number;
+  /** A breakable section's hit points (owner, 11/11/2026); none = an unbreakable wall. */
+  readonly durability?: number;
 }
 
 export interface FloorZone extends Rect {

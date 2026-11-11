@@ -64,6 +64,8 @@ export interface EngineDebugInfo {
   startClash(): void;
   /** Practice/testing: fill the player's ultimate meter. */
   fillMeter(): void;
+  /** Tests: chip an interior wall section (by its index) as if struck; damage before toughness. */
+  damageWall(index: number, damage: number): void;
   /** Props summary: how many are broken, and how many are moving right now. */
   props: { total: number; broken: number; awake: number };
   assetFailures: { url: string; message: string }[];
@@ -219,6 +221,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     clash: null,
     startClash() {}, // replaced once the scene exists
     fillMeter() {}, // replaced once the scene exists
+    damageWall() {}, // replaced once the scene exists
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     setTimeScale() {}, // replaced once the loop exists
@@ -294,6 +297,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   if (scene instanceof FightArenaScene) {
     debug.startClash = () => scene.startClash();
     debug.fillMeter = () => scene.playerFighter.caster?.fillMeter();
+    debug.damageWall = (index, damage) => {
+      const r = scene.arena.interiorWalls?.[index];
+      if (r) scene.walls?.hitWhere((w) => w === r, { damage, direction: { x: 1, y: 0 } });
+    };
     debug.setDummyHp = (hp: number) => {
       scene.dummyFighter.combatant.hp = Math.max(1, Math.min(scene.dummyFighter.combatant.stats.maxHp, hp));
     };
