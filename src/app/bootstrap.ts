@@ -3,7 +3,7 @@ import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
-import { onDebugToggle } from '../input/debug-keys';
+import { onDebugImpact, onDebugToggle } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard } from '../input/keyboard';
 import { attachTouchControls } from '../input/touch-controls';
@@ -13,7 +13,7 @@ import { createTextureLoader } from '../rendering/pixi-assets';
 import { createRenderSurface } from '../rendering/renderer';
 import type { ArenaScene } from './scenes/arena-scene';
 import { EngineCheckScene } from './scenes/engine-check-scene';
-import { type PlayerState, TrainingYardScene } from './scenes/training-yard-scene';
+import { type CameraState, type PlayerState, TrainingYardScene } from './scenes/training-yard-scene';
 
 /** Read-only hook used by the browser tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
@@ -23,7 +23,8 @@ export interface EngineDebugInfo {
   framesRendered: number;
   crate: { x: number; y: number; speed: number } | null;
   player: PlayerState | null;
-  camera: { x: number; y: number } | null;
+  camera: CameraState | null;
+  dummy: { x: number; y: number; speed: number } | null;
   assetFailures: { url: string; message: string }[];
   debugOverlay: { enabled: boolean; segments: number; fps: number };
   /** Render now and return the RGBA of the pixel at fractional canvas coords (0..1, top-left origin). */
@@ -77,6 +78,9 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
 
   if (params.has('debug')) overlay.setVisible(true);
   onDebugToggle(window, () => overlay.toggle());
+  onDebugImpact(window, () => {
+    if (overlay.enabled && scene instanceof TrainingYardScene) scene.debugImpact();
+  });
 
   const debug: EngineDebugInfo = {
     ready: false,
@@ -86,6 +90,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     crate: null,
     player: null,
     camera: null,
+    dummy: null,
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     readPixel(xFrac, yFrac) {
@@ -130,7 +135,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       if (scene instanceof EngineCheckScene) debug.crate = scene.state.crate;
       if (scene instanceof TrainingYardScene) {
         debug.player = { ...scene.player };
-        debug.camera = scene.camera ? { x: scene.camera.x, y: scene.camera.y } : null;
+        debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
+        debug.dummy = { ...scene.dummy };
       }
       debug.debugOverlay = { enabled: overlay.enabled, segments: overlay.drawnSegments, fps: fps.fps };
     },

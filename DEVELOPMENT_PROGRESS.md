@@ -6,8 +6,8 @@ Persistent record of project state. Update after every meaningful piece of work 
 
 | Item | Value |
 |---|---|
-| Current phase | **Phase 2: player character and movement: COMPLETE** (11/11/2026) |
-| Next milestone | **Phase 3:** finish the camera (auto-zoom to frame opponents, impact shake); then **Phase 4:** office arena |
+| Current phase | **Phase 3: camera: COMPLETE** (11/11/2026) |
+| Next milestone | **Phase 4:** office arena (greybox) |
 | Branch | `ccr-6b7ad8fe-whr1i5` |
 | Latest commit | see `git log -1` |
 | Runnable game | `npm run dev`: **training yard**, where a jointed greybox stickman walks and hops freely (keyboard or touch) with a follow camera. `?scene=engine-check` opens the physics test. No combat yet. |
@@ -188,6 +188,15 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 **Process:** the poses were previewed as stills first. The first attempt still looked wrong (hands too low and crossed, lunging back leg, high back kick, feet crossing), so it was revised before going into the game.
 **New tests (75 total, all passing):** in every idle, walk and air pose both fists are at or above chest height and in front of the body; across 40 points of the shuffle cycle (and idle) the lead foot stays at least 12 cm ahead of the rear foot.
 **Verified:** lint, typecheck and build clean; e2e all pass; in-game captures (standing, shuffling right and left, moving up) saved as `docs/screenshots/phase2-fighting-stance.png`.
+
+### 11/11/2026: Phase 3, camera completion (Master Developer; no specialists used, per TD-019)
+**Acceptance criteria (set before editing):** auto-zoom keeps all nearby fighters framed within limits, with the player always on screen; impact shake and zoom punch that settle back; no snapping under sudden knockbacks; unit, integration and e2e evidence.
+**Delivered (TD-027):** `src/camera/framing.ts`, `camera-shake.ts`, multi-target `FollowCamera` with pan and zoom speed caps; grey **training dummy** in the training yard (shove-able, faces the player); debug impact key **P** (overlay on only); debug hook exposes camera and dummy state.
+**Issues found and fixed:**
+1. The camera could lurch up to 0.5 m and zoom 0.22 m in one frame after a sudden knockback. Fixed by adding speed caps (15 m/s pan, 6 m/s zoom).
+2. Shake returned −0 instead of 0 at rest. Normalised.
+3. Several of my tests had wrong assumptions: wide screens fit side-by-side fighters without zooming; the player carried momentum past the dummy's row; a pillar blocked the walk-up path; slow CI rendering means fixed-time key holds move the fighter less. All were fixed in the tests (position- and distance-based waits), not by weakening the game.
+**Evidence (11/11/2026):** lint, typecheck and build clean; `npm test` 92/92; `npm run e2e` 11 passed (with one earlier flaky failure, now on watch; see the checklist).
 
 ## Decisions requiring owner attention
 

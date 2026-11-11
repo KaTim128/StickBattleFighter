@@ -10,7 +10,7 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 | 0 | Workspace, architecture approval, bootstrap | I | Master Developer | — (stack approved 10/11/2026) | ☑ |
 | 1 | Rendering, physics, main loop, asset pipeline, scenes | 0 | Rendering, Physics | — | ☑ |
 | 2 | Player character, free top-down movement (up/down/left/right), hop, collision | 1 | Physics | — | ☑ |
-| 3 | Top-down camera (follow, auto-zoom framing, shake) | 2 | Rendering | — | ◐ (follow and arena clamping done in Phase 2) |
+| 3 | Top-down camera (follow, auto-zoom framing, shake) | 2 | Rendering | — | ☑ |
 | 4 | Office arena (greybox → readable) | 1, 2 ∥3 | Rendering, Physics | — | ☐ |
 | 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-05 | ☐ |
 | 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-04, OQ-05 | ☐ |

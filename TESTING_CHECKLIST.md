@@ -33,6 +33,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: 8 passed, 2 correctly skipped (each movement test runs on its own platform). Desktop keyboard: moves right, faces right, stops; moves up; Space hops and lands; cannot pass the left wall; camera follows; **touch controls hidden on desktop**. Mobile: a real touch drag (CDP) shows the joystick and moves the fighter; release stops it and hides the stick; JUMP button hops; no page errors
 - [x] GitHub Pages sub-path build loads and runs
 
+## 0e. Phase 3 camera (verified 11/11/2026)
+- [x] Lint, typecheck and build clean
+- [x] `npm test`: **92 tests**. Framing: alone, zooms to fit, the 17 m limit keeps the player on screen, ignores far fighters. Smoothness: no snapping after a knockback (≤ 0.25 m pan and < 0.15 m zoom per frame). Shake: shakes then fully settles, trauma² scaling, smooth between frames, capped. Scene: frames player and dummy and zooms out as they separate, both stay on screen; dummy can be shoved and settles; impact shakes then settles; dummy unloads.
+- [x] `npm run e2e`: 11 passed (desktop and mobile; keyboard and touch tests skipped on the other platform by design). New: the camera zooms out to keep both fighters on screen within limits; debug **P** shakes and settles; **P** does nothing without the debug overlay.
+- [ ] **Flaky watch:** the "camera zooms out" e2e failed once in a full parallel run, then passed alone and in two further full runs. Suspected timing under CPU load; the exact failing assertion was not captured. Watch in CI; if it recurs, capture the error-context file.
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

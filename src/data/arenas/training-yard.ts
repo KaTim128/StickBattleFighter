@@ -23,3 +23,6 @@ export const TRAINING_YARD = {
   colours: GREYBOX_COLOURS,
   playerStart: { x: 15, y: 10 },
 } as const;
+
+/** Where the training dummy stands at the start (diagonally ahead, off the player's starting row). */
+export const TRAINING_YARD_DUMMY_START = { x: 19, y: 13 } as const;

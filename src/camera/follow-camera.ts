@@ -1,10 +1,11 @@
 import { smoothing } from '../animation/animator';
+import { DEFAULT_FRAMING, type FramingOptions, frameTargets, type Point } from './framing';
 
 /**
- * Top-down follow camera (REQ-CAM-1/3). Eases towards its target and stays
- * inside the arena; if the arena is smaller than the view on an axis, it
- * centres on that axis instead. Zoom shows `viewShortSideM` metres across the
- * screen's shorter side, so phones and desktops see a similar amount.
+ * Top-down follow camera (REQ-CAM-1..3). Eases towards the framing target:
+ * position quickly, zoom more gently, so sudden knockbacks never snap the view.
+ * Stays inside the arena; on an axis where the arena is smaller than the view,
+ * it centres instead.
  */
 export interface CameraBounds {
   minX: number;
@@ -19,6 +20,10 @@ export interface CameraView {
   y: number;
   /** Pixels per metre. */
   scale: number;
+  /** Metres across the screen's shorter side. */
+  shortSideM: number;
+  /** Other fighters currently framed. */
+  framed: number;
 }
 
 export function cameraScale(viewWidthPx: number, viewHeightPx: number, viewShortSideM: number): number {
@@ -41,26 +46,46 @@ export function clampCamera(
 export class FollowCamera {
   x: number;
   y: number;
+  shortSideM: number;
 
   constructor(
-    start: { x: number; y: number },
+    start: Point,
     private readonly bounds: CameraBounds,
-    private readonly viewShortSideM = 11,
+    private readonly framing: FramingOptions = DEFAULT_FRAMING,
     private readonly followRate = 6,
+    private readonly zoomRate = 3,
+    /** Top camera speed, m/s: big target jumps (knockbacks) glide instead of jolting. */
+    private readonly maxSpeedMps = 15,
+    /** Top zoom speed, metres of view per second, for the same reason. */
+    private readonly maxZoomSpeedMps = 6,
   ) {
     this.x = start.x;
     this.y = start.y;
+    this.shortSideM = framing.minShortSideM;
   }
 
-  /** Ease towards the target and return the view for a screen of the given size. */
-  update(target: { x: number; y: number }, dtS: number, viewWidthPx: number, viewHeightPx: number): CameraView {
+  /** Ease towards framing the player (and nearby others) for a screen of the given size. */
+  update(player: Point, others: readonly Point[], dtS: number, viewWidthPx: number, viewHeightPx: number): CameraView {
+    const goal = frameTargets(player, others, viewWidthPx, viewHeightPx, this.framing);
+    const zoomStep = (goal.shortSideM - this.shortSideM) * smoothing(this.zoomRate, dtS);
+    const maxZoomStep = this.maxZoomSpeedMps * dtS;
+    this.shortSideM += Math.max(-maxZoomStep, Math.min(maxZoomStep, zoomStep));
     const k = smoothing(this.followRate, dtS);
-    this.x += (target.x - this.x) * k;
-    this.y += (target.y - this.y) * k;
-    const scale = cameraScale(viewWidthPx, viewHeightPx, this.viewShortSideM);
+    let mx = (goal.x - this.x) * k;
+    let my = (goal.y - this.y) * k;
+    const step = Math.hypot(mx, my);
+    const maxStep = this.maxSpeedMps * dtS;
+    if (step > maxStep) {
+      mx *= maxStep / step;
+      my *= maxStep / step;
+    }
+    this.x += mx;
+    this.y += my;
+
+    const scale = cameraScale(viewWidthPx, viewHeightPx, this.shortSideM);
     const c = clampCamera(this.x, this.y, viewWidthPx / scale / 2, viewHeightPx / scale / 2, this.bounds);
     this.x = c.x;
     this.y = c.y;
-    return { x: c.x, y: c.y, scale };
+    return { x: c.x, y: c.y, scale, shortSideM: this.shortSideM, framed: goal.framed };
   }
 }
