@@ -171,7 +171,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // track (e.g. the menu theme), `?music=none` turns it off.
   const music = new MusicPlayer();
   music.setMuted(sound.muted);
-  const musicId = params.get('music') ?? (scene instanceof FightArenaScene ? scene.arena.music : undefined);
+  // Automated browsers (tests, CI: navigator.webdriver) skip background music unless asked for: headless
+  // software audio rendering of a whole band starves the page on small CI machines.
+  const automated = typeof navigator !== 'undefined' && navigator.webdriver === true;
+  const arenaMusic = scene instanceof FightArenaScene && !automated ? scene.arena.music : undefined;
+  const musicId = params.get('music') ?? arenaMusic;
   music.play(musicId ? (MUSIC_TRACKS[musicId] ?? null) : null);
   onFirstInput(window, () => {
     sound.unlock();
