@@ -107,7 +107,7 @@ export const GREYBOX_STICKMAN = {
       damage: 120,
       heavy: true,
       strength: 820,
-      knockbackSpeedMps: 10,
+      knockbackSpeedMps: 7, // owner 11/11/2026: was 10, sent fighters too far
       moveFactor: 1,
       lungeMps: 3.5,
       trauma: 0.55,

@@ -45,7 +45,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('starts closed and blocks the way; walking and pushing into it never opens it', async () => {
     const { intents, scene, scenes, run, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 8, y: 12 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
     walkToDoor();
     run(2); // push for two more seconds
     expect(scene.doorStates[0]!.broken).toBe(false);
@@ -56,7 +56,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('jab and hook do not break it; the heavy finisher smashes it and the way is clear', async () => {
     const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 8, y: 12 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
     walkToDoor();
     intents.setMove('t', { x: 0, y: 0 });
     run(0.3);
@@ -80,7 +80,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('a flying kick smashes it', async () => {
     const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 8, y: 12 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
     walkToDoor();
     intents.setMove('t', { x: -1, y: 0 });
     run(0.15); // step back a little
@@ -97,6 +97,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('knocking the dummy into it with the heavy finisher smashes it (heavy knockback)', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup();
+    scene.respawnDummy({ x: DOOR.x0 - 3.5, y: DOOR_Y }); // a few metres in front of the door
     // Line up with the dummy (between the player and the door, on the door's row).
     intents.setMove('t', { x: 1, y: 0 });
     runUntil(() => scene.player.x > scene.dummy.x - 1.1);
@@ -133,13 +134,13 @@ describe('office door (owner request, 11/11/2026)', () => {
     }
     run(0.6);
     expect(scene.player.hits).toBe(3);
-    expect(scene.dummy.speed + Math.abs(scene.dummy.x - 20)).toBeGreaterThan(1); // the finisher sent it flying
+    expect(scene.dummy.speed + Math.abs(scene.dummy.x - OFFICE.dummyStart.x)).toBeGreaterThan(1); // the finisher sent it flying
     scenes.clear();
   });
 
   it('the camera glides with the player into the boss room (no hard cut)', async () => {
     const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 8, y: 12 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
     walkToDoor();
     intents.setMove('t', { x: -1, y: 0 });
     run(0.15);
@@ -151,14 +152,17 @@ describe('office door (owner request, 11/11/2026)', () => {
     expect(scene.doorStates[0]!.broken).toBe(true);
     let prev = scene.cameraState!.x;
     let maxStep = 0;
-    runUntil(() => scene.player.x > 31, 4);
+    runUntil(() => scene.player.x > DOOR.x1 + 2, 4);
     for (let i = 0; i < 60; i++) {
       run(STEP);
       maxStep = Math.max(maxStep, Math.abs(scene.cameraState!.x - prev));
       prev = scene.cameraState!.x;
     }
-    expect(scene.player.x).toBeGreaterThan(29);
-    expect(scene.cameraState!.x).toBeGreaterThan(DOOR.x1); // looking into the boss room
+    expect(scene.player.x).toBeGreaterThan(DOOR.x1 + 1.5);
+    // Looking into the boss room: the camera has followed right (to the arena edge clamp) and the player is well in view.
+    const cam = scene.cameraState!;
+    expect(cam.x).toBeGreaterThan(OFFICE.playerStart.x + 6);
+    expect(scene.player.x).toBeLessThan(cam.x + 640 / cam.scale - 1);
     expect(maxStep).toBeLessThan(0.3); // smooth: no jump between frames
     scenes.clear();
   });

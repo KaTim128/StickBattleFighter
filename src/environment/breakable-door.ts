@@ -1,6 +1,7 @@
-import type { Collider, RigidBody } from '@dimforge/rapier2d';
+import type { Collider } from '@dimforge/rapier2d';
 import type { DoorSpec, Rect } from '../data/arenas/arena-layout';
 import type { PhysicsWorld, Vec2 } from '../physics/physics-world';
+import { Debris } from './debris';
 
 /**
  * Breakable door (owner request, 11/11/2026). Starts closed and solid.
@@ -32,18 +33,12 @@ export function circleTouchesRect(c: Vec2, radius: number, r: Rect): boolean {
   return dx * dx + dy * dy <= radius * radius;
 }
 
-interface Splinter {
-  body: RigidBody;
-  heightM: number;
-  verticalSpeedMps: number;
-}
-
 const SPLINTERS = 7;
-const SPLINTER_HOP_GRAVITY = 18;
+const DOOR_WOOD = 0xa8713a;
 
 export class BreakableDoor {
   private collider: Collider | null;
-  private readonly splinters: Splinter[] = [];
+  private readonly splinters: Debris;
   /** How the door broke, for tests and the debug hook. */
   brokenBy: ImpactKind | null = null;
 
@@ -51,6 +46,7 @@ export class BreakableDoor {
     readonly spec: DoorSpec,
     private readonly physics: PhysicsWorld,
   ) {
+    this.splinters = new Debris(physics);
     this.collider = physics.addStaticBox({
       halfExtents: { x: (spec.x1 - spec.x0) / 2, y: (spec.y1 - spec.y0) / 2 },
       position: { x: (spec.x0 + spec.x1) / 2, y: (spec.y0 + spec.y1) / 2 },
@@ -75,17 +71,16 @@ export class BreakableDoor {
       const f = (i + 0.5) / SPLINTERS;
       const spread = (f - 0.5) * 2; // -1..1 along the door
       const speed = (4 + ((i * 37) % 5)) * power;
-      this.splinters.push({
-        body: this.physics.addDebris({
-          position: { x: x0 + (x1 - x0) / 2, y: y0 + (y1 - y0) * f },
-          halfExtents: { x: 0.22 + (i % 3) * 0.06, y: 0.05 },
-          velocity: {
-            x: impact.direction.x * speed - impact.direction.y * spread * 2,
-            y: impact.direction.y * speed + impact.direction.x * spread * 2,
-          },
-          spin: (i % 2 ? 1 : -1) * (6 + i),
-          massKg: 2,
-        }),
+      this.splinters.add({
+        position: { x: x0 + (x1 - x0) / 2, y: y0 + (y1 - y0) * f },
+        halfExtents: { x: 0.22 + (i % 3) * 0.06, y: 0.05 },
+        velocity: {
+          x: impact.direction.x * speed - impact.direction.y * spread * 2,
+          y: impact.direction.y * speed + impact.direction.x * spread * 2,
+        },
+        spin: (i % 2 ? 1 : -1) * (6 + i),
+        massKg: 2,
+        colour: DOOR_WOOD,
         heightM: 1 + (i % 3) * 0.3,
         verticalSpeedMps: 1.5 + (i % 4) * 0.6,
       });
@@ -95,16 +90,11 @@ export class BreakableDoor {
 
   /** Advance the splinters' fall to the floor (their floor-plane motion is physics). */
   update(stepS: number): void {
-    for (const s of this.splinters) {
-      if (s.heightM <= 0 && s.verticalSpeedMps <= 0) continue;
-      s.verticalSpeedMps -= SPLINTER_HOP_GRAVITY * stepS;
-      s.heightM = Math.max(0, s.heightM + s.verticalSpeedMps * stepS);
-      if (s.heightM === 0) s.verticalSpeedMps = 0;
-    }
+    this.splinters.update(stepS);
   }
 
   get pieces(): { x: number; y: number; angle: number; heightM: number }[] {
-    return this.splinters.map((s) => {
+    return this.splinters.pieces.map((s) => {
       const p = s.body.translation();
       return { x: p.x, y: p.y, angle: s.body.rotation(), heightM: s.heightM };
     });

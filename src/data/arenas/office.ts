@@ -2,7 +2,7 @@ import type { PropPlacement } from '../objects/props';
 import type { ArenaLayout } from './arena-layout';
 
 /**
- * The office arena (owner layout, 11/11/2026). GREYBOX art. 36 m × 18 m:
+ * The office arena (owner layout, 11/11/2026). GREYBOX art. 29 m × 12 m (tightened on owner request, 11/11/2026):
  *
  *   ┌─────────────── main office (carpet) ───────────────┬── boss room (wood) ──┐
  *   │ [C1][C2][C3][C4][C5][C6]   6 cubicles along the top │  bookshelf           │
@@ -16,15 +16,17 @@ import type { ArenaLayout } from './arena-layout';
  * from a kick or a heavy knockback impact (src/environment/breakable-door.ts).
  */
 const DESK_TOP_M = 0.75;
-const CUBE_W = 3.4;
-const CUBE_D = 3.0;
-const CUBES_X0 = 1.5;
-const MAIN_W = 26;
-const WALL_X0 = 26;
-const WALL_X1 = 26.4;
-const HEIGHT = 18;
-const DOOR_Y0 = 8;
-const DOOR_Y1 = 10;
+const CUBE_W = 3.0;
+const CUBE_D = 2.7;
+const CUBES_X0 = 1.4;
+const MAIN_W = 21;
+const WALL_X0 = 21;
+const WALL_X1 = 21.4;
+const WIDTH = 29;
+const HEIGHT = 12;
+const MID_Y = HEIGHT / 2;
+const DOOR_Y0 = MID_Y - 1;
+const DOOR_Y1 = MID_Y + 1;
 
 /** Desk items sit on the desk and draw on top of it. */
 function onDesk(kind: PropPlacement['kind'], x: number, y: number, deskFront: number, order: number): PropPlacement {
@@ -63,43 +65,43 @@ function cubicle(i: number, top: boolean): PropPlacement[] {
 const CUBICLES: PropPlacement[] = [0, 1, 2, 3, 4, 5].flatMap((i) => [...cubicle(i, true), ...cubicle(i, false)]);
 
 const MAIN_EXTRAS: PropPlacement[] = [
-  { kind: 'water-dispenser', x: 25.4, y: 4.4 },
-  { kind: 'bin', x: 25.4, y: 5.2 },
-  { kind: 'printer', x: 25.2, y: 13.4 },
-  { kind: 'plant', x: 0.6, y: 6.4 },
-  { kind: 'plant', x: 0.6, y: 11.6 },
-  { kind: 'cabinet', x: 0.5, y: 8.5, rotated: true },
-  { kind: 'cabinet', x: 0.5, y: 9.45, rotated: true },
+  { kind: 'water-dispenser', x: MAIN_W - 0.6, y: 3.3 },
+  { kind: 'bin', x: MAIN_W - 0.6, y: 4.0 },
+  { kind: 'printer', x: MAIN_W - 0.35, y: HEIGHT - 1.4, rotated: true }, // in the corner, clear of the cubicle panel
+  { kind: 'plant', x: 0.6, y: MID_Y - 2.1 },
+  { kind: 'plant', x: 0.6, y: MID_Y + 2.1 },
+  { kind: 'cabinet', x: 0.5, y: MID_Y - 0.48, rotated: true },
+  { kind: 'cabinet', x: 0.5, y: MID_Y + 0.48, rotated: true },
 ];
 
 const BOSS_X0 = WALL_X1;
 const BOSS_ROOM: PropPlacement[] = [
-  { kind: 'rug', x: 31.6, y: 9 },
+  { kind: 'rug', x: 25.0, y: MID_Y },
   // Executive desk turned to face the door; boss chair behind it, visitor chair opposite.
-  { kind: 'executive-desk', x: 32.6, y: 9, rotated: true },
-  { kind: 'boss-chair', x: 33.9, y: 9 },
-  { kind: 'visitor-chair', x: 30.9, y: 9 },
-  onDesk('computer', 33.0, 8.4, 10.2, 1),
-  onDesk('coffee-cup', 32.3, 9.8, 10.2, 2),
-  { kind: 'bookshelf', x: 31.4, y: 0.25 },
-  { kind: 'bookshelf', x: 34.2, y: 0.25, w: 1.4 },
-  { kind: 'plant', x: BOSS_X0 + 0.6, y: 17.3 },
-  { kind: 'plant', x: 35.3, y: 17.3 },
-  { kind: 'cabinet', x: 35.5, y: 13.5, rotated: true },
+  { kind: 'executive-desk', x: 26.0, y: MID_Y, rotated: true },
+  { kind: 'boss-chair', x: 27.3, y: MID_Y },
+  { kind: 'visitor-chair', x: 24.3, y: MID_Y },
+  onDesk('computer', 26.4, MID_Y - 0.6, MID_Y + 1.2, 1),
+  onDesk('coffee-cup', 25.7, MID_Y + 0.8, MID_Y + 1.2, 2),
+  { kind: 'bookshelf', x: 23.8, y: 0.25 },
+  { kind: 'bookshelf', x: 27.3, y: 0.25, w: 1.4 },
+  { kind: 'plant', x: BOSS_X0 + 0.6, y: HEIGHT - 0.7 },
+  { kind: 'plant', x: WIDTH - 0.7, y: HEIGHT - 0.7 },
+  { kind: 'cabinet', x: WIDTH - 0.5, y: HEIGHT - 3, rotated: true },
 ];
 
 export const OFFICE: ArenaLayout = {
   id: 'office',
   name: 'Office',
-  widthM: 36,
+  widthM: WIDTH,
   heightM: HEIGHT,
   wallThicknessM: 0.5,
   props: [...CUBICLES, ...MAIN_EXTRAS, ...BOSS_ROOM],
-  playerStart: { x: 13, y: 9 },
-  dummyStart: { x: 20, y: 9 },
+  playerStart: { x: 8, y: MID_Y },
+  dummyStart: { x: 13, y: MID_Y },
   windows: [
     { x0: 0.6, x1: MAIN_W - 0.6 },
-    { x0: BOSS_X0 + 0.5, x1: 35.5 },
+    { x0: BOSS_X0 + 0.5, x1: WIDTH - 0.5 },
   ],
   look: {
     background: 0x141922,
@@ -114,7 +116,7 @@ export const OFFICE: ArenaLayout = {
     {
       x0: BOSS_X0,
       y0: 0,
-      x1: 36,
+      x1: WIDTH,
       y1: HEIGHT,
       floor: 0x7a5236,
       lines: 0x6a4630,

@@ -121,6 +121,7 @@ Selected stack (TD-021, after the switch to 2D): TypeScript + Vite, **PixiJS 8**
 | REQ-ENV-8 | Main office floor with **12 cubicles: 6 on each side** of a central aisle. |
 | REQ-ENV-9 | A separate **boss room** with an **executive desk, a boss chair behind it and a visitor chair opposite**. Each room has its own look (floor, walls, decor). |
 | REQ-ENV-10 | The camera follows smoothly between rooms, keeping active characters in view, with **no hard cuts**. |
+| REQ-ENV-12 | **Compact office (owner, 11/11/2026):** the office is tight, with no large empty space in the centre and a short overall length (29 m × 12 m; aisle ≤ 7.5 m between cubicle rows). |
 | REQ-ENV-11 | The rooms are joined by a **closed door that blocks the way**. Walking or normal movement never opens it. It **only breaks** (shatters violently, clearing the path) when a fighter lands a **kick** or a **heavy-impact knockback attack** against it. Implemented as: kick, combo finisher (heavy strike) or a body knocked into it, at ≥ the door's break strength. |
 
 Design sheet: `docs/design/arenas/office.md`.
@@ -147,6 +148,7 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 |---|---|
 | REQ-PHY-5 | Objects have **material, mass and durability** properties. |
 | REQ-PHY-6 | Fragile glass can shatter. Wooden furniture can move, topple or break. Metal objects resist more damage. Some objects are movable but not destructible. |
+| REQ-PHY-6a | **Struck furniture reacts (owner, 11/11/2026):** when a fighter hits a table, chair or other prop (or is knocked into it), the prop **moves or breaks depending on its durability**. Walking into furniture does not shove it. Items on a desk move with it and fall when it breaks. Debris counts are capped (REQ-PHY-7). |
 | REQ-PHY-7 | Avoid uncontrolled debris and expensive physics for cosmetic objects. `[PB §8.6]` |
 
 ### 6.3 Pickup, carry and throw `[PB §12 Phase 7, §14.4]`
@@ -182,6 +184,7 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 | REQ-CTL-12 | Dodge by **flicking the movement stick** on touch (optional double-tap mode) or the dodge key (Shift) on desktop. | [TD-016] |
 | REQ-CTL-13 | One **contextual utility button** (jump / pick up / throw; hold to drop), visually distinct from the five combat buttons. Desktop has Space for jump and a separate interact key. | [TD-016] |
 | REQ-CTL-14 | Automatic soft target lock on the nearest visible opponent; switch with a tap on the opponent or Tab. Aim assist never guarantees hits. | [TD-016] |
+| REQ-CTL-16 | **Touch buttons never highlight (owner, 11/11/2026):** holding a button (for example MELEE to block) must not select or highlight its label or open a long-press menu. |
 | REQ-CTL-15 | Two desktop presets: keyboard + mouse (default) and keyboard only. | [TD-016] |
 
 ### 7.2 Desktop `[PB §8.9, §12 Phase 11]`
@@ -266,6 +269,8 @@ No numeric values were supplied (OQ-05).
 | REQ-CMB-18 | **Dodge:** Shift (or a joystick flick) dashes about 2.4 m with 0.18 s of invulnerability for 25 stamina, cancelling the current attack. Stamina regenerates after 0.7 s; melee never costs stamina (REQ-CMB-4). |
 | REQ-CMB-19 | **Hit reactions:** light hits flinch (short stun); heavy hits knock down (no control, then a short get-up invulnerability); hit-stop on contact sells the impact. |
 | REQ-CMB-20 | **One engine for every fighter (INV-5):** the player and the dummy use the same fighter entity, combat rules and attacks; the dummy can be switched to attack (Practice, T key) for testing defence. |
+| REQ-CMB-22 | **Combo variations (owner, 11/11/2026):** each strike (jab, hook, finisher, flying kick) has several animations with **identical damage, reach and timing**; the look changes every press (never the same twice in a row), so the combo does not look identical each time. |
+| REQ-CMB-23 | **Kick distance (owner, 11/11/2026):** the flying kick knocks down but does not send the target far (about 3 m, previously about 10 m); knockdown slides brake harder in general. |
 | REQ-CMB-21 | **No lost taps:** quick Button 1 taps are queued (up to three) and handled one per simulation step, so a slow frame or hit-stop never swallows a combo input. |
 | REQ-CMB-11 | Pairwise combat and ability regression tests across fighters. | [PB §12 Phase 8–9] |
 
@@ -292,6 +297,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ANI-4 | Animation events (for example hit-frame timing) are coordinated with the combat system. |
 | REQ-ANI-5 | 2D asset pipeline (TD-022, proposed): fighters as crisp vector stick figures drawn in code with 2D skeletal (bone) animation defined as data; effects as particles and sprites; environment props as 2D top-down art. *(Blender and glTF superseded: SUP-04.)* |
 | REQ-ANI-6 | **Jointed fighters (owner, 10/11/2026):** every fighter has a 2D skeleton with real joints: pelvis, spine (lower and upper), neck, head; shoulder → **elbow** → hand; hip → **knee** → foot on both sides. Attacks, kicks and movement are animated by rotating these joints with eased curves (anticipation, snap, follow-through, settle), so motion feels smooth and natural, never stiff. Blending between animations is joint by joint. | [OWNER 10/11/2026] [TD-022] |
+| REQ-ANI-8 | **Fall and get-up (owner, 11/11/2026):** a heavy hit or KO plays a readable fall (tumble back, arms flung, a short flight, landing with a bounce, lying flat), and recovery plays a **get-up** (sit up on a hand, knee drawn, rise through a crouch into the stance). The fighter cannot act and cannot be hit while getting up. |
 | REQ-ANI-7 | **Unique body language per fighter (owner, 10/11/2026):** every fighter has its **own idle stance** (including a breathing or ready loop), its **own movement style** (walk, run, strafe, turn, start and stop) and its **own attack animations** for melee, all three abilities and the ultimate, plus distinct hit reactions where practical. No two fighters share these animations; only the skeleton system is shared. **Fighting stance at all times (owner, 11/11/2026):** idle and every movement animation keep a fighting posture (guard up near the chin, knees bent, staggered feet, torso engaged); never a casual walk with loose swinging arms. Each fighter's stance and footwork style is still its own. **Unarmed default (owner, 11/11/2026): a slightly bent, boxer-like stance** (`BOXER_STANCE`); armed fighters get weapon-specific stances (chosen by the fighter's `weapon` field). Direction (to be designed per fighter, not final): Inferno = bouncy, restless boxer stance with flickering energy; Shadowfang = low crouch, prowling lope, claw-ready hands; Ronin = calm, centred sword stance, smooth gliding steps; Titan = wide, heavy planted stance, slow stomping gait with weight shift; Phantom = upright floating hover, drifting glide, hands weaving magic. | [OWNER 10/11/2026] |
 
 ### 11.2 Presentation quality targets (from the owner's videos) `[PB §4.5]` `[REF-VIDEO]`
@@ -460,6 +466,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Owner feedback: compact office (REQ-ENV-12), furniture moves or breaks by durability (REQ-PHY-6a), fall and get-up animation (REQ-ANI-8), combo variations (REQ-CMB-22), shorter kick knockback (REQ-CMB-23), no button highlight on touch (REQ-CTL-16). | Master Developer |
 | 11/11/2026 | Phase 5 combat: health, damage and KO, block and parry, dodge, stamina, hit reactions, one engine for player and dummy, queued taps (REQ-CMB-16..21). Values provisional pending OQ-05 (TD-030). | Master Developer |
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |
 | 11/11/2026 | Owner requests: office layout with 12 cubicles, boss room and breakable door (REQ-ENV-8..11); higher jump with jump stance (REQ-PHY-2a); 1-2-3 combo, heavy finisher, flying kick, capsule hits (REQ-CMB-12..15); unarmed boxer stance as default (REQ-ANI-7). | Master Developer |

@@ -23,6 +23,9 @@ export interface AttackEvent {
   readonly started: AttackDef | null;
 }
 
+/** Number of animation looks per strike (attack-poses provides this many shapes per attack). */
+export const COMBO_VARIANTS = 3;
+
 export class ComboController {
   private current: AttackDef | null = null;
   private t = 0;
@@ -30,8 +33,22 @@ export class ComboController {
   private buffered = false;
   private comboStep = 0; // index into GROUND_STRING of the current ground attack
   private airKickUsed = false;
+  private variantIndex = 0;
 
-  constructor(private readonly set: ComboSet) {}
+  /**
+   * @param pick random source for the look of each strike (seeded in scenes so
+   *   tests and replays are deterministic). Variants change only the animation,
+   *   never damage, reach or timing (owner, 11/11/2026).
+   */
+  constructor(
+    private readonly set: ComboSet,
+    private readonly pick: () => number = () => 0,
+  ) {}
+
+  /** Which look (0..COMBO_VARIANTS-1) the current strike uses; never the same twice in a row. */
+  get variant(): number {
+    return this.variantIndex;
+  }
 
   get attack(): AttackDef | null {
     return this.current;
@@ -104,6 +121,8 @@ export class ComboController {
   }
 
   private begin(a: AttackDef): void {
+    // Pick a different look from last time: shift by 1..N-1 so it never repeats back to back.
+    this.variantIndex = (this.variantIndex + 1 + Math.floor(this.pick() * (COMBO_VARIANTS - 1))) % COMBO_VARIANTS;
     this.current = a;
     this.t = 0;
     this.hitDone = false;

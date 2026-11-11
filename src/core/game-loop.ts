@@ -23,6 +23,11 @@ export class GameLoop {
   private readonly accumulator: FixedStepAccumulator;
   private handle: number | null = null;
   private lastTimeMs: number | null = null;
+  /**
+   * Game-time speed: 1 = real time, 0.25 = slow motion, 0 = frozen (rendering
+   * continues). For reviewing animations (`?slowmo=`) and exact test screenshots.
+   */
+  timeScale = 1;
 
   constructor(
     private readonly callbacks: GameLoopCallbacks,
@@ -49,7 +54,7 @@ export class GameLoop {
   }
 
   private readonly frame = (timeMs: number): void => {
-    const elapsedS = this.lastTimeMs === null ? 0 : (timeMs - this.lastTimeMs) / 1000;
+    const elapsedS = this.lastTimeMs === null ? 0 : ((timeMs - this.lastTimeMs) / 1000) * this.timeScale;
     this.lastTimeMs = timeMs;
 
     const { steps, alpha } = this.accumulator.advance(elapsedS);

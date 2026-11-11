@@ -12,6 +12,8 @@ export interface ArenaView {
   readonly actors: YSortLayer;
   readonly doors: ReadonlyMap<string, DoorView>;
   readonly propCount: number;
+  /** Standing props' views by their index in `arena.props`, so moving or broken props can follow the simulation. */
+  readonly props: Map<number, Container>;
   destroy(): void;
 }
 
@@ -94,7 +96,13 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
 
   const actors = new YSortLayer();
   world.addChild(actors.container);
-  for (const p of arena.props) if (!kindOf(p.kind).decal) actors.add(buildPropView(p), propFootOffset(p));
+  const props = new Map<number, Container>();
+  arena.props.forEach((p, i) => {
+    if (kindOf(p.kind).decal) return;
+    const view = buildPropView(p);
+    props.set(i, view);
+    actors.add(view, propFootOffset(p));
+  });
 
   for (const r of arena.interiorWalls ?? []) {
     const front = wallColour(arena, r);
@@ -118,6 +126,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     actors,
     doors,
     propCount: arena.props.length,
+    props,
     destroy() {
       for (const d of doors.values()) d.destroy();
       actors.destroy();

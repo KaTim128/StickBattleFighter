@@ -234,6 +234,20 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 **Evidence:** lint clean; typecheck 0; `npm test` **152/152**; build clean; `npm run e2e` **96/96** over 6 full-suite repeats. Screenshots: `docs/screenshots/phase5-combo-damage.png`, `phase5-guard.png`.
 **Limitations:** stats are provisional (OQ-05). Feel (parry window, dodge distance) needs an owner playtest.
 
+### 11/11/2026: Owner feedback round (Master Developer; no specialists used, per TD-019)
+**Requests and what changed:**
+1. *Tighter arena, shorter office:* office 36 × 18 m → **29 × 12 m**; the aisle between cubicle rows is about 6.6 m (was 12 m). A printer that sealed off a corner pocket was moved (found by the reachability test).
+2. *Furniture moves or breaks by durability:* new `ArenaProps` (TD-031). Chairs shove on a jab and break on a hook; desks break to the finisher and drop their monitor, keyboard and cup; cabinets never break; bodies knocked into furniture damage it too.
+3. *Better fall and a get-up:* tumble, landing bounce, lying flat, then sit-up and rise (new `gettingUp` state).
+4. *Kick sends fighters too far:* kick knockback 10 → 7 m/s and harder knock-flight braking; the kick now slides about 2–3 m.
+5. *Combo variations, same damage:* 3 looks per strike (for example straight/body/high jab; hook/uppercut/lead hook; rear straight/push kick/overhand), never the same twice in a row.
+6. *Mobile button highlight while held:* no text selection, tap highlight or long-press menu on the touch controls.
+Also added `?slowmo=` and a freeze hook for exact animation screenshots.
+**Files:** `src/data/arenas/office.ts`; `src/environment/arena-props.ts`, `debris.ts`, `breakable-door.ts`; `src/physics/physics-world.ts`; `src/arenas/arena-colliders.ts`; `src/rendering/arena-view.ts`, `debris-view.ts`; `src/combat/combatant.ts`, `combo.ts`; `src/animation/reaction-poses.ts`, `attack-poses.ts`; `src/app/scenes/fight-arena-scene.ts`, `fighter-entity.ts`; `src/app/bootstrap.ts`; `src/core/game-loop.ts`; `src/input/touch-controls.ts`; `index.html`; tests.
+**Issues found and fixed:** a re-hit cooldown meant for sliding bodies blocked the hook right after a jab (now applies only to knockback contact); the first fall screenshots were mistimed because the software renderer runs slower than real time (fixed with the freeze hook; the simulation trace was already correct).
+**Evidence:** lint clean; typecheck 0; `npm test` **166/166**; build clean; `npm run e2e` **48/48** over 3 repeats; screenshots listed in `TESTING_CHECKLIST.md` §0h.
+**Limitations:** pieces and fallen items are greybox; real-phone check of the button fix still to do by the owner.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

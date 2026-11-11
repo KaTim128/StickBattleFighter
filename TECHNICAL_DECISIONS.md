@@ -233,6 +233,17 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Provisional baseline (OQ-05 not yet answered):** HP 1000; stamina 100 (regen 30/s after 0.7 s); jab 40, hook 60, heavy 140, flying kick 120 damage; crit 5% × 1.5; block chip 15%, 0.6 stamina per blocked damage; parry window 0.15 s; dodge 25 stamina, 0.24 s, 0.18 s invulnerable. All values are data in `src/data/fighters/` and `DEFENCE`, so owner changes need no code edits.
 - **Alternatives:** Rapier sensors for hit detection (rejected: the capsule query is simpler, deterministic and already tested); per-fighter classes (rejected: one data-driven entity scales to 100 fighters).
 
+### TD-031: Interactive furniture, fall/get-up, combo variants — ACCEPTED (owner feedback 11/11/2026)
+- **Props** (`src/environment/arena-props.ts`): every solid floor prop gets a Rapier body that starts **fixed** ("planted"). A strike or a knocked-back body **wakes** it (dynamic), applies an impulse of 0.05 N·s per unit of blow strength plus a little spin, and it is planted again after 0.3 s below 0.06 m/s. Blows deal the attack's damage (or 0.1 × mass × speed for a knocked body) against the catalogue durability; at 0 the prop shatters into 3–8 material-coloured pieces and its desk items fall loose. `movable: false` props never slide; `durability: null` props never break.
+  - *Why planted until struck:* fighters are velocity-driven bodies, so free dynamic furniture would be bulldozed by simply walking, scrambling the layout and invalidating the nav grid. The owner asked for reactions to hits.
+  - *Alternatives:* always-dynamic props with heavy damping (rejected: walking shoves desks); scripted animations without physics (rejected: no real collisions with walls and fighters).
+- **Debris** (`src/environment/debris.ts`): one shared implementation for door splinters and prop pieces, capped at 90 pieces per owner (oldest removed, REQ-PHY-7).
+- **Fall and get-up:** new `gettingUp` combat state (0.55 s, cannot act, invulnerable plus 0.2 s after). `knockdownFrame` and `getUpFrame` (`src/animation/reaction-poses.ts`) key the pose, a backwards tilt about the feet and a short lift.
+- **Combo variants:** `ComboController` picks one of `COMBO_VARIANTS` (3) looks per strike from a seeded RNG, never repeating back to back; `attack-poses.ts` holds 3 shapes per attack. Attack data is unchanged, so damage, reach and timing are identical.
+- **Knockback:** flying kick 10 → 7 m/s; knock-flight braking 5 → 9 m/s² (kick slides about 2–3 m, the finisher about 6 m instead of 12 m).
+- **Office tightened** to 29 m × 12 m (REQ-ENV-12).
+- **Debug time scale:** `GameLoop.timeScale` (`?slowmo=0.25`, debug hook `setTimeScale`, 0 freezes) for animation review and exact browser screenshots.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

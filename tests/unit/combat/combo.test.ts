@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { attackVariantCount } from '../../../src/animation/attack-poses';
 import { attackDuration, capsuleTouchesRect, distanceToCapsule, hitCapsule } from '../../../src/combat/attacks';
-import { ComboController } from '../../../src/combat/combo';
+import { seededRandom } from '../../../src/combat/combatant';
+import { COMBO_VARIANTS, ComboController } from '../../../src/combat/combo';
 import { GREYBOX_STICKMAN } from '../../../src/data/fighters/greybox-stickman';
 
 const A = GREYBOX_STICKMAN.attacks;
@@ -109,5 +111,36 @@ describe('hit area', () => {
     const c = hitCapsule(pos, 1, A.jab);
     expect(distanceToCapsule(c, 10.6, 5)).toBeCloseTo(0, 6);
     expect(distanceToCapsule(c, 9.4, 5)).toBeGreaterThan(A.jab.hitRadiusM + 0.32);
+  });
+});
+
+describe('combo variations (owner, 11/11/2026: same damage, different looks)', () => {
+  it('every attack has COMBO_VARIANTS animations', () => {
+    for (const id of ['jab', 'hook', 'heavy', 'flyingKick'] as const)
+      expect(attackVariantCount(id)).toBe(COMBO_VARIANTS);
+  });
+
+  it('never shows the same look twice in a row, and uses every look', () => {
+    const c = new ComboController(A, seededRandom(7));
+    const seen = new Set<number>();
+    let last = -1;
+    for (let i = 0; i < 40; i++) {
+      c.press(false);
+      expect(c.variant).not.toBe(last);
+      last = c.variant;
+      seen.add(c.variant);
+      c.interrupt();
+    }
+    expect(seen.size).toBe(COMBO_VARIANTS);
+  });
+
+  it('a variant changes only the look: the attack data (damage, reach, timing) is the same object', () => {
+    const c = new ComboController(A, seededRandom(3));
+    c.press(false);
+    const first = { attack: c.attack, variant: c.variant };
+    c.interrupt();
+    c.press(false);
+    expect(c.variant).not.toBe(first.variant);
+    expect(c.attack).toBe(first.attack);
   });
 });

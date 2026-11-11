@@ -47,8 +47,12 @@ export const DEFENCE = {
   dodgeSpeedMps: 10,
   dodgeCooldownS: 0.35,
   lightStunS: 0.22,
+  /** Time on the floor after a heavy hit (the fall plus lying still). */
   heavyKnockdownS: 1.1,
-  getUpInvulnS: 0.4,
+  /** Getting back up (animated; cannot act, cannot be hit). */
+  getUpS: 0.55,
+  /** Extra invulnerability once standing again (and after a respawn). */
+  getUpInvulnS: 0.2,
   koRespawnS: 2.5,
 } as const;
 
@@ -75,7 +79,7 @@ export interface HitResult {
   readonly attackerStunS: number;
 }
 
-export type CombatState = 'free' | 'guarding' | 'dodging' | 'stunned' | 'knockdown' | 'ko';
+export type CombatState = 'free' | 'guarding' | 'dodging' | 'stunned' | 'knockdown' | 'gettingUp' | 'ko';
 
 export class Combatant {
   hp: number;
@@ -84,6 +88,8 @@ export class Combatant {
   private guardAgeS = 0;
   private stunS = 0;
   private knockdownS = 0;
+  private getUpS = 0;
+  private downS = 0;
   private invulnS = 0;
   private dodgeS = 0;
   private dodgeCooldownS = 0;
@@ -98,6 +104,7 @@ export class Combatant {
   get state(): CombatState {
     if (this.koAgeS >= 0) return 'ko';
     if (this.knockdownS > 0) return 'knockdown';
+    if (this.getUpS > 0) return 'gettingUp';
     if (this.stunS > 0) return 'stunned';
     if (this.dodgeS > 0) return 'dodging';
     if (this.guardUp) return 'guarding';
@@ -116,6 +123,16 @@ export class Combatant {
   /** Seconds since KO (for respawn timing); -1 when not KO. */
   get koAge(): number {
     return this.koAgeS;
+  }
+
+  /** Seconds since the fighter was knocked down or KO'd (drives the fall animation); 0 when standing. */
+  get downTimeS(): number {
+    return this.downS;
+  }
+
+  /** 0..1 through getting back up; 0 when not getting up. */
+  get getUpProgress(): number {
+    return this.getUpS > 0 ? 1 - this.getUpS / DEFENCE.getUpS : 0;
   }
 
   get stunned(): number {
@@ -185,26 +202,39 @@ export class Combatant {
     this.hp = Math.max(0, this.hp - damage);
     this.guardUp = false;
     if (this.hp === 0) {
+      if (this.knockdownS === 0) this.downS = 0; // the KO fall starts now (or continues one already under way)
       this.koAgeS = 0;
       this.stunS = 0;
       this.knockdownS = 0;
+      this.getUpS = 0;
       return { outcome: 'ko', damage, knockbackScale: kbKeep, attackerStunS: 0 };
     }
-    if (hit.heavy) this.knockdownS = DEFENCE.heavyKnockdownS;
-    else this.stunS = Math.max(this.stunS, DEFENCE.lightStunS);
+    if (hit.heavy) {
+      if (this.knockdownS === 0) this.downS = 0; // a fresh fall (a hit while already down keeps the fall going)
+      this.knockdownS = DEFENCE.heavyKnockdownS;
+    } else this.stunS = Math.max(this.stunS, DEFENCE.lightStunS);
     return { outcome: crit ? 'crit' : 'hit', damage, knockbackScale: kbKeep, attackerStunS: 0 };
   }
 
   update(dtS: number): void {
     if (this.koAgeS >= 0) {
       this.koAgeS += dtS;
+      this.downS += dtS;
       return;
     }
     if (this.guardUp) this.guardAgeS += dtS;
     this.stunS = Math.max(0, this.stunS - dtS);
     if (this.knockdownS > 0) {
+      this.downS += dtS;
       this.knockdownS = Math.max(0, this.knockdownS - dtS);
-      if (this.knockdownS === 0) this.invulnS = DEFENCE.getUpInvulnS; // safe while getting up
+      if (this.knockdownS === 0) {
+        // Get up: animated, and safe from hits until a moment after standing.
+        this.getUpS = DEFENCE.getUpS;
+        this.invulnS = DEFENCE.getUpS + DEFENCE.getUpInvulnS;
+      }
+    } else if (this.getUpS > 0) {
+      this.getUpS = Math.max(0, this.getUpS - dtS);
+      if (this.getUpS === 0) this.downS = 0;
     }
     this.invulnS = Math.max(0, this.invulnS - dtS);
     this.dodgeS = Math.max(0, this.dodgeS - dtS);
@@ -224,6 +254,8 @@ export class Combatant {
     this.guardUp = false;
     this.stunS = 0;
     this.knockdownS = 0;
+    this.getUpS = 0;
+    this.downS = 0;
     this.invulnS = DEFENCE.getUpInvulnS;
     this.dodgeS = 0;
     this.dodgeCooldownS = 0;

@@ -18,7 +18,7 @@ describe('office arena content (owner layout, 11/11/2026)', () => {
     expect(desks.filter((d) => d.y > OFFICE.heightM / 2)).toHaveLength(6);
     // every cubicle has a chair, a computer, a keyboard and a mouse
     for (const kind of ['office-chair', 'computer', 'keyboard', 'mouse'] as const) {
-      expect(OFFICE.props.filter((p) => p.kind === kind && p.x < 26).length, kind).toBeGreaterThanOrEqual(12);
+      expect(OFFICE.props.filter((p) => p.kind === kind && p.x < 21).length, kind).toBeGreaterThanOrEqual(12);
     }
     expect(OFFICE.props.filter((p) => p.kind === 'cubicle-panel').length).toBeGreaterThanOrEqual(12 + 14);
   });
@@ -112,7 +112,7 @@ describe('office zones', () => {
     const c = regionOf(closed);
     const o = regionOf(open);
     const main = OFFICE.playerStart;
-    const boss = { x: 29.5, y: 12 };
+    const boss = { x: 24, y: 9 };
     expect(isWalkable(closed, boss.x, boss.y)).toBe(true);
     expect(c(boss.x, boss.y)).not.toBe(c(main.x, main.y));
     expect(o(boss.x, boss.y)).toBe(o(main.x, main.y));
@@ -125,16 +125,24 @@ describe('office zones', () => {
     const start = c(OFFICE.playerStart.x, OFFICE.playerStart.y);
     for (const desk of OFFICE.props.filter((p) => p.kind === 'desk')) {
       // a spot beside the chair, inside the cubicle
-      const y = desk.y < 9 ? desk.y + 1.0 : desk.y - 1.0;
+      const y = desk.y < OFFICE.heightM / 2 ? desk.y + 1.0 : desk.y - 1.0;
       const x = desk.x + 0.9;
       expect(isWalkable(closed, x, y), `cubicle at ${desk.x},${desk.y}`).toBe(true);
       expect(c(x, y), `cubicle at ${desk.x},${desk.y}`).toBe(start);
     }
   });
 
-  it('the central aisle is a genuinely open combat zone (clear 14 m × 6 m)', () => {
-    for (let x = 6; x <= 20; x += 0.2) {
-      for (let y = 6; y <= 12; y += 0.2) expect(isWalkable(closed, x, y), `${x},${y}`).toBe(true);
+  it('the central aisle is an open but tight combat zone (clear 14 m × 4 m, at most 7 m tall)', () => {
+    for (let x = 4; x <= 18; x += 0.2) {
+      for (let y = 4; y <= 8; y += 0.2) expect(isWalkable(closed, x, y), `${x},${y}`).toBe(true);
     }
+  });
+
+  it('is compact (owner, 11/11/2026): a short office and a tight aisle between the cubicle rows', () => {
+    expect(OFFICE.widthM).toBeLessThanOrEqual(30);
+    const panels = OFFICE.props.filter((p) => p.kind === 'cubicle-panel' && p.rotated);
+    const topEdge = Math.max(...panels.filter((p) => p.y < OFFICE.heightM / 2).map((p) => p.y + footprint(p).d / 2));
+    const bottomEdge = Math.min(...panels.filter((p) => p.y > OFFICE.heightM / 2).map((p) => p.y - footprint(p).d / 2));
+    expect(bottomEdge - topEdge).toBeLessThanOrEqual(7.5);
   });
 });

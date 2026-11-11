@@ -37,10 +37,14 @@ export interface EngineDebugInfo {
   dummy: DummyState | null;
   dummyAttacks: boolean;
   doors: DoorState[];
+  /** Props summary: how many are broken, and how many are moving right now. */
+  props: { total: number; broken: number; awake: number };
   assetFailures: { url: string; message: string }[];
   debugOverlay: { enabled: boolean; segments: number; fps: number };
   /** Render now and return the RGBA of the pixel at fractional canvas coords (0..1, top-left origin). */
   readPixel(xFrac: number, yFrac: number): [number, number, number, number];
+  /** Game speed (0 = frozen, 1 = real time); tests freeze it for exact screenshots. */
+  setTimeScale(scale: number): void;
 }
 
 declare global {
@@ -130,8 +134,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     dummy: null,
     dummyAttacks: false,
     doors: [],
+    props: { total: 0, broken: 0, awake: 0 },
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
+    setTimeScale() {}, // replaced once the loop exists
     readPixel(xFrac, yFrac) {
       app.render();
       const gl = (app.renderer as WebGLRenderer).gl;
@@ -154,7 +160,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     render(alpha) {
       const now = performance.now();
       // Clamp so a long stall does not fling animations or the camera.
-      const frameDtS = lastFrameMs === null ? 0 : Math.min(0.1, (now - lastFrameMs) / 1000);
+      const frameDtS = lastFrameMs === null ? 0 : Math.min(0.1, (now - lastFrameMs) / 1000) * loop.timeScale;
       if (lastFrameMs !== null) fps.addFrame((now - lastFrameMs) / 1000);
       lastFrameMs = now;
 
@@ -179,10 +185,22 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         debug.dummyAttacks = scene.dummyAttacks;
         combatText.show(scene.drainEvents(), (x, y) => scene.worldToScreen(x, y));
         debug.doors = scene.doorStates;
+        const props = scene.propStates;
+        debug.props = {
+          total: props.length,
+          broken: props.filter((p) => p.broken).length,
+          awake: props.filter((p) => p.awake).length,
+        };
       }
       debug.debugOverlay = { enabled: overlay.enabled, segments: overlay.drawnSegments, fps: fps.fps };
     },
   });
+  // Slow motion for reviewing animations, e.g. ?slowmo=0.25 (debug; clamped so the game never stalls by URL).
+  const slowmo = Number(params.get('slowmo'));
+  if (slowmo > 0) loop.timeScale = Math.min(1, Math.max(0.05, slowmo));
+  debug.setTimeScale = (scale: number) => {
+    loop.timeScale = Math.min(1, Math.max(0, scale));
+  };
   loop.start();
 
   debug.ready = true;

@@ -63,6 +63,43 @@ describe('Phase 5 combat in the arena', () => {
     scenes.clear();
   });
 
+  it('after a knockdown the dummy falls, lies, then gets up (animated) before it can act again', async () => {
+    const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
+    lineUp();
+    for (const step of ['jab', 'hook', 'heavy']) {
+      intents.pressMelee();
+      runUntil(() => scene.player.attack === step, 1.5);
+      run(0.12);
+    }
+    runUntil(() => scene.dummy.state === 'knockdown', 1);
+    runUntil(() => scene.dummy.state !== 'knockdown', 2);
+    expect(scene.dummy.state).toBe('gettingUp');
+    expect(scene.dummyFighter.combatant.canAct).toBe(false);
+    runUntil(() => scene.dummy.state === 'free', DEFENCE.getUpS + 0.2);
+    expect(scene.dummy.state).toBe('free');
+    scenes.clear();
+  });
+
+  it('the flying kick knocks down but no longer sends the target flying across the room (owner, 11/11/2026)', async () => {
+    const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
+    lineUp();
+    intents.setMove('t', { x: -1, y: 0 }); // a little run-up room
+    run(0.15);
+    const x0 = scene.dummy.x;
+    intents.setMove('t', { x: 1, y: 0 }); // jump in and kick
+    intents.pressJump();
+    run(0.1);
+    intents.pressMelee();
+    run(0.1);
+    intents.setMove('t', { x: 0, y: 0 });
+    runUntil(() => scene.dummy.state === 'knockdown', 1);
+    expect(scene.dummy.state).toBe('knockdown');
+    runUntil(() => scene.dummy.speed < 0.05, 3);
+    expect(scene.dummy.x - x0).toBeGreaterThan(0.5);
+    expect(scene.dummy.x - x0).toBeLessThan(3.5); // was about 10 m
+    scenes.clear();
+  });
+
   it('KO at 0 health, then the dummy gets back up at full health where it started', async () => {
     const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
     // Start the dummy at 200 health so one full combo (240+ damage) is enough; retry if a hit misses.

@@ -51,6 +51,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: **16 passed**, and **96/96** across 6 repeats of the whole suite (`--repeat-each 6`). New: combo damage with floating numbers, hold J to block, T toggles dummy attacks, an unguarded player takes damage, Shift dodges.
 - [ ] V Owner playtest of feel: block timing, parry window, dodge distance, damage numbers (values provisional, OQ-05)
 
+## 0h. Owner feedback round (verified 11/11/2026)
+- [x] Lint, typecheck and build clean
+- [x] `npm test`: **166 tests**. New: compact office (≤ 30 m wide, ≤ 7.5 m aisle, one connected area, no enclosed pockets); props (jab shoves a chair and it is planted again; jab + hook breaks it into pieces and the way is clear; a desk breaks and its monitor falls to the floor; desk items ride along; a metal cabinet never breaks but moves; walking never shoves a desk); get-up state (cannot act, invulnerable, then free); flying kick slide < 3.5 m (was about 5 m+ in the same test); combo variants (3 looks per attack, never twice in a row, same attack data); game loop time scale.
+- [x] `npm run e2e`: **48/48** over 3 full-suite repeats. New: holding MELEE never selects or highlights its label (user-select none, transparent tap highlight, long-press menu blocked).
+- [x] V Screenshots: `docs/screenshots/office-compact-overview.png`, `props-chair-shoved.png`, `props-chair-broken.png`, `props-boss-desk-smashed.png`, `fall-and-get-up.png`, `combo-variants.png`.
+- [ ] V Owner check on a real phone: holding MELEE no longer highlights the label.
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

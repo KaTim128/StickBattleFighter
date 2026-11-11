@@ -2,8 +2,11 @@ import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { footprint, PROP_KINDS } from '../data/objects/props';
 import type { PhysicsWorld } from '../physics/physics-world';
 
-/** Walls just outside the floor plus a static box per solid prop footprint (Phase 4; dynamic in Phase 7). */
-export function addArenaColliders(physics: PhysicsWorld, arena: ArenaLayout): void {
+/**
+ * Walls just outside the floor, interior walls, and (unless the scene simulates
+ * props itself, see ArenaProps) a static box per solid prop footprint.
+ */
+export function addArenaColliders(physics: PhysicsWorld, arena: ArenaLayout, includeProps = true): void {
   const { widthM: w, heightM: h, wallThicknessM: t } = arena;
   physics.addStaticBox({ halfExtents: { x: w / 2 + t, y: t / 2 }, position: { x: w / 2, y: -t / 2 } });
   physics.addStaticBox({ halfExtents: { x: w / 2 + t, y: t / 2 }, position: { x: w / 2, y: h + t / 2 } });
@@ -16,6 +19,7 @@ export function addArenaColliders(physics: PhysicsWorld, arena: ArenaLayout): vo
     });
   }
   // Doors are added by BreakableDoor (src/environment) so they can be removed when broken.
+  if (!includeProps) return;
   for (const p of arena.props) {
     if (!PROP_KINDS[p.kind].solid || (p.elevationM ?? 0) > 0) continue;
     const f = footprint(p);

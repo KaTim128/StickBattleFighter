@@ -64,7 +64,8 @@ On desktop, jump has its own key (Space) because keys are plentiful. The context
 ## 4a. Live now (11/11/2026)
 - **Button 1** works: J or left click on desktop, the **MELEE** button on touch. Ground: 1-2-3 combo (jab → hook → heavy finisher; press once per strike); in the air: flying kick. **Hold** Button 1 (≥ 0.18 s) to block; raise it just before a hit to parry.
 - **Dodge:** Shift (desktop) or a joystick flick (touch).
-- **Practice helpers:** T makes the dummy attack you (toggle); `?scene=training-yard` opens the open yard.
+- **Practice helpers:** T makes the dummy attack you (toggle); `?scene=training-yard` opens the open yard; `?slowmo=0.25` plays in slow motion to study animations.
+- Touch buttons never select or highlight their label when held (REQ-CTL-16).
 - **Jump:** Space or the JUMP button. Buttons 2–5 (abilities and ultimate) arrive with Phase 6.
 
 ## 5. Intent model (contract for Phase 2)

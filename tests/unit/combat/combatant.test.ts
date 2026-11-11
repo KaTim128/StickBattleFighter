@@ -41,8 +41,24 @@ describe('Combatant: damage', () => {
     expect(c.state).toBe('knockdown');
     expect(c.canAct).toBe(false);
     tick(c, DEFENCE.heavyKnockdownS + 0.02);
+    expect(c.state).toBe('gettingUp'); // animated get-up: still cannot act
+    expect(c.canAct).toBe(false);
+    expect(c.getUpProgress).toBeGreaterThan(0);
+    expect(c.receive(HIT).outcome).toBe('dodged'); // safe while getting up
+    tick(c, DEFENCE.getUpS);
     expect(c.state).toBe('free');
-    expect(c.receive(HIT).outcome).toBe('dodged'); // still getting up
+    expect(c.downTimeS).toBe(0);
+    expect(c.receive(HIT).outcome).toBe('dodged'); // and a moment after standing
+    tick(c, DEFENCE.getUpInvulnS + 0.02);
+    expect(c.receive(HIT).outcome).toBe('hit');
+  });
+
+  it('tracks time on the floor for the fall animation', () => {
+    const c = new Combatant(STATS);
+    expect(c.downTimeS).toBe(0);
+    c.receive({ ...HIT, heavy: true });
+    tick(c, 0.5);
+    expect(c.downTimeS).toBeCloseTo(0.5, 1);
   });
 
   it('knockback resistance reduces knockback', () => {

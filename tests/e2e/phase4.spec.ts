@@ -37,12 +37,12 @@ test('office: walking into the door keeps it shut; the 1-2-3 combo smashes it; t
 
   // Walk right along the door's row, shoving the dummy all the way to the door, and keep pushing.
   await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await hook(page)).dummy.x, { timeout: 20_000 }).toBeGreaterThan(25);
+  await expect.poll(async () => (await hook(page)).dummy.x, { timeout: 20_000 }).toBeGreaterThan(20); // door at x = 21
   await page.waitForTimeout(1500);
   await page.keyboard.up('KeyD');
   let s = await hook(page);
   expect(s.doors[0]!.broken).toBe(false); // contact never opens it
-  expect(s.player.x).toBeLessThan(26);
+  expect(s.player.x).toBeLessThan(21);
 
   // 1-2-3: jab → hook → heavy finisher.
   await comboToHeavy(page, async () => (await hook(page)).player.attack);
@@ -54,9 +54,9 @@ test('office: walking into the door keeps it shut; the 1-2-3 combo smashes it; t
 
   // Walk through into the boss room; the camera glides after.
   await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await hook(page)).player.x, { timeout: 15_000 }).toBeGreaterThan(29);
+  await expect.poll(async () => (await hook(page)).player.x, { timeout: 15_000 }).toBeGreaterThan(22.5); // through the doorway (boss room starts at 21.4)
   await page.keyboard.up('KeyD');
-  await expect.poll(async () => (await hook(page)).camera.x, { timeout: 5000 }).toBeGreaterThan(26);
+  await expect.poll(async () => (await hook(page)).camera.x, { timeout: 5000 }).toBeGreaterThan(16); // followed right, to the arena-edge clamp
   await page.screenshot({ path: testInfo.outputPath('boss-room.png') });
   expect(errors).toEqual([]);
 });
@@ -75,7 +75,7 @@ test('higher jump: the fighter rises about a metre off the floor', async ({ page
   expect(errors).toEqual([]);
 });
 
-test('touch: the MELEE button appears and throws the jab', async ({ page }, testInfo) => {
+test('touch: the MELEE button appears, throws the jab, and never highlights its label', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'touch test');
   const errors: string[] = [];
   await open(page, errors);
@@ -83,5 +83,19 @@ test('touch: the MELEE button appears and throws the jab', async ({ page }, test
   await expect(page.locator('.melee-button')).toBeVisible();
   await page.locator('.melee-button').tap();
   await expect.poll(async () => (await hook(page)).player.attack, { timeout: 3000 }).toBe('jab');
+  // Holding MELEE (block) must not select or highlight its label (owner, 11/11/2026).
+  const style = await page.locator('.melee-button').evaluate((b) => {
+    const cs = getComputedStyle(b);
+    return { select: cs.userSelect || cs.webkitUserSelect, tap: cs.getPropertyValue('-webkit-tap-highlight-color') };
+  });
+  expect(style.select).toBe('none');
+  expect(style.tap).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+  const blocked = await page.locator('.melee-button').evaluate((b) => {
+    const e = new Event('contextmenu', { bubbles: true, cancelable: true });
+    b.dispatchEvent(e);
+    return e.defaultPrevented;
+  });
+  expect(blocked).toBe(true); // long-press menu suppressed
+  expect(await page.evaluate(() => window.getSelection()?.toString() ?? '')).toBe('');
   expect(errors).toEqual([]);
 });

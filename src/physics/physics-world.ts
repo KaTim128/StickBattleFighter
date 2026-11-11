@@ -139,6 +139,43 @@ export class PhysicsWorld {
     return body;
   }
 
+  /**
+   * An arena prop (desk, chair, cabinet). It starts planted (fixed) so walking
+   * into it does not shove it; a blow wakes it with `setPropAwake` so it slides,
+   * spins and collides by its mass, and it is planted again once it settles.
+   */
+  addPropBody(spec: { position: Vec2; halfExtents: Vec2; massKg: number }): RapierModule.RigidBody {
+    const RAPIER = rapier();
+    const body = this.world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed()
+        .setTranslation(spec.position.x, spec.position.y)
+        .setLinearDamping(4.5) // floor friction stand-in: shoved furniture slides a short way
+        .setAngularDamping(5)
+        .setCcdEnabled(true),
+    );
+    const area = spec.halfExtents.x * spec.halfExtents.y * 4;
+    this.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(spec.halfExtents.x, spec.halfExtents.y)
+        .setDensity(spec.massKg / area)
+        .setFriction(0.4)
+        .setRestitution(0.15)
+        .setCollisionGroups(groups(GROUP.WORLD, 0xffff)),
+      body,
+    );
+    return body;
+  }
+
+  /** Wake a planted prop (it becomes dynamic) or plant it again (fixed). */
+  setPropAwake(body: RapierModule.RigidBody, awake: boolean): void {
+    const RAPIER = rapier();
+    body.setBodyType(awake ? RAPIER.RigidBodyType.Dynamic : RAPIER.RigidBodyType.Fixed, true);
+  }
+
+  /** Remove any body and its colliders (a broken prop, expired debris). */
+  removeBody(body: RapierModule.RigidBody): void {
+    this.world.removeRigidBody(body);
+  }
+
   /** Advance the simulation by one fixed step. */
   step(stepS: number): void {
     this.world.timestep = stepS;

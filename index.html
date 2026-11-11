@@ -16,6 +16,11 @@
       }
       #status[data-state='error'] { background: rgba(160, 20, 20, 0.85); }
       .touch-controls { position: fixed; inset: 0; pointer-events: none; }
+      /* Holding a button (block) must not select or highlight its label, or open the iOS/Android callout. */
+      .touch-controls, .touch-controls * {
+        -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent; outline: none;
+      }
       .touch-controls[hidden], .joystick[hidden] { display: none; }
       .joystick {
         position: fixed; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%;

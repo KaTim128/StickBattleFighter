@@ -112,6 +112,10 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     intents.meleePress(); // tap = attack, hold = block
   };
   const onMeleeUp = (): void => intents.meleeRelease();
+  // A long press (holding MELEE to block) must not select the label or open the context menu.
+  const noDefault = (e: Event): void => e.preventDefault();
+  layer.addEventListener('contextmenu', noDefault);
+  layer.addEventListener('selectstart', noDefault);
 
   window.addEventListener('pointerdown', onDown);
   window.addEventListener('pointermove', onMove);
@@ -123,6 +127,8 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   melee.addEventListener('pointercancel', onMeleeUp);
   melee.addEventListener('pointerleave', onMeleeUp);
   return () => {
+    layer.removeEventListener('contextmenu', noDefault);
+    layer.removeEventListener('selectstart', noDefault);
     melee.removeEventListener('pointerdown', onMelee);
     melee.removeEventListener('pointerup', onMeleeUp);
     melee.removeEventListener('pointercancel', onMeleeUp);

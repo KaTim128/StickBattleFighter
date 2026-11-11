@@ -1,7 +1,7 @@
 import { Container } from 'pixi.js';
 import { smoothing } from '../../animation/animator';
 import { attackPose } from '../../animation/attack-poses';
-import { blockPose, dashPose, flinchPose, KNOCKDOWN_TILT_RAD } from '../../animation/reaction-poses';
+import { blockPose, dashPose, flinchPose, getUpFrame, knockdownFrame } from '../../animation/reaction-poses';
 import { blendPose } from '../../animation/skeleton';
 import { addArenaColliders } from '../../arenas/arena-colliders';
 import { CameraShake } from '../../camera/camera-shake';
@@ -13,11 +13,13 @@ import type { CombatEvent } from '../../combat/events';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { GREYBOX_STICKMAN } from '../../data/fighters/greybox-stickman';
 import { TRAINING_DUMMY } from '../../data/fighters/training-dummy';
+import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
 import type { PlayerIntents } from '../../input/intents';
 import { stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
+import { DebrisView } from '../../rendering/debris-view';
 import { tallestPropM } from '../../rendering/prop-view';
 import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
@@ -50,6 +52,10 @@ export interface DummyState {
   hp: number;
   state: CombatState;
   attack: string | null;
+  /** Seconds on the floor (fall animation); 0 when standing. */
+  downTimeS: number;
+  /** 0..1 through getting up. */
+  getUpProgress: number;
 }
 
 /** Live camera state for the debug overlay and browser tests. */
@@ -67,11 +73,13 @@ export interface DoorState {
 
 const KNOCK_FLIGHT_S = 0.8;
 /** While flying from a heavy knockback a fighter slides further before stopping. */
-const KNOCK_FLIGHT_DECEL = 5;
+const KNOCK_FLIGHT_DECEL = 9; // was 5: knockdowns slid 10 m+, too far for the compact office
 /** Knockback at or above this speed counts as heavy (door-smashing) knockback. */
 const HEAVY_KNOCKBACK_MPS = 6;
 /** Sliding to a stop after a light knockback or while stunned. */
 const SETTLE_DECEL = 14;
+/** Durability a knocked-back body takes off a prop it crashes into, per unit of mass × speed. */
+const KNOCK_PROP_DAMAGE = 0.1;
 const HITSTOP_LIGHT_S = 0.05;
 const HITSTOP_HEAVY_S = 0.09;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
@@ -89,6 +97,11 @@ export class FightArenaScene implements ArenaScene {
   camera: FollowCamera | null = null;
   cameraState: CameraState | null = null;
   doors: BreakableDoor[] = [];
+  /** Furniture that moves or breaks when hit (owner, 11/11/2026). */
+  props: ArenaProps | null = null;
+  private debrisView: DebrisView | null = null;
+  /** Desk items that fell to the floor and now depth-sort as floor objects. */
+  private readonly grounded = new Set<number>();
   /** Practice option: the dummy jabs back when you are close (REQ-MOD-5). */
   dummyAttacks = false;
   readonly playerFighter: FighterEntity;
@@ -152,6 +165,8 @@ export class FightArenaScene implements ArenaScene {
       speed: Math.hypot(v.x, v.y),
       knockedBack: f.knockFlightS > 0,
       hp: f.combatant.hp,
+      downTimeS: f.combatant.downTimeS,
+      getUpProgress: f.combatant.getUpProgress,
       state: f.combatant.state,
       attack: f.combo.attack?.id ?? null,
     };
@@ -177,9 +192,11 @@ export class FightArenaScene implements ArenaScene {
     const arena = this.arena;
     const physics = new PhysicsWorld();
     this.physics = physics;
-    addArenaColliders(physics, arena);
+    addArenaColliders(physics, arena, false); // props get their own bodies: they move and break
+    this.props = new ArenaProps(arena, physics);
     this.doors = (arena.doors ?? []).map((spec) => new BreakableDoor(spec, physics));
     this.view = buildArenaView(arena);
+    this.debrisView = new DebrisView(this.view.actors);
     this.overlay = new Container();
     this.overlay.label = 'fighter-overlay';
     for (const f of this.fighters) f.attach(physics, this.view.actors, this.overlay);
@@ -227,6 +244,7 @@ export class FightArenaScene implements ArenaScene {
     this.controlDummy(this.dummyFighter, stepS);
     for (const f of this.fighters) this.checkDoorImpact(f, stepS);
     for (const door of this.doors) door.update(stepS);
+    this.props?.update(stepS);
 
     for (const f of this.fighters) {
       Object.assign(f.prev, f.curr);
@@ -417,6 +435,18 @@ export class FightArenaScene implements ArenaScene {
       }
     }
 
+    // Furniture: moves or breaks depending on its durability.
+    const props = this.props?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
+      blow: a.blow === 'kick' ? 'kick' : 'strike',
+      damage: a.damage * attacker.def.stats.power,
+      strength: a.strength,
+      direction: { x: facing, y: 0 },
+    });
+    if (props && props.hit > 0) {
+      connected = true;
+      if (props.broke > 0) this.shake.addTrauma(0.35);
+    }
+
     if (connected) {
       attacker.hits++;
       this.shake.addTrauma(a.trauma);
@@ -424,7 +454,7 @@ export class FightArenaScene implements ArenaScene {
     }
   }
 
-  /** A fighter flying from a heavy knockback smashes a door it hits. */
+  /** A fighter flying from a heavy knockback smashes a door, and shoves or breaks furniture, that it hits. */
   private checkDoorImpact(f: FighterEntity, stepS: number): void {
     if (f.knockFlightS <= 0 || !f.body) return;
     const v = f.body.linvel();
@@ -432,13 +462,18 @@ export class FightArenaScene implements ArenaScene {
     if (speed === 0) return;
     const pos = f.body.translation();
     const reach = f.def.body.footRadiusM + speed * stepS + 0.05;
+    const strength = f.def.body.massKg * speed;
+    const direction = { x: v.x / speed, y: v.y / speed };
+    const props = this.props?.hitWhere((r) => circleTouchesRect(pos, reach, r), {
+      blow: 'knockback',
+      damage: strength * KNOCK_PROP_DAMAGE,
+      strength,
+      direction,
+    });
+    if (props && props.broke > 0) this.shake.addTrauma(0.35);
     for (const door of this.doors) {
       if (door.broken || !circleTouchesRect(pos, reach, door.spec)) continue;
-      const broke = door.applyImpact({
-        kind: 'knockback',
-        strength: f.def.body.massKg * speed,
-        direction: { x: v.x / speed, y: v.y / speed },
-      });
+      const broke = door.applyImpact({ kind: 'knockback', strength, direction });
       if (broke) {
         this.shake.addTrauma(0.75);
         this.shake.punch(0.08);
@@ -455,6 +490,7 @@ export class FightArenaScene implements ArenaScene {
       const view = this.view.doors.get(door.spec.id);
       if (door.broken && view) view.showBroken(door.pieces, (node) => this.view?.actors.add(node, 0));
     }
+    this.renderProps();
     this.view.actors.update();
 
     // Frame the player and the dummy (aiming at torsos), then apply impact shake.
@@ -491,6 +527,38 @@ export class FightArenaScene implements ArenaScene {
     };
   }
 
+  /** Moving props follow their bodies; broken ones are replaced by their pieces; fallen desk items lie on the floor. */
+  private renderProps(): void {
+    const view = this.view;
+    if (!view || !this.props) return;
+    for (const prop of this.props.props) {
+      const node = view.props.get(prop.index);
+      if (!node) continue;
+      if (prop.broken) {
+        node.visible = false;
+        continue;
+      }
+      const pose = prop.pose;
+      node.position.set(pose.x, pose.y);
+      node.rotation = pose.angle;
+      if (prop.looseFall) {
+        // The drawing has its desk height built in: drop it to the current fall height.
+        node.pivot.y = prop.looseFall.heightM - (prop.placement.elevationM ?? 0);
+        if (!this.grounded.has(prop.index)) {
+          this.grounded.add(prop.index);
+          view.actors.remove(node);
+          view.actors.add(node, 0);
+        }
+      }
+    }
+    this.debrisView?.sync(this.props.debris.pieces);
+  }
+
+  /** Props for tests and the debug hook. */
+  get propStates(): PropState[] {
+    return this.props?.states ?? [];
+  }
+
   /** Pose, reactions, knockdown tilt and bars for one fighter; returns its drawn position. */
   private renderFighter(f: FighterEntity, alpha: number, frameDtS: number): { x: number; y: number } {
     const x = f.prev.x + (f.curr.x - f.prev.x) * alpha;
@@ -502,14 +570,14 @@ export class FightArenaScene implements ArenaScene {
     const down = c.state === 'knockdown' || c.state === 'ko';
 
     let pose = f.animator.update(frameDtS, {
-      speedMps: down || c.state === 'stunned' ? 0 : Math.hypot(v.x, v.y),
+      speedMps: down || c.state === 'stunned' || c.state === 'gettingUp' ? 0 : Math.hypot(v.x, v.y),
       maxSpeedMps: f.def.movement.maxSpeedMps,
       heightM,
       peakHeightM: this.peakHopM,
       verticalSpeedMps: f.hop.verticalSpeedMps,
     });
     const attack = f.combo.attack;
-    if (attack) pose = attackPose(pose, attack, f.combo.progress);
+    if (attack) pose = attackPose(pose, attack, f.combo.progress, f.combo.variant);
 
     // Reactions blend in and out smoothly.
     const reaction =
@@ -520,9 +588,22 @@ export class FightArenaScene implements ArenaScene {
       const fn = f.lastReaction === 'block' ? blockPose : f.lastReaction === 'flinch' ? flinchPose : dashPose;
       pose = blendPose(pose, fn(pose), f.reactWeight);
     }
-    f.tilt += ((down ? KNOCKDOWN_TILT_RAD : 0) - f.tilt) * smoothing(down ? 16 : 7, frameDtS);
+    // Falling, lying and getting up are keyed animations (owner, 11/11/2026); tilt is smoothed so a KO from any pose blends in.
+    let lift = 0;
+    let tiltTarget = 0;
+    const frame = down
+      ? knockdownFrame(pose, c.downTimeS)
+      : c.state === 'gettingUp'
+        ? getUpFrame(pose, c.getUpProgress)
+        : null;
+    if (frame) {
+      pose = frame.pose;
+      tiltTarget = frame.tiltRad;
+      lift = frame.liftM;
+    }
+    f.tilt += (tiltTarget - f.tilt) * smoothing(frame ? 40 : 12, frameDtS);
 
-    f.view.draw(pose, f.facing, heightM, f.tilt);
+    f.view.draw(pose, f.facing, heightM + lift, f.tilt);
     f.view.root.position.set(x, y);
     f.bars?.draw(
       x,
@@ -557,5 +638,9 @@ export class FightArenaScene implements ArenaScene {
     this.physics = null;
     this.camera = null;
     this.doors = [];
+    this.props = null;
+    this.debrisView?.destroy();
+    this.debrisView = null;
+    this.grounded.clear();
   }
 }

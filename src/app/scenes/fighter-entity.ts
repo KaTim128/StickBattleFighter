@@ -1,7 +1,7 @@
 import type { RigidBody } from '@dimforge/rapier2d';
 import type { Container } from 'pixi.js';
 import { StickmanAnimator } from '../../animation/animator';
-import { Combatant } from '../../combat/combatant';
+import { Combatant, seededRandom } from '../../combat/combatant';
 import { ComboController } from '../../combat/combo';
 import type { FighterDef } from '../../data/fighters/fighter-def';
 import { type HopState, isAirborne } from '../../physics/movement';
@@ -49,7 +49,7 @@ export class FighterEntity {
     readonly showStamina: boolean,
   ) {
     this.combatant = new Combatant(def.stats);
-    this.combo = new ComboController(def.attacks);
+    this.combo = new ComboController(def.attacks, seededRandom(name.length * 7919 + 17));
     this.animator = new StickmanAnimator(def.bones);
   }
 
