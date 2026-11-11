@@ -114,6 +114,17 @@ Selected stack (TD-021, after the switch to 2D): TypeScript + Vite, **PixiJS 8**
 | REQ-ENV-5 | Readable for combat; performance-aware. |
 | REQ-ENV-6 | Greybox assets recorded separately from final art. |
 
+### 5.2a Office layout and breakable door (owner, 11/11/2026)
+
+| ID | Requirement |
+|---|---|
+| REQ-ENV-8 | Main office floor with **12 cubicles: 6 on each side** of a central aisle. |
+| REQ-ENV-9 | A separate **boss room** with an **executive desk, a boss chair behind it and a visitor chair opposite**. Each room has its own look (floor, walls, decor). |
+| REQ-ENV-10 | The camera follows smoothly between rooms, keeping active characters in view, with **no hard cuts**. |
+| REQ-ENV-11 | The rooms are joined by a **closed door that blocks the way**. Walking or normal movement never opens it. It **only breaks** (shatters violently, clearing the path) when a fighter lands a **kick** or a **heavy-impact knockback attack** against it. Implemented as: kick, combo finisher (heavy strike) or a body knocked into it, at ≥ the door's break strength. |
+
+Design sheet: `docs/design/arenas/office.md`.
+
 ### 5.3 Future arenas `[PB §12 Phase 15, §14.4]`
 
 REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local obstacles, throwable objects and material responses.
@@ -126,6 +137,7 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 |---|---|
 | REQ-PHY-1 | Reusable 2D top-down character controller (circle or capsule body on the floor plane). |
 | REQ-PHY-2 | Free movement in all directions with acceleration, deceleration, facing direction, running, obstacles and **jumping as a short hop** (airborne height with a ground shadow; the player is airborne for a moment and avoids ground-level hits). There is no gravity in the floor plane, and no slopes or stairs. *(3D gravity, slopes and stairs superseded: SUP-04.)* |
+| REQ-PHY-2a | **Higher jump (owner, 11/11/2026):** the jump clearly separates the fighter from the floor (peak about 1 m, about 0.65 s airtime), with a distinct **jump stance**: rising (lead knee driven up) and falling (legs tucked, arms out), plus a landing dip. |
 | REQ-PHY-3 | Friction, knockback, and per-fighter weight and mobility values. |
 | REQ-PHY-4 | Collision layers, rigid bodies, camera collision, navigation integration, physics performance. |
 
@@ -245,6 +257,10 @@ No numeric values were supplied (OQ-05).
 | REQ-CMB-8 | Combos: fighters may have combo chains; timed combo windows are an optional pattern to evaluate (§2.2). | [PB §4.2, §4.4] |
 | REQ-CMB-9 | Fighter values data-driven; no fighter-specific branches in the shared engine where data or components fit. | [PB §8.5] |
 | REQ-CMB-10 | Unit and integration tests for every combat rule changed: hits, misses, blocks, dodges, interruptions, cooldowns, stamina, knockback. | [PB §8.5, §15] |
+| REQ-CMB-12 | **1-2-3 combo (owner, 11/11/2026):** repeated Button 1 presses on the ground flow **left jab → right hook → heavy final strike**, seamlessly. Stop pressing and it resets. |
+| REQ-CMB-13 | The **third strike is a heavy-impact finisher** with **strong knockback** (and camera shake and zoom punch). |
+| REQ-CMB-14 | **Aerial attack:** Button 1 while airborne performs a **flying kick** (once per jump) that blends with the jump and **can smash the boss door**. |
+| REQ-CMB-15 | Strikes hit along their whole path (capsule from the body to full reach), not only at the fist. |
 | REQ-CMB-11 | Pairwise combat and ability regression tests across fighters. | [PB §12 Phase 8–9] |
 
 ## 10. Abilities
@@ -270,7 +286,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ANI-4 | Animation events (for example hit-frame timing) are coordinated with the combat system. |
 | REQ-ANI-5 | 2D asset pipeline (TD-022, proposed): fighters as crisp vector stick figures drawn in code with 2D skeletal (bone) animation defined as data; effects as particles and sprites; environment props as 2D top-down art. *(Blender and glTF superseded: SUP-04.)* |
 | REQ-ANI-6 | **Jointed fighters (owner, 10/11/2026):** every fighter has a 2D skeleton with real joints: pelvis, spine (lower and upper), neck, head; shoulder → **elbow** → hand; hip → **knee** → foot on both sides. Attacks, kicks and movement are animated by rotating these joints with eased curves (anticipation, snap, follow-through, settle), so motion feels smooth and natural, never stiff. Blending between animations is joint by joint. | [OWNER 10/11/2026] [TD-022] |
-| REQ-ANI-7 | **Unique body language per fighter (owner, 10/11/2026):** every fighter has its **own idle stance** (including a breathing or ready loop), its **own movement style** (walk, run, strafe, turn, start and stop) and its **own attack animations** for melee, all three abilities and the ultimate, plus distinct hit reactions where practical. No two fighters share these animations; only the skeleton system is shared. **Fighting stance at all times (owner, 11/11/2026):** idle and every movement animation keep a fighting posture (guard up near the chin, knees bent, staggered feet, torso engaged); never a casual walk with loose swinging arms. Each fighter's stance and footwork style is still its own. Direction (to be designed per fighter, not final): Inferno = bouncy, restless boxer stance with flickering energy; Shadowfang = low crouch, prowling lope, claw-ready hands; Ronin = calm, centred sword stance, smooth gliding steps; Titan = wide, heavy planted stance, slow stomping gait with weight shift; Phantom = upright floating hover, drifting glide, hands weaving magic. | [OWNER 10/11/2026] |
+| REQ-ANI-7 | **Unique body language per fighter (owner, 10/11/2026):** every fighter has its **own idle stance** (including a breathing or ready loop), its **own movement style** (walk, run, strafe, turn, start and stop) and its **own attack animations** for melee, all three abilities and the ultimate, plus distinct hit reactions where practical. No two fighters share these animations; only the skeleton system is shared. **Fighting stance at all times (owner, 11/11/2026):** idle and every movement animation keep a fighting posture (guard up near the chin, knees bent, staggered feet, torso engaged); never a casual walk with loose swinging arms. Each fighter's stance and footwork style is still its own. **Unarmed default (owner, 11/11/2026): a slightly bent, boxer-like stance** (`BOXER_STANCE`); armed fighters get weapon-specific stances (chosen by the fighter's `weapon` field). Direction (to be designed per fighter, not final): Inferno = bouncy, restless boxer stance with flickering energy; Shadowfang = low crouch, prowling lope, claw-ready hands; Ronin = calm, centred sword stance, smooth gliding steps; Titan = wide, heavy planted stance, slow stomping gait with weight shift; Phantom = upright floating hover, drifting glide, hands weaving magic. | [OWNER 10/11/2026] |
 
 ### 11.2 Presentation quality targets (from the owner's videos) `[PB §4.5]` `[REF-VIDEO]`
 
@@ -439,6 +455,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | Date | Change | By |
 |---|---|---|
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |
+| 11/11/2026 | Owner requests: office layout with 12 cubicles, boss room and breakable door (REQ-ENV-8..11); higher jump with jump stance (REQ-PHY-2a); 1-2-3 combo, heavy finisher, flying kick, capsule hits (REQ-CMB-12..15); unarmed boxer stance as default (REQ-ANI-7). | Master Developer |
 | 11/11/2026 | REQ-ANI-7 extended: fighting stance at all times when idle or moving (owner). | Master Developer |
 | 10/11/2026 | Added REQ-ANI-7: unique idle stance, movement style and attack animations per fighter (owner). | Master Developer |
 | 10/11/2026 | Added REQ-ANI-6: jointed 2D skeletons with elbows and knees for smooth, natural attacks (owner). | Master Developer |

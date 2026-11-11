@@ -18,7 +18,7 @@ const camera = (page: Page) => page.evaluate(() => (window as DebugWindow).__sti
 async function open(page: Page, errors: string[]) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-  await page.goto('/');
+  await page.goto('/?scene=training-yard');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   expect(await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.scene)).toBe('training-yard');
 }

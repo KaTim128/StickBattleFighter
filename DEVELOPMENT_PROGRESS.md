@@ -6,8 +6,8 @@ Persistent record of project state. Update after every meaningful piece of work 
 
 | Item | Value |
 |---|---|
-| Current phase | **Phase 3: camera: COMPLETE** (11/11/2026) |
-| Next milestone | **Phase 4:** office arena (greybox) |
+| Current phase | **Phase 4: office arena: COMPLETE**, plus owner-requested early combat (11/11/2026) |
+| Next milestone | **Phase 5:** rest of the combat engine (health and damage, block, dodge, stamina, hit reactions) |
 | Branch | `ccr-6b7ad8fe-whr1i5` |
 | Latest commit | see `git log -1` |
 | Runnable game | `npm run dev`: **training yard**, where a jointed greybox stickman walks and hops freely (keyboard or touch) with a follow camera. `?scene=engine-check` opens the physics test. No combat yet. |
@@ -198,6 +198,31 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 3. Several of my tests had wrong assumptions: wide screens fit side-by-side fighters without zooming; the player carried momentum past the dummy's row; a pillar blocked the walk-up path; slow CI rendering means fixed-time key holds move the fighter less. All were fixed in the tests (position- and distance-based waits), not by weakening the game.
 **Evidence (11/11/2026):** lint, typecheck and build clean; `npm test` 92/92; `npm run e2e` 11 passed (with one earlier flaky failure, now on watch; see the checklist).
 
+### 11/11/2026: Phase 4 office arena plus owner-requested combat, jump and stance (Master Developer; no specialists used, per TD-019)
+**Owner requests in this round:**
+1. Office with 12 cubicles (6 per side), a distinct boss room, a smooth camera between rooms, and a door that only breaks from a kick or a heavy knockback.
+2. A higher jump with its own jump stance.
+3. A 1-2-3 combo (jab, hook, heavy finisher with strong knockback) and an aerial flying kick that can smash the door.
+4. A slightly bent boxer stance as the unarmed default.
+
+**My first office draft** (open plan, meeting room, storage and break area) was replaced by the owner's layout before completion.
+
+**Delivered:** see TD-028, TD-029, `docs/design/arenas/office.md`, and spec REQ-ENV-8..11, REQ-PHY-2a, REQ-CMB-12..15 and REQ-ANI-7. The default scene is now the office (`?scene=training-yard`, `?scene=engine-check`, `?overview`).
+
+**Issues found and fixed (honest record):**
+1. A slicing edit corrupted the scene file; it was rewritten from source.
+2. Overlapping glass partitions at a corner (caught by a layout test; draft layout).
+3. The jab and hook pushed the dummy out of the finisher's reach (found in browser capture: 2 hits instead of 3). Retuned, and a standing-still three-hit test added.
+4. A longer finisher reach missed a door the fighter stood against. Fixed by switching to capsule hit areas, with tests.
+5. The hook pose did not read as a hook (frame-by-frame render); reworked.
+6. The boxer stance at 0.68 m hips locked the rear knee at full stride (test); hips set to 0.67 m.
+7. **Phase 3 camera e2e flakiness solved:** the test overshot the 16 m framing range under slow rendering, so the camera correctly stopped framing the dummy. The test now releases keys in a tight loop and asserts the real rule; it passed 3/3 alone and the suite passed 3/3 full runs.
+8. A browser capture issue: slow high-resolution screenshots pause the game, so combo presses lost their timing. Assertions moved into e2e tests with no screenshots between presses.
+
+**Evidence (11/11/2026):** lint clean (84 files); typecheck 0; `npm test` **127/127**; build clean; `npm run e2e` **14/14** in 3 consecutive full runs. Visuals inspected: office overview, boss room, boxer stance, the three combo strikes and the flying kick (frame-by-frame pose renders), jump rise, door before and after.
+
+**Live preview:** GitHub Pages deploy #2 succeeded on 11/11/2026 (Phase 3 build). It is redeployed with this build after the push. This session's network blocks `github.io`, so the live URL could not be opened from here.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
@@ -213,7 +238,6 @@ Full list in spec §21. Still open:
 - Documentation limitation: numeric gameplay and economy values are absent from the source material (spec §21).
 
 ## Outstanding tasks (next)
-1. GitHub CI (checked 11/11/2026): Phase 1 `6838a26` **passed** (with the lint step); Phase 2 `876a44f` **passed**; fighting stance `4f65fb9` **passed**. Wide stance `bfb30ab`: check on the next session.
-2. **Phase 3: camera completion.** Auto-zoom so all fighters stay framed (within zoom limits, REQ-CAM-2), a shake and zoom-punch service for impacts (REQ-CAM-4), stability tests. Needs a second body to frame, so it pairs naturally with a training dummy.
-3. **Phase 4: office arena** (greybox), following the `/new-arena` skill.
-4. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.
+1. Check GitHub CI and the Pages redeploy for this push.
+2. **Phase 5: combat engine.** Health and damage, hit reactions (flinch, knockdown), block (hold Button 1), dodge (flick or Shift), stamina, and counters, building on TD-029. Needs **OQ-05** (stat, stamina and damage baselines); defaults can be proposed for approval.
+3. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.

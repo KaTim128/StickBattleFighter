@@ -11,10 +11,10 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 | 1 | Rendering, physics, main loop, asset pipeline, scenes | 0 | Rendering, Physics | — | ☑ |
 | 2 | Player character, free top-down movement (up/down/left/right), hop, collision | 1 | Physics | — | ☑ |
 | 3 | Top-down camera (follow, auto-zoom framing, shake) | 2 | Rendering | — | ☑ |
-| 4 | Office arena (greybox → readable) | 1, 2 ∥3 | Rendering, Physics | — | ☐ |
-| 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-05 | ☐ |
+| 4 | Office arena (greybox → readable) | 1, 2 ∥3 | Rendering, Physics | — | ☑ (owner layout: 12 cubicles, boss room, breakable door) |
+| 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-05 | ◐ (Button 1 combo, flying kick, knockback and hit detection done early, TD-029) |
 | 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-04, OQ-05 | ☐ |
-| 7 | Object interaction: pickup, carry, throw, material, destruction | 4, 5 | Physics, Combat | OQ-12 | ☐ |
+| 7 | Object interaction: pickup, carry, throw, material, destruction | 4, 5 | Physics, Combat | OQ-12 | ◐ (breakable door done; prop materials recorded) |
 | 8 | First fully polished fighter + asset pipeline | 6, 7 | Character, Animation, Rendering | OQ-16 | ☐ |
 | 9 | Inferno, Shadowfang, Ronin, Titan, Phantom roster | 8 | Character, Animation, Combat | OQ-05 | ☐ |
 | 10 | AI opponents, personalities, navigation, Practice Zone | 5, 6, 7 ∥9 | AI | — | ☐ |

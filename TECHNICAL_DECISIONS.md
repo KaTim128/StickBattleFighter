@@ -32,6 +32,8 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 | TD-025 | Scene lifecycle, asset loader, debug overlay, y-sorting | ACCEPTED (Phase 1) | 11/11/2026 |
 | TD-026 | Fighter movement: velocity-driven dynamic body, procedural jointed animation | ACCEPTED (Phase 2) | 11/11/2026 |
 | TD-027 | Camera framing, speed caps and trauma-based shake | ACCEPTED (Phase 3) | 11/11/2026 |
+| TD-028 | Arenas as data: prop catalogue, rooms, interior walls, breakable doors, collision groups | ACCEPTED (Phase 4) | 11/11/2026 |
+| TD-029 | Early Button 1 combat: data-driven attacks, combo controller, capsule hits | ACCEPTED (owner-requested, ahead of Phase 5) | 11/11/2026 |
 
 ---
 
@@ -205,6 +207,23 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Smoothing** (`FollowCamera`): position eases at rate 6, zoom at rate 3, plus hard caps of **15 m/s pan and 6 m/s zoom**. Tests showed that easing alone moved the view up to 0.5 m and zoomed 0.22 m in a single frame when a fighter was suddenly knocked far away, which reads as a jolt.
 - **Shake** (`src/camera/camera-shake.ts`): trauma 0..1 (added by impacts, decays at 1.6/s), offset = 0.45 m × trauma² along smooth layered waves (no random jumps), plus a zoom punch that settles exponentially. It returns exactly to rest. Combat will call `addTrauma` and `punch`; until then the debug key **P** (only while the debug overlay is on) fires a test impact.
 - **Training dummy** (`src/data/fighters/training-dummy.ts`): a grey greybox stickman, 140 kg, which eases to a stop after being shoved and faces the player. It exists as something to frame and push; Practice Zone dummy options are Phase 10.
+
+### TD-028: Arenas as data — ACCEPTED (11/11/2026)
+- `ArenaLayout` (`src/data/arenas/arena-layout.ts`): size, walls, windows, **props**, **floor zones** (rooms with their own floor and wall colours), **interior walls** and **doors**. One scene (`FightArenaScene`) plays any layout; the training yard and the office both use it.
+- **Prop catalogue** (`src/data/objects/props.ts`): size, height, solidity, material, mass, durability, movable, throwable and decal per kind. Phase 4 props are static; Phase 7 uses the recorded material data. An exhaustive `switch` in `prop-view.ts` makes a missing drawing a type error.
+- **Depth:** desk items carry `elevationM` and `sortY` so they draw on top of their desk; long walls and doors are drawn in 0.5 m blocks so fighters beside them sort correctly.
+- **Navigation grid** (`src/arenas/navigation.ts`): walkable cells for a fighter's radius, with doors open or closed, and connected regions. It proves reachability now and is the basis for AI navigation (Phase 10).
+- **Breakable door** (`src/environment/breakable-door.ts`): `impactBreaksDoor` is the pure rule (`contact` never; `kick`, `strike` or `knockback` at ≥ breakStrength). Breaking removes the collider and spawns 7 splinters.
+- **Collision groups:** WORLD, FIGHTER and DEBRIS. Splinters collide with walls and each other, never with fighters, so the doorway is truly clear.
+- `respawnDummy()` puts the dummy back at rest (the Practice Zone needs this; tests use it to isolate cases).
+
+### TD-029: Early Button 1 combat — ACCEPTED (owner-requested ahead of Phase 5)
+- **Attacks are data** (`AttackDef` in each fighter's data): wind-up, active and recovery times, chain point, reach, hit radius, strength, knockback speed, movement factor, lunge, camera trauma and zoom punch.
+- **`ComboController`** (`src/combat/combo.ts`): the ground string jab → hook → heavy, with presses buffered during an attack and chaining at the chain point. In the air it does one flying kick per jump. The hit fires exactly once per attack, even if a slow frame skips the active window.
+- **Capsule hit area** from 0.15 m in front of the body out to full reach (`hitCapsule`). Found necessary when a longer finisher reach overshot a door the fighter stood against.
+- **Tuning found in playtesting:** jab and hook only nudge (knockback 1.5 and 2.5 m/s, fast settle), so the finisher (reach 1.0 m, knockback 11 m/s) connects when standing still. Earlier values pushed the dummy out of range.
+- **Attack animation** (`src/animation/attack-poses.ts`): each attack overrides only the joints it uses, moving through chamber, then snap, then return, on top of the current stance or jump pose.
+- **Not yet built (Phase 5–6):** damage and health, block (hold Button 1), dodge, stamina, abilities, hit reactions.
 
 ## Unresolved technical questions
 - Performance budgets (OQ-10).

@@ -1,9 +1,12 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { TrainingYardScene } from '../../../src/app/scenes/training-yard-scene';
+import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { DEFAULT_FRAMING, visibleSize } from '../../../src/camera/framing';
 import { SceneManager } from '../../../src/core/scene';
-import { TRAINING_YARD_DUMMY_START } from '../../../src/data/arenas/training-yard';
+import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
+
+const TRAINING_YARD_DUMMY_START = TRAINING_YARD.dummyStart;
+
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
 
@@ -13,7 +16,7 @@ const VIEW = { width: 1280, height: 720 };
 async function setup() {
   const stage = new Container();
   const intents = new PlayerIntents();
-  const scene = new TrainingYardScene(stage, intents, () => VIEW);
+  const scene = new FightArenaScene(TRAINING_YARD, stage, intents, () => VIEW);
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
   const run = (seconds: number) => {
@@ -30,7 +33,7 @@ async function setup() {
 }
 
 /** Is a world point inside the current camera view? */
-function onScreen(scene: TrainingYardScene, p: { x: number; y: number }): boolean {
+function onScreen(scene: FightArenaScene, p: { x: number; y: number }): boolean {
   const cam = scene.cameraState!;
   const { w, h } = visibleSize(cam.shortSideM, VIEW.width, VIEW.height);
   return Math.abs(p.x - cam.x) <= w / 2 && Math.abs(p.y - cam.y) <= h / 2;

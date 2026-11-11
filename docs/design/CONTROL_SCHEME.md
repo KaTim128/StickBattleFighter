@@ -61,6 +61,10 @@ Two presets. All keys can be rebound, with conflict prevention and reset to defa
 
 On desktop, jump has its own key (Space) because keys are plentiful. The contextual pick up and throw moves to G or U, so you can jump while standing next to an object.
 
+## 4a. Live now (11/11/2026)
+- **Button 1** works: J or left click on desktop, the **MELEE** button on touch. Ground: 1-2-3 combo (jab → hook → heavy finisher); in the air: flying kick. Hold-to-block arrives with Phase 5.
+- **Jump:** Space or the JUMP button. Buttons 2–5 (abilities and ultimate) arrive with Phase 6.
+
 ## 5. Intent model (contract for Phase 2)
 
 Devices map to these intents, which are all gameplay sees:

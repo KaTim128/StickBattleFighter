@@ -12,6 +12,8 @@ export const MOVE_KEYS: Readonly<Record<string, Vec2>> = {
   ArrowRight: { x: 1, y: 0 },
 };
 export const JUMP_KEYS: ReadonlySet<string> = new Set(['Space']);
+/** Button 1 melee: J (both presets); left mouse button is handled in attachMouse. */
+export const MELEE_KEYS: ReadonlySet<string> = new Set(['KeyJ']);
 
 /** Movement vector from the set of held key codes (opposite keys cancel; length ≤ 1). */
 export function moveFromKeys(held: ReadonlySet<string>): Vec2 {
@@ -40,6 +42,10 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
       if (!e.repeat) intents.pressJump();
       return;
     }
+    if (MELEE_KEYS.has(e.code)) {
+      if (!e.repeat) intents.pressMelee();
+      return;
+    }
     if (e.code in MOVE_KEYS) {
       held.add(e.code);
       sync();
@@ -61,4 +67,13 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
     target.removeEventListener('keyup', up);
     target.removeEventListener('blur', blur);
   };
+}
+
+/** Keyboard + mouse preset: left click = melee (CONTROL_SCHEME §4). Touch is handled by the touch controls. */
+export function attachMouse(target: HTMLElement, intents: PlayerIntents): () => void {
+  const down = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' && e.button === 0) intents.pressMelee();
+  };
+  target.addEventListener('pointerdown', down);
+  return () => target.removeEventListener('pointerdown', down);
 }

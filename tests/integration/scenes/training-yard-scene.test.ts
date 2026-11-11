@@ -1,6 +1,6 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { TrainingYardScene } from '../../../src/app/scenes/training-yard-scene';
+import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { GREYBOX_STICKMAN } from '../../../src/data/fighters/greybox-stickman';
@@ -14,7 +14,7 @@ const MAX = GREYBOX_STICKMAN.movement.maxSpeedMps;
 async function setup() {
   const stage = new Container();
   const intents = new PlayerIntents();
-  const scene = new TrainingYardScene(stage, intents, () => ({ width: 1280, height: 720 }));
+  const scene = new FightArenaScene(TRAINING_YARD, stage, intents, () => ({ width: 1280, height: 720 }));
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
   const run = (seconds: number) => {
@@ -70,7 +70,7 @@ describe('TrainingYardScene: free top-down movement (Phase 2)', () => {
     expect(scene.player.x - xBefore).toBeGreaterThan(1); // slides along instead of sticking
     intents.setMove('test', { x: 1, y: 0 });
     run(8); // all the way to the right wall
-    expect(scene.player.x).toBeLessThanOrEqual(TRAINING_YARD.arenaWidthM - R + 0.02);
+    expect(scene.player.x).toBeLessThanOrEqual(TRAINING_YARD.widthM - R + 0.02);
     scenes.clear();
   });
 
@@ -79,9 +79,9 @@ describe('TrainingYardScene: free top-down movement (Phase 2)', () => {
     // Start (15, 10) → walk up to y = 4.5, the pillar at (15, 4.5) sits in the way.
     intents.setMove('test', { x: 0, y: -1 });
     run(3);
-    const pillar = TRAINING_YARD.pillars[1]!;
-    expect(pillar).toEqual({ x: 15, y: 4.5 });
-    expect(scene.player.y).toBeGreaterThan(pillar.y + TRAINING_YARD.pillarFootprintHalf.y + R - 0.03);
+    const pillar = TRAINING_YARD.props[1]!;
+    expect(pillar).toEqual({ kind: 'pillar', x: 15, y: 4.5 });
+    expect(scene.player.y).toBeGreaterThan(pillar.y + 0.64 / 2 + R - 0.03);
     scenes.clear();
   });
 

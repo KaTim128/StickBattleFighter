@@ -46,8 +46,22 @@ export class PlayerIntents {
     return queued;
   }
 
+  private meleeQueued = false;
+
+  /** Button 1 (melee). Latched like jump so quick taps are never lost. */
+  pressMelee(): void {
+    this.meleeQueued = true;
+  }
+
+  consumeMelee(): boolean {
+    const queued = this.meleeQueued;
+    this.meleeQueued = false;
+    return queued;
+  }
+
   clear(): void {
     this.sources.clear();
     this.jumpQueued = false;
+    this.meleeQueued = false;
   }
 }

@@ -3,6 +3,8 @@ import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
+import { OFFICE } from '../data/arenas/office';
+import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { onDebugImpact, onDebugToggle } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard } from '../input/keyboard';
@@ -13,7 +15,7 @@ import { createTextureLoader } from '../rendering/pixi-assets';
 import { createRenderSurface } from '../rendering/renderer';
 import type { ArenaScene } from './scenes/arena-scene';
 import { EngineCheckScene } from './scenes/engine-check-scene';
-import { type CameraState, type PlayerState, TrainingYardScene } from './scenes/training-yard-scene';
+import { type CameraState, type DoorState, FightArenaScene, type PlayerState } from './scenes/fight-arena-scene';
 
 /** Read-only hook used by the browser tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
@@ -24,7 +26,8 @@ export interface EngineDebugInfo {
   crate: { x: number; y: number; speed: number } | null;
   player: PlayerState | null;
   camera: CameraState | null;
-  dummy: { x: number; y: number; speed: number } | null;
+  dummy: { x: number; y: number; speed: number; knockedBack: boolean } | null;
+  doors: DoorState[];
   assetFailures: { url: string; message: string }[];
   debugOverlay: { enabled: boolean; segments: number; fps: number };
   /** Render now and return the RGBA of the pixel at fractional canvas coords (0..1, top-left origin). */
@@ -65,21 +68,28 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const fps = new FpsMeter();
   const scenes = new SceneManager({ onError: (name, error) => console.error(`[scene:${name}]`, error) });
 
-  // Default: the Phase 2 training yard. `?scene=engine-check` opens the Phase 0/1 engine check.
+  // Default: the office arena (Phase 4). `?scene=training-yard` opens the movement/camera test yard;
+  // `?scene=engine-check` opens the Phase 0/1 engine check. `?overview` shows a whole arena at once.
   // `?missingAssetTest` (engine check) requests a texture that does not exist, to prove it cannot crash the game.
-  const sceneName = params.get('scene') ?? 'training-yard';
+  const sceneName = params.get('scene') ?? 'office';
   const optionalTextures = params.has('missingAssetTest') ? ['assets/does-not-exist.png'] : [];
   const scene: ArenaScene =
     sceneName === 'engine-check'
       ? new EngineCheckScene(app.stage, textures, viewport, optionalTextures)
-      : new TrainingYardScene(app.stage, intents, viewport);
+      : new FightArenaScene(
+          sceneName === 'training-yard' ? TRAINING_YARD : OFFICE,
+          app.stage,
+          intents,
+          viewport,
+          params.has('overview'),
+        );
   if (!(await scenes.switchTo(() => scene))) throw new Error(`${scene.name} scene failed to load`);
   scene.world?.addChild(overlay.colliderLayer);
 
   if (params.has('debug')) overlay.setVisible(true);
   onDebugToggle(window, () => overlay.toggle());
   onDebugImpact(window, () => {
-    if (overlay.enabled && scene instanceof TrainingYardScene) scene.debugImpact();
+    if (overlay.enabled && scene instanceof FightArenaScene) scene.debugImpact();
   });
 
   const debug: EngineDebugInfo = {
@@ -91,6 +101,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     player: null,
     camera: null,
     dummy: null,
+    doors: [],
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     readPixel(xFrac, yFrac) {
@@ -133,10 +144,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       debug.framesRendered++;
       debug.physicsSteps = physicsSteps;
       if (scene instanceof EngineCheckScene) debug.crate = scene.state.crate;
-      if (scene instanceof TrainingYardScene) {
+      if (scene instanceof FightArenaScene) {
         debug.player = { ...scene.player };
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = { ...scene.dummy };
+        debug.doors = scene.doorStates;
       }
       debug.debugOverlay = { enabled: overlay.enabled, segments: overlay.drawnSegments, fps: fps.fps };
     },
@@ -148,7 +160,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   status.textContent =
     assetFailures.length > 0
       ? `Stickman Arena · ${scene.name} · ${assetFailures.length} asset(s) failed to load (greybox shown)`
-      : scene.name === 'training-yard'
-        ? 'Stickman Arena · training yard (greybox) · move: WASD / arrows · jump: Space'
+      : scene instanceof FightArenaScene
+        ? `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · move: WASD / arrows · jump: Space · attack: J / click`
         : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
 }

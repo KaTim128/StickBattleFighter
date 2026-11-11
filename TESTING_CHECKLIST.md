@@ -39,6 +39,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: 11 passed (desktop and mobile; keyboard and touch tests skipped on the other platform by design). New: the camera zooms out to keep both fighters on screen within limits; debug **P** shakes and settles; **P** does nothing without the debug overlay.
 - [ ] **Flaky watch:** the "camera zooms out" e2e failed once in a full parallel run, then passed alone and in two further full runs. Suspected timing under CPU load; the exact failing assertion was not captured. Watch in CI; if it recurs, capture the error-context file.
 
+## 0f. Phase 4 office, combo and door (verified 11/11/2026)
+- [x] Lint, typecheck and build clean
+- [x] `npm test`: **127 tests**. Office layout (12 cubicles, 6 per side; boss-room arrangement; distinct looks; bounds; no solid overlaps; spawns; closed door = 2 regions, broken = 1; cubicles reachable; open aisle). Combo (single jab; jab → hook → heavy flow; finisher strongest; reset; no mash-through; flying kick once per jump; door strengths). Door rule (contact never; light strikes no; kick, heavy strike and heavy knockback yes). Capsule hits (whole path, facing side only). Boxer stance (slightly bent, staggered); jump stance (rise knee up, fall tucked). Office scene with real physics: walking never opens the door; jab and hook don't break it, the finisher does and the way is clear; the flying kick does; a knocked-back dummy does; three presses standing still land three hits; the camera follows into the boss room smoothly.
+- [x] `npm run e2e`: **14 passed** in 3 consecutive full runs. New: shoving the dummy against the door keeps it shut, the 1-2-3 combo smashes it, walk into the boss room, camera follows; jump peak > 0.8 m; the touch MELEE button throws the jab.
+- [ ] **Watch:** one earlier full run had a one-off mobile smoke-test failure that did not recur in later runs (cause not captured).
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

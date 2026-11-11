@@ -9,6 +9,14 @@ type Rapier = typeof RapierModule;
  * Axes match the screen: +x = right, +y = down (towards the viewer's side).
  */
 
+/**
+ * Collision groups (Rapier packs membership << 16 | filter). Two colliders
+ * touch only if each one's membership is in the other's filter.
+ * Door splinters hit walls and each other but never block fighters.
+ */
+export const GROUP = { WORLD: 0x1, FIGHTER: 0x2, DEBRIS: 0x4 } as const;
+const groups = (member: number, filter: number): number => (member << 16) | filter;
+
 let RAPIER: Rapier | null = null;
 let initPromise: Promise<void> | null = null;
 
@@ -66,7 +74,49 @@ export class PhysicsWorld {
     const body = this.world.createRigidBody(
       RAPIER.RigidBodyDesc.fixed().setTranslation(spec.position.x, spec.position.y),
     );
-    return this.world.createCollider(RAPIER.ColliderDesc.cuboid(spec.halfExtents.x, spec.halfExtents.y), body);
+    return this.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(spec.halfExtents.x, spec.halfExtents.y).setCollisionGroups(
+        groups(GROUP.WORLD, 0xffff),
+      ),
+      body,
+    );
+  }
+
+  /** Remove a static collider and its body (e.g. a door that has broken). */
+  removeStatic(collider: RapierModule.Collider): void {
+    const body = collider.parent();
+    this.world.removeCollider(collider, true);
+    if (body) this.world.removeRigidBody(body);
+  }
+
+  /** A small flying piece (door splinter): collides with walls and other debris only. */
+  addDebris(spec: {
+    position: Vec2;
+    halfExtents: Vec2;
+    velocity: Vec2;
+    spin: number;
+    massKg: number;
+  }): RapierModule.RigidBody {
+    const RAPIER = rapier();
+    const body = this.world.createRigidBody(
+      RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(spec.position.x, spec.position.y)
+        .setLinvel(spec.velocity.x, spec.velocity.y)
+        .setAngvel(spec.spin)
+        .setLinearDamping(2.2)
+        .setAngularDamping(2.5)
+        .setCcdEnabled(true),
+    );
+    const area = spec.halfExtents.x * spec.halfExtents.y * 4;
+    this.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(spec.halfExtents.x, spec.halfExtents.y)
+        .setDensity(spec.massKg / area)
+        .setRestitution(0.3)
+        .setFriction(0.4)
+        .setCollisionGroups(groups(GROUP.DEBRIS, GROUP.WORLD | GROUP.DEBRIS)),
+      body,
+    );
+    return body;
   }
 
   /** A dynamic box that slides, spins and bounces off walls. */
@@ -113,7 +163,8 @@ export class PhysicsWorld {
       RAPIER.ColliderDesc.ball(spec.radiusM)
         .setDensity(spec.massKg / area)
         .setFriction(0)
-        .setRestitution(0),
+        .setRestitution(0)
+        .setCollisionGroups(groups(GROUP.FIGHTER, GROUP.WORLD | GROUP.FIGHTER)),
       body,
     );
     return body;

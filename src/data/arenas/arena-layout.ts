@@ -1,0 +1,64 @@
+import type { PropPlacement } from '../objects/props';
+
+/**
+ * A playable arena as pure data (REQ-ARC-3). The floor spans
+ * (0,0)–(widthM, heightM); walls sit just outside it. +x = right, +y = down.
+ */
+export interface ArenaLayout {
+  readonly id: string;
+  readonly name: string;
+  readonly widthM: number;
+  readonly heightM: number;
+  readonly wallThicknessM: number;
+  readonly props: readonly PropPlacement[];
+  readonly playerStart: { readonly x: number; readonly y: number };
+  readonly dummyStart: { readonly x: number; readonly y: number };
+  /** Window strips along the top wall: start and end x in metres. */
+  readonly windows?: readonly { readonly x0: number; readonly x1: number }[];
+  readonly look: {
+    readonly background: number;
+    readonly floor: number;
+    /** Floor grid or tile lines; null = none. */
+    readonly floorLines: number | null;
+    /** Spacing of floor lines in metres. */
+    readonly floorLineSpacingM: number;
+    readonly wall: number;
+    readonly wallEdge: number;
+  };
+  /** Greybox until final art (REQ-ENV-6). */
+  readonly greybox: boolean;
+  /** Areas with their own floor (e.g. a room with wood instead of carpet), drawn over the base floor. */
+  readonly floorZones?: readonly FloorZone[];
+  /** Solid walls inside the arena (rect, metres). Drawn as wall blocks and given colliders. */
+  readonly interiorWalls?: readonly Rect[];
+  /** Doors in gaps of the interior walls. */
+  readonly doors?: readonly DoorSpec[];
+}
+
+export interface Rect {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+}
+
+export interface FloorZone extends Rect {
+  readonly floor: number;
+  /** Line colour (tiles or planks); null = plain. */
+  readonly lines: number | null;
+  readonly lineSpacingM: number;
+  /** Planks run along x only (wood floor); otherwise a square tile grid. */
+  readonly planks?: boolean;
+  /** Wall colour for interior walls bordering this zone (rooms look different). */
+  readonly wall?: number;
+}
+
+/**
+ * A breakable door (owner request, 11/11/2026). Closed at the start and blocks
+ * the way; only a kick or a heavy knockback impact against it breaks it.
+ */
+export interface DoorSpec extends Rect {
+  readonly id: string;
+  /** Impact strength needed to break it (kick ≈ 600, a knocked-back dummy ≈ mass × speed). */
+  readonly breakStrength: number;
+}

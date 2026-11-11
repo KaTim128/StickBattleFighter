@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { StickmanAnimator } from '../../../src/animation/animator';
-import { AIR_POSE, idlePose, WALK_STRIDE_M, walkPose } from '../../../src/animation/greybox-motion';
+import {
+  AIR_FALL_POSE,
+  AIR_POSE,
+  AIR_RISE_POSE,
+  BOXER_STANCE,
+  idlePose,
+  stanceFor,
+  WALK_STRIDE_M,
+  walkPose,
+} from '../../../src/animation/greybox-motion';
 import { blendPose, legIk, type Pose, solveSkeleton } from '../../../src/animation/skeleton';
 import { GREYBOX_STICKMAN } from '../../../src/data/fighters/greybox-stickman';
 
@@ -35,13 +44,17 @@ describe('jointed skeleton (REQ-ANI-6)', () => {
     expect(s.head.y).toBeLessThan(s.pelvis.y); // head above hips (up the screen)
   });
 
-  it.each(samplePoses)('%s: guard is up, both fists near the chin, never hanging down', (_name, pose) => {
-    const s = solveSkeleton(pose, BONES);
-    for (const hand of [s.armFront[2], s.armBack[2]]) {
-      expect(hand.y).toBeLessThan(s.chest.y + 0.05); // at or above chest height
-      expect(hand.x).toBeGreaterThan(s.chest.x); // in front of the body
-    }
-  });
+  // The fighting stance applies whenever standing or moving; the jump has its own stance (owner request).
+  it.each(samplePoses.filter(([n]) => n !== 'air'))(
+    '%s: guard is up, both fists near the chin, never hanging down',
+    (_name, pose) => {
+      const s = solveSkeleton(pose, BONES);
+      for (const hand of [s.armFront[2], s.armBack[2]]) {
+        expect(hand.y).toBeLessThan(s.chest.y + 0.05); // at or above chest height
+        expect(hand.x).toBeGreaterThan(s.chest.x); // in front of the body
+      }
+    },
+  );
 
   it('fighting shuffle: feet stay staggered (lead foot ahead) and never cross at any point in the cycle', () => {
     for (let i = 0; i < 40; i++) {
@@ -73,6 +86,26 @@ describe('jointed skeleton (REQ-ANI-6)', () => {
         expect(Math.hypot(foot.x - hip.x, foot.y - hip.y)).toBeLessThan(straight - 0.012);
       }
     }
+  });
+
+  it('unarmed default is the boxer stance: knees only slightly bent, feet staggered', () => {
+    expect(stanceFor(null)).toBe(BOXER_STANCE);
+    const s = solveSkeleton(idlePose(0.35, BONES), BONES); // bounce at its highest point
+    const straight = BONES.thigh + BONES.shin;
+    const hip = -s.pelvis.y;
+    expect(hip).toBeGreaterThan(straight * 0.8); // slightly bent, not a deep crouch
+    expect(hip).toBeLessThan(straight - 0.08); // but clearly bent
+    expect(s.legFront[2].x - s.legBack[2].x).toBeGreaterThan(0.5);
+  });
+
+  it('jump has its own stance: rising drives the lead knee up; falling tucks both legs', () => {
+    const rise = solveSkeleton(AIR_RISE_POSE, BONES);
+    const fall = solveSkeleton(AIR_FALL_POSE, BONES);
+    const stand = solveSkeleton(idlePose(0, BONES), BONES);
+    // lead knee well above standing knee height (relative to the hips)
+    expect(rise.legFront[1].y - rise.pelvis.y).toBeLessThan(stand.legFront[1].y - stand.pelvis.y - 0.1);
+    for (const leg of [AIR_FALL_POSE.legFront, AIR_FALL_POSE.legBack]) expect(leg.bend).toBeLessThan(-1); // tucked
+    expect(fall.legFront[2].y).not.toBeCloseTo(rise.legFront[2].y, 2); // visibly different poses
   });
 
   it('blends joint by joint', () => {
