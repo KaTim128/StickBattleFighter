@@ -1,4 +1,4 @@
-import { expect, test, type ConsoleMessage } from '@playwright/test';
+import { type ConsoleMessage, expect, test } from '@playwright/test';
 
 /** Mirror of the read-only debug hook in src/app/bootstrap.ts. */
 interface EngineDebugInfo {
@@ -10,7 +10,9 @@ interface EngineDebugInfo {
 }
 type DebugWindow = Window & { __stickmanDebug?: EngineDebugInfo };
 
-test('Phase 0: the 2D top-down engine-check scene renders with working physics and no errors', async ({ page }, testInfo) => {
+test('Phase 0: the 2D top-down engine-check scene renders with working physics and no errors', async ({
+  page,
+}, testInfo) => {
   const problems: string[] = [];
   page.on('console', (msg: ConsoleMessage) => {
     if (msg.type() === 'error') problems.push(`console: ${msg.text()}`);

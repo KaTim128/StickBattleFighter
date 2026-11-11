@@ -2,7 +2,7 @@
 
 An original, browser-based, **2D top-down, real-time arena fighting game**: fighters move freely up, down, left and right across the arena.
 
-> **Status:** Phase 0 complete (10/11/2026): toolchain plus a minimal 2D top-down engine-check scene (renderer + physics). No gameplay yet. Next: Phase 1, engine foundation.
+> **Status:** Phase 1 complete (11/11/2026): 2D engine foundation (scenes, asset loading, physics, debug overlay, depth sorting). No gameplay yet. Next: Phase 2, a movable fighter. Press the backquote key (`) in the game for the debug overlay.
 
 ## Run it locally
 Requires Node.js 20.19+ or 22.12+.
@@ -10,6 +10,7 @@ Requires Node.js 20.19+ or 22.12+.
 ```bash
 npm install
 npm run dev          # start the game at http://localhost:5173
+npm run lint         # Biome lint + format check (npm run format to fix)
 npm run typecheck    # TypeScript checks
 npm test             # unit + integration tests (Vitest)
 npm run build        # production build into dist/

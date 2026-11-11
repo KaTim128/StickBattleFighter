@@ -20,7 +20,15 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] `npm run e2e`: 2/2 pass (desktop Chrome + Pixel 7): ready state, physics steps advance, the crate slides more than 1 m and comes to rest, canvas not blank, zero console, page or network errors; screenshots saved
 - [x] Pages build (`BASE_PATH=/StickBattleFighter/`) loads under the sub-path with zero errors
 
+## 0c. Phase 1 engine foundation (verified 11/11/2026)
+- [x] `npm run lint` (Biome): no issues
+- [x] `npm run typecheck`, `npm run build`: exit 0, no warnings
+- [x] `npm test`: 10 files, 26 tests: scene manager (switch, failed load cleanup, superseded load, clear once), asset loader (dedupe, missing asset, odd failures), FPS meter, y-sort (feet-based depth), engine-check scene load/unload ×3 with no leftover display objects or physics, missing optional texture keeps running, plus the Phase 0 tests
+- [x] `npm run e2e`: 6/6 pass (desktop and mobile): smoke; debug overlay toggles with the backquote key and draws collider outlines and FPS; `?missingAssetTest` reports the failure in the status line with no page errors and the simulation keeps running
+- [x] GitHub Pages sub-path build loads the physics `.wasm` correctly
+
 ## 1. Build and code health (every change)
+- [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0
 - [ ] U/I `npm test` passes; no skipped tests without a recorded reason
 - [ ] `npm run build` exits 0; no bundler warnings left untriaged

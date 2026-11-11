@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameLoop, type FrameScheduler } from '../../../src/core/game-loop';
+import { type FrameScheduler, GameLoop } from '../../../src/core/game-loop';
 
 /** Manually driven scheduler: each tick() delivers one display frame. */
 function manualScheduler() {

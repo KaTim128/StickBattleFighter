@@ -6,12 +6,12 @@ Persistent record of project state. Update after every meaningful piece of work 
 
 | Item | Value |
 |---|---|
-| Current phase | **Phase 0: bootstrap: COMPLETE** (10/11/2026) |
-| Next milestone | **Phase 1:** engine foundation |
+| Current phase | **Phase 1: engine foundation: COMPLETE** (11/11/2026) |
+| Next milestone | **Phase 2:** player character and free top-down movement |
 | Branch | `ccr-6b7ad8fe-whr1i5` |
 | Latest commit | see `git log -1` |
 | Runnable game | **2D top-down** engine-check scene only (`npm run dev`): a walled floor and a crate that slides, bounces off the walls and stops. No gameplay. |
-| Installed dependencies | pixi.js 8.22, Rapier 2D compat 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, Vitest 5.1, Playwright 1.63.0 |
+| Installed dependencies | pixi.js 8.22, @dimforge/rapier2d 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, vite-plugin-wasm 3.6, Vitest 5.1, Playwright 1.63.0, Biome 2.6 |
 
 ## Active assignments
 
@@ -115,6 +115,29 @@ TD-017 updated: game on GitHub Pages (manual deploy workflow); Supabase Free sti
 | `npm run e2e` | **2/2 passed** (desktop-chromium, mobile-chromium) |
 | Screenshots | `docs/screenshots/phase0-2d-desktop.png` (1280×720 @2x), `docs/screenshots/phase0-2d-phone-landscape.png` (Pixel 7 landscape), both captured mid-slide with zero console errors and inspected. |
 
+### 11/11/2026: Phase 1, engine foundation (Master Developer; no specialists used, per TD-019)
+**Acceptance criteria (set before editing):** lint and format tooling; a smaller physics download (or a measured justification); scene load and unload with no leaks; an asset loader where a missing asset shows an error rather than a crash; a debug overlay (FPS, collider outlines); a y-sorted draw-order layer; all checks green, with e2e and screenshots.
+
+**Delivered:** Biome lint and format (TD-024); Rapier switched to the separate `.wasm` build, measured at about 30% smaller (TD-023); `SceneManager` and `GameScene`; `AssetLoader` plus the Pixi adapter; `DebugOverlay`, `FpsMeter` and the backquote-key toggle; `YSortLayer` with greybox pillars in the engine check; the engine check refactored into a proper scene (`src/app/scenes/engine-check-scene.ts`; view file renamed `engine-check-view.ts`); lint step added to CI (TD-025).
+
+**Issues found and fixed during the work:**
+1. Vitest could not resolve `@dimforge/rapier2d` (the package only has a browser `module` entry). Fixed with a test alias plus inlining, documented in `vite.config.ts`.
+2. `typescript-eslint` does not support TypeScript 7, so I chose Biome instead (TD-024).
+3. Biome flagged the deprecated `recommended` key; switched to `preset`.
+4. The first pillar layout sat on the crate's launch path, so the wall-bounce test failed (1 bounce instead of 2 or more). Moved the pillars off the path; the test is unchanged.
+
+**Evidence (run by the Master Developer, 11/11/2026):**
+
+| Command | Result |
+|---|---|
+| `npm run lint` | clean (40 files) |
+| `npm run typecheck` | exit 0 |
+| `npm test` | 10 files, **26/26 passed** |
+| `npm run build` | exit 0, no warnings. pixi 511 kB (145 kB gzip); Rapier `.wasm` 2.40 MB (0.92 MB gzip), previously 1.29 MB gzip |
+| `npm run e2e` | **6/6 passed** (desktop and mobile) |
+| Pages sub-path | `.wasm` and the game load at `/StickBattleFighter/` with no errors |
+| Visual | Debug overlay screenshot inspected: the panel shows FPS, steps, 8 colliders and 0 asset failures; green outlines match the walls, pillar footprints and crate; pillars render upright with shadows |
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
@@ -130,6 +153,6 @@ Full list in spec §21. Still open:
 - Documentation limitation: numeric gameplay and economy values are absent from the source material (spec §21).
 
 ## Outstanding tasks (next)
-1. **Check CI** on GitHub after this push (typecheck, tests, build, e2e).
-2. **Phase 1: engine foundation (2D).** Acceptance: lint and format tooling; Rapier 2D switched to the non-compat build with a separate `.wasm` (smaller bundle) or the size justified against OQ-10; scene lifecycle (load and unload without leaks); an asset loader with a handled-error path (test: missing asset shows an error, not a crash); a debug overlay (FPS, physics collider outlines toggle); y-sorted draw-order layer; all tests and build green; e2e plus screenshots.
-3. Owner: answer OQ-10 (performance targets) before Phase 1 ends.
+1. Check GitHub CI for the Phase 1 push (now includes lint).
+2. **Phase 2: player character and movement.** Acceptance: the input intent layer (`src/input`: keyboard WASD/arrows and touch joystick, per CONTROL_SCHEME §5); a kinematic top-down character controller (Rapier 2D: acceleration, deceleration, facing, diagonals not faster, wall sliding, data-driven speed and mobility); a jump hop with ground shadow; a greybox **jointed** stickman (REQ-ANI-6) with a basic idle and walk; the camera follows the player (REQ-CAM-1); unit tests on the controller with synthetic input; e2e: keyboard moves the fighter, it cannot leave the arena, screenshots.
+3. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.

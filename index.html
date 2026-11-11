@@ -15,11 +15,17 @@
         pointer-events: none;
       }
       #status[data-state='error'] { background: rgba(160, 20, 20, 0.85); }
+      #debug {
+        position: fixed; left: 12px; top: 12px; padding: 6px 10px; border-radius: 6px;
+        font: 12px/1.4 ui-monospace, monospace; color: #39ff88; background: rgba(0, 0, 0, 0.6);
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
     <div id="app"></div>
     <div id="status" data-state="loading">Loading…</div>
+    <div id="debug" hidden></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -27,6 +27,9 @@ Architecture decision log. Each entry records context, decision, alternatives, t
 | TD-020 | Phase 0 toolchain details | ACCEPTED (libraries updated by TD-021) | 10/11/2026 |
 | TD-021 | Switch to 2D top-down: PixiJS 8 + Rapier 2D | ACCEPTED (owner direction) | 10/11/2026 |
 | TD-022 | 2D art and animation pipeline | PROPOSED | 10/11/2026 |
+| TD-023 | Rapier 2D non-compat build with a separate .wasm | ACCEPTED (Phase 1) | 11/11/2026 |
+| TD-024 | Biome for lint and format (instead of ESLint + Prettier) | ACCEPTED (Phase 1) | 11/11/2026 |
+| TD-025 | Scene lifecycle, asset loader, debug overlay, y-sorting | ACCEPTED (Phase 1) | 11/11/2026 |
 
 ---
 
@@ -174,9 +177,23 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Style sample (10/11/2026):** outlined, coloured limbs with visible joints, standing upright on the top-down floor with a ground shadow. The owner was shown sample stills (three fighters; a five-pose kick sequence built from a jointed skeleton).
 - **Pending:** further owner input on art direction (OQ-16).
 
+### TD-023: Rapier 2D non-compat build — ACCEPTED (11/11/2026)
+**Measured:** the compat build embeds the engine as base64 inside JavaScript (3.41 MB raw / 1.29 MB gzip). The non-compat `@dimforge/rapier2d` ships a real `.wasm` (2.40 MB raw / 0.92 MB gzip in our build), **about 30% smaller to download**, and the browser compiles it while it streams.
+**How:** `vite-plugin-wasm` (supports Vite 8) handles the ES-module `.wasm` import. `initPhysics()` loads Rapier with a dynamic `import()`, so the renderer and physics download in parallel. Vitest resolves `@dimforge/rapier2d/rapier.js` directly and inlines it, because the package only declares a browser `module` entry.
+**Verified:** unit, integration and e2e tests pass, and the GitHub Pages sub-path build loads the `.wasm` correctly.
+
+### TD-024: Biome for lint and format — ACCEPTED (11/11/2026)
+`typescript-eslint` 8.72 requires TypeScript < 6.1, so it does not support our TypeScript 7 (TD-020). **Biome 2.6** lints and formats TS, JSON and config files in one fast tool with no TypeScript dependency. Config: `biome.json` (recommended preset, `noExplicitAny` as an error, single quotes, 120 columns). Commands: `npm run lint` (check) and `npm run format` (apply). Lint runs in CI. Markdown is excluded.
+
+### TD-025: Phase 1 engine foundation — ACCEPTED (11/11/2026)
+- **Scene lifecycle** (`src/core/scene.ts`): `GameScene` (load, update, render, unload) and `SceneManager`. Switches are serialised: a scene superseded while loading is unloaded and never activated; a failed load is cleaned up and reported. Each scene owns and frees its physics world and display objects.
+- **Asset loader** (`src/core/asset-loader.ts`, plus a Pixi adapter in `src/rendering/pixi-assets.ts`): loads each URL once and **never throws**. Failures become results, are logged and shown in the status line, and the scene falls back to greybox.
+- **Debug overlay** (`src/rendering/debug-overlay.ts`): Rapier collider outlines plus a panel (FPS, physics steps, collider count, asset failures). Toggle with the backquote key (`src/input/debug-keys.ts`) or start with `?debug`. Hidden by default.
+- **Y-sorting** (`src/rendering/y-sort-layer.ts`): objects sort by the y of their feet, so lower-on-screen draws in front (REQ-VIS-9). Demonstrated with upright greybox pillars.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).
 
 ## Dependencies
-Installed (see `package.json`, TD-020, TD-021): pixi.js 8.22, @dimforge/rapier2d-compat 0.21; dev: typescript, vite, vitest, @playwright/test, @types/node. `npm audit`: 0 vulnerabilities (10/11/2026).
+Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); dev: typescript, vite, vite-plugin-wasm, vitest, @playwright/test, @biomejs/biome, @types/node. `npm audit`: 0 vulnerabilities (10/11/2026).

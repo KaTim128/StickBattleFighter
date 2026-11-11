@@ -1,18 +1,25 @@
 import type { WebGLRenderer } from 'pixi.js';
 import { fitRectToView } from '../camera/fit-view';
+import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
-import { initPhysics, PhysicsWorld } from '../physics/physics-world';
-import { createRenderSurface } from '../rendering/renderer';
-import { addEngineCheckColliders } from '../arenas/engine-check-colliders';
+import { SceneManager } from '../core/scene';
 import { ENGINE_CHECK } from '../data/arenas/engine-check';
-import { buildEngineCheckScene } from '../rendering/engine-check-scene';
+import { onDebugToggle } from '../input/debug-keys';
+import { initPhysics } from '../physics/physics-world';
+import { DebugOverlay } from '../rendering/debug-overlay';
+import { createTextureLoader } from '../rendering/pixi-assets';
+import { createRenderSurface } from '../rendering/renderer';
+import { EngineCheckScene } from './scenes/engine-check-scene';
 
 /** Read-only hook used by the browser smoke tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
   ready: boolean;
+  scene: string | null;
   physicsSteps: number;
   framesRendered: number;
   crate: { x: number; y: number; speed: number };
+  assetFailures: { url: string; message: string }[];
+  debugOverlay: { enabled: boolean; segments: number; fps: number };
   /** Render now and return the RGBA of the pixel at fractional canvas coords (0..1, top-left origin). */
   readPixel(xFrac: number, yFrac: number): [number, number, number, number];
 }
@@ -23,25 +30,41 @@ declare global {
   }
 }
 
-/** Shortest-path angle interpolation so a spinning crate never "unwinds". */
-function lerpAngle(a: number, b: number, t: number): number {
-  const delta = Math.atan2(Math.sin(b - a), Math.cos(b - a));
-  return a + delta * t;
+export interface BootstrapElements {
+  container: HTMLElement;
+  status: HTMLElement;
+  debugPanel: HTMLElement;
 }
 
-export async function bootstrap(container: HTMLElement, status: HTMLElement): Promise<void> {
-  status.textContent = 'Loading physics…';
-  await initPhysics();
+export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
+  const params = new URLSearchParams(window.location.search);
+  status.textContent = 'Loading…';
+
+  // Renderer and physics download in parallel; physics is a separate .wasm (TD-023).
+  const [app] = await Promise.all([createRenderSurface(container, ENGINE_CHECK.colours.background), initPhysics()]);
+
+  const assetFailures: EngineDebugInfo['assetFailures'] = [];
+  const textures = createTextureLoader((failure) => {
+    assetFailures.push(failure);
+    console.warn(`[assets] could not load ${failure.url}: ${failure.message}`);
+  });
+
+  const overlay = new DebugOverlay(debugPanel);
+  const fps = new FpsMeter();
+  const scenes = new SceneManager({
+    onError: (name, error) => console.error(`[scene:${name}]`, error),
+  });
+
+  // `?missingAssetTest` requests a texture that does not exist, to prove a bad asset cannot crash the game.
+  const optionalTextures = params.has('missingAssetTest') ? ['assets/does-not-exist.png'] : [];
+  const scene = new EngineCheckScene(app.stage, textures, optionalTextures);
+  if (!(await scenes.switchTo(() => scene))) throw new Error('engine-check scene failed to load');
+  scene.view?.world.addChild(overlay.colliderLayer);
 
   const { arenaWidthM: w, arenaHeightM: h, wallThicknessM: t } = ENGINE_CHECK;
-  const physics = new PhysicsWorld();
-  const { crate: crateBody } = addEngineCheckColliders(physics);
-
-  const app = await createRenderSurface(container, ENGINE_CHECK.colours.background);
-  const { world, crate } = buildEngineCheckScene();
-  app.stage.addChild(world);
-
   const frameArena = (): void => {
+    const world = scene.view?.world;
+    if (!world) return;
     const fit = fitRectToView(w + 2 * t, h + 2 * t, app.screen.width, app.screen.height, 16);
     world.scale.set(fit.scale);
     world.position.set(fit.offsetX + t * fit.scale, fit.offsetY + t * fit.scale);
@@ -49,15 +72,17 @@ export async function bootstrap(container: HTMLElement, status: HTMLElement): Pr
   frameArena();
   app.renderer.on('resize', frameArena);
 
-  // Previous and current physics poses, interpolated by alpha when drawing (TD-013).
-  const prev = { ...crateBody.translation(), angle: crateBody.rotation() };
-  const curr = { ...prev };
+  if (params.has('debug')) overlay.setVisible(true);
+  onDebugToggle(window, () => overlay.toggle());
 
   const debug: EngineDebugInfo = {
     ready: false,
+    scene: scenes.active?.name ?? null,
     physicsSteps: 0,
     framesRendered: 0,
-    crate: { x: curr.x, y: curr.y, speed: Math.hypot(ENGINE_CHECK.crateVelocity.x, ENGINE_CHECK.crateVelocity.y) },
+    crate: scene.state.crate,
+    assetFailures,
+    debugOverlay: { enabled: false, segments: 0, fps: 0 },
     readPixel(xFrac, yFrac) {
       app.render();
       const gl = (app.renderer as WebGLRenderer).gl;
@@ -70,26 +95,39 @@ export async function bootstrap(container: HTMLElement, status: HTMLElement): Pr
   };
   window.__stickmanDebug = debug;
 
+  let lastFrameMs: number | null = null;
   const loop = new GameLoop({
     update(stepS) {
-      Object.assign(prev, curr);
-      physics.step(stepS);
-      const p = crateBody.translation();
-      const v = crateBody.linvel();
-      Object.assign(curr, { x: p.x, y: p.y, angle: crateBody.rotation() });
-      debug.physicsSteps++;
-      debug.crate = { x: p.x, y: p.y, speed: Math.hypot(v.x, v.y) };
+      scenes.update(stepS);
     },
     render(alpha) {
-      crate.position.set(prev.x + (curr.x - prev.x) * alpha, prev.y + (curr.y - prev.y) * alpha);
-      crate.rotation = lerpAngle(prev.angle, curr.angle, alpha);
+      const now = performance.now();
+      if (lastFrameMs !== null) fps.addFrame((now - lastFrameMs) / 1000);
+      lastFrameMs = now;
+
+      scenes.render(alpha);
+      if (overlay.enabled && scene.physics) {
+        overlay.draw(scene.physics.debugLines(), {
+          FPS: fps.fps.toFixed(0),
+          'physics steps': scene.state.physicsSteps,
+          colliders: scene.physics.colliderCount,
+          'asset failures': assetFailures.length,
+        });
+      }
       app.render();
+
       debug.framesRendered++;
+      debug.physicsSteps = scene.state.physicsSteps;
+      debug.crate = scene.state.crate;
+      debug.debugOverlay = { enabled: overlay.enabled, segments: overlay.drawnSegments, fps: fps.fps };
     },
   });
   loop.start();
 
   debug.ready = true;
   status.dataset.state = 'ready';
-  status.textContent = 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
+  status.textContent =
+    assetFailures.length > 0
+      ? `Stickman Arena · 2D engine check · ${assetFailures.length} asset(s) failed to load (greybox shown)`
+      : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
 }

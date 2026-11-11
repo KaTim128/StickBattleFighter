@@ -15,6 +15,15 @@ export const ENGINE_CHECK = {
   crateDamping: 0.8,
   crateRestitution: 0.55,
   crateFriction: 0.1,
+  /** Upright greybox pillars: a collider footprint on the floor, drawn rising "up" the screen. */
+  pillars: [
+    // Kept clear of the crate's launch path so it still proves wall bounces.
+    { x: 5.5, y: 6.8 },
+    { x: 11, y: 3 },
+    { x: 8, y: 8.6 },
+  ],
+  pillarFootprintHalf: { x: 0.4, y: 0.3 },
+  pillarHeightM: 1.8,
   colours: {
     background: 0x141922,
     floor: 0x4c5563,
@@ -24,5 +33,8 @@ export const ENGINE_CHECK = {
     crate: 0xe0a14a,
     crateEdge: 0x8a5a1c,
     shadow: 0x000000,
+    pillarFront: 0x8b93a1,
+    pillarTop: 0xb5bdc9,
+    pillarEdge: 0x2a303b,
   },
 } as const;
