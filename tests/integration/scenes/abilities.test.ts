@@ -142,6 +142,79 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
+  it('mouse aiming (owner, 11/11/2026): F aims, the spot follows the hovered cursor, left click launches without a punch', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
+    scene.playerFighter.caster!.fillMeter();
+    intents.pressAbility('ult');
+    run(STEP);
+    expect(scene.ultAim).not.toBeNull();
+    // Hover over a spot up and to the left of the fighter (inside the leap's range).
+    const want = { x: 12.5, y: 10.5 };
+    intents.setPointer(scene.worldToScreen(want.x, want.y));
+    run(STEP);
+    const aim = scene.ultAim!;
+    expect(Math.hypot(aim.to.x - want.x, aim.to.y - want.y)).toBeLessThan(0.05);
+    // Keys still nudge it until the mouse moves again.
+    intents.setMove('t', { x: 1, y: 0 });
+    run(0.2);
+    intents.setMove('t', { x: 0, y: 0 });
+    expect(scene.ultAim!.to.x).toBeGreaterThan(want.x + 0.3);
+    intents.setPointer(scene.worldToScreen(want.x, want.y));
+    run(STEP);
+    expect(scene.ultAim!.to.x).toBeCloseTo(want.x, 1);
+    // Left click: the attack press and the launch arrive together; only the launch happens.
+    intents.meleePress();
+    intents.pressUltLaunch();
+    run(STEP);
+    intents.meleeRelease();
+    expect(scene.ultAim).toBeNull();
+    expect(scene.player.ability).toBe('meteorFist');
+    expect(scene.player.attack).toBeNull();
+    runUntil(() => scene.player.ability === null, 3);
+    expect(Math.hypot(scene.player.x - want.x, scene.player.y - want.y)).toBeLessThan(0.8); // landed where hovered
+    expect(scene.player.attack).toBeNull(); // the release after the click did not punch either
+    scenes.clear();
+  });
+
+  it('a hovered spot beyond the leap is clamped to its range; a plain click with no aim is just an attack', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 });
+    intents.meleePress();
+    intents.pressUltLaunch();
+    run(STEP);
+    intents.meleeRelease();
+    run(STEP);
+    expect(scene.player.attack).toBe('jab');
+    expect(scene.ultAim).toBeNull();
+    run(0.8);
+    scene.playerFighter.caster!.fillMeter();
+    intents.setPointer(scene.worldToScreen(2, 2)); // far away
+    intents.pressAbility('ult');
+    run(STEP);
+    const a = scene.ultAim!;
+    expect(Math.hypot(a.to.x - a.from.x, a.to.y - a.from.y)).toBeLessThanOrEqual(a.maxRangeM + 1e-6);
+    expect(a.to.x).toBeLessThan(a.from.x); // toward the cursor
+    scenes.clear();
+  });
+
+  it('sprint (hold Shift): runs about 45% faster, not while attacking', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 5, y: 5 });
+    const speedAfter = (sprint: boolean) => {
+      intents.sprint = sprint;
+      intents.setMove('t', { x: 1, y: 0 });
+      run(0.6);
+      const v = scene.player.speed;
+      intents.setMove('t', { x: 0, y: 0 });
+      intents.sprint = false;
+      run(0.6);
+      return v;
+    };
+    const walk = speedAfter(false);
+    const sprint = speedAfter(true);
+    expect(sprint / walk).toBeGreaterThan(1.35);
+    expect(sprint / walk).toBeLessThan(1.55);
+    scenes.clear();
+  });
+
   it('aiming the ultimate (owner): I enters aim mode in a jump-prep crouch; WASD moves the spot, not the fighter', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
     scene.playerFighter.caster!.fillMeter();

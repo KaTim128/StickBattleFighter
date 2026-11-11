@@ -13,13 +13,16 @@ import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { MUSIC_TRACKS } from '../data/audio/music-tracks';
+import { codeLabel } from '../input/bindings';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
-import { attachKeyboard, attachMouse } from '../input/keyboard';
+import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
+import { SettingsState } from '../input/settings-store';
 import { attachTouchControls, showDodgeReady, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
+import { SettingsPanel } from '../interface/settings-panel';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
@@ -132,8 +135,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   });
 
   const intents = new PlayerIntents();
-  attachKeyboard(window, intents);
-  attachMouse(container, intents);
+  // Settings (owner, 11/11/2026): saved in this browser; bindings apply the moment they change.
+  const settings = new SettingsState(browserStorage());
+  let settingsOpen = false;
+  const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => settingsOpen });
+  attachKeyboard(window, desktop);
+  attachMouse(container, desktop, intents);
   attachTouchControls(document.body, intents);
 
   const overlay = new DebugOverlay(debugPanel);
@@ -190,12 +197,20 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sound.muted = !sound.muted;
     music.setMuted(sound.muted);
   });
-  const controlsHint =
-    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F or I ultimate (aim with WASD, press again) · G pick up / throw (hold: put down) · Shift dodge · T dummy attacks · M mute';
+  const applyAudio = (): void => {
+    music.setVolume(settings.current.musicVolume);
+    sound.setVolume(settings.current.sfxVolume);
+  };
+  applyAudio();
+  const controlsHint = (): string => {
+    const b = settings.bindings;
+    const k = codeLabel;
+    return `move ${k(b.moveUp)}${k(b.moveLeft)}${k(b.moveDown)}${k(b.moveRight)} · sprint ${k(b.sprint)} · jump ${k(b.jump)} · ${k(b.attack)}: attack (hold: block) · ${k(b.dodge)}: dodge · ${k(b.ability1)}/${k(b.ability2)}/${k(b.ability3)} abilities · ${k(b.ultimate)} ultimate (leaps: aim with the mouse, ${k(b.ultimateLaunch)} to jump) · ${k(b.grab)} grab / throw · Esc settings`;
+  };
   onToggleDummyAttacks(window, () => {
     if (!(scene instanceof FightArenaScene)) return;
     scene.dummyAttacks = !scene.dummyAttacks;
-    status.textContent = `Stickman Arena · dummy attacks ${scene.dummyAttacks ? 'ON' : 'OFF'} · ${controlsHint}`;
+    status.textContent = `Stickman Arena · dummy attacks ${scene.dummyAttacks ? 'ON' : 'OFF'} · ${controlsHint()}`;
   });
   onDebugImpact(window, () => {
     if (overlay.enabled && scene instanceof FightArenaScene) scene.debugImpact();
@@ -313,14 +328,41 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   };
   loop.start();
 
+  // The settings screen pauses the fight while open (the game ignores input, nothing moves).
+  let timeScaleBeforeSettings = loop.timeScale;
+  new SettingsPanel(document.body, settings, (open) => {
+    settingsOpen = open;
+    desktop.releaseAll();
+    intents.clear();
+    if (open) {
+      timeScaleBeforeSettings = loop.timeScale;
+      loop.timeScale = 0;
+    } else loop.timeScale = timeScaleBeforeSettings;
+  });
+  settings.onChange(() => {
+    applyAudio();
+    status.textContent = readyStatus();
+  });
+
   debug.ready = true;
   status.dataset.state = 'ready';
-  status.textContent =
-    assetFailures.length > 0
+  status.textContent = readyStatus();
+  function readyStatus(): string {
+    return assetFailures.length > 0
       ? `Stickman Arena · ${scene.name} · ${assetFailures.length} asset(s) failed to load (greybox shown)`
       : scene instanceof FightArenaScene
         ? scene.characters.player.fellBack
           ? `Stickman Arena · character "${scene.characters.player.report.id}" is invalid (using the Base Stickman): ${scene.characters.player.report.errors[0] ?? ''}`
-          : `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · ${scene.playerFighter.def.displayName} · ${controlsHint}`
+          : `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · ${scene.playerFighter.def.displayName} · ${controlsHint()}`
         : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
+  }
+}
+
+/** Local storage, or null where the browser refuses it (settings then last for this session only). */
+function browserStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }

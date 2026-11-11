@@ -95,7 +95,7 @@ describe('office door (owner request, 11/11/2026)', () => {
     scenes.clear();
   });
 
-  it('jab and hook do not break it; the heavy finisher smashes it and the way is clear', async () => {
+  it('the three punches do not break it; the kick finisher smashes it and the way is clear', async () => {
     const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
     scene.respawnDummy({ x: 3, y: 1.9 }); // out of the way: these tests hit the door directly
     walkToDoor();
@@ -105,13 +105,16 @@ describe('office door (owner request, 11/11/2026)', () => {
     run(0.12);
     expect(scene.player.attack).toBe('jab');
     intents.pressMelee();
+    runUntil(() => scene.player.attack === 'cross');
+    run(0.1);
+    intents.pressMelee();
     runUntil(() => scene.player.attack === 'hook');
     run(0.2);
-    expect(scene.doorStates[0]!.broken).toBe(false); // jab and hook landed, door still shut
+    expect(scene.doorStates[0]!.broken).toBe(false); // the punches landed, door still shut
     intents.pressMelee();
     runUntil(() => scene.player.attack === 'heavy');
     run(0.4);
-    expect(scene.doorStates[0]).toEqual({ id: 'boss-door', broken: true, brokenBy: 'strike', open: false });
+    expect(scene.doorStates[0]).toEqual({ id: 'boss-door', broken: true, brokenBy: 'kick', open: false });
     // splinters do not block: walk straight through into the boss room
     intents.setMove('t', { x: 1, y: 0 });
     run(1.5);
@@ -146,22 +149,19 @@ describe('office door (owner request, 11/11/2026)', () => {
     run(0.2);
     // Full combo, staying close as the light hits nudge the dummy.
     intents.setMove('t', { x: 0.4, y: 0 });
-    intents.pressMelee();
-    runUntil(() => scene.player.attack === 'jab');
-    run(0.1);
-    intents.pressMelee();
-    runUntil(() => scene.player.attack === 'hook');
-    run(0.1);
-    intents.pressMelee();
-    runUntil(() => scene.player.attack === 'heavy');
+    for (const step of ['jab', 'cross', 'hook', 'heavy']) {
+      intents.pressMelee();
+      runUntil(() => scene.player.attack === step);
+      run(0.1);
+    }
     intents.setMove('t', { x: 0, y: 0 });
     runUntil(() => scene.doorStates[0]!.broken, 3);
     expect(scene.doorStates[0]!.brokenBy).toBe('knockback');
-    expect(scene.player.hits).toBe(3);
+    expect(scene.player.hits).toBe(4);
     scenes.clear();
   });
 
-  it('standing still and pressing three times lands all three strikes on the dummy', async () => {
+  it('standing still and pressing four times lands all four strikes on the dummy', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup();
     const dummyAt = { x: DOOR.x0 - 1.4, y: DOOR_Y };
     scene.respawnDummy(dummyAt);
@@ -169,14 +169,14 @@ describe('office door (owner request, 11/11/2026)', () => {
     runUntil(() => scene.player.x > scene.dummy.x - 1.15);
     intents.setMove('t', { x: 0, y: 0 });
     run(0.3);
-    for (const step of ['jab', 'hook', 'heavy']) {
+    for (const step of ['jab', 'cross', 'hook', 'heavy']) {
       intents.pressMelee();
       runUntil(() => scene.player.attack === step, 1.5);
       expect(scene.player.attack).toBe(step);
       run(0.15);
     }
     run(0.6);
-    expect(scene.player.hits).toBe(3);
+    expect(scene.player.hits).toBe(4);
     expect(scene.dummy.speed + Math.abs(scene.dummy.x - dummyAt.x)).toBeGreaterThan(1); // the finisher sent it flying
     scenes.clear();
   });

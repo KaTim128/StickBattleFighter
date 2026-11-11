@@ -47,28 +47,28 @@ describe('Phase 5 combat in the arena', () => {
     await initPhysics();
   });
 
-  it('the 1-2-3 combo damages the dummy; the finisher knocks it down', async () => {
+  it('the combo (three punches then a kick) damages the dummy; the kick finisher knocks it down', async () => {
     const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
     lineUp();
-    for (const step of ['jab', 'hook', 'heavy']) {
+    for (const step of ['jab', 'cross', 'hook', 'heavy']) {
       intents.pressMelee();
       runUntil(() => scene.player.attack === step, 1.5);
       run(0.12);
     }
     runUntil(() => scene.dummy.state === 'knockdown', 1);
     expect(scene.dummy.state).toBe('knockdown');
-    const base = A.jab!.damage + A.hook!.damage + A.heavy!.damage;
+    const base = A.jab!.damage + A.cross!.damage + A.hook!.damage + A.heavy!.damage;
     expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(base);
     expect(1000 - scene.dummy.hp).toBeLessThanOrEqual(Math.round(base * 1.5));
     const kinds = scene.drainEvents().map((e) => e.kind);
-    expect(kinds.filter((k) => k === 'hit' || k === 'crit')).toHaveLength(3);
+    expect(kinds.filter((k) => k === 'hit' || k === 'crit')).toHaveLength(4);
     scenes.clear();
   });
 
   it('after a knockdown the dummy falls, lies, then gets up (animated) before it can act again', async () => {
     const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
     lineUp();
-    for (const step of ['jab', 'hook', 'heavy']) {
+    for (const step of ['jab', 'cross', 'hook', 'heavy']) {
       intents.pressMelee();
       runUntil(() => scene.player.attack === step, 1.5);
       run(0.12);
@@ -124,17 +124,17 @@ describe('Phase 5 combat in the arena', () => {
     scenes.clear();
   });
 
-  it('the finisher sounds heavier, and a blocked punch sounds like a block with no flash', async () => {
+  it('the finisher (a kick) sounds heavier, and a blocked punch sounds like a block with no flash', async () => {
     const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
     lineUp();
     scene.drainSounds();
-    for (const step of ['jab', 'hook', 'heavy']) {
+    for (const step of ['jab', 'cross', 'hook', 'heavy']) {
       intents.pressMelee();
       runUntil(() => scene.player.attack === step, 1.5);
       run(0.12);
     }
     run(0.3);
-    expect(scene.drainSounds()).toContain('punch-heavy');
+    expect(scene.drainSounds()).toContain('kick-heavy');
     scenes.clear();
 
     const b = await setup();
@@ -181,6 +181,9 @@ describe('Phase 5 combat in the arena', () => {
       lineUp();
       intents.pressMelee();
       runUntil(() => scene.player.attack === 'jab', 1);
+      run(0.1);
+      intents.pressMelee();
+      runUntil(() => scene.player.attack === 'cross', 1);
       run(0.1);
       intents.pressMelee();
       runUntil(() => scene.player.attack === 'hook', 1);

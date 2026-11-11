@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { tapAttack } from './combo';
 
 type GameWindow = Window & { __stickmanDebug?: { player: { attack: string | null } } };
 
@@ -64,7 +65,7 @@ test('game: ?character= picks the fighter; an unknown one shows a clear message 
   await page.goto('/?scene=training-yard&character=no-such-fighter');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.locator('#status')).toContainText('character "no-such-fighter" is invalid');
-  await page.keyboard.press('KeyJ');
+  await tapAttack(page);
   await expect.poll(async () => page.evaluate(() => (window as GameWindow).__stickmanDebug!.player.attack)).toBe('jab'); // still playable
   expect(errors).toEqual([]);
 });

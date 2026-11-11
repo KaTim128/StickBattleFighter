@@ -92,6 +92,8 @@ export class FighterEntity {
   /** Time left flying from a heavy knockback (can smash doors). */
   knockFlightS = 0;
   readonly dodgeDir = { x: 0, y: 0 };
+  /** Holding sprint (player only): runs faster while moving freely. */
+  sprinting = false;
   /** Button 1 tap/hold tracking (player only). */
   meleeHoldS = 0;
   meleeTracking = false;

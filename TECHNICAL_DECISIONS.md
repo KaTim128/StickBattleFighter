@@ -356,6 +356,16 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Breakable sections:** `WallRect.durability`; `src/environment/breakable-wall.ts` gives each section its own collider and hit points (stone toughness 0.6). A hit with an impact point chips only the nearest section touched (melee uses the capsule tip, slams the body, blasts their centre), so damage digs one hole. Blasts deal ×3. Breaking removes the collider, hides that section's blocks, throws rubble and plaster dust, plays `break-wall`; chips thud and add crack lines at 66% and 33%. Debug hook `damageWall(index, damage)`.
 - **Trade-offs:** navigation still treats sections as solid (AI pathing through holes comes with Phase 10).
 
+### TD-049: Rebindable desktop controls, Settings, sprint, right-click dodge, mouse-aimed leap, four-hit combo, quick dodge — ACCEPTED (owner request 11/11/2026)
+- **Bindings:** `src/input/bindings.ts` holds one code per action (`KeyboardEvent.code` or `Mouse0..4`), the owner's defaults, `checkBinding`/`rebind` (conflicts and reserved keys refused with a message) and `sanitiseBindings`. The aimed-ultimate launch (`ultimateLaunch`) is the one action allowed to share a code, and only with `attack` or `ultimate`, because it only acts while aiming.
+- **Devices:** `DesktopInput` (`src/input/keyboard.ts`) turns bound key and mouse codes into intents for both devices, reading the live bindings on every event; `attachMouse` also reports the cursor (`PlayerIntents.setPointer`) and cancels `contextmenu` over the game. New intents: `sprint` (held), `pressUltLaunch`, `pointer`/`pointerMoves`.
+- **Settings:** `src/input/settings-store.ts` (`SettingsState`, localStorage key `stickman-arena.settings.v1`, repaired on load, survives refused writes); `src/interface/settings-panel.ts` (gear button and Esc; Audio and Controls tabs). While open the game loop's time scale is 0 and desktop input is ignored. `SoundBoard.setVolume` and `MusicPlayer.setVolume` apply volumes live.
+- **Scene:** sprint multiplies max speed by `SPRINT.speedFactor` (1.45) while moving freely on the ground. While a leap ultimate is aimed, attack edges are swallowed, the cursor (when it moves) places the spot through the inverse of `worldToScreen`, and the launch or the ultimate key jumps.
+- **Combo:** movesets gain a third punch (base `cross`, Inferno `hook`); the finisher is a kick (base `heavy` is now a roundhouse kick, category kick). Total damage unchanged.
+- **Quick dodge:** clip `proc.dodge.quick` (shared default) blends `quickDodgePose` (forward/back/side by the dash's screen direction relative to facing) and draws speed lines (`DodgeLook.dash`). The roll clip stays available to profiles.
+- **Alternatives:** keeping both desktop presets with secondary keys (rejected: ambiguous conflicts when rebinding); a separate pause system (rejected for now: time scale 0 already freezes the fixed step; a proper pause menu arrives with menus).
+- **Limitation:** there is no main menu yet, so Settings opens in game only; the store is ready for the menu to reuse.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { tapAttack } from './combo';
 
 interface Hook {
   clash: { phase: string; powerA: number; powerB: number; remainingS: number } | null;
@@ -24,7 +25,7 @@ test('Punch Clash: mashing J fills the power bar live; the winner breaks through
   const end = Date.now() + 9000;
   let sawPower = false;
   while (Date.now() < end) {
-    await page.keyboard.press('KeyJ');
+    await tapAttack(page);
     const s = await hook(page);
     if (s.clash && s.clash.powerA > 3) sawPower = true;
     if (!s.clash && sawPower) break;

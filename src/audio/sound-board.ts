@@ -378,12 +378,17 @@ export function hasSound(id: string): boolean {
   return id in RECIPES;
 }
 
+/** The effects' level at full volume (the compressor keeps stacked hits from clipping). */
+const SFX_LEVEL = 0.55;
+
 export class SoundBoard {
   private ctx: Ctx | null = null;
   private out: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private unlocked = false;
   muted = false;
+  /** Sound-effect volume from the settings, 0..1 (applied at once). */
+  private volume = 1;
   private seed = 7;
   private readonly curves = new Map<number, Float32Array<ArrayBuffer>>();
   private bus: AudioNode | null = null;
@@ -407,7 +412,7 @@ export class SoundBoard {
     const ctx = new Ctor();
     const comp = ctx.createDynamicsCompressor(); // stacked hits must not clip
     const master = ctx.createGain();
-    master.gain.value = 0.55;
+    master.gain.value = SFX_LEVEL * this.volume;
     master.connect(comp).connect(ctx.destination);
     this.bus = comp;
     const buffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
@@ -417,6 +422,16 @@ export class SoundBoard {
     this.out = master;
     this.noise = buffer;
     void ctx.resume();
+  }
+
+  /** Sound-effect volume 0..1 (settings); takes effect immediately, music is separate. */
+  setVolume(v: number): void {
+    this.volume = Math.min(1, Math.max(0, v));
+    if (this.out && this.ctx) this.out.gain.setTargetAtTime(SFX_LEVEL * this.volume, this.ctx.currentTime, 0.02);
+  }
+
+  get effectsVolume(): number {
+    return this.volume;
   }
 
   /** Play a sound; `gain` scales its loudness (the Punch Clash builds it up). */

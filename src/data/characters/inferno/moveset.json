@@ -22,7 +22,7 @@
         "reachM": 0.72,
         "radiusM": 0.4
       },
-      "damage": 40,
+      "damage": 35,
       "strength": 150,
       "knockbackMps": 1.5,
       "lungeMps": 0,
@@ -51,8 +51,36 @@
         "reachM": 0.76,
         "radiusM": 0.42
       },
-      "damage": 55,
+      "damage": 40,
       "strength": 220,
+      "knockbackMps": 2.5,
+      "lungeMps": 0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.2,
+      "zoomPunch": 0.01,
+      "next": {
+        "tap": "hook"
+      },
+      "requires": ["canPunch", "canUseCombos"]
+    },
+    {
+      "id": "hook",
+      "displayName": "Lead hook",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.07,
+      "activeS": 0.08,
+      "recoveryS": 0.18,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 0.76,
+        "radiusM": 0.42
+      },
+      "damage": 45,
+      "strength": 240,
       "knockbackMps": 2.5,
       "lungeMps": 0,
       "moveFactor": 0.4,

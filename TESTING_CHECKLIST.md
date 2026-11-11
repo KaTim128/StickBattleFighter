@@ -139,6 +139,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/office-tall-glass-door.png`, `docs/screenshots/wall-hole-and-cracks.png`.
 - [ ] Owner: furniture now faces the room; the wall height and glass door; punching a hole.
 
+## 0z. Desktop controls, Settings, four-hit combo, quick dodge (verified 11/11/2026)
+- [x] `npm test`: **280 tests**. Default bindings match the owner table; every conflict refused with the action named; the launch key may share only with attack or ultimate; reserved keys refused; settings saved, restored and repaired; rebinds apply at once; paused input ignored; sprint ≈ ×1.45; mouse-hovered ultimate lands where hovered and the click never punches; four-strike combos (base and Inferno).
+- [x] `npm run e2e`: right click dodges with no context menu; dodges follow the held key and back-step with none; F + hover + click launches Meteor Fist; Settings pauses, saves volumes and keys across a reload, shows the conflict message, resets.
+- [x] V Screenshots: `docs/screenshots/quick-dodge-forward-back-side.png`, `docs/screenshots/settings-controls-conflict.png`.
+- [ ] Owner: feel of sprint, quick dodge and four-hit combo; settings layout; physical mouse right click in your browser.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

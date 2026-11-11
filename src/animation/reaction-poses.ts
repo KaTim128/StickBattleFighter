@@ -45,6 +45,26 @@ export function dashPose(base: Pose): Pose {
   return { ...base, lean: deg(-34), head: deg(28), armFront: limb(82, 112), armBack: limb(40, 140) };
 }
 
+/** Which way a quick dodge goes, seen on screen relative to where the fighter faces. */
+export type QuickDodgeKind = 'forward' | 'back' | 'side';
+
+/**
+ * The default quick dodge (owner, 11/11/2026: "a quick dodge movement rather than a rolling
+ * animation"): a fast, low step with the guard kept up. Forward: lunging in, leading leg reaching.
+ * Back: leaning away, front foot sliding out ahead. Side (up or down the screen): a crouched
+ * shuffle with both knees bent.
+ */
+export function quickDodgePose(base: Pose, kind: QuickDodgeKind): Pose {
+  const guard = { armFront: limb(70, 118), armBack: limb(52, 128) };
+  if (kind === 'forward') {
+    return { ...base, lean: deg(-30), head: deg(24), ...guard, legFront: limb(42, -55), legBack: limb(-38, -25) };
+  }
+  if (kind === 'back') {
+    return { ...base, lean: deg(16), head: deg(-10), ...guard, legFront: limb(34, -18), legBack: limb(-14, -62) };
+  }
+  return { ...base, lean: deg(-10), head: deg(8), ...guard, legFront: limb(24, -72), legBack: limb(-22, -64) };
+}
+
 /** A whole-body frame for falling and getting up: pose, figure tilt about the feet, and lift off the floor. */
 export interface DownFrame {
   pose: Pose;

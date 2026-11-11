@@ -78,6 +78,8 @@ export class MusicPlayer {
   private nextTime = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private muted = false;
+  /** Music volume from the settings, 0..1. */
+  private volume = 1;
 
   /** The track that is (or will be, once audio unlocks) playing. */
   get current(): string | null {
@@ -89,7 +91,7 @@ export class MusicPlayer {
     if (this.ctx) return;
     this.ctx = ctx;
     const out = ctx.createGain();
-    out.gain.value = this.muted ? 0 : MUSIC_LEVEL;
+    out.gain.value = this.level;
     out.connect(destination);
     this.out = out;
     const buffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
@@ -111,7 +113,25 @@ export class MusicPlayer {
 
   setMuted(muted: boolean): void {
     this.muted = muted;
-    if (this.out && this.ctx) this.out.gain.setTargetAtTime(muted ? 0 : MUSIC_LEVEL, this.ctx.currentTime, 0.05);
+    this.applyLevel();
+  }
+
+  /** Music volume 0..1 (settings); takes effect immediately. */
+  setVolume(v: number): void {
+    this.volume = Math.min(1, Math.max(0, v));
+    this.applyLevel();
+  }
+
+  get musicVolume(): number {
+    return this.volume;
+  }
+
+  private get level(): number {
+    return this.muted ? 0 : MUSIC_LEVEL * this.volume;
+  }
+
+  private applyLevel(): void {
+    if (this.out && this.ctx) this.out.gain.setTargetAtTime(this.level, this.ctx.currentTime, 0.05);
   }
 
   stop(): void {

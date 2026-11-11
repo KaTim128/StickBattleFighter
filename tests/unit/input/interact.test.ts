@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { THROWING } from '../../../src/data/combat/throwing';
 import { PlayerIntents } from '../../../src/input/intents';
-import { INTERACT_KEYS } from '../../../src/input/keyboard';
+import { DesktopInput } from '../../../src/input/keyboard';
 
 describe('pick up / throw input (REQ-CTL-13, TD-016)', () => {
-  it('G and U are the desktop interact keys', () => {
-    expect([...INTERACT_KEYS].sort()).toEqual(['KeyG', 'KeyU']);
+  it('G is the default desktop grab key: press, then release (owner, 11/11/2026)', () => {
+    const i = new PlayerIntents();
+    const input = new DesktopInput(i);
+    input.down('KeyG');
+    expect(i.interactHeld).toBe(true);
+    input.up('KeyG');
+    expect(i.consumeInteract()).toEqual({ down: true, orJump: false });
+    expect(i.consumeInteract()).toEqual({ down: false, orJump: false });
+    input.down('KeyU'); // no longer bound
+    expect(i.consumeInteract()).toBeNull();
   });
 
   it('press and release are queued in order, one per step, and a held key is reported', () => {

@@ -38,7 +38,9 @@ export const PROCEDURAL_CLIPS = [
   'proc.knockdown',
   'proc.getup',
   'proc.safe',
-  // Dodges (owner, 11/11/2026): a backward roll by default; Inferno turns into a streaking flame.
+  // Dodges (owner, 11/11/2026): a quick dash by default (it replaced the roll, which stays
+  // available to profiles); Inferno turns into a streaking flame.
+  'proc.dodge.quick',
   'proc.dodge.roll',
   'proc.dodge.flame',
 ] as const;

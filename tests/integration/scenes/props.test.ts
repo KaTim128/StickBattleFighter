@@ -47,8 +47,8 @@ async function setup(props: PropPlacement[]) {
   };
   const prop = (kind: string) => scene.propStates.find((p) => p.kind === kind)!;
   /** Press once per strike, like a player, through the 1-2-3 combo. */
-  const combo = (strikes = 3) => {
-    const order = ['jab', 'hook', 'heavy'];
+  const combo = (strikes = 4) => {
+    const order = ['jab', 'cross', 'hook', 'heavy'];
     for (let i = 0; i < strikes; i++) {
       intents.pressMelee();
       runUntil(() => scene.player.attack === order[i], 1.5);
@@ -78,7 +78,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
     combo(1);
     const after = prop('office-chair');
     expect(after.broken).toBe(false);
-    expect(after.hp).toBe(60 - 40);
+    expect(after.hp).toBe(60 - 30); // the jab (30)
     expect(after.x).toBeGreaterThan(before.x + 0.05); // pushed away from the player
     run(3);
     expect(prop('office-chair').awake).toBe(false); // settled and planted again
@@ -105,11 +105,11 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
       { kind: 'desk', x: 6.6, y: 5 },
       { kind: 'keyboard', x: 7.0, y: 5.1, elevationM: 0.75, sortY: 5.4 }, // out of the fists' reach
     ]);
-    combo(3); // 240 damage
+    combo(4); // 240 damage
     expect(prop('desk').broken).toBe(false);
     scene.drainSounds();
     approach();
-    combo(3);
+    combo(4);
     expect(prop('desk').broken).toBe(true);
     expect(scene.drainSounds()).toContain('break-wood');
     const kb = scene.props!.props.find((p) => p.placement.kind === 'keyboard')!;
@@ -165,7 +165,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
   it('a steel drawer pedestal is hard to break (metal takes 45% of each blow), rings when hit and breaks with sparks (owner)', async () => {
     const { intents, scene, scenes, run, runUntil, prop, combo } = await setup([{ kind: 'drawer-unit', x: 6.0, y: 5 }]);
     scene.drainSounds();
-    combo(3); // 240 of damage, of which steel takes 45%
+    combo(4); // 240 of damage, of which steel takes 45%
     const d = prop('drawer-unit');
     expect(d.broken).toBe(false);
     expect(d.hp).toBeCloseTo(260 - 240 * MATERIAL_TOUGHNESS.metal, 6);
@@ -184,7 +184,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
       }, 3);
       intents.setMove('t', { x: 0, y: 0 });
       run(0.1);
-      combo(3);
+      combo(4);
       more++;
     }
     expect(prop('drawer-unit').broken).toBe(true);
@@ -197,7 +197,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
   it('a steel filing cabinet is very tough (450, metal) but still moves under heavy blows', async () => {
     const { scenes, prop, combo } = await setup([{ kind: 'cabinet', x: 6.2, y: 5 }]);
     const x0 = prop('cabinet').x;
-    combo(3);
+    combo(4);
     const c = prop('cabinet');
     expect(c.broken).toBe(false);
     expect(c.hp).toBeCloseTo(450 - 240 * MATERIAL_TOUGHNESS.metal, 6);

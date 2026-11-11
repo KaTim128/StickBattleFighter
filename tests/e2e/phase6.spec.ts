@@ -58,21 +58,21 @@ test('touch: five combat buttons (MELEE, A1–A3, ULT); A1 casts the Fire Bolt',
   expect(errors).toEqual([]);
 });
 
-test('ultimate aiming (desktop): I aims in a crouch, D moves the spot, I launches the leap there', async ({
+test('ultimate aiming (desktop): F aims in a crouch, W moves the spot, F again launches the leap there', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   const errors: string[] = [];
   await open(page, errors);
   await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
-  await page.keyboard.press('KeyI');
+  await page.keyboard.press('KeyF');
   await page.keyboard.down('KeyW');
   await page.waitForTimeout(2500); // the aim moves in game time; a software-rendered browser runs slower than real time
   await page.keyboard.up('KeyW');
   const before = await hook(page);
   expect(before.player.ability).toBeNull(); // still aiming
   await page.screenshot({ path: testInfo.outputPath('ult-aiming.png') });
-  await page.keyboard.press('KeyI');
+  await page.keyboard.press('KeyF');
   await expect
     .poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] })
     .toBe('meteorFist');

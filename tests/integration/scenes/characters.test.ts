@@ -72,7 +72,8 @@ describe('Inferno in the arena: behaviour entirely from its configuration (TD-03
     intents.setMove('t', { x: 0, y: 0 });
     expect(scene.player.attack).toBe('front-kick');
     run(0.8);
-    for (const step of ['jab', 'straight', 'roundhouse']) {
+    for (const step of ['jab', 'straight', 'hook', 'roundhouse']) {
+      // owner: three punches then the kick
       intents.pressMelee();
       runUntil(() => scene.player.attack === step, 1.5);
       expect(scene.player.attack).toBe(step);
@@ -145,7 +146,7 @@ describe('Inferno in the arena: behaviour entirely from its configuration (TD-03
     });
     scene.respawnDummy({ x: 27.6, y: 10 });
     run(0.3);
-    for (const step of ['jab', 'hook', 'heavy']) {
+    for (const step of ['jab', 'cross', 'hook', 'heavy']) {
       intents.pressMelee();
       runUntil(() => scene.player.attack === step, 1.5);
       run(0.12);

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { tapAttack } from './combo';
 
 interface Hook {
   scene: string | null;
@@ -26,7 +27,7 @@ async function open(page: Page, errors: string[], query = '') {
   expect((await hook(page)).scene).toBe('office');
 }
 
-test('office: walking into the door swings it open into the boss room; the 1-2-3 combo smashes it instead', async ({
+test('office: walking into the door swings it open into the boss room; the four-hit combo smashes it instead', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
@@ -64,15 +65,15 @@ test('office: walking into the door swings it open into the boss room; the 1-2-3
     .toBeGreaterThan(startX + 0.03);
   await page.keyboard.up('KeyD');
   await page.waitForTimeout(300);
-  // Keep pressing through the 1-2-3 until the door gives (a loaded browser can poll too slowly
+  // Keep pressing through the combo until the door gives (a loaded browser can poll too slowly
   // to see the short finisher frame, so wait on the outcome rather than the animation state).
   for (let i = 0; i < 60 && !(await hook(page)).doors[0]!.broken; i++) {
-    await page.keyboard.press('KeyJ');
+    await tapAttack(page);
     await page.waitForTimeout(110);
   }
   s = await hook(page);
   expect(s.doors[0]!.broken).toBe(true);
-  expect(['strike', 'knockback']).toContain(s.doors[0]!.brokenBy);
+  expect(['kick', 'knockback']).toContain(s.doors[0]!.brokenBy); // the four-hit combo ends in a kick (owner, 11/11/2026)
   await page.screenshot({ path: testInfo.outputPath('door-smashed.png') });
   expect(errors).toEqual([]);
 });

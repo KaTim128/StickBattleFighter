@@ -190,11 +190,11 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 | ID | Requirement | Source |
 |---|---|---|
 | REQ-CTL-11 | Block by **holding Button 1** (hold threshold data-driven, default 0.2 s); a tap is melee. | [TD-016] |
-| REQ-CTL-12 | Dodge by **flicking the movement stick** on touch (optional double-tap mode) or the dodge key (Shift) on desktop. | [TD-016] |
+| REQ-CTL-12 | Dodge by **flicking the movement stick** on touch (optional double-tap mode) or the dodge input on desktop (default **right click**, REQ-CTL-17). *(Shift as the dodge key superseded: SUP-09.)* | [TD-016] |
 | REQ-CTL-13 | One **contextual utility button** (jump / pick up / throw; hold to drop), visually distinct from the five combat buttons. Desktop has Space for jump and a separate interact key. | [TD-016] |
 | REQ-CTL-14 | Automatic soft target lock on the nearest visible opponent; switch with a tap on the opponent or Tab. Aim assist never guarantees hits. | [TD-016] |
 | REQ-CTL-16 | **Touch buttons never highlight (owner, 11/11/2026):** holding a button (for example MELEE to block) must not select or highlight its label or open a long-press menu. |
-| REQ-CTL-15 | Two desktop presets: keyboard + mouse (default) and keyboard only. | [TD-016] |
+| REQ-CTL-15 | ~~Two desktop presets: keyboard + mouse (default) and keyboard only.~~ One rebindable desktop layout (REQ-CTL-17). *(Superseded: SUP-10.)* | [TD-016] |
 
 ### 7.2 Desktop `[PB §8.9, §12 Phase 11]`
 
@@ -203,6 +203,8 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 | REQ-CTL-1 | WASD movement and configurable keyboard bindings. |
 | REQ-CTL-2 | Desktop shows keyboard controls and **no** virtual joystick and **no** mobile combat buttons. |
 | REQ-CTL-3 | Key rebinding, reset to defaults, conflict prevention. |
+| REQ-CTL-17 | **Default desktop controls and Settings (owner, 11/11/2026; TD-049):** W/A/S/D move · hold Shift sprint (about 45% faster while running freely) · Space jump · left click tap attack (hold: block) · right click dodge toward the held movement direction (backwards with none) · Q/E/R abilities 1–3 · F ultimate · G grab, G again to throw. A **Settings** screen (gear button or Esc; the fight pauses while open) has an **Audio** tab (separate music and sound-effect volume sliders, applied immediately) and a **Controls** tab where every action can be rebound to any key or mouse button, with **Reset to defaults**. A key already in use is refused with a clear message naming the action that has it ("W is already assigned to Move up"); Esc, M, T, P and \` are reserved. Settings persist in the browser between sessions. The browser's right-click menu is disabled over the game area. |
+| REQ-CTL-18 | **Mouse-aimed leap ultimate (owner, 11/11/2026; Inferno's Meteor Fist):** press the ultimate key to aim, hover the mouse over the landing spot (the ring follows the cursor, clamped to the leap's range; W/A/S/D still nudge it), then **left click** to jump there (pressing the ultimate key again also launches). The click launches and never punches. The launch input is its own rebindable control: it may share its key only with the tap attack or the ultimate key (it only acts while aiming), never with movement, sprint, jump, dodge, grab or an ability. |
 
 ### 7.3 Mobile and tablet `[PB §8.9, §12 Phase 11]`
 
@@ -269,7 +271,8 @@ No numeric values were supplied (OQ-05).
 | REQ-CMB-8 | Combos: fighters may have combo chains; timed combo windows are an optional pattern to evaluate (§2.2). | [PB §4.2, §4.4] |
 | REQ-CMB-9 | Fighter values data-driven; no fighter-specific branches in the shared engine where data or components fit. | [PB §8.5] |
 | REQ-CMB-10 | Unit and integration tests for every combat rule changed: hits, misses, blocks, dodges, interruptions, cooldowns, stamina, knockback. | [PB §8.5, §15] |
-| REQ-CMB-12 | **1-2-3 combo (owner, 11/11/2026):** repeated Button 1 presses on the ground flow **left jab → right hook → heavy final strike**, seamlessly. Stop pressing and it resets. |
+| REQ-CMB-12 | ~~**1-2-3 combo (owner, 11/11/2026):** repeated Button 1 presses on the ground flow left jab → right hook → heavy final strike.~~ Now four hits: REQ-CMB-26. *(Superseded: SUP-12.)* |
+| REQ-CMB-26 | **Four-hit tap combo (owner, 11/11/2026):** repeated tap attacks flow **three consecutive punches then a kick** (default stickman: jab → cross → hook → roundhouse kick finisher; Inferno: jab → straight → hook → fire roundhouse). Each strike has its own animation; strikes chain at each move's cancel point, so pressing once per strike stays responsive. Stop pressing and it resets. Combo damage is unchanged (default 240). |
 | REQ-CMB-13 | The **third strike is a heavy-impact finisher** with **strong knockback** (and camera shake and zoom punch). |
 | REQ-CMB-14 | **Aerial attack:** Button 1 while airborne performs a **flying kick** (once per jump) that blends with the jump and **can smash the boss door**. |
 | REQ-CMB-15 | Strikes hit along their whole path (capsule from the body to full reach), not only at the fist. |
@@ -320,6 +323,7 @@ No numeric values were supplied (OQ-05).
 | REQ-ANI-8 | **Fall and get-up (owner, 11/11/2026):** a heavy hit or KO plays a readable fall (tumble back, arms flung, a short flight, landing with a bounce, lying flat), and recovery plays a **get-up** (sit up on a hand, knee drawn, rise through a crouch into the stance). The fighter cannot act and cannot be hit while getting up. |
 | REQ-ANI-9 | **KO dissolve (owner, 11/11/2026):** at zero health the fighter faints (a longer freeze on the final blow, then the fall), lies still for a beat, then dissolves into dust particles that drift away while the figure fades out, with a soft dusting sound. |
 | REQ-ANI-10 | **Walking and running (owner, 11/11/2026):** responsive movement with smooth walk and run cycles: legs step alternately (the swinging foot lifts), each fist swings opposite its leg with the elbows bent so the fighter still looks ready, running has longer strides, higher knees, more lean and a bigger arm pump; idle, walk, run and combat poses blend without snapping. *(Supersedes the 'shuffle with arms only bobbing' part of REQ-ANI-7: SUP-05.)* |
+| REQ-ANI-12 | **Quick dodge (owner, 11/11/2026):** the default dodge is a fast, low dash (not a roll): forward lunging in, backwards leaning away with the front foot sliding out, sideways (up or down the screen) a crouched shuffle; guard kept up, with speed lines trailing opposite the dash. Clip `proc.dodge.quick` is the shared default; Inferno keeps its flame dodge. *(The default roll of REQ-CTL-16 superseded: SUP-11.)* |
 | REQ-ANI-11 | **Strong, confident gait (owner, 11/11/2026: "strong and confident", not crouched or timid):** walking is tall and proud (hips high, chest up within a few degrees of upright, head level, long steps, a springy bounce and a small chest roll per step) with loose fists swinging freely between the hips and chest; running drives from the chest (a firm lean, head up) with high knees, long bounding strides and a strong elbows-bent arm drive. The guard returns when standing (idle stance) or attacking. *(Supersedes the 'elbows bent so the fighter still looks ready' guard-up walk of REQ-ANI-10: SUP-06.)* |
 | REQ-ANI-7 | **Unique body language per fighter (owner, 10/11/2026):** every fighter has its **own idle stance** (including a breathing or ready loop), its **own movement style** (walk, run, strafe, turn, start and stop) and its **own attack animations** for melee, all three abilities and the ultimate, plus distinct hit reactions where practical. No two fighters share these animations; only the skeleton system is shared. **Fighting stance at all times (owner, 11/11/2026):** idle and every movement animation keep a fighting posture (guard up near the chin, knees bent, staggered feet, torso engaged); never a casual walk with loose swinging arms. Each fighter's stance and footwork style is still its own. **Unarmed default (owner, 11/11/2026): a slightly bent, boxer-like stance** (`BOXER_STANCE`); armed fighters get weapon-specific stances (chosen by the fighter's `weapon` field). Direction (to be designed per fighter, not final): Inferno = bouncy, restless boxer stance with flickering energy; Shadowfang = low crouch, prowling lope, claw-ready hands; Ronin = calm, centred sword stance, smooth gliding steps; Titan = wide, heavy planted stance, slow stomping gait with weight shift; Phantom = upright floating hover, drifting glide, hands weaving magic. | [OWNER 10/11/2026] |
 
@@ -488,11 +492,16 @@ Browser verification uses the documented dev command and browser automation: tes
 | SUP-06 | REQ-ANI-10 (owner, 11/11/2026): walking with the fists held up near the chin in guard, low crouched hips and a hunched lean. | REQ-ANI-11: an upright, confident walk with freely swinging fists and a powerful upright run. Owner: "it looks weird and not confident ... it should be strong and confident". | 11/11/2026 |
 | SUP-07 | REQ-ENV-11 (owner, 11/11/2026): walking or normal movement never opens the door; only breaking it clears the way. | REQ-ENV-13: walking into the door swings it open (breaking still works). Owner: "the player can just break the door or walk to the next room without breaking the door". | 11/11/2026 |
 | SUP-08 | REQ-ENV-13 (owner, 11/11/2026): interior walls cut away to 0.8 m so doorways show. | REQ-ENV-15: the curved wall full height with a glass door. Owner: "a short wall makes the player think they can jump over it". | 11/11/2026 |
+| SUP-09 | REQ-CTL-12 / REQ-CTL-16 / CONTROL_SCHEME §4: Shift dodges on desktop. | REQ-CTL-17: right click dodges toward the movement keys; Shift sprints. | 11/11/2026 |
+| SUP-10 | REQ-CTL-15: two desktop presets (keyboard + mouse; keyboard only with J melee, K/L/O abilities, I ultimate, U interact, arrow keys). | REQ-CTL-17: one default layout, fully rebindable in Settings (one key per action). | 11/11/2026 |
+| SUP-11 | REQ-CTL-16 (owner, 11/11/2026): the default stickman tucks and rolls backwards to dodge. | REQ-ANI-12: a quick directional dash dodge. Owner: "a quick dodge movement rather than a rolling animation". | 11/11/2026 |
+| SUP-12 | REQ-CMB-12: three-strike 1-2-3 combo (jab, hook, heavy finisher). | REQ-CMB-26: three punches then a kick. | 11/11/2026 |
 
 ## 23. Change log
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Owner: default desktop controls, sprint, right-click dodge, Settings with audio sliders and rebinding with conflict checks, no context menu (REQ-CTL-17); mouse-aimed leap ultimate (REQ-CTL-18); four-hit combo (REQ-CMB-26); quick dodge (REQ-ANI-12). Superseded SUP-09..12. | Master Developer |
 | 11/11/2026 | Owner: data-driven character system (REQ-CHR-1..6); Inferno fist flames via its effects profile. | Master Developer |
 | 11/11/2026 | Owner: centre cubicle pairs (REQ-ENV-8 updated), 33 m office (REQ-ENV-12 updated), breakable office equipment and material destruction (REQ-PHY-6b). | Master Developer |
 | 11/11/2026 | Owner: furniture facing, tall glass-door wall, breakable wall sections (REQ-ENV-15; supersedes the 0.8 m cut-away wall of REQ-ENV-13: SUP-08). | Master Developer |

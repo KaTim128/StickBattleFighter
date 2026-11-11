@@ -134,7 +134,42 @@ export class PlayerIntents {
     return this.ultDragValue;
   }
 
-  // ---- Dodge (Shift, double-tap or joystick flick; REQ-CTL-12).
+  // ---- Aimed ultimate launch (owner, 11/11/2026): while a leaping ultimate is being aimed, this
+  // press launches it (default left click, so the mouse aims and clicks). Ignored otherwise.
+  private ultLaunchQueued = false;
+
+  pressUltLaunch(): void {
+    this.ultLaunchQueued = true;
+  }
+
+  consumeUltLaunch(): boolean {
+    const queued = this.ultLaunchQueued;
+    this.ultLaunchQueued = false;
+    return queued;
+  }
+
+  // ---- Mouse pointer (desktop): where the cursor is over the game, in CSS pixels of the game
+  // area. `pointerMoves` counts moves so the game can tell a fresh hover from a stale one.
+  private pointerAt: Vec2 | null = null;
+  private pointerMoveCount = 0;
+
+  setPointer(p: Vec2 | null): void {
+    this.pointerAt = p ? { x: p.x, y: p.y } : null;
+    if (p) this.pointerMoveCount++;
+  }
+
+  get pointer(): Vec2 | null {
+    return this.pointerAt;
+  }
+
+  get pointerMoves(): number {
+    return this.pointerMoveCount;
+  }
+
+  // ---- Sprint (hold Shift by default): faster running while held.
+  sprint = false;
+
+  // ---- Dodge (right click, double-tap or joystick flick; REQ-CTL-12).
   private dodgeQueued = false;
 
   pressDodge(): void {
@@ -180,6 +215,8 @@ export class PlayerIntents {
     this.meleeDown = false;
     this.meleeEdges.length = 0;
     this.dodgeQueued = false;
+    this.ultLaunchQueued = false;
+    this.sprint = false;
     this.abilityQueue.length = 0;
     this.ultDragValue = null;
   }

@@ -10,6 +10,8 @@ import {
   flinchPose,
   getUpFrame,
   knockdownFrame,
+  type QuickDodgeKind,
+  quickDodgePose,
   throwPose,
   tuckPose,
 } from '../../animation/reaction-poses';
@@ -39,13 +41,14 @@ import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
 import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
-import { stepHop, stepVelocity } from '../../physics/movement';
+import { SPRINT, stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
 import { OcclusionFader } from '../../rendering/occlusion-fader';
-import { iso, isoBounds, screenSideToWorld } from '../../rendering/projection';
+import { ISO_C, ISO_T, iso, isoBounds, isoToWorld, screenSideToWorld } from '../../rendering/projection';
 import { tallestPropM } from '../../rendering/prop-view';
+import type { DodgeLook } from '../../rendering/stickman-view';
 import {
   AbilityVfx,
   type BurningThing,
@@ -251,6 +254,8 @@ export class FightArenaScene implements ArenaScene {
   private hitstopS = 0;
   /** Where the player is aiming the leaping ultimate, while aiming (else null). */
   private ultAimPoint: { x: number; y: number } | null = null;
+  /** The pointer's move count when the aim last followed it (a hover only steers when it moves). */
+  private ultPointerMoves = 0;
   private aimPrepT = 0;
   /** Why the player's last ability press did not cast (HUD feedback), or null. */
   lastAbilityBlock: CastBlock | null = null;
@@ -290,6 +295,7 @@ export class FightArenaScene implements ArenaScene {
         }
         this.intents.consumeDodge();
         this.intents.consumeJump();
+        this.intents.consumeUltLaunch();
         return pressed ? 1 : 0;
       },
       finisher: (winner, loser, f) =>
@@ -532,6 +538,7 @@ export class FightArenaScene implements ArenaScene {
       // Hands full: the combat buttons do nothing until it is thrown or put down (CONTROL_SCHEME §2).
       this.intents.consumeMeleeEdges();
       this.intents.consumeAbility();
+      this.intents.consumeUltLaunch();
       if (c.state === 'guarding') c.setGuard(false);
       f.meleeTracking = false;
       if (this.intents.consumeDodge() && !air && c.tryDodge()) {
@@ -542,9 +549,32 @@ export class FightArenaScene implements ArenaScene {
       const slow = THROWING.carrySpeedFactor(f.carrying.kind.massKg);
       const m = this.intents.move;
       const jump = (this.intents.consumeJump() || jumpFromUtility) && f.def.capabilities.canJump && c.canAct;
+      f.sprinting = false; // no sprinting with your hands full
       this.stepFighter(f, stepS, { x: m.x * slow, y: m.y * slow }, jump);
       return;
     }
+
+    if (this.ultAimPoint) {
+      // Aiming the leaping ultimate (owner, 11/11/2026): hover the mouse (or slide with WASD, or drag
+      // on touch) to pick the spot, then the launch button (default left click) or the ultimate key
+      // again jumps. The attack button does not punch while aiming: its click is the launch.
+      this.intents.consumeMeleeEdges();
+      f.meleeTracking = false;
+      if (c.state === 'guarding') c.setGuard(false);
+      const launch = this.intents.consumeUltLaunch();
+      const slot = this.intents.consumeAbility();
+      if (launch || slot === 'ult') this.ultimatePress(f);
+      if (this.ultAimPoint) {
+        this.steerUltimateAim(f, stepS);
+        f.sprinting = false;
+        this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
+        return;
+      }
+      f.sprinting = false;
+      this.stepFighter(f, stepS, { x: 0, y: 0 }, false); // the leap has just begun
+      return;
+    }
+    this.intents.consumeUltLaunch(); // nothing to launch: a plain click is just an attack
 
     // Button 1: decide tap vs hold on the fixed step.
     const { pressed, released } = this.intents.consumeMeleeEdges();
@@ -578,13 +608,15 @@ export class FightArenaScene implements ArenaScene {
     if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
     if (this.ultAimPoint) {
-      // Aiming: Inferno crouches to spring; WASD (or a drag) moves the landing spot instead of the fighter.
+      // Aiming starts: Inferno crouches to spring; the mouse, WASD or a drag picks the landing spot.
       this.steerUltimateAim(f, stepS);
+      f.sprinting = false;
       this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
       return;
     }
 
-    // Dodge (Shift / flick): a quick invulnerable dash, cancelling an attack (not an ability already cast).
+    // Dodge (right click / flick): a quick invulnerable dash toward the movement keys (back with
+    // none held), cancelling an attack (not an ability already cast).
     if (this.intents.consumeDodge() && !air && !f.caster?.cast && c.tryDodge()) {
       f.combo.interrupt();
       const m = this.intents.move;
@@ -599,6 +631,7 @@ export class FightArenaScene implements ArenaScene {
       c.state !== 'guarding' &&
       !(f.combo.attack && !air) &&
       !f.caster?.cast;
+    f.sprinting = this.intents.sprint;
     this.stepFighter(f, stepS, this.intents.move, jump);
   }
 
@@ -815,7 +848,17 @@ export class FightArenaScene implements ArenaScene {
     this.lastAbilityBlock = block;
     if (block) return;
     const start = this.abilities.aimFor(f, f.caster.def('ult'));
-    this.ultAimPoint = this.clampToRange(f, start);
+    const hover = this.pointerOnFloor();
+    this.ultAimPoint = this.clampToRange(f, hover ?? start);
+    this.ultPointerMoves = this.intents.pointerMoves;
+  }
+
+  /** The floor point under the mouse cursor (null without a mouse over the game). */
+  private pointerOnFloor(): { x: number; y: number } | null {
+    const p = this.intents.pointer;
+    const w = this.view?.world;
+    if (!p || !w || w.scale.x === 0) return null;
+    return isoToWorld((p.x - w.position.x) / w.scale.x, (p.y - w.position.y) / w.scale.y); // inverse of worldToScreen
   }
 
   /** Move the aimed spot: a touch drag places it directly; keys slide it; always within the leap's range. */
@@ -830,8 +873,13 @@ export class FightArenaScene implements ArenaScene {
     const range = this.ultRange(f);
     const drag = this.intents.ultDrag;
     let next = aim;
+    const hover = this.intents.pointerMoves !== this.ultPointerMoves ? this.pointerOnFloor() : null;
     if (drag) {
       next = { x: f.x + drag.x * range, y: f.y + drag.y * range };
+    } else if (hover) {
+      // The mouse moved: the spot follows the cursor (keys take over again until it moves).
+      this.ultPointerMoves = this.intents.pointerMoves;
+      next = hover;
     } else {
       const m = this.intents.move;
       next = { x: aim.x + m.x * ULT_AIM_SPEED_MPS * stepS, y: aim.y + m.y * ULT_AIM_SPEED_MPS * stepS };
@@ -953,7 +1001,8 @@ export class FightArenaScene implements ArenaScene {
       const isIdle = move.x === 0 && move.y === 0;
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
-      next = stepVelocity(v, move, { ...tuning, decelMps2: decel }, stepS);
+      const sprint = f.sprinting && !attack && !cast && c.state !== 'guarding' && !air ? SPRINT.speedFactor : 1;
+      next = stepVelocity(v, move, { ...tuning, maxSpeedMps: tuning.maxSpeedMps * sprint, decelMps2: decel }, stepS);
       if (!attack && !cast && Math.hypot(moveIn.x, moveIn.y) > 0.1 && f === this.playerFighter)
         f.faceToward(moveIn.x, moveIn.y);
     }
@@ -1673,7 +1722,7 @@ export class FightArenaScene implements ArenaScene {
     const bounce = f.recoilS > 0 ? 0.07 * Math.sin(Math.PI * (1 - f.recoilS / RECOIL_BOUNCE_S)) : 0;
     const drawnHeight = heightM + lift + f.abilityLift + bounce;
     // Dodge (owner, 11/11/2026): each character's own Dodge clip from its Animation Profile.
-    const dodge: { roll?: number; flame?: number } = {};
+    const dodge: DodgeLook = {};
     if (c.state === 'dodging') {
       const p = c.dodgeProgress;
       const clip = f.def.animation.clips.Dodge[0];
@@ -1681,9 +1730,18 @@ export class FightArenaScene implements ArenaScene {
         dodge.flame = Math.min(1, p / 0.2, (1 - p) / 0.2);
         const o = screenSideToWorld(f.facing * 0.3);
         this.frameFlames.push({ points: [{ x: x + o.x, y: y + o.y, z: 0.8 }], strength: 0.9 });
-      } else {
+      } else if (clip?.kind === 'procedural' && clip.id === 'proc.dodge.roll') {
         pose = blendPose(pose, tuckPose(pose), Math.min(1, p / 0.15, (1 - p) / 0.15));
         dodge.roll = p;
+      } else {
+        // Quick dodge (the default): snap into a low dash pose toward the dodge direction, then out.
+        const sx = (f.dodgeDir.x - f.dodgeDir.y) * ISO_C; // the dash on screen
+        const sy = (f.dodgeDir.x + f.dodgeDir.y) * ISO_C * ISO_T;
+        const kind: QuickDodgeKind =
+          Math.abs(sx) < Math.abs(sy) * 0.8 ? 'side' : sx * f.facing > 0 ? 'forward' : 'back';
+        const amount = Math.min(1, p / 0.12, (1 - p) / 0.3);
+        pose = blendPose(pose, quickDodgePose(pose, kind), amount);
+        dodge.dash = { amount, dirX: sx, dirY: sy };
       }
     }
     f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, f.flashColour, dodge);

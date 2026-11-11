@@ -12,6 +12,9 @@ export interface MovementTuning {
   readonly decelMps2: number;
 }
 
+/** Hold sprint (default Shift) to run this much faster (owner, 11/11/2026; REQ-CTL-16). */
+export const SPRINT = { speedFactor: 1.45 } as const;
+
 export interface Vel {
   x: number;
   y: number;

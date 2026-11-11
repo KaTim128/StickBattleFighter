@@ -51,7 +51,7 @@ async function setup() {
   /** Face the wall and land a full 1-2-3. */
   const combo = () => {
     scene.playerFighter.faceToward(-n.x, -n.y);
-    for (const id of ['jab', 'hook', 'heavy']) {
+    for (const id of ['jab', 'cross', 'hook', 'heavy']) {
       intents.pressMelee();
       runUntil(() => scene.player.attack === id, 1.5);
       run(0.12);

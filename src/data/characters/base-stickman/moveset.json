@@ -21,7 +21,7 @@
         "reachM": 0.72,
         "radiusM": 0.4
       },
-      "damage": 40,
+      "damage": 30,
       "strength": 150,
       "knockbackMps": 1.5,
       "lungeMps": 0,
@@ -30,9 +30,37 @@
       "shake": 0.12,
       "zoomPunch": 0,
       "next": {
-        "tap": "hook"
+        "tap": "cross"
       },
       "requires": ["canPunch"]
+    },
+    {
+      "id": "cross",
+      "displayName": "Right cross",
+      "animationState": "StraightPunch",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.07,
+      "activeS": 0.07,
+      "recoveryS": 0.18,
+      "cancelAt": 0.25,
+      "hitbox": {
+        "reachM": 0.78,
+        "radiusM": 0.4
+      },
+      "damage": 30,
+      "strength": 190,
+      "knockbackMps": 2,
+      "lungeMps": 0,
+      "moveFactor": 0.45,
+      "impact": "knuckle-light",
+      "shake": 0.12,
+      "zoomPunch": 0,
+      "next": {
+        "tap": "hook"
+      },
+      "requires": ["canPunch", "canUseCombos"]
     },
     {
       "id": "hook",
@@ -49,7 +77,7 @@
         "reachM": 0.74,
         "radiusM": 0.45
       },
-      "damage": 60,
+      "damage": 40,
       "strength": 230,
       "knockbackMps": 2.5,
       "lungeMps": 0,
@@ -64,9 +92,9 @@
     },
     {
       "id": "heavy",
-      "displayName": "Heavy finisher",
-      "animationState": "HeavyPunch",
-      "category": "punch",
+      "displayName": "Roundhouse kick finisher",
+      "animationState": "RoundhouseKick",
+      "category": "kick",
       "heavy": true,
       "aerial": false,
       "startupS": 0.17,
@@ -85,7 +113,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.6,
       "zoomPunch": 0.06,
-      "requires": ["canPunch", "canUseCombos"]
+      "requires": ["canUseCombos", "canKick"]
     },
     {
       "id": "front-kick",

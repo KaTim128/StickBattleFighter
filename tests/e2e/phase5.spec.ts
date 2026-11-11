@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { comboToHeavy } from './combo';
+import { comboToHeavy, gamePoint } from './combo';
 
 interface Hook {
   player: { hp: number; stamina: number; state: string; attack: string | null };
@@ -31,13 +31,15 @@ test('combat: combo damage with floating numbers; hold J to block; T toggles dum
   await expect(page.locator('.combat-text').first()).toBeAttached(); // floating numbers appeared
   await page.screenshot({ path: testInfo.outputPath('combo-damage.png') });
 
-  // Hold J: guard up, no attack.
+  // Hold the left mouse button: guard up, no attack.
   await page.waitForTimeout(1500);
-  await page.keyboard.down('KeyJ');
+  const at = await gamePoint(page);
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
   await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000 }).toBe('guarding');
   expect((await hook(page)).player.attack).toBeNull();
   await page.screenshot({ path: testInfo.outputPath('guard.png') });
-  await page.keyboard.up('KeyJ');
+  await page.mouse.up();
   await expect.poll(async () => (await hook(page)).player.state).toBe('free');
 
   await page.keyboard.press('KeyT');
@@ -46,7 +48,9 @@ test('combat: combo damage with floating numbers; hold J to block; T toggles dum
   expect(errors).toEqual([]);
 });
 
-test('combat: with dummy attacks on, an unguarded player takes damage; Shift dodges', async ({ page }, testInfo) => {
+test('combat: with dummy attacks on, an unguarded player takes damage; right click dodges', async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   test.setTimeout(60_000);
   const errors: string[] = [];
@@ -59,7 +63,8 @@ test('combat: with dummy attacks on, an unguarded player takes damage; Shift dod
   // Real-time waits for game-time events get headroom: a software-rendered browser under parallel load runs slow.
   await expect.poll(async () => (await hook(page)).player.state, { timeout: 8000, intervals: [20] }).toBe('free');
   await expect.poll(async () => (await hook(page)).player.stamina, { timeout: 3000 }).toBe(100);
-  await page.keyboard.press('ShiftLeft');
+  const p = await gamePoint(page);
+  await page.mouse.click(p.x, p.y, { button: 'right' });
   await expect
     .poll(async () => (await hook(page)).player.stamina, { timeout: 2000, intervals: [20] })
     .toBeLessThan(100);

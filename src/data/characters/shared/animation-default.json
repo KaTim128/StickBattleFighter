@@ -51,6 +51,6 @@
     "Faint": "proc.knockdown",
     "Defeat": "proc.knockdown",
     "Disintegration": "proc.knockdown",
-    "Dodge": "proc.dodge.roll"
+    "Dodge": "proc.dodge.quick"
   }
 }

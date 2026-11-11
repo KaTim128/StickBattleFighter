@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { clampToUnit, PlayerIntents } from '../../../src/input/intents';
-import { ABILITY_KEYS, moveFromKeys } from '../../../src/input/keyboard';
+import { DesktopInput, moveFromActions } from '../../../src/input/keyboard';
 import { joystickVector } from '../../../src/input/touch-controls';
 
 describe('PlayerIntents', () => {
@@ -27,21 +27,22 @@ describe('PlayerIntents', () => {
   });
 });
 
-describe('moveFromKeys (front/back/left/right, CONTROL_SCHEME §1)', () => {
-  it('maps WASD and arrows to screen directions', () => {
-    expect(moveFromKeys(new Set(['KeyW']))).toEqual({ x: 0, y: -1 });
-    expect(moveFromKeys(new Set(['ArrowDown']))).toEqual({ x: 0, y: 1 });
-    expect(moveFromKeys(new Set(['KeyA']))).toEqual({ x: -1, y: 0 });
-    expect(moveFromKeys(new Set(['ArrowRight']))).toEqual({ x: 1, y: 0 });
+describe('moveFromActions (up/down/left/right, CONTROL_SCHEME §1)', () => {
+  it('maps the four movement actions to screen directions', () => {
+    expect(moveFromActions(['moveUp'])).toEqual({ x: 0, y: -1 });
+    expect(moveFromActions(['moveDown'])).toEqual({ x: 0, y: 1 });
+    expect(moveFromActions(['moveLeft'])).toEqual({ x: -1, y: 0 });
+    expect(moveFromActions(['moveRight'])).toEqual({ x: 1, y: 0 });
   });
 
-  it('makes diagonals unit length and lets opposite keys cancel', () => {
-    const d = moveFromKeys(new Set(['KeyW', 'KeyD']));
+  it('makes diagonals unit length and lets opposite directions cancel', () => {
+    const d = moveFromActions(['moveUp', 'moveRight']);
     expect(Math.hypot(d.x, d.y)).toBeCloseTo(1, 6);
     expect(d.x).toBeGreaterThan(0);
     expect(d.y).toBeLessThan(0);
-    expect(moveFromKeys(new Set(['KeyA', 'KeyD']))).toEqual({ x: 0, y: 0 });
-    expect(moveFromKeys(new Set(['KeyW', 'ArrowUp']))).toEqual({ x: 0, y: -1 }); // same direction twice
+    expect(moveFromActions(['moveLeft', 'moveRight'])).toEqual({ x: 0, y: 0 });
+    expect(moveFromActions(['moveUp', 'moveUp'])).toEqual({ x: 0, y: -1 }); // same direction twice
+    expect(moveFromActions(['jump', 'sprint'])).toEqual({ x: 0, y: 0 }); // not movement
   });
 });
 
@@ -99,18 +100,17 @@ describe('ability buttons (Buttons 2–5)', () => {
     expect(intents.consumeAbility()).toBeNull();
   });
 
-  it('maps Q/E/R/F and K/L/O/I to the four slots; I is the ultimate (owner, CONTROL_SCHEME §4)', () => {
-    expect([ABILITY_KEYS.KeyQ, ABILITY_KEYS.KeyE, ABILITY_KEYS.KeyR, ABILITY_KEYS.KeyF]).toEqual([
-      'a1',
-      'a2',
-      'a3',
-      'ult',
-    ]);
-    expect([ABILITY_KEYS.KeyK, ABILITY_KEYS.KeyL, ABILITY_KEYS.KeyO, ABILITY_KEYS.KeyI]).toEqual([
-      'a1',
-      'a2',
-      'a3',
-      'ult',
-    ]);
+  it('maps Q/E/R/F to the three abilities and the ultimate by default (owner, 11/11/2026)', () => {
+    const intents = new PlayerIntents();
+    const input = new DesktopInput(intents);
+    for (const code of ['KeyQ', 'KeyE', 'KeyR', 'KeyF']) {
+      input.down(code);
+      input.up(code);
+    }
+    const got = [intents.consumeAbility(), intents.consumeAbility()];
+    expect(got).toEqual(['a1', 'a2']); // at most two wait
+    input.down('KeyR');
+    input.down('KeyF');
+    expect([intents.consumeAbility(), intents.consumeAbility()]).toEqual(['a3', 'ult']);
   });
 });

@@ -46,29 +46,31 @@
 
 ## 4. Desktop default bindings
 
-Two presets. All keys can be rebound, with conflict prevention and reset to defaults (REQ-CTL-3). Desktop never shows the joystick or touch buttons (REQ-CTL-2).
+One default layout (owner, 11/11/2026; REQ-CTL-17, TD-049). Every action can be rebound in **Settings → Controls** to any key or mouse button, with conflict prevention and reset to defaults (REQ-CTL-3). Desktop never shows the joystick or touch buttons (REQ-CTL-2). *(The two-preset table with a keyboard-only layout is superseded: SUP-10.)*
 
-| Action | **Keyboard + mouse** (default) | **Keyboard only** (Creature Clash-style) |
-|---|---|---|
-| Move | W A S D | W A S D or arrow keys |
-| Melee (tap) / Block (hold) | Left mouse button (or J) | J |
-| Ability 1 / 2 / 3 | Q / E / R | K / L / O |
-| Ultimate (aim, then launch) | F or I | I |
-| Dodge | Shift (or double-tap a direction) | Shift (or double-tap a direction) |
-| Jump / Pick up / Throw (contextual) | Space jumps; **G** picks up and throws | Space jumps; **U** picks up and throws |
-| Switch target | Tab | Tab |
-| Pause | Esc | Esc |
+| Action | Default |
+|---|---|
+| Move | W, A, S, D |
+| Sprint (hold) | Left Shift |
+| Jump | Space |
+| Tap attack (hold: block) | Left click |
+| Dodge (toward the held direction; backwards with none) | Right click |
+| Ability 1 / 2 / 3 | Q / E / R |
+| Ultimate | F |
+| Launch an aimed (leap) ultimate | Left click (or F again) |
+| Grab, press again to throw (hold: put down) | G |
+| Settings (pauses) | Esc or the gear button |
 
-On desktop, jump has its own key (Space) because keys are plentiful. The contextual pick up and throw moves to G or U, so you can jump while standing next to an object.
+Reserved, not bindable: Esc (settings), M (mute), T (dummy attacks), P and ` (debug). The launch control may share its key only with the tap attack or the ultimate. The browser's right-click menu is disabled over the game area.
 
 ## 4a. Live now (11/11/2026)
-- **Button 1** works: J or left click on desktop, the **MELEE** button on touch. Ground: 1-2-3 combo (jab → hook → heavy finisher; press once per strike); in the air: flying kick. **Hold** Button 1 (≥ 0.18 s) to block; raise it just before a hit to parry.
-- **Dodge:** Shift (desktop) or a joystick flick (touch).
-- **Abilities (Phase 6):** Q / E / R (or K / L / O) = Fire Bolt, Flame Dash, Eruption; F or I = Meteor Fist when the meter is full.
-- **Aiming Meteor Fist (owner, 11/11/2026):** press I (or F) to aim: Inferno crouches to spring and a landing ring appears inside the maximum-range ring; WASD moves the ring; press I again to jump. Touch: hold ULT, drag to place the ring, release to jump (a plain tap jumps at the locked target). Getting hit while aiming cancels it (the meter is kept). Keyboard-only preset: A3 moved from I to O (owner chose I for the ultimate). Touch: A1, A2, A3 and ULT around MELEE (five combat buttons); JUMP moved above the arc. Desktop shows an ability bar with cooldowns, stamina costs and the meter; touch draws them on the buttons.
+- **Button 1** works: left click on desktop, the **MELEE** button on touch. Ground: four-hit combo, three punches then a kick (press once per strike); in the air: flying kick. **Hold** Button 1 (≥ 0.18 s) to block; raise it just before a hit to parry.
+- **Dodge:** right click (desktop; toward the held W/A/S/D direction, backwards with none), the DODGE button or a joystick flick (touch). A quick low dash, not a roll (Inferno: flame). **Sprint:** hold Shift.
+- **Abilities (Phase 6):** Q / E / R = Fire Bolt, Flame Dash, Eruption; F = Meteor Fist when the meter is full.
+- **Aiming Meteor Fist (owner, 11/11/2026):** press F to aim: Inferno crouches to spring and a landing ring appears inside the maximum-range ring; **hover the mouse** over the spot (WASD also nudges it) and **left click** to jump (F again works too). Touch: hold ULT, drag to place the ring, release to jump (a plain tap jumps at the locked target). Getting hit while aiming cancels it (the meter is kept). Touch: A1, A2, A3 and ULT around MELEE (five combat buttons); JUMP moved above the arc. Desktop shows an ability bar with cooldowns, stamina costs and the meter; touch draws them on the buttons.
 - **Practice helpers:** T makes the dummy attack you (toggle); `?scene=training-yard` opens the open yard; `?slowmo=0.25` plays in slow motion to study animations.
 - Touch buttons never select or highlight their label when held (REQ-CTL-16).
-- **Punch Clash:** trade punches and blocks with an opponent and a clash starts; mash Button 1 (J, click or MELEE) as fast as you can for 4 s.
+- **Punch Clash:** trade punches and blocks with an opponent and a clash starts; mash Button 1 (click or MELEE) as fast as you can for 4 s.
 - **Sound:** starts after your first key press or tap (browser rule); **M** mutes; `?mute` starts muted.
 - **Jump:** Space or the JUMP button. Buttons 2–5 (abilities and ultimate) arrive with Phase 6.
 

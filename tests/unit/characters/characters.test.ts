@@ -24,9 +24,12 @@ describe('1. Base Stickman with the shared default profiles', () => {
     const report = validateCharacter('base-stickman', LIB);
     expect(report.errors).toEqual([]);
     const d = resolveCharacter('base-stickman', LIB);
-    expect(Object.keys(d.moves)).toEqual(['jab', 'hook', 'heavy', 'front-kick', 'flyingKick']);
-    expect(d.moves.jab!.next).toEqual({ tap: 'hook' });
-    expect(d.moves.jab!.damage).toBe(40);
+    expect(Object.keys(d.moves)).toEqual(['jab', 'cross', 'hook', 'heavy', 'front-kick', 'flyingKick']); // owner: three punches then a kick
+    expect(d.moves.jab!.next).toEqual({ tap: 'cross' });
+    expect(d.moves.cross!.next).toEqual({ tap: 'hook' });
+    expect(d.moves.hook!.next).toEqual({ tap: 'heavy' });
+    expect(d.moves.heavy!.category).toBe('kick'); // owner: three punches then a kick
+    expect(d.moves.jab!.damage).toBe(30);
     expect(d.animation.source.Jab).toBe('default'); // from the shared default profile
     expect(d.animation.source.Idle).toBe('style'); // boxing style profile
     expect(d.abilities).toBeNull();
@@ -70,7 +73,7 @@ describe('2. Inferno: fire element, taekwondo style, its own profiles', () => {
     expect(d.moves.roundhouse!.damage).toBeCloseTo(raw.damage * 1.25, 6);
     expect(d.moves.roundhouse!.windupS).toBeCloseTo(raw.startupS / 1.15, 6);
     expect(d.moves.roundhouse!.knockbackSpeedMps).toBeCloseTo(raw.knockbackMps * 1.15, 6);
-    expect(d.moves.jab!.damage).toBe(40); // punches ×1.0
+    expect(d.moves.jab!.damage).toBe(35); // punches ×1.0
     expect(d.movement.maxSpeedMps).toBeCloseTo(5 * 1.05, 6);
     expect(d.movement.jumpSpeedMps).toBeCloseTo(6.5 * 1.1, 6);
   });
@@ -255,12 +258,14 @@ describe('MoveController (data-driven Button 1)', () => {
     return started;
   };
 
-  it('follows combo routes from data: jab → straight → fire roundhouse; forward taps give the kick string', () => {
+  it('follows combo routes from data: jab → straight → hook → fire roundhouse; forward taps give the kick string', () => {
     const c = new MoveController(d.moves, d.starters);
     c.press(ground);
     expect(c.attack?.id).toBe('jab');
     c.press(ground);
     expect(run(c, 0.4)).toEqual(['straight']);
+    c.press(ground);
+    expect(run(c, 0.2)).toEqual(['hook']); // pressed while the straight is still running
     c.press(ground);
     expect(run(c, 0.5)).toEqual(['roundhouse']);
     const k = new MoveController(d.moves, d.starters);
@@ -331,7 +336,7 @@ describe('dodge animation per character (owner, 11/11/2026)', () => {
   it('the default stickman rolls back; Inferno turns into a flame', () => {
     const base = resolveCharacter('base-stickman', LIB2);
     const inferno = resolveCharacter('inferno', LIB2);
-    expect(base.animation.clips.Dodge[0]).toMatchObject({ kind: 'procedural', id: 'proc.dodge.roll' });
+    expect(base.animation.clips.Dodge[0]).toMatchObject({ kind: 'procedural', id: 'proc.dodge.quick' }); // owner: a quick dodge, not a roll
     expect(inferno.animation.clips.Dodge[0]).toMatchObject({ kind: 'procedural', id: 'proc.dodge.flame' });
   });
 

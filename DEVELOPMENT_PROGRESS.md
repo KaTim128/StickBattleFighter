@@ -327,6 +327,18 @@ Wall-side furniture faces into the room and chairs face their desks; the curved 
 ### 11/11/2026: Dodge roll on the ground (owner)
 The default stickman's roll now turns about the tucked body's centre while its lowest point stays on the floor every frame (no floating). Frames: `docs/screenshots/dodge-roll-grounded.png`. Evidence: lint, typecheck, `npm test`, `npm run e2e` green.
 
+### 11/11/2026: Desktop controls, Settings, four-hit combo, quick dodge, mouse-aimed ultimate (owner request)
+- **Controls (REQ-CTL-17, TD-049):** W/A/S/D move, hold Shift sprint, Space jump, left click attack (hold block), right click dodge toward the held direction, Q/E/R abilities, F ultimate, G grab/throw. One rebindable layout replaces the two presets (SUP-09, SUP-10). The browser's right-click menu is disabled over the game.
+- **Settings:** gear button or Esc (pauses). Audio: separate music and sound-effect sliders, live. Controls: rebind any action to a key or mouse button; conflicts refused with "X is already assigned to Y"; reset to defaults; saved in localStorage.
+- **Inferno ultimate (REQ-CTL-18):** F aims, the ring follows the hovered mouse, left click jumps (rebindable "Launch aimed ultimate"; may share only with attack or ultimate).
+- **Combo (REQ-CMB-26, SUP-12):** three punches then a kick: base jab → cross → hook → roundhouse kick; Inferno jab → straight → hook → fire roundhouse. Same total damage.
+- **Quick dodge (REQ-ANI-12, SUP-11):** `proc.dodge.quick` replaces the roll as the default: forward lunge, back-step or side shuffle with speed lines. Inferno keeps its flame.
+- **Files:** `src/input/bindings.ts`, `src/input/settings-store.ts`, `src/interface/settings-panel.ts` (new); `src/input/keyboard.ts` (rewritten as `DesktopInput`), `src/input/intents.ts`, `src/app/bootstrap.ts`, `src/app/scenes/fight-arena-scene.ts`, `src/app/scenes/fighter-entity.ts`, `src/physics/movement.ts`, `src/audio/{sound-board,music}.ts`, `src/animation/{reaction-poses,clips}.ts`, `src/rendering/stickman-view.ts`, both movesets, shared animation profile, `index.html`.
+- **Tests changed and why:** combo tests now expect four strikes (owner changed the combo); door e2e expects `brokenBy: 'kick'` (the finisher is a kick); key-preset tests (K/L/O/I, U, J, arrows, Shift dodge) rewritten for the new single layout; the default dodge clip test expects `proc.dodge.quick`. New: `tests/unit/input/bindings.test.ts` (defaults, conflicts, reserved keys, persistence, repair), three ultimate/sprint integration tests, `tests/e2e/controls.spec.ts` (right-click dodge and no menu, directional dodge, mouse-aimed ultimate, settings flow with reload).
+- **Evidence:** lint clean; typecheck 0; `npm test` 280/280; `npm run e2e` 31 passed (25 skipped by project); screenshots `docs/screenshots/quick-dodge-forward-back-side.png`, `docs/screenshots/settings-controls-conflict.png`.
+- **Limitation:** there is no main menu yet, so Settings opens in game only. Not checked on a real phone or with a physical mouse (headless Chromium only).
+- **Next task:** owner playtest of the new controls, then Phase 8 (first polished fighter).
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

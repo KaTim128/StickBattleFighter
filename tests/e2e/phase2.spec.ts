@@ -56,9 +56,9 @@ test('keyboard moves the stickman front/back/left/right, it jumps, and the camer
   await expect.poll(async () => (await player(page)).airborne).toBe(false);
 
   // Holding left for long enough reaches the wall but never passes it.
-  await page.keyboard.down('ArrowLeft');
+  await page.keyboard.down('KeyA');
   await page.waitForTimeout(4500);
-  await page.keyboard.up('ArrowLeft');
+  await page.keyboard.up('KeyA');
   const end = await player(page);
   expect(end.x).toBeGreaterThan(0.25); // inside the west wall…
   expect(end.y).toBeLessThan(20 - 0.25); // …and the south wall

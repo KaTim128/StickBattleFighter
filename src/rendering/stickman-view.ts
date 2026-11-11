@@ -16,6 +16,16 @@ export interface StickmanLook {
  * outlined figure lifted by its hop height over a ground shadow (REQ-VIS-9).
  * Origin = the point between the feet on the floor.
  */
+/** Dodge looks (owner, 11/11/2026): the default quick dash, the optional roll, Inferno's flame. */
+export interface DodgeLook {
+  /** 0..1 progress of a ground roll. */
+  roll?: number;
+  /** 0..1 how far the body has turned to flame. */
+  flame?: number;
+  /** A quick dash: 0..1 strength and the screen direction of travel (speed lines trail behind). */
+  dash?: { amount: number; dirX: number; dirY: number };
+}
+
 export class StickmanView {
   private last: { s: ReturnType<typeof solveSkeleton>; facing: 1 | -1; heightM: number; rot: number } | null = null;
   readonly root = new Container();
@@ -25,6 +35,8 @@ export class StickmanView {
   /** The flame head (head style 'flame'): drawn additively so overlapping tongues glow. */
   private readonly fire = new Graphics();
   private readonly fireCore = new Graphics();
+  /** Speed lines behind a quick dodge. */
+  private readonly trail = new Graphics();
   /** 0..1 how fast the fighter is moving: the flames stream back. */
   motion = 0;
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
@@ -37,7 +49,7 @@ export class StickmanView {
     this.root.label = 'stickman';
     this.fire.blendMode = 'add';
     this.figure.addChild(this.body, this.fire, this.fireCore);
-    this.root.addChild(this.shadow, this.figure);
+    this.root.addChild(this.shadow, this.trail, this.figure);
   }
 
   /** Seconds since this view was made (render-only animation clock for the flame head). */
@@ -58,7 +70,7 @@ export class StickmanView {
     tiltRad = 0,
     flash = 0,
     flashColour = 0xffffff,
-    dodge: { roll?: number; flame?: number } = {},
+    dodge: DodgeLook = {},
   ): void {
     const s = solveSkeleton(pose, this.bones);
     this.last = { s, facing, heightM, rot: -facing * tiltRad };
@@ -110,6 +122,7 @@ export class StickmanView {
       // Falling backwards, away from the facing direction.
       this.figure.rotation = -facing * tiltRad;
     }
+    this.drawTrail(dodge.dash, outline);
     // Flame dodge: the body burns away into a streaking flame, then reforms.
     const flame = dodge.flame ?? 0;
     this.body.alpha = 1 - flame;
@@ -143,6 +156,26 @@ export class StickmanView {
       g.circle(s.head.x, s.head.y, this.bones.headRadius)
         .fill(limb)
         .stroke({ width: o * 1.4, color: outline });
+    }
+  }
+
+  /** Quick dodge speed lines: short streaks trailing opposite the dash, fading in and out with it. */
+  private drawTrail(dash: DodgeLook['dash'], colour: number): void {
+    const t = this.trail.clear();
+    if (!dash || dash.amount <= 0.01) return;
+    const len = Math.hypot(dash.dirX, dash.dirY) || 1;
+    const bx = -dash.dirX / len;
+    const by = -dash.dirY / len;
+    for (const [h, l, start] of [
+      [0.45, 0.55, 0.2],
+      [0.95, 0.8, 0.12],
+      [1.35, 0.5, 0.22],
+    ] as const) {
+      const x0 = bx * start;
+      const y0 = -h + by * start * 0.5;
+      t.moveTo(x0, y0)
+        .lineTo(x0 + bx * l * dash.amount, y0 + by * l * dash.amount * 0.5)
+        .stroke({ width: 0.035, color: colour, alpha: 0.4 * dash.amount, cap: 'round' });
     }
   }
 
