@@ -6,7 +6,8 @@ import type { HitOutcome } from './combatant';
  * (PRS-4). Positions are world metres at the target's head.
  */
 export interface CombatEvent {
-  readonly kind: Exclude<HitOutcome, 'ignored'>;
+  /** A hit outcome, or 'burn' for damage over time from fire. */
+  readonly kind: Exclude<HitOutcome, 'ignored'> | 'burn';
   readonly target: string;
   readonly x: number;
   readonly y: number;

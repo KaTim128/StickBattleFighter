@@ -1,5 +1,6 @@
 import type { RigidBody } from '@dimforge/rapier2d';
 import type { Container } from 'pixi.js';
+import { AbilityCaster } from '../../abilities/ability-caster';
 import { StickmanAnimator } from '../../animation/animator';
 import { Combatant, seededRandom } from '../../combat/combatant';
 import { ComboController } from '../../combat/combo';
@@ -19,6 +20,15 @@ export class FighterEntity {
   readonly combatant: Combatant;
   readonly combo: ComboController;
   readonly animator: StickmanAnimator;
+  /** Abilities and the ultimate meter (null for fighters without a kit, e.g. the training dummy). */
+  readonly caster: AbilityCaster | null;
+  /** Velocity forced by a dash or leap this step, or null. */
+  driveVelocity: { x: number; y: number } | null = null;
+  /** Height off the floor during a leap, metres. */
+  abilityLift = 0;
+  /** Burn damage not yet shown as a floating number. */
+  burnShown = 0;
+  burnTextS = 0;
   body: RigidBody | null = null;
   view: StickmanView | null = null;
   bars: FighterBars | null = null;
@@ -51,6 +61,7 @@ export class FighterEntity {
     this.combatant = new Combatant(def.stats);
     this.combo = new ComboController(def.attacks, seededRandom(name.length * 7919 + 17));
     this.animator = new StickmanAnimator(def.bones);
+    this.caster = def.abilities ? new AbilityCaster(def.abilities) : null;
   }
 
   get airborne(): boolean {
@@ -85,6 +96,8 @@ export class FighterEntity {
     Object.assign(this.prev, at);
     Object.assign(this.curr, at);
     this.knockFlightS = 0;
+    this.driveVelocity = null;
+    this.abilityLift = 0;
     this.hop = { heightM: 0, verticalSpeedMps: 0 };
     this.prevHop = 0;
   }
@@ -93,6 +106,7 @@ export class FighterEntity {
   respawn(): void {
     this.combatant.reset();
     this.combo.interrupt();
+    this.caster?.reset();
     this.placeAt(this.spawn);
   }
 

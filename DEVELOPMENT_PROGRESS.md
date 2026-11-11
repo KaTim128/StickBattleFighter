@@ -248,6 +248,13 @@ Also added `?slowmo=` and a freeze hook for exact animation screenshots.
 **Evidence:** lint clean; typecheck 0; `npm test` **166/166**; build clean; `npm run e2e` **48/48** over 3 repeats; screenshots listed in `TESTING_CHECKLIST.md` §0h.
 **Limitations:** pieces and fallen items are greybox; real-phone check of the button fix still to do by the owner.
 
+### 11/11/2026: Phase 6, abilities and ultimate (Master Developer; no specialists used, per TD-019)
+**Owner decisions:** ultimate = charge meter (OQ-04); Inferno gets the first kit.
+**What changed:** shared ability framework (data, caster, delivery world), Inferno's Fire Bolt, Flame Dash, Eruption and Meteor Fist; burning fighters and furniture; one hit path for melee and abilities; cast animations; fire VFX with telegraphs; desktop ability bar; touch A1–A3 and ULT buttons (five combat buttons); sound-hook events. See TD-032 and REQ-ABL-3/7/8.
+**Files:** `src/abilities/*`, `src/data/abilities/inferno.ts`, `src/data/fighters/inferno.ts`, `fighter-def.ts`, `greybox-stickman.ts`; `src/app/scenes/scene-abilities.ts`, `fight-arena-scene.ts`, `fighter-entity.ts`; `src/animation/ability-poses.ts`; `src/vfx/ability-vfx.ts`; `src/interface/ability-hud.ts`, `combat-text.ts`; `src/combat/combatant.ts`, `events.ts`; `src/environment/arena-props.ts`; `src/physics/physics-world.ts`; `src/input/intents.ts`, `keyboard.ts`, `touch-controls.ts`; `src/app/bootstrap.ts`; `index.html` (status hint moved to the top-left so it does not overlap the ability bar).
+**Evidence:** lint clean; typecheck 0; `npm test` **189/189**; build clean; `npm run e2e` **18/18**; browser screenshots of every ability (`docs/screenshots/phase6-abilities.png`).
+**Limitations:** numbers provisional (OQ-05); sound hooks fire but no audio plays yet (OQ-17); the dummy does not use abilities (AI is Phase 10).
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

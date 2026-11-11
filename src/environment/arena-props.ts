@@ -25,8 +25,12 @@ export interface PropHit {
   readonly damage: number;
   /** Impulse source: attack strength, or mass × speed for a knocked body. */
   readonly strength: number;
-  /** Direction of the blow (unit vector). */
+  /** Direction of the blow (unit vector); ignored when `origin` is set. */
   readonly direction: Vec2;
+  /** An area blast: each prop is pushed straight away from this point. */
+  readonly origin?: Vec2;
+  /** Fire: flammable props catch alight (Inferno, spec §8.3). */
+  readonly ignites?: boolean;
 }
 
 export interface PropHitResult {
@@ -43,6 +47,7 @@ export interface PropState {
   readonly hp: number | null;
   readonly broken: boolean;
   readonly awake: boolean;
+  readonly burning: boolean;
 }
 
 /** Push per unit of blow strength (N·s). A heavy finisher (720) sends a 12 kg chair off at ~3 m/s. */
@@ -52,6 +57,10 @@ const REHIT_S = 0.3;
 /** Planted again once slower than this for SETTLE_S. */
 const SETTLE_SPEED_MPS = 0.06;
 const SETTLE_S = 0.3;
+/** Materials that catch fire, and how fast a burning prop loses durability. */
+const FLAMMABLE: ReadonlySet<Material> = new Set(['wood', 'fabric', 'paper', 'plant']);
+const BURN_DPS = 14;
+const BURN_S = 5;
 
 export const MATERIAL_COLOURS: Record<Material, number> = {
   wood: 0x9c7446,
@@ -71,6 +80,8 @@ export class ArenaProp {
   awake = false;
   /** Fell off its (broken) parent: now a loose piece on the floor. */
   looseFall: { heightM: number; vz: number } | null = null;
+  /** Seconds of fire left (flammable props hit by fire). */
+  burnS = 0;
   private settleS = 0;
   private lastHitS = -Infinity;
 
@@ -196,6 +207,16 @@ export class ArenaProps {
   update(stepS: number): void {
     this.timeS += stepS;
     for (const prop of this.props) {
+      if (prop.burnS > 0 && !prop.broken) {
+        prop.burnS = Math.max(0, prop.burnS - stepS);
+        if (prop.hp !== null) {
+          prop.hp = Math.max(0, prop.hp - BURN_DPS * stepS);
+          if (prop.hp === 0) {
+            prop.burnS = 0;
+            this.shatter(prop, { blow: 'strike', damage: 0, strength: 150, direction: { x: 0, y: 1 } });
+          }
+        }
+      }
       if (prop.looseFall) {
         const f = prop.looseFall;
         if (f.heightM > 0 || f.vz > 0) {
@@ -223,13 +244,23 @@ export class ArenaProps {
         hp: p.hp,
         broken: p.broken,
         awake: p.awake,
+        burning: p.burnS > 0,
       };
     });
   }
 
   /** Returns true if this hit broke the prop. */
-  private applyHit(prop: ArenaProp, hit: PropHit): boolean {
+  private applyHit(prop: ArenaProp, propHit: PropHit): boolean {
     prop.markHit(this.timeS);
+    let hit = propHit;
+    if (hit.origin) {
+      const { x, y } = prop.pose;
+      const dx = x - hit.origin.x;
+      const dy = y - hit.origin.y;
+      const len = Math.hypot(dx, dy) || 1;
+      hit = { ...hit, direction: { x: dx / len, y: dy / len } };
+    }
+    if (hit.ignites && FLAMMABLE.has(prop.kind.material)) prop.burnS = BURN_S;
     if (prop.hp !== null) {
       prop.hp = Math.max(0, prop.hp - hit.damage);
       if (prop.hp === 0) {

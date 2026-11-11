@@ -136,4 +136,6 @@ export const GREYBOX_STICKMAN = {
     limbWidthM: 0.075,
     outlineWidthM: 0.035,
   },
+  /** The greybox base fighter has no kit; Inferno builds on it (src/data/fighters/inferno.ts). */
+  abilities: null,
 } as const;

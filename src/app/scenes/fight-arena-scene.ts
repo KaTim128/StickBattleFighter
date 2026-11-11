@@ -1,4 +1,7 @@
 import { Container } from 'pixi.js';
+import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
+import type { Burn } from '../../abilities/ability-def';
+import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { attackPose } from '../../animation/attack-poses';
 import { blockPose, dashPose, flinchPose, getUpFrame, knockdownFrame } from '../../animation/reaction-poses';
@@ -12,6 +15,7 @@ import { type CombatState, DEFENCE, seededRandom } from '../../combat/combatant'
 import type { CombatEvent } from '../../combat/events';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { GREYBOX_STICKMAN } from '../../data/fighters/greybox-stickman';
+import { INFERNO } from '../../data/fighters/inferno';
 import { TRAINING_DUMMY } from '../../data/fighters/training-dummy';
 import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
@@ -21,8 +25,10 @@ import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
 import { tallestPropM } from '../../rendering/prop-view';
+import { AbilityVfx, type BurningThing } from '../../vfx/ability-vfx';
 import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
+import { SceneAbilities } from './scene-abilities';
 
 /** Live player state for the debug overlay and browser tests. */
 export interface PlayerState {
@@ -42,6 +48,11 @@ export interface PlayerState {
   hp: number;
   stamina: number;
   state: CombatState;
+  /** Ability being cast (id), or null. */
+  ability: string | null;
+  /** Ultimate meter, 0..100. */
+  meter: number;
+  burning: boolean;
 }
 
 export interface DummyState {
@@ -52,6 +63,7 @@ export interface DummyState {
   hp: number;
   state: CombatState;
   attack: string | null;
+  burning: boolean;
   /** Seconds on the floor (fall animation); 0 when standing. */
   downTimeS: number;
   /** 0..1 through getting up. */
@@ -100,6 +112,9 @@ export class FightArenaScene implements ArenaScene {
   /** Furniture that moves or breaks when hit (owner, 11/11/2026). */
   props: ArenaProps | null = null;
   private debrisView: DebrisView | null = null;
+  /** The shared ability framework in this arena (Phase 6). */
+  abilities: SceneAbilities | null = null;
+  private vfx: AbilityVfx | null = null;
   /** Desk items that fell to the floor and now depth-sort as floor objects. */
   private readonly grounded = new Set<number>();
   /** Practice option: the dummy jabs back when you are close (REQ-MOD-5). */
@@ -110,6 +125,8 @@ export class FightArenaScene implements ArenaScene {
   private readonly shake = new CameraShake();
   private readonly rng = seededRandom(1234);
   private hitstopS = 0;
+  /** Why the player's last ability press did not cast (HUD feedback), or null. */
+  lastAbilityBlock: CastBlock | null = null;
   private view: ArenaView | null = null;
   private overlay: Container | null = null;
   private readonly peakHopM =
@@ -124,7 +141,7 @@ export class FightArenaScene implements ArenaScene {
     private readonly overview = false,
   ) {
     this.name = arena.id;
-    this.playerFighter = new FighterEntity('player', GREYBOX_STICKMAN, arena.playerStart, true);
+    this.playerFighter = new FighterEntity('player', INFERNO, arena.playerStart, true);
     this.dummyFighter = new FighterEntity('dummy', TRAINING_DUMMY, arena.dummyStart, false);
   }
 
@@ -153,7 +170,15 @@ export class FightArenaScene implements ArenaScene {
       hp: f.combatant.hp,
       stamina: f.combatant.stamina,
       state: f.combatant.state,
+      ability: f.caster?.cast?.def.id ?? null,
+      meter: f.caster?.meter ?? 0,
+      burning: f.combatant.burning,
     };
+  }
+
+  /** The player's ability buttons for the HUD (cooldowns, costs, meter). */
+  get abilityHud(): AbilityHudState | null {
+    return this.abilities?.hud(this.playerFighter) ?? null;
   }
 
   get dummy(): DummyState {
@@ -164,6 +189,7 @@ export class FightArenaScene implements ArenaScene {
       y: f.y,
       speed: Math.hypot(v.x, v.y),
       knockedBack: f.knockFlightS > 0,
+      burning: f.combatant.burning,
       hp: f.combatant.hp,
       downTimeS: f.combatant.downTimeS,
       getUpProgress: f.combatant.getUpProgress,
@@ -195,8 +221,18 @@ export class FightArenaScene implements ArenaScene {
     addArenaColliders(physics, arena, false); // props get their own bodies: they move and break
     this.props = new ArenaProps(arena, physics);
     this.doors = (arena.doors ?? []).map((spec) => new BreakableDoor(spec, physics));
+    this.abilities = new SceneAbilities(
+      () => this.fighters,
+      (attacker, target, strike) => this.applyStrike(attacker, target, strike),
+      physics,
+      this.props,
+      this.doors,
+      () => this.shake.addTrauma(0.35),
+    );
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
+    this.vfx = new AbilityVfx();
+    this.vfx.attach(this.view.world, this.view.actors.container);
     this.overlay = new Container();
     this.overlay.label = 'fighter-overlay';
     for (const f of this.fighters) f.attach(physics, this.view.actors, this.overlay);
@@ -234,7 +270,11 @@ export class FightArenaScene implements ArenaScene {
     }
 
     for (const f of this.fighters) {
-      f.combatant.update(stepS);
+      const wasKo = f.combatant.isKo;
+      const burned = f.combatant.update(stepS);
+      if (burned > 0) this.showBurn(f, burned);
+      if (!wasKo && f.combatant.isKo) this.abilities?.interrupt(f, true); // burned out
+      f.burnTextS = Math.max(0, f.burnTextS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
       if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS) f.respawn();
@@ -242,6 +282,7 @@ export class FightArenaScene implements ArenaScene {
 
     this.controlPlayer(this.playerFighter, stepS);
     this.controlDummy(this.dummyFighter, stepS);
+    if (this.abilities) this.abilities.world.update(stepS, this.abilities);
     for (const f of this.fighters) this.checkDoorImpact(f, stepS);
     for (const door of this.doors) door.update(stepS);
     this.props?.update(stepS);
@@ -270,24 +311,29 @@ export class FightArenaScene implements ArenaScene {
     }
     if (f.meleeTracking && this.intents.meleeHeld && !released) {
       f.meleeHoldS += stepS;
-      if (f.meleeHoldS >= DEFENCE.blockHoldS && !air && !f.combo.attack) c.setGuard(true);
+      if (f.meleeHoldS >= DEFENCE.blockHoldS && !air && !f.combo.attack && !f.caster?.cast) c.setGuard(true);
     }
     if (released && f.meleeTracking) {
       const wasGuarding = c.state === 'guarding' || f.meleeHoldS >= DEFENCE.blockHoldS;
-      if (!wasGuarding && c.canAct) f.combo.press(air);
+      if (!wasGuarding && c.canAct && !f.caster?.cast) f.combo.press(air);
       f.meleeTracking = false;
     }
     if (!this.intents.meleeHeld && c.state === 'guarding') c.setGuard(false);
 
-    // Dodge (Shift / flick): a quick invulnerable dash, cancelling an attack.
-    if (this.intents.consumeDodge() && !air && c.tryDodge()) {
+    // Buttons 2–5: abilities and the ultimate.
+    const slot = this.intents.consumeAbility();
+    if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
+
+    // Dodge (Shift / flick): a quick invulnerable dash, cancelling an attack (not an ability already cast).
+    if (this.intents.consumeDodge() && !air && !f.caster?.cast && c.tryDodge()) {
       f.combo.interrupt();
       const m = this.intents.move;
       const len = Math.hypot(m.x, m.y);
       Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.facing, y: 0 });
     }
 
-    const jump = this.intents.consumeJump() && c.canAct && c.state !== 'guarding' && !(f.combo.attack && !air);
+    const jump =
+      this.intents.consumeJump() && c.canAct && c.state !== 'guarding' && !(f.combo.attack && !air) && !f.caster?.cast;
     this.stepFighter(f, stepS, this.intents.move, jump);
   }
 
@@ -327,6 +373,8 @@ export class FightArenaScene implements ArenaScene {
     const c = f.combatant;
     const air = f.airborne;
     if (!c.canAct) f.combo.interrupt();
+    this.abilities?.stepCaster(f, stepS);
+    const cast = f.caster?.cast ?? null;
 
     const ev = f.combo.update(stepS, air);
     const attack = f.combo.attack;
@@ -334,7 +382,9 @@ export class FightArenaScene implements ArenaScene {
     const v = body.linvel();
 
     let next: { x: number; y: number };
-    if (c.state === 'dodging') {
+    if (f.driveVelocity) {
+      next = f.driveVelocity; // dash or leap: the ability world moves the body
+    } else if (c.state === 'dodging') {
       next = { x: f.dodgeDir.x * DEFENCE.dodgeSpeedMps, y: f.dodgeDir.y * DEFENCE.dodgeSpeedMps };
     } else if (!c.canAct) {
       // Stunned, knocked down or KO: slide to a stop (further while flying from a heavy blow).
@@ -342,13 +392,19 @@ export class FightArenaScene implements ArenaScene {
       next = stepVelocity(v, { x: 0, y: 0 }, { maxSpeedMps: 0, accelMps2: 0, decelMps2: decel }, stepS);
     } else {
       let move = moveIn;
-      const factor = c.state === 'guarding' ? 0.35 : attack && !air ? attack.moveFactor : 1;
+      const factor = cast
+        ? cast.def.moveFactor
+        : c.state === 'guarding'
+          ? 0.35
+          : attack && !air
+            ? attack.moveFactor
+            : 1;
       move = { x: move.x * factor, y: move.y * factor };
       const isIdle = move.x === 0 && move.y === 0;
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
       next = stepVelocity(v, move, { ...tuning, decelMps2: decel }, stepS);
-      if (!attack && Math.abs(moveIn.x) > 0.1 && f === this.playerFighter) f.facing = moveIn.x > 0 ? 1 : -1;
+      if (!attack && !cast && Math.abs(moveIn.x) > 0.1 && f === this.playerFighter) f.facing = moveIn.x > 0 ? 1 : -1;
     }
     body.setLinvel(next, true);
 
@@ -357,6 +413,84 @@ export class FightArenaScene implements ArenaScene {
     if (air && !f.airborne) f.combo.landed();
 
     if (ev.hit) this.resolveHit(f, ev.hit);
+  }
+
+  /**
+   * The one hit path for melee and abilities (INV-5): combat rules, floating text,
+   * parry, interruption, ultimate charge, burn, knockback and hit-stop.
+   * `dir` scales the knockback velocity (melee uses facing plus a little sideways).
+   * Returns true if the hit connected (anything but a dodge or an ignored hit).
+   */
+  private applyStrike(
+    attacker: FighterEntity,
+    target: FighterEntity,
+    s: {
+      damage: number;
+      heavy: boolean;
+      knockbackMps: number;
+      dir: { x: number; y: number };
+      melee: boolean;
+      burn?: Burn;
+    },
+  ): boolean {
+    if (!target.body || target.combatant.isKo) return false;
+    const t = target.body.translation();
+    // A block only works when facing the attacker.
+    const fromFront = target.facing === (attacker.x >= t.x ? 1 : -1);
+    const result = target.combatant.receive(
+      {
+        baseDamage: s.damage,
+        attackerPower: attacker.def.stats.power,
+        heavy: s.heavy,
+        fromFront,
+        critRoll: this.rng(),
+      },
+      attacker.def.stats.critChance,
+      attacker.def.stats.critMultiplier,
+    );
+    if (result.outcome === 'ignored') return false;
+    this.events.push({ kind: result.outcome, target: target.name, x: t.x, y: t.y - HEAD_TOP_M, amount: result.damage });
+
+    if (result.outcome === 'parried') {
+      if (s.melee) {
+        attacker.combatant.stun(result.attackerStunS);
+        attacker.combo.interrupt();
+        this.abilities?.interrupt(attacker, false);
+      }
+      this.shake.addTrauma(0.25);
+      this.hitstopS = HITSTOP_HEAVY_S;
+      return true;
+    }
+    if (result.outcome === 'dodged') return false;
+
+    // Damage dealt and taken fills the ultimate meters (OQ-04: charge meter).
+    attacker.caster?.onDamage(result.damage, 0);
+    target.caster?.onDamage(0, result.damage);
+    if (result.outcome !== 'blocked') {
+      target.combo.interrupt();
+      this.abilities?.interrupt(target, result.outcome === 'ko');
+      if (s.burn && result.outcome !== 'ko') target.combatant.ignite(s.burn.dps, s.burn.durationS);
+    }
+
+    const speed = s.knockbackMps * result.knockbackScale;
+    target.body.setLinvel({ x: s.dir.x * speed, y: s.dir.y * speed }, true);
+    target.knockFlightS = speed >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : 0;
+    this.hitstopS = s.heavy || result.outcome === 'ko' ? HITSTOP_HEAVY_S : HITSTOP_LIGHT_S;
+    if (result.outcome === 'ko') {
+      this.shake.addTrauma(0.7);
+      this.shake.punch(0.08);
+    }
+    return true;
+  }
+
+  /** Burn damage shows as small floating numbers, at most twice a second; it also charges the ultimate. */
+  private showBurn(f: FighterEntity, damage: number): void {
+    f.caster?.onDamage(0, damage);
+    f.burnShown += damage;
+    if (f.burnShown < 1 || f.burnTextS > 0) return;
+    this.events.push({ kind: 'burn', target: f.name, x: f.x, y: f.y - HEAD_TOP_M, amount: Math.round(f.burnShown) });
+    f.burnShown = 0;
+    f.burnTextS = 0.5;
   }
 
   /** An attack reached its active window: check its hit capsule against other fighters and doors. */
@@ -377,48 +511,9 @@ export class FightArenaScene implements ArenaScene {
       if (target === attacker || !target.body || target.combatant.isKo) continue;
       const t = target.body.translation();
       if (distanceToCapsule(capsule, t.x, t.y) > a.hitRadiusM + target.def.body.footRadiusM) continue;
-      // A block only works when facing the attacker.
-      const fromFront = target.facing === (p.x >= t.x ? 1 : -1);
-      const result = target.combatant.receive(
-        {
-          baseDamage: a.damage,
-          attackerPower: attacker.def.stats.power,
-          heavy: a.heavy,
-          fromFront,
-          critRoll: this.rng(),
-        },
-        attacker.def.stats.critChance,
-        attacker.def.stats.critMultiplier,
-      );
-      if (result.outcome === 'ignored') continue;
-      connected = true;
-      this.events.push({
-        kind: result.outcome,
-        target: target.name,
-        x: t.x,
-        y: t.y - HEAD_TOP_M,
-        amount: result.damage,
-      });
-
-      if (result.outcome === 'parried') {
-        attacker.combatant.stun(result.attackerStunS);
-        attacker.combo.interrupt();
-        this.shake.addTrauma(0.25);
-        this.hitstopS = HITSTOP_HEAVY_S;
-        continue;
-      }
-      if (result.outcome === 'dodged') continue;
-      if (result.outcome !== 'blocked') target.combo.interrupt();
-
-      const speed = a.knockbackSpeedMps * result.knockbackScale;
       const sideways = Math.max(-0.4, Math.min(0.4, t.y - p.y));
-      target.body.setLinvel({ x: facing * speed, y: sideways * speed }, true);
-      target.knockFlightS = speed >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : 0;
-      this.hitstopS = a.heavy || result.outcome === 'ko' ? HITSTOP_HEAVY_S : HITSTOP_LIGHT_S;
-      if (result.outcome === 'ko') {
-        this.shake.addTrauma(0.7);
-        this.shake.punch(0.08);
-      }
+      const strike = { damage: a.damage, heavy: a.heavy, knockbackMps: a.knockbackSpeedMps, melee: true };
+      if (this.applyStrike(attacker, target, { ...strike, dir: { x: facing, y: sideways } })) connected = true;
     }
 
     for (const door of this.doors) {
@@ -491,6 +586,7 @@ export class FightArenaScene implements ArenaScene {
       if (door.broken && view) view.showBroken(door.pieces, (node) => this.view?.actors.add(node, 0));
     }
     this.renderProps();
+    this.renderAbilityFx(frameDtS);
     this.view.actors.update();
 
     // Frame the player and the dummy (aiming at torsos), then apply impact shake.
@@ -554,6 +650,32 @@ export class FightArenaScene implements ArenaScene {
     this.debrisView?.sync(this.props.debris.pieces);
   }
 
+  /** Fire effects: projectiles, trails, telegraphs, bursts and flames on burning things; big blasts shake the camera. */
+  private renderAbilityFx(frameDtS: number): void {
+    if (!this.vfx || !this.abilities) return;
+    const fx = this.abilities.drainFx();
+    for (const e of fx) {
+      if (e.kind !== 'impact' || (e.radiusM ?? 0) < 2) continue;
+      this.shake.addTrauma((e.radiusM ?? 0) >= 2.8 ? 0.85 : 0.5); // Meteor Fist hits hardest
+      this.shake.punch(0.06);
+    }
+    const burning: BurningThing[] = [];
+    for (const f of this.fighters) {
+      if (f.combatant.burning) burning.push({ x: f.x, y: f.y, heightM: 1.4 });
+    }
+    for (const p of this.props?.props ?? []) {
+      if (p.burnS > 0 && !p.broken) burning.push({ x: p.pose.x, y: p.pose.y, heightM: p.size.h + 0.35 });
+    }
+    const world = this.abilities.world;
+    this.vfx.update(frameDtS, {
+      projectiles: world.projectiles,
+      zones: world.zones,
+      telegraphs: world.telegraphs,
+      fx,
+      burning,
+    });
+  }
+
   /** Props for tests and the debug hook. */
   get propStates(): PropState[] {
     return this.props?.states ?? [];
@@ -578,6 +700,10 @@ export class FightArenaScene implements ArenaScene {
     });
     const attack = f.combo.attack;
     if (attack) pose = attackPose(pose, attack, f.combo.progress, f.combo.variant);
+    const cast = f.caster?.cast;
+    if (cast && f.caster) {
+      pose = abilityPose(pose, cast.def.id, cast.phase, f.caster.phaseProgress, f.abilityLift > 0.05);
+    }
 
     // Reactions blend in and out smoothly.
     const reaction =
@@ -603,7 +729,7 @@ export class FightArenaScene implements ArenaScene {
     }
     f.tilt += (tiltTarget - f.tilt) * smoothing(frame ? 40 : 12, frameDtS);
 
-    f.view.draw(pose, f.facing, heightM + lift, f.tilt);
+    f.view.draw(pose, f.facing, heightM + lift + f.abilityLift, f.tilt);
     f.view.root.position.set(x, y);
     f.bars?.draw(
       x,
@@ -639,6 +765,8 @@ export class FightArenaScene implements ArenaScene {
     this.camera = null;
     this.doors = [];
     this.props = null;
+    this.abilities = null;
+    this.vfx = null; // destroyed with the arena view
     this.debrisView?.destroy();
     this.debrisView = null;
     this.grounded.clear();

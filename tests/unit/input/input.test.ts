@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { clampToUnit, PlayerIntents } from '../../../src/input/intents';
-import { moveFromKeys } from '../../../src/input/keyboard';
+import { ABILITY_KEYS, moveFromKeys } from '../../../src/input/keyboard';
 import { joystickVector } from '../../../src/input/touch-controls';
 
 describe('PlayerIntents', () => {
@@ -85,5 +85,32 @@ describe('melee taps between steps (regression: a slow frame lost the second tap
     let taps = 0;
     while (intents.consumeMeleeEdges().pressed) taps++;
     expect(taps).toBe(3);
+  });
+});
+
+describe('ability buttons (Buttons 2–5)', () => {
+  it('queues presses so none are lost between steps, at most two', () => {
+    const intents = new PlayerIntents();
+    intents.pressAbility('a1');
+    intents.pressAbility('ult');
+    intents.pressAbility('a3');
+    expect(intents.consumeAbility()).toBe('a1');
+    expect(intents.consumeAbility()).toBe('ult');
+    expect(intents.consumeAbility()).toBeNull();
+  });
+
+  it('maps Q/E/R/F and K/L/I/O to the four slots (CONTROL_SCHEME §4)', () => {
+    expect([ABILITY_KEYS.KeyQ, ABILITY_KEYS.KeyE, ABILITY_KEYS.KeyR, ABILITY_KEYS.KeyF]).toEqual([
+      'a1',
+      'a2',
+      'a3',
+      'ult',
+    ]);
+    expect([ABILITY_KEYS.KeyK, ABILITY_KEYS.KeyL, ABILITY_KEYS.KeyI, ABILITY_KEYS.KeyO]).toEqual([
+      'a1',
+      'a2',
+      'a3',
+      'ult',
+    ]);
   });
 });

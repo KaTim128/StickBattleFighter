@@ -1,4 +1,4 @@
-import type { PlayerIntents, Vec2 } from './intents';
+import type { AbilityPress, PlayerIntents, Vec2 } from './intents';
 
 /** Default movement keys for both desktop presets (CONTROL_SCHEME §4). Rebinding arrives in Phase 11. */
 export const MOVE_KEYS: Readonly<Record<string, Vec2>> = {
@@ -14,6 +14,17 @@ export const MOVE_KEYS: Readonly<Record<string, Vec2>> = {
 export const JUMP_KEYS: ReadonlySet<string> = new Set(['Space']);
 /** Button 1 melee: J (both presets); left mouse button is handled in attachMouse. Tap = attack, hold = block. */
 export const MELEE_KEYS: ReadonlySet<string> = new Set(['KeyJ']);
+/** Abilities and ultimate: Q/E/R/F (keyboard + mouse) and K/L/I/O (keyboard only), CONTROL_SCHEME §4. */
+export const ABILITY_KEYS: Readonly<Record<string, AbilityPress>> = {
+  KeyQ: 'a1',
+  KeyE: 'a2',
+  KeyR: 'a3',
+  KeyF: 'ult',
+  KeyK: 'a1',
+  KeyL: 'a2',
+  KeyI: 'a3',
+  KeyO: 'ult',
+};
 /** Dodge (CONTROL_SCHEME §4). */
 export const DODGE_KEYS: ReadonlySet<string> = new Set(['ShiftLeft', 'ShiftRight']);
 
@@ -46,6 +57,11 @@ export function attachKeyboard(target: Window, intents: PlayerIntents): () => vo
     }
     if (MELEE_KEYS.has(e.code)) {
       if (!e.repeat) intents.meleePress();
+      return;
+    }
+    const ability = ABILITY_KEYS[e.code];
+    if (ability) {
+      if (!e.repeat) intents.pressAbility(ability);
       return;
     }
     if (DODGE_KEYS.has(e.code)) {

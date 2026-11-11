@@ -17,6 +17,9 @@ export function clampToUnit(v: Vec2): Vec2 {
 /** Up to three taps can wait for the fixed step. */
 const MAX_QUEUED_MELEE_EDGES = 6;
 
+/** Which ability button was pressed (the same ids as the ability framework's slots). */
+export type AbilityPress = 'a1' | 'a2' | 'a3' | 'ult';
+
 export class PlayerIntents {
   private readonly sources = new Map<string, Vec2>();
   private jumpQueued = false;
@@ -90,6 +93,18 @@ export class PlayerIntents {
     this.meleeEdges.push(edge);
   }
 
+  // ---- Buttons 2–5: abilities 1–3 and the ultimate (CONTROL_SCHEME §3–4). Queued so a press
+  // between steps is never lost; at most two wait (no buffering a whole rotation).
+  private readonly abilityQueue: AbilityPress[] = [];
+
+  pressAbility(slot: AbilityPress): void {
+    if (this.abilityQueue.length < 2) this.abilityQueue.push(slot);
+  }
+
+  consumeAbility(): AbilityPress | null {
+    return this.abilityQueue.shift() ?? null;
+  }
+
   // ---- Dodge (Shift, double-tap or joystick flick; REQ-CTL-12).
   private dodgeQueued = false;
 
@@ -109,5 +124,6 @@ export class PlayerIntents {
     this.meleeDown = false;
     this.meleeEdges.length = 0;
     this.dodgeQueued = false;
+    this.abilityQueue.length = 0;
   }
 }

@@ -1,3 +1,4 @@
+import type { AbilityKit } from '../../abilities/ability-def';
 import type { Weapon } from '../../animation/greybox-motion';
 import type { BoneLengths } from '../../animation/skeleton';
 import type { CombatStats } from '../../combat/combatant';
@@ -20,4 +21,6 @@ export interface FighterDef {
   };
   readonly stats: CombatStats;
   readonly attacks: ComboSet;
+  /** Three abilities and an ultimate (REQ-ABL-2); null for training dummies. */
+  readonly abilities: AbilityKit | null;
 }

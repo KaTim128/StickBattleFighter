@@ -178,3 +178,37 @@ describe('seededRandom', () => {
     expect(Math.max(...xs)).toBeLessThan(1);
   });
 });
+
+describe('Combatant: abilities support', () => {
+  it('spends stamina only when there is enough', () => {
+    const c = new Combatant(STATS);
+    expect(c.spendStamina(30)).toBe(true);
+    expect(c.stamina).toBe(STATS.maxStamina - 30);
+    expect(c.spendStamina(1000)).toBe(false);
+    expect(c.stamina).toBe(STATS.maxStamina - 30);
+  });
+
+  it('burning deals damage over time, then stops', () => {
+    const c = new Combatant(STATS);
+    c.ignite(20, 1);
+    let total = 0;
+    for (let i = 0; i < 120; i++) total += c.update(1 / 60);
+    expect(total).toBeCloseTo(20, 1);
+    expect(c.hp).toBeCloseTo(STATS.maxHp - 20, 1);
+    expect(c.burning).toBe(false);
+  });
+
+  it('burning can KO', () => {
+    const c = new Combatant(STATS);
+    c.hp = 5;
+    c.ignite(20, 2);
+    for (let i = 0; i < 60; i++) c.update(1 / 60);
+    expect(c.state).toBe('ko');
+  });
+
+  it('granted invulnerability makes hits miss', () => {
+    const c = new Combatant(STATS);
+    c.grantInvulnerability(0.5);
+    expect(c.receive(HIT).outcome).toBe('dodged');
+  });
+});

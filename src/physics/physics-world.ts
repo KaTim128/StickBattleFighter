@@ -176,6 +176,18 @@ export class PhysicsWorld {
     this.world.removeRigidBody(body);
   }
 
+  /**
+   * First wall, door or furniture collider along a segment (fighters and debris
+   * are ignored): the fraction 0..1 along it and the body hit, or null if clear.
+   */
+  castWorldRay(from: Vec2, to: Vec2): { fraction: number; body: RapierModule.RigidBody | null } | null {
+    const RAPIER = rapier();
+    const ray = new RAPIER.Ray(from, { x: to.x - from.x, y: to.y - from.y });
+    const hit = this.world.castRay(ray, 1, true, undefined, groups(0xffff, GROUP.WORLD));
+    if (!hit) return null;
+    return { fraction: hit.timeOfImpact, body: hit.collider.parent() };
+  }
+
   /** Advance the simulation by one fixed step. */
   step(stepS: number): void {
     this.world.timestep = stepS;

@@ -58,6 +58,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V Screenshots: `docs/screenshots/office-compact-overview.png`, `props-chair-shoved.png`, `props-chair-broken.png`, `props-boss-desk-smashed.png`, `fall-and-get-up.png`, `combo-variants.png`.
 - [ ] V Owner check on a real phone: holding MELEE no longer highlights the label.
 
+## 0i. Phase 6 abilities (verified 11/11/2026)
+- [x] Lint, typecheck and build clean
+- [x] `npm test`: **189 tests**. Caster (phases and release event, cooldown, stamina, busy, airborne, meter gating and charge, interrupts except the ultimate, no interrupt after release); burn (damage over time, can KO); stamina spending; invulnerability; ability input queue and keys. In the arena: Fire Bolt hits, burns and fires its sound hooks; a pillar stops it; cooldown and stamina gating; Flame Dash distance, hit and fading trail; Eruption warns first, then knocks down only inside the ring; Meteor Fist needs a full meter, leaps (lifted), lands on the target, empties the meter; damage charges the meter; a hit during the wind-up cancels the bolt; fire burns a desk until it breaks.
+- [x] `npm run e2e`: **18 passed**. New: Q fires a bolt that damages the dummy, the bar shows the cooldown, F does nothing without a full meter; touch shows five combat buttons and A1 casts.
+- [x] V Screenshots: `docs/screenshots/phase6-abilities.png` (bolt in flight and hit, flame trail, eruption warning and blast, meteor leap with landing warning, impact, ultimate ready).
+- [ ] V Owner playtest of ability feel and balance (values provisional, OQ-05)
+
 ## 1. Build and code health (every change)
 - [ ] `npm run lint` passes (Biome)
 - [ ] U `npm run typecheck` exits 0

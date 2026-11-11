@@ -280,10 +280,12 @@ No numeric values were supplied (OQ-05).
 |---|---|---|
 | REQ-ABL-1 | One **shared ability framework**. Each ability includes target validation, stamina, cooldown, hit detection, animation, VFX, sound, interruption and automated tests. | [PB §11.1] |
 | REQ-ABL-2 | Each fighter has exactly 3 unique abilities and 1 unique ultimate. | [PB §4.2, §14.2] |
-| REQ-ABL-3 | Ultimate has its own **charge or cooldown** rule (not yet specified, OQ-04). | [PB §4.2] |
+| REQ-ABL-3 | Ultimate has its own **charge meter** (owner decision 11/11/2026, OQ-04): it fills from damage dealt and taken plus slowly over time; a full meter makes the ultimate ready; using it empties the meter. Values provisional (TD-032). | [PB §4.2] [OWNER 11/11/2026] |
 | REQ-ABL-4 | Ability interfaces support fighter–object interactions (§8.3). | [PB §12 Phase 7] |
 | REQ-ABL-5 | Abilities and ultimates must be **original**. Creature Clash's ability catalogue may be used as a **design reference** for delivery types (projectile, fan, ring, dash, beam, trap, shield, blink, lob, snare, aura, heal), effect categories (control, damage-over-time, mobility, defence, summons, zones) and the "every ultimate designed, none weaker" balance philosophy, reinterpreted for Stickman Arena. See `docs/references/CREATURE_CLASH_OBSERVATIONS.md`. | [OWNER 10/11/2026] [REF-CC] |
 | REQ-ABL-6 | Telegraphing: where an ability has a delayed area, show it before it lands so it can be avoided. *Adopted by the owner 10/11/2026 (OQ-15).* | [REF-CC] [REF-VIDEO] [OWNER] |
+| REQ-ABL-7 | **Inferno is the first full kit (owner, 11/11/2026):** A1 Fire Bolt (projectile that burns), A2 Flame Dash (dash leaving a burning trail), A3 Eruption (telegraphed fire ring around Inferno, knocks down), Ultimate Meteor Fist (telegraphed leaping slam, heavy area damage). Fire sets flammable furniture alight. | [OWNER 11/11/2026] |
+| REQ-ABL-8 | Ability hits use the same combat rules as melee (block, dodge, parry, crit, knockback, interruption); a hit during an ability's wind-up cancels it, except the ultimate. Projectiles are stopped by walls, doors and furniture. | [INV-5] |
 
 ## 11. Animation and visual presentation
 
@@ -437,7 +439,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | OQ-01 | Is **Stickman Kombat 2D** (Playgama, Ernar / Tempo Play) the intended "Stickman Kombat" reference? `[PB §4.4]` | The playbook asks for confirmation before treating it as definitive. | **RESOLVED 10/11/2026:** confirmed. It is the reference for style, feel, sound effects and attacks; movement follows Creature Clash (§2.1). |
 | OQ-02 | **How are dodge, block, jump, pickup and throw triggered** when the HUD has exactly five combat buttons? Options: gestures (for example swipe the joystick to dodge), context-sensitive Button 1 near an object, extra *non-combat* buttons, automatic block, or a combination. | Dodge, block, jump, pickup and throw are all required (REQ-CMB-1, REQ-PHY-2, REQ-PHY-8, REQ-TUT-2), but no inputs are assigned. Adding buttons could breach INV-9. | **RESOLVED 10/11/2026 (TD-016):** the owner delegated the design. Hold Button 1 = block, flick stick = dodge, contextual utility button = jump / pick up / throw. See `docs/design/CONTROL_SCHEME.md`. |
 | OQ-03 | Desktop default key map for the five actions, dodge, block, jump and pickup. | Only WASD is specified. | **RESOLVED 10/11/2026 (TD-016):** default bindings in `docs/design/CONTROL_SCHEME.md` §4. |
-| OQ-04 | **Ultimate rule:** charge meter (built how?) or timed cooldown? Values? (For reference, Creature Clash unlocks ultimates 25 s into a fight with a 25 s cooldown.) | REQ-ABL-3 | Phase 6 |
+| OQ-04 | ~~Ultimate rule~~ **RESOLVED 11/11/2026:** charge meter (owner). Fill rates provisional (TD-032). | REQ-ABL-3 | Phase 6 |
 | OQ-05 | Base **stat values** and ranges for the 13 stats; stamina pool, regeneration rate and ability costs. | Balance needs a baseline. | Phase 5–6, Phase 9 |
 | OQ-06 | **Match rules:** round count, timer, draw conditions, win conditions, ring-out or fall-off? | REQ-MOD-7 | Phase 13 |
 | OQ-07 | **3v3 rules** (simultaneous team fight or tag/relay?), ladder length, Story Mode content and bosses. | REQ-MOD-2 to 4 | Phase 13 |
@@ -466,6 +468,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Phase 6: OQ-04 resolved (charge-meter ultimate, REQ-ABL-3); Inferno kit (REQ-ABL-7); abilities share melee rules (REQ-ABL-8). | Master Developer |
 | 11/11/2026 | Owner feedback: compact office (REQ-ENV-12), furniture moves or breaks by durability (REQ-PHY-6a), fall and get-up animation (REQ-ANI-8), combo variations (REQ-CMB-22), shorter kick knockback (REQ-CMB-23), no button highlight on touch (REQ-CTL-16). | Master Developer |
 | 11/11/2026 | Phase 5 combat: health, damage and KO, block and parry, dodge, stamina, hit reactions, one engine for player and dummy, queued taps (REQ-CMB-16..21). Values provisional pending OQ-05 (TD-030). | Master Developer |
 | 10/11/2026 | Initial specification compiled from Playbook v1.2, owner instructions, both reference videos and Creature Clash. | Master Developer |

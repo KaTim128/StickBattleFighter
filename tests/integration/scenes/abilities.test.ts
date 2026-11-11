@@ -1,0 +1,174 @@
+import { Container } from 'pixi.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
+import { SceneManager } from '../../../src/core/scene';
+import { INFERNO_KIT } from '../../../src/data/abilities/inferno';
+import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
+import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
+import type { PropPlacement } from '../../../src/data/objects/props';
+import { PlayerIntents } from '../../../src/input/intents';
+import { initPhysics } from '../../../src/physics/physics-world';
+
+const STEP = 1 / 60;
+const K = INFERNO_KIT;
+
+/** Training yard (dummy at 19, 13) with the player placed where a test needs it. */
+async function setup(playerAt: { x: number; y: number }, arena: ArenaLayout = TRAINING_YARD) {
+  const intents = new PlayerIntents();
+  const scene = new FightArenaScene({ ...arena, playerStart: playerAt }, new Container(), intents, () => ({
+    width: 1280,
+    height: 720,
+  }));
+  const scenes = new SceneManager();
+  await scenes.switchTo(() => scene);
+  const run = (seconds: number) => {
+    for (let i = 0; i < Math.round(seconds / STEP); i++) {
+      scenes.update(STEP);
+      scenes.render(1, STEP);
+    }
+  };
+  const runUntil = (done: () => boolean, limitS = 4) => {
+    for (let i = 0; i < limitS / STEP && !done(); i++) run(STEP);
+  };
+  run(0.1);
+  scene.drainEvents();
+  return { intents, scene, scenes, run, runUntil };
+}
+
+describe('Inferno abilities in the arena (Phase 6)', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
+  it('Fire Bolt: costs stamina, flies to the soft-locked dummy, damages and burns it, firing every hook', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
+    intents.pressAbility('a1');
+    run(STEP);
+    expect(scene.player.ability).toBe('fireBolt');
+    expect(scene.player.stamina).toBeCloseTo(100 - K.a1.staminaCost, 0);
+    runUntil(() => scene.dummy.hp < 1000, 1.5);
+    expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(K.a1.payload.damage);
+    expect(scene.dummy.burning).toBe(true);
+    run(K.a1.payload.burn!.durationS + 0.2);
+    expect(scene.dummy.burning).toBe(false);
+    expect(scene.drainEvents().some((e) => e.kind === 'burn')).toBe(true);
+    expect(scene.abilities!.sfxLog).toEqual(expect.arrayContaining(['fire-charge', 'fire-whoosh', 'fire-burst-small']));
+    scenes.clear();
+  });
+
+  it('Fire Bolt is stopped by a pillar in the way (real hit detection, REQ-CMB-2)', async () => {
+    // Facing right at a pillar (8, 6); the dummy is out of lock range, so the bolt flies straight ahead.
+    const { intents, scene, scenes, run } = await setup({ x: 5, y: 6 });
+    intents.pressAbility('a1');
+    run(1);
+    expect(scene.abilities!.world.projectiles).toHaveLength(0);
+    expect(scene.dummy.hp).toBe(1000);
+    const impact = scene.abilities!.recentFx.find((f) => f.kind === 'impact' && f.ability === 'fireBolt');
+    expect(impact).toBeDefined();
+    expect(impact!.x).toBeGreaterThan(7);
+    expect(impact!.x).toBeLessThan(8);
+    scenes.clear();
+  });
+
+  it('cooldown and stamina gate casting', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 5, y: 6 });
+    intents.pressAbility('a1');
+    run(0.6);
+    intents.pressAbility('a1');
+    run(STEP);
+    expect(scene.lastAbilityBlock).toBe('cooldown');
+    scene.playerFighter.combatant.stamina = 10;
+    intents.pressAbility('a3');
+    run(STEP);
+    expect(scene.lastAbilityBlock).toBe('stamina');
+    expect(scene.player.ability).toBeNull();
+    scenes.clear();
+  });
+
+  it('Flame Dash: rushes about 4.5 m, hits the dummy in the way, and leaves a burning trail that fades', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 }); // 5 m from the dummy: within the dash's reach
+    const x0 = scene.player.x;
+    intents.pressAbility('a2');
+    run(0.6);
+    expect(scene.player.x - x0).toBeGreaterThan(3.5); // stopped at the dummy or after the full dash
+    expect(scene.dummy.hp).toBeLessThan(1000);
+    expect(scene.abilities!.world.zones.length).toBeGreaterThan(3);
+    run(K.a2.delivery.type === 'dash' ? K.a2.delivery.trail!.lifeS + 0.2 : 0);
+    expect(scene.abilities!.world.zones).toHaveLength(0);
+    scenes.clear();
+  });
+
+  it('Eruption: telegraphed first (no damage yet), then knocks down anyone inside the ring', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 17.6, y: 13 });
+    intents.pressAbility('a3');
+    run(K.a3.castS + 0.1);
+    expect(scene.abilities!.world.telegraphs).toHaveLength(1);
+    expect(scene.dummy.hp).toBe(1000); // still only a warning (REQ-ABL-6)
+    run(0.6);
+    expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(K.a3.payload.damage);
+    expect(['knockdown', 'gettingUp']).toContain(scene.dummy.state);
+    scenes.clear();
+  });
+
+  it('Eruption does not reach a dummy outside the ring', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 });
+    intents.pressAbility('a3');
+    run(1.2);
+    expect(scene.dummy.hp).toBe(1000);
+    scenes.clear();
+  });
+
+  it('the ultimate needs a full meter; Meteor Fist then leaps (untouchable), lands on the dummy and empties the meter', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
+    intents.pressAbility('ult');
+    run(STEP);
+    expect(scene.lastAbilityBlock).toBe('meter');
+    scene.playerFighter.caster!.fillMeter();
+    intents.pressAbility('ult');
+    run(STEP);
+    expect(scene.player.ability).toBe('meteorFist');
+    expect(scene.player.meter).toBe(0);
+    runUntil(() => scene.playerFighter.abilityLift > 1, 1);
+    expect(scene.playerFighter.abilityLift).toBeGreaterThan(1); // in the air
+    expect(scene.abilities!.world.telegraphs).toHaveLength(1); // landing spot shown
+    runUntil(() => scene.dummy.hp < 1000, 1.5);
+    expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(K.ult.payload.damage);
+    expect(Math.hypot(scene.player.x - 19, scene.player.y - 13)).toBeLessThan(2.5);
+    expect(scene.abilities!.sfxLog).toContain('meteor-impact');
+    scenes.clear();
+  });
+
+  it('melee and abilities charge the ultimate meter', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 });
+    intents.pressAbility('a1');
+    run(1);
+    // 70 damage dealt at 0.25 per point, plus about 1 per second.
+    expect(scene.player.meter).toBeGreaterThan(70 * K.charge.perDamageDealt);
+    scenes.clear();
+  });
+
+  it('a hit during the wind-up interrupts the cast: no bolt is fired', async () => {
+    const { intents, scene, scenes, run } = await setup({ x: 17.95, y: 13 });
+    scene.dummyFighter.combo.press(false); // the dummy jabs (wind-up 0.06 s)…
+    intents.pressAbility('a1'); // …while the bolt winds up for 0.18 s
+    run(0.5);
+    expect(scene.player.ability).toBeNull();
+    expect(scene.abilities!.sfxLog).not.toContain('fire-whoosh');
+    expect(scene.dummy.hp).toBe(1000);
+    scenes.clear();
+  });
+
+  it('fire sets wooden furniture alight; it burns until it breaks', async () => {
+    const desk: PropPlacement = { kind: 'desk', x: 8, y: 5 };
+    const room: ArenaLayout = { ...TRAINING_YARD, props: [desk], dummyStart: { x: 25, y: 17 } };
+    const { intents, scene, scenes, runUntil } = await setup({ x: 5, y: 5 }, room);
+    intents.pressAbility('a1');
+    runUntil(() => scene.propStates[0]!.burning, 1.5);
+    const d = scene.propStates[0]!;
+    expect(d.burning).toBe(true);
+    expect(d.hp).toBeLessThan(120);
+    runUntil(() => scene.propStates[0]!.broken, 6);
+    expect(scene.propStates[0]!.broken).toBe(true);
+    scenes.clear();
+  });
+});

@@ -244,6 +244,16 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Office tightened** to 29 m × 12 m (REQ-ENV-12).
 - **Debug time scale:** `GameLoop.timeScale` (`?slowmo=0.25`, debug hook `setTimeScale`, 0 freezes) for animation review and exact browser screenshots.
 
+### TD-032: Shared ability framework and Inferno's kit — ACCEPTED (values PROVISIONAL, OQ-05)
+- **Abilities are data** (`src/abilities/ability-def.ts`, `src/data/abilities/inferno.ts`): slot, stamina cost, cooldown, wind-up, recovery, aim range, move factor, interruptible, payload (damage, knockback, heavy, strength, burn, ignites), delivery, VFX id and three SFX ids (cast, release, impact).
+- **`AbilityCaster`** (pure, per fighter): check → spend stamina → start; wind-up then release event then recovery; cooldowns; the **ultimate charge meter** (owner, OQ-04): 0.25 per damage dealt, 0.15 per damage taken, 1 per second, max 100, emptied on use. A hit during an interruptible wind-up cancels the cast (the cooldown is still spent).
+- **`AbilityWorld`** (deliveries): projectile (stopped by fighters, walls, doors and furniture via a Rapier ray query on WORLD colliders), dash (drives the caster's body, hits once per fighter, lays fire-trail zones), nova (telegraphed ring that follows the caster, then erupts), leap (telegraphed landing spot clamped short of walls; the caster is invulnerable in the air; area slam on landing). It talks to the game only through `AbilityHost`, implemented by `SceneAbilities`.
+- **One hit path (INV-5):** melee and abilities both go through `FightArenaScene.applyStrike` (rules, floating text, parry, interruption, meter charge, burn, knockback, hit-stop).
+- **Burn:** `Combatant.ignite` (damage over time, can KO); flammable props (wood, fabric, paper, plant) burn for 5 s at 14 durability/s.
+- **Presentation:** cast poses (`ability-poses.ts`); fire VFX (`src/vfx/ability-vfx.ts`: two Graphics layers redrawn per frame, pooled particles, shockwave rings, scorch marks, telegraph rings); HUD bar and touch buttons (`src/interface/ability-hud.ts`). Sound hooks are emitted as ids (`sfxLog`); audio playback depends on OQ-17.
+- **Provisional numbers:** Fire Bolt 20 ST, 2.5 s, 70 dmg + burn 12/s for 2 s; Flame Dash 30 ST, 5 s, 4.5 m, 60 dmg, trail burn 18/s; Eruption 35 ST, 7 s, radius 2.3 m after 0.5 s warning, 110 dmg, knockdown; Meteor Fist meter, radius 3 m, 260 dmg, knockdown.
+- **Alternatives:** per-ability classes (rejected: data plus four delivery types covers the kit and scales to 100 fighters); Rapier sensors for projectiles (rejected: a ray per step is simpler, deterministic and cannot tunnel).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

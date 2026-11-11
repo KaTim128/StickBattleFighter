@@ -95,6 +95,8 @@ export class Combatant {
   private dodgeCooldownS = 0;
   private sinceStaminaUseS = 0;
   private koAgeS = -1;
+  private burnS = 0;
+  private burnDps = 0;
 
   constructor(readonly stats: CombatStats) {
     this.hp = stats.maxHp;
@@ -161,6 +163,30 @@ export class Combatant {
     return true;
   }
 
+  /** Spend stamina for an ability (REQ-ABL-1). Returns false, spending nothing, if there is not enough. */
+  spendStamina(cost: number): boolean {
+    if (this.stamina < cost) return false;
+    this.stamina -= cost;
+    this.sinceStaminaUseS = 0;
+    return true;
+  }
+
+  /** Cannot be hit for a while (e.g. airborne during an ultimate's leap). */
+  grantInvulnerability(seconds: number): void {
+    this.invulnS = Math.max(this.invulnS, seconds);
+  }
+
+  /** Set on fire: damage over time; a new burn refreshes the timer and keeps the stronger rate. */
+  ignite(dps: number, durationS: number): void {
+    if (this.isKo) return;
+    this.burnDps = Math.max(this.burnS > 0 ? this.burnDps : 0, dps);
+    this.burnS = Math.max(this.burnS, durationS);
+  }
+
+  get burning(): boolean {
+    return this.burnS > 0;
+  }
+
   /** Stun this fighter (e.g. its attack was parried). */
   stun(seconds: number): void {
     this.guardUp = false;
@@ -216,11 +242,13 @@ export class Combatant {
     return { outcome: crit ? 'crit' : 'hit', damage, knockbackScale: kbKeep, attackerStunS: 0 };
   }
 
-  update(dtS: number): void {
+  /** Advance timers. Returns burn damage taken this step (for floating numbers and the ultimate meter). */
+  update(dtS: number): number {
+    const burned = this.tickBurn(dtS);
     if (this.koAgeS >= 0) {
       this.koAgeS += dtS;
       this.downS += dtS;
-      return;
+      return burned;
     }
     if (this.guardUp) this.guardAgeS += dtS;
     this.stunS = Math.max(0, this.stunS - dtS);
@@ -245,6 +273,28 @@ export class Combatant {
     if (!this.guardUp && this.sinceStaminaUseS >= this.stats.staminaRegenDelayS) {
       this.stamina = Math.min(this.stats.maxStamina, this.stamina + this.stats.staminaRegenPerS * dtS);
     }
+    return burned;
+  }
+
+  private tickBurn(dtS: number): number {
+    if (this.burnS <= 0 || this.isKo) {
+      this.burnS = 0;
+      return 0;
+    }
+    const step = Math.min(dtS, this.burnS);
+    this.burnS -= step;
+    const damage = Math.min(this.hp, this.burnDps * step);
+    this.hp -= damage;
+    if (this.hp <= 0) {
+      this.hp = 0;
+      if (this.knockdownS === 0) this.downS = 0;
+      this.koAgeS = 0;
+      this.stunS = 0;
+      this.knockdownS = 0;
+      this.getUpS = 0;
+      this.burnS = 0;
+    }
+    return damage;
   }
 
   /** Back on its feet at full health and stamina (KO respawn, Practice Zone). */
@@ -260,6 +310,8 @@ export class Combatant {
     this.dodgeS = 0;
     this.dodgeCooldownS = 0;
     this.koAgeS = -1;
+    this.burnS = 0;
+    this.burnDps = 0;
   }
 }
 

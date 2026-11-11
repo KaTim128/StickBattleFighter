@@ -10,7 +10,7 @@
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; width: 100%; height: 100%; touch-action: none; }
       #status {
-        position: fixed; left: 12px; bottom: 12px; padding: 6px 10px; border-radius: 6px;
+        position: fixed; left: 12px; top: 12px; padding: 6px 10px; border-radius: 6px;
         font: 12px/1.4 system-ui, sans-serif; color: #e8edf5; background: rgba(0, 0, 0, 0.45);
         pointer-events: none;
       }
@@ -31,7 +31,7 @@
         background: rgba(232, 237, 245, 0.75); transform: translate(-50%, -50%);
       }
       .util-button {
-        position: fixed; right: calc(24px + env(safe-area-inset-right)); bottom: 120px;
+        position: fixed; right: calc(24px + env(safe-area-inset-right)); bottom: 190px;
         width: 64px; height: 64px; border-radius: 18px; border: 3px solid rgba(232, 237, 245, 0.6);
         background: rgba(30, 36, 48, 0.7); color: #e8edf5; font: 700 12px system-ui, sans-serif;
         pointer-events: auto; touch-action: none;
@@ -42,6 +42,41 @@
         background: rgba(120, 50, 20, 0.7); color: #fff2e6; font: 700 13px system-ui, sans-serif;
         pointer-events: auto; touch-action: none;
       }
+      .ability-button {
+        position: fixed; width: 60px; height: 60px; border-radius: 50%;
+        border: 3px solid rgba(255, 140, 60, 0.85); color: #fff2e6; font: 800 12px system-ui, sans-serif;
+        background: conic-gradient(rgba(200, 70, 20, 0.85) var(--fill, 100%), rgba(20, 22, 28, 0.85) 0);
+        pointer-events: auto; touch-action: none;
+      }
+      .ability-button[data-slot='a1'] { right: calc(212px + env(safe-area-inset-right)); bottom: 28px; }
+      .ability-button[data-slot='a2'] { right: calc(204px + env(safe-area-inset-right)); bottom: 108px; }
+      .ability-button[data-slot='a3'] { right: calc(136px + env(safe-area-inset-right)); bottom: 150px; }
+      .ability-button.ult {
+        right: calc(28px + env(safe-area-inset-right)); bottom: 44px; width: 70px; height: 70px;
+        border-color: rgba(255, 210, 63, 0.9);
+        background: conic-gradient(rgba(255, 170, 30, 0.9) var(--fill, 0%), rgba(20, 22, 28, 0.85) 0);
+      }
+      .ability-button.no-stamina, .ability-slot.no-stamina { filter: grayscale(0.9) brightness(0.7); }
+      .ability-button.ult.ready, .ability-slot.ult.ready { animation: ult-glow 0.9s ease-in-out infinite alternate; }
+      @keyframes ult-glow { from { box-shadow: 0 0 6px 2px rgba(255, 190, 40, 0.5); } to { box-shadow: 0 0 22px 8px rgba(255, 120, 20, 0.9); } }
+      .ability-bar {
+        position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 8px;
+        pointer-events: none; font: 600 11px system-ui, sans-serif; color: #e8edf5;
+      }
+      .ability-bar[hidden], body.touch-mode .ability-bar { display: none; }
+      .ability-slot {
+        position: relative; width: 64px; height: 54px; border-radius: 8px; overflow: hidden;
+        border: 2px solid rgba(255, 140, 60, 0.7); display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 2px;
+        background: linear-gradient(to top, rgba(200, 70, 20, 0.75) var(--fill, 100%), rgba(20, 22, 28, 0.8) 0);
+      }
+      .ability-slot.ult {
+        border-color: rgba(255, 210, 63, 0.9);
+        background: linear-gradient(to top, rgba(255, 170, 30, 0.85) var(--fill, 0%), rgba(20, 22, 28, 0.8) 0);
+      }
+      .ab-key { position: absolute; left: 4px; top: 2px; font-weight: 800; color: #ffd8b0; }
+      .ab-name { margin-top: 8px; font-weight: 700; white-space: nowrap; }
+      .ab-cost { font-size: 10px; opacity: 0.85; }
       .combat-text-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
       .combat-text {
         position: absolute; transform: translate(-50%, -100%); white-space: nowrap;
@@ -55,6 +90,7 @@
       .ct-break { color: #ff8a3d; font-size: 18px; }
       .ct-dodge { color: #d6ffb0; font-size: 15px; }
       .ct-ko { color: #ff4d4d; font-size: 34px; }
+      .ct-burn { color: #ff9d3d; font-size: 14px; }
       @keyframes ct-rise {
         0% { opacity: 0; transform: translate(-50%, -60%) scale(0.7); }
         12% { opacity: 1; transform: translate(-50%, -100%) scale(1.15); }

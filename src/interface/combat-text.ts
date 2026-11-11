@@ -13,6 +13,7 @@ const STYLE: Record<CombatEvent['kind'], { text: (e: CombatEvent) => string; cls
   guardBreak: { text: () => 'GUARD BREAK', cls: 'ct-break' },
   dodged: { text: () => 'DODGE', cls: 'ct-dodge' },
   ko: { text: () => 'KO!', cls: 'ct-ko' },
+  burn: { text: (e) => `-${e.amount}`, cls: 'ct-burn' },
 };
 
 const MAX_LIVE = 24;

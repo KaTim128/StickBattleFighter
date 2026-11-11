@@ -1,4 +1,5 @@
 import type { WebGLRenderer } from 'pixi.js';
+import type { AbilityHudState } from '../abilities/ability-caster';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
@@ -10,6 +11,7 @@ import { onDebugImpact, onDebugToggle, onToggleDummyAttacks } from '../input/deb
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse } from '../input/keyboard';
 import { attachTouchControls } from '../input/touch-controls';
+import { AbilityHud } from '../interface/ability-hud';
 import { CombatText } from '../interface/combat-text';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
@@ -37,6 +39,10 @@ export interface EngineDebugInfo {
   dummy: DummyState | null;
   dummyAttacks: boolean;
   doors: DoorState[];
+  /** The player's ability slots and ultimate meter (Phase 6). */
+  abilities: AbilityHudState | null;
+  /** Recent sound-hook ids (audio itself arrives with OQ-17). */
+  sfx: string[];
   /** Props summary: how many are broken, and how many are moving right now. */
   props: { total: number; broken: number; awake: number };
   assetFailures: { url: string; message: string }[];
@@ -113,7 +119,9 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   if (params.has('debug')) overlay.setVisible(true);
   onDebugToggle(window, () => overlay.toggle());
   const combatText = new CombatText(document.body);
-  const controlsHint = 'move WASD · jump Space · J/click: tap attack, hold block · Shift dodge · T dummy attacks';
+  const abilityHud = new AbilityHud(document.body); // after the touch controls: it paints their ability buttons
+  const controlsHint =
+    'move WASD · jump Space · J/click: tap attack, hold block · Q/E/R abilities · F ultimate · Shift dodge · T dummy attacks';
   onToggleDummyAttacks(window, () => {
     if (!(scene instanceof FightArenaScene)) return;
     scene.dummyAttacks = !scene.dummyAttacks;
@@ -135,6 +143,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     dummyAttacks: false,
     doors: [],
     props: { total: 0, broken: 0, awake: 0 },
+    abilities: null,
+    sfx: [],
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
     setTimeScale() {}, // replaced once the loop exists
@@ -184,6 +194,9 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;
         combatText.show(scene.drainEvents(), (x, y) => scene.worldToScreen(x, y));
+        abilityHud.update(scene.abilityHud);
+        debug.abilities = scene.abilityHud;
+        debug.sfx = scene.abilities?.sfxLog.slice(-12) ?? [];
         debug.doors = scene.doorStates;
         const props = scene.propStates;
         debug.props = {

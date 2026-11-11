@@ -64,6 +64,7 @@ On desktop, jump has its own key (Space) because keys are plentiful. The context
 ## 4a. Live now (11/11/2026)
 - **Button 1** works: J or left click on desktop, the **MELEE** button on touch. Ground: 1-2-3 combo (jab → hook → heavy finisher; press once per strike); in the air: flying kick. **Hold** Button 1 (≥ 0.18 s) to block; raise it just before a hit to parry.
 - **Dodge:** Shift (desktop) or a joystick flick (touch).
+- **Abilities (Phase 6):** Q / E / R (or K / L / I) = Fire Bolt, Flame Dash, Eruption; F (or O) = Meteor Fist when the meter is full. Touch: A1, A2, A3 and ULT around MELEE (five combat buttons); JUMP moved above the arc. Desktop shows an ability bar with cooldowns, stamina costs and the meter; touch draws them on the buttons.
 - **Practice helpers:** T makes the dummy attack you (toggle); `?scene=training-yard` opens the open yard; `?slowmo=0.25` plays in slow motion to study animations.
 - Touch buttons never select or highlight their label when held (REQ-CTL-16).
 - **Jump:** Space or the JUMP button. Buttons 2–5 (abilities and ultimate) arrive with Phase 6.

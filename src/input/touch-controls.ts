@@ -51,7 +51,7 @@ export class FlickDetector {
  * Mobile and tablet controls (CONTROL_SCHEME §3): a floating joystick in the
  * left 40% of the screen and the contextual utility button (jump for now).
  * Hidden until the first touch, so desktop never shows them (REQ-CTL-2).
- * Button 1 (MELEE) is live; the other four combat buttons arrive with Phases 6 and 11.
+ * Five combat buttons (REQ-CTL-1, INV-9): MELEE plus A1, A2, A3 and ULT in an arc; JUMP sits apart.
  */
 export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): () => void {
   const layer = document.createElement('div');
@@ -60,24 +60,31 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   layer.innerHTML = `
     <div class="joystick" hidden><div class="joystick-knob"></div></div>
     <button class="util-button" type="button" aria-label="Jump">JUMP</button>
-    <button class="melee-button" type="button" aria-label="Melee">MELEE</button>`;
+    <button class="melee-button" type="button" aria-label="Melee">MELEE</button>
+    <button class="ability-button" data-slot="a1" type="button" aria-label="Ability 1">A1</button>
+    <button class="ability-button" data-slot="a2" type="button" aria-label="Ability 2">A2</button>
+    <button class="ability-button" data-slot="a3" type="button" aria-label="Ability 3">A3</button>
+    <button class="ability-button ult" data-slot="ult" type="button" aria-label="Ultimate">ULT</button>`;
   root.appendChild(layer);
   const stick = layer.querySelector<HTMLElement>('.joystick')!;
   const knob = layer.querySelector<HTMLElement>('.joystick-knob')!;
   const util = layer.querySelector<HTMLButtonElement>('.util-button')!;
   const melee = layer.querySelector<HTMLButtonElement>('.melee-button')!;
+  const abilityButtons = [...layer.querySelectorAll<HTMLButtonElement>('.ability-button')];
 
   let stickPointer: number | null = null;
   const flick = new FlickDetector();
   let origin = { x: 0, y: 0 };
 
   const showForTouch = (e: PointerEvent): void => {
-    if (e.pointerType === 'touch') layer.hidden = false;
+    if (e.pointerType !== 'touch') return;
+    layer.hidden = false;
+    document.body.classList.add('touch-mode'); // the HUD shows cooldowns on the buttons instead of the desktop bar
   };
   const onDown = (e: PointerEvent): void => {
     showForTouch(e);
     if (e.pointerType !== 'touch' || stickPointer !== null) return;
-    if (e.target === util || e.target === melee || e.clientX > window.innerWidth * 0.4) return;
+    if (e.target instanceof HTMLButtonElement || e.clientX > window.innerWidth * 0.4) return;
     stickPointer = e.pointerId;
     origin = { x: e.clientX, y: e.clientY };
     stick.style.left = `${origin.x}px`;
@@ -112,6 +119,12 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     intents.meleePress(); // tap = attack, hold = block
   };
   const onMeleeUp = (): void => intents.meleeRelease();
+  const onAbility = (e: PointerEvent): void => {
+    e.preventDefault();
+    const slot = (e.currentTarget as HTMLElement).dataset.slot;
+    if (slot === 'a1' || slot === 'a2' || slot === 'a3' || slot === 'ult') intents.pressAbility(slot);
+  };
+  for (const b of abilityButtons) b.addEventListener('pointerdown', onAbility);
   // A long press (holding MELEE to block) must not select the label or open the context menu.
   const noDefault = (e: Event): void => e.preventDefault();
   layer.addEventListener('contextmenu', noDefault);
@@ -127,6 +140,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   melee.addEventListener('pointercancel', onMeleeUp);
   melee.addEventListener('pointerleave', onMeleeUp);
   return () => {
+    for (const b of abilityButtons) b.removeEventListener('pointerdown', onAbility);
     layer.removeEventListener('contextmenu', noDefault);
     layer.removeEventListener('selectstart', noDefault);
     melee.removeEventListener('pointerdown', onMelee);

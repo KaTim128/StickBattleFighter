@@ -13,7 +13,7 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 | 3 | Top-down camera (follow, auto-zoom framing, shake) | 2 | Rendering | — | ☑ |
 | 4 | Office arena (greybox → readable) | 1, 2 ∥3 | Rendering, Physics | — | ☑ (owner layout: 12 cubicles, boss room, breakable door) |
 | 5 | Shared combat engine: melee, health, damage, block, dodge, recovery | 2, 3 | Combat | OQ-05 | ◐ (code and tests done 11/11/2026: health, block, parry, dodge, stamina, reactions, TD-030; awaiting owner playtest and OQ-05 values) |
-| 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-04, OQ-05 | ☐ |
+| 6 | Abilities, ultimate, stamina, cooldowns, projectiles, VFX hooks | 5 | Combat, Animation | OQ-05 (values) | ☑ (11/11/2026, Inferno kit; values provisional, TD-032) |
 | 7 | Object interaction: pickup, carry, throw, material, destruction | 4, 5 | Physics, Combat | OQ-12 | ◐ (breakable door; furniture moves or breaks by durability, TD-031; pickup and throw to do) |
 | 8 | First fully polished fighter + asset pipeline | 6, 7 | Character, Animation, Rendering | OQ-16 | ☐ |
 | 9 | Inferno, Shadowfang, Ronin, Titan, Phantom roster | 8 | Character, Animation, Combat | OQ-05 | ☐ |
