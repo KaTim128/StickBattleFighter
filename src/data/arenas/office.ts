@@ -2,27 +2,35 @@ import type { PropPlacement } from '../objects/props';
 import type { ArenaLayout } from './arena-layout';
 
 /**
- * The office arena (owner layout, 11/11/2026). GREYBOX art. 29 m × 12 m (tightened on owner request, 11/11/2026):
+ * The office arena (owner layout, 11/11/2026). GREYBOX art. 33 m × 12 m.
+ * Owner update (11/11/2026): the 12 cubicles stand in the CENTRE of the main
+ * office as six back-to-back pairs (one cubicle opens north, its partner
+ * south, sharing the back panel), with walkways between the pairs:
  *
- *   ┌─────────────── main office (carpet) ───────────────┬── boss room (wood) ──┐
- *   │ [C1][C2][C3][C4][C5][C6]   6 cubicles along the top │  bookshelf           │
- *   │                                                     │                      │
- *   │            open aisle: the main combat zone        DOOR  [visitor] DESK [boss]
- *   │                                                     │       (rug)          │
- *   │ [C7][C8][C9][C10][C11][C12] 6 cubicles along bottom │  plant               │
- *   └─────────────────────────────────────────────────────┴──────────────────────┘
+ *   ┌──────────────────────── main office (carpet) ─────────────────────────┬─ boss room (wood) ─┐
+ *   │            north aisle (combat)                    water  printer     │ bookshelves        │
+ *   │  [N1] [N2] [N3] [N4] [N5] [N6]   cubicles open north                  │                    │
+ *   │  ════ ════ ════ ════ ════ ════   shared back panels      open area  DOOR visitor DESK boss │
+ *   │  [S1] [S2] [S3] [S4] [S5] [S6]   cubicles open south                  │      (rug)         │
+ *   │            south aisle (combat)                                       │ plants, cabinet    │
+ *   └────────────────────────────────────────────────────────────────────────┴────────────────────┘
  *
- * The rooms are joined by a wooden door that starts closed and only breaks
- * from a kick or a heavy knockback impact (src/environment/breakable-door.ts).
+ * Each cubicle: desk against the back panel, a steel drawer pedestal, a
+ * chair, monitor, keyboard, mouse (some a coffee cup); all breakable.
+ * The rooms are joined by a wooden door that only breaks from a kick or a
+ * heavy impact (src/environment/breakable-door.ts).
  */
 const DESK_TOP_M = 0.75;
-const CUBE_W = 3.0;
-const CUBE_D = 2.7;
-const CUBES_X0 = 1.4;
-const MAIN_W = 21;
-const WALL_X0 = 21;
-const WALL_X1 = 21.4;
-const WIDTH = 29;
+/** Width of one back-to-back pair, the gap (walkway) between pairs, and where the row starts. */
+const PAIR_W = 2.6;
+const PAIR_GAP = 1.0;
+const PAIRS_X0 = 1.3;
+/** Depth of one cubicle, from the shared back panel to its open side. */
+const CUBE_D = 2.3;
+const MAIN_W = 25;
+const WALL_X0 = 25;
+const WALL_X1 = 25.4;
+const WIDTH = 33;
 const HEIGHT = 12;
 const MID_Y = HEIGHT / 2;
 const DOOR_Y0 = MID_Y - 1;
@@ -34,57 +42,62 @@ function onDesk(kind: PropPlacement['kind'], x: number, y: number, deskFront: nu
 }
 
 /**
- * One cubicle: low fabric walls on three sides (open towards the aisle), a
- * desk against the back wall, monitor, keyboard, mouse, and a chair.
- * `top` = in the top row (opening faces down); otherwise opening faces up.
+ * One cubicle of a pair. `s` = -1 opens north (desk on the north side of the
+ * shared back panel), +1 opens south.
  */
-function cubicle(i: number, top: boolean): PropPlacement[] {
-  const x0 = CUBES_X0 + i * CUBE_W;
-  const cx = x0 + CUBE_W / 2;
-  const s = top ? 1 : -1; // direction from the back wall towards the aisle
-  const back = top ? 0.15 : HEIGHT - 0.15;
-  const deskY = back + s * 0.6;
-  const deskFront = top ? deskY + 0.35 : deskY + 0.35;
-  const panelLen = CUBE_D - 0.4;
-  const sideY = back + s * (panelLen / 2 + 0.05);
+function cubicle(cx: number, x0: number, s: 1 | -1, index: number): PropPlacement[] {
+  const deskY = MID_Y + s * 0.46;
+  const deskX = cx - 0.3;
+  const deskFront = deskY + 0.4; // its lower (screen-front) edge
   const parts: PropPlacement[] = [
-    { kind: 'cubicle-panel', x: cx, y: back, w: CUBE_W - 0.1 },
-    { kind: 'desk', x: cx, y: deskY, w: 1.8 },
-    { kind: 'office-chair', x: cx, y: deskY + s * 1.0 },
-    onDesk('computer', cx, deskY - s * 0.15, deskFront, 1),
-    onDesk('keyboard', cx, deskY + s * 0.18, deskFront, 2),
-    onDesk('mouse', cx + 0.38, deskY + s * 0.18, deskFront, 3),
+    { kind: 'desk', x: deskX, y: deskY },
+    { kind: 'drawer-unit', x: cx + 0.72, y: MID_Y + s * 0.335 },
+    { kind: 'office-chair', x: deskX - 0.25, y: MID_Y + s * 1.35 }, // leaves room to step in beside it
+    onDesk('computer', deskX, deskY - s * 0.15, deskFront, 1),
+    onDesk('keyboard', deskX, deskY + s * 0.18, deskFront, 2),
+    onDesk('mouse', deskX + 0.38, deskY + s * 0.18, deskFront, 3),
+    // Side walls run from the back panel to the open side.
+    { kind: 'cubicle-panel', x: x0, y: MID_Y + s * (CUBE_D / 2), rotated: true, w: CUBE_D - 0.1 },
+    { kind: 'cubicle-panel', x: x0 + PAIR_W, y: MID_Y + s * (CUBE_D / 2), rotated: true, w: CUBE_D - 0.1 },
   ];
-  if (i % 3 === 1) parts.push(onDesk('coffee-cup', cx - 0.65, deskY + s * 0.1, deskFront, 4));
-  // Side walls: the left wall of each cubicle (the shared divider) plus the right wall of the last one.
-  parts.push({ kind: 'cubicle-panel', x: x0, y: sideY, rotated: true, w: panelLen });
-  if (i === 5) parts.push({ kind: 'cubicle-panel', x: x0 + CUBE_W, y: sideY, rotated: true, w: panelLen });
+  if (index % 3 === 1) parts.push(onDesk('coffee-cup', deskX - 0.65, deskY + s * 0.1, deskFront, 4));
   return parts;
 }
 
-const CUBICLES: PropPlacement[] = [0, 1, 2, 3, 4, 5].flatMap((i) => [...cubicle(i, true), ...cubicle(i, false)]);
+/** A back-to-back pair: one shared back panel and a cubicle on each side of it. */
+function cubiclePair(i: number): PropPlacement[] {
+  const x0 = PAIRS_X0 + i * (PAIR_W + PAIR_GAP);
+  const cx = x0 + PAIR_W / 2;
+  return [
+    { kind: 'cubicle-panel', x: cx, y: MID_Y, w: PAIR_W },
+    ...cubicle(cx, x0, -1, i * 2),
+    ...cubicle(cx, x0, 1, i * 2 + 1),
+  ];
+}
+
+const CUBICLES: PropPlacement[] = [0, 1, 2, 3, 4, 5].flatMap(cubiclePair);
 
 const MAIN_EXTRAS: PropPlacement[] = [
-  { kind: 'water-dispenser', x: MAIN_W - 0.6, y: 3.3 },
-  { kind: 'bin', x: MAIN_W - 0.6, y: 4.0 },
-  { kind: 'printer', x: MAIN_W - 0.35, y: HEIGHT - 1.4, rotated: true }, // in the corner, clear of the cubicle panel
-  { kind: 'plant', x: 0.6, y: MID_Y - 2.1 },
-  { kind: 'plant', x: 0.6, y: MID_Y + 2.1 },
-  { kind: 'cabinet', x: 0.5, y: MID_Y - 0.48, rotated: true },
-  { kind: 'cabinet', x: 0.5, y: MID_Y + 0.48, rotated: true },
+  { kind: 'water-dispenser', x: MAIN_W - 0.6, y: 0.9 },
+  { kind: 'bin', x: MAIN_W - 1.3, y: 0.7 },
+  { kind: 'printer', x: MAIN_W - 0.6, y: HEIGHT - 0.6 },
+  { kind: 'plant', x: 0.6, y: 0.7 },
+  { kind: 'plant', x: 0.6, y: HEIGHT - 0.7 },
+  { kind: 'cabinet', x: 2.6, y: 0.35 },
+  { kind: 'cabinet', x: 3.55, y: 0.35 },
 ];
 
 const BOSS_X0 = WALL_X1;
 const BOSS_ROOM: PropPlacement[] = [
-  { kind: 'rug', x: 25.0, y: MID_Y },
+  { kind: 'rug', x: BOSS_X0 + 4, y: MID_Y },
   // Executive desk turned to face the door; boss chair behind it, visitor chair opposite.
-  { kind: 'executive-desk', x: 26.0, y: MID_Y, rotated: true },
-  { kind: 'boss-chair', x: 27.3, y: MID_Y },
-  { kind: 'visitor-chair', x: 24.3, y: MID_Y },
-  onDesk('computer', 26.4, MID_Y - 0.6, MID_Y + 1.2, 1),
-  onDesk('coffee-cup', 25.7, MID_Y + 0.8, MID_Y + 1.2, 2),
-  { kind: 'bookshelf', x: 23.8, y: 0.25 },
-  { kind: 'bookshelf', x: 27.3, y: 0.25, w: 1.4 },
+  { kind: 'executive-desk', x: BOSS_X0 + 5, y: MID_Y, rotated: true },
+  { kind: 'boss-chair', x: BOSS_X0 + 6.3, y: MID_Y },
+  { kind: 'visitor-chair', x: BOSS_X0 + 3.3, y: MID_Y },
+  onDesk('computer', BOSS_X0 + 5.4, MID_Y - 0.6, MID_Y + 1.2, 1),
+  onDesk('coffee-cup', BOSS_X0 + 4.7, MID_Y + 0.8, MID_Y + 1.2, 2),
+  { kind: 'bookshelf', x: BOSS_X0 + 2.8, y: 0.25 },
+  { kind: 'bookshelf', x: BOSS_X0 + 6.3, y: 0.25, w: 1.4 },
   { kind: 'plant', x: BOSS_X0 + 0.6, y: HEIGHT - 0.7 },
   { kind: 'plant', x: WIDTH - 0.7, y: HEIGHT - 0.7 },
   { kind: 'cabinet', x: WIDTH - 0.5, y: HEIGHT - 3, rotated: true },
@@ -97,8 +110,9 @@ export const OFFICE: ArenaLayout = {
   heightM: HEIGHT,
   wallThicknessM: 0.5,
   props: [...CUBICLES, ...MAIN_EXTRAS, ...BOSS_ROOM],
-  playerStart: { x: 8, y: MID_Y },
-  dummyStart: { x: 13, y: MID_Y },
+  // Both start in the north aisle, facing each other.
+  playerStart: { x: 7, y: 1.9 },
+  dummyStart: { x: 12, y: 1.9 },
   windows: [
     { x0: 0.6, x1: MAIN_W - 0.6 },
     { x0: BOSS_X0 + 0.5, x1: WIDTH - 0.5 },

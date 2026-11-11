@@ -117,6 +117,18 @@ export function buildPropView(p: PropPlacement): Container {
       box(g, w, d, h, { top: 0xdcdfe4, front: 0xb8bdc6 });
       g.rect(-w * 0.3, -d / 2 - h + 0.08, w * 0.6, 0.12).fill(0xffffff);
       break;
+    case 'drawer-unit': {
+      // Steel pedestal: brushed grey with three drawer fronts and handles.
+      box(g, w, d, h, { top: 0xa3acb8, front: 0x838d9a });
+      for (let i = 1; i < 3; i++) {
+        const y = d / 2 - h + (h / 3) * i;
+        g.moveTo(-w / 2 + 0.04, y)
+          .lineTo(w / 2 - 0.04, y)
+          .stroke({ width: 0.02, color: EDGE });
+      }
+      for (let i = 0; i < 3; i++) g.rect(-0.07, d / 2 - h + (h / 3) * (i + 0.5) - 0.015, 0.14, 0.03).fill(0xdfe4ea);
+      break;
+    }
     case 'cubicle-panel': {
       box(g, w, d, h, { top: 0x8c95a6, front: 0x6f7889 });
       // fabric texture stripes on the visible face

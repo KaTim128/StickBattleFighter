@@ -217,7 +217,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
-  it('fire sets wooden furniture alight; it burns until it breaks', async () => {
+  it('fire sets wooden furniture alight; it keeps losing durability while it burns', async () => {
     const desk: PropPlacement = { kind: 'desk', x: 8, y: 5 };
     const room: ArenaLayout = { ...TRAINING_YARD, props: [desk], dummyStart: { x: 25, y: 17 } };
     const { intents, scene, scenes, runUntil } = await setup({ x: 5, y: 5 }, room);
@@ -225,9 +225,10 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     runUntil(() => scene.propStates[0]!.burning, 1.5);
     const d = scene.propStates[0]!;
     expect(d.burning).toBe(true);
-    expect(d.hp).toBeLessThan(120);
-    runUntil(() => scene.propStates[0]!.broken, 6);
-    expect(scene.propStates[0]!.broken).toBe(true);
+    expect(d.hp).toBeLessThan(320); // the bolt's 70 damage
+    const afterBolt = scene.propStates[0]!.hp!;
+    runUntil(() => !scene.propStates[0]!.burning, 6);
+    expect(scene.propStates[0]!.hp!).toBeLessThan(afterBolt - 50); // about 14 per second for 5 s
     scenes.clear();
   });
 });

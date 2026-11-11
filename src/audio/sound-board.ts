@@ -114,6 +114,51 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.05, gain: 0.6, type: 'bandpass', freq: 3500, q: 1.2 } },
     { crackle: { dur: 0.35, gain: 0.2, count: 6 } },
   ],
+  // Furniture (owner, 11/11/2026: realistic destruction). Wood: a dry crack and crunch over a thud.
+  'hit-wood': [
+    { tone: { wave: 'sine', f0: 190, f1: 95, dur: 0.1, gain: 0.45 } },
+    { noise: { dur: 0.06, gain: 0.3, type: 'lowpass', freq: 1200 } },
+  ],
+  'break-wood': [
+    { noise: { dur: 0.05, gain: 0.7, type: 'bandpass', freq: 1700, q: 1.5 } },
+    { tone: { wave: 'sine', f0: 140, f1: 55, dur: 0.25, gain: 0.6 } },
+    { crackle: { dur: 0.35, gain: 0.35, count: 14 } },
+    { noise: { dur: 0.3, gain: 0.3, type: 'lowpass', freq: 900, freqEnd: 300, delay: 0.04 } },
+  ],
+  // Steel: a ringing clang of inharmonic partials.
+  'hit-metal': [
+    { tone: { wave: 'triangle', f0: 620, f1: 600, dur: 0.35, gain: 0.25 } },
+    { tone: { wave: 'sine', f0: 1530, f1: 1500, dur: 0.25, gain: 0.12 } },
+    { noise: { dur: 0.03, gain: 0.3, type: 'highpass', freq: 3000 } },
+  ],
+  'break-metal': [
+    { tone: { wave: 'triangle', f0: 410, f1: 380, dur: 0.8, gain: 0.35 } },
+    { tone: { wave: 'sine', f0: 1130, f1: 1080, dur: 0.6, gain: 0.18 } },
+    { tone: { wave: 'sine', f0: 1870, f1: 1820, dur: 0.45, gain: 0.1 } },
+    { noise: { dur: 0.12, gain: 0.5, type: 'bandpass', freq: 2500, q: 0.8 } },
+    { tone: { wave: 'sine', f0: 120, f1: 50, dur: 0.3, gain: 0.5 } },
+  ],
+  // Glass and screens: a bright shatter and a tinkle of falling shards.
+  'break-glass': [
+    { noise: { dur: 0.18, gain: 0.6, type: 'highpass', freq: 2800 } },
+    { crackle: { dur: 0.6, gain: 0.35, count: 18 } },
+    { tone: { wave: 'sine', f0: 3200, f1: 2900, dur: 0.12, gain: 0.05, delay: 0.05 } },
+  ],
+  'hit-plastic': [
+    { noise: { dur: 0.04, gain: 0.35, type: 'bandpass', freq: 2200, q: 1.2 } },
+    { tone: { wave: 'sine', f0: 300, f1: 180, dur: 0.05, gain: 0.25 } },
+  ],
+  'break-plastic': [
+    { noise: { dur: 0.07, gain: 0.55, type: 'bandpass', freq: 2000, q: 1 } },
+    { crackle: { dur: 0.3, gain: 0.25, count: 8 } },
+    { tone: { wave: 'sine', f0: 220, f1: 110, dur: 0.12, gain: 0.3 } },
+  ],
+  // Fabric and plants: a muffled thump and a rip.
+  'hit-soft': [{ tone: { wave: 'sine', f0: 130, f1: 80, dur: 0.1, gain: 0.4 } }],
+  'break-soft': [
+    { tone: { wave: 'sine', f0: 120, f1: 60, dur: 0.18, gain: 0.5 } },
+    { noise: { dur: 0.25, gain: 0.35, type: 'bandpass', freq: 900, freqEnd: 1600, q: 1.2 } },
+  ],
   // KO: a heavy, final boom.
   ko: [
     { tone: { wave: 'sine', f0: 95, f1: 28, dur: 0.65, gain: 1 } },

@@ -24,6 +24,7 @@ import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/im
 import { GREYBOX_STICKMAN } from '../../data/fighters/greybox-stickman';
 import { INFERNO } from '../../data/fighters/inferno';
 import { TRAINING_DUMMY } from '../../data/fighters/training-dummy';
+import type { Material } from '../../data/objects/props';
 import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
 import type { PlayerIntents } from '../../input/intents';
@@ -109,6 +110,16 @@ const RECOIL_BOUNCE_S = 0.14;
 /** KO: lie still, then dissolve into dust over this window (seconds after the KO), then respawn. */
 const KO_DISSOLVE_FROM_S = 1.0;
 const KO_DISSOLVE_S = 1.6;
+/** Sound for a prop being hit or breaking, by material (src/audio recipes). */
+const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
+  wood: { hit: 'hit-wood', break: 'break-wood' },
+  metal: { hit: 'hit-metal', break: 'break-metal' },
+  glass: { hit: 'hit-plastic', break: 'break-glass' },
+  plastic: { hit: 'hit-plastic', break: 'break-plastic' },
+  ceramic: { hit: 'hit-plastic', break: 'break-glass' },
+  fabric: { hit: 'hit-soft', break: 'break-soft' },
+  plant: { hit: 'hit-soft', break: 'break-soft' },
+};
 /** How fast WASD slides the ultimate's landing spot while aiming, m/s. */
 const ULT_AIM_SPEED_MPS = 7;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
@@ -380,6 +391,7 @@ export class FightArenaScene implements ArenaScene {
     for (const f of this.fighters) this.checkDoorImpact(f, stepS);
     for (const door of this.doors) door.update(stepS);
     this.props?.update(stepS);
+    this.propFeedback();
 
     for (const f of this.fighters) {
       Object.assign(f.prev, f.curr);
@@ -885,6 +897,37 @@ export class FightArenaScene implements ArenaScene {
       shakeOffset: Math.hypot(shake.offsetX, shake.offsetY),
       zoom: shake.zoom,
     };
+  }
+
+  /** Furniture sounds and particles by material: splinters and sawdust, sparks off steel, glints off glass. */
+  private propFeedback(): void {
+    for (const e of this.props?.drainEvents() ?? []) {
+      const sound = PROP_SOUNDS[e.material]?.[e.kind];
+      if (sound) this.queueSound(sound, e.kind === 'break' ? Math.min(1.4, 0.8 + e.sizeM * 0.3) : 0.7);
+      const len = Math.hypot(e.dir.x, e.dir.y) || 1;
+      const dir = { x: e.dir.x / len || 1, y: e.dir.y / len };
+      const big = e.kind === 'break';
+      if (e.material === 'metal' || e.material === 'glass' || e.material === 'ceramic') {
+        const spark: ImpactProfile = {
+          ...IMPACTS['knuckle-light'],
+          sparks: big ? 22 : 8,
+          sparkSpeedMps: big ? 7 : 4,
+          sparkColour: e.material === 'metal' ? 0xffd27a : 0xd8f6ff,
+          burstM: big ? 0.5 : 0.25,
+        };
+        this.impacts.push({ x: e.x, y: e.y + (1.1 - e.z), dir, profile: spark });
+      }
+      if (big && e.material !== 'metal' && e.material !== 'glass') {
+        // A puff of sawdust, stuffing or soil where it broke.
+        const colour = e.material === 'wood' ? 0xc9a27a : e.material === 'plant' ? 0x7a5a3a : 0xe6e1d6;
+        const points = Array.from({ length: 5 }, (_, i) => ({
+          x: e.x + (i - 2) * 0.12,
+          y: e.y,
+          z: e.z * (0.4 + i * 0.15),
+        }));
+        this.frameDust.push({ points, colour, count: Math.round(10 + e.sizeM * 14) });
+      }
+    }
   }
 
   /** Moving props follow their bodies; broken ones are replaced by their pieces; fallen desk items lie on the floor. */

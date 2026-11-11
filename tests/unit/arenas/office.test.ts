@@ -12,15 +12,29 @@ const ARENAS: ArenaLayout[] = [OFFICE, TRAINING_YARD];
 describe('office arena content (owner layout, 11/11/2026)', () => {
   const desks = OFFICE.props.filter((p) => p.kind === 'desk');
 
-  it('has 12 cubicles: 6 along the top and 6 along the bottom', () => {
+  it('has 12 cubicles in the centre as six back-to-back pairs, one opening north and one south (owner)', () => {
+    const mid = OFFICE.heightM / 2;
     expect(desks).toHaveLength(12);
-    expect(desks.filter((d) => d.y < OFFICE.heightM / 2)).toHaveLength(6);
-    expect(desks.filter((d) => d.y > OFFICE.heightM / 2)).toHaveLength(6);
-    // every cubicle has a chair, a computer, a keyboard and a mouse
-    for (const kind of ['office-chair', 'computer', 'keyboard', 'mouse'] as const) {
-      expect(OFFICE.props.filter((p) => p.kind === kind && p.x < 21).length, kind).toBeGreaterThanOrEqual(12);
+    const north = desks.filter((d) => d.y < mid);
+    const south = desks.filter((d) => d.y > mid);
+    expect(north).toHaveLength(6);
+    expect(south).toHaveLength(6);
+    // Each north desk has a partner directly across the shared back panel.
+    for (const n of north) expect(south.some((d) => Math.abs(d.x - n.x) < 1e-6)).toBe(true);
+    const backs = OFFICE.props.filter((p) => p.kind === 'cubicle-panel' && !p.rotated && Math.abs(p.y - mid) < 1e-6);
+    expect(backs).toHaveLength(6);
+    for (const n of north) expect(backs.some((b) => Math.abs(b.x - n.x) < 1.4)).toBe(true);
+    // In the centre: desks hug the back panels, well away from the outer walls.
+    for (const d of desks) {
+      expect(Math.abs(d.y - mid)).toBeLessThan(1);
+      expect(d.y).toBeGreaterThan(3);
+      expect(d.y).toBeLessThan(OFFICE.heightM - 3);
     }
-    expect(OFFICE.props.filter((p) => p.kind === 'cubicle-panel').length).toBeGreaterThanOrEqual(12 + 14);
+    // Every cubicle has a chair, a computer, a keyboard, a mouse and a steel drawer pedestal.
+    const door = OFFICE.doors![0]!;
+    for (const kind of ['office-chair', 'computer', 'keyboard', 'mouse', 'drawer-unit'] as const) {
+      expect(OFFICE.props.filter((p) => p.kind === kind && p.x < door.x0).length, kind).toBeGreaterThanOrEqual(12);
+    }
   });
 
   it('boss room: executive desk with the boss chair behind it and a visitor chair opposite, facing the door', () => {
@@ -55,7 +69,15 @@ describe('office arena content (owner layout, 11/11/2026)', () => {
       expect(k.durability === null || k.durability > 0, id).toBe(true);
     }
     expect(PROP_KINDS['glass-partition'].durability!).toBeLessThan(PROP_KINDS.desk.durability!);
-    expect(PROP_KINDS.cabinet.durability).toBeNull();
+  });
+
+  it('computers and drawers break; steel drawers and office tables take far more damage (owner)', () => {
+    expect(PROP_KINDS.computer.durability).toBeGreaterThan(0);
+    expect(PROP_KINDS['drawer-unit'].material).toBe('metal');
+    for (const tough of ['drawer-unit', 'cabinet', 'desk', 'executive-desk'] as const) {
+      expect(PROP_KINDS[tough].durability, tough).toBeGreaterThanOrEqual(250);
+      expect(PROP_KINDS[tough].durability!, tough).toBeGreaterThan(PROP_KINDS['office-chair'].durability! * 4);
+    }
   });
 });
 
@@ -112,7 +134,7 @@ describe('office zones', () => {
     const c = regionOf(closed);
     const o = regionOf(open);
     const main = OFFICE.playerStart;
-    const boss = { x: 24, y: 9 };
+    const boss = { x: OFFICE.doors![0]!.x1 + 3, y: 9 };
     expect(isWalkable(closed, boss.x, boss.y)).toBe(true);
     expect(c(boss.x, boss.y)).not.toBe(c(main.x, main.y));
     expect(o(boss.x, boss.y)).toBe(o(main.x, main.y));
@@ -125,24 +147,39 @@ describe('office zones', () => {
     const start = c(OFFICE.playerStart.x, OFFICE.playerStart.y);
     for (const desk of OFFICE.props.filter((p) => p.kind === 'desk')) {
       // a spot beside the chair, inside the cubicle
-      const y = desk.y < OFFICE.heightM / 2 ? desk.y + 1.0 : desk.y - 1.0;
-      const x = desk.x + 0.9;
+      // beside the chair, inside the cubicle (cubicles open away from the shared back panel)
+      const y = desk.y < OFFICE.heightM / 2 ? desk.y - 1.05 : desk.y + 1.05;
+      const x = desk.x + 0.55;
       expect(isWalkable(closed, x, y), `cubicle at ${desk.x},${desk.y}`).toBe(true);
       expect(c(x, y), `cubicle at ${desk.x},${desk.y}`).toBe(start);
     }
   });
 
-  it('the central aisle is an open but tight combat zone (clear 14 m × 4 m, at most 7 m tall)', () => {
-    for (let x = 4; x <= 18; x += 0.2) {
-      for (let y = 4; y <= 8; y += 0.2) expect(isWalkable(closed, x, y), `${x},${y}`).toBe(true);
+  it('open aisles run along the north and south of the cubicle block, joined by walkways between the pairs', () => {
+    const c = regionOf(closed);
+    const start = c(OFFICE.playerStart.x, OFFICE.playerStart.y);
+    for (let x = 2; x <= 21; x += 0.25) {
+      for (const y of [1.6, 2.4, OFFICE.heightM - 1.6, OFFICE.heightM - 2.4]) {
+        expect(isWalkable(closed, x, y), `${x},${y}`).toBe(true);
+        expect(c(x, y), `${x},${y}`).toBe(start);
+      }
+    }
+    // Walkways between the pairs cross from the north aisle to the south aisle.
+    const mid = OFFICE.heightM / 2;
+    const backs = OFFICE.props
+      .filter((p) => p.kind === 'cubicle-panel' && !p.rotated && Math.abs(p.y - mid) < 1e-6)
+      .sort((a, b) => a.x - b.x);
+    for (let i = 0; i < backs.length - 1; i++) {
+      const gapX = (backs[i]!.x + backs[i + 1]!.x) / 2;
+      for (let y = 3; y <= OFFICE.heightM - 3; y += 0.25) {
+        expect(isWalkable(closed, gapX, y), `walkway ${i} at ${gapX},${y}`).toBe(true);
+        expect(c(gapX, y)).toBe(start);
+      }
     }
   });
 
-  it('is compact (owner, 11/11/2026): a short office and a tight aisle between the cubicle rows', () => {
-    expect(OFFICE.widthM).toBeLessThanOrEqual(30);
-    const panels = OFFICE.props.filter((p) => p.kind === 'cubicle-panel' && p.rotated);
-    const topEdge = Math.max(...panels.filter((p) => p.y < OFFICE.heightM / 2).map((p) => p.y + footprint(p).d / 2));
-    const bottomEdge = Math.min(...panels.filter((p) => p.y > OFFICE.heightM / 2).map((p) => p.y - footprint(p).d / 2));
-    expect(bottomEdge - topEdge).toBeLessThanOrEqual(7.5);
+  it('stays compact: the cubicles take the centre and the office is at most 33 m long', () => {
+    expect(OFFICE.widthM).toBeLessThanOrEqual(33);
+    expect(OFFICE.heightM).toBeLessThanOrEqual(12);
   });
 });

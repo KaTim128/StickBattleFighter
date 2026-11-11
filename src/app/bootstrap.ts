@@ -82,10 +82,15 @@ export interface BootstrapElements {
  * Developer option `?playerAt=x,y`: start the player at an exact spot (layout review and
  * deterministic browser tests). Invalid values are ignored.
  */
-function withPlayerStart(arena: ArenaLayout, at: string | null): ArenaLayout {
-  const [x, y] = (at ?? '').split(',').map(Number);
-  if (x === undefined || y === undefined || !Number.isFinite(x) || !Number.isFinite(y)) return arena;
-  return { ...arena, playerStart: { x, y } };
+/** `?playerAt=x,y` and `?dummyAt=x,y`: start positions for testing and practice. */
+function withStarts(arena: ArenaLayout, playerAt: string | null, dummyAt: string | null): ArenaLayout {
+  const parse = (at: string | null) => {
+    const [x, y] = (at ?? '').split(',').map(Number);
+    return x === undefined || y === undefined || !Number.isFinite(x) || !Number.isFinite(y) ? null : { x, y };
+  };
+  const p = parse(playerAt);
+  const d = parse(dummyAt);
+  return { ...arena, ...(p ? { playerStart: p } : {}), ...(d ? { dummyStart: d } : {}) };
 }
 
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
@@ -120,7 +125,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sceneName === 'engine-check'
       ? new EngineCheckScene(app.stage, textures, viewport, optionalTextures)
       : new FightArenaScene(
-          withPlayerStart(sceneName === 'training-yard' ? TRAINING_YARD : OFFICE, params.get('playerAt')),
+          withStarts(
+            sceneName === 'training-yard' ? TRAINING_YARD : OFFICE,
+            params.get('playerAt'),
+            params.get('dummyAt'),
+          ),
           app.stage,
           intents,
           viewport,

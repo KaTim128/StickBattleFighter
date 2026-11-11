@@ -278,6 +278,9 @@ I / F (or hold ULT) aims with a range ring, arc and landing zone while Inferno c
 ### 11/11/2026: Walking and running (owner request)
 Real walk and run cycles with alternating legs and fists swinging opposite them (arm IK), smooth idle/walk/run blending, snappier acceleration and turning (TD-037, REQ-ANI-10; the earlier shuffle rule is SUP-05). Finding: driving arm swings by shoulder angle moved the fist up rather than forward, so arms now use IK on fist positions. Evidence: `npm test` 216/216; frame captures.
 
+### 11/11/2026: Office centre cubicles and breakables (owner request)
+Six back-to-back cubicle pairs in the centre with walkways, steel drawer pedestals, breakable monitors and desk items, tougher tables/drawers/cabinets, material-specific debris, particles and sounds (TD-038, REQ-ENV-8/12, REQ-PHY-6b). Office is now 33 × 12 m (the row of pairs needs the length). Evidence: `npm test` 220/220, e2e, screenshot.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

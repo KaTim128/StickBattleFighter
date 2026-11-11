@@ -61,7 +61,8 @@ describe('dynamic wall transparency (owner, 11/11/2026)', () => {
 
   it('a fighter standing in the office doorway sees through the wall section in front', async () => {
     const office = { ...OFFICE, doors: [] }; // doorway open
-    const { scene, scenes, run } = await setup({ x: 21.2, y: 6.4 }, office);
+    const door = OFFICE.doors![0]!;
+    const { scene, scenes, run } = await setup({ x: (door.x0 + door.x1) / 2, y: 6.4 }, office);
     run(0.4);
     const walls = scene.arenaView!.occluders;
     const seeThrough = walls.filter((w) => w.alpha < 0.5);

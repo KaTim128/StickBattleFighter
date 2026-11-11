@@ -21,10 +21,15 @@ export class DebrisView {
         node.label = 'debris';
         node.addChild(
           new Graphics().ellipse(0, 0.04, p.halfW * 1.1, p.halfH * 1.4 + 0.03).fill({ color: 0x000000, alpha: 0.22 }),
-          new Graphics()
-            .rect(-p.halfW, -p.halfH, p.halfW * 2, p.halfH * 2)
-            .fill(p.colour)
-            .stroke({ width: 0.015, color: 0x1f242d }),
+          p.shape === 'shard'
+            ? new Graphics()
+                .poly([-p.halfW, p.halfH, p.halfW * 1.2, 0, -p.halfW * 0.4, -p.halfH * 1.4])
+                .fill({ color: p.colour, alpha: 0.9 })
+                .stroke({ width: 0.01, color: 0xffffff, alpha: 0.6 })
+            : new Graphics()
+                .rect(-p.halfW, -p.halfH, p.halfW * 2, p.halfH * 2)
+                .fill(p.colour)
+                .stroke({ width: 0.015, color: 0x1f242d }),
         );
         this.nodes.set(p.id, node);
         this.actors.add(node, 0);

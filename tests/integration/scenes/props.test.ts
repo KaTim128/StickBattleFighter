@@ -48,8 +48,15 @@ async function setup(props: PropPlacement[]) {
     }
     run(0.8);
   };
+  /** Step up to the (possibly shoved) prop again. */
+  const approach = () => {
+    intents.setMove('t', { x: 1, y: 0 });
+    run(0.5);
+    intents.setMove('t', { x: 0, y: 0 });
+    run(0.2);
+  };
   run(0.2);
-  return { intents, scene, scenes, run, runUntil, prop, combo };
+  return { intents, scene, scenes, run, runUntil, prop, combo, approach };
 }
 
 describe('furniture moves or breaks depending on durability (owner, 11/11/2026)', () => {
@@ -85,20 +92,50 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
     scenes.clear();
   });
 
-  it('the heavy finisher breaks a desk (120); the monitor on it falls to the floor', async () => {
-    const { scene, scenes, run, prop, combo } = await setup([
+  it('office tables are tough (owner): one full combo does not break one, a second does; the keyboard on it falls', async () => {
+    const { scene, scenes, run, prop, combo, approach } = await setup([
       { kind: 'desk', x: 6.6, y: 5 },
-      { kind: 'computer', x: 6.6, y: 4.85, elevationM: 0.75, sortY: 5.4 },
+      { kind: 'keyboard', x: 7.0, y: 5.1, elevationM: 0.75, sortY: 5.4 }, // out of the fists' reach
     ]);
-    combo(2);
-    expect(prop('desk').broken).toBe(false); // jab + hook = 100 damage
-    combo(1); // a fresh jab (40) finishes it
+    combo(3); // 240 damage
+    expect(prop('desk').broken).toBe(false);
+    scene.drainSounds();
+    approach();
+    combo(3);
     expect(prop('desk').broken).toBe(true);
-    const monitor = scene.props!.props.find((p) => p.placement.kind === 'computer')!;
-    expect(monitor.looseFall).not.toBeNull();
+    expect(scene.drainSounds()).toContain('break-wood');
+    const kb = scene.props!.props.find((p) => p.placement.kind === 'keyboard')!;
+    expect(kb.looseFall).not.toBeNull();
     run(1);
-    expect(monitor.looseFall!.heightM).toBe(0); // on the floor
-    expect(monitor.broken).toBe(false);
+    expect(kb.looseFall!.heightM).toBe(0); // on the floor
+    scenes.clear();
+  });
+
+  it('a punch shatters the monitor on a desk into glass shards (owner: computers are breakable)', async () => {
+    const { scene, scenes, prop, combo } = await setup([
+      { kind: 'desk', x: 6.6, y: 5 },
+      { kind: 'computer', x: 6.0, y: 4.85, elevationM: 0.75, sortY: 5.4 }, // near the desk's edge, in reach
+    ]);
+    scene.drainSounds();
+    combo(1);
+    expect(prop('computer').broken).toBe(true);
+    expect(prop('desk').broken).toBe(false);
+    expect(scene.props!.debris.pieces.some((p) => p.shape === 'shard')).toBe(true);
+    expect(scene.drainSounds()).toContain('break-glass');
+    scenes.clear();
+  });
+
+  it('a desk item that survives a blow is knocked off the desk', async () => {
+    const { scene, scenes, run } = await setup([
+      { kind: 'desk', x: 6.6, y: 5 },
+      { kind: 'mouse', x: 6.6, y: 5, elevationM: 0.75, sortY: 5.4 },
+    ]);
+    scene.props!.hitWhere(() => true, { blow: 'strike', damage: 1, strength: 150, direction: { x: 1, y: 0 } });
+    const mouse = scene.props!.props.find((p) => p.placement.kind === 'mouse')!;
+    expect(mouse.broken).toBe(false);
+    expect(mouse.looseFall).not.toBeNull();
+    run(1);
+    expect(mouse.looseFall!.heightM).toBe(0);
     scenes.clear();
   });
 
@@ -117,16 +154,28 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
     scenes.clear();
   });
 
-  it('a metal filing cabinet (no durability) never breaks, but heavy blows still move it', async () => {
-    const { scenes, run, prop, combo } = await setup([{ kind: 'cabinet', x: 6.2, y: 5 }]);
+  it('a steel drawer pedestal takes more than a full combo, rings when hit and breaks with sparks (owner)', async () => {
+    const { scene, scenes, run, prop, combo, approach } = await setup([{ kind: 'drawer-unit', x: 6.0, y: 5 }]);
+    scene.drainSounds();
+    combo(3); // 240 of its 260
+    const d = prop('drawer-unit');
+    expect(d.broken).toBe(false);
+    expect(scene.drainSounds()).toContain('hit-metal');
+    approach();
+    combo(1);
+    expect(prop('drawer-unit').broken).toBe(true);
+    expect(scene.drainSounds()).toContain('break-metal');
+    run(0.2);
+    scenes.clear();
+  });
+
+  it('a steel filing cabinet is very tough (450) but still moves under heavy blows', async () => {
+    const { scenes, prop, combo } = await setup([{ kind: 'cabinet', x: 6.2, y: 5 }]);
     const x0 = prop('cabinet').x;
-    for (let i = 0; i < 2; i++) {
-      combo(3);
-      run(0.5);
-    }
+    combo(3);
     const c = prop('cabinet');
     expect(c.broken).toBe(false);
-    expect(c.hp).toBeNull();
+    expect(c.hp).toBe(450 - 240);
     expect(c.x).toBeGreaterThan(x0 + 0.05);
     scenes.clear();
   });

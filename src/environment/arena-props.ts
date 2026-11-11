@@ -38,6 +38,19 @@ export interface PropHitResult {
   readonly broke: number;
 }
 
+/** Something happened to a prop this step (for sounds and particles): a hit it survived, or a break. */
+export interface PropEvent {
+  readonly kind: 'hit' | 'break';
+  readonly material: Material;
+  readonly x: number;
+  readonly y: number;
+  /** Height of the prop's middle, metres (items on desks sit higher). */
+  readonly z: number;
+  readonly dir: Vec2;
+  /** Rough size of the prop, metres (bigger props make bigger bursts). */
+  readonly sizeM: number;
+}
+
 export interface PropState {
   readonly index: number;
   readonly kind: string;
@@ -60,6 +73,56 @@ const SETTLE_S = 0.3;
 /** Materials that catch fire, and how fast a burning prop loses durability. */
 const FLAMMABLE: ReadonlySet<Material> = new Set(['wood', 'fabric', 'paper', 'plant']);
 const BURN_DPS = 14;
+
+/**
+ * How each material breaks up (owner, 11/11/2026: "realistic destruction"):
+ * wood into long splinters, metal into a few bent plates, glass into many
+ * small shards, plastic into chunks, fabric into foam lumps.
+ */
+const BREAKUP: Record<
+  Material,
+  { min: number; max: number; speed: number; shape: 'rect' | 'shard'; size: (w: number, d: number, i: number) => Vec2 }
+> = {
+  wood: {
+    min: 5,
+    max: 9,
+    speed: 1,
+    shape: 'rect',
+    size: (w, _d, i) => ({ x: Math.min(0.3, 0.12 + w / 8) * (1 + (i % 3) * 0.25), y: 0.035 }),
+  },
+  metal: {
+    min: 3,
+    max: 5,
+    speed: 0.8,
+    shape: 'rect',
+    size: (w, d, i) => ({ x: Math.min(0.2, w / 3) * (0.8 + (i % 2) * 0.3), y: Math.min(0.14, d / 3) }),
+  },
+  glass: {
+    min: 8,
+    max: 12,
+    speed: 1.3,
+    shape: 'shard',
+    size: (_w, _d, i) => ({ x: 0.04 + (i % 3) * 0.025, y: 0.03 + (i % 2) * 0.02 }),
+  },
+  plastic: {
+    min: 5,
+    max: 8,
+    speed: 1.1,
+    shape: 'rect',
+    size: (w, _d, i) => ({ x: Math.min(0.12, 0.05 + w / 10) * (1 + (i % 2) * 0.4), y: 0.05 }),
+  },
+  ceramic: {
+    min: 4,
+    max: 6,
+    speed: 1.2,
+    shape: 'shard',
+    size: (_w, _d, i) => ({ x: 0.035 + (i % 2) * 0.015, y: 0.03 }),
+  },
+  fabric: { min: 4, max: 7, speed: 0.8, shape: 'rect', size: (_w, _d, i) => ({ x: 0.08 + (i % 3) * 0.02, y: 0.06 }) },
+  plant: { min: 5, max: 8, speed: 0.9, shape: 'shard', size: (_w, _d, i) => ({ x: 0.06 + (i % 2) * 0.03, y: 0.03 }) },
+  paper: { min: 4, max: 7, speed: 0.7, shape: 'rect', size: () => ({ x: 0.07, y: 0.05 }) },
+  stone: { min: 4, max: 7, speed: 0.8, shape: 'rect', size: (_w, _d, i) => ({ x: 0.09 + (i % 2) * 0.04, y: 0.07 }) },
+};
 const BURN_S = 5;
 
 export const MATERIAL_COLOURS: Record<Material, number> = {
@@ -130,7 +193,9 @@ export class ArenaProp {
 
   /** Can be struck: a standing floor prop with a body. */
   get hittable(): boolean {
-    return !this.broken && this.body !== null && this.looseFall === null && !this.kind.decal;
+    if (this.broken || this.kind.decal || this.looseFall !== null) return false;
+    // Floor props with a body, and items still sitting on a standing desk (monitors, keyboards, cups).
+    return this.body !== null || (this.parent !== null && !this.parent.broken);
   }
 
   canTakeHit(nowS: number): boolean {
@@ -158,6 +223,8 @@ export class ArenaProp {
 export class ArenaProps {
   readonly props: ArenaProp[] = [];
   readonly debris: Debris;
+  /** Hits and breaks since the last drain (presentation). */
+  private readonly pending: PropEvent[] = [];
   private timeS = 0;
 
   constructor(
@@ -232,6 +299,11 @@ export class ArenaProps {
     this.debris.update(stepS);
   }
 
+  /** Hits and breaks since the last call (sounds, sparks, dust). */
+  drainEvents(): PropEvent[] {
+    return this.pending.splice(0, this.pending.length);
+  }
+
   get states(): PropState[] {
     return this.props.map((p) => {
       const pose = p.pose;
@@ -261,12 +333,37 @@ export class ArenaProps {
       hit = { ...hit, direction: { x: dx / len, y: dy / len } };
     }
     if (hit.ignites && FLAMMABLE.has(prop.kind.material)) prop.burnS = BURN_S;
+    const evAt = () => {
+      const p = prop.pose;
+      return { x: p.x, y: p.y, z: (prop.placement.elevationM ?? 0) + prop.size.h / 2 };
+    };
     if (prop.hp !== null) {
       prop.hp = Math.max(0, prop.hp - hit.damage);
       if (prop.hp === 0) {
+        this.pending.push({
+          kind: 'break',
+          material: prop.kind.material,
+          ...evAt(),
+          dir: hit.direction,
+          sizeM: Math.max(prop.size.w, prop.size.d, prop.size.h),
+        });
         this.shatter(prop, hit);
         return true;
       }
+    }
+    if (hit.blow !== 'knockback' || prop.canTakeHit(this.timeS)) {
+      this.pending.push({
+        kind: 'hit',
+        material: prop.kind.material,
+        ...evAt(),
+        dir: hit.direction,
+        sizeM: Math.max(prop.size.w, prop.size.d, prop.size.h),
+      });
+    }
+    // An item on a desk that survives the blow is knocked off it.
+    if (!prop.body && prop.parent && prop.kind.movable) {
+      this.knockOff(prop, hit);
+      return false;
     }
     const body = prop.body;
     if (!body || !prop.kind.movable) return false;
@@ -283,11 +380,27 @@ export class ArenaProps {
     return false;
   }
 
+  /** A desk item that survived a blow flies off the desk and falls to the floor. */
+  private knockOff(item: ArenaProp, hit: PropHit): void {
+    const at = item.pose;
+    const iw = item.size;
+    const speed = Math.min(6, (hit.strength * IMPULSE_PER_STRENGTH) / Math.max(0.3, item.kind.massKg));
+    item.body = this.physics.addDebris({
+      position: { x: at.x, y: at.y },
+      halfExtents: { x: Math.max(0.04, iw.w / 2), y: Math.max(0.04, iw.d / 2) },
+      velocity: { x: hit.direction.x * speed, y: hit.direction.y * speed + 0.2 },
+      spin: (item.index % 2 ? 1 : -1) * 6,
+      massKg: Math.max(0.1, item.kind.massKg),
+    });
+    item.looseFall = { heightM: item.placement.elevationM ?? 0, vz: 1.6 };
+  }
+
   private shatter(prop: ArenaProp, hit: PropHit): void {
     const pose = prop.pose;
+    const lift = prop.placement.elevationM ?? 0;
     // Where the items on it are now (they ride along with it until it breaks).
     const riders = this.props
-      .filter((item) => item.parent === prop && !item.broken)
+      .filter((item) => item.parent === prop && !item.broken && item.looseFall === null)
       .map((item) => ({ item, at: item.pose }));
     prop.broken = true;
     if (prop.body) this.physics.removeBody(prop.body);
@@ -295,16 +408,19 @@ export class ArenaProps {
     prop.awake = false;
 
     const { w, d, h } = prop.size;
-    const count = Math.max(3, Math.min(8, Math.round(w * d * 6) + 3));
+    const look = BREAKUP[prop.kind.material];
+    const count = Math.max(look.min, Math.min(look.max, Math.round(w * d * 6) + look.min));
     const power = Math.min(2, 0.6 + hit.strength / 600);
     const colour = MATERIAL_COLOURS[prop.kind.material];
     for (let i = 0; i < count; i++) {
       const f = (i + 0.5) / count - 0.5; // -0.5..0.5 across the prop
-      const speed = (2.5 + ((i * 37) % 5) * 0.6) * power;
+      const speed = (2.5 + ((i * 37) % 5) * 0.6) * power * look.speed;
       const side = f * 3;
+      const size = look.size(w, d, i);
       this.debris.add({
         position: { x: pose.x + f * w * 0.8, y: pose.y + ((i % 3) - 1) * d * 0.25 },
-        halfExtents: { x: Math.max(0.05, Math.min(0.3, w / 6)) * (1 + (i % 2) * 0.4), y: Math.max(0.04, d / 10) },
+        halfExtents: size,
+        shape: look.shape,
         velocity: {
           x: hit.direction.x * speed - hit.direction.y * side,
           y: hit.direction.y * speed + hit.direction.x * side,
@@ -312,7 +428,7 @@ export class ArenaProps {
         spin: (i % 2 ? 1 : -1) * (5 + i),
         massKg: Math.max(0.2, prop.kind.massKg / count),
         colour,
-        heightM: Math.min(1.2, h * (0.4 + (i % 3) * 0.25)),
+        heightM: lift + Math.min(1.2, h * (0.4 + (i % 3) * 0.25)),
         verticalSpeedMps: 1.2 + (i % 4) * 0.5,
       });
     }

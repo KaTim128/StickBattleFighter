@@ -15,6 +15,8 @@ export interface DebrisPiece {
   readonly halfH: number;
   /** Display colour (from the material). */
   readonly colour: number;
+  /** A block (splinter, plate, chunk) or a sharp triangular shard (glass, ceramic). */
+  readonly shape: 'rect' | 'shard';
   heightM: number;
   verticalSpeedMps: number;
   removed: boolean;
@@ -27,6 +29,7 @@ export interface DebrisSpec {
   spin: number;
   massKg: number;
   colour: number;
+  shape?: 'rect' | 'shard';
   heightM: number;
   verticalSpeedMps: number;
 }
@@ -48,6 +51,7 @@ export class Debris {
       halfW: spec.halfExtents.x,
       halfH: spec.halfExtents.y,
       colour: spec.colour,
+      shape: spec.shape ?? 'rect',
       heightM: spec.heightM,
       verticalSpeedMps: spec.verticalSpeedMps,
       removed: false,

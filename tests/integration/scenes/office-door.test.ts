@@ -15,7 +15,16 @@ const DOOR_Y = (DOOR.y0 + DOOR.y1) / 2;
 async function setup() {
   const stage = new Container();
   const intents = new PlayerIntents();
-  const scene = new FightArenaScene(OFFICE, stage, intents, () => ({ width: 1280, height: 720 }));
+  // Start in the open area between the cubicle block and the door (cubicles fill the centre since 11/11/2026).
+  const scene = new FightArenaScene(
+    { ...OFFICE, playerStart: { x: DOOR.x0 - 2.6, y: DOOR_Y } },
+    stage,
+    intents,
+    () => ({
+      width: 1280,
+      height: 720,
+    }),
+  );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
   const run = (seconds: number) => {
@@ -45,7 +54,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('starts closed and blocks the way; walking and pushing into it never opens it', async () => {
     const { intents, scene, scenes, run, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 3, y: 1.9 }); // out of the way: these tests hit the door directly
     walkToDoor();
     run(2); // push for two more seconds
     expect(scene.doorStates[0]!.broken).toBe(false);
@@ -56,7 +65,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('jab and hook do not break it; the heavy finisher smashes it and the way is clear', async () => {
     const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 3, y: 1.9 }); // out of the way: these tests hit the door directly
     walkToDoor();
     intents.setMove('t', { x: 0, y: 0 });
     run(0.3);
@@ -80,7 +89,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('a flying kick smashes it', async () => {
     const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 3, y: 1.9 }); // out of the way: these tests hit the door directly
     walkToDoor();
     intents.setMove('t', { x: -1, y: 0 });
     run(0.15); // step back a little
@@ -97,7 +106,7 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('knocking the dummy into it with the heavy finisher smashes it (heavy knockback)', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup();
-    scene.respawnDummy({ x: DOOR.x0 - 3.5, y: DOOR_Y }); // a few metres in front of the door
+    scene.respawnDummy({ x: DOOR.x0 - 1.4, y: DOOR_Y }); // between the player and the door
     // Line up with the dummy (between the player and the door, on the door's row).
     intents.setMove('t', { x: 1, y: 0 });
     runUntil(() => scene.player.x > scene.dummy.x - 1.1);
@@ -122,6 +131,8 @@ describe('office door (owner request, 11/11/2026)', () => {
 
   it('standing still and pressing three times lands all three strikes on the dummy', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup();
+    const dummyAt = { x: DOOR.x0 - 1.4, y: DOOR_Y };
+    scene.respawnDummy(dummyAt);
     intents.setMove('t', { x: 1, y: 0 });
     runUntil(() => scene.player.x > scene.dummy.x - 1.15);
     intents.setMove('t', { x: 0, y: 0 });
@@ -134,13 +145,13 @@ describe('office door (owner request, 11/11/2026)', () => {
     }
     run(0.6);
     expect(scene.player.hits).toBe(3);
-    expect(scene.dummy.speed + Math.abs(scene.dummy.x - OFFICE.dummyStart.x)).toBeGreaterThan(1); // the finisher sent it flying
+    expect(scene.dummy.speed + Math.abs(scene.dummy.x - dummyAt.x)).toBeGreaterThan(1); // the finisher sent it flying
     scenes.clear();
   });
 
   it('the camera glides with the player into the boss room (no hard cut)', async () => {
     const { intents, scene, scenes, run, runUntil, walkToDoor } = await setup();
-    scene.respawnDummy({ x: 4, y: 8 }); // out of the way: these tests hit the door directly
+    scene.respawnDummy({ x: 3, y: 1.9 }); // out of the way: these tests hit the door directly
     walkToDoor();
     intents.setMove('t', { x: -1, y: 0 });
     run(0.15);

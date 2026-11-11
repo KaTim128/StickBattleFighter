@@ -286,6 +286,12 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - Animator: walk weight rises sooner (starts stepping almost at once), run weight eases in.
 - Movement: acceleration 32 → 50 m/s², deceleration 40 → 55 m/s² (snappier starts, stops and turns).
 
+### TD-038: Centre cubicle block and material destruction — ACCEPTED (owner request 11/11/2026)
+- Office: six back-to-back pairs (`cubiclePair` in `src/data/arenas/office.ts`) in one row in the centre; walkways 1 m wide; main room 25 m (the row needs about 22 m plus an open area before the door); office 33 × 12 m. Reachability tests found two cubicles too tight to step into and 0.85 m walkways barely passable, so chairs moved and walkways widened.
+- New prop `drawer-unit` (steel, 260). Desk 320, cabinet 450 (was indestructible), executive desk 450, computer is glass (the screen).
+- `ArenaProps`: desk items on a standing desk are hittable (they shatter, or are knocked off if they survive); a `BREAKUP` table per material sets piece count, size, speed and shape (rect or triangular shard); `PropEvent`s (hit/break with material, position, size) drive sounds and particles in the scene (steel/glass: sparks or glints; wood/fabric/plant: dust); new synthesised sounds `hit-wood`, `break-wood`, `hit-metal`, `break-metal`, `break-glass`, `hit-plastic`, `break-plastic`, `hit-soft`, `break-soft`.
+- `?dummyAt=x,y` joins `?playerAt=` for tests and practice.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

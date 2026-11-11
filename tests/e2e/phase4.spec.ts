@@ -33,16 +33,17 @@ test('office: walking into the door keeps it shut; the 1-2-3 combo smashes it; t
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   test.setTimeout(60_000);
   const errors: string[] = [];
-  await open(page, errors);
+  // Start in the open area before the boss door (the cubicles fill the centre since 11/11/2026).
+  await open(page, errors, '?playerAt=22.3,6&dummyAt=23.5,6');
 
   // Walk right along the door's row, shoving the dummy all the way to the door, and keep pushing.
   await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await hook(page)).dummy.x, { timeout: 20_000 }).toBeGreaterThan(20); // door at x = 21
+  await expect.poll(async () => (await hook(page)).dummy.x, { timeout: 20_000 }).toBeGreaterThan(23.9); // door at x = 25
   await page.waitForTimeout(1500);
   await page.keyboard.up('KeyD');
   let s = await hook(page);
   expect(s.doors[0]!.broken).toBe(false); // contact never opens it
-  expect(s.player.x).toBeLessThan(21);
+  expect(s.player.x).toBeLessThan(25);
 
   // 1-2-3: jab → hook → heavy finisher.
   await comboToHeavy(page, async () => (await hook(page)).player.attack);
@@ -54,9 +55,9 @@ test('office: walking into the door keeps it shut; the 1-2-3 combo smashes it; t
 
   // Walk through into the boss room; the camera glides after.
   await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await hook(page)).player.x, { timeout: 15_000 }).toBeGreaterThan(22.5); // through the doorway (boss room starts at 21.4)
+  await expect.poll(async () => (await hook(page)).player.x, { timeout: 15_000 }).toBeGreaterThan(26.3); // through the doorway (boss room starts at 25.4)
   await page.keyboard.up('KeyD');
-  await expect.poll(async () => (await hook(page)).camera.x, { timeout: 5000 }).toBeGreaterThan(16); // followed right, to the arena-edge clamp
+  await expect.poll(async () => (await hook(page)).camera.x, { timeout: 5000 }).toBeGreaterThan(20); // followed right, to the arena-edge clamp
   await page.screenshot({ path: testInfo.outputPath('boss-room.png') });
   expect(errors).toEqual([]);
 });

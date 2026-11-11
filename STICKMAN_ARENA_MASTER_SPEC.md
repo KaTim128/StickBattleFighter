@@ -119,10 +119,10 @@ Selected stack (TD-021, after the switch to 2D): TypeScript + Vite, **PixiJS 8**
 
 | ID | Requirement |
 |---|---|
-| REQ-ENV-8 | Main office floor with **12 cubicles: 6 on each side** of a central aisle. |
+| REQ-ENV-8 | Main office floor with **12 cubicles: 6 on each side** of a central aisle. | *Updated 11/11/2026 (owner):* the 12 cubicles stand in the **centre** as **six back-to-back pairs** (one opening north, one south, sharing the back panel), with walkways between the pairs and aisles north and south.
 | REQ-ENV-9 | A separate **boss room** with an **executive desk, a boss chair behind it and a visitor chair opposite**. Each room has its own look (floor, walls, decor). |
 | REQ-ENV-10 | The camera follows smoothly between rooms, keeping active characters in view, with **no hard cuts**. |
-| REQ-ENV-12 | **Compact office (owner, 11/11/2026):** the office is tight, with no large empty space in the centre and a short overall length (29 m × 12 m; aisle ≤ 7.5 m between cubicle rows). |
+| REQ-ENV-12 | **Compact office (owner, 11/11/2026):** the office is tight, with no large empty space in the centre and a short overall length (29 m × 12 m; aisle ≤ 7.5 m between cubicle rows). | *Updated 11/11/2026:* 33 m × 12 m to fit the centre cubicle block and an open area before the boss door.
 | REQ-ENV-11 | The rooms are joined by a **closed door that blocks the way**. Walking or normal movement never opens it. It **only breaks** (shatters violently, clearing the path) when a fighter lands a **kick** or a **heavy-impact knockback attack** against it. Implemented as: kick, combo finisher (heavy strike) or a body knocked into it, at ≥ the door's break strength. |
 
 Design sheet: `docs/design/arenas/office.md`.
@@ -150,6 +150,7 @@ REQ-ENV-7: playground, street, jungle and field arenas, each with suitable local
 | REQ-PHY-5 | Objects have **material, mass and durability** properties. |
 | REQ-PHY-6 | Fragile glass can shatter. Wooden furniture can move, topple or break. Metal objects resist more damage. Some objects are movable but not destructible. |
 | REQ-PHY-6a | **Struck furniture reacts (owner, 11/11/2026):** when a fighter hits a table, chair or other prop (or is knocked into it), the prop **moves or breaks depending on its durability**. Walking into furniture does not shove it. Items on a desk move with it and fall when it breaks. Debris counts are capped (REQ-PHY-7). |
+| REQ-PHY-6b | **Breakable office equipment (owner, 11/11/2026):** computers (screens) and other desk items can be punched: weak items shatter, survivors are knocked off the desk; each cubicle has a steel drawer pedestal; steel drawers (260), filing cabinets (450) and office tables (320; executive desk 450) need far more damage. Destruction looks and sounds like its material: wood splinters with sawdust and a crack, steel plates with sparks and a clang, glass shards with glints and a shatter, plastic chunks, fabric stuffing with a soft rip. |
 | REQ-PHY-7 | Avoid uncontrolled debris and expensive physics for cosmetic objects. `[PB §8.6]` |
 
 ### 6.3 Pickup, carry and throw `[PB §12 Phase 7, §14.4]`
@@ -475,6 +476,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 11/11/2026 | Owner: centre cubicle pairs (REQ-ENV-8 updated), 33 m office (REQ-ENV-12 updated), breakable office equipment and material destruction (REQ-PHY-6b). | Master Developer |
 | 11/11/2026 | Owner: walking and running (REQ-ANI-10); shuffle rule superseded (SUP-05). | Master Developer |
 | 11/11/2026 | Owner: aimed ultimate (REQ-ABL-9); keyboard-only preset A3 moved to O. | Master Developer |
 | 11/11/2026 | Owner: dynamic wall transparency (REQ-VIS-10). | Master Developer |
