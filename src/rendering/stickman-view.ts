@@ -273,24 +273,25 @@ export class StickmanView {
     // thighs root into the pelvis, so for a muscle body both legs are drawn first and the torso's
     // pelvis (hips and seat, in the pants) sits over their roots as one connected structure. The
     // head sits on the body's centre line, behind the near arm, so it never pokes out in front of it.
-    const headBehindArm = muscled && this.head === 'brute';
-    for (const i of headBehindArm ? [0, 1, 3, 2] : [0, 1, 2, 3, 4]) drawPart(limbs[i]!, i);
-    if (headBehindArm) {
-      this.bruteHead(g, s, limb, toward(limb, outline, 0.68), o);
-      drawPart(limbs[4]!, 4);
-    }
+    // Every stickman (owner, 12/11/2026: "all stickmans head sits centred on shoulders, behind the
+    // near arm"): the head is drawn after the body and the far limbs but before the near arm, so the
+    // near arm always passes in front of it. Muscle bodies also draw both legs before the torso.
+    const drawHead = (): void => {
+      if (flame > 0.01) {
+        // Dodge: the body becomes a small, quick streak of flame at chest height (owner: smaller, no grey).
+        this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
+      } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
+      else if (this.head === 'brute') this.bruteHead(g, s, limb, toward(limb, outline, 0.68), o);
+      else if (this.head === 'hood') this.hoodHead(g, s, limb, toward(limb, outline, 0.68), o);
+      else if (this.head === 'skull') this.skullHead(g, s, limb, toward(limb, outline, 0.7), o);
+      else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
+    };
+    for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);
+    if (flame <= 0.01) drawHead();
+    drawPart(limbs[4]!, 4);
+    if (flame > 0.01) drawHead();
     if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
     this.drawStatus(s, t);
-    if (headBehindArm) {
-      // Head already drawn, behind the near arm.
-    } else if (flame > 0.01) {
-      // Dodge: the body becomes a small, quick streak of flame at chest height (owner: smaller, no grey).
-      this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
-    } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
-    else if (this.head === 'brute') this.bruteHead(g, s, limb, toward(limb, outline, 0.68), o);
-    else if (this.head === 'hood') this.hoodHead(g, s, limb, toward(limb, outline, 0.68), o);
-    else if (this.head === 'skull') this.skullHead(g, s, limb, toward(limb, outline, 0.7), o);
-    else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
     if (this.held && flame < 0.01) this.drawHeld(g, s, o);
     if (this.magic > 0) this.drawMagic(s);
     if (this.blind > 0.01) this.drawBlind(s);
