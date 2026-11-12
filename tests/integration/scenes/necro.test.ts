@@ -8,7 +8,6 @@ import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
-import { iso } from '../../../src/rendering/projection';
 
 const STEP = 1 / 60;
 const K = NECRO_KIT;

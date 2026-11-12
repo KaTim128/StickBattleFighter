@@ -714,7 +714,7 @@ export class AbilityWorld {
   private stepPull(a: PullAction, dtS: number, host: AbilityHost): boolean {
     a.ageS += dtS;
     const target = host.fighters().find((f) => f.id === a.targetId);
-    if (!target || !target.hittable || a.ageS > PULL_MAX_S) return true;
+    if (!target?.hittable || a.ageS > PULL_MAX_S) return true;
     const c = host.position(a.casterId);
     const dx = c.x - target.x;
     const dy = c.y - target.y;
@@ -733,7 +733,7 @@ export class AbilityWorld {
     a.ageS += dtS;
     const target = host.fighters().find((f) => f.id === a.targetId);
     const caster = host.fighters().find((f) => f.id === a.casterId);
-    if (!target || !caster || !caster.hittable) return true; // the grabber fell: the target drops
+    if (!target || !caster?.hittable) return true; // the grabber fell: the target drops
     // Keep the target held just in front of the caster, rising overhead.
     const hold = {
       x: caster.x + a.dir.x * (caster.radiusM + target.radiusM),

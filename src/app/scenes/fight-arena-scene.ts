@@ -1139,13 +1139,6 @@ export class FightArenaScene implements ArenaScene {
     return { x: f.x + (dx / len) * range, y: f.y + (dy / len) * range };
   }
 
-  /** A point on the game area (CSS pixels, a tap) to the floor point under it. */
-  private screenToFloor(p: { x: number; y: number }): { x: number; y: number } | null {
-    const w = this.view?.world;
-    if (!w || w.scale.x === 0) return null;
-    return isoToWorld((p.x - w.position.x) / w.scale.x, (p.y - w.position.y) / w.scale.y);
-  }
-
   /**
    * Teleport (owner, 12/11/2026): land on the free spot nearest `to` that a body can stand on (never
    * inside walls or furniture, always inside the map). Returns where it landed, or null if no spot

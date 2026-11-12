@@ -71,7 +71,7 @@ describe('fourth abilities (R)', () => {
   });
 
   it('Braxon Grapple Slam: seizes the enemy in front, hoists it overhead, then slams it down', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 14, y: 13 }, { x: 15.1, y: 13 });
+    const { intents, scene, scenes, runUntil } = await setup('rampage', { x: 14, y: 13 }, { x: 15.1, y: 13 });
     intents.pressAbility('a4');
     runUntil(() => scene.dummyFighter.abilityLift > 0.6, 1.5);
     expect(scene.dummyFighter.abilityLift).toBeGreaterThan(0.6); // held up overhead
