@@ -69,8 +69,12 @@ export function solveSkeleton(pose: Pose, bones: BoneLengths): SolvedSkeleton {
   const pelvis = { x: 0, y: 0 };
   const torso = Math.PI + pose.lean; // pointing up the screen
   const chest = along(pelvis, torso, bones.spine);
-  const neck = along(chest, torso + pose.head, bones.neck);
-  const head = along(neck, torso + pose.head, bones.headRadius);
+  // Heads sit centred on the torso's axis for every stickman (owner, 12/11/2026: "perfectly centered
+  // heads, naturally aligned with their torsos"): the neck and head continue the spine's line, so a
+  // pose can never push the head forward, back or off the shoulders. (`pose.head` is kept in poses
+  // for tilting head-mounted parts, but no longer moves the head.)
+  const neck = along(chest, torso, bones.neck);
+  const head = along(neck, torso, bones.headRadius);
 
   // Arms hang from the shoulder relative to the torso's "down" direction.
   const torsoDown = pose.lean;

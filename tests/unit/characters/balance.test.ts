@@ -47,3 +47,10 @@ describe('fighter balance (owner, 12/11/2026: no fighter objectively stronger on
       }
   });
 });
+
+describe('testing area audio (owner, 12/11/2026)', () => {
+  it('the testing area (training yard) has no background ambience, and never the suspense crowd', async () => {
+    const { TRAINING_YARD } = await import('../../../src/data/arenas/training-yard');
+    expect(TRAINING_YARD.ambience).toBeUndefined();
+  });
+});

@@ -7,9 +7,10 @@ import { AMBIENCES, AMBIENT_EVENTS, CROWD_EVENTS, MENU_AMBIENCE_ID } from '../..
 const ARENAS = [OFFICE, TRAINING_YARD];
 
 describe('background ambience, never music (owner, 12/11/2026)', () => {
-  it('every map has its own soundscape, and the menu has its own', () => {
+  it('every map with a soundscape has its own, and the menu has its own (the testing area has none, SUP-22)', () => {
     expect(AMBIENCES[MENU_AMBIENCE_ID]).toBeDefined();
-    const ids = ARENAS.map((a) => a.ambience);
+    const ids = ARENAS.filter((a) => a.id !== 'training-yard').map((a) => a.ambience);
+    expect(ARENAS.find((a) => a.id === 'training-yard')?.ambience).toBeUndefined();
     for (const id of ids) {
       expect(id && AMBIENCES[id], `${id}`).toBeTruthy();
       expect(id).not.toBe(MENU_AMBIENCE_ID);
