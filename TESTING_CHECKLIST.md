@@ -304,6 +304,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Fire Beam follows the mouse or a swipe while it pours; Inferno stays rooted (`ability-world.test.ts`, `input.test.ts`, browser check)
 - [ ] Real-device check of swipe steering on a phone (manual)
 - [x] Rampage Buffer at 1.6x, bodybuilder V-taper, wearing pants (browser check, `rampage.test.ts`)
+- [x] Rampage Buffer heavyweight idle, walk and run: forward lean, low planted steps, less bounce, arms opposite legs (`heavyweight-motion.test.ts`, browser check)
 - [x] Admin editor: the Opponent selector opens Try in game against the chosen character (browser check)
 
 ## 13a. HUD buttons (owner, 12/11/2026)

@@ -470,9 +470,25 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - **Rampage Buffer:**
   - Drawn 1.6× Inferno's size (was 2×).
   - Bodybuilder V-taper: a tighter waist and a wider chest.
-  - Dark fighting pants (`rig.pants`, data) with a belt, folds and bare feet.
+  - Dark fighting pants (`rig.pants`, data) with folds and bare feet.
 - **Admin editor:** an **Opponent** selector next to "Try in game" opens the draft against any built-in character (`?opponent=`). It exists only in the admin preview; the public menu still pairs you with the training dummy.
 - **Evidence:** typecheck 0; `npm test` passes; screenshots checked in the browser.
+
+### 12/11/2026: Rampage Buffer leaner, real-looking muscles, heavyweight movement (owner requests)
+- **Leaner** ("it looks fat"): limbs at 0.115 m (were 0.13), and every muscle mass about 15% slimmer.
+- **Muscles** ("the abs look like they're drawn and not real"): the abs and pecs are now soft light on each bulge and soft shadow in the grooves, with no hard lines.
+- **Black spot removed:** it was the belt, a zero-length round-capped stroke in the outline colour. The pants' edge now marks the waist.
+- **Heavyweight movement** (`proc.idle.heavyweight`, chosen by Rampage's Animation Profile):
+  - Idle: a wide, planted stance leaning forward, with no bounce, only a slow breath.
+  - Walk: low, steady hips; the chest forward; shorter deliberate steps with low feet that plant hard (the hips sink at each heel strike); the weight shifting with each step; clenched fists swinging firmly opposite the legs.
+  - Run and sprint: grounded with little flight, lower knees, a hard lean and a compact pump. The charge uses the same sprint, so idle, walk, run and charge blend smoothly.
+- **Code:** `idleStyleFor` replaces the copy in the fighter and the admin preview.
+- **Tests:** `tests/unit/animation/heavyweight-motion.test.ts` (5).
+- **Evidence:** `npm test` 316/316; e2e 39 passed; lint clean (1 info, in an old mockup); browser screenshots of the idle and walk.
+- **Known limitation:** real-device checks (swipe steering, heavyweight gait on a phone) are still manual.
+
+## Decisions requiring owner attention
+
 
 
 Full list in spec §21. Still open:
