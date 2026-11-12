@@ -164,6 +164,54 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(0), head: deg(-2), armFront: limb(20, 30), armBack: limb(30, 40) },
     settle: 0.6,
   },
+  // Shroud (owner, 12/11/2026): every cast stays hunched. Thrown Blade: the knife hand drawn back
+  // past the ear, then flicked out flat and fast.
+  thrownBlade: {
+    windup: { lean: deg(-22), armFront: limb(150, 100), armBack: limb(20, 40), legFront: limb(34, -40) },
+    release: { lean: deg(-34), armFront: limb(96, 4), armBack: limb(-20, 30), legFront: limb(44, -50) },
+    settle: 0.5,
+  },
+  // Stalker Lunge: coiled low like a spring, knife back; then flat out, knife arm thrust ahead.
+  stalkerLunge: {
+    windup: { lean: deg(-40), armFront: limb(-30, 110), armBack: limb(-20, 40), ...CROUCH },
+    release: {
+      lean: deg(-52),
+      armFront: limb(94, 4),
+      armBack: limb(-60, 20),
+      legFront: limb(60, -40),
+      legBack: limb(-50, -10),
+    },
+    run: { lean: deg(-52), armFront: limb(94, 4), armBack: limb(-60, 20) },
+    settle: 0.35,
+  },
+  // Behind You: he folds in on himself as the shadow takes him, then rises behind his prey,
+  // knife already raised.
+  behindYou: {
+    windup: { lean: deg(-46), armFront: limb(20, 140), armBack: limb(10, 140), ...CROUCH },
+    release: { lean: deg(-24), armFront: limb(150, 60), armBack: limb(20, 40), legFront: limb(30, -40) },
+    settle: 0.5,
+  },
+  // Rending Flurry: knife hand cocked across the chest, then a wild sweep out (the flurry's last cut).
+  rendingFlurry: {
+    windup: { lean: deg(-26), armFront: limb(60, 150), armBack: limb(30, 80), legFront: limb(40, -60) },
+    release: {
+      lean: deg(-36),
+      armFront: limb(115, 10),
+      armBack: limb(-30, 50),
+      legFront: limb(56, -70),
+      legBack: limb(-30, -20),
+    },
+    tremble: deg(4),
+    settle: 0.4,
+  },
+  // Hunting Frenzy: he hunches lower and shakes, knife hand twitching; then snaps up, arms flung
+  // back, head thrown forward.
+  huntingFrenzy: {
+    windup: { lean: deg(-50), armFront: limb(30, 120), armBack: limb(20, 120), ...CROUCH },
+    tremble: deg(5),
+    release: { lean: deg(-18), armFront: limb(-40, 40), armBack: limb(-50, 40), legFront: limb(30, -40) },
+    settle: 0.5,
+  },
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.

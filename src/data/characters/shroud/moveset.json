@@ -1,0 +1,115 @@
+{
+  "id": "shroud-moveset",
+  "starters": {
+    "tap": "knife-slash",
+    "air-tap": "knife-plunge"
+  },
+  "moves": [
+    {
+      "id": "knife-slash",
+      "displayName": "Knife slash",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.07,
+      "activeS": 0.06,
+      "recoveryS": 0.17,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.45
+      },
+      "damage": 34,
+      "strength": 260,
+      "knockbackMps": 1.4,
+      "lungeMps": 0.9,
+      "moveFactor": 0.45,
+      "impact": "knuckle-light",
+      "shake": 0.14,
+      "zoomPunch": 0.012,
+      "requires": ["canPunch"],
+      "next": {
+        "tap": "backhand-slash"
+      }
+    },
+    {
+      "id": "backhand-slash",
+      "displayName": "Backhand slash",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.08,
+      "activeS": 0.07,
+      "recoveryS": 0.19,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.05,
+        "radiusM": 0.5
+      },
+      "damage": 40,
+      "strength": 320,
+      "knockbackMps": 1.8,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.18,
+      "zoomPunch": 0.015,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "lunging-stab"
+      }
+    },
+    {
+      "id": "lunging-stab",
+      "displayName": "Lunging stab (finisher)",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.16,
+      "activeS": 0.08,
+      "recoveryS": 0.34,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.3,
+        "radiusM": 0.45
+      },
+      "damage": 82,
+      "strength": 900,
+      "knockbackMps": 6,
+      "lungeMps": 2.2,
+      "moveFactor": 0.3,
+      "impact": "knuckle-heavy",
+      "shake": 0.38,
+      "zoomPunch": 0.035,
+      "requires": ["canPunch", "canUseCombos"]
+    },
+    {
+      "id": "knife-plunge",
+      "displayName": "Plunging stab",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.07,
+      "activeS": 0.14,
+      "recoveryS": 0.28,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.95,
+        "radiusM": 0.55
+      },
+      "damage": 70,
+      "strength": 800,
+      "knockbackMps": 4.5,
+      "lungeMps": 0,
+      "moveFactor": 0.6,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.03,
+      "requires": ["canUseAerialPunches"]
+    }
+  ]
+}

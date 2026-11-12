@@ -1,6 +1,7 @@
 import {
   type AbilityDef,
   type AbilityPayload,
+  type BuffEffect,
   type Burn,
   type MagicLook,
   payloadAt,
@@ -81,10 +82,7 @@ export interface AbilityHost {
   /** Turn a caster to face a direction (it follows its steered beam). Optional. */
   face?(casterId: string, dir: Vec2): void;
   /** Start (or end, null) a timed self-buff on a caster. */
-  buff(
-    casterId: string,
-    buff: { speedFactor: number; damageTakenFactor: number; durationS: number; abilityDamageFactor?: number } | null,
-  ): void;
+  buff(casterId: string, buff: BuffEffect | null): void;
   /** Raise minions for the caster (summons, owner 12/11/2026). Optional (hosts without summons ignore it). */
   summon?(casterId: string, spec: SummonSpec): void;
   /**
@@ -331,9 +329,34 @@ export class AbilityWorld {
       }
       case 'teleport': {
         // Vanish here, reappear there (within range); the host finds a free spot to stand on.
-        const want = Math.min(d.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
-        const to = { x: at.x + dir.x * want, y: at.y + dir.y * want };
+        let to: Vec2;
+        let face: Vec2 | null = null;
+        if (d.behindTargetM !== undefined) {
+          // Behind the nearest enemy in range, on its far side (Shroud's "Behind You").
+          let best: AbilityTarget | null = null;
+          let bestD = d.maxRangeM;
+          for (const f of host.fighters()) {
+            if (this.friendly(f, casterId, host) || !f.hittable) continue;
+            const dd = Math.hypot(f.x - at.x, f.y - at.y);
+            if (dd <= bestD) {
+              best = f;
+              bestD = dd;
+            }
+          }
+          if (!best) {
+            host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+            break;
+          }
+          const away = norm({ x: best.x - at.x, y: best.y - at.y });
+          const gap = best.radiusM + d.behindTargetM;
+          to = { x: best.x + away.x * gap, y: best.y + away.y * gap };
+          face = { x: -away.x, y: -away.y };
+        } else {
+          const want = Math.min(d.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+          to = { x: at.x + dir.x * want, y: at.y + dir.y * want };
+        }
         const landed = host.teleport?.(casterId, to) ?? null;
+        if (landed && face) host.face?.(casterId, face);
         if (landed)
           host.emit({
             kind: 'impact',
@@ -443,12 +466,10 @@ export class AbilityWorld {
         break;
       }
       case 'buff':
-        host.buff(casterId, {
-          speedFactor: d.speedFactor,
-          damageTakenFactor: d.damageTakenFactor,
-          durationS: d.durationS,
-          abilityDamageFactor: d.abilityDamageFactor,
-        });
+        {
+          const { type: _type, summon: _summon, ...effect } = d;
+          host.buff(casterId, effect);
+        }
         if (d.summon) host.summon?.(casterId, d.summon);
         host.emit({
           kind: 'impact',

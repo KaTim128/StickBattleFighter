@@ -62,6 +62,22 @@ export function quickDodgePose(base: Pose): Pose {
   };
 }
 
+/**
+ * Shroud's shade dodge (owner, 12/11/2026): he drops low and skitters backwards, bent double, the
+ * knife held out in front and the free hand trailing near the floor.
+ */
+export function shadeDodgePose(base: Pose): Pose {
+  return {
+    ...base,
+    lean: deg(-40),
+    head: deg(10),
+    armFront: limb(70, 30),
+    armBack: limb(-30, 40),
+    legFront: limb(60, -110),
+    legBack: limb(-30, -90),
+  };
+}
+
 /** A whole-body frame for falling and getting up: pose, figure tilt about the feet, and lift off the floor. */
 export interface DownFrame {
   pose: Pose;

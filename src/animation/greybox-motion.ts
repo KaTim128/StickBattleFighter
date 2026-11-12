@@ -116,18 +116,42 @@ export const HEAVYWEIGHT_STANCE = {
 } as const;
 
 /** Movement style: the stance, walk and run a fighter's Animation Profile picks (via its Idle clip). */
-export type IdleStyle = 'boxer' | 'taekwondo' | 'heavyweight' | 'mage';
+export type IdleStyle = 'boxer' | 'taekwondo' | 'heavyweight' | 'mage' | 'stalker';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.taekwondo') return 'taekwondo';
   if (clipId === 'proc.idle.heavyweight') return 'heavyweight';
   if (clipId === 'proc.idle.mage') return 'mage';
+  if (clipId === 'proc.idle.stalker') return 'stalker';
   return 'boxer';
 }
 
 /** Idle: planted wide stance with a light bounce on the balls of the feet (1.8 bounces per second). */
+/**
+ * STALKER (owner, 12/11/2026, Shroud: "a naturally hunched posture, with rounded shoulders, a
+ * forward leaning upper body, slightly bent knees and a menacing head position ... avoid making him
+ * stand upright"): bent well over the hips, shoulders rolled forward, knees soft, the knife hand low
+ * and ready, the free arm hanging loose; he sways slowly side to side and the knife hand twitches.
+ */
+export const STALKER_STANCE = { lean: -28, pelvisM: 0.7, leadFootX: 0.2, rearFootX: -0.26 } as const;
+
+function stalkerIdle(timeS: number, bones: BoneLengths): Pose {
+  const sway = Math.sin(timeS * TAU * 0.4);
+  const twitch = Math.max(0, Math.sin(timeS * TAU * 0.23)) ** 12; // now and then the knife hand flicks
+  const s = STALKER_STANCE;
+  return {
+    lean: deg(s.lean + sway * 2),
+    head: deg(0),
+    armFront: { root: deg(42 + twitch * 22), bend: deg(70 - twitch * 30) },
+    armBack: { root: deg(12 + sway * 3), bend: deg(26) },
+    legFront: legIk(s.leadFootX, s.pelvisM - 0.01 * sway, bones.thigh, bones.shin),
+    legBack: legIk(s.rearFootX, s.pelvisM + 0.01 * sway, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'stalker') return stalkerIdle(timeS, bones);
   if (style === 'mage') {
     // MAGE STANCE (owner, 12/11/2026, Necro: "a straight, confident idle stance, using the staff as
     // a support"): standing tall on nearly straight legs, chin level, the staff hand (rear, his left)
@@ -261,6 +285,22 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'stalker') {
+    // A creeping prowl: bent over, knees soft, feet kept low, the knife hand low in front barely
+    // moving while the free arm swings loose and limp.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.69,
+      bob: 0.01,
+      leadX: 0.02,
+      rearX: -0.04,
+      reach: 0.24 * k,
+      lift: 0.06,
+      lean: -27,
+      sway: 3,
+      head: 0,
+      arms: { lead: { x: 0.24, y: 0.36 }, rear: { x: 0.0, y: 0.48 }, swingX: 0.08, swingY: 0.03 },
+    });
+  }
   // A PROPER WALK (owner, 12/11/2026: "a proper walking animation rather than a slowed down
   // running animation ... natural alternating arm and leg movement, with straighter knees and a
   // more upright posture"): hips high over nearly straight legs, the chest upright, the head level,
@@ -296,7 +336,8 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
  * arms hanging a little out from his body.
  */
 export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
-  if (style === 'mage') return idlePose(timeS, bones, style);
+  // The mage keeps his staff stance; the stalker never stands up straight.
+  if (style === 'mage' || style === 'stalker') return idlePose(timeS, bones, style);
   const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.3);
   const shift = Math.sin(timeS * TAU * 0.11);
   const legs = bones.thigh + bones.shin;
@@ -486,14 +527,43 @@ const HEAVY_SPRINT: RunStyle = {
   pumpBack: { shoulder: -42, elbow: 92 },
 };
 
+/**
+ * STALKER RUN (Shroud): a low, predatory lope, bent nearly double, long quick strides, the knife
+ * arm held low and back, the free arm hanging and swinging.
+ */
+const STALKER_RUN: RunStyle = {
+  pelvisM: 0.62,
+  bob: 0.03,
+  reachM: 0.36,
+  pushM: 0.38,
+  stance: 0.36,
+  swingLiftM: 0.4,
+  lean: -34,
+  drive: 4,
+  head: 0,
+  pumpFront: { shoulder: 30, elbow: 70 },
+  pumpBack: { shoulder: -40, elbow: 40 },
+};
+
+const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
+  style === 'heavyweight'
+    ? sprint
+      ? HEAVY_SPRINT
+      : HEAVY_RUN
+    : style === 'stalker'
+      ? STALKER_RUN
+      : sprint
+        ? SPRINT_STYLE
+        : RUN;
+
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
-  return runningPose(phase, bones, style === 'heavyweight' ? HEAVY_RUN : RUN);
+  return runningPose(phase, bones, runStyleFor(style, false));
 }
 
 /** SPRINT: the running cycle at full effort. */
 export function sprintPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
-  return runningPose(phase, bones, style === 'heavyweight' ? HEAVY_SPRINT : SPRINT_STYLE);
+  return runningPose(phase, bones, runStyleFor(style, true));
 }
 
 /** Distance (m) covered by one walk cycle (two steps) and one run cycle. */

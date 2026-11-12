@@ -26,6 +26,12 @@ import boxingAnimation from '../data/characters/shared/animation-style-boxing.js
 import taekwondoAnimation from '../data/characters/shared/animation-style-taekwondo.json';
 import defaultAudio from '../data/characters/shared/audio-default.json';
 import defaultEffects from '../data/characters/shared/effects-default.json';
+import shroudAnimation from '../data/characters/shroud/animation-profile.json';
+import shroudAudio from '../data/characters/shroud/audio.json';
+import shroudCharacter from '../data/characters/shroud/character.json';
+import shroudEffects from '../data/characters/shroud/effects.json';
+import shroudMoveset from '../data/characters/shroud/moveset.json';
+import shroudStats from '../data/characters/shroud/stats.json';
 import skeletonAi from '../data/characters/skeleton-warrior/ai.json';
 import skeletonCharacter from '../data/characters/skeleton-warrior/character.json';
 import skeletonEffects from '../data/characters/skeleton-warrior/effects.json';
@@ -60,6 +66,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     infernoCharacter,
     rampageCharacter,
     necroCharacter,
+    shroudCharacter,
     skeletonCharacter,
     dummyCharacter,
   ]),
@@ -71,11 +78,34 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     infernoAnimation,
     rampageAnimation,
     necroAnimation,
+    shroudAnimation,
   ]),
-  moveset: byId<MovesetProfile>([baseMoveset, infernoMoveset, rampageMoveset, necroMoveset, skeletonMoveset]),
-  stats: byId<StatsProfile>([baseStats, infernoStats, rampageStats, necroStats, skeletonStats, dummyStats]),
-  effects: byId<EffectsProfile>([defaultEffects, infernoEffects, rampageEffects, necroEffects, skeletonEffects]),
-  audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio, necroAudio]),
+  moveset: byId<MovesetProfile>([
+    baseMoveset,
+    infernoMoveset,
+    rampageMoveset,
+    necroMoveset,
+    shroudMoveset,
+    skeletonMoveset,
+  ]),
+  stats: byId<StatsProfile>([
+    baseStats,
+    infernoStats,
+    rampageStats,
+    necroStats,
+    shroudStats,
+    skeletonStats,
+    dummyStats,
+  ]),
+  effects: byId<EffectsProfile>([
+    defaultEffects,
+    infernoEffects,
+    rampageEffects,
+    necroEffects,
+    shroudEffects,
+    skeletonEffects,
+  ]),
+  audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio, necroAudio, shroudAudio]),
   ai: byId<AiProfile>([defaultAi, dummyAi, skeletonAi]),
 };
 

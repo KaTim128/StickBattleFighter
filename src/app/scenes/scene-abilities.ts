@@ -1,5 +1,12 @@
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
-import type { AbilityDef, AbilityPayload, AbilitySlot, Burn, SummonSpec } from '../../abilities/ability-def';
+import type {
+  AbilityDef,
+  AbilityPayload,
+  AbilitySlot,
+  BuffEffect,
+  Burn,
+  SummonSpec,
+} from '../../abilities/ability-def';
 import {
   type AbilityFx,
   type AbilityHost,
@@ -189,6 +196,8 @@ export class SceneAbilities implements AbilityHost {
       flashColour: hitFlash,
       stunS: payload.stunS,
     });
+    // Shroud's knife: deep cuts bleed.
+    if (landed && payload.bleed) target.combatant.bleed(payload.bleed.dps, payload.bleed.durationS);
     // Soul Drain: the target is blinded for a while.
     if (landed && payload.blindS) target.combatant.blind(payload.blindS);
     // Soul Drain: the caster takes back a share of the life it drained.
@@ -281,10 +290,7 @@ export class SceneAbilities implements AbilityHost {
     f.abilityLift = heightM;
   }
 
-  buff(
-    casterId: string,
-    buff: { speedFactor: number; damageTakenFactor: number; durationS: number; abilityDamageFactor?: number } | null,
-  ): void {
+  buff(casterId: string, buff: BuffEffect | null): void {
     const f = this.byName(casterId);
     if (!f) return;
     f.buff = buff ? { ...buff, leftS: buff.durationS } : null;

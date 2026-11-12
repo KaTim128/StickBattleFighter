@@ -115,6 +115,8 @@ export class Combatant {
   private sinceStaminaUseS = 0;
   private koAgeS = -1;
   private burnS = 0;
+  private bleedS = 0;
+  private bleedDps = 0;
   private burnKo = false;
   /** Multiplies damage taken (a durability buff such as Rampage Mode sets 0.85). */
   damageTakenScale = 1;
@@ -223,6 +225,20 @@ export class Combatant {
     if (this.isKo) return;
     this.burnDps = Math.max(this.burnS > 0 ? this.burnDps : 0, dps);
     this.burnS = Math.max(this.burnS, durationS);
+  }
+
+  /**
+   * Bleeding (owner, 12/11/2026, Shroud's knife): damage over time like a burn, but from deep cuts;
+   * a new cut refreshes the timer and keeps the stronger rate. Runs alongside a burn.
+   */
+  bleed(dps: number, durationS: number): void {
+    if (this.isKo || dps <= 0 || durationS <= 0) return;
+    this.bleedDps = Math.max(this.bleedS > 0 ? this.bleedDps : 0, dps);
+    this.bleedS = Math.max(this.bleedS, durationS);
+  }
+
+  get bleeding(): boolean {
+    return this.bleedS > 0;
   }
 
   get burning(): boolean {
@@ -344,7 +360,7 @@ export class Combatant {
 
   update(dtS: number): number {
     this.blindS = Math.max(0, this.blindS - dtS);
-    const burned = this.tickBurn(dtS);
+    const burned = this.tickBurn(dtS) + this.tickBleed(dtS);
     if (this.koAgeS >= 0) {
       this.koAgeS += dtS;
       this.downS += dtS;
@@ -398,8 +414,30 @@ export class Combatant {
     return damage;
   }
 
+  private tickBleed(dtS: number): number {
+    if (this.bleedS <= 0 || this.isKo) {
+      this.bleedS = 0;
+      return 0;
+    }
+    const step = Math.min(dtS, this.bleedS);
+    this.bleedS -= step;
+    const damage = Math.min(this.hp, this.bleedDps * step);
+    this.hp -= damage;
+    if (this.hp <= 0) {
+      this.hp = 0;
+      if (this.knockdownS === 0) this.downS = 0;
+      this.koAgeS = 0;
+      this.stunS = 0;
+      this.knockdownS = 0;
+      this.getUpS = 0;
+      this.bleedS = 0;
+    }
+    return damage;
+  }
+
   /** Back on its feet at full health and stamina (KO respawn, Practice Zone). */
   reset(): void {
+    this.bleedS = 0;
     this.blindS = 0;
     this.hp = this.stats.maxHp;
     this.stamina = this.stats.maxStamina;

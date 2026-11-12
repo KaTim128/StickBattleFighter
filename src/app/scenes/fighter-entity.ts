@@ -77,13 +77,7 @@ export class FighterEntity {
   koSounded = false;
   dustSounded = false;
   /** A timed self-buff (Rampage Mode): speed and durability, with seconds left. */
-  buff: {
-    speedFactor: number;
-    damageTakenFactor: number;
-    durationS: number;
-    leftS: number;
-    abilityDamageFactor?: number;
-  } | null = null;
+  buff: (import('../../abilities/ability-def').BuffEffect & { leftS: number }) | null = null;
   /** Consecutive landed hits (PRS-4 combo counter) and when the last one landed (sim seconds). */
   comboCount = 0;
   lastLandS = -99;

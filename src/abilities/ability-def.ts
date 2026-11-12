@@ -48,6 +48,8 @@ export interface AbilityPayload {
    * to anyone; a computer-controlled fighter cannot find its target; a player's view goes dark.
    */
   readonly blindS?: number;
+  /** Deep cuts: the target bleeds this much damage per second for this long (Shroud's knife). */
+  readonly bleed?: Burn;
   /**
    * Drags the target toward the caster when it lands (Grave Chains, owner 12/11/2026), at
    * `speedMps`, stopping `stopM` in front of the caster or at anything solid in the way.
@@ -156,6 +158,11 @@ export interface TeleportDelivery {
   readonly maxRangeM: number;
   /** How fast WASD or the joystick moves the destination while aiming (owner, 12/11/2026). */
   readonly aimSpeedMps?: number;
+  /**
+   * Not aimed: the caster reappears this far beyond the nearest enemy within range, on its far
+   * side, facing it (Shroud's "Behind You"). Nobody in range: it fizzles.
+   */
+  readonly behindTargetM?: number;
 }
 
 export interface SummonDelivery extends SummonSpec {
@@ -215,6 +222,12 @@ export interface BuffDelivery {
   readonly abilityDamageFactor?: number;
   /** Raises minions as it begins (Death's Dominion's extra undead). */
   readonly summon?: SummonSpec;
+  /** Melee strikes play this much faster while it lasts (Hunting Frenzy: 1.4 = 40% faster). */
+  readonly attackSpeedFactor?: number;
+  /** Multiplies melee (knife) damage while it lasts. */
+  readonly meleeDamageFactor?: number;
+  /** Melee hits make the target bleed while it lasts. */
+  readonly meleeBleed?: Burn;
 }
 
 /**
@@ -231,6 +244,9 @@ export interface GrabDelivery {
   readonly liftM: number;
   readonly slamRadiusM: number;
 }
+
+/** What a running buff does (the buff delivery without its summons). */
+export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon'>;
 
 export type Delivery =
   | ProjectileDelivery

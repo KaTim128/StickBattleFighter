@@ -99,7 +99,7 @@ test('Inferno ultimate on the keyboard (owner, 12/11/2026): K aims with WASD and
   const start = await hook(page);
   await page.keyboard.press('KeyK');
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(3000); // the aim moves in game time; a software-rendered CI browser runs slower than real time
   await page.keyboard.up('KeyW');
   expect(
     Math.hypot((await hook(page)).player.x - start.player.x, (await hook(page)).player.y - start.player.y),

@@ -50,11 +50,18 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
   if (p.burn) out.push({ label: 'Burn', value: `${p.burn.dps}/s for ${s1(p.burn.durationS)} s` });
   if (p.stunS) out.push({ label: 'Stun', value: `${s1(p.stunS)} s` });
   if (p.blindS) out.push({ label: 'Blind', value: `${s1(p.blindS)} s` });
+  if (p.bleed) out.push({ label: 'Bleed', value: `${p.bleed.dps}/s for ${s1(p.bleed.durationS)} s` });
   if (p.lifesteal) out.push({ label: 'Heals', value: `${Math.round(p.lifesteal * 100)}% of damage dealt` });
   if (p.heavy) out.push({ label: 'Knockdown', value: 'yes' });
   if (d.type === 'buff') {
     out.push({ label: 'Lasts', value: `${s1(d.durationS)} s` });
     if (d.speedFactor !== 1) out.push({ label: 'Speed', value: `+${Math.round((d.speedFactor - 1) * 100)}%` });
+    if (d.attackSpeedFactor && d.attackSpeedFactor !== 1)
+      out.push({ label: 'Attack speed', value: `+${Math.round((d.attackSpeedFactor - 1) * 100)}%` });
+    if (d.meleeDamageFactor && d.meleeDamageFactor !== 1)
+      out.push({ label: 'Knife damage', value: `+${Math.round((d.meleeDamageFactor - 1) * 100)}%` });
+    if (d.meleeBleed)
+      out.push({ label: 'Cuts bleed', value: `${d.meleeBleed.dps}/s for ${s1(d.meleeBleed.durationS)} s` });
     if (d.damageTakenFactor !== 1)
       out.push({ label: 'Damage taken', value: `-${Math.round((1 - d.damageTakenFactor) * 100)}%` });
   }
@@ -84,6 +91,8 @@ function howTo(a: AbilityDef, device: Device, keys: Bindings): string {
   if (device === 'touch') {
     const button = a.slot === 'ult' ? 'the ULT button' : `the ${SLOT_BUTTON[a.slot]} ability button`;
     const ready = a.slot === 'ult' ? ' once it reads READY' : '';
+    if (d.type === 'teleport' && d.behindTargetM !== undefined)
+      return `Tap ${button}: he appears behind the nearest enemy in range.`;
     if (d.type === 'teleport')
       return `Tap ${button} to start aiming, move the marker with the joystick, then tap ${button} again to teleport there. Tap ✕ to cancel.`;
     if (d.type === 'leap')
@@ -96,6 +105,8 @@ function howTo(a: AbilityDef, device: Device, keys: Bindings): string {
   const key = codeLabel(keys[SLOT_ACTION[a.slot]]);
   const move = `${codeLabel(keys.moveUp)} ${codeLabel(keys.moveLeft)} ${codeLabel(keys.moveDown)} ${codeLabel(keys.moveRight)}`;
   const ready = a.slot === 'ult' ? ' when the ultimate meter is full' : '';
+  if (d.type === 'teleport' && d.behindTargetM !== undefined)
+    return `Press ${key}: he appears behind the nearest enemy in range.`;
   if (d.type === 'teleport')
     return `Press ${key} to start aiming, move the marker with ${move}, then press ${key} again to teleport there. Esc cancels.`;
   if (d.type === 'leap')

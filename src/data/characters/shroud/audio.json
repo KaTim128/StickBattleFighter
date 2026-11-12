@@ -1,0 +1,17 @@
+{
+  "id": "shroud-audio",
+  "lightPunch": ["knife-slash", "knife-slash-b"],
+  "heavyPunch": ["knife-stab"],
+  "lightKick": ["kick-heavy"],
+  "heavyKick": ["kick-heavy"],
+  "block": ["block"],
+  "parry": ["parry"],
+  "footstep": ["footstep"],
+  "jump": ["jump"],
+  "land": ["land"],
+  "wallImpact": ["wall-thud"],
+  "clash": ["clash-collide"],
+  "finisher": ["clash-break"],
+  "defeat": ["ko"],
+  "disintegration": ["dust"]
+}

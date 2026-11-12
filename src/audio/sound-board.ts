@@ -444,6 +444,59 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'triangle', f0: 523, f1: 510, dur: 1.2, gain: 0.08, delay: 0.02 } },
     { tone: { wave: 'triangle', f0: 784, f1: 770, dur: 1, gain: 0.05, delay: 0.02 } },
   ],
+  // ---- Shroud (owner, 12/11/2026): steel and cloth, breath and blood; quiet and close.
+  // A blade cutting air: a thin, fast, high whistle.
+  'knife-slash': [
+    { noise: { dur: 0.13, gain: 0.45, type: 'bandpass', freq: 2400, freqEnd: 5200, q: 2.2, attack: 0.02 } },
+    { tone: { wave: 'sine', f0: 3100, f1: 2600, dur: 0.06, gain: 0.03, delay: 0.03 } },
+  ],
+  'knife-slash-b': [
+    { noise: { dur: 0.15, gain: 0.42, type: 'bandpass', freq: 1900, freqEnd: 4400, q: 2.6, attack: 0.025 } },
+  ],
+  // Steel drawn from a sheath: a short scraping ring.
+  'knife-draw': [
+    { noise: { dur: 0.22, gain: 0.25, type: 'bandpass', freq: 3800, freqEnd: 6000, q: 6, attack: 0.04 } },
+    { tone: { wave: 'triangle', f0: 2650, f1: 2600, dur: 0.25, gain: 0.03, delay: 0.08 } },
+  ],
+  // A thrown knife spinning away: a rising, fluttering whirr.
+  'knife-throw': [
+    { noise: { dur: 0.25, gain: 0.35, type: 'bandpass', freq: 1500, freqEnd: 3500, q: 3, attack: 0.01, flutter: 32 } },
+  ],
+  // The blade going in: a wet, dull thud with a short sharp cut on top.
+  'knife-stab': [
+    { tone: { wave: 'sine', f0: 140, f1: 60, dur: 0.14, gain: 0.7 } },
+    { noise: { dur: 0.05, gain: 0.45, type: 'bandpass', freq: 3200, q: 1.6 } },
+    { noise: { dur: 0.18, gain: 0.25, type: 'lowpass', freq: 900, freqEnd: 300, attack: 0.01, delay: 0.02 } },
+  ],
+  'knife-slash-hit': [
+    { tone: { wave: 'sine', f0: 160, f1: 70, dur: 0.1, gain: 0.55 } },
+    { noise: { dur: 0.09, gain: 0.5, type: 'bandpass', freq: 4200, freqEnd: 2500, q: 1.4 } },
+    { noise: { dur: 0.16, gain: 0.2, type: 'lowpass', freq: 700, attack: 0.01, delay: 0.03 } },
+  ],
+  // Rending Flurry: three quick cuts in a row.
+  'knife-flurry': [
+    { noise: { dur: 0.09, gain: 0.4, type: 'bandpass', freq: 2600, freqEnd: 5000, q: 2.4 } },
+    { noise: { dur: 0.09, gain: 0.4, type: 'bandpass', freq: 2300, freqEnd: 4600, q: 2.4, delay: 0.08 } },
+    { noise: { dur: 0.1, gain: 0.45, type: 'bandpass', freq: 2800, freqEnd: 5400, q: 2.4, delay: 0.16 } },
+  ],
+  // The lunge: a low rush of dark cloth.
+  'shade-rush': [
+    { noise: { dur: 0.35, gain: 0.5, type: 'bandpass', freq: 300, freqEnd: 1200, q: 0.8, attack: 0.04, flutter: 18 } },
+  ],
+  // Shadow gathering round him: a breathy, hollow inhale.
+  'shade-gather': [{ noise: { dur: 0.3, gain: 0.3, type: 'bandpass', freq: 600, freqEnd: 1500, q: 2.5, attack: 0.2 } }],
+  // Hunting Frenzy: a building, ragged heartbeat and breath, then a sharp snap into the frenzy.
+  'frenzy-build': [
+    { tone: { wave: 'sine', f0: 60, f1: 50, dur: 0.12, gain: 0.7 } },
+    { tone: { wave: 'sine', f0: 62, f1: 50, dur: 0.12, gain: 0.8, delay: 0.25 } },
+    { tone: { wave: 'sine', f0: 64, f1: 50, dur: 0.12, gain: 0.9, delay: 0.45 } },
+    { noise: { dur: 0.6, gain: 0.25, type: 'bandpass', freq: 500, freqEnd: 1300, q: 1.8, attack: 0.4, flutter: 9 } },
+  ],
+  'frenzy-snap': [
+    { tone: { wave: 'sine', f0: 90, f1: 30, dur: 0.4, gain: 0.9, drive: 0.4 } },
+    { noise: { dur: 0.06, gain: 0.6, type: 'bandpass', freq: 3000, q: 1.2 } },
+    { noise: { dur: 0.5, gain: 0.3, type: 'highpass', freq: 2500, freqEnd: 1200, attack: 0.02 } },
+  ],
   'fire-charge': [
     { noise: { dur: 0.28, gain: 0.22, type: 'bandpass', freq: 400, freqEnd: 1700, q: 1.5, attack: 0.16 } },
   ],

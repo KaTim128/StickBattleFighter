@@ -1,0 +1,65 @@
+{
+  "id": "shroud",
+  "template": "base-stickman",
+  "displayName": "Shroud",
+  "description": "An original masked slasher: a long, pale porcelain mask in a black hood, a tattered robe and a knife. Hunched and silent, he stalks rather than fights, throws blades, lunges through his prey, appears behind them and, in a Hunting Frenzy, cuts faster, deeper and bloodier.",
+  "characterType": "fighter",
+  "element": "shadow",
+  "combatStyle": "knife",
+  "profiles": {
+    "animation": "shroud-animation",
+    "moveset": "shroud-moveset",
+    "stats": "shroud-stats",
+    "effects": "shroud-effects",
+    "audio": "shroud-audio",
+    "ai": "default-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.07,
+      "headRadius": 0.15,
+      "upperArm": 0.29,
+      "foreArm": 0.27,
+      "thigh": 0.41,
+      "shin": 0.41
+    },
+    "colour": "#24242c",
+    "colourBack": "#17171d",
+    "outline": "#060608",
+    "limbWidthM": 0.082,
+    "outlineWidthM": 0.033
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "shroud-kit"
+}

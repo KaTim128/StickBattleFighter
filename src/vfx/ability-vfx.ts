@@ -1108,6 +1108,25 @@ export class AbilityVfx {
     // Fireballs: glow, body, white-hot core and a fading trail; a shadow on the floor.
     for (const p of input.projectiles) {
       const look = p.def.look;
+      if (p.def.vfx === 'thrown-blade') {
+        // A thrown knife (Shroud): a steel blade spinning end over end, a faint arc of motion behind.
+        const c = P(p.x, p.y, BOLT_HEIGHT_M);
+        const spin = p.travelledM * 9;
+        const ux = Math.cos(spin);
+        const uy = Math.sin(spin) * 0.6;
+        f.ellipse(p.x, p.y, 0.15, 0.08).fill({ color: 0x000000, alpha: 0.25 });
+        g.circle(c.x, c.y, 0.2).stroke({ width: 0.03, color: 0xdfe5ee, alpha: 0.25 });
+        g.moveTo(c.x - ux * 0.12, c.y - uy * 0.12)
+          .lineTo(c.x + ux * 0.16, c.y + uy * 0.16)
+          .stroke({ width: 0.05, color: 0x2c3038, cap: 'round' })
+          .moveTo(c.x - ux * 0.02, c.y - uy * 0.02)
+          .lineTo(c.x + ux * 0.16, c.y + uy * 0.16)
+          .stroke({ width: 0.032, color: 0xdfe5ee, cap: 'round' })
+          .moveTo(c.x - ux * 0.12, c.y - uy * 0.12)
+          .lineTo(c.x - ux * 0.02, c.y - uy * 0.02)
+          .stroke({ width: 0.04, color: 0x1e1e24, cap: 'round' });
+        continue;
+      }
       if (look?.flight) {
         this.magicProjectile(f, g, p, look, t);
         continue;

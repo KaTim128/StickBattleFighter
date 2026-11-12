@@ -247,6 +247,8 @@ export class StickmanView {
         else celShade(g, pts, widths, colour, i === 2);
         // Necro: skeletal armour on the chest, the robe falling over both legs, a bone pauldron.
         if (robed) this.robeDetail(g, s, w, colour, edge, i);
+        // Shroud: a tattered black robe and ragged sleeves.
+        if (this.bodyStyle === 'cloak') this.cloakDetail(g, s, w, colour, edge, i);
         return;
       }
       const edge = toward(FLAME.ember, flashColour, flash * 0.85);
@@ -284,6 +286,7 @@ export class StickmanView {
       else if (this.head === 'brute') this.bruteHead(g, s, limb, toward(limb, outline, 0.68), o);
       else if (this.head === 'hood') this.hoodHead(g, s, limb, toward(limb, outline, 0.68), o);
       else if (this.head === 'skull') this.skullHead(g, s, limb, toward(limb, outline, 0.7), o);
+      else if (this.head === 'mask') this.maskHead(g, s, limb, toward(limb, outline, 0.68), o);
       else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
     };
     for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);
@@ -293,7 +296,8 @@ export class StickmanView {
     if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
     this.drawStatus(s, t);
     if (this.held && flame < 0.01) this.drawHeld(g, s, o);
-    if (this.magic > 0) this.drawMagic(s);
+    // Necro's violet magic belongs to the staff: other casters show their power through their VFX.
+    if (this.magic > 0 && this.held === 'staff') this.drawMagic(s);
     if (this.blind > 0.01) this.drawBlind(s);
   }
 
@@ -508,7 +512,14 @@ export class StickmanView {
    * Necro's hood: a deep cowl peaked at the back, falling to the shoulders, around a face that is
    * only darkness (no eyes, owner 12/11/2026).
    */
-  private hoodHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
+  private hoodHead(
+    g: Graphics,
+    s: ReturnType<typeof solveSkeleton>,
+    colour: number,
+    edge: number,
+    o: number,
+    rimColour: number = StickmanView.DEATH.soul,
+  ): void {
     const r = this.bones.headRadius;
     const hx = s.head.x;
     const hy = s.head.y;
@@ -536,7 +547,7 @@ export class StickmanView {
     g.ellipse(hx + r * 0.42, hy + r * 0.05, r * 0.55, r * 0.75).fill(StickmanView.DEATH.void);
     g.ellipse(hx + r * 0.42, hy + r * 0.05, r * 0.55, r * 0.75).stroke({
       width: o * 0.8,
-      color: StickmanView.DEATH.soul,
+      color: rimColour,
       alpha: 0.35,
     });
     // Light along the top of the hood, shadow down its back.
@@ -544,6 +555,167 @@ export class StickmanView {
       .lineTo(hx - r * 0.1, hy - r * 1.4)
       .lineTo(hx + r * 0.55, hy - r * 0.95)
       .stroke({ width: r * 0.12, color: toward(colour, 0xffffff, 0.3), alpha: 0.6, cap: 'round', join: 'round' });
+  }
+
+  /**
+   * Shroud's head (owner, 12/11/2026, an original masked slasher): a deep black hood around a long,
+   * pale porcelain mask of our own design: elongated, smooth and slightly tilted, with one narrow
+   * slanted eye slit and a thin, short mouth slit near its front edge. Lit from the top front, shaded
+   * underneath, with a soft sheen. The hood's rim casts a shadow across its top.
+   */
+  private maskHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
+    this.hoodHead(g, s, colour, edge, o, 0x55555f);
+    const r = this.bones.headRadius * 1.12;
+    const hx = s.head.x + r * 0.3;
+    const hy = s.head.y + r * 0.1;
+    const tilt = 0.22; // the mask leans forward a little: a menacing, downward stare
+    const PORCELAIN = 0xf1eee7;
+    const pts: number[] = [];
+    for (let k = 0; k < 24; k++) {
+      const a = (k / 24) * Math.PI * 2;
+      // Longer below than above: a long chin.
+      const ry = r * (Math.sin(a) > 0 ? 0.98 : 0.78);
+      const x = Math.cos(a) * r * 0.5;
+      const y = Math.sin(a) * ry;
+      pts.push(hx + x * Math.cos(tilt) - y * Math.sin(tilt), hy + x * Math.sin(tilt) + y * Math.cos(tilt));
+    }
+    g.poly(pts).fill(0x8f8a80);
+    g.poly(pts.map((v, k) => (k % 2 === 0 ? hx + (v - hx) * 0.92 : hy + (v - hy) * 0.94))).fill(PORCELAIN);
+    // Shade along the back and under the chin; a sheen on the brow.
+    g.ellipse(hx - r * 0.2, hy + r * 0.35, r * 0.2, r * 0.55).fill({ color: 0xbdb7ab, alpha: 0.55 });
+    g.ellipse(hx + r * 0.1, hy - r * 0.45, r * 0.22, r * 0.12).fill({ color: 0xffffff, alpha: 0.7 });
+    // Features: a narrow slanted eye slit and a short mouth slit, near the front edge.
+    const INK = 0x101014;
+    g.poly([
+      hx + r * 0.02,
+      hy - r * 0.24,
+      hx + r * 0.36,
+      hy - r * 0.12,
+      hx + r * 0.32,
+      hy - r * 0.05,
+      hx + r * 0.0,
+      hy - r * 0.15,
+    ]).fill(INK);
+    g.roundRect(hx + r * 0.16, hy + r * 0.34, r * 0.16, r * 0.07, r * 0.035).fill(INK);
+    // The hood's rim shadows the top of the mask.
+    g.moveTo(hx - r * 0.45, hy - r * 0.62)
+      .lineTo(hx + r * 0.42, hy - r * 0.78)
+      .stroke({ width: r * 0.16, color: colour, alpha: 0.85, cap: 'round' });
+  }
+
+  /**
+   * Shroud's robe (owner, 12/11/2026): black and tattered. Over the legs a long skirt falls from the
+   * waist to the shins and ends in ragged points; each forearm wears a wide, ragged sleeve; a pale
+   * rim catches the leading edge so the dark shape still reads.
+   */
+  private cloakDetail(
+    g: Graphics,
+    s: ReturnType<typeof solveSkeleton>,
+    w: number,
+    colour: number,
+    edge: number,
+    part: number,
+  ): void {
+    const o = this.look.outlineWidthM;
+    const rim = toward(colour, 0xffffff, 0.28);
+    if (part === 3) {
+      const waist = s.pelvis;
+      const along = (a: Point, b: Point, k: number) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
+      const shinF = along(s.legFront[1], s.legFront[2], 0.55);
+      const shinB = along(s.legBack[1], s.legBack[2], 0.55);
+      const left = Math.min(shinF.x, shinB.x) - w * 1.2;
+      const right = Math.max(shinF.x, shinB.x) + w * 1.2;
+      const hem = Math.max(shinF.y, shinB.y);
+      // Ragged hem: five uneven points.
+      const poly = [waist.x - w * 1.2, waist.y - w * 0.5, waist.x + w * 1.2, waist.y - w * 0.5, right, hem - w * 0.6];
+      const teeth = 5;
+      for (let k = 0; k <= teeth; k++) {
+        const x = right - ((right - left) * k) / teeth;
+        const deep = k % 2 === 0 ? w * 0.9 : -w * 0.1 + (k === 3 ? w * 0.5 : 0);
+        poly.push(x, hem + deep);
+      }
+      poly.push(left, hem - w * 0.5);
+      g.poly(poly).fill(edge);
+      g.poly(poly.map((v, k) => (k % 2 === 0 ? waist.x + (v - waist.x) * 0.95 : waist.y + (v - waist.y) * 0.97))).fill(
+        colour,
+      );
+      // Folds, and the lit leading edge.
+      for (const k of [0.35, 0.68]) {
+        g.moveTo(waist.x - w * 0.7 + w * 1.4 * k, waist.y)
+          .lineTo(left + (right - left) * k, hem)
+          .stroke({ width: o * 0.8, color: toward(colour, 0x000000, 0.5), alpha: 0.8 });
+      }
+      g.moveTo(waist.x + w * 1.15, waist.y - w * 0.4)
+        .lineTo(right - w * 0.05, hem - w * 0.6)
+        .stroke({ width: o * 0.9, color: rim, alpha: 0.5 });
+      return;
+    }
+    if (part === 0 || part === 4) {
+      // A wide, ragged sleeve from the elbow, flaring toward the wrist.
+      const [, elbow, hand] = part === 4 ? s.armFront : s.armBack;
+      const dx = hand.x - elbow.x;
+      const dy = hand.y - elbow.y;
+      const l = Math.hypot(dx, dy) || 1;
+      const nx = -dy / l;
+      const ny = dx / l;
+      const at = (k: number, side: number) => ({ x: elbow.x + dx * k + nx * side, y: elbow.y + dy * k + ny * side });
+      const p = [
+        at(0, w * 0.8),
+        at(0.82, w * 1.35),
+        at(0.95, w * 0.6),
+        at(0.78, w * 0.2),
+        at(0.98, -w * 0.4),
+        at(0.8, -w * 1.25),
+        at(0, -w * 0.8),
+      ];
+      const flat = p.flatMap((q) => [q.x, q.y]);
+      g.poly(flat).fill(edge);
+      g.poly(flat.map((v, k) => (k % 2 === 0 ? elbow.x + (v - elbow.x) * 0.94 : elbow.y + (v - elbow.y) * 0.94))).fill(
+        part === 4 ? colour : toward(colour, 0x000000, 0.25),
+      );
+      g.moveTo(at(0.05, w * 0.75).x, at(0.05, w * 0.75).y)
+        .lineTo(at(0.78, w * 1.25).x, at(0.78, w * 1.25).y)
+        .stroke({ width: o * 0.8, color: rim, alpha: part === 4 ? 0.5 : 0.25 });
+    }
+  }
+
+  /**
+   * Shroud's knife (owner, 12/11/2026): a black-gripped hunting knife held point-forward along the
+   * forearm: a polished steel blade with a bright cutting edge, a dark spine shade, a small steel
+   * guard, and a red stain toward the tip.
+   */
+  private drawKnife(g: Graphics, hand: Point, ux: number, uy: number, o: number): void {
+    const nx = -uy;
+    const ny = ux;
+    const at = (k: number, side: number) => ({ x: hand.x + ux * k + nx * side, y: hand.y + uy * k + ny * side });
+    // Grip behind the fist, then the blade beyond it.
+    g.moveTo(at(-0.1, 0).x, at(-0.1, 0).y)
+      .lineTo(at(0.02, 0).x, at(0.02, 0).y)
+      .stroke({ width: 0.045 + o * 2, color: 0x050506, cap: 'round' })
+      .moveTo(at(-0.1, 0).x, at(-0.1, 0).y)
+      .lineTo(at(0.02, 0).x, at(0.02, 0).y)
+      .stroke({ width: 0.045, color: 0x1e1e24, cap: 'round' });
+    const blade = [at(0.04, 0.026), at(0.2, 0.024), at(0.3, 0.004), at(0.2, -0.016), at(0.04, -0.02)];
+    const flat = blade.flatMap((q) => [q.x, q.y]);
+    g.poly(flat).fill(0x2c3038);
+    g.poly(flat.map((v, k) => (k % 2 === 0 ? hand.x + (v - hand.x) * 0.97 : hand.y + (v - hand.y) * 0.97))).fill(
+      0xc9d0da,
+    );
+    // Spine shade, bright edge, and the stain near the tip.
+    g.moveTo(at(0.05, -0.008).x, at(0.05, -0.008).y)
+      .lineTo(at(0.22, -0.008).x, at(0.22, -0.008).y)
+      .stroke({ width: 0.012, color: 0x7d8696, alpha: 0.9, cap: 'round' });
+    g.moveTo(at(0.05, 0.018).x, at(0.05, 0.018).y)
+      .lineTo(at(0.24, 0.014).x, at(0.24, 0.014).y)
+      .stroke({ width: 0.007, color: 0xffffff, alpha: 0.95, cap: 'round' });
+    g.poly([at(0.21, 0.02), at(0.29, 0.005), at(0.21, -0.014), at(0.18, 0.004)].flatMap((q) => [q.x, q.y])).fill({
+      color: 0xa3121b,
+      alpha: 0.85,
+    });
+    // The guard.
+    g.moveTo(at(0.035, 0.04).x, at(0.035, 0.04).y)
+      .lineTo(at(0.035, -0.034).x, at(0.035, -0.034).y)
+      .stroke({ width: 0.02, color: 0x8b93a1, cap: 'round' });
   }
 
   /** A skeleton's skull: one clean cranium-and-jaw silhouette, cel shaded (no eyes, owner 12/11/2026). */
@@ -704,6 +876,10 @@ export class StickmanView {
     const D = StickmanView.DEATH;
     if (this.held === 'staff') {
       this.drawStaff(g, s, o);
+      return;
+    }
+    if (this.held === 'knife') {
+      this.drawKnife(g, hand, ux, uy, o);
       return;
     }
     // Grave blade: one clean tapered blade of dark violet obsidian with a pale cutting edge (it

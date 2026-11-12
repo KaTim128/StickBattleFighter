@@ -12,6 +12,7 @@ import {
   getUpFrame,
   knockdownFrame,
   quickDodgePose,
+  shadeDodgePose,
   throwPose,
   tuckPose,
 } from '../../animation/reaction-poses';
@@ -810,7 +811,7 @@ export class FightArenaScene implements ArenaScene {
     // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
     const slot = this.intents.consumeAbility();
     if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
-    else if (slot && f.caster?.def(slot).delivery.type === 'teleport') this.beginPointAim(f, slot);
+    else if (slot && this.needsPointAim(f, slot)) this.beginPointAim(f, slot);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
     if (this.pointAim || this.ultAimPoint) {
       // Targeting starts: Inferno crouches to spring, Necro gathers his smoke.
@@ -1120,6 +1121,12 @@ export class FightArenaScene implements ArenaScene {
     this.pointAim = { slot, spot: this.clampToReach(f, slot, this.insideMap(start)) };
   }
 
+  /** A teleport the player aims (not one that picks its own spot, like "Behind You"). */
+  private needsPointAim(f: FighterEntity, slot: AbilitySlot): boolean {
+    const d = f.caster?.def(slot).delivery;
+    return d?.type === 'teleport' && d.behindTargetM === undefined;
+  }
+
   /** How fast WASD or the joystick moves this ability's target (per ability data, owner 12/11/2026). */
   private aimSpeed(f: FighterEntity, slot: AbilitySlot): number {
     const d = f.caster?.def(slot).delivery;
@@ -1365,7 +1372,8 @@ export class FightArenaScene implements ArenaScene {
     this.abilities?.stepCaster(f, stepS);
     const cast = f.caster?.cast ?? null;
 
-    const ev = f.combo.update(stepS, air);
+    // A frenzy buff plays the fighter's strikes faster (Hunting Frenzy: attack speed).
+    const ev = f.combo.update(stepS * (f.buff?.attackSpeedFactor ?? 1), air);
     const attack = f.combo.attack;
     const tuning = f.def.movement;
     const v = body.linvel();
@@ -1739,8 +1747,10 @@ export class FightArenaScene implements ArenaScene {
       const kx = dir.x * 0.75 + (tx / tl) * 0.25;
       const ky = dir.y * 0.75 + (ty / tl) * 0.25;
       const kl = Math.hypot(kx, ky) || 1;
+      // A frenzy buff (Hunting Frenzy, owner 12/11/2026) sharpens the knife.
+      const frenzy = attacker.buff;
       const strike = {
-        damage: a.damage,
+        damage: a.damage * (frenzy?.meleeDamageFactor ?? 1),
         heavy: a.heavy,
         knockbackMps: a.knockbackSpeedMps,
         melee: true,
@@ -1753,6 +1763,7 @@ export class FightArenaScene implements ArenaScene {
       if (this.applyStrike(attacker, target, { ...strike, dir: { x: kx / kl, y: ky / kl } })) {
         connected = true;
         hitFighter = true;
+        if (frenzy?.meleeBleed) target.combatant.bleed(frenzy.meleeBleed.dps, frenzy.meleeBleed.durationS);
       }
     }
 
@@ -2141,6 +2152,14 @@ export class FightArenaScene implements ArenaScene {
             smoke.push({ x: f.x, y: f.y, z: 1 + this.fxRng() * 0.5, count: 1 });
         }
       }
+      // Bleeding (Shroud's cuts): drops of blood fall from the wound now and then.
+      if (c.bleeding && !c.isKo && this.fxRng() < 0.35)
+        this.frameDust.push({
+          points: [{ x: f.x, y: f.y, z: 0.9 + this.fxRng() * 0.5 }],
+          colour: 0x8a0a12,
+          colours: [0xa3121b, 0x6e060c, 0xc81e28],
+          count: 2,
+        });
       // Casts charging (Magic Attack VFX Standard): the element gathers to the hand, and around
       // the body for beams and leaps.
       const cast = f.caster?.cast;
@@ -2367,6 +2386,17 @@ export class FightArenaScene implements ArenaScene {
         dodge.flame = Math.min(1, p / 0.2, (1 - p) / 0.2);
         const o = screenSideToWorld(f.facing * 0.3);
         this.frameFlames.push({ points: [{ x: x + o.x, y: y + o.y, z: 0.8 }], strength: 0.9 });
+      } else if (clip?.kind === 'procedural' && clip.id === 'proc.dodge.shade') {
+        // Shroud: a low backward skitter, trailing dark smoke.
+        const amount = Math.min(1, p / 0.1, (1 - p) / 0.3);
+        pose = blendPose(pose, shadeDodgePose(pose), amount);
+        if (this.fxRng() < 0.7)
+          this.frameDust.push({
+            points: [{ x, y, z: 0.25 + this.fxRng() * 0.7 }],
+            colour: 0x111116,
+            colours: [0x0b0b0f, 0x1d1d26, 0x2b2b36],
+            count: 3,
+          });
       } else if (clip?.kind === 'procedural' && clip.id === 'proc.dodge.roll') {
         pose = blendPose(pose, tuckPose(pose), Math.min(1, p / 0.15, (1 - p) / 0.15));
         dodge.roll = p;

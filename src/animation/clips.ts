@@ -30,6 +30,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.taekwondo',
   'proc.idle.mage',
   'proc.idle.heavyweight',
+  'proc.idle.stalker',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -45,6 +46,8 @@ export const PROCEDURAL_CLIPS = [
   'proc.dodge.quick',
   'proc.dodge.roll',
   'proc.dodge.flame',
+  // Shroud (owner, 12/11/2026): a low, skittering backward slide that trails dark smoke.
+  'proc.dodge.shade',
 ] as const;
 export type ProceduralClipId = (typeof PROCEDURAL_CLIPS)[number];
 
@@ -263,6 +266,37 @@ const STRIKES = {
   'inferno.flame-uppercut': strike(
     { lean: deg(10), head: deg(-6), armBack: limb(-5, 130), armFront: limb(70, 110), legFront: limb(40, -80) },
     { lean: deg(-26), head: deg(-14), armBack: limb(150, 30), armFront: limb(40, 120), legBack: limb(-45, -6) },
+  ),
+
+  // ---- Shroud's own (owner, 12/11/2026): a hunched knife fighter. The knife is in his lead hand;
+  // every strike starts low and close, the body staying bent over (never upright).
+  'shroud.knife-slash': strike(
+    { lean: deg(-18), armFront: limb(-10, 120), armBack: limb(20, 60), legFront: limb(30, -40) },
+    { lean: deg(-30), armFront: limb(100, 10), armBack: limb(-10, 50), legFront: limb(40, -50) },
+  ),
+  'shroud.backhand-slash': strike(
+    { lean: deg(-28), armFront: limb(130, 120), armBack: limb(30, 70), legFront: limb(36, -46) },
+    { lean: deg(-20), armFront: limb(20, 20), armBack: limb(50, 80), legBack: limb(-30, -30) },
+  ),
+  'shroud.lunging-stab': strike(
+    {
+      lean: deg(-12),
+      armFront: limb(-40, 140),
+      armBack: limb(40, 90),
+      legFront: limb(30, -70),
+      legBack: limb(-10, -60),
+    },
+    { lean: deg(-44), armFront: limb(92, 2), armBack: limb(-40, 40), legFront: limb(70, -60), legBack: limb(-40, -10) },
+  ),
+  'shroud.knife-plunge': strike(
+    {
+      lean: deg(-10),
+      armFront: limb(170, 40),
+      armBack: limb(120, 50),
+      legFront: limb(60, -100),
+      legBack: limb(20, -90),
+    },
+    { lean: deg(-40), armFront: limb(40, 6), armBack: limb(30, 60), legFront: limb(50, -80) },
   ),
 
   // ---- Necro's own (owner, 12/11/2026): a staff fighter. Both hands on the staff, the lead hand

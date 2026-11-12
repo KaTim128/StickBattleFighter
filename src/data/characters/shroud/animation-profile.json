@@ -1,0 +1,16 @@
+{
+  "id": "shroud-animation",
+  "extends": "style-boxing",
+  "states": {
+    "Jab": "shroud.knife-slash",
+    "Hook": "shroud.backhand-slash",
+    "HeavyPunch": "shroud.lunging-stab",
+    "DownwardAerialKick": "shroud.knife-plunge",
+    "ClashFinisher": "shroud.lunging-stab",
+    "ClashWin": "shroud.lunging-stab",
+    "Idle": "proc.idle.stalker",
+    "FightingStance": "proc.idle.stalker",
+    "Turn": "proc.idle.stalker",
+    "Dodge": "proc.dodge.shade"
+  }
+}

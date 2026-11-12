@@ -1,0 +1,39 @@
+{
+  "id": "shroud-stats",
+  "maxHp": 950,
+  "maxStamina": 100,
+  "staminaRegenPerS": 30,
+  "staminaRegenDelayS": 0.7,
+  "movement": {
+    "maxSpeedMps": 5.2,
+    "accelMps2": 62,
+    "decelMps2": 60,
+    "jumpSpeedMps": 6.8,
+    "gravityMps2": 20
+  },
+  "body": {
+    "footRadiusM": 0.3,
+    "massKg": 58
+  },
+  "power": 1.1,
+  "defence": 1.02,
+  "critChance": 0.12,
+  "critMultiplier": 1.6,
+  "knockbackResistance": 0,
+  "multipliers": {
+    "attackSpeed": 1.1,
+    "punchDamage": 1,
+    "kickDamage": 1.0,
+    "aerialDamage": 1,
+    "knockback": 0.9,
+    "movementSpeed": 1.0,
+    "jumpForce": 1.1,
+    "clashPower": 1,
+    "specialCharge": 1
+  },
+  "hitStunResistance": 0,
+  "objects": {
+    "maxLiftKg": 15,
+    "throwPower": 1.05
+  }
+}

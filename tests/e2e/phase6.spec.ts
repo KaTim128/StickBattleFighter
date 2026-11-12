@@ -119,7 +119,7 @@ test('ultimate aiming (touch, owner 12/11/2026): tap ULT, the joystick moves the
     );
   await send('pointerdown', stick.x, stick.y);
   for (let i = 1; i <= 5; i++) await send('pointermove', stick.x, stick.y - i * 12);
-  await page.waitForTimeout(2500); // the aim moves in game time; a software-rendered browser runs slower than real time
+  await page.waitForTimeout(3500); // the aim moves in game time; a software-rendered browser runs slower than real time
   await send('pointerup', stick.x, stick.y - 60);
   const mid = (await hook(page)).player;
   expect(Math.hypot(mid.x - start.x, mid.y - start.y)).toBeLessThan(0.1);

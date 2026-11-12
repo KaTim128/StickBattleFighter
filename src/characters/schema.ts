@@ -251,11 +251,11 @@ export interface EffectsProfile {
   readonly held?: HeldItem;
 }
 
-export const HEAD_STYLES = ['round', 'flame', 'brute', 'hood', 'skull'] as const;
+export const HEAD_STYLES = ['round', 'flame', 'brute', 'hood', 'skull', 'mask'] as const;
 export type HeadStyle = (typeof HEAD_STYLES)[number];
-export const BODY_STYLES = ['solid', 'flame', 'muscle', 'robe', 'bones'] as const;
+export const BODY_STYLES = ['solid', 'flame', 'muscle', 'robe', 'bones', 'cloak'] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
-export const HELD_ITEMS = ['staff', 'bone-sword'] as const;
+export const HELD_ITEMS = ['staff', 'bone-sword', 'knife'] as const;
 export type HeldItem = (typeof HELD_ITEMS)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */
