@@ -1,11 +1,11 @@
 {
   "id": "necro-stats",
-  "maxHp": 950,
+  "maxHp": 1000,
   "maxStamina": 100,
-  "staminaRegenPerS": 30,
+  "staminaRegenPerS": 36,
   "staminaRegenDelayS": 0.7,
   "movement": {
-    "maxSpeedMps": 4.6,
+    "maxSpeedMps": 4.7,
     "accelMps2": 50,
     "decelMps2": 55,
     "jumpSpeedMps": 6.5,
@@ -13,10 +13,10 @@
   },
   "body": {
     "footRadiusM": 0.32,
-    "massKg": 65
+    "massKg": 60
   },
-  "power": 0.95,
-  "defence": 1,
+  "power": 1.05,
+  "defence": 1.05,
   "critChance": 0.05,
   "critMultiplier": 1.5,
   "knockbackResistance": 0,

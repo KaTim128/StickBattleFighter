@@ -377,9 +377,26 @@ export class AbilityVfx {
       this.emitAt(fx.x, fx.y, 1.0, 10, 1.8, 0.3, 0.1, fx.look.palette);
       return;
     }
+    if (fx.kind === 'release' && fx.vfx === 'teleport' && fx.look) {
+      // Teleport out (owner, 12/11/2026): the body breaks into violet smoke that collapses inward,
+      // and a dark ring snaps shut on the floor where he stood.
+      for (let i = 0; i < 3; i++) this.emitAt(fx.x, fx.y, 0.4 + i * 0.5, 9, 1.2, 0.45, 0.12, fx.look.palette);
+      this.rings.push({
+        colour: fx.look.palette.bright,
+        x: fx.x,
+        y: fx.y,
+        z: 0,
+        r0: 0.9,
+        r1: 0.1,
+        ageS: 0,
+        lifeS: 0.35,
+      });
+      return;
+    }
     switch (fx.kind) {
       case 'release':
-        this.emitAt(fx.x, fx.y, 1.0, 8, 1.5, 0.35, 0.1);
+        // A small puff where the hand was, in the ability's own colours (never fire for others).
+        this.emitAt(fx.x, fx.y, 1.0, 8, 1.5, 0.35, 0.1, fx.look?.palette);
         break;
       case 'impact': {
         // Bigger blasts: more embers, a shockwave ring and a scorch mark.

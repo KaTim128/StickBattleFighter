@@ -307,10 +307,15 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.9, gain: 0.4, type: 'bandpass', freq: 700, freqEnd: 1800, q: 2, attack: 0.6, flutter: 7 } },
     { tone: { wave: 'sawtooth', f0: 50, f1: 70, dur: 0.9, gain: 0.25, attack: 0.5, drive: 0.5 } },
   ],
-  'dominion-burst': [
-    { tone: { wave: 'sine', f0: 80, f1: 28, dur: 0.8, gain: 1, drive: 0.4 } },
-    { noise: { dur: 0.8, gain: 0.55, type: 'bandpass', freq: 900, freqEnd: 300, q: 1, attack: 0.01 } },
-    { noise: { dur: 1.2, gain: 0.2, type: 'bandpass', freq: 2000, q: 3, attack: 0.3, delay: 0.1, flutter: 6 } },
+  // Teleport out: a hollow, inward rush of breath (the body breaking into smoke).
+  'teleport-out': [
+    { noise: { dur: 0.3, gain: 0.4, type: 'bandpass', freq: 2200, freqEnd: 500, q: 2.5, attack: 0.02 } },
+    { tone: { wave: 'sine', f0: 420, f1: 160, dur: 0.25, gain: 0.12 } },
+  ],
+  // Teleport in: a soft, low thump and a rising whisper as he reforms.
+  'teleport-in': [
+    { tone: { wave: 'sine', f0: 90, f1: 60, dur: 0.18, gain: 0.5 } },
+    { noise: { dur: 0.35, gain: 0.3, type: 'bandpass', freq: 500, freqEnd: 1800, q: 2.5, attack: 0.12 } },
   ],
   // Ground Smash: a deep thud through the floor, rubble rattling down after it.
   'ground-smash': [

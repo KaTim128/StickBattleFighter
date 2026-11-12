@@ -51,6 +51,8 @@ export class SceneAbilities implements AbilityHost {
   readonly sfxLog: string[] = [];
   /** Recent FX events, newest last (tests and the debug hook; the VFX layer drains `pending`). */
   readonly recentFx: AbilityFx[] = [];
+  /** Moves a caster to the nearest free spot (set by the scene, which owns the physics). */
+  teleportSource: (f: FighterEntity, to: Vec2) => Vec2 | null = () => null;
   /** Raises a caster's minions (set by the scene, which owns the fighters). */
   summonSource: (f: FighterEntity, spec: SummonSpec) => void = () => {};
   /** Where a fighter is steering its beam (set by the scene: player input or the AI's target). */
@@ -187,12 +189,19 @@ export class SceneAbilities implements AbilityHost {
       flashColour: hitFlash,
       stunS: payload.stunS,
     });
+    // Soul Drain: the target is blinded for a while.
+    if (landed && payload.blindS) target.combatant.blind(payload.blindS);
     // Soul Drain: the caster takes back a share of the life it drained.
     if (landed && payload.lifesteal && !attacker.combatant.isKo) {
       const c = attacker.combatant;
       c.hp = Math.min(c.stats.maxHp, c.hp + damage * payload.lifesteal);
     }
     return landed;
+  }
+
+  teleport(casterId: string, to: Vec2): Vec2 | null {
+    const f = this.byName(casterId);
+    return f ? this.teleportSource(f, to) : null;
   }
 
   summon(casterId: string, spec: SummonSpec): void {

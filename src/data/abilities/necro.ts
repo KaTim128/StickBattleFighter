@@ -1,9 +1,9 @@
 import type { AbilityKit } from '../../abilities/ability-def';
 
 /**
- * Necro's kit (owner, 12/11/2026): a hooded death mage. Soul Drain, Death Eruption and Undead
- * Army are his three abilities and Death's Dominion his ultimate; the owner chose to drop the
- * fourth requested ability, Zombie Summon. His magic is in the violet of drawn souls and the
+ * Necro's kit (owner, 12/11/2026): a hooded death mage. Q Soul Drain (blinds), E Death Eruption,
+ * R Teleport (replaced Undead Army) and the ultimate Undead Army (4 skeletons near the enemy that
+ * stay until killed; replaced Death's Dominion, SUP-19). His magic is in the violet of drawn souls and the
  * bone-white of the dead (Magic Attack VFX Standard: each fighter in his own colours). All his magic
  * glows in the violet soul palette (the bone spikes and skeletons are drawn in bone by their own art),
  * and the energy gathering round him is subtle so it never hides him (CHARACTER_STYLE_QA S7). All numbers
@@ -13,21 +13,31 @@ const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff }
 
 export const NECRO_KIT: AbilityKit = {
   // A1: Soul Drain. A dark bolt of drawn souls flies from the staff; when it lands it tears life out
-  // of the target and half of it flows back to Necro.
+  // of the target (half of it flows back to Necro) and blinds it for 3 s (owner, 12/11/2026).
   a1: {
     id: 'soulDrain',
     name: 'Soul Drain',
     label: 'DRAIN',
     icon: 'soul-drain',
+    description:
+      'A bolt of drawn souls. It drains life from the target, giving half back to Necro, and blinds it for 3 seconds.',
     slot: 'a1',
     staminaCost: 20,
-    cooldownS: 3.5,
+    cooldownS: 4.5,
     castS: 0.35,
     recoveryS: 0.3,
     aimRangeM: 10,
     moveFactor: 0.3,
     interruptible: true,
-    payload: { damage: 70, knockbackMps: 2, heavy: false, strength: 200, impact: 'knuckle-light', lifesteal: 0.5 },
+    payload: {
+      damage: 60,
+      knockbackMps: 2,
+      heavy: false,
+      strength: 200,
+      impact: 'knuckle-light',
+      lifesteal: 0.5,
+      blindS: 3,
+    },
     delivery: { type: 'projectile', speedMps: 14, radiusM: 0.3, maxRangeM: 10 },
     vfx: 'soul-drain',
     sfx: { cast: 'soul-gather', release: 'soul-cast', impact: 'soul-drain-hit' },
@@ -46,6 +56,8 @@ export const NECRO_KIT: AbilityKit = {
     name: 'Death Eruption',
     label: 'ERUPT',
     icon: 'death-eruption',
+    description:
+      'Marks the ground where he aims; a moment later bone spikes and skeletal hands burst up, hurting and trapping everyone inside.',
     slot: 'a2',
     staminaCost: 30,
     cooldownS: 7,
@@ -65,39 +77,41 @@ export const NECRO_KIT: AbilityKit = {
       hitFlash: 0xd9c8ff,
     },
   },
-  // A3: Undead Army. Three skeleton warriors claw out of the ground around him and hunt the nearest
-  // enemies for 10 s, then crumble. Never more than four of his at once.
+  // A3: Teleport (owner, 12/11/2026, replacing Undead Army). He dissolves into violet smoke and
+  // reforms at the chosen spot (desktop: R, then left click; touch: R, then tap the spot).
   a3: {
-    id: 'undeadArmy',
-    name: 'Undead Army',
-    label: 'ARMY',
-    icon: 'undead-army',
+    id: 'teleport',
+    name: 'Teleport',
+    label: 'BLINK',
+    icon: 'teleport',
+    description: 'Dissolves into violet smoke and reforms at the chosen spot, up to 9 metres away, even past walls.',
     slot: 'a3',
-    staminaCost: 40,
-    cooldownS: 14,
-    castS: 0.8,
-    recoveryS: 0.4,
-    aimRangeM: 0,
+    staminaCost: 30,
+    cooldownS: 7,
+    castS: 0.25,
+    recoveryS: 0.2,
+    aimRangeM: 9,
     moveFactor: 0,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'summon', character: 'skeleton-warrior', count: 3, lifeS: 10, maxAlive: 4 },
-    vfx: 'undead-army',
-    sfx: { cast: 'grave-call', release: 'summon-rise', impact: 'summon-rise' },
+    delivery: { type: 'teleport', maxRangeM: 9 },
+    vfx: 'teleport',
+    sfx: { cast: 'soul-gather', release: 'teleport-out', impact: 'teleport-in' },
     look: {
       palette: SOUL,
-      // A low ring of grave energy at his feet; it never hides him (owner, 12/11/2026).
-      impact: { flashM: 0.4, sparks: 6, motes: 16, ringM: 2, smoke: 5, groundFire: false, smokeColour: 0x2e2438 },
+      impact: { flashM: 0.7, sparks: 14, motes: 30, ringM: 1.1, smoke: 8, groundFire: false, smokeColour: 0x2e2438 },
     },
   },
-  // ULTIMATE: Death's Dominion. A necromantic transformation for 8 s: dark energy swirls round him,
-  // two more skeletons rise, his magic hits 50% harder, and he moves a little faster and takes a
-  // little less damage.
+  // ULTIMATE: Undead Army (owner, 12/11/2026, replacing Death's Dominion). He rises off the ground
+  // with his free arm raised and four skeleton warriors claw up at random spots around the enemy.
+  // They fight until they are destroyed: no timer, and they stay even if he falls.
   ult: {
-    id: 'deathsDominion',
-    name: "Death's Dominion",
+    id: 'undeadArmy',
+    name: 'Undead Army',
     label: 'ULT',
-    icon: 'deaths-dominion',
+    icon: 'undead-army',
+    description:
+      'Four skeleton warriors claw out of the ground around the enemy and fight for Necro until they are destroyed.',
     slot: 'ult',
     staminaCost: 0,
     cooldownS: 1,
@@ -108,20 +122,20 @@ export const NECRO_KIT: AbilityKit = {
     interruptible: false,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
     delivery: {
-      type: 'buff',
-      durationS: 8,
-      speedFactor: 1.1,
-      damageTakenFactor: 0.85,
-      abilityDamageFactor: 1.5,
-      summon: { character: 'skeleton-warrior', count: 2, lifeS: 8, maxAlive: 6 },
+      type: 'summon',
+      character: 'skeleton-warrior',
+      count: 4,
+      lifeS: null,
+      maxAlive: 8,
+      near: 'enemy',
+      persistent: true,
     },
-    vfx: 'deaths-dominion',
-    sfx: { cast: 'dominion-rise', release: 'dominion-burst', impact: 'dominion-burst' },
+    vfx: 'undead-army',
+    sfx: { cast: 'dominion-rise', release: 'grave-call', impact: 'summon-rise' },
     look: {
       palette: SOUL,
-      impact: { flashM: 1.2, sparks: 30, motes: 40, ringM: 2.8, smoke: 10, groundFire: false, smokeColour: 0x2a1e38 },
-      // His own violet glow and circling motes show the power; the floor keeps only a soft ring.
-      aura: 'quiet',
+      // A low ring of grave energy at his feet; it never hides him (CHARACTER_STYLE_QA S7).
+      impact: { flashM: 0.4, sparks: 6, motes: 16, ringM: 2, smoke: 5, groundFire: false, smokeColour: 0x2e2438 },
     },
   },
   charge: { max: 100, perDamageDealt: 0.25, perDamageTaken: 0.2, perSecond: 1 },

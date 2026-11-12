@@ -5,6 +5,7 @@ import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
 import { BUILT_IN_LIBRARY, DEFAULT_CAST, withEntries } from '../characters/library';
+import { loadCharacter } from '../characters/load';
 import { resolveCharacter } from '../characters/resolve';
 import type { CharacterLibrary } from '../characters/schema';
 import { FpsMeter } from '../core/fps-meter';
@@ -22,8 +23,10 @@ import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
 import { SettingsState } from '../input/settings-store';
 import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
+import { BlindVeil } from '../interface/blind-veil';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
+import { fighterSheet } from '../interface/fighter-sheet';
 import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
@@ -169,6 +172,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const settings = new SettingsState(browserStorage());
   // Overlays that pause the fight (Settings, the main menu): the game ignores input while any is open.
   const pausedBy = new Set<string>();
+  const blindVeil = new BlindVeil(document.body);
   const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => pausedBy.size > 0 });
   attachKeyboard(window, desktop);
   attachMouse(container, desktop, intents);
@@ -320,6 +324,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         showUtilityAction(document.body, debug.player.utility);
         showDodgeReady(document.body, debug.player.dodgeReady);
         showStickAiming(document.body, debug.player.beamAiming);
+        blindVeil.update(debug.player.blindS);
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;
@@ -410,6 +415,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       window.location.search = next.toString();
     },
     (open) => setPaused('menu', open),
+    (id) => {
+      // The details screen: ratings and abilities for this device, with the player's own keys.
+      const def = loadCharacter(id).def;
+      return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings);
+    },
   );
   new SettingsPanel(document.body, settings, (open) => setPaused('settings', open), {
     leave: () => menu.setOpen(true),

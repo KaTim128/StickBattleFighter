@@ -1,6 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
-import type { Burn } from '../../abilities/ability-def';
+import type { AbilitySlot, Burn } from '../../abilities/ability-def';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
@@ -94,6 +94,8 @@ export interface PlayerState {
   carrying: string | null;
   /** Still heaving the carried object up (heavier takes longer). */
   lifting: boolean;
+  /** Seconds of blindness left (Soul Drain): the player's view darkens. */
+  blindS: number;
   /** The player's beam is pouring: the touch joystick aims it instead of moving. */
   beamAiming: boolean;
   /** What the contextual utility button does now: jump, pick up or throw. */
@@ -205,6 +207,8 @@ const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
 const ULT_AIM_SPEED_MPS = 7;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
 const HEAD_TOP_M = 1.75;
+/** After a teleport the body fades back in over this long, seconds. */
+const TELEPORT_APPEAR_S = 0.3;
 /** The top of a fighter's head over its feet (big fighters are drawn bigger: rig.scale). */
 const headTop = (f: FighterEntity): number => HEAD_TOP_M * (f.def.sizeScale ?? 1);
 
@@ -364,7 +368,7 @@ export class FightArenaScene implements ArenaScene {
       y: f.y,
       hp: f.combatant.hp,
       ko: f.combatant.isKo,
-      leftS: f.summon?.leftS ?? 0,
+      leftS: f.summon?.leftS ?? Number.POSITIVE_INFINITY,
     }));
   }
 
@@ -480,6 +484,7 @@ export class FightArenaScene implements ArenaScene {
       burning: f.combatant.burning,
       carrying: f.carrying?.placement.kind ?? null,
       lifting: f.liftS > 0,
+      blindS: f.combatant.blindLeftS,
       beamAiming: this.abilities?.world.beams.some((b) => b.casterId === f.name) ?? false,
       utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
       dodgeReady: 1 - f.combatant.dodgeCooldownLeftS / f.combatant.dodgeCooldownTotalS,
@@ -551,6 +556,7 @@ export class FightArenaScene implements ArenaScene {
     );
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
+    this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
     this.occlusion = new OcclusionFader();
@@ -610,6 +616,7 @@ export class FightArenaScene implements ArenaScene {
         }
       }
       f.recoilS = Math.max(0, f.recoilS - stepS);
+      f.appearS = Math.max(0, f.appearS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
       // Fighters get back up; summoned minions crumble away instead (SceneSummons).
@@ -684,6 +691,19 @@ export class FightArenaScene implements ArenaScene {
       return;
     }
 
+    if (this.pointAim) {
+      // Aiming a point-aimed ability (Teleport, owner 12/11/2026): the spot follows the mouse and a
+      // left click (the aim-confirm binding) casts; on touch, tapping the map casts there. Pressing
+      // the ability again, or being hit, calls it off.
+      this.intents.consumeMeleeEdges();
+      f.meleeTracking = false;
+      if (c.state === 'guarding') c.setGuard(false);
+      this.stepPointAim(f);
+      f.sprinting = false;
+      this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
+      return;
+    }
+
     if (this.ultAimPoint) {
       // Aiming the leaping ultimate (owner, 11/11/2026): hover the mouse (or slide with WASD, or drag
       // on touch) to pick the spot, then the launch button (default left click) or the ultimate key
@@ -736,7 +756,14 @@ export class FightArenaScene implements ArenaScene {
     // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
     const slot = this.intents.consumeAbility();
     if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
+    else if (slot && f.caster?.def(slot).delivery.type === 'teleport') this.beginPointAim(f, slot);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
+    if (this.pointAim) {
+      this.intents.consumeTap(); // only taps after the press pick the spot
+      f.sprinting = false;
+      this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
+      return;
+    }
     if (this.ultAimPoint) {
       // Aiming starts: Inferno crouches to spring; the mouse, WASD or a drag picks the landing spot.
       this.steerUltimateAim(f, stepS);
@@ -979,6 +1006,7 @@ export class FightArenaScene implements ArenaScene {
    * line up exactly with your opponent.
    */
   private softLock(f: FighterEntity): void {
+    if (f.combatant.blinded) return; // blinded: it cannot find anyone to turn to
     let best: FighterEntity | null = null;
     let bestD = SOFT_LOCK_M;
     for (const o of this.fighters) {
@@ -1026,6 +1054,119 @@ export class FightArenaScene implements ArenaScene {
       }
     }
     return best ? { x: best.x - f.x, y: best.y - f.y } : null;
+  }
+
+  /** A point-aimed ability being aimed by the player (Teleport), with the spot it will go to. */
+  private pointAim: { slot: AbilitySlot; spot: { x: number; y: number }; moves: number } | null = null;
+
+  /** Start aiming a point-aimed ability, if it can be cast now. */
+  private beginPointAim(f: FighterEntity, slot: AbilitySlot): void {
+    if (!f.caster || !this.abilities) return;
+    const block = f.caster.check(slot, {
+      canAct: f.combatant.canAct && !f.combo.attack,
+      stamina: f.combatant.stamina,
+      airborne: f.airborne,
+    });
+    this.lastAbilityBlock = block;
+    if (block || (slot !== 'ult' && f.combatant.stamina < f.caster.def(slot).staminaCost)) return;
+    const start = this.pointerOnFloor() ?? { x: f.x + f.aim.x * 3, y: f.y + f.aim.y * 3 };
+    this.pointAim = { slot, spot: this.clampToReach(f, slot, start), moves: this.intents.pointerMoves };
+  }
+
+  /** While aiming: follow the mouse, cast on the confirm click or a tap, cancel on a second press. */
+  private stepPointAim(f: FighterEntity): void {
+    const aim = this.pointAim;
+    if (!aim || !this.abilities) return;
+    const again = this.intents.consumeAbility();
+    if (again === aim.slot || !f.combatant.canAct) {
+      this.pointAim = null;
+      this.intents.consumeUltLaunch();
+      return;
+    }
+    if (this.intents.pointerMoves !== aim.moves) {
+      aim.moves = this.intents.pointerMoves;
+      const p = this.pointerOnFloor();
+      if (p) aim.spot = this.clampToReach(f, aim.slot, p);
+    }
+    let go = this.intents.consumeUltLaunch();
+    const tap = this.intents.consumeTap();
+    if (tap) {
+      const p = this.screenToFloor(tap);
+      if (p) {
+        aim.spot = this.clampToReach(f, aim.slot, p);
+        go = true;
+      }
+    }
+    if (Math.hypot(aim.spot.x - f.x, aim.spot.y - f.y) > 0.1) f.faceToward(aim.spot.x - f.x, aim.spot.y - f.y);
+    if (!go) return;
+    this.pointAim = null;
+    this.lastAbilityBlock = this.abilities.tryCast(f, aim.slot, aim.spot);
+  }
+
+  /** The point-aimed ability's aiming state (indicator and tests). */
+  get pointAimState(): {
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    radiusM: number;
+    maxRangeM: number;
+  } | null {
+    const aim = this.pointAim;
+    if (!aim) return null;
+    const f = this.playerFighter;
+    const d = f.caster?.def(aim.slot).delivery;
+    return {
+      from: { x: f.x, y: f.y },
+      to: aim.spot,
+      radiusM: f.def.body.footRadiusM + 0.15,
+      maxRangeM: d?.type === 'teleport' ? d.maxRangeM : 0,
+    };
+  }
+
+  private clampToReach(f: FighterEntity, slot: AbilitySlot, p: { x: number; y: number }): { x: number; y: number } {
+    const d = f.caster?.def(slot).delivery;
+    const range = d?.type === 'teleport' ? d.maxRangeM : 0;
+    const dx = p.x - f.x;
+    const dy = p.y - f.y;
+    const len = Math.hypot(dx, dy);
+    if (len <= range) return p;
+    return { x: f.x + (dx / len) * range, y: f.y + (dy / len) * range };
+  }
+
+  /** A point on the game area (CSS pixels, a tap) to the floor point under it. */
+  private screenToFloor(p: { x: number; y: number }): { x: number; y: number } | null {
+    const w = this.view?.world;
+    if (!w || w.scale.x === 0) return null;
+    return isoToWorld((p.x - w.position.x) / w.scale.x, (p.y - w.position.y) / w.scale.y);
+  }
+
+  /**
+   * Teleport (owner, 12/11/2026): land on the free spot nearest `to` that a body can stand on (never
+   * inside walls or furniture, always inside the map). Returns where it landed, or null if no spot
+   * is free nearby (the cast fizzles).
+   */
+  private teleportTo(f: FighterEntity, to: { x: number; y: number }): { x: number; y: number } | null {
+    const physics = this.physics;
+    if (!physics) return null;
+    const r = f.def.body.footRadiusM;
+    const inside = (p: { x: number; y: number }) =>
+      p.x > r + 0.05 && p.y > r + 0.05 && p.x < this.arena.widthM - r - 0.05 && p.y < this.arena.heightM - r - 0.05;
+    for (const ring of [0, 0.35, 0.7, 1.05, 1.4]) {
+      const steps = ring === 0 ? 1 : 12;
+      for (let k = 0; k < steps; k++) {
+        const a = (k / steps) * Math.PI * 2;
+        const p = { x: to.x + Math.cos(a) * ring, y: to.y + Math.sin(a) * ring };
+        if (!inside(p) || !physics.isFree(p, r)) continue;
+        const crowded = this.fighters.some(
+          (o) => o !== f && !o.combatant.isKo && Math.hypot(o.x - p.x, o.y - p.y) < o.def.body.footRadiusM + r,
+        );
+        if (crowded) continue;
+        f.combo.interrupt();
+        f.placeAt(p);
+        f.appearS = TELEPORT_APPEAR_S;
+        return p;
+      }
+    }
+    return null;
   }
 
   /** I / F / ULT: start aiming the leap, or launch it at the aimed spot (owner, 11/11/2026). */
@@ -1132,8 +1273,9 @@ export class FightArenaScene implements ArenaScene {
   private controlDummy(f: FighterEntity, stepS: number): void {
     const p = this.playerFighter;
     const c = f.combatant;
-    if (c.canAct && !f.combo.attack) f.faceToward(p.x - f.x, p.y - f.y);
+    if (c.canAct && !f.combo.attack && !c.blinded) f.faceToward(p.x - f.x, p.y - f.y);
     if (
+      !c.blinded &&
       this.dummyAttacks &&
       c.state === 'free' &&
       !f.combo.attack &&
@@ -1984,7 +2126,7 @@ export class FightArenaScene implements ArenaScene {
     this.limbFlameStrength = limbFlames.reduce((m, l) => Math.max(m, l.strength), 0);
     this.vfx.update(frameDtS, {
       limbFlames,
-      aim: this.ultAim ?? this.throwAim,
+      aim: this.ultAim ?? this.pointAimState ?? this.throwAim,
       impacts,
       dust,
       projectiles: world.projectiles,
@@ -2132,6 +2274,8 @@ export class FightArenaScene implements ArenaScene {
     f.view.stunned = c.state === 'stunned';
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
+    // Blinded (Soul Drain): dark smoke wraps the head, thinning in its last half second.
+    f.view.blind = Math.min(1, c.blindLeftS / 0.5);
     // Magic at work (owner, 12/11/2026): casting, or a power buff, lights the staff skull's eyes and
     // gathers violet energy; a staff strike swings the staff with the arm.
     const casting = f.caster?.cast !== null && f.caster?.cast !== undefined;
@@ -2224,7 +2368,9 @@ export class FightArenaScene implements ArenaScene {
     if (!view) return;
     const c = f.combatant;
     if (!c.isKo) {
-      view.root.alpha = 1;
+      // Reappearing after a teleport: the body fades back in from nothing.
+      const k = f.appearS > 0 ? 1 - f.appearS / TELEPORT_APPEAR_S : 1;
+      view.root.alpha = k * k * (3 - 2 * k);
       view.burnAway = 0;
       return;
     }

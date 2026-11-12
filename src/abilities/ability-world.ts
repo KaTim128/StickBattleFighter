@@ -87,6 +87,11 @@ export interface AbilityHost {
   ): void;
   /** Raise minions for the caster (summons, owner 12/11/2026). Optional (hosts without summons ignore it). */
   summon?(casterId: string, spec: SummonSpec): void;
+  /**
+   * Move the caster to `to` (Teleport): the host picks the nearest spot a body can stand on and
+   * returns it, or null if there is none (the cast fizzles). Optional.
+   */
+  teleport?(casterId: string, to: Vec2): Vec2 | null;
   emit(fx: AbilityFx): void;
 }
 
@@ -278,6 +283,24 @@ export class AbilityWorld {
           y: spot.y,
           radiusM: d.radiusM,
         });
+        break;
+      }
+      case 'teleport': {
+        // Vanish here, reappear there (within range); the host finds a free spot to stand on.
+        const want = Math.min(d.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+        const to = { x: at.x + dir.x * want, y: at.y + dir.y * want };
+        const landed = host.teleport?.(casterId, to) ?? null;
+        if (landed)
+          host.emit({
+            kind: 'impact',
+            ability: def.id,
+            look: def.look,
+            vfx: def.vfx,
+            sfx: def.sfx.impact,
+            x: landed.x,
+            y: landed.y,
+            radiusM: 0.9,
+          });
         break;
       }
       case 'summon':

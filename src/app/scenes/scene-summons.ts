@@ -45,20 +45,24 @@ export class SceneSummons {
 
   constructor(private readonly host: SummonHost) {}
 
-  /** Raise `spec.count` minions around `owner`. Returns how many appeared (some spots may be blocked). */
+  /**
+   * Raise `spec.count` minions around `owner`, or at random spots near its nearest enemy
+   * (`near: 'enemy'`). Returns how many appeared (some spots may be blocked).
+   */
   spawn(owner: FighterEntity, spec: SummonSpec): number {
     const def = this.host.loadDef(spec.character);
     const radius = def.body.footRadiusM;
+    const enemy = spec.near === 'enemy' ? this.nearestEnemy(owner, Number.POSITIVE_INFINITY) : null;
     let raised = 0;
     for (let i = 0; i < spec.count; i++) {
-      const spot = this.spotNear(owner, radius, i, spec.count);
+      const spot = enemy ? this.spotAround(enemy, radius) : this.spotNear(owner, radius, i, spec.count);
       if (!spot) continue;
       // Keep within the cap: the summoner's oldest minion crumbles to make room.
       const mine = this.list.filter((m) => m.summon?.owner === owner && !m.combatant.isKo);
       if (mine.length >= spec.maxAlive) mine[0]?.combatant.expire();
       const f = new FighterEntity(`${owner.name}-summon-${++this.made}`, def, spot, false);
       f.team = owner.team;
-      f.summon = { owner, leftS: spec.lifeS };
+      f.summon = { owner, leftS: spec.lifeS, persistent: spec.persistent === true };
       f.faceToward(owner.aim.x, owner.aim.y);
       this.host.attach(f);
       this.list.push(f);
@@ -87,14 +91,47 @@ export class SceneSummons {
     return null;
   }
 
+  /** A random free spot 1.4–3.2 m from `centre`, in sight of it (not through a wall), inside the map. */
+  private spotAround(centre: FighterEntity, radius: number): Vec2 | null {
+    for (let attempt = 0; attempt < 14; attempt++) {
+      const a = this.host.random() * Math.PI * 2;
+      const want = 1.4 + this.host.random() * 1.8;
+      const end = { x: centre.x + Math.cos(a) * want, y: centre.y + Math.sin(a) * want };
+      const block = this.host.blocked({ x: centre.x, y: centre.y }, end);
+      const d = block === null ? want : want * block - radius - 0.1;
+      if (d < radius + 0.6) continue;
+      const at = { x: centre.x + Math.cos(a) * d, y: centre.y + Math.sin(a) * d };
+      const crowded = this.host
+        .fighters()
+        .some((o) => !o.combatant.isKo && Math.hypot(o.x - at.x, o.y - at.y) < o.def.body.footRadiusM + radius + 0.05);
+      if (!crowded && this.host.isFree(at, radius)) return at;
+    }
+    return null;
+  }
+
+  private nearestEnemy(f: FighterEntity, within: number): FighterEntity | null {
+    let target: FighterEntity | null = null;
+    let best = within;
+    for (const o of this.host.fighters()) {
+      if (o.team === f.team || o.combatant.isKo || o.summon) continue;
+      const d = Math.hypot(o.x - f.x, o.y - f.y);
+      if (d < best) {
+        best = d;
+        target = o;
+      }
+    }
+    return target;
+  }
+
   /** One step: lifetimes, crumbling, and each minion's AI. */
   update(stepS: number): void {
     for (let i = this.list.length - 1; i >= 0; i--) {
       const f = this.list[i]!;
       const s = f.summon!;
-      s.leftS -= stepS;
-      // Time's up, or its summoner fell: it crumbles.
-      if (!f.combatant.isKo && (s.leftS <= 0 || s.owner.combatant.isKo)) f.combatant.expire();
+      if (s.leftS !== null) s.leftS -= stepS;
+      // Time's up, or its summoner fell (unless it stays until killed): it crumbles.
+      const expired = s.leftS !== null && s.leftS <= 0;
+      if (!f.combatant.isKo && (expired || (!s.persistent && s.owner.combatant.isKo))) f.combatant.expire();
       if (f.combatant.isKo) {
         this.host.step(f, stepS, { x: 0, y: 0 });
         if (f.combatant.koAge >= CRUMBLE_S) {
@@ -122,6 +159,7 @@ export class SceneSummons {
     }
     const c = f.combatant;
     let move: Vec2 = { x: 0, y: 0 };
+    if (c.blinded) target = null; // blinded: it cannot find anyone
     if (target) {
       const dx = target.x - f.x;
       const dy = target.y - f.y;

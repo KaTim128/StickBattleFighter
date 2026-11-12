@@ -157,28 +157,14 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.35,
   },
-  // Death's Dominion: the same levitation, higher, the staff raised overhead with the free arm.
-  deathsDominion: {
-    windup: {
-      lean: deg(4),
-      head: deg(-4),
-      armFront: limb(110, 30),
-      armBack: limb(100, 30),
-      legFront: limb(6, -14),
-      legBack: limb(-4, -18),
-      liftM: 0.18,
-    },
-    release: {
-      lean: deg(6),
-      head: deg(-16),
-      armFront: limb(165, 8),
-      armBack: limb(160, 12),
-      legFront: limb(6, -14),
-      legBack: limb(-4, -18),
-      liftM: 0.34,
-    },
-    settle: 0.5,
+  // Teleport: a still, gathering moment (the staff lifted a little, the free hand drawn in), then
+  // he is gone; he reforms in the same calm stance.
+  teleport: {
+    windup: { lean: deg(2), head: deg(-4), armFront: limb(60, 70), armBack: limb(30, 40) },
+    release: { lean: deg(0), head: deg(-2), armFront: limb(20, 30), armBack: limb(30, 40) },
+    settle: 0.6,
   },
+
   // Eruption (owner, 11/11/2026): squat deep and gather fire, spring up wrapped in flame (AIR),
   // then crash down fist-first into the floor (the release is the landing slam, held briefly).
   eruption: {

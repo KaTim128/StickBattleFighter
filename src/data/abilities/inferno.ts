@@ -18,6 +18,8 @@ export const INFERNO_KIT: AbilityKit = {
     id: 'fireball',
     name: 'Fireball',
     label: 'FIRE',
+    description:
+      'Draws fire into his palm and hurls a blazing ball that bursts on contact, burning the target and setting furniture alight.',
     icon: 'fireball',
     slot: 'a1',
     staminaCost: 20,
@@ -51,6 +53,8 @@ export const INFERNO_KIT: AbilityKit = {
     id: 'flameDash',
     name: 'Flame Dash',
     label: 'DASH',
+    description:
+      'A short burst forward wrapped in flame; anyone in the way is hit and set alight, and the floor behind him burns for a moment.',
     icon: 'flame-dash',
     slot: 'a2',
     staminaCost: 30,
@@ -87,6 +91,8 @@ export const INFERNO_KIT: AbilityKit = {
     id: 'fireBeam',
     name: 'Fire Beam',
     label: 'BEAM',
+    description:
+      'After a 1-second charge, a roaring beam of fire pours from his hands. It hits again and again, hurts more up close and burns.',
     icon: 'fire-beam',
     slot: 'a3',
     staminaCost: 35,
@@ -124,6 +130,7 @@ export const INFERNO_KIT: AbilityKit = {
     id: 'eruption',
     name: 'Eruption',
     label: 'ULT',
+    description: 'Leaps to the chosen spot and slams down in an eruption of fire, hardest at the centre.',
     icon: 'eruption',
     slot: 'ult',
     staminaCost: 0,

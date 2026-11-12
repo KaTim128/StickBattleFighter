@@ -64,6 +64,8 @@ export class StickmanView {
    * energy gathers at the hood, the staff and around the body.
    */
   magic = 0;
+  /** 0..1 blinded (Soul Drain): a band of dark violet smoke wraps the head. */
+  blind = 0;
   /** 0..1 how far a held staff follows the swinging arm (a staff strike) instead of standing upright. */
   heldSwing = 0;
   /** Stunned: stars circle the head (PRS-6). */
@@ -279,6 +281,7 @@ export class StickmanView {
     else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
     if (this.held && flame < 0.01) this.drawHeld(g, s, o);
     if (this.magic > 0) this.drawMagic(s);
+    if (this.blind > 0.01) this.drawBlind(s);
   }
 
   /** Bone and wood colours for Necro's armour and staff, and the souls' violet glow. */
@@ -612,6 +615,36 @@ export class StickmanView {
       for (const ex of [0.02, 0.05]) {
         this.fire.circle(head.x + ex, head.y - 0.008, 0.045).fill({ color: D.soul, alpha: 0.55 * m });
       }
+    }
+  }
+
+  /**
+   * Blinded (owner, 12/11/2026, Soul Drain): a clean band of dark violet smoke wrapped round the
+   * head where the eyes would be, with two soft wisps trailing off the back.
+   */
+  private drawBlind(s: ReturnType<typeof solveSkeleton>): void {
+    const g = this.status;
+    const r = this.bones.headRadius;
+    const a = this.blind;
+    const t = this.clockS;
+    const y = s.head.y - r * 0.05;
+    g.roundRect(s.head.x - r * 1.15, y - r * 0.32, r * 2.3, r * 0.64, r * 0.32).fill({
+      color: 0x1a0d26,
+      alpha: 0.85 * a,
+    });
+    g.roundRect(s.head.x - r * 1.1, y - r * 0.3, r * 2.2, r * 0.18, r * 0.09).fill({
+      color: 0x6a2bb0,
+      alpha: 0.45 * a,
+    });
+    for (const [k, len] of [
+      [0, 1],
+      [1, 0.7],
+    ] as const) {
+      const sway = Math.sin(t * 3 + k * 1.7) * r * 0.25;
+      g.ellipse(s.head.x - r * (1.35 + len * 0.45), y + r * (0.05 + k * 0.25) + sway, r * 0.42 * len, r * 0.16).fill({
+        color: 0x1a0d26,
+        alpha: 0.55 * a,
+      });
     }
   }
 

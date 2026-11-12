@@ -166,6 +166,21 @@ export class PlayerIntents {
     return this.swipeValue;
   }
 
+  // ---- A tap on the game area (touch, owner 12/11/2026): picks the spot for a point-aimed ability
+  // (Teleport: tap the ability, then tap where to go). In CSS pixels of the game area, like the
+  // mouse pointer. Remembered until a step consumes it.
+  private tapAt: Vec2 | null = null;
+
+  tap(p: Vec2): void {
+    this.tapAt = { x: p.x, y: p.y };
+  }
+
+  consumeTap(): Vec2 | null {
+    const t = this.tapAt;
+    this.tapAt = null;
+    return t;
+  }
+
   // ---- Mouse pointer (desktop): where the cursor is over the game, in CSS pixels of the game
   // area. `pointerMoves` counts moves so the game can tell a fresh hover from a stale one.
   private pointerAt: Vec2 | null = null;

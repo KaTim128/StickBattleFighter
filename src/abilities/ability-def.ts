@@ -43,6 +43,11 @@ export interface AbilityPayload {
   readonly wallDamage?: number;
   /** Restores this fraction of the damage to the caster when it lands (Soul Drain, owner 12/11/2026). */
   readonly lifesteal?: number;
+  /**
+   * Blinds the target this long when it lands (Soul Drain, owner 12/11/2026): it cannot lock on
+   * to anyone; a computer-controlled fighter cannot find its target; a player's view goes dark.
+   */
+  readonly blindS?: number;
 }
 
 /**
@@ -119,8 +124,24 @@ export interface NovaDelivery {
 export interface SummonSpec {
   readonly character: string;
   readonly count: number;
-  readonly lifeS: number;
+  /** Seconds before they crumble; null = they stay until killed (owner, 12/11/2026). */
+  readonly lifeS: number | null;
   readonly maxAlive: number;
+  /** Where they rise: around the caster (default) or at random spots near the nearest enemy. */
+  readonly near?: 'caster' | 'enemy';
+  /** They stay even if the summoner falls. */
+  readonly persistent?: boolean;
+}
+
+/**
+ * Teleport (Necro, owner 12/11/2026): the caster vanishes and reappears at the chosen spot, within
+ * `maxRangeM`, anywhere on the map that a body can stand (never inside walls or furniture). The
+ * spot is picked by the player: on desktop press the ability, then left click the destination; on
+ * touch tap the ability button, then tap the destination.
+ */
+export interface TeleportDelivery {
+  readonly type: 'teleport';
+  readonly maxRangeM: number;
 }
 
 export interface SummonDelivery extends SummonSpec {
@@ -188,7 +209,8 @@ export type Delivery =
   | BeamDelivery
   | StrikeDelivery
   | BuffDelivery
-  | SummonDelivery;
+  | SummonDelivery
+  | TeleportDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,
@@ -237,6 +259,8 @@ export interface AbilityDef {
   readonly name: string;
   /** Short label for buttons and the ability bar. */
   readonly label: string;
+  /** What it does, in a sentence or two (the fighter details screen, owner 12/11/2026). */
+  readonly description?: string;
   /** Picture shown on the ability bar and touch buttons (src/interface/ability-icons.ts); falls back to the label. */
   readonly icon?: string;
   readonly slot: AbilitySlot;

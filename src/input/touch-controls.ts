@@ -135,6 +135,9 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   const onDown = (e: PointerEvent): void => {
     showForTouch(e);
     if (e.pointerType !== 'touch' || e.target instanceof HTMLButtonElement) return;
+    // Any tap on the game area can pick a destination (Teleport: tap R, then tap where to go).
+    const box = root.getBoundingClientRect();
+    intents.tap({ x: e.clientX - box.left, y: e.clientY - box.top });
     if (e.clientX > window.innerWidth * 0.4) {
       if (swipePointer === null && !(e.target as Element | null)?.closest?.('.settings-panel, .main-menu')) {
         swipePointer = e.pointerId;

@@ -22,7 +22,7 @@ describe('Necro motion (owner, 12/11/2026)', () => {
 
   it('summons with the free arm raised overhead, levitating off the floor, without flailing', () => {
     const base = idlePose(0, BONES, 'mage');
-    for (const id of ['undeadArmy', 'deathsDominion']) {
+    for (const id of ['undeadArmy']) {
       const p = abilityPose(base, id, 'recovery', 0.3, false);
       expect(deg(p.armFront.root)).toBeGreaterThan(150); // free arm up
       expect(p.liftM ?? 0).toBeGreaterThan(0.2); // off the ground

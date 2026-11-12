@@ -79,7 +79,9 @@ export class FighterEntity {
    */
   team: 'player' | 'opponent' = 'player';
   /** A summoned minion: who raised it and how long it has left (null for real fighters). */
-  summon: { readonly owner: FighterEntity; leftS: number } | null = null;
+  summon: { readonly owner: FighterEntity; leftS: number | null; readonly persistent: boolean } | null = null;
+  /** Seconds left of reappearing after a teleport (the body fades back in). */
+  appearS = 0;
   body: RigidBody | null = null;
   view: StickmanView | null = null;
   bars: FighterBars | null = null;

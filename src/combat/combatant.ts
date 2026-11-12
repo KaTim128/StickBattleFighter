@@ -108,6 +108,8 @@ export class Combatant {
   private getUpS = 0;
   private downS = 0;
   private invulnS = 0;
+  /** Seconds of blindness left (Soul Drain, owner 12/11/2026). */
+  private blindS = 0;
   private dodgeS = 0;
   private dodgeCooldownS = 0;
   private sinceStaminaUseS = 0;
@@ -305,7 +307,24 @@ export class Combatant {
   }
 
   /** Advance timers. Returns burn damage taken this step (for floating numbers and the ultimate meter). */
+  /** Blinded (it cannot lock on to anyone; the AI cannot find its target; a player's view darkens). */
+  get blinded(): boolean {
+    return this.blindS > 0;
+  }
+
+  /** 0..1 how much blindness is left (presentation: the smoke over the eyes thins as it ends). */
+  get blindLeftS(): number {
+    return this.blindS;
+  }
+
+  /** Blind for `seconds` (a longer blind replaces a shorter one; never stacks). */
+  blind(seconds: number): void {
+    if (this.koAgeS >= 0) return;
+    this.blindS = Math.max(this.blindS, seconds);
+  }
+
   update(dtS: number): number {
+    this.blindS = Math.max(0, this.blindS - dtS);
     const burned = this.tickBurn(dtS);
     if (this.koAgeS >= 0) {
       this.koAgeS += dtS;
@@ -362,6 +381,7 @@ export class Combatant {
 
   /** Back on its feet at full health and stamina (KO respawn, Practice Zone). */
   reset(): void {
+    this.blindS = 0;
     this.hp = this.stats.maxHp;
     this.stamina = this.stats.maxStamina;
     this.guardUp = false;

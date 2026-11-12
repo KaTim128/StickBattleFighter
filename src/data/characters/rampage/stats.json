@@ -1,6 +1,6 @@
 {
   "id": "rampage-stats",
-  "maxHp": 1300,
+  "maxHp": 1250,
   "maxStamina": 100,
   "staminaRegenPerS": 26,
   "staminaRegenDelayS": 0.8,
@@ -15,8 +15,8 @@
     "footRadiusM": 0.38,
     "massKg": 140
   },
-  "power": 1.35,
-  "defence": 1.25,
+  "power": 1.2,
+  "defence": 1.15,
   "critChance": 0.04,
   "critMultiplier": 1.6,
   "knockbackResistance": 0.5,

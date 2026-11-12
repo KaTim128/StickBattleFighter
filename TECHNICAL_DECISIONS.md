@@ -453,3 +453,14 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 
 ## Dependencies
 Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); dev: typescript, vite, vite-plugin-wasm, vitest, @playwright/test, @biomejs/biome, @types/node. `npm audit`: 0 vulnerabilities (10/11/2026).
+
+### TD-055: Point-aimed abilities, blindness, permanent summons, ratings and the fighter sheet — ACCEPTED (owner request 12/11/2026)
+- **Context:** Necro's Teleport needs a chosen spot; Soul Drain blinds; the ultimate's skeletons never expire; the menu shows comparable stats and device-specific how-to text.
+- **Decisions:**
+  - A `teleport` delivery; the scene keeps one point-aim state for abilities that pick a spot, and `teleportTo` lands on the nearest free spot (rings of candidates) with a 0.3 s fade-in.
+  - Payload `blindS`; `Combatant.blind()`. A blinded fighter cannot lock on; summons and the dummy treat every target as missing; the player sees a vignette (`BlindVeil`).
+  - `SummonSpec.lifeS: null` means no timer; `near: 'enemy'` spawns around the nearest enemy; `persistent` summons outlive their summoner.
+  - `fighterRatings()` maps raw stats to 0–100 ratings on fixed scales; a unit test enforces the balance rule (REQ-ABL-16).
+  - `fighterSheet()` builds the details screen from data (pure), so ability text never drifts from the numbers.
+- **Alternatives:** hand-written stat bars (drift from data); per-ability scene branches for teleport (rejected: data-driven delivery instead).
+- **Status:** ACCEPTED.

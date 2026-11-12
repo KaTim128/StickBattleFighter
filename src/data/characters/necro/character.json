@@ -2,7 +2,7 @@
   "id": "necro",
   "template": "base-stickman",
   "displayName": "Necro",
-  "description": "A hooded death mage: dark robes over skeletal armour, a staff topped with a soul crystal. He drains life, traps foes in bone-spiked ground, raises skeleton warriors and, in Death's Dominion, becomes a storm of necromantic power.",
+  "description": "A hooded death mage: dark robes over skeletal armour, a staff topped with a soul crystal. He drains life and blinds, traps foes in bone-spiked ground, slips through walls in violet smoke and raises an army of skeleton warriors around his enemy.",
   "characterType": "fighter",
   "element": "shadow",
   "combatStyle": "staff",

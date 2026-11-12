@@ -54,9 +54,9 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
   'undead-army': svg(
     `<path d="M2 42 H46" stroke="#2e2438" stroke-width="4" stroke-linecap="round"/><g fill="#e6dfcf" stroke="#2a241c" stroke-width="1.5"><circle cx="12" cy="30" r="6"/><circle cx="24" cy="22" r="7"/><circle cx="36" cy="30" r="6"/><rect x="9" y="34" width="7" height="5" rx="1.5"/><rect x="20" y="27" width="8" height="6" rx="1.5"/><rect x="33" y="34" width="7" height="5" rx="1.5"/></g><path d="M8 40 V44 M24 34 V44 M40 40 V44" stroke="#bfb6a3" stroke-width="3"/>`,
   ),
-  // Death's Dominion: a hooded figure in a storm of violet energy.
-  'deaths-dominion': svg(
-    `<defs><radialGradient id="dg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f1e8ff"/><stop offset=".4" stop-color="#a970ff"/><stop offset="1" stop-color="#2a0d3d" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="24" r="23" fill="url(#dg)"/><path d="M14 44 L16 22 C16 12 32 12 32 22 L34 44 Z" fill="#33284a" stroke="#120e18" stroke-width="2" stroke-linejoin="round"/><path d="M18 12 L24 4 L30 12 C30 18 18 18 18 12 Z" fill="#4a3a63" stroke="#120e18" stroke-width="2"/><ellipse cx="25" cy="16" rx="3.5" ry="4" fill="#07050a"/><path d="M36 6 V40" stroke="#3b2a1e" stroke-width="3"/><circle cx="36" cy="6" r="3" fill="#a970ff"/>`,
+  // Teleport: a hooded figure fading into violet smoke on one side, reforming on the other.
+  teleport: svg(
+    `<path d="M8 40 L10 22 C10 14 20 14 20 22 L22 40 Z" fill="#33284a" opacity=".35" stroke="#120e18" stroke-width="1.5"/><path d="M26 40 L28 20 C28 11 40 11 40 20 L42 40 Z" fill="#4a3a63" stroke="#120e18" stroke-width="2" stroke-linejoin="round"/><ellipse cx="34.5" cy="22" rx="3" ry="3.6" fill="#07050a"/><path d="M12 30 C18 24 22 34 28 28" stroke="#a970ff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="2 3"/><circle cx="8" cy="18" r="2" fill="#a970ff" opacity=".7"/><circle cx="14" cy="12" r="1.5" fill="#d9c8ff" opacity=".7"/><ellipse cx="34" cy="42" rx="10" ry="2.5" fill="#a970ff" opacity=".45"/>`,
   ),
 };
 

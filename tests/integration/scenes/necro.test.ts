@@ -8,6 +8,7 @@ import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
+import { iso } from '../../../src/rendering/projection';
 
 const STEP = 1 / 60;
 const K = NECRO_KIT;
@@ -69,7 +70,7 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scenes.clear();
   });
 
-  it('Soul Drain: a projectile that hurts the target and gives Necro back half the damage', async () => {
+  it('Soul Drain: a projectile that hurts the target, gives Necro back half the damage and blinds it', async () => {
     const { scene, scenes, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
     scene.playerFighter.combatant.hp = 600;
     cast('a1');
@@ -78,6 +79,7 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     expect(dealt).toBeGreaterThan(0);
     expect(scene.player.hp).toBeGreaterThan(600);
     expect(scene.player.hp - 600).toBeCloseTo(K.a1.payload.damage * K.a1.payload.lifesteal!, 0);
+    expect(scene.dummyFighter.combatant.blinded).toBe(true); // blinded for 3 s
     scenes.clear();
   });
 
@@ -93,50 +95,86 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scenes.clear();
   });
 
-  it('Undead Army: three skeleton warriors rise on his side, hunt the dummy and hurt it, never him, then crumble', async () => {
-    const { scene, scenes, runUntil, cast } = await setup({ x: 14, y: 13 }, { x: 18, y: 13 });
-    cast('a3');
-    runUntil(() => scene.summonStates.length > 0, 2);
-    expect(scene.summonStates).toHaveLength(3);
-    expect(scene.summonStates.every((s) => s.team === 'player')).toBe(true);
-    runUntil(() => scene.dummy.hp < 1000, 6);
-    expect(scene.dummy.hp).toBeLessThan(1000);
-    expect(scene.player.hp).toBe(scene.playerFighter.combatant.stats.maxHp); // their blows never hit him
-    // Their time (game time) runs out: they crumble and are gone.
-    runUntil(() => scene.summonStates.length === 0, 16);
-    expect(scene.summonStates).toHaveLength(0);
+  it('Soul Drain blinds for 3 s: a blinded fighter cannot find its target or attack, then sees again', async () => {
+    const { scene, scenes, run, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
+    cast('a1');
+    runUntil(() => scene.dummyFighter.combatant.blinded, 3);
+    scene.dummyAttacks = true;
+    scene.playerFighter.placeAt({ x: 16.9, y: 13 }); // right in its jab's reach
+    const hp = scene.player.hp;
+    run(2.4);
+    expect(scene.player.hp).toBe(hp); // it never swung at him while blind
+    runUntil(() => !scene.dummyFighter.combatant.blinded, 2);
+    expect(scene.dummyFighter.combatant.blinded).toBe(false);
     scenes.clear();
   });
 
-  it('never more than four at once, and they never appear inside walls or furniture', async () => {
-    // Against the office's walls and furniture.
-    const { scene, scenes, run, runUntil, cast } = await setup({ x: 2.2, y: 4 }, { x: 25, y: 13 }, OFFICE);
-    cast('a3');
-    runUntil(() => scene.summonStates.length > 0, 2);
-    scene.playerFighter.caster!.reset();
-    scene.playerFighter.combatant.stamina = 100;
-    run(1);
-    cast('a3');
-    run(1.5);
-    const alive = scene.summonStates.filter((s) => !s.ko);
-    expect(alive.length).toBeLessThanOrEqual(4);
-    for (const s of alive) expect(scene.physics!.isFree({ x: s.x, y: s.y }, 0.2)).toBe(true);
+  it('Teleport (desktop): R, then a left click on the spot: he reappears there, past furniture', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 10, y: 10 }, { x: 25, y: 18 });
+    intents.pressAbility('a3');
+    run(STEP * 2);
+    expect(scene.pointAimState).not.toBeNull(); // aiming, nothing cast yet
+    // Point the mouse at a spot 6 m away (screen position of that floor point).
+    const w = scene.arenaView!.world;
+    const to = { x: 16, y: 10 };
+    const p = iso(to.x, to.y);
+    intents.setPointer({ x: w.position.x + p.x * w.scale.x, y: w.position.y + p.y * w.scale.y });
+    run(STEP * 2);
+    intents.pressUltLaunch(); // left click (the aim-confirm binding)
+    runUntil(() => Math.hypot(scene.player.x - to.x, scene.player.y - to.y) < 0.6, 2);
+    expect(Math.hypot(scene.player.x - to.x, scene.player.y - to.y)).toBeLessThan(0.6);
+    expect(scene.pointAimState).toBeNull();
     scenes.clear();
   });
 
-  it("Death's Dominion: 8 s of power: two more skeletons rise and his magic hits 50% harder", async () => {
-    const { scene, scenes, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
+  it('Teleport (touch): tap R, then tap the destination; never lands inside walls or furniture; R again cancels', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 4, y: 4 }, { x: 25, y: 13 }, OFFICE);
+    const w = () => scene.arenaView!.world;
+    const screenOf = (x: number, y: number) => {
+      const p = iso(x, y);
+      return { x: w().position.x + p.x * w().scale.x, y: w().position.y + p.y * w().scale.y };
+    };
+    // Press, then press again: called off, nothing cast.
+    intents.pressAbility('a3');
+    run(STEP * 2);
+    intents.pressAbility('a3');
+    run(STEP * 2);
+    expect(scene.pointAimState).toBeNull();
+    // Press, then tap a spot right on a desk: he lands next to it, never inside it.
+    const desk = OFFICE.props!.find((p) => p.kind === 'desk' && Math.hypot(p.x - 4, p.y - 4) < 8)!;
+    intents.pressAbility('a3');
+    run(STEP * 2);
+    intents.tap(screenOf(desk.x, desk.y));
+    runUntil(() => Math.hypot(scene.player.x - 4, scene.player.y - 4) > 1, 2);
+    run(0.3);
+    expect(Math.hypot(scene.player.x - 4, scene.player.y - 4)).toBeGreaterThan(1);
+    expect(scene.physics!.isFree({ x: scene.player.x, y: scene.player.y }, 0.25)).toBe(true);
+    scenes.clear();
+  });
+
+  it('Ultimate Undead Army: four skeletons rise near the enemy and stay until they are destroyed', async () => {
+    const { scene, scenes, run, runUntil, cast } = await setup({ x: 8, y: 13 }, { x: 18, y: 13 });
     scene.playerFighter.caster!.fillMeter();
     cast('ult');
-    runUntil(() => scene.playerFighter.buff !== null, 2);
-    expect(scene.playerFighter.buff?.abilityDamageFactor).toBe(1.5);
-    expect(scene.summonStates.length).toBe(2);
-    // His magic now hits harder: the same Soul Drain hit takes far more off the dummy.
-    const before = scene.dummy.hp;
-    scene.abilities!.hitFighter('player', 'dummy', K.a1.payload, { x: 1, y: 0 });
-    expect(before - scene.dummy.hp).toBeGreaterThanOrEqual(K.a1.payload.damage * 1.4);
-    runUntil(() => scene.playerFighter.buff === null, 12);
-    expect(scene.playerFighter.buff).toBeNull();
+    runUntil(() => scene.summonStates.length > 0, 3);
+    expect(scene.summonStates).toHaveLength(4);
+    for (const s of scene.summonStates) {
+      expect(Math.hypot(s.x - 18, s.y - 13)).toBeLessThan(3.6); // around the enemy, not Necro
+      expect(s.team).toBe('player');
+      expect(scene.physics!.isFree({ x: s.x, y: s.y }, 0.2)).toBe(true);
+    }
+    // No timer: well past any old lifetime they are all still there.
+    scene.respawnDummy({ x: 28, y: 18 }); // out of the way, so they are not fighting
+    run(16);
+    expect(scene.summonStates.filter((s) => !s.ko)).toHaveLength(4);
+    // Destroyed: one falls and crumbles away.
+    const victim = scene.summonStates[0]!.name;
+    const f = (
+      scene as unknown as { summons: { list: { name: string; combatant: { expire(): void } }[] } }
+    ).summons.list.find((m) => m.name === victim)!;
+    f.combatant.expire();
+    runUntil(() => scene.summonStates.length === 3, 3);
+    expect(scene.summonStates).toHaveLength(3);
     scenes.clear();
   });
 });
