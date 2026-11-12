@@ -500,6 +500,7 @@ Full list in spec §21. Still open:
 5. **TD-017:** game hosting is GitHub Pages (decided). To publish, enable Pages in the repository settings and run the deploy workflow (or ask me to). Pages is free only for **public** repositories. The Supabase data backend needs approval by Phase 14.
 
 ## Known issues
+- **Flaky e2e under heavy load (older than 12/11/2026's changes):** `phase7.spec.ts` ("G picks up the chair, G throws it") can fail when the software-rendered browser freezes for seconds. This happened on CI for ced57b2 and 279c1b3. Running it 12 times with 4 parallel workers failed 4/12 on both a611e01 (before today's changes) and HEAD. CI passed on e9ad821, d220067 and bb40f63. Next step: profile the office scene's frame time under software WebGL; do not loosen the test.
 - None open in code. Stats are provisional (OQ-05).
 - Documentation limitation: numeric gameplay and economy values are absent from the source material (spec §21).
 
