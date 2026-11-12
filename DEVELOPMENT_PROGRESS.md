@@ -27,7 +27,8 @@ Check this table before assigning work. No two active assignments may share a pa
 - Inferno's premium model (body style `magma`, `src/rendering/magma-model.ts`) on the shared rig; premium portrait (from the model, lit backdrop, frame) in the menu and the HUD; the bookshelf redesigned (`src/rendering/bookshelf-view.ts`). REQ-VIS-10, TD-059 (proposed).
 - Checked in the running game (screenshots in `docs/screenshots/prototype-redesign/`): idle both facings, jab, heavy, Fire Beam, Flame Detonation, block, flinch, knockdown, get-up, fire KO, climbing a bookshelf; no detached parts, no console errors.
 - Tests: 378 unit/integration pass; lint, typecheck and build clean.
-- **Stopped for owner approval.** Not started: other fighters, furniture, arenas, UI; Grapple Slam polish; falling, landing and recovery; AI abilities; the Tournament mode.
+- Owner approved the style (13/11/2026) and asked for slimmer boots (done).
+- Previously stopped for owner approval. Not started: other fighters, furniture, arenas, UI; Grapple Slam polish; falling, landing and recovery; AI abilities; the Tournament mode.
 
 ### 12/11/2026 (evening): Necro and Shroud reworks, steady throws, battle music and stinger (owner requests; Master Developer)
 - Necro: Undead Army skeletons last 10 s again (SUP-24). Teleport was reworked (one press away, double press in: af0d35e), then replaced by **Curse of Decay** on F at the owner's request (REQ-ABL-20).

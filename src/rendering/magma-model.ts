@@ -381,33 +381,33 @@ export class MagmaModel {
     const v = frame(knee, ankle);
     // The foot points "forward" (+x in his frame), turned with the shin a little.
     const fx = Math.abs(v.uy) > 0.35 ? 1 : Math.sign(v.ux) || 1;
-    const sole = { x: ankle.x + v.ux * w * 0.35, y: ankle.y + v.uy * w * 0.35 };
-    const toe = { x: sole.x + fx * w * 1.55, y: sole.y + w * 0.08 };
-    const heel = { x: sole.x - fx * w * 0.5, y: sole.y + w * 0.05 };
-    const top = { x: ankle.x - v.ux * w * 0.4, y: ankle.y - v.uy * w * 0.4 };
+    const sole = { x: ankle.x + v.ux * w * 0.3, y: ankle.y + v.uy * w * 0.3 };
+    const toe = { x: sole.x + fx * w * 1.3, y: sole.y + w * 0.06 };
+    const heel = { x: sole.x - fx * w * 0.36, y: sole.y + w * 0.04 };
+    const top = { x: ankle.x - v.ux * w * 0.3, y: ankle.y - v.uy * w * 0.3 };
     const outline = this.c(MAGMA.armourEdge);
     const shape = (grow: number) => [
-      top.x - fx * (w * 0.5 + grow),
+      top.x - fx * (w * 0.34 + grow),
       top.y - grow,
-      top.x + fx * (w * 0.55 + grow),
+      top.x + fx * (w * 0.38 + grow),
       top.y - grow,
       toe.x + fx * grow,
-      toe.y - w * 0.45 - grow,
+      toe.y - w * 0.3 - grow,
       toe.x + fx * grow,
       toe.y + grow,
       heel.x - fx * grow,
       heel.y + grow,
     ];
-    g.poly(shape(w * 0.28)).fill(outline);
+    g.poly(shape(w * 0.2)).fill(outline);
     g.poly(shape(0)).fill(this.c(far ? toward(MAGMA.armour, 0x000000, 0.3) : MAGMA.armour));
     // Lit upper and a glowing sole line.
     g.poly([
-      top.x - fx * w * 0.2,
+      top.x - fx * w * 0.14,
       top.y + w * 0.05,
-      top.x + fx * w * 0.5,
+      top.x + fx * w * 0.34,
       top.y + w * 0.05,
       toe.x - fx * w * 0.2,
-      toe.y - w * 0.38,
+      toe.y - w * 0.25,
     ]).fill({
       color: this.c(MAGMA.armourLit),
       alpha: far ? 0.35 : 0.7,
