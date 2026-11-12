@@ -209,6 +209,8 @@ const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
 /** How fast WASD slides the ultimate's landing spot while aiming, m/s. */
 /** Target speed under WASD or the joystick when an ability's data sets none (Inferno's leap, owner 11/11/2026). */
 const DEFAULT_AIM_SPEED_MPS = 7;
+/** The player locks on to an opponent in sight within this range (owner, 12/11/2026). */
+const TARGET_LOCK_SIGHT_M = 14;
 /**
  * The fight intro's timeline (owner, 12/11/2026), in seconds of game time: a short lead-in, the
  * announcer's "READY...", then "FIGHT!"; combat unlocks the moment FIGHT has been said. The
@@ -1053,6 +1055,25 @@ export class FightArenaScene implements ArenaScene {
    * be hit soon, unless they are well behind. Free movement in the 2.5D view needs it: you rarely
    * line up exactly with your opponent.
    */
+  /**
+   * The opponent the player locks on to: the nearest standing enemy within sight range with a clear
+   * line of sight (walls and doors block it). None while the player is blinded (it cannot see).
+   */
+  private lockTarget(f: FighterEntity): FighterEntity | null {
+    if (f.combatant.blinded || !this.physics) return null;
+    let best: FighterEntity | null = null;
+    let bestD = TARGET_LOCK_SIGHT_M;
+    for (const o of this.fighters) {
+      if (o.team === f.team || o.combatant.isKo || o.appearS > 0) continue;
+      const d = Math.hypot(o.x - f.x, o.y - f.y);
+      if (d >= bestD || d < 1e-3) continue;
+      if (this.physics.castWorldRay({ x: f.x, y: f.y }, { x: o.x, y: o.y }, false)) continue; // behind a wall
+      best = o;
+      bestD = d;
+    }
+    return best;
+  }
+
   private softLock(f: FighterEntity): void {
     if (f.combatant.blinded) return; // blinded: it cannot find anyone to turn to
     let best: FighterEntity | null = null;
@@ -1415,8 +1436,14 @@ export class FightArenaScene implements ArenaScene {
         { ...tuning, maxSpeedMps: tuning.maxSpeedMps * sprint * buffed, decelMps2: decel },
         stepS,
       );
-      if (!attack && !cast && Math.hypot(moveIn.x, moveIn.y) > 0.1 && f === this.playerFighter)
-        f.faceToward(moveIn.x, moveIn.y);
+      if (f === this.playerFighter) {
+        // Target lock (owner, 12/11/2026): while an opponent is in sight the player always faces it,
+        // whichever way they move (strafing, backing off). With nobody in sight, blinded, or the
+        // opponent out of view, the fighter faces the way it moves.
+        const lock = !cast && !this.targeting ? this.lockTarget(f) : null;
+        if (lock) f.faceToward(lock.x - f.x, lock.y - f.y);
+        else if (!attack && !cast && Math.hypot(moveIn.x, moveIn.y) > 0.1) f.faceToward(moveIn.x, moveIn.y);
+      }
     }
     body.setLinvel(next, true);
 

@@ -75,6 +75,9 @@ export interface PropState {
   readonly burning: boolean;
 }
 
+/** A piece behind the fighter counts as this much further away when choosing what to pick up. */
+const BEHIND_PENALTY_M = 0.6;
+
 /** How fast a landed piece tips onto the face it rests on, radians per second. */
 const ROLL_SETTLE_RADPS = 7;
 
@@ -382,8 +385,9 @@ export class ArenaProps {
   // ---------------- Pickup, carry and throw (Phase 7, REQ-PHY-8..10) ----------------
 
   /**
-   * The throwable object nearest a fighter's feet within reach, in front of them (not behind),
-   * or null. Standing furniture, items on desks and loose items lying on the floor all count.
+   * The throwable object nearest a fighter's feet within reach, or null. Pieces in front are
+   * preferred, but one behind can be grabbed too (owner, 12/11/2026: fighters face their locked-on
+   * opponent while moving, so what they reach for is often to the side or behind). Standing furniture, items on desks and loose items lying on the floor all count.
    */
   pickupCandidate(
     x: number,
@@ -412,10 +416,12 @@ export class ArenaProps {
       const d = Math.hypot(dx, dy);
       const cx = (r.x0 + r.x1) / 2;
       const cy = (r.y0 + r.y1) / 2;
-      if (d > reachM || (cx - x) * aim.x + (cy - y) * aim.y < -behindM) continue;
-      if (d < bestD) {
+      if (d > reachM) continue;
+      const behind = (cx - x) * aim.x + (cy - y) * aim.y < -behindM;
+      const score = d + (behind ? BEHIND_PENALTY_M : 0);
+      if (score < bestD) {
         best = prop;
-        bestD = d;
+        bestD = score;
       }
     }
     return best;

@@ -36,6 +36,7 @@ describe('TrainingYardScene: free top-down movement (Phase 2)', () => {
 
   it('walks right at top speed and stops smoothly when released', async () => {
     const { intents, scene, run, scenes } = await setup();
+    scene.respawnDummy({ x: 29, y: 19 }); // out of sight range: the fighter faces the way it moves
     const x0 = scene.player.x;
     intents.setMove('test', { x: 1, y: 0 });
     run(1);
@@ -50,6 +51,7 @@ describe('TrainingYardScene: free top-down movement (Phase 2)', () => {
 
   it('moves front/back (up/down the screen) and diagonals at no more than top speed', async () => {
     const { intents, scene, run, scenes } = await setup();
+    scene.respawnDummy({ x: 29, y: 19 }); // out of sight range: the fighter faces the way it moves
     const y0 = scene.player.y;
     intents.setMove('test', { x: 0, y: -1 });
     run(0.5);

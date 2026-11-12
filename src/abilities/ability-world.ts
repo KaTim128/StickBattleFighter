@@ -1,9 +1,9 @@
 import {
   type AbilityDef,
-  beamRampFactor,
   type AbilityPayload,
   type BuffEffect,
   type Burn,
+  beamRampFactor,
   type MagicLook,
   payloadAt,
   type SummonSpec,

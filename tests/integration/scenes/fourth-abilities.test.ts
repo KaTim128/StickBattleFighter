@@ -174,3 +174,44 @@ describe('fight intro lock', () => {
     scenes.clear();
   });
 });
+
+/** Owner, 12/11/2026: the player faces a visible opponent at all times, whichever way it moves. */
+describe('target lock facing', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
+  it('faces the opponent while walking away or sideways; free facing out of range or when blinded', async () => {
+    const { intents, scene, scenes, run } = await setup('inferno', { x: 14, y: 10 }, { x: 18, y: 10 });
+    // Walking away (left) from an opponent on the right: still facing right.
+    intents.setMove('t', { x: -1, y: 0 });
+    run(0.5);
+    expect(scene.player.x).toBeLessThan(13.5); // moving freely
+    expect(scene.playerFighter.aim.x).toBeGreaterThan(0.9); // but facing the opponent
+    // Sideways: still facing it.
+    intents.setMove('t', { x: 0, y: 1 });
+    run(0.4);
+    const p = scene.playerFighter;
+    const d = scene.dummyFighter;
+    const to = { x: d.x - p.x, y: d.y - p.y };
+    const len = Math.hypot(to.x, to.y);
+    expect(p.aim.x * (to.x / len) + p.aim.y * (to.y / len)).toBeGreaterThan(0.98);
+    // Blinded: it cannot see, so it faces the way it moves.
+    p.combatant.blind(2);
+    intents.setMove('t', { x: -1, y: 0 });
+    run(0.3);
+    expect(p.aim.x).toBeLessThan(-0.9);
+    intents.setMove('t', { x: 0, y: 0 });
+    run(2); // the blindness wears off
+    // Sight back: locked again.
+    run(0.1);
+    expect(p.aim.x).toBeGreaterThan(0.9);
+    // Opponent out of sight range: free again.
+    scene.respawnDummy({ x: 29, y: 19 });
+    intents.setMove('t', { x: -1, y: 0 });
+    run(0.3);
+    expect(p.aim.x).toBeLessThan(-0.9);
+    intents.setMove('t', { x: 0, y: 0 });
+    scenes.clear();
+  });
+});

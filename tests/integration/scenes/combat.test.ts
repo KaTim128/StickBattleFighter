@@ -252,7 +252,7 @@ describe('Phase 5 combat in the arena', () => {
 
   it('dodge always steps straight back from the facing, ignoring movement input, with the same distance every time (owner, 12/11/2026)', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup();
-    scene.respawnDummy({ x: 3, y: 3 }); // out of the way
+    scene.respawnDummy({ x: 29, y: 19 }); // out of sight range, so the fighter faces the way it moves
     intents.setMove('t', { x: 1, y: 0 }); // face +x
     run(0.3);
     intents.setMove('t', { x: 0, y: 0 });

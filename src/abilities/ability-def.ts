@@ -203,7 +203,12 @@ export interface BeamDelivery {
    * tick on them is multiplied by `startFactor`, growing by `perS` each further second up to
    * `maxFactor`. Losing contact for a single tick resets it.
    */
-  readonly ramp?: { readonly afterS: number; readonly startFactor: number; readonly perS: number; readonly maxFactor: number };
+  readonly ramp?: {
+    readonly afterS: number;
+    readonly startFactor: number;
+    readonly perS: number;
+    readonly maxFactor: number;
+  };
 }
 
 /** The damage factor a beam's build-up gives after `contactS` of unbroken contact. */
