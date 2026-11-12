@@ -107,7 +107,9 @@ export const HEAVYWEIGHT_STANCE = {
   rearFootX: -0.4,
   pelvisM: 0.725,
   lean: -14,
-  head: 17,
+  // Owner, 12/11/2026: "looking upwards constantly": the head now only partly offsets the lean, so
+  // it sits on the spine's line and faces forward, never thrown back.
+  head: 9,
   breathHz: 0.55,
   breathM: 0.012,
   guardLow: 0.45,
@@ -331,7 +333,7 @@ function heavyWalkPose(phase: number, bones: BoneLengths, k = 1): Pose {
     lift: 0.04,
     lean: -10,
     sway: 3.5,
-    head: 12,
+    head: 6,
     arms: { lead: { x: 0.2, y: 0.36 }, rear: { x: 0.1, y: 0.38 }, swingX: 0.13, swingY: 0.05 },
   });
 }
@@ -464,7 +466,7 @@ const HEAVY_RUN: RunStyle = {
   swingLiftM: 0.26,
   lean: -16,
   drive: 3,
-  head: 13,
+  head: 9,
   pumpFront: { shoulder: 52, elbow: 112 },
   pumpBack: { shoulder: -30, elbow: 96 },
 };
@@ -479,7 +481,7 @@ const HEAVY_SPRINT: RunStyle = {
   swingLiftM: 0.32,
   lean: -21,
   drive: 4,
-  head: 16,
+  head: 13,
   pumpFront: { shoulder: 62, elbow: 108 },
   pumpBack: { shoulder: -42, elbow: 92 },
 };

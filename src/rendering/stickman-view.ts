@@ -224,7 +224,7 @@ export class StickmanView {
     const muscled = this.bodyStyle === 'muscle';
     const robed = this.bodyStyle === 'robe';
     const bony = this.bodyStyle === 'bones';
-    limbs.forEach(([pts, rawColour, profile], i) => {
+    const drawPart = ([pts, rawColour, profile]: (typeof limbs)[number], i: number): void => {
       if (bony) {
         // A skeleton (owner, 12/11/2026): bare bones with knobbly joints and a ribcage.
         this.boneDetail(g, pts, w, rawColour, toward(rawColour, outline, 0.7), i);
@@ -268,10 +268,22 @@ export class StickmanView {
         toward(FLAME.core, flashColour, flash),
         Math.min(1, pulse),
       );
-    });
+    };
+    // Braxon (owner, 12/11/2026: "fix the underlying model structure, joints and rigging"): both
+    // thighs root into the pelvis, so for a muscle body both legs are drawn first and the torso's
+    // pelvis (hips and seat, in the pants) sits over their roots as one connected structure. The
+    // head sits on the body's centre line, behind the near arm, so it never pokes out in front of it.
+    const headBehindArm = muscled && this.head === 'brute';
+    for (const i of headBehindArm ? [0, 1, 3, 2] : [0, 1, 2, 3, 4]) drawPart(limbs[i]!, i);
+    if (headBehindArm) {
+      this.bruteHead(g, s, limb, toward(limb, outline, 0.68), o);
+      drawPart(limbs[4]!, 4);
+    }
     if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
     this.drawStatus(s, t);
-    if (flame > 0.01) {
+    if (headBehindArm) {
+      // Head already drawn, behind the near arm.
+    } else if (flame > 0.01) {
       // Dodge: the body becomes a small, quick streak of flame at chest height (owner: smaller, no grey).
       this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
     } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
@@ -923,10 +935,13 @@ export class StickmanView {
       // A bodybuilder's V-taper (owner, 12/11/2026): a tight waist flaring into a barrel chest far
       // wider than it, a trapezius hump and a thick neck, all one shape; pants over the hips.
       const pants = this.look.pants;
-      mass(pelvis, chest, w * 1.85, 0.0, 0.38, 0, pants ?? colour);
-      mass(pelvis, chest, w * 2.15, 0.34, 0.62, w * 0.05);
-      mass(pelvis, chest, w * 3.7, 0.56, 1.0, w * 0.1);
-      mass(chest, neck, w * 2.2, 0, 0.75);
+      // The pelvis: a solid block of hips and seat that both thighs root into (drawn over their
+      // tops), flowing up through a thick, tapered waist (no pinch) into the barrel chest.
+      ball(pelvis.x, pelvis.y, w * 1.25, pants ?? colour);
+      mass(pelvis, chest, w * 2.55, 0.0, 0.36, 0, pants ?? colour);
+      mass(pelvis, chest, w * 2.45, 0.32, 0.6, w * 0.05);
+      mass(pelvis, chest, w * 3.5, 0.55, 1.0, w * 0.1);
+      mass(chest, neck, w * 1.9, 0, 0.7);
       paint();
       // (The pants' own edge marks the waist: no belt or seam line.)
       // Muscle definition is shaded, not drawn (owner, 12/11/2026: "the abs look like they're drawn
@@ -1040,8 +1055,10 @@ export class StickmanView {
       .stroke({ width: o * 1.4, color: outline });
     // Pale rim light on the back of the skull, a shadow under the jaw.
     // (Each arc starts with its own moveTo, or Pixi joins it to the last point drawn with a line.)
+    // The shading turns with the head, so a forward tilt reads as looking ahead, never up.
+    const tilt = Math.atan2(s.head.x - s.neck.x, s.neck.y - s.head.y);
     const arcAt = (rr: number, a0: number, a1: number) =>
-      g.moveTo(hx + Math.cos(a0) * rr, hy + Math.sin(a0) * rr).arc(hx, hy, rr, a0, a1);
+      g.moveTo(hx + Math.cos(a0 + tilt) * rr, hy + Math.sin(a0 + tilt) * rr).arc(hx, hy, rr, a0 + tilt, a1 + tilt);
     arcAt(r * 0.82, Math.PI * 1.05, Math.PI * 1.55).stroke({ width: r * 0.14, color: BRUTE.rim, alpha: 0.55 });
     arcAt(r * 0.8, Math.PI * 0.2, Math.PI * 0.75).stroke({
       width: r * 0.16,

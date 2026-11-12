@@ -50,6 +50,8 @@ import type { ClashHudState } from './scenes/scene-clash';
 
 /** Read-only hook used by the browser tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
+  /** Screen position (CSS pixels) of a world point, for screenshots and tests. */
+  screenOf?: (x: number, y: number, z?: number) => { x: number; y: number } | null;
   ready: boolean;
   scene: string | null;
   physicsSteps: number;
@@ -291,6 +293,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       return [out[0] ?? 0, out[1] ?? 0, out[2] ?? 0, out[3] ?? 0];
     },
   };
+  if (scene instanceof FightArenaScene) debug.screenOf = (x, y, z = 0) => scene.worldToScreen(x, y, z);
   window.__stickmanDebug = debug;
 
   let physicsSteps = 0;
