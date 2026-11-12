@@ -255,20 +255,59 @@ function gaitPose(
  * with a little chest roll on each step. The guard comes back up the moment
  * the fighter stops (idle stance) or attacks.
  */
-export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
-  if (style === 'heavyweight') return heavyWalkPose(phase, bones);
+export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer', strideM = WALK_STRIDE_M): Pose {
+  // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
+  const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
+  if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  // A PROPER WALK (owner, 12/11/2026: "a proper walking animation rather than a slowed down
+  // running animation ... natural alternating arm and leg movement, with straighter knees and a
+  // more upright posture"): hips high over nearly straight legs, the chest upright, the head level,
+  // one foot always on the floor (low lift, no flight), and loose, nearly straight arms swinging
+  // from the shoulders opposite the legs.
+  const legs = bones.thigh + bones.shin;
+  const arm = bones.upperArm + bones.foreArm;
   return gaitPose(phase, bones, {
-    pelvisM: 0.735,
-    bob: 0.02,
-    leadX: 0.03,
-    rearX: -0.03,
-    reach: 0.26,
-    lift: 0.11,
-    lean: -3,
-    sway: 2.5,
-    head: 2,
-    arms: { lead: { x: 0.13, y: 0.43 }, rear: { x: 0.09, y: 0.44 }, swingX: 0.18, swingY: 0.06 },
+    pelvisM: legs * 0.94,
+    bob: 0.015,
+    leadX: 0.02,
+    rearX: -0.02,
+    reach: 0.25 * k,
+    lift: 0.07,
+    lean: -1,
+    sway: 1.5,
+    head: 0,
+    arms: {
+      lead: { x: 0.05, y: arm * 0.86 },
+      rear: { x: 0.03, y: arm * 0.86 },
+      swingX: 0.17 * k,
+      swingY: 0.03,
+    },
   });
+}
+
+/**
+ * RELAXED STANDING IDLE (owner, 12/11/2026: "The fighting stance must not be the default idle
+ * animation ... After 3 seconds without fighting, automatically transition into the relaxed idle
+ * state"): standing tall on straight legs, feet about hip width, shoulders down, arms hanging
+ * loosely at the sides with a slight bend, and a slow breath with a gentle weight shift. The mage
+ * keeps his staff stance (already a calm standing pose). The heavyweight stands wide with heavy
+ * arms hanging a little out from his body.
+ */
+export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'mage') return idlePose(timeS, bones, style);
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.3);
+  const shift = Math.sin(timeS * TAU * 0.11);
+  const legs = bones.thigh + bones.shin;
+  const arm = bones.upperArm + bones.foreArm;
+  const heavy = style === 'heavyweight';
+  return {
+    lean: deg((heavy ? -3 : 0) + breath * 1.2),
+    head: deg(heavy ? 4 : 1),
+    armFront: armIk(heavy ? 0.1 : 0.05, arm * (heavy ? 0.88 : 0.93) - breath * 0.01, bones.upperArm, bones.foreArm),
+    armBack: armIk(heavy ? 0.04 : 0.0, arm * (heavy ? 0.88 : 0.93) - breath * 0.01, bones.upperArm, bones.foreArm),
+    legFront: legIk((heavy ? 0.15 : 0.1) + shift * 0.01, legs * 0.975, bones.thigh, bones.shin),
+    legBack: legIk((heavy ? -0.16 : -0.11) + shift * 0.01, legs * 0.975, bones.thigh, bones.shin),
+  };
 }
 
 /**
@@ -279,7 +318,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
  * the weight rolling side to side with each step, and clenched fists swinging firmly and
  * compactly opposite the legs, carried high and wide like a guard that never fully drops.
  */
-function heavyWalkPose(phase: number, bones: BoneLengths): Pose {
+function heavyWalkPose(phase: number, bones: BoneLengths, k = 1): Pose {
   // Owner, 12/11/2026: "reducing the excessive knee bending ... straighter legs": the hips ride
   // close to full leg length (0.79 m for Rampage), so the planted leg is nearly straight.
   return gaitPose(phase, bones, {
@@ -288,7 +327,7 @@ function heavyWalkPose(phase: number, bones: BoneLengths): Pose {
     plant: 0.01,
     leadX: 0.04,
     rearX: -0.05,
-    reach: 0.2,
+    reach: 0.2 * k,
     lift: 0.04,
     lean: -10,
     sway: 3.5,
@@ -481,6 +520,14 @@ export function sprintAmount(speedMps: number): number {
 export function strideAt(speedMps: number): number {
   const run = WALK_STRIDE_M + (RUN_STRIDE_M - WALK_STRIDE_M) * runAmount(speedMps);
   return run + (SPRINT_STRIDE_M - RUN_STRIDE_M) * sprintAmount(speedMps);
+}
+
+/** A walk never steps faster than this many cycles a second (two steps each): a brisk pace. */
+export const WALK_MAX_CADENCE_HZ = 2.1;
+
+/** A walking stride at this speed: longer at a brisk pace, so the feet keep up without scurrying. */
+export function walkStrideAt(speedMps: number): number {
+  return Math.max(WALK_STRIDE_M, speedMps / WALK_MAX_CADENCE_HZ);
 }
 
 /**

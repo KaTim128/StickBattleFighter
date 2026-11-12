@@ -206,6 +206,8 @@ const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
 /** How fast WASD slides the ultimate's landing spot while aiming, m/s. */
 /** Target speed under WASD or the joystick when an ability's data sets none (Inferno's leap, owner 11/11/2026). */
 const DEFAULT_AIM_SPEED_MPS = 7;
+/** Standing relaxed after this long without fighting (owner, 12/11/2026). */
+const RELAX_AFTER_S = 3;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
 const HEAD_TOP_M = 1.75;
 /** After a teleport the body fades back in over this long, seconds. */
@@ -2160,12 +2162,27 @@ export class FightArenaScene implements ArenaScene {
     const v = f.body?.linvel() ?? { x: 0, y: 0 };
     const down = c.state === 'knockdown' || c.state === 'ko';
 
+    // Out of the fight for 3 s (owner, 12/11/2026): no attack, cast, block, dodge, aim or hit.
+    const fighting =
+      f.combo.attack !== null ||
+      f.scriptedAttack !== null ||
+      f.caster?.cast != null ||
+      c.state !== 'free' ||
+      c.hp < f.calmHp ||
+      f.carrying !== null ||
+      (f === this.playerFighter && this.targeting !== null);
+    f.calmS = fighting ? 0 : f.calmS + frameDtS;
+    f.calmHp = c.hp;
+    const charging = f.driveVelocity !== null && f.caster?.cast?.def.delivery.type === 'dash';
     let pose = f.animator.update(frameDtS, {
       speedMps: down || c.state === 'stunned' || c.state === 'gettingUp' ? 0 : Math.hypot(v.x, v.y),
       maxSpeedMps: f.def.movement.maxSpeedMps,
       heightM,
       peakHeightM: this.peakHop(f),
       verticalSpeedMps: f.hop.verticalSpeedMps,
+      // Walk unless sprinting (Shift) or driven by a charge (owner, 12/11/2026).
+      sprinting: f.sprinting || charging,
+      relaxed: f.calmS >= RELAX_AFTER_S,
     });
     const attack = f.combo.attack;
     if (attack) pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);

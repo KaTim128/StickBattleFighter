@@ -107,3 +107,34 @@ describe('fourth abilities (R)', () => {
     scenes.clear();
   });
 });
+
+/** Owner, 12/11/2026: the fighting stance only while fighting; after 3 s calm, a relaxed stand. */
+describe('relaxed idle in a fight', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
+  it('relaxes after 3 s without fighting, takes the guard at once on an attack, and walks without Shift', async () => {
+    const { intents, scene, scenes, run } = await setup('inferno', { x: 10, y: 10 }, { x: 22, y: 18 });
+    const w = () => scene.playerFighter.animator.weights;
+    run(2.5);
+    expect(w().relax).toBeLessThan(0.05); // still in the stance
+    run(2);
+    expect(w().relax).toBeGreaterThan(0.8);
+    intents.pressMelee();
+    run(0.3);
+    expect(w().relax).toBeLessThan(0.1);
+    // Walking (no Shift) never blends into the run; Shift does.
+    run(0.6);
+    intents.setMove('t', { x: 1, y: 0 });
+    run(1);
+    expect(w().walk).toBeGreaterThan(0.9);
+    expect(w().run).toBeLessThan(0.05);
+    intents.sprint = true;
+    run(1);
+    expect(w().run).toBeGreaterThan(0.9);
+    intents.sprint = false;
+    intents.setMove('t', { x: 0, y: 0 });
+    scenes.clear();
+  });
+});

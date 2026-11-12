@@ -35,6 +35,10 @@ export class FighterEntity {
   driveVelocity: { x: number; y: number } | null = null;
   /** Height off the floor during a leap, metres. */
   abilityLift = 0;
+  /** Seconds since this fighter last fought (attacked, cast, blocked, dodged or was hit): presentation only. */
+  calmS = 0;
+  /** Health last frame, to notice being hit. */
+  calmHp = Number.NaN;
   /** Burn damage not yet shown as a floating number. */
   burnShown = 0;
   /** An attack animation played outside the combo (the Punch Clash finisher). */

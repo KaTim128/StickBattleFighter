@@ -4,12 +4,15 @@ import {
   type IdleStyle,
   idlePose,
   landingPose,
+  RUN_FULL_MPS,
+  relaxedPose,
   runAmount,
   runPose,
   sprintAmount,
   sprintPose,
   strideAt,
   walkPose,
+  walkStrideAt,
 } from './greybox-motion';
 import { type BoneLengths, blendPose, type Pose } from './skeleton';
 
@@ -27,6 +30,13 @@ export interface MotionInput {
   peakHeightM: number;
   /** Upward speed of the hop, m/s (positive rising, negative falling). */
   verticalSpeedMps?: number;
+  /**
+   * Running is only for sprinting (owner, 12/11/2026: "Running should only activate when Shift is
+   * held"); otherwise the fighter walks at any speed. Absent = the old speed-based blend.
+   */
+  sprinting?: boolean;
+  /** Out of the fight long enough (3 s) to stand relaxed instead of in the fighting stance. */
+  relaxed?: boolean;
 }
 
 /**
@@ -41,6 +51,7 @@ export class StickmanAnimator {
   private walkWeight = 0;
   private runWeight = 0;
   private sprintWeight = 0;
+  private relaxWeight = 0;
   private airWeight = 0;
   private riseWeight = 0;
   private landWeight = 0;
@@ -58,14 +69,22 @@ export class StickmanAnimator {
   update(dtS: number, motion: MotionInput): Pose {
     this.timeS += dtS;
     const before = this.walkPhase;
-    this.walkPhase = (this.walkPhase + (motion.speedMps * dtS) / strideAt(motion.speedMps)) % 1;
+    const runTarget = motion.sprinting === undefined ? runAmount(motion.speedMps) : motion.sprinting ? 1 : 0;
+    // The walk and the run keep their own strides: blend the cycle length by how much it runs.
+    const stride =
+      walkStrideAt(motion.speedMps) +
+      (strideAt(Math.max(motion.speedMps, RUN_FULL_MPS)) - walkStrideAt(motion.speedMps)) * this.runWeight;
+    this.walkPhase = (this.walkPhase + (motion.speedMps * dtS) / stride) % 1;
     // A footfall at the start and middle of each cycle (footstep sounds).
     if (motion.speedMps > 0.5 && (this.walkPhase < before || (before < 0.5 && this.walkPhase >= 0.5))) this.footfalls++;
 
     // Start stepping almost at once (responsive), and ease into the run as speed builds.
     const walkTarget = Math.min(1, motion.speedMps / (motion.maxSpeedMps * 0.2));
     this.walkWeight += (walkTarget - this.walkWeight) * smoothing(16, dtS);
-    this.runWeight += (runAmount(motion.speedMps) - this.runWeight) * smoothing(10, dtS);
+    this.runWeight += (runTarget - this.runWeight) * smoothing(10, dtS);
+    // Settling into the relaxed stand is slow and calm; snapping back to the guard is quick.
+    const relaxTarget = motion.relaxed ? 1 : 0;
+    this.relaxWeight += (relaxTarget - this.relaxWeight) * smoothing(relaxTarget > this.relaxWeight ? 2.5 : 12, dtS);
     this.sprintWeight += (sprintAmount(motion.speedMps) - this.sprintWeight) * smoothing(8, dtS);
     const airTarget = motion.peakHeightM > 0 ? Math.min(1, motion.heightM / (motion.peakHeightM * 0.4)) : 0;
     this.airWeight += (airTarget - this.airWeight) * smoothing(18, dtS);
@@ -82,8 +101,14 @@ export class StickmanAnimator {
       sprintPose(this.walkPhase, this.bones, this.idleStyle),
       this.sprintWeight,
     );
-    const gait = blendPose(walkPose(this.walkPhase, this.bones, this.idleStyle), running, this.runWeight);
-    const stance = blendPose(idlePose(this.timeS, this.bones, this.idleStyle), gait, this.walkWeight);
+    const walking = walkPose(this.walkPhase, this.bones, this.idleStyle, walkStrideAt(motion.speedMps));
+    const gait = blendPose(walking, running, this.runWeight);
+    const standing = blendPose(
+      idlePose(this.timeS, this.bones, this.idleStyle),
+      relaxedPose(this.timeS, this.bones, this.idleStyle),
+      this.relaxWeight,
+    );
+    const stance = blendPose(standing, gait, this.walkWeight);
     const grounded = blendPose(stance, landingPose(this.bones), this.landWeight * 0.8);
     const air = blendPose(AIR_FALL_POSE, AIR_RISE_POSE, this.riseWeight);
     return blendPose(grounded, air, this.airWeight);
@@ -96,8 +121,9 @@ export class StickmanAnimator {
     return n;
   }
 
-  get weights(): { walk: number; run: number; sprint: number; air: number; rise: number; land: number } {
+  get weights(): { walk: number; run: number; sprint: number; air: number; rise: number; land: number; relax: number } {
     return {
+      relax: this.relaxWeight,
       walk: this.walkWeight,
       run: this.runWeight,
       sprint: this.sprintWeight,
