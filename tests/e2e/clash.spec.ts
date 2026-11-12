@@ -24,14 +24,21 @@ test('Punch Clash: mashing J fills the power bar live; the winner breaks through
   // Mash until the clash ends (about 4.4 s).
   const end = Date.now() + 9000;
   let sawPower = false;
+  let sawBanner = false;
+  const bannerShown = () => page.locator('.clash-banner').isVisible();
   while (Date.now() < end) {
     await tapAttack(page);
     const s = await hook(page);
     if (s.clash && s.clash.powerA > 3) sawPower = true;
-    if (!s.clash && sawPower) break;
+    if (!s.clash && sawPower) {
+      sawBanner = await bannerShown();
+      break;
+    }
   }
   expect(sawPower).toBe(true);
-  await expect(page.locator('.clash-banner')).toBeVisible();
+  // The result banner shows for 1.6 s of game time: a slow CI browser can pass that before the
+  // check, so catch it the moment the clash ends, or poll for it if it has not appeared yet.
+  if (!sawBanner) await expect(page.locator('.clash-banner')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('clash-result.png') });
   const sounds = (await hook(page)).sounds; // the last 16 played
   expect(sounds).toContain('block'); // exchange beats

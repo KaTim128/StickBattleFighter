@@ -30,7 +30,7 @@ import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
-import { renderPortrait } from '../rendering/portraits';
+import { renderPortraits } from '../rendering/portraits';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
 import type { ArenaScene } from './scenes/arena-scene';
@@ -416,21 +416,23 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   });
   if (scene instanceof FightArenaScene && !automated && !params.has('play')) menu.setOpen(true);
   // Portraits are the fighters themselves, drawn by the game's own renderer (owner, 12/11/2026).
-  void (async () => {
+  // All in one GPU read-back, once the page is idle, so the first moments of a fight never stall.
+  const drawPortraits = async (): Promise<void> => {
     try {
-      // The fight's own portraits first (seen at once), then the menu's.
-      if (scene instanceof FightArenaScene) {
-        topHud.setPortraits(
-          await renderPortrait(app, scene.playerFighter.def),
-          await renderPortrait(app, scene.dummyFighter.def),
-        );
-      }
-      for (const f of menuFighters())
-        menu.setPortrait(f.id, await renderPortrait(app, resolveCharacter(f.id, BUILT_IN_LIBRARY)));
+      const fighters = menuFighters();
+      const defs = fighters.map((f) => resolveCharacter(f.id, BUILT_IN_LIBRARY));
+      if (scene instanceof FightArenaScene) defs.push(scene.playerFighter.def, scene.dummyFighter.def);
+      const urls = await renderPortraits(app, defs);
+      fighters.forEach((f, i) => {
+        menu.setPortrait(f.id, urls[i]!);
+      });
+      if (scene instanceof FightArenaScene) topHud.setPortraits(urls[fighters.length]!, urls[fighters.length + 1]!);
     } catch (error) {
       console.warn('[portraits] could not render fighter portraits', error);
     }
-  })();
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(() => void drawPortraits(), { timeout: 1500 });
+  else setTimeout(() => void drawPortraits(), 300);
   if (touchDevice) {
     // After choosing on the menu the page reloads, which leaves fullscreen: the first tap restores it.
     const once = (): void => {
