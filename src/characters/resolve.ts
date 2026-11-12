@@ -254,6 +254,7 @@ export function resolveCharacter(id: string, lib: CharacterLibrary): FighterDef 
       outline: colour(def.rig.outline),
       limbWidthM: def.rig.limbWidthM,
       outlineWidthM: def.rig.outlineWidthM,
+      ...(def.rig.pants ? { pants: colour(def.rig.pants) } : {}),
     },
     stats: {
       maxHp: stats.maxHp,

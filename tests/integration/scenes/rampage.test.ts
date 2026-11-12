@@ -43,12 +43,13 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     await initPhysics();
   });
 
-  it("is twice Inferno's size, bulkier and wider, and his Rampage Charge winds up in 0.5 s (owner, 12/11/2026)", async () => {
+  it('is drawn bigger than Inferno (1.6x), in pants, bulkier and wider, and his Rampage Charge winds up in 0.5 s (owner, 12/11/2026)', async () => {
     const r = await setup('rampage', { x: 5, y: 5 });
     const i = await setup('inferno', { x: 5, y: 5 });
     const rd = r.scene.playerFighter.def;
     const id = i.scene.playerFighter.def;
-    expect(rd.sizeScale).toBe(2);
+    expect(rd.sizeScale).toBe(1.6); // owner 12/11/2026: "a little smaller" than 2x
+    expect(rd.look.pants).toBeDefined(); // owner 12/11/2026: not fully naked
     expect(id.sizeScale ?? 1).toBe(1);
     expect(rd.body.footRadiusM).toBeGreaterThan(id.body.footRadiusM);
     expect(rd.look.limbWidthM).toBeGreaterThan(id.look.limbWidthM);

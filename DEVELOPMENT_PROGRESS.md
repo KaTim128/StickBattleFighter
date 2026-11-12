@@ -466,7 +466,14 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
   - The throw tests now wait out the lift, because throwing during the lift is no longer allowed.
 - **Evidence:** typecheck 0; `npm test` 311/311; `npm run lint` clean (1 info, in an old mockup); browser screenshots of the redesign, the wind-up, the two-legged run, the impact, and the steered beam.
 
-## Decisions requiring owner attention
+### 12/11/2026: Rampage Buffer smaller and in pants; admin opponent picker (owner requests)
+- **Rampage Buffer:**
+  - Drawn 1.6× Inferno's size (was 2×).
+  - Bodybuilder V-taper: a tighter waist and a wider chest.
+  - Dark fighting pants (`rig.pants`, data) with a belt, folds and bare feet.
+- **Admin editor:** an **Opponent** selector next to "Try in game" opens the draft against any built-in character (`?opponent=`). It exists only in the admin preview; the public menu still pairs you with the training dummy.
+- **Evidence:** typecheck 0; `npm test` passes; screenshots checked in the browser.
+
 
 Full list in spec §21. Still open:
 

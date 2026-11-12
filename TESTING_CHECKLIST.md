@@ -303,6 +303,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Heavier objects take longer to lift; rooted while lifting; no throw until overhead (`throwing.test.ts`)
 - [x] Fire Beam follows the mouse or a swipe while it pours; Inferno stays rooted (`ability-world.test.ts`, `input.test.ts`, browser check)
 - [ ] Real-device check of swipe steering on a phone (manual)
+- [x] Rampage Buffer at 1.6x, bodybuilder V-taper, wearing pants (browser check, `rampage.test.ts`)
+- [x] Admin editor: the Opponent selector opens Try in game against the chosen character (browser check)
 
 ## 13a. HUD buttons (owner, 12/11/2026)
 - [x] Ability bar and touch ability buttons show each ability's picture; the name appears on hover

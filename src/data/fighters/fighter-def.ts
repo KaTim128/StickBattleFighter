@@ -38,6 +38,7 @@ export interface FighterDef {
     readonly outline: number;
     readonly limbWidthM: number;
     readonly outlineWidthM: number;
+    readonly pants?: number;
   };
   readonly stats: CombatStats;
   readonly multipliers: StatsProfile['multipliers'];

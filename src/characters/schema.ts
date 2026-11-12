@@ -360,6 +360,8 @@ export interface CharacterDefinition {
      * of Inferno"). Scales the whole figure; collision size and reach stay in the stats and moves.
      */
     readonly scale?: number;
+    /** Pants colour for muscle bodies (owner, 12/11/2026: "should at least have pants on"). */
+    readonly pants?: string;
   };
   readonly capabilities: Partial<Capabilities>;
   readonly unlock: UnlockProfile;

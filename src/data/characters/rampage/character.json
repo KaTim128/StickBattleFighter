@@ -29,7 +29,8 @@
     "outline": "#141418",
     "limbWidthM": 0.13,
     "outlineWidthM": 0.04,
-    "scale": 2
+    "scale": 1.6,
+    "pants": "#2b2f3c"
   },
   "capabilities": {
     "canWalk": true,

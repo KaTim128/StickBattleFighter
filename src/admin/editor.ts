@@ -704,6 +704,22 @@ $('export').onclick = () => {
   a.click();
   URL.revokeObjectURL(a.href);
 };
+// Admin preview only (owner, 12/11/2026): pick who the draft fights. The public menu always pairs
+// the player with the training dummy; this choice exists only here.
+const opponentSelect = $('try-opponent') as HTMLSelectElement;
+const fillOpponents = (): void => {
+  const keep = opponentSelect.value || DEFAULT_CAST.opponent;
+  opponentSelect.replaceChildren();
+  for (const [id, def] of Object.entries(library().characters)) {
+    const o = document.createElement('option');
+    o.value = id;
+    o.textContent = def.displayName;
+    opponentSelect.appendChild(o);
+  }
+  opponentSelect.value = keep;
+};
+fillOpponents();
+opponentSelect.onfocus = fillOpponents; // new or renamed characters show up
 $('try').onclick = () => {
   if (!renderValidation()) return;
   const b = bundle();
@@ -711,7 +727,8 @@ $('try').onclick = () => {
     characterId: selected,
     entries: { characters: [b.character], ...Object.fromEntries(Object.entries(b.profiles).map(([k, v]) => [k, [v]])) },
   });
-  window.open(`${import.meta.env.BASE_URL}?scene=training-yard&character=draft`, '_blank');
+  const opponent = encodeURIComponent(opponentSelect.value || DEFAULT_CAST.opponent);
+  window.open(`${import.meta.env.BASE_URL}?scene=training-yard&character=draft&opponent=${opponent}`, '_blank');
 };
 
 const stateSelect = $('preview-state') as HTMLSelectElement;

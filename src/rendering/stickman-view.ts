@@ -9,6 +9,8 @@ export interface StickmanLook {
   readonly outline: number;
   readonly limbWidthM: number;
   readonly outlineWidthM: number;
+  /** Pants over the hips and legs (muscle bodies); absent = bare legs. */
+  readonly pants?: number;
 }
 
 /**
@@ -443,13 +445,20 @@ export class StickmanView {
     if (part === 2) {
       const [pelvis, chest, neck] = pts;
       if (!pelvis || !chest || !neck) return;
-      // V-taper: narrow hips flowing into a barrel chest far wider than the waist, a trapezius hump
-      // and a thick neck, all one shape.
-      mass(pelvis, chest, w * 2.2, 0.0, 0.5);
-      mass(pelvis, chest, w * 3.0, 0.32, 0.72, w * 0.15);
-      mass(pelvis, chest, w * 4.2, 0.58, 1.0, w * 0.1);
+      // A bodybuilder's V-taper (owner, 12/11/2026): a tight waist flaring into a barrel chest far
+      // wider than it, a trapezius hump and a thick neck, all one shape; pants over the hips.
+      const pants = this.look.pants;
+      mass(pelvis, chest, w * 2.05, 0.0, 0.38, 0, pants ?? colour);
+      mass(pelvis, chest, w * 2.5, 0.34, 0.62, w * 0.1);
+      mass(pelvis, chest, w * 4.3, 0.56, 1.0, w * 0.1);
       mass(chest, neck, w * 2.6, 0, 0.75);
       paint();
+      if (pants !== undefined) {
+        // Waistband: a dark belt where the pants meet the abs.
+        seg(pelvis, chest, w * 0.42, outline, 1, 0.33, 0.33, 0);
+        seg(pelvis, chest, w * 2.15, outline, 1, 0.33, 0.4, 0);
+        seg(pelvis, chest, w * 1.95, toward(pants, 0x000000, 0.45), 1, 0.34, 0.39, 0);
+      }
       // Pecs: a lit slab on the chest's front with a deep line under it.
       seg(pelvis, chest, w * 1.2, lit, 0.55, 0.76, 0.95, w * 1.1);
       line(at(pelvis, chest, 0.7, w * 0.3), at(pelvis, chest, 0.66, w * 1.95), o * 0.8, outline);
@@ -484,18 +493,30 @@ export class StickmanView {
       line({ x: end.x - w * 0.55, y: end.y - w * 0.12 }, { x: end.x + w * 0.55, y: end.y - w * 0.02 }, o * 0.6, shade);
       return;
     }
-    // Legs: thick quads and hamstrings, a hard knee, a heavy calf and a broad foot.
-    mass(root, mid, w * 2.15, 0.06, 0.6, w * 0.15);
-    mass(root, mid, w * 1.7, 0.5, 0.95);
-    mass(mid, end, w * 1.7, 0.08, 0.5, -w * 0.2);
-    mass(mid, end, w * 1.2, 0.45, 0.88);
+    // Legs: thick quads and hamstrings, a hard knee, a heavy calf and a broad foot; in loose fighting
+    // pants (owner, 12/11/2026) when the fighter has them, ending just above the foot.
+    const pants = this.look.pants;
+    const cloth = pants ?? colour;
+    mass(root, mid, w * 2.2, 0.0, 0.6, w * 0.15, cloth);
+    mass(root, mid, w * 1.85, 0.5, 1.0, 0, cloth);
+    mass(mid, end, w * 1.75, 0.0, 0.55, -w * 0.15, cloth);
+    mass(mid, end, w * 1.45, 0.5, pants !== undefined ? 0.78 : 0.88, 0, cloth);
     paint();
     g.ellipse(end.x + w * 0.45, end.y, w * 1.05, w * 0.5)
       .fill(toward(colour, 0x000000, 0.18))
       .stroke({ width: o, color: outline });
-    seg(root, mid, w * 0.38, lit, 0.55, 0.14, 0.62, w * 0.85);
-    line(at(root, mid, 0.25, w * 0.15), at(root, mid, 0.72, w * 0.35), o * 0.55, shade, 0.9); // quad split
-    seg(mid, end, w * 0.3, shade, 0.5, 0.15, 0.55, w * 0.55);
+    if (pants !== undefined) {
+      const clothLit = toward(pants, 0xffffff, 0.16);
+      const fold = toward(pants, 0x000000, 0.4);
+      seg(root, mid, w * 0.32, clothLit, 0.6, 0.12, 0.62, w * 0.75);
+      line(at(root, mid, 0.3, w * 0.5), at(root, mid, 0.55, -w * 0.2), o * 0.5, fold, 0.9); // folds
+      line(at(mid, end, 0.25, w * 0.4), at(mid, end, 0.45, -w * 0.3), o * 0.5, fold, 0.9);
+      line(at(mid, end, 0.05, -w * 0.5), at(mid, end, 0.05, w * 0.6), o * 0.5, fold, 0.7); // behind the knee
+    } else {
+      seg(root, mid, w * 0.38, lit, 0.55, 0.14, 0.62, w * 0.85);
+      line(at(root, mid, 0.25, w * 0.15), at(root, mid, 0.72, w * 0.35), o * 0.55, shade, 0.9); // quad split
+      seg(mid, end, w * 0.3, shade, 0.5, 0.15, 0.55, w * 0.55);
+    }
   }
 
   /**
