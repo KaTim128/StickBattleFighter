@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 type DebugWindow = Window & { __stickmanDebug?: { musicPlaying: boolean } };
 
-test('battle music (owner, 12/11/2026): silent through READY, then "Steel Rain" loops from FIGHT!', async ({
+test('battle music (owner, 12/11/2026): silent through READY, then the battle track loops from FIGHT!', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'one audio check is enough');
@@ -13,7 +13,7 @@ test('battle music (owner, 12/11/2026): silent through READY, then "Steel Rain" 
   });
   page.on('requestfailed', (req) => problems.push(`requestfailed: ${req.url()}`));
   // Automated browsers skip the music unless asked for (`music=`), like the ambience.
-  await page.goto('/?play&intro&music=steel-rain');
+  await page.goto('/?play&intro&music=japanese-boss');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await page.mouse.click(640, 400); // audio starts on the first input
   const playing = () => page.evaluate(() => (window as DebugWindow).__stickmanDebug!.musicPlaying);

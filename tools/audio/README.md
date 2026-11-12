@@ -5,19 +5,15 @@ Everything is original synthesis in numpy (no samples, no third-party audio); th
 
 | Script | Output |
 |---|---|
-| `battle_music.py` | "Steel Rain", the battle loop (32 bars at 92 BPM, seamless) |
 | `fight_stinger.py` | The READY... FIGHT! stinger (FIGHT lands 1.5 s in) |
 | `synth.py` | Shared instruments, reverb, EQ and mastering |
 
 Re-render and encode (needs Python 3 with numpy, and ffmpeg):
 
 ```sh
-python3 tools/audio/battle_music.py /tmp/battle.wav
-ffmpeg -y -i /tmp/battle.wav -c:a libvorbis -q:a 5 assets/audio/music-battle-steel-rain.ogg
-ffmpeg -y -i /tmp/battle.wav -c:a libmp3lame -b:a 160k assets/audio/music-battle-steel-rain.mp3
 python3 tools/audio/fight_stinger.py /tmp/stinger.wav
 ffmpeg -y -i /tmp/stinger.wav -c:a libvorbis -q:a 6 assets/audio/sfx-fight-stinger.ogg
 ffmpeg -y -i /tmp/stinger.wav -c:a libmp3lame -b:a 192k assets/audio/sfx-fight-stinger.mp3
 ```
 
-If the loop length changes, update `loopS` in `src/data/audio/music.ts`.
+The battle music is not rendered here: it is the owner's supplied track (see `assets/ASSET_REGISTER.md` and `src/data/audio/music.ts` for its loop points).

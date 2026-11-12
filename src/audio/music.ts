@@ -3,8 +3,8 @@ import type { AudioTrackDef } from '../data/audio/music';
 /**
  * Recorded music and stingers (owner, 12/11/2026). Fetches and decodes a track (Ogg Vorbis where the
  * browser plays it, MP3 otherwise) and plays it through the given output:
- * - a loop runs gaplessly on the Web Audio clock. Its loop points come from the track's musical
- *   length, measured from its first sound, so an encoder's leading silence (MP3) never opens a gap;
+ * - a loop runs gaplessly on the Web Audio clock: the intro once, then its loop section forever.
+ *   Times are measured from the first sound, so an encoder's leading silence (MP3) never opens a gap;
  * - a one-shot (the fight stinger) simply plays once.
  * Loading failures are reported once and leave the game silent rather than broken.
  */
@@ -20,15 +20,19 @@ export function leadingSilenceS(samples: Float32Array, sampleRate: number, thres
   return 0;
 }
 
-/** Loop points for a decoded buffer: start at its first sound, run for the musical length. */
+/**
+ * Where to start and loop in a decoded buffer: the track's times are counted from its first sound,
+ * so any encoder padding before it (`leadS`) shifts them all. Never past what was decoded.
+ */
 export function loopPoints(
   durationS: number,
   leadS: number,
-  loopS: number | undefined,
-): { start: number; end: number } {
-  const start = Math.min(leadS, Math.max(0, durationS - 0.01));
-  const end = loopS ? Math.min(durationS, start + loopS) : durationS;
-  return { start, end };
+  loop: AudioTrackDef['loop'],
+): { offset: number; start: number; end: number } {
+  const clamp = (t: number) => Math.min(durationS, Math.max(0, t));
+  const offset = clamp(leadS);
+  if (!loop) return { offset, start: offset, end: durationS };
+  return { offset, start: clamp(leadS + loop.startS), end: clamp(leadS + loop.endS) };
 }
 
 const canPlayType = (type: string): string =>
@@ -106,12 +110,12 @@ export class MusicLoop {
       const lp = loopPoints(
         buffer.duration,
         leadingSilenceS(buffer.getChannelData(0), buffer.sampleRate),
-        this.clip.def.loopS,
+        this.clip.def.loop,
       );
       src.loopStart = lp.start;
       src.loopEnd = lp.end;
       src.connect(gain);
-      src.start(ctx.currentTime, lp.start);
+      src.start(ctx.currentTime, lp.offset); // the intro once, then the loop
       this.source = src;
       this.gain = gain;
       this.applyLevel(this.fadeInS);
