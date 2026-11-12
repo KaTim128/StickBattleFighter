@@ -49,6 +49,7 @@ import { OcclusionFader } from '../../rendering/occlusion-fader';
 import { ISO_C, ISO_T, iso, isoBounds, isoToWorld, screenSideToWorld } from '../../rendering/projection';
 import { tallestPropM } from '../../rendering/prop-view';
 import type { DodgeLook } from '../../rendering/stickman-view';
+import { drawWallDamage } from '../../rendering/wall-damage';
 import {
   AbilityVfx,
   type AuraFx,
@@ -173,22 +174,6 @@ function withoutElements(e: EffectDef): EffectDef {
 }
 
 /** Crack lines drawn over a weakened wall block (deterministic per section, deeper at level 2). */
-function wallCracks(level: number, seed: number): Graphics {
-  const g = new Graphics();
-  const n = level === 2 ? 3 : 1;
-  for (let i = 0; i < n; i++) {
-    let x = ((seed * 37 + i * 53) % 20) / 100 - 0.1;
-    let y = -0.4 - ((seed * 11 + i * 29) % 120) / 100;
-    g.moveTo(x, y);
-    for (let k = 0; k < 4; k++) {
-      x += (((seed + k * 7 + i * 3) % 5) - 2) * 0.04;
-      y += 0.12 + ((seed + k) % 3) * 0.05;
-      g.lineTo(x, y);
-    }
-  }
-  return g.stroke({ width: level === 2 ? 0.025 : 0.018, color: 0x6e6559, alpha: 0.85 });
-}
-
 /** A world point that sits `side` metres beside (x, y) on screen, `z` up: effects on a billboarded fighter. */
 function besideOnScreen(x: number, y: number, side: number, z: number): { x: number; y: number; z: number } {
   const o = screenSideToWorld(side);
@@ -239,7 +224,8 @@ export class FightArenaScene implements ArenaScene {
   /** Breakable interior wall sections (owner, 11/11/2026). */
   walls: BreakableWalls | null = null;
   /** Cracks already drawn per wall section (0, 1 or 2 levels). */
-  private readonly wallCracks = new Map<number, number>();
+  /** Visible damage per breakable wall section (index): how worn and how scorched, and its overlays. */
+  private readonly wallDamage = new Map<number, { damage: number; scorch: number; overlays: Graphics[] }>();
   /** The shared ability framework in this arena (Phase 6). */
   abilities: SceneAbilities | null = null;
   private vfx: AbilityVfx | null = null;
@@ -1522,10 +1508,13 @@ export class FightArenaScene implements ArenaScene {
     }
 
     // Breakable wall sections: every blow chips the section it lands on (owner, 11/11/2026).
+    // Damage builds up on the one section the blow lands on (wall-break power: Inferno's flaming fists
+    // crack stone far faster, owner 12/11/2026).
     const wallHit = this.walls?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
-      damage: a.damage * attacker.def.stats.power,
+      damage: a.damage * attacker.def.stats.power * (attacker.def.objects.wallBreakPower ?? 1),
       direction: { x: dir.x, y: dir.y },
       at: { x: capsule.bx, y: capsule.by },
+      fire: attacker.def.capabilities.usesFireEffects === true,
     });
     if (wallHit && wallHit.hit > 0) connected = true;
 
@@ -1695,12 +1684,32 @@ export class FightArenaScene implements ArenaScene {
         }
       } else {
         this.queueSound('wall-thud', 0.5);
-        this.frameDust.push({ points: puff.slice(0, 3), colour: 0xe6ded2, count: 14 });
-        const level = e.left < 0.33 ? 2 : e.left < 0.66 ? 1 : 0;
-        if (level > (this.wallCracks.get(e.index) ?? 0)) {
-          this.wallCracks.set(e.index, level);
-          for (const n of nodes) n.addChild(wallCracks(level, e.index));
+        // Progressive damage on exactly this section (owner, 12/11/2026): cracks spread, plaster
+        // spalls, the face caves in; fire blackens it and leaves the cracks glowing.
+        let state = this.wallDamage.get(e.index);
+        if (!state) {
+          state = { damage: 0, scorch: 0, overlays: nodes.map((n) => n.addChild(new Graphics())) };
+          this.wallDamage.set(e.index, state);
         }
+        state.damage = 1 - e.left;
+        if (e.fire) state.scorch = Math.min(1, state.scorch + 0.2);
+        for (const g of state.overlays) drawWallDamage(g, { ...state, seed: e.index });
+        // More dust and flying chips the weaker it gets; embers when fire hits it.
+        this.frameDust.push({ points: puff.slice(0, 3), colour: 0xe6ded2, count: 14 + Math.round(state.damage * 30) });
+        if (state.damage > 0.4) {
+          for (let k = 0; k < 2; k++)
+            this.props?.debris.add({
+              position: { x: e.x, y: e.y },
+              halfExtents: { x: 0.03 + k * 0.02, y: 0.025 },
+              velocity: { x: e.dir.x * -1.5 + (k - 0.5), y: e.dir.y * -1.5 + (0.5 - k) },
+              spin: k ? 6 : -6,
+              massKg: 0.3,
+              colour: k ? 0xbfb6a8 : 0xe6ded2,
+              heightM: 1 + k * 0.2,
+              verticalSpeedMps: 1.2,
+            });
+        }
+        if (e.fire) this.frameFlames.push({ points: [{ x: e.x, y: e.y, z: 1.1 }], strength: 0.6 });
       }
     }
   }

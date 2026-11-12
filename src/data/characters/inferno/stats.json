@@ -35,6 +35,7 @@
   "objects": {
     "maxLiftKg": 15,
     "throwPower": 1.1,
-    "ignitesThrown": true
+    "ignitesThrown": true,
+    "wallBreakPower": 3
   }
 }

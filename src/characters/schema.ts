@@ -210,6 +210,11 @@ export interface ObjectHandling {
    * `maxLiftKg` (Rampage's Heavy Throw, owner 12/11/2026). Default false.
    */
   readonly liftsFurniture?: boolean;
+  /**
+   * Multiplies the damage this fighter's blows and abilities do to breakable wall sections
+   * (Inferno, owner 12/11/2026: "significantly better at breaking walls"). Default 1.
+   */
+  readonly wallBreakPower?: number;
 }
 
 export const DEFAULT_OBJECT_HANDLING: ObjectHandling = { maxLiftKg: 15, throwPower: 1, ignitesThrown: false };

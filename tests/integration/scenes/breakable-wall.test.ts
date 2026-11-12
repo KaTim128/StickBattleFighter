@@ -24,7 +24,7 @@ function officeSide(i: number): { x: number; y: number } {
   return n.x < 0 ? n : { x: -n.x, y: -n.y };
 }
 
-async function setup() {
+async function setup(player = 'base-stickman') {
   const c = centreOf(SECTION);
   const n = officeSide(SECTION);
   const intents = new PlayerIntents();
@@ -34,7 +34,7 @@ async function setup() {
     intents,
     () => ({ width: 1280, height: 720 }),
     false,
-    { player: 'base-stickman' },
+    { player },
   );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
@@ -58,7 +58,19 @@ async function setup() {
     }
     run(0.7);
   };
-  return { intents, scene, scenes, run, section, combo, n };
+  /** Any fighter's combo: four presses of the attack button, a beat apart. */
+  const spot = { x: c.x + n.x * 0.75, y: c.y + n.y * 0.75 };
+  const presses = () => {
+    // Back to the same spot each round, the way a player keeps hammering one place.
+    scene.playerFighter.placeAt(spot);
+    scene.playerFighter.faceToward(-n.x, -n.y);
+    for (let k = 0; k < 4; k++) {
+      intents.pressMelee();
+      run(0.35);
+    }
+    run(0.6);
+  };
+  return { intents, scene, scenes, run, section, combo, presses, n };
 }
 
 describe('breakable curved wall (owner, 11/11/2026)', () => {
@@ -104,6 +116,37 @@ describe('breakable curved wall (owner, 11/11/2026)', () => {
     run(2);
     intents.setMove('t', { x: 0, y: 0 });
     expect(beyond(scene.player)).toBeGreaterThan(0.4); // into the boss room
+    scenes.clear();
+  });
+
+  it('Inferno breaks walls far faster: damage builds on the one section he keeps hitting, which scorches and cracks progressively (owner, 12/11/2026)', async () => {
+    const count = async (who: string) => {
+      const t = await setup(who);
+      t.run(0.2);
+      const lefts: number[] = [];
+      let combos = 0;
+      while (!t.section(SECTION).broken && combos < 30) {
+        t.presses();
+        combos++;
+        lefts.push(t.section(SECTION).left);
+        // Only the struck section weakens (once it breaks, the rest of that combo may chip the next one).
+        if (who === 'inferno' && !t.section(SECTION).broken) expect(t.section(NEIGHBOUR).left).toBe(1);
+      }
+      t.scenes.clear();
+      return { combos, lefts };
+    };
+    const base = await count('base-stickman');
+    const inferno = await count('inferno');
+    expect(inferno.combos).toBeLessThanOrEqual(Math.ceil(base.combos * 0.45));
+    // Damage builds steadily on that section, round after round, until it gives way.
+    for (let i = 1; i < inferno.lefts.length; i++) expect(inferno.lefts[i]!).toBeLessThan(inferno.lefts[i - 1]!);
+  });
+
+  it('a fire hit is reported as fire, so the section scorches and its cracks glow', async () => {
+    const { scene, scenes, n } = await setup();
+    scene.walls!.drainEvents();
+    scene.walls!.hitWhere((r) => r === WALLS[SECTION], { damage: 50, direction: { x: -n.x, y: -n.y }, fire: true });
+    expect(scene.walls!.drainEvents()).toEqual([expect.objectContaining({ kind: 'chip', index: SECTION, fire: true })]);
     scenes.clear();
   });
 });

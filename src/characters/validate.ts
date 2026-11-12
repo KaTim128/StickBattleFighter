@@ -122,6 +122,8 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
     if (stats.objects) {
       num(`${s}.objects.maxLiftKg`, stats.objects.maxLiftKg, 'maxLiftKg');
       num(`${s}.objects.throwPower`, stats.objects.throwPower, 'throwPower');
+      if (stats.objects.wallBreakPower !== undefined)
+        num(`${s}.objects.wallBreakPower`, stats.objects.wallBreakPower, 'throwPower');
     }
     for (const [k, v] of Object.entries(stats.multipliers ?? {})) num(`${s}.multipliers.${k}`, v, 'multiplier');
   }

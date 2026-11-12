@@ -185,7 +185,7 @@ export class SceneAbilities implements AbilityHost {
   }
 
   hitEnvironment(
-    _casterId: string,
+    casterId: string,
     at: Vec2,
     radiusM: number,
     payload: AbilityPayload,
@@ -209,8 +209,10 @@ export class SceneAbilities implements AbilityHost {
       if (door.applyImpact({ kind: 'strike', strength: payload.strength, direction: away })) broke = true;
     }
     // Breakable wall sections: blasts chip them harder than fists, but only the sections in reach.
+    const power = this.byName(casterId)?.def.objects.wallBreakPower ?? 1;
     const w = this.walls?.hitWhere((r) => circleTouchesRect(at, radiusM, r), {
-      damage: payload.wallDamage ?? payload.damage,
+      damage: (payload.wallDamage ?? payload.damage) * power,
+      fire: payload.burn !== undefined || payload.ignites === true,
       blast: !continuous && payload.wallDamage === undefined,
       direction: radial ? { x: 0, y: 1 } : dir,
       at, // the blast cracks the section nearest its centre, never the whole wall

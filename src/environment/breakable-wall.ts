@@ -34,6 +34,8 @@ export interface WallHit {
    * one hole (a fist overlaps its neighbours too). Without it every section touched is chipped.
    */
   readonly at?: Vec2;
+  /** A fire attack: the section blackens with scorch marks as well as cracking. */
+  readonly fire?: boolean;
 }
 
 /** Something happened to a section this step (cracks, sounds, rubble). */
@@ -45,6 +47,7 @@ export interface WallEvent {
   readonly dir: Vec2;
   /** 0..1 health left after the blow. */
   readonly left: number;
+  readonly fire?: boolean;
 }
 
 /** Blasts deal this many times their damage to a wall section. */
@@ -100,9 +103,16 @@ export class BreakableWalls {
         if (s.collider) this.physics.removeStatic(s.collider);
         s.collider = null;
         broke++;
-        this.pending.push({ kind: 'break', index: s.index, ...at, dir: hit.direction, left: 0 });
+        this.pending.push({ kind: 'break', index: s.index, ...at, dir: hit.direction, left: 0, fire: hit.fire });
       } else {
-        this.pending.push({ kind: 'chip', index: s.index, ...at, dir: hit.direction, left: s.hp / s.maxHp });
+        this.pending.push({
+          kind: 'chip',
+          index: s.index,
+          ...at,
+          dir: hit.direction,
+          left: s.hp / s.maxHp,
+          fire: hit.fire,
+        });
       }
     }
     return { hit: n, broke };
