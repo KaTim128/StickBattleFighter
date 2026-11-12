@@ -4,11 +4,12 @@ import type { AbilityKit } from '../../abilities/ability-def';
  * Necro's kit (owner, 12/11/2026): a hooded death mage. Soul Drain, Death Eruption and Undead
  * Army are his three abilities and Death's Dominion his ultimate; the owner chose to drop the
  * fourth requested ability, Zombie Summon. His magic is in the violet of drawn souls and the
- * bone-white of the dead (Magic Attack VFX Standard: each fighter in his own colours). All numbers
+ * bone-white of the dead (Magic Attack VFX Standard: each fighter in his own colours). All his magic
+ * glows in the violet soul palette (the bone spikes and skeletons are drawn in bone by their own art),
+ * and the energy gathering round him is subtle so it never hides him (CHARACTER_STYLE_QA S7). All numbers
  * PROVISIONAL (OQ-05).
  */
 const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff } as const;
-const BONE = { deep: 0x3a2f45, hot: 0x7b6a8f, bright: 0xd8cfe6, core: 0xf6f0e4 } as const;
 
 export const NECRO_KIT: AbilityKit = {
   // A1: Soul Drain. A dark bolt of drawn souls flies from the staff; when it lands it tears life out
@@ -32,7 +33,7 @@ export const NECRO_KIT: AbilityKit = {
     sfx: { cast: 'soul-gather', release: 'soul-cast', impact: 'soul-drain-hit' },
     look: {
       palette: SOUL,
-      charge: { gatherRadiusM: 1.1, motesPerS: 80, coreMaxM: 0.22 },
+      charge: { gatherRadiusM: 0.9, motesPerS: 45, coreMaxM: 0.2 },
       flight: { trailPerS: 100, sparksPerS: 26, shimmer: true },
       impact: { flashM: 0.8, sparks: 26, motes: 34, ringM: 1.1, smoke: 10, groundFire: false, smokeColour: 0x3a2850 },
       hitFlash: 0xd9c8ff,
@@ -58,8 +59,8 @@ export const NECRO_KIT: AbilityKit = {
     vfx: 'death-eruption',
     sfx: { cast: 'grave-call', release: 'grave-rumble', impact: 'bone-eruption' },
     look: {
-      palette: BONE,
-      charge: { gatherRadiusM: 0.9, motesPerS: 60, coreMaxM: 0 },
+      palette: SOUL,
+      charge: { gatherRadiusM: 0.8, motesPerS: 35, coreMaxM: 0 },
       impact: { flashM: 1, sparks: 40, motes: 50, ringM: 1.8, smoke: 18, groundFire: false, smokeColour: 0x2e2438 },
       hitFlash: 0xd9c8ff,
     },
@@ -84,8 +85,7 @@ export const NECRO_KIT: AbilityKit = {
     vfx: 'undead-army',
     sfx: { cast: 'grave-call', release: 'summon-rise', impact: 'summon-rise' },
     look: {
-      palette: BONE,
-      charge: { gatherRadiusM: 1.4, motesPerS: 90, coreMaxM: 0 },
+      palette: SOUL,
       // A low ring of grave energy at his feet; it never hides him (owner, 12/11/2026).
       impact: { flashM: 0.4, sparks: 6, motes: 16, ringM: 2, smoke: 5, groundFire: false, smokeColour: 0x2e2438 },
     },
@@ -119,8 +119,9 @@ export const NECRO_KIT: AbilityKit = {
     sfx: { cast: 'dominion-rise', release: 'dominion-burst', impact: 'dominion-burst' },
     look: {
       palette: SOUL,
-      charge: { gatherRadiusM: 1.6, motesPerS: 140, coreMaxM: 0 },
-      impact: { flashM: 1.8, sparks: 50, motes: 80, ringM: 2.8, smoke: 24, groundFire: false, smokeColour: 0x2a1e38 },
+      impact: { flashM: 1.2, sparks: 30, motes: 40, ringM: 2.8, smoke: 10, groundFire: false, smokeColour: 0x2a1e38 },
+      // His own violet glow and circling motes show the power; the floor keeps only a soft ring.
+      aura: 'quiet',
     },
   },
   charge: { max: 100, perDamageDealt: 0.25, perDamageTaken: 0.2, perSecond: 1 },

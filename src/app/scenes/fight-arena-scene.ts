@@ -1941,7 +1941,14 @@ export class FightArenaScene implements ArenaScene {
       // A fury buff: red motes and steam rise off the body, with a red glow on the floor.
       if (f.buff && !c.isKo) {
         const look = f.caster?.def('ult').look;
-        if (look) auras.push({ x: f.x, y: f.y, palette: look.palette, strength: Math.min(1, f.buff.leftS) });
+        if (look)
+          auras.push({
+            x: f.x,
+            y: f.y,
+            palette: look.palette,
+            strength: Math.min(1, f.buff.leftS),
+            quiet: look.aura === 'quiet',
+          });
       }
       // A charge (a dash with a look): dust kicked up behind the feet.
       if (f.driveVelocity && cast?.def.delivery.type === 'dash' && cast.def.look?.flight) {

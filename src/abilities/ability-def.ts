@@ -224,6 +224,12 @@ export interface MagicLook {
   };
   /** The target's body flashes this colour on contact (white for the Fireball). */
   readonly hitFlash?: number;
+  /**
+   * A buff's aura while it lasts: 'full' (default) has rising embers and steam (a fury); 'quiet'
+   * keeps only the soft ring on the floor, for casters whose own body glow shows the power
+   * (Necro's Death's Dominion, CHARACTER_STYLE_QA S7).
+   */
+  readonly aura?: 'full' | 'quiet';
 }
 
 export interface AbilityDef {

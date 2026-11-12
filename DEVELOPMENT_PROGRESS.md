@@ -522,6 +522,20 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
   - The opponent AI does not cast abilities, so Necro as an admin-chosen opponent only uses melee.
   - Summon numbers are provisional (OQ-05).
 
+### 12/11/2026: Clean restyle of Necro's staff and the skeletons; style QA checklist (owner request)
+- **New standard:** `docs/design/CHARACTER_STYLE_QA.md` (S1–S10) sets out the style of the owner's reference art. Every character change must pass it, using screenshots at gameplay zoom, 3× zoom and in slow motion, in every pose and facing, before it is called done.
+- **Skeletons:**
+  - Bones: clean tapered bones with rounded joints and two-tone shading, and a single ribcage shape with two rib gaps and a rounded pelvis.
+  - Skull: one cranium-and-jaw silhouette with a single mouth line (no eye sockets).
+  - Blades: dark violet obsidian with a pale edge, so they read against the bones.
+- **Necro's staff:** one smooth tapered bone shaft with two violet grip wraps, topped by a clean skull in two curved prongs, its sockets glowing while he casts. The knobs and teeth are gone.
+- **Magic:** all of Necro's magic is in the violet soul palette.
+  - The summoning casts have no busy charge streaks.
+  - Death's Dominion uses a quiet aura (a floor ring only, new `MagicLook.aura`), because his own glow and circling motes show the power.
+- **QA run (this change):** S1–S10 pass in the idle (both facings), the walk, Undead Army and Death's Dominion (slow motion), Death Eruption, and with skeletons at 1× in the office.
+  - Earlier failures found by this QA and fixed: pale stripes on the robe hem from the bone-white charge effect; flame spikes at his feet from the fury aura; blades that blended into the bones; a ribcage too thin to read.
+- **Evidence:** `npm test` 329/329; e2e 39 passed; lint clean (1 info, in an old mockup).
+
 ## Decisions requiring owner attention
 
 

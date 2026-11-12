@@ -397,46 +397,95 @@ export class StickmanView {
     }
   }
 
-  /** A skeleton's bones (summoned warriors): thin shafts with knobbly joints, a spine, ribs and a pelvis. */
+  /**
+   * A skeleton's bones (summoned warriors), in the roster's clean flat style (CHARACTER_STYLE_QA
+   * S1–S5): slim tapered bones with rounded joints and two-tone cel shading; a torso of one clean
+   * ribcage shape with two rib gaps, a short spine and a rounded pelvis. No knobs or scribbles.
+   */
   private boneDetail(g: Graphics, pts: readonly Point[], w: number, colour: number, edge: number, part: number): void {
     const o = this.look.outlineWidthM;
-    const line = (a: Point, b: Point, width: number, c: number) =>
-      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width, color: c, cap: 'round' });
-    if (part === 2) {
-      const [pelvis, chest, neck] = pts;
-      if (!pelvis || !chest || !neck) return;
-      line(pelvis, neck, w * 0.7 + o * 2, edge);
-      line(pelvis, neck, w * 0.7, colour);
-      // Ribs: three curved bars, longest at the top.
-      for (const [k, len] of [
-        [0.5, 0.7],
-        [0.66, 0.85],
-        [0.82, 0.95],
-      ] as const) {
-        const c = { x: pelvis.x + (chest.x - pelvis.x) * k, y: pelvis.y + (chest.y - pelvis.y) * k };
-        const a = { x: c.x - w * 1.5 * len, y: c.y + w * 0.35 };
-        const b = { x: c.x + w * 1.5 * len, y: c.y + w * 0.35 };
-        g.moveTo(a.x, a.y)
-          .quadraticCurveTo(c.x, c.y - w * 0.6, b.x, b.y)
-          .stroke({ width: w * 0.45 + o * 2, color: edge, cap: 'round' });
-        g.moveTo(a.x, a.y)
-          .quadraticCurveTo(c.x, c.y - w * 0.6, b.x, b.y)
-          .stroke({ width: w * 0.45, color: colour, cap: 'round' });
-      }
-      // Pelvis bone.
-      g.ellipse(pelvis.x, pelvis.y - w * 0.2, w * 1.4 + o, w * 0.6 + o).fill(edge);
-      g.ellipse(pelvis.x, pelvis.y - w * 0.2, w * 1.4, w * 0.6).fill(colour);
+    if (part !== 2) {
+      const arm = part === 0 || part === 4;
+      const widths = (arm ? [1.0, 0.8, 0.66] : [1.15, 0.9, 0.74]).map((k) => k * w);
+      taper(
+        g,
+        pts,
+        widths.map((x) => x + o * 2),
+        edge,
+      );
+      taper(g, pts, widths, colour);
+      celShade(g, pts, widths, colour, false);
       return;
     }
-    for (let i = 0; i + 1 < pts.length; i++) {
-      line(pts[i]!, pts[i + 1]!, w + o * 2, edge);
-      line(pts[i]!, pts[i + 1]!, w, colour);
+    const [pelvis, chest, neck] = pts;
+    if (!pelvis || !chest || !neck) return;
+    // Axis along the torso and its normal, so the shapes lean with it.
+    const ax = chest.x - pelvis.x;
+    const ay = chest.y - pelvis.y;
+    const al = Math.hypot(ax, ay) || 1;
+    const ux = ax / al;
+    const uy = ay / al;
+    const nx = -uy;
+    const ny = ux;
+    const at = (k: number, side: number) => ({
+      x: pelvis.x + ax * k + nx * side,
+      y: pelvis.y + ay * k + ny * side,
+    });
+    // Spine: a slim tapered column from the pelvis to the neck.
+    const spine = [pelvis, chest, neck];
+    const sw = [0.55, 0.5, 0.45].map((k) => k * w);
+    taper(
+      g,
+      spine,
+      sw.map((x) => x + o * 2),
+      edge,
+    );
+    taper(g, spine, sw, colour);
+    // Ribcage: one rounded shield shape, widest at the shoulders.
+    const cage = [
+      at(1.03, -w * 1.6),
+      at(1.03, w * 1.6),
+      at(0.76, w * 1.85),
+      at(0.48, w * 1.3),
+      at(0.4, 0),
+      at(0.48, -w * 1.3),
+      at(0.76, -w * 1.85),
+    ].flatMap((p) => [p.x, p.y]);
+    g.poly(cage).fill(edge);
+    const inner = [
+      at(1.005, -w * 1.6 + o),
+      at(1.005, w * 1.6 - o),
+      at(0.76, w * 1.85 - o),
+      at(0.495, w * 1.3 - o),
+      at(0.42, 0),
+      at(0.495, -w * 1.3 + o),
+      at(0.76, -w * 1.85 + o),
+    ].flatMap((p) => [p.x, p.y]);
+    g.poly(inner).fill(colour);
+    // Two clean rib gaps (negative space) and a lit band down the front.
+    for (const [k, half] of [
+      [0.86, 1.25],
+      [0.68, 1.1],
+    ] as const) {
+      const a = at(k, -w * half);
+      const b = at(k, w * half);
+      g.moveTo(a.x, a.y)
+        .lineTo(b.x, b.y)
+        .stroke({ width: w * 0.2, color: edge, cap: 'round' });
     }
-    // Knobbly joints at the elbow or knee and the wrist or ankle.
-    for (const p of pts.slice(1)) {
-      g.circle(p.x, p.y, w * 0.85 + o).fill(edge);
-      g.circle(p.x, p.y, w * 0.85).fill(colour);
-    }
+    const l0 = at(0.96, w * 1.15);
+    const l1 = at(0.56, w * 0.85);
+    g.moveTo(l0.x, l0.y)
+      .lineTo(l1.x, l1.y)
+      .stroke({ width: w * 0.22, color: toward(colour, 0xffffff, 0.5), alpha: 0.55, cap: 'round' });
+    // Pelvis: a rounded bowl.
+    const pc = at(0.02, 0);
+    g.ellipse(pc.x, pc.y, w * 1.5 + o, w * 0.62 + o).fill(edge);
+    g.ellipse(pc.x, pc.y, w * 1.5, w * 0.62).fill(colour);
+    g.ellipse(pc.x - w * 0.35, pc.y - w * 0.18, w * 0.55, w * 0.18).fill({
+      color: toward(colour, 0xffffff, 0.5),
+      alpha: 0.5,
+    });
   }
 
   /**
@@ -481,25 +530,17 @@ export class StickmanView {
       .stroke({ width: r * 0.12, color: toward(colour, 0xffffff, 0.3), alpha: 0.6, cap: 'round', join: 'round' });
   }
 
-  /** A skeleton's skull: a bone cranium with a jaw and a line of teeth (no eyes, owner 12/11/2026). */
+  /** A skeleton's skull: one clean cranium-and-jaw silhouette, cel shaded (no eyes, owner 12/11/2026). */
   private skullHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
-    const r = this.bones.headRadius;
-    const hx = s.head.x;
-    const hy = s.head.y;
-    g.circle(hx, hy - r * 0.1, r + o).fill(edge);
-    g.circle(hx, hy - r * 0.1, r).fill(colour);
-    g.roundRect(hx - r * 0.2, hy + r * 0.35, r * 1.0, r * 0.6, r * 0.2).fill(edge);
-    g.roundRect(hx - r * 0.2 + o, hy + r * 0.35 + o, r * 1.0 - o * 2, r * 0.6 - o * 2, r * 0.15).fill(colour);
-    for (const k of [0.05, 0.3, 0.55]) g.rect(hx + r * k, hy + r * 0.42, o * 0.6, r * 0.3).fill(edge);
-    g.ellipse(hx - r * 0.3, hy - r * 0.5, r * 0.35, r * 0.2).fill({ color: 0xffffff, alpha: 0.35 });
+    skullShape(g, s.head.x, s.head.y, this.bones.headRadius, colour, edge, o, null);
   }
 
   /**
-   * Necro's bone staff (owner, 12/11/2026: "a bone/skeleton staff in his left hand ... raised rather
-   * than hanging low"): held in the rear (left) hand. At rest it stands upright and is planted on
-   * the floor beside him as a support; when he raises his hand it rises with it, never hanging; in
-   * a staff strike it follows the swinging forearm. A shaft of vertebra-like bone topped by a skull
-   * whose eyes glow purple while he works magic.
+   * Necro's bone staff (owner, 12/11/2026), in the roster's clean style (CHARACTER_STYLE_QA S1–S7):
+   * held in the rear (left) hand. At rest it stands upright and planted beside him as a support;
+   * it rises with his hand (never hanging) and follows his arm in staff strikes. A smooth, tapered
+   * bone shaft with two violet grip wraps, topped by a skull cradled in two curved bone prongs;
+   * the skull's eye sockets glow purple while he works magic.
    */
   private drawStaff(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number): void {
     const D = StickmanView.DEATH;
@@ -518,44 +559,60 @@ export class StickmanView {
     const below = Math.min(Math.max(0, -hand.y), 0.78) * (1 - k) + 0.45 * k;
     const butt = { x: hand.x - ux * below, y: hand.y - uy * below };
     const top = { x: butt.x + ux * LENGTH, y: butt.y + uy * LENGTH };
-    const shaft = (w: number, c: number, a = 1) =>
-      g.moveTo(butt.x, butt.y).lineTo(top.x, top.y).stroke({ width: w, color: c, alpha: a, cap: 'round' });
-    shaft(0.055 + o * 2, 0x241c14);
-    shaft(0.055, D.bone);
-    shaft(0.018, 0xffffff, 0.45);
-    // Vertebra knobs down the shaft.
-    for (let d = 0.18; d < LENGTH - 0.15; d += 0.17) {
-      const p = { x: butt.x + ux * d, y: butt.y + uy * d };
-      g.circle(p.x, p.y, 0.038).fill(0x241c14);
-      g.circle(p.x, p.y, 0.03).fill(D.boneShade);
+    const edge = 0x6f6656;
+    // The shaft: one smooth bone, slim at the foot and thicker under the skull, cel shaded.
+    const shaft = [butt, top];
+    const widths = [0.04, 0.06];
+    taper(
+      g,
+      shaft,
+      widths.map((x) => x + o * 2),
+      edge,
+    );
+    taper(g, shaft, widths, D.bone);
+    celShade(g, shaft, widths, D.bone, false);
+    // Two violet cloth wraps at the grip.
+    const nx = -uy;
+    const ny = ux;
+    for (const d of [-0.12, 0.12]) {
+      const c = { x: hand.x + ux * d, y: hand.y + uy * d };
+      const h = 0.04;
+      g.poly([
+        c.x + nx * 0.045 - ux * h,
+        c.y + ny * 0.045 - uy * h,
+        c.x + nx * 0.045 + ux * h,
+        c.y + ny * 0.045 + uy * h,
+        c.x - nx * 0.045 + ux * h,
+        c.y - ny * 0.045 + uy * h,
+        c.x - nx * 0.045 - ux * h,
+        c.y - ny * 0.045 - uy * h,
+      ]).fill(0x4a3a63);
     }
-    // The skull on top, facing forward (+x), with two curved prongs of bone behind it.
-    const c = { x: top.x + ux * 0.07, y: top.y + uy * 0.07 };
+    // Two curved bone prongs cradling the skull: clean tapered crescents.
+    const head = { x: top.x + ux * 0.1, y: top.y + uy * 0.1 };
     for (const side of [-1, 1]) {
-      g.moveTo(c.x - 0.02, c.y + 0.02)
-        .lineTo(c.x - 0.09, c.y - 0.06 * side - 0.04)
-        .lineTo(c.x - 0.05, c.y - 0.13 * side - 0.02)
-        .stroke({ width: 0.022, color: D.boneShade, cap: 'round', join: 'round' });
+      const p0 = { x: top.x + nx * side * 0.02, y: top.y + ny * side * 0.02 };
+      const p1 = { x: top.x + ux * 0.08 + nx * side * 0.13, y: top.y + uy * 0.08 + ny * side * 0.13 };
+      const p2 = { x: top.x + ux * 0.22 + nx * side * 0.1, y: top.y + uy * 0.22 + ny * side * 0.1 };
+      const prong = [p0, p1, p2];
+      const pw = [0.035, 0.028, 0.012];
+      taper(
+        g,
+        prong,
+        pw.map((x) => x + o * 2),
+        edge,
+      );
+      taper(g, prong, pw, D.bone);
     }
-    g.circle(c.x, c.y, 0.095).fill(0x241c14);
-    g.circle(c.x, c.y, 0.083).fill(D.bone);
-    g.roundRect(c.x - 0.01, c.y + 0.035, 0.08, 0.055, 0.015)
-      .fill(D.bone)
-      .stroke({ width: 0.008, color: 0x241c14 });
-    for (const t of [0.01, 0.03, 0.05]) g.rect(c.x + t, c.y + 0.045, 0.006, 0.03).fill(0x241c14);
-    // Eye sockets: dark, or burning purple while he casts.
+    // The skull (its sockets glow while he casts).
     const m = this.magic;
-    for (const [ex, ey] of [
-      [0.03, -0.01],
-      [0.065, -0.005],
-    ] as const) {
-      g.ellipse(c.x + ex, c.y + ey, 0.017, 0.021).fill(m > 0.05 ? toward(0x1a0826, D.soul, m) : 0x1a0826);
-      if (m > 0.05) {
-        this.fire.circle(c.x + ex, c.y + ey, 0.07).fill({ color: D.soul, alpha: 0.5 * m });
-        g.circle(c.x + ex, c.y + ey, 0.008).fill({ color: D.soulCore, alpha: m });
+    skullShape(g, head.x, head.y, 0.085, D.bone, edge, o, m);
+    if (m > 0.05) {
+      this.fire.circle(head.x, head.y, 0.22).fill({ color: D.soul, alpha: 0.18 * m });
+      for (const ex of [0.02, 0.05]) {
+        this.fire.circle(head.x + ex, head.y - 0.008, 0.045).fill({ color: D.soul, alpha: 0.55 * m });
       }
     }
-    if (m > 0.05) this.fire.circle(c.x, c.y, 0.28).fill({ color: D.soul, alpha: 0.16 * m });
   }
 
   /**
@@ -603,21 +660,31 @@ export class StickmanView {
       this.drawStaff(g, s, o);
       return;
     }
-    // Bone blade: a pale, tapering blade with a knobbed hilt.
-    const tip = { x: hand.x + ux * 0.6, y: hand.y + uy * 0.6 };
-    const nx = -uy * 0.045;
-    const ny = ux * 0.045;
-    const blade = [hand.x + nx, hand.y + ny, tip.x, tip.y, hand.x - nx, hand.y - ny];
-    g.poly(blade).fill(0x2a241c);
-    g.poly([
-      hand.x + nx * 0.7,
-      hand.y + ny * 0.7,
-      tip.x - ux * 0.03,
-      tip.y - uy * 0.03,
-      hand.x - nx * 0.7,
-      hand.y - ny * 0.7,
-    ]).fill(D.bone);
-    g.circle(hand.x - ux * 0.06, hand.y - uy * 0.06, 0.04).fill(D.boneShade);
+    // Grave blade: one clean tapered blade of dark violet obsidian with a pale cutting edge (it
+    // stands out against the bones and carries Necro's colours), on a short rounded bone guard.
+    const tip = { x: hand.x + ux * 0.62, y: hand.y + uy * 0.62 };
+    const blade = [hand, tip];
+    const bw = [0.075, 0.012];
+    const OBSIDIAN = 0x3a2d55;
+    taper(
+      g,
+      blade,
+      bw.map((x) => x + o * 2),
+      0x16101f,
+    );
+    taper(g, blade, bw, OBSIDIAN);
+    celShade(g, blade, bw, OBSIDIAN, false);
+    g.moveTo(hand.x + ux * 0.05, hand.y + uy * 0.05)
+      .lineTo(tip.x - ux * 0.04, tip.y - uy * 0.04)
+      .stroke({ width: 0.012, color: 0xd9c8ff, alpha: 0.85, cap: 'round' });
+    const gx = -uy * 0.07;
+    const gy = ux * 0.07;
+    g.moveTo(hand.x + gx, hand.y + gy)
+      .lineTo(hand.x - gx, hand.y - gy)
+      .stroke({ width: 0.035 + o * 2, color: 0x6f6656, cap: 'round' })
+      .moveTo(hand.x + gx, hand.y + gy)
+      .lineTo(hand.x - gx, hand.y - gy)
+      .stroke({ width: 0.035, color: D.boneShade, cap: 'round' });
   }
 
   /** Quick dodge speed lines: short streaks trailing opposite the dash, fading in and out with it. */
@@ -1120,5 +1187,41 @@ function celShade(g: Graphics, pts: readonly Point[], widths: readonly number[],
     band(0.15, 0.85, 1, lit, 0.45);
     band(0.35, 0.95, -1, dark, 0.4);
     if (torso) band(0.82, 0.97, -1, toward(colour, 0xffffff, 0.55), 0.35);
+  }
+}
+
+/**
+ * A clean skull silhouette (skeleton warriors' heads, the top of Necro's staff): a round cranium
+ * merged with a slightly narrower jaw toward the front, one edge around both, two-tone shading and
+ * a single mouth line. `sockets` = null draws no eye sockets (stickmen have no eyes); a number
+ * 0..1 draws two sockets that glow violet by that much (the staff skull while casting).
+ */
+function skullShape(
+  g: Graphics,
+  x: number,
+  y: number,
+  r: number,
+  bone: number,
+  edge: number,
+  o: number,
+  sockets: number | null,
+): void {
+  const jaw = { x: x + r * 0.2, y: y + r * 0.55, w: r * 1.1, h: r * 0.62 };
+  // Edge first, around the merged shape, then the fill.
+  g.circle(x, y, r + o).fill(edge);
+  g.roundRect(jaw.x - jaw.w / 2 - o, jaw.y - jaw.h / 2 - o, jaw.w + o * 2, jaw.h + o * 2, r * 0.28).fill(edge);
+  g.circle(x, y, r).fill(bone);
+  g.roundRect(jaw.x - jaw.w / 2, jaw.y - jaw.h / 2, jaw.w, jaw.h, r * 0.24).fill(bone);
+  // Shadow under the cranium's back, a lit cap toward the light.
+  g.ellipse(x - r * 0.25, y + r * 0.35, r * 0.6, r * 0.35).fill({ color: toward(bone, 0x000000, 0.25), alpha: 0.4 });
+  g.ellipse(x - r * 0.2, y - r * 0.45, r * 0.5, r * 0.25).fill({ color: 0xffffff, alpha: 0.45 });
+  // One clean mouth line across the jaw.
+  g.moveTo(jaw.x - jaw.w * 0.3, jaw.y + jaw.h * 0.05)
+    .lineTo(jaw.x + jaw.w * 0.4, jaw.y + jaw.h * 0.05)
+    .stroke({ width: o * 0.8, color: edge, cap: 'round' });
+  if (sockets !== null) {
+    const glow = Math.min(1, Math.max(0, sockets));
+    const c = toward(0x1a0826, 0xc89cff, glow);
+    for (const ex of [0.15, 0.55]) g.ellipse(x + r * ex, y - r * 0.05, r * 0.2, r * 0.24).fill(c);
   }
 }

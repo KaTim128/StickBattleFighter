@@ -87,6 +87,8 @@ export interface AuraFx {
   readonly palette: MagicLook['palette'];
   /** 0..1 (fades out at the end). */
   readonly strength: number;
+  /** Only the floor ring: no rising embers or steam. */
+  readonly quiet?: boolean;
 }
 
 /** A charging body kicking up the ground behind it (Rampage Charge). */
@@ -249,6 +251,7 @@ export class AbilityVfx {
     }
     for (const c of input.charges ?? []) this.chargeParticles(c, dtS);
     for (const a of input.auras ?? []) {
+      if (a.quiet) continue; // only the floor ring (drawn below)
       const n = this.count(30 * a.strength * dtS);
       for (let i = 0; i < n; i++) {
         const ang = this.rand() * Math.PI * 2;
