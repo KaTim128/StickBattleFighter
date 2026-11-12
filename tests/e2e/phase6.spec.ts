@@ -3,6 +3,7 @@ import { expect, type Page, test } from '@playwright/test';
 interface Hook {
   player: { ability: string | null; stamina: number; meter: number; x: number; y: number };
   fillMeter(): void;
+  aimSpot: { x: number; y: number } | null;
   dummy: { hp: number; burning: boolean };
   abilities: { slots: { slot: string; cooldownS: number; block: string | null }[]; meter: number } | null;
   sfx: string[];
@@ -68,8 +69,17 @@ test('ultimate aiming (desktop): I aims in a crouch, W moves the spot, I again l
   await open(page, errors);
   await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
   await page.keyboard.press('KeyI');
+  await expect
+    .poll(() => page.evaluate(() => (window as DebugWindow).__stickmanDebug!.aimSpot), { timeout: 5000 })
+    .not.toBeNull();
+  const y0 = (await hook(page)).player.y;
+  // Hold W until the spot is well up the screen from the fighter (game time; no fixed wait is safe on a slow CI browser).
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(2500); // the aim moves in game time; a software-rendered browser runs slower than real time
+  await expect
+    .poll(async () => y0 - (await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.aimSpot))!.y, {
+      timeout: 30_000,
+    })
+    .toBeGreaterThan(2);
   await page.keyboard.up('KeyW');
   const before = await hook(page);
   expect(before.player.ability).toBeNull(); // still aiming

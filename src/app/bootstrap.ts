@@ -79,6 +79,8 @@ export interface EngineDebugInfo {
   ambience: string | null;
   /** The battle music is playing (owner, 12/11/2026). */
   musicPlaying: boolean;
+  /** Where the ability being aimed will land (the ultimate's leap or a point-aimed ability), or null. */
+  aimSpot: { x: number; y: number } | null;
   /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
   setDummyHp(hp: number): void;
   /** The Punch Clash in progress (power, timer), or null. */
@@ -310,6 +312,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sounds: [],
     ambience: music.current,
     musicPlaying: false,
+    aimSpot: null,
     setDummyHp() {}, // replaced once the scene exists
     clash: null,
     startClash() {}, // replaced once the scene exists
@@ -402,6 +405,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           startBattleMusic();
         }
         debug.musicPlaying = battleMusic?.playing ?? false;
+        {
+          const spot = scene.ultAim?.to ?? scene.pointAimState?.to ?? null;
+          debug.aimSpot = spot ? { x: spot.x, y: spot.y } : null;
+        }
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;

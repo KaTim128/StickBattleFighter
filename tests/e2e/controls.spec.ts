@@ -18,6 +18,7 @@ interface Hook {
   physicsSteps: number;
   fillMeter(): void;
   camera: { x: number; y: number; scale: number } | null;
+  aimSpot: { x: number; y: number } | null;
 }
 type DebugWindow = Window & { __stickmanDebug?: Hook };
 const hook = (page: Page) => page.evaluate(() => (window as DebugWindow).__stickmanDebug!);
@@ -85,7 +86,9 @@ test('Inferno ultimate on the keyboard (owner, 12/11/2026): I aims with WASD and
   page,
 }, testInfo) => {
   const errors: string[] = [];
-  await open(page, errors);
+  // Clear floor straight up the screen (a pillar stands just up-screen of the default start, which
+  // rightly cuts the leap short), and the dummy out of lock-on range (REQ-CTL-22).
+  await open(page, errors, 'scene=training-yard&playerAt=17,10&dummyAt=29,21');
   await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
   const hint = page.locator('.aim-hint');
   // K aims; the instructions name the keys; Escape cancels without opening the settings or casting.
@@ -99,8 +102,19 @@ test('Inferno ultimate on the keyboard (owner, 12/11/2026): I aims with WASD and
   // Again: W slides the spot up the screen (the fighter stays put), K launches the leap there.
   const start = await hook(page);
   await page.keyboard.press('KeyI');
+  await expect.poll(async () => (await hook(page)).aimSpot, { timeout: 5000 }).not.toBeNull();
+  // Hold W until the spot is well up the screen from the fighter (the aim moves in game time, and
+  // a software-rendered CI browser runs far slower than real time, so no fixed wait is safe).
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(3000); // the aim moves in game time; a software-rendered CI browser runs slower than real time
+  await expect
+    .poll(
+      async () => {
+        const s = (await hook(page)).aimSpot!;
+        return start.player.x + start.player.y - (s.x + s.y);
+      },
+      { timeout: 30_000 },
+    )
+    .toBeGreaterThan(3);
   await page.keyboard.up('KeyW');
   expect(
     Math.hypot((await hook(page)).player.x - start.player.x, (await hook(page)).player.y - start.player.y),
