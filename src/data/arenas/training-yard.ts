@@ -7,7 +7,8 @@ import { GREYBOX_COLOURS } from './greybox-arena';
  */
 export const TRAINING_YARD: ArenaLayout = {
   id: 'training-yard',
-  music: 'yard-fight',
+  // The yard is the Colosseum's fighting floor: a tournament crowd fills the stands (owner, 12/11/2026).
+  ambience: 'colosseum',
   name: 'Training yard',
   widthM: 30,
   heightM: 20,

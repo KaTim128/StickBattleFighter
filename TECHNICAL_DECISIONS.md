@@ -376,6 +376,19 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Alternatives:** an animated sprite sheet per ability (rejected: no art pipeline yet, and procedural effects stay consistent with the vector style); per-ability effect classes (rejected: duplicated logic, against the data-driven rule).
 - **Trade-off:** the 1 s beam charge (2 s until the owner shortened it, 12/11/2026) and the 0.4 s Fireball charge make both easier to interrupt. That is intended (the wind-up is the counterplay).
 
+### TD-051: Procedural ambience engine replaces the music sequencer — ACCEPTED (owner request 12/11/2026)
+- **Decision:**
+  - `src/audio/ambience.ts` (`AmbiencePlayer`) plays `AmbienceDef` data (`src/data/audio/ambiences.ts`) through a generated reverb, optionally muffled. The data has:
+    - beds: looping coloured noise through filters, sine hums, and a crowd made of noise bands whose levels chatter independently;
+    - slow random swells;
+    - random one-off events: creak, thump, tick, knock, flicker, vent click, cheer, applause, whistle, ooh, roar.
+  - `react('heavy-hit' | 'ko')` lets a crowd answer the fight; bootstrap sends a cue on KOs and on hits of 100 damage or more.
+  - Same API as the old player (attach, play, setMuted, setVolume, stop), and it obeys the hidden-tab pause.
+  - The music sequencer and its track data are removed (SUP-15). Arenas name an `ambience`; preview any one with `?ambience=<id>`.
+- **Reference:** the owner's suspense track was analysed by spectrum and loudness only and is not used or committed. What carried over is its shape: dense, low-heavy, constant, with swells about every 5 s and occasional large surges.
+- **Verification:** 30 s clips were rendered offline through the real engine (an `OfflineAudioContext`, with a `lookaheadS` constructor option) and measured. The office holds steady around -18 dB with sparse events; the Colosseum surges by about 4 dB and lifts at a KO. Previews are in `docs/audio-previews/`.
+- **Trade-offs:** synthesised crowds are less realistic than recordings. Recorded or licensed ambiences can replace beds later without changing the API. The build environment cannot play audio, so the owner's ear is the acceptance test.
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

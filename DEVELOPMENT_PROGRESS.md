@@ -383,6 +383,17 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
   - lint clean; typecheck 0; `npm test` 291/291, including two new tests for the background pause;
   - in Chromium the audio context went from running to suspended when hidden, and back to running when shown.
 
+### 12/11/2026: Ambience instead of music (owner)
+- **Soundscapes:**
+  - the office is an empty office after hours;
+  - the training yard is a Colosseum tournament crowd that reacts to big hits and KOs;
+  - the menu is the crowd, muffled, heard from the tunnel.
+- **No music:** the sequencer and tracks are removed (TD-051, REQ-AUD-1, SUP-15). The settings slider is now "Ambience volume".
+- **Evidence:**
+  - lint clean; typecheck 0; `npm test` 292/292 (ambience data tests: no crowd in the office, a full crowd in the Colosseum, reactions, irregular timing);
+  - offline renders measured and attached as `docs/audio-previews/*.mp3`.
+- **Limitation:** the sounds were checked by measurement, not by ear.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

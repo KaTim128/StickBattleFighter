@@ -1,6 +1,6 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
-import { MusicPlayer } from '../audio/music';
+import { AmbiencePlayer } from '../audio/ambience';
 import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
@@ -13,7 +13,7 @@ import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
-import { MUSIC_TRACKS } from '../data/audio/music-tracks';
+import { AMBIENCES } from '../data/audio/ambiences';
 import { codeLabel } from '../input/bindings';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
@@ -58,8 +58,8 @@ export interface EngineDebugInfo {
   sfx: string[];
   /** Recent sounds played by the sound board (melee contacts, KO, dusting, abilities). */
   sounds: string[];
-  /** The background music track playing (or waiting for the first input to start). */
-  music: string | null;
+  /** The background ambience playing (or waiting for the first input to start). */
+  ambience: string | null;
   /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
   setDummyHp(hp: number): void;
   /** The Punch Clash in progress (power, timer), or null. */
@@ -121,6 +121,9 @@ function castFromParams(params: URLSearchParams): { player?: string; opponent?: 
   return { player: draft.characterId, opponent, library: withEntries(BUILT_IN_LIBRARY, draft.entries) };
 }
 
+/** A blow this big gets a reaction from a crowd. */
+const HEAVY_HIT_FOR_CROWD = 100;
+
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   status.textContent = 'Loading…';
@@ -180,16 +183,16 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const clashHud = new ClashHud(document.body);
   const sound = new SoundBoard();
   sound.muted = params.has('mute');
-  // Background music (owner, 11/11/2026): each map its own fight track; `?music=<id>` previews any
-  // track (e.g. the menu theme), `?music=none` turns it off.
-  const music = new MusicPlayer();
+  // Background ambience (owner, 12/11/2026: soundscapes, never music): each map its own;
+  // `?ambience=<id>` previews any (e.g. the menu's `tunnel`), `?ambience=none` turns it off.
+  const music = new AmbiencePlayer();
   music.setMuted(sound.muted);
-  // Automated browsers (tests, CI: navigator.webdriver) skip background music unless asked for: headless
-  // software audio rendering of a whole band starves the page on small CI machines.
+  // Automated browsers (tests, CI: navigator.webdriver) skip the ambience unless asked for: headless
+  // software audio rendering starves the page on small CI machines.
   const automated = typeof navigator !== 'undefined' && navigator.webdriver === true;
-  const arenaMusic = scene instanceof FightArenaScene && !automated ? scene.arena.music : undefined;
-  const musicId = params.get('music') ?? arenaMusic;
-  music.play(musicId ? (MUSIC_TRACKS[musicId] ?? null) : null);
+  const arenaAmbience = scene instanceof FightArenaScene && !automated ? scene.arena.ambience : undefined;
+  const ambienceId = params.get('ambience') ?? arenaAmbience;
+  music.play(ambienceId ? (AMBIENCES[ambienceId] ?? null) : null);
   // The game falls silent the moment its tab is hidden, and plays on when you come back (owner).
   pauseAudioWhenHidden(document, () => sound.context, window);
   onFirstInput(window, () => {
@@ -234,7 +237,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     abilities: null,
     sfx: [],
     sounds: [],
-    music: music.current,
+    ambience: music.current,
     setDummyHp() {}, // replaced once the scene exists
     clash: null,
     startClash() {}, // replaced once the scene exists
@@ -290,7 +293,13 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;
-        combatText.show(scene.drainEvents(), (x, y) => scene.worldToScreen(x, y));
+        const events = scene.drainEvents();
+        // The crowd answers the fight (Colosseum): a big blow draws an "ooh", a KO a roar.
+        for (const e of events) {
+          if (e.kind === 'ko') music.react('ko');
+          else if (e.kind === 'hit' && e.amount >= HEAVY_HIT_FOR_CROWD) music.react('heavy-hit');
+        }
+        combatText.show(events, (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
         clashHud.update(scene.clashHud);
         debug.clash = scene.clashHud.state;
