@@ -52,6 +52,11 @@ export class FighterEntity {
   /** KO presentation: the boom and the dusting sound play once per KO. */
   koSounded = false;
   dustSounded = false;
+  /** Consecutive landed hits (PRS-4 combo counter) and when the last one landed (sim seconds). */
+  comboCount = 0;
+  lastLandS = -99;
+  /** Seconds left of the shield flare after a block (PRS-5). */
+  shieldS = 0;
   /** KO'd by fire (a fire hit or the burn): the body burns away to ash instead of dust. */
   koByFire = false;
   /** Seconds of smoke still rising after a burn went out. */

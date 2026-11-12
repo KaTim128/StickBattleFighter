@@ -92,3 +92,19 @@ describe('AbilityCaster', () => {
     expect(c.interrupt()).toBe(false);
   });
 });
+
+describe('Phase 8: complete animation set for the kit', () => {
+  it('every ability and the ultimate has its own cast animation; the leaping ultimate has an air pose', async () => {
+    const { hasAbilityPose, abilityPose } = await import('../../../src/animation/ability-poses');
+    const { idlePose } = await import('../../../src/animation/greybox-motion');
+    const { GREYBOX_STICKMAN } = await import('../../../src/data/fighters/greybox-stickman');
+    const base = idlePose(0, GREYBOX_STICKMAN.bones);
+    for (const slot of ['a1', 'a2', 'a3', 'ult'] as const) {
+      const def = INFERNO_KIT[slot];
+      expect(hasAbilityPose(def.id), def.id).toBe(true);
+      expect(abilityPose(base, def.id, 'windup', 0.8, false)).not.toEqual(base); // a visible wind-up
+    }
+    const ult = INFERNO_KIT.ult.id;
+    expect(abilityPose(base, ult, 'recovery', 0.5, true)).not.toEqual(abilityPose(base, ult, 'recovery', 0.5, false));
+  });
+});

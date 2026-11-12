@@ -14,6 +14,8 @@ const STYLE: Record<CombatEvent['kind'], { text: (e: CombatEvent) => string; cls
   dodged: { text: () => 'DODGE', cls: 'ct-dodge' },
   ko: { text: () => 'KO!', cls: 'ct-ko' },
   burn: { text: (e) => `-${e.amount}`, cls: 'ct-burn' },
+  combo: { text: (e) => `${e.amount} HIT COMBO`, cls: 'ct-combo' },
+  miss: { text: () => 'MISS', cls: 'ct-miss' },
 };
 
 const MAX_LIVE = 24;

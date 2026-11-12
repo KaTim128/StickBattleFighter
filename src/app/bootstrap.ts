@@ -24,6 +24,7 @@ import { AbilityHud } from '../interface/ability-hud';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { SettingsPanel } from '../interface/settings-panel';
+import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
@@ -181,6 +182,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const combatText = new CombatText(document.body);
   const abilityHud = new AbilityHud(document.body); // after the touch controls: it paints their ability buttons
   const clashHud = new ClashHud(document.body);
+  const topHud = new TopHud(document.body);
+  const showcase = new UltimateShowcase(document.body);
   const sound = new SoundBoard();
   sound.muted = params.has('mute');
   // Background ambience (owner, 12/11/2026: soundscapes, never music): each map its own;
@@ -301,6 +304,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         }
         combatText.show(events, (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
+        topHud.update(scene.topHud);
+        if (scene.drainShowcases() > 0) showcase.play();
         clashHud.update(scene.clashHud);
         debug.clash = scene.clashHud.state;
         for (const { id, gain } of scene.drainSoundCues()) {

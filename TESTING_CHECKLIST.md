@@ -160,6 +160,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V `docs/screenshots/inferno-fx-sheet-1.png`, `inferno-fx-sheet-2.png`, `inferno-flame-body.png`, `doorway-office-side.png`, `doorway-boss-side.png`.
 - [ ] Owner: the feel of the Fireball, Fire Beam and Eruption; Inferno's new look; death by fire.
 
+## 0zc. Phase 8 presentation targets (verified 12/11/2026)
+- [x] Combo count and MISS (PRS-4); shield flare (PRS-5); stunned stars and status chips (PRS-6); ultimate showcase (PRS-8); top HUD with portraits, clock and last action (PRS-10).
+- [x] The kit's animation set is complete; every built-in character validates.
+- [x] V `docs/screenshots/phase8-top-hud.png` (desktop and Pixel 7).
+- [ ] Owner: HUD layout on your phone; the showcase flash; the combo callouts.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.

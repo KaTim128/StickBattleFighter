@@ -41,6 +41,7 @@ import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
 import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
+import type { HudFighter, TopHudState } from '../../interface/top-hud';
 import { SPRINT, stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
@@ -146,6 +147,12 @@ const HITSTOP_KO_S = 0.18;
 const RECOIL_BOUNCE_S = 0.14;
 /** KO: lie still, then dissolve into dust over this window (seconds after the KO), then respawn. */
 const KO_DISSOLVE_FROM_S = 1.0;
+/** Landed hits this close together (seconds) count as one combo (PRS-4). */
+const COMBO_WINDOW_S = 1.0;
+/** A whiff calls out MISS only if an opponent stood this close (metres). */
+const MISS_CALLOUT_RANGE_M = 2.4;
+/** The guard's shield flares this long after it takes a blow (PRS-5). */
+const SHIELD_FLARE_S = 0.35;
 /** A body burned by fire chars to this before it crumbles to ash. */
 const CHARCOAL = 0x2a1c14;
 /** Every fighter killed by fire crumbles into embers and ash (Effects library id). */
@@ -257,6 +264,10 @@ export class FightArenaScene implements ArenaScene {
   private readonly sounds: { id: string; gain: number }[] = [];
   /** Simulation time (hit-stop excluded), seconds. */
   private simTimeS = 0;
+  /** The name of the player's last attack or ability (top HUD). */
+  private lastActionName: string | null = null;
+  private lastActionKey: string | null = null;
+  private showcases = 0;
   /** The Punch Clash (owner, 11/11/2026). */
   readonly clashes: SceneClash;
   private readonly shake = new CameraShake();
@@ -356,6 +367,44 @@ export class FightArenaScene implements ArenaScene {
   /** The floor layer (world metres through the floor projection): debug collider outlines go here. */
   get floorLayer(): Container | null {
     return this.view?.floor ?? null;
+  }
+
+  /** Top HUD (PRS-10): both fighters, the match clock and the player's last action. */
+  get topHud(): TopHudState {
+    const side = (f: FighterEntity): HudFighter => {
+      const c = f.combatant;
+      const status: string[] = [];
+      if (c.isKo) status.push('ko');
+      else {
+        if (c.burning) status.push('burning');
+        if (c.state === 'stunned') status.push('stunned');
+        if (c.state === 'knockdown' || c.state === 'gettingUp') status.push('down');
+        if (c.state === 'guarding') status.push('guarding');
+      }
+      return {
+        name: f.def.displayName,
+        hp: c.hp,
+        maxHp: c.stats.maxHp,
+        stamina: c.stamina,
+        maxStamina: c.stats.maxStamina,
+        status,
+        portrait: f.def.capabilities.usesFireEffects && f.def.effects.head === 'flame' ? 'flame' : 'round',
+        colour: `#${f.def.look.limb.toString(16).padStart(6, '0')}`,
+      };
+    };
+    return {
+      left: side(this.playerFighter),
+      right: side(this.dummyFighter),
+      timerS: this.simTimeS,
+      lastAction: this.lastActionName,
+    };
+  }
+
+  /** Ultimates that landed since the last call (the HUD plays the showcase, PRS-8). */
+  drainShowcases(): number {
+    const n = this.showcases;
+    this.showcases = 0;
+    return n;
   }
 
   get player(): PlayerState {
@@ -496,6 +545,7 @@ export class FightArenaScene implements ArenaScene {
       if (!wasKo && f.combatant.isKo) this.abilities?.interrupt(f, true); // burned out
       f.burnTextS = Math.max(0, f.burnTextS - stepS);
       f.flashS = Math.max(0, f.flashS - stepS);
+      f.shieldS = Math.max(0, f.shieldS - stepS);
       f.recoilS = Math.max(0, f.recoilS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
@@ -505,6 +555,7 @@ export class FightArenaScene implements ArenaScene {
     // A Punch Clash takes over both fighters while it runs.
     if (!this.clashes.step(stepS, this.simTimeS)) {
       this.controlPlayer(this.playerFighter, stepS);
+      this.trackLastAction();
       this.controlDummy(this.dummyFighter, stepS);
       this.clashes.maybeStart(this.simTimeS);
     }
@@ -643,6 +694,16 @@ export class FightArenaScene implements ArenaScene {
       !f.caster?.cast;
     f.sprinting = this.intents.sprint;
     this.stepFighter(f, stepS, this.intents.move, jump);
+  }
+
+  /** Notice when the player starts a new attack or ability, for the top HUD's action name. */
+  private trackLastAction(): void {
+    const f = this.playerFighter;
+    const cast = f.caster?.cast;
+    const attack = f.combo.attack;
+    const key = cast ? `a:${cast.def.id}` : attack ? `m:${attack.id}:${f.combo.step}` : null;
+    if (key && key !== this.lastActionKey) this.lastActionName = cast ? cast.def.name : (attack?.label ?? null);
+    this.lastActionKey = key;
   }
 
   /**
@@ -1093,6 +1154,22 @@ export class FightArenaScene implements ArenaScene {
 
     if (result.outcome === 'dodged') return false;
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
+    if (guarded)
+      target.shieldS = SHIELD_FLARE_S; // the guard flares where it took the blow (PRS-5)
+    else {
+      // Combo counter (PRS-4): landed hits close together chain; the second and later call out.
+      attacker.comboCount = this.simTimeS - attacker.lastLandS <= COMBO_WINDOW_S ? attacker.comboCount + 1 : 1;
+      attacker.lastLandS = this.simTimeS;
+      if (attacker.comboCount >= 2) {
+        this.events.push({
+          kind: 'combo',
+          target: target.name,
+          x: t.x,
+          y: t.y - HEAD_TOP_M - 0.45,
+          amount: attacker.comboCount,
+        });
+      }
+    }
     const profile = s.profile ?? (guarded ? IMPACTS.blocked : IMPACTS[s.impact]);
     this.impactFeel(attacker, target, s, profile, result.outcome, guarded);
     if (s.groundBounce && !guarded && target.combatant.state !== 'ko') {
@@ -1300,6 +1377,7 @@ export class FightArenaScene implements ArenaScene {
     const capsule = hitCapsule(p, dir, a);
     let connected = false;
     let hitFighter = false; // fighter contacts shake through their impact profile
+    let reachedFighter = false; // the blow reached someone (even if blocked or dodged): not a miss
 
     if (a.lungeMps > 0) {
       const v = body.linvel();
@@ -1310,6 +1388,7 @@ export class FightArenaScene implements ArenaScene {
       if (target === attacker || !target.body || target.combatant.isKo) continue;
       const t = target.body.translation();
       if (distanceToCapsule(capsule, t.x, t.y) > a.hitRadiusM + target.def.body.footRadiusM) continue;
+      reachedFighter = true;
       // Knocked back along the blow, nudged a little toward where the target actually stands.
       const tx = t.x - p.x;
       const ty = t.y - p.y;
@@ -1372,6 +1451,13 @@ export class FightArenaScene implements ArenaScene {
       attacker.hits++;
       if (!hitFighter) this.shake.addTrauma(a.trauma);
       this.shake.punch(a.zoomPunch);
+    }
+    if (!reachedFighter) {
+      // MISS (PRS-4), only when someone was close enough that the swing was meant for them.
+      const near = this.fighters.some(
+        (o) => o !== attacker && !o.combatant.isKo && Math.hypot(o.x - p.x, o.y - p.y) < MISS_CALLOUT_RANGE_M,
+      );
+      if (near) this.events.push({ kind: 'miss', target: attacker.name, x: p.x, y: p.y - HEAD_TOP_M, amount: 0 });
     }
   }
 
@@ -1629,6 +1715,12 @@ export class FightArenaScene implements ArenaScene {
     for (const e of fx) {
       if (e.kind !== 'impact' || (e.radiusM ?? 0) < 2) continue;
       this.shake.addTrauma((e.radiusM ?? 0) >= 2.8 ? 0.85 : 0.5); // the Eruption slam hits hardest
+      if (
+        e.ability === this.playerFighter.caster?.def('ult').id ||
+        e.ability === this.dummyFighter.caster?.def('ult').id
+      ) {
+        this.showcases++; // an ultimate landed: the showcase flash (PRS-8)
+      }
       this.shake.punch(0.06);
     }
     const charges: ChargeFx[] = [];
@@ -1832,6 +1924,11 @@ export class FightArenaScene implements ArenaScene {
         dodge.dash = { amount, dirX: sx, dirY: sy };
       }
     }
+    // Readable defence and status (PRS-5, PRS-6): a shield while guarding that flares on a block,
+    // and stars circling the head while stunned.
+    f.view.guard = c.state === 'guarding' ? 1 : 0;
+    f.view.shieldFlare = f.shieldS / SHIELD_FLARE_S;
+    f.view.stunned = c.state === 'stunned';
     f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, flashColour, dodge);
     this.limbEffects(f, x, y);
     for (let n = f.animator.takeFootfalls(); n > 0; n--) this.characterSound(f, 'footstep', 0.5);

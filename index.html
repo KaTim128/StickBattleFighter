@@ -10,9 +10,9 @@
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; width: 100%; height: 100%; touch-action: none; }
       #status {
-        position: fixed; left: 12px; top: 12px; padding: 6px 10px; border-radius: 6px;
+        position: fixed; left: 12px; top: 84px; padding: 6px 10px; border-radius: 6px;
         font: 12px/1.4 system-ui, sans-serif; color: #e8edf5; background: rgba(0, 0, 0, 0.45);
-        pointer-events: none; max-width: calc(100% - 92px); box-sizing: border-box;
+        pointer-events: none; max-width: min(44vw, 520px); box-sizing: border-box;
       }
       #status[data-state='error'] { background: rgba(160, 20, 20, 0.85); }
       .touch-controls { position: fixed; inset: 0; pointer-events: none; }
@@ -129,6 +129,8 @@
       .ct-dodge { color: #d6ffb0; font-size: 15px; }
       .ct-ko { color: #ff4d4d; font-size: 34px; }
       .ct-burn { color: #ff9d3d; font-size: 14px; }
+      .ct-combo { color: #ffe066; font-size: 17px; letter-spacing: 0.04em; }
+      .ct-miss { color: #c9d3e0; font-size: 15px; font-style: italic; }
       @keyframes ct-rise {
         0% { opacity: 0; transform: translate(-50%, -60%) scale(0.7); }
         12% { opacity: 1; transform: translate(-50%, -100%) scale(1.15); }
@@ -185,6 +187,67 @@
       }
       .settings-message[data-kind='error'] { color: #ff6b6b; }
       .settings-reset { width: 100%; margin-top: 12px; }
+      /* Top HUD (PRS-10): both fighters at a glance, the match clock and the last action. */
+      .top-hud {
+        position: fixed; left: 50%; top: 10px; transform: translateX(-50%); z-index: 20;
+        width: min(calc(100vw - 132px), 860px); display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px;
+        pointer-events: none; font: 700 12px system-ui, sans-serif; color: #f2f5fa; text-shadow: 0 1px 0 #000;
+      }
+      .th-side { display: flex; gap: 8px; align-items: flex-start; }
+      .th-right { flex-direction: row-reverse; text-align: right; }
+      .th-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+      .th-name { font-size: 13px; letter-spacing: 0.04em; }
+      .th-bar { position: relative; height: 12px; border-radius: 4px; background: rgba(10, 12, 18, 0.75); border: 2px solid rgba(0, 0, 0, 0.7); overflow: hidden; }
+      .th-st { height: 6px; }
+      .th-bar > div { position: absolute; top: 0; bottom: 0; left: 0; }
+      .th-right .th-bar > div { left: auto; right: 0; }
+      .th-hp .th-fill { background: linear-gradient(#7cf08e, #2fb24a); }
+      .th-hp .th-lag { background: #e04a3a; }
+      .th-st .th-fill { background: #f2c94c; }
+      .th-status { display: flex; gap: 4px; min-height: 16px; }
+      .th-right .th-status { justify-content: flex-end; }
+      .th-chip { padding: 1px 6px; border-radius: 4px; font-size: 10px; background: rgba(0, 0, 0, 0.6); }
+      .th-chip-burning { color: #ffb347; border: 1px solid #ff7a1a; }
+      .th-chip-stunned { color: #ffe066; border: 1px solid #ffd23f; }
+      .th-chip-guarding { color: #9fe0ff; border: 1px solid #7fd8ff; }
+      .th-chip-down, .th-chip-ko { color: #ff8f8f; border: 1px solid #e04a3a; }
+      .th-portrait {
+        width: 44px; height: 44px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.7);
+        background: rgba(10, 12, 18, 0.8); display: grid; place-items: center; overflow: hidden;
+      }
+      .th-portrait span { width: 26px; height: 26px; border-radius: 50%; background: var(--fighter, #ccc); border: 3px solid #1b1b1f; }
+      .th-portrait[data-style='flame'] span {
+        border: 0; width: 28px; height: 28px; margin-top: 6px;
+        background: radial-gradient(circle at 42% 40%, #fffbe6 0 18%, #ffc94a 32%, #ff8c1e 58%, #d8320c 76%, transparent 78%);
+        box-shadow: 0 -8px 10px -2px rgba(255, 140, 30, 0.9), 0 -14px 12px -6px rgba(255, 220, 90, 0.8);
+      }
+      .th-centre { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; }
+      .th-timer { font-size: 20px; padding: 2px 10px; border-radius: 8px; background: rgba(10, 12, 18, 0.75); font-variant-numeric: tabular-nums; }
+      .th-action { font-size: 12px; color: #ffd8b0; min-height: 16px; white-space: nowrap; }
+      .th-action.pop { animation: th-pop 0.35s ease-out; }
+      @keyframes th-pop { from { transform: scale(1.35); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
+      /* Touch screens: the controls hint is for keyboards; only an error message is shown there. */
+      @media (pointer: coarse) {
+        #status:not([data-state='error']) { display: none; }
+      }
+      @media (max-width: 640px) {
+        .top-hud { gap: 6px; }
+        .th-portrait { width: 32px; height: 32px; }
+        .th-centre { min-width: 70px; }
+        .th-timer { font-size: 15px; }
+        .th-name { font-size: 11px; }
+      }
+      /* Ultimate showcase (PRS-8): a short white flash with speed lines from the centre. */
+      .ult-showcase { position: fixed; inset: 0; pointer-events: none; z-index: 25; opacity: 0; }
+      .ult-showcase.on {
+        animation: ult-flash 0.42s ease-out;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(255, 250, 230, 0.75) 0 18%, rgba(255, 200, 120, 0.25) 40%, transparent 65%),
+          repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, 0.55) 0deg 1.2deg, transparent 1.2deg 9deg);
+        -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 60%);
+        mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 60%);
+      }
+      @keyframes ult-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
     </style>
   </head>
   <body>

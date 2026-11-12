@@ -46,6 +46,12 @@ export class StickmanView {
    */
   burnAway = 0;
   private readonly burnMask = new Graphics();
+  /** 0..1 guarding (a faint shield in front); `shieldFlare` 0..1 flares it after a block (PRS-5). */
+  guard = 0;
+  shieldFlare = 0;
+  /** Stunned: stars circle the head (PRS-6). */
+  stunned = false;
+  private readonly status = new Graphics();
   /** 0..1 how fast the fighter is moving: the flames stream back. */
   motion = 0;
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
@@ -58,7 +64,7 @@ export class StickmanView {
   ) {
     this.root.label = 'stickman';
     this.fire.blendMode = 'add';
-    this.figure.addChild(this.body, this.fire, this.fireCore, this.burnMask);
+    this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
     this.root.addChild(this.shadow, this.trail, this.figure);
   }
 
@@ -198,6 +204,7 @@ export class StickmanView {
       stroke(pts, toward(FLAME.core, flashColour, flash), w * 0.42, Math.min(1, pulse));
     });
     if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
+    this.drawStatus(s, t);
     if (flame > 0.01) {
       // Dodge: the body becomes a small, quick streak of flame at chest height (owner: smaller, no grey).
       this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
@@ -293,6 +300,67 @@ export class StickmanView {
       c.ellipse(x + r * ex, y + r * ey, r * ew, r * eh).fill(0xfffbe6);
     }
     if (flash > 0) c.circle(x, y, r).fill({ color: 0xffffff, alpha: flash * 0.6 });
+  }
+
+  /**
+   * Defence and status marks (PRS-5, PRS-6), in the figure's frame (+x = in front):
+   * - a curved shield of light in front of the chest while guarding, flaring bright when it
+   *   absorbs a blow;
+   * - three small stars circling the head while stunned.
+   */
+  private drawStatus(s: ReturnType<typeof solveSkeleton>, t: number): void {
+    const g = this.status.clear();
+    const shield = Math.max(this.guard * 0.45, this.shieldFlare);
+    if (shield > 0.01) {
+      const cx = s.chest.x + 0.2;
+      const cy = (s.chest.y + s.pelvis.y) / 2 - 0.1;
+      const r = 0.55 + 0.1 * this.shieldFlare;
+      const a0 = -1.05;
+      const a1 = 1.05;
+      g.moveTo(cx + Math.cos(a0) * r * 0.55, cy + Math.sin(a0) * r)
+        .arc(cx, cy, r, a0, a1)
+        .lineTo(cx + Math.cos(a1) * r * 0.55, cy + Math.sin(a1) * r)
+        .arc(cx - r * 0.45, cy, r * 0.85, a1 * 0.9, a0 * 0.9, true)
+        .closePath()
+        .fill({ color: 0x7fd8ff, alpha: 0.18 * shield + 0.25 * this.shieldFlare })
+        .stroke({ width: 0.035, color: 0xd8f4ff, alpha: 0.5 * shield + 0.5 * this.shieldFlare });
+      if (this.shieldFlare > 0.05) {
+        // Ripples spreading from where it took the blow.
+        g.circle(cx + r * 0.75, cy, 0.12 + (1 - this.shieldFlare) * 0.35).stroke({
+          width: 0.03,
+          color: 0xffffff,
+          alpha: this.shieldFlare,
+        });
+      }
+    }
+    if (this.stunned) {
+      for (let i = 0; i < 3; i++) {
+        const a = t * 4.5 + (i * Math.PI * 2) / 3;
+        const x = s.head.x + Math.cos(a) * 0.24;
+        const y = s.head.y - this.bones.headRadius - 0.12 + Math.sin(a) * 0.06;
+        const k = 0.06;
+        g.poly([
+          x,
+          y - k,
+          x + k * 0.3,
+          y - k * 0.3,
+          x + k,
+          y,
+          x + k * 0.3,
+          y + k * 0.3,
+          x,
+          y + k,
+          x - k * 0.3,
+          y + k * 0.3,
+          x - k,
+          y,
+          x - k * 0.3,
+          y - k * 0.3,
+        ])
+          .fill({ color: 0xffe066, alpha: 0.95 })
+          .stroke({ width: 0.012, color: 0x7a5a00 });
+      }
+    }
   }
 
   /** Charred streaks: short dark flecks drifting along a limb, so the fire has darker detail. */

@@ -394,6 +394,19 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
   - offline renders measured and attached as `docs/audio-previews/*.mp3`.
 - **Limitation:** the sounds were checked by measurement, not by ear.
 
+### 12/11/2026: Phase 8 slice 1: presentation targets complete for Inferno
+- **New presentation features:**
+  - **Combo and MISS callouts (PRS-4):** "N HIT COMBO" for chained hits; MISS for a swing that reaches nobody while an opponent is close.
+  - **Shield (PRS-5):** shown while guarding, flaring on a block.
+  - **Status (PRS-6):** stars over a stunned head, and status chips on the HUD.
+  - **Ultimate showcase (PRS-8):** a flash with speed lines when an ultimate lands.
+  - **Top HUD (PRS-10):** portraits, health and stamina for both sides, a match clock and the last action used.
+- **Layout:** the controls hint moved under the HUD, and is hidden on touch screens unless it shows an error.
+- **QA record:** `docs/qa/PHASE8_INFERNO_QA.md` (self-review; an independent QA review is recommended).
+- **Tests:** a presentation integration suite (combo, MISS, HUD, showcase, shield, stun) and a complete-animation-set test for the kit.
+- **Evidence:** lint clean; typecheck 0; `npm test` 297/297; `npm run e2e` 31 passed; `docs/screenshots/phase8-top-hud.png`.
+- **Next task:** an independent QA review of Phase 8 (`qa-specialist`, if the owner agrees), then Phase 9 (the full initial roster).
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
