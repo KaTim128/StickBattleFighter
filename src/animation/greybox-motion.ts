@@ -575,46 +575,131 @@ export function landingPose(bones: BoneLengths): Pose {
 }
 
 /**
- * CLIMBING (owner, 12/11/2026: "proper grabbing, pulling and climbing animations"), by climb
- * progress 0..1. 0: hanging from the edge, both arms straight up gripping the top, legs dangling
- * loose. Mid-way: elbows bent hard, chin to the edge, knees drawn up to scrabble at the side. 1: the
- * mantle: chest over the edge, both hands pressing down on the top, the lead knee up onto it.
+ * CLIMBING (owner, 12/11/2026: "visibly raise one elbow above the ledge and use that arm to push
+ * its body upwards ... the other arm helps pull the body onto the platform ... rather than simply
+ * snapping onto the platform"), by climb progress. Joint angles: arm roots from the torso's down
+ * axis (+ forward, 180 = overhead), elbows bend + to curl the forearm; the ledge is ahead.
+ *
+ * 0     HANG: both arms reaching up and forward, hands gripping the top, legs dangling.
+ * 0.35  PULL: a pull-up; elbows driven down, forearms up to the hands, chin to the edge, knees up.
+ * 0.6   ELBOW OVER: the lead elbow hooks up over the ledge (upper arm forward, forearm flat on the
+ *       top) while the rear arm keeps pulling; the chest tips forward onto the edge.
+ * 0.82  PRESS: the lead elbow is high above the top, its hand planted, and the arm drives down;
+ *       the rear hand is planted too; the torso leans far over as the hips rise.
+ * 1     MANTLE: both arms locked straight down on the top, the lead knee up onto it.
+ * 1..2  STAND: rising off the hands onto the feet as the body moves in over the top.
  */
-const CLIMB_HANG: Pose = {
-  lean: deg(-8),
-  head: deg(-4),
-  // Reaching up and forward onto the ledge, so the arms read clear of the head.
-  armFront: { root: deg(146), bend: deg(8) },
-  armBack: { root: deg(136), bend: deg(14) },
-  legFront: { root: deg(12), bend: deg(-24) },
-  legBack: { root: deg(-6), bend: deg(-14) },
-};
-const CLIMB_PULL: Pose = {
-  lean: deg(-10),
-  head: deg(4),
-  armFront: { root: deg(150), bend: deg(115) },
-  armBack: { root: deg(144), bend: deg(120) },
-  legFront: { root: deg(55), bend: deg(-95) },
-  legBack: { root: deg(10), bend: deg(-60) },
-};
-const CLIMB_MANTLE: Pose = {
-  lean: deg(-38),
-  head: deg(26),
-  armFront: { root: deg(28), bend: deg(30) },
-  armBack: { root: deg(36), bend: deg(26) },
-  legFront: { root: deg(95), bend: deg(-120) },
-  legBack: { root: deg(-10), bend: deg(-30) },
-};
+const CLIMB_KEYS: readonly [number, Pose][] = [
+  [
+    0,
+    {
+      lean: deg(-8),
+      head: deg(-4),
+      armFront: { root: deg(146), bend: deg(8) },
+      armBack: { root: deg(136), bend: deg(14) },
+      legFront: { root: deg(12), bend: deg(-24) },
+      legBack: { root: deg(-6), bend: deg(-14) },
+    },
+  ],
+  [
+    0.35,
+    {
+      lean: deg(-12),
+      head: deg(6),
+      armFront: { root: deg(34), bend: deg(150) },
+      armBack: { root: deg(30), bend: deg(152) },
+      legFront: { root: deg(48), bend: deg(-90) },
+      legBack: { root: deg(8), bend: deg(-56) },
+    },
+  ],
+  [
+    0.6,
+    {
+      lean: deg(-24),
+      head: deg(14),
+      armFront: { root: deg(130), bend: deg(-26) },
+      armBack: { root: deg(36), bend: deg(128) },
+      legFront: { root: deg(62), bend: deg(-104) },
+      legBack: { root: deg(-4), bend: deg(-40) },
+    },
+  ],
+  [
+    0.82,
+    {
+      lean: deg(-36),
+      head: deg(24),
+      // A dip: the lead elbow up behind and above the planted hand, driving it down; the rear arm
+      // pressing beside it.
+      armFront: { root: deg(-64), bend: deg(100) },
+      armBack: { root: deg(-48), bend: deg(84) },
+      legFront: { root: deg(78), bend: deg(-118) },
+      legBack: { root: deg(-14), bend: deg(-28) },
+    },
+  ],
+  [
+    1,
+    {
+      lean: deg(-40),
+      head: deg(28),
+      armFront: { root: deg(-14), bend: deg(8) },
+      armBack: { root: deg(-6), bend: deg(10) },
+      legFront: { root: deg(95), bend: deg(-122) },
+      legBack: { root: deg(-12), bend: deg(-30) },
+    },
+  ],
+  [
+    2,
+    {
+      lean: deg(-6),
+      head: deg(4),
+      armFront: { root: deg(20), bend: deg(40) },
+      armBack: { root: deg(14), bend: deg(46) },
+      legFront: { root: deg(14), bend: deg(-20) },
+      legBack: { root: deg(-10), bend: deg(-14) },
+    },
+  ],
+];
 
+const smoothStep = (t: number): number => t * t * (3 - 2 * t);
+
+/** The climbing pose at progress 0..1, then 1..2 while stepping up onto the top. */
 export function climbPose(progress: number, timeS = 0): Pose {
-  const p = Math.min(1, Math.max(0, progress));
-  // A little sway while hanging, which fades as the pull takes over.
-  const sway = Math.sin(timeS * TAU * 0.7) * deg(4) * (1 - p);
-  const base =
-    p < 0.6 ? blendPose(CLIMB_HANG, CLIMB_PULL, p / 0.6) : blendPose(CLIMB_PULL, CLIMB_MANTLE, (p - 0.6) / 0.4);
+  const p = Math.min(2, Math.max(0, progress));
+  let i = 0;
+  while (i < CLIMB_KEYS.length - 2 && p > CLIMB_KEYS[i + 1]![0]) i++;
+  const [p0, a] = CLIMB_KEYS[i]!;
+  const [p1, b] = CLIMB_KEYS[i + 1]!;
+  const base = blendPose(a, b, smoothStep(Math.min(1, Math.max(0, (p - p0) / (p1 - p0)))));
+  // Hanging sways a little; the legs kick and scrabble at the wall while pulling.
+  const sway = Math.sin(timeS * TAU * 0.7) * deg(4) * Math.max(0, 1 - p * 3);
+  const scrabble = Math.sin(timeS * TAU * 3.2) * deg(9) * Math.max(0, Math.min(1, p * 3) * (1 - Math.min(1, p)));
   return {
     ...base,
-    legFront: { root: base.legFront.root + sway, bend: base.legFront.bend },
-    legBack: { root: base.legBack.root + sway * 0.6, bend: base.legBack.bend },
+    legFront: { root: base.legFront.root + sway + scrabble, bend: base.legFront.bend },
+    legBack: { root: base.legBack.root + sway * 0.6 - scrabble, bend: base.legBack.bend },
   };
+}
+
+/**
+ * How far the body has risen (0 hanging, 1 standing on the top) at a climb progress 0..2, keyed to
+ * the poses so the hands stay on the ledge through every stage: slow through the pull-up and the
+ * elbow hook, then the press and the step up carry it over.
+ */
+const CLIMB_RISE: readonly [number, number][] = [
+  [0, 0],
+  [0.35, 0.3],
+  [0.6, 0.37],
+  [0.82, 0.55],
+  [1, 0.66],
+  [2, 1],
+];
+
+export function climbRise(progress: number): number {
+  const p = Math.min(2, Math.max(0, progress));
+  for (let i = 0; i + 1 < CLIMB_RISE.length; i++) {
+    const [p0, r0] = CLIMB_RISE[i]!;
+    const [p1, r1] = CLIMB_RISE[i + 1]!;
+    if (p <= p1) return r0 + (r1 - r0) * smoothStep((p - p0) / (p1 - p0));
+  }
+  return 1;
 }

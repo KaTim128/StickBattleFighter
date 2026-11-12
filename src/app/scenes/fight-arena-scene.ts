@@ -2221,7 +2221,7 @@ export class FightArenaScene implements ArenaScene {
       relaxed: f.calmS >= RELAX_AFTER_S,
     });
     // Hanging and pulling up a ledge (owner, 12/11/2026).
-    if (f.climb) pose = climbPose(f.climb.progress, this.simTimeS);
+    if (f.climb) pose = climbPose(f.climb.shown + (f.climb.stepUp?.t ?? 0), this.simTimeS);
     const attack = f.combo.attack;
     if (attack) pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
     if (f.scriptedAttack) {

@@ -41,9 +41,14 @@ export class FighterEntity {
    */
   climb: {
     surface: import('../../physics/climbing').ClimbSurface;
+    /** How far the presses have earned (0..1). */
     progress: number;
+    /** What the body shows: it chases `progress` with weight and momentum, never snapping. */
+    shown: number;
     hangM: number;
     dir: { x: number; y: number };
+    /** Stepping up onto the top once over the edge: 0..1, with where it starts and ends. */
+    stepUp: { t: number; from: { x: number; y: number }; to: { x: number; y: number } } | null;
   } | null = null;
   /** Highest point of the current fall (for fall damage on landing). */
   fallPeakM = 0;

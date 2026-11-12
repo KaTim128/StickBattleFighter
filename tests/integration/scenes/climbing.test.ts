@@ -93,7 +93,13 @@ describe('furniture climbing', () => {
     // Not pressing: it hangs there (slipping back a little), never climbing by itself.
     run(0.5);
     expect(p.climb).not.toBeNull();
-    for (let i = 0; i < 6 && p.climb; i++) pull();
+    let rising = 0;
+    for (let i = 0; i < 12 && p.climb; i++) {
+      const h = p.hop.heightM;
+      pull();
+      if (p.hop.heightM > h) rising++;
+    }
+    expect(rising).toBeGreaterThanOrEqual(4); // each heave lifts the body a little: no snap
     expect(p.climb).toBeNull();
     run(0.3);
     expect(p.hop.heightM).toBeCloseTo(2, 2); // standing on the top
@@ -102,7 +108,7 @@ describe('furniture climbing', () => {
     scenes.clear();
   });
 
-  it('hit at about 70% of the climb: the climb is cancelled and the fighter falls, hurt by the drop', async () => {
+  it('hit at about 70% of the climb: the climb is cancelled and the fighter falls back to the floor', async () => {
     const { intents, scene, scenes, run, runUntil, p, jumpRight, pull } = await setup('inferno', { x: 18.2, y: 3 });
     jumpRight();
     runUntil(() => p.climb !== null, 1.2);
@@ -131,7 +137,7 @@ describe('furniture climbing', () => {
     expect(p.airborne).toBe(true); // falling, not snapped down
     runUntil(() => !p.airborne, 2);
     expect(p.hop.heightM).toBe(0);
-    expect(before - hp(p)).toBeGreaterThan(20); // the blow plus the fall
+    expect(before - hp(p)).toBeGreaterThanOrEqual(20); // the blow (a drop from this low is survivable unhurt)
     scenes.clear();
   });
 
@@ -170,7 +176,7 @@ describe('furniture climbing', () => {
       jumpRight();
       runUntil(() => p.climb !== null, 1.2);
       intents.setMove('t', { x: 0, y: 0 });
-      for (let i = 0; i < 8 && p.climb; i++) pull();
+      for (let i = 0; i < 14 && p.climb; i++) pull();
       run(0.3);
       expect(p.hop.heightM).toBeCloseTo(2, 2);
       const before = hp(p);

@@ -66,3 +66,33 @@ describe('walking, running and the relaxed idle', () => {
     expect(a.weights.relax).toBeLessThan(0.1);
   });
 });
+
+/** Owner, 12/11/2026: the climb raises one elbow over the ledge and pushes up on it. */
+describe('ledge climb poses', () => {
+  it('hangs from both hands, hooks the lead elbow up over the edge, then presses down on it', async () => {
+    const { climbPose } = await import('../../../src/animation/greybox-motion');
+    const at = (p: number) => solveSkeleton(climbPose(p), BONES);
+    const hang = at(0);
+    // Hanging: both hands above the head.
+    for (const arm of [hang.armFront, hang.armBack]) expect(arm[2].y).toBeLessThan(hang.head.y);
+    // Elbow over: the lead elbow is higher than its shoulder, while the rear hand still pulls from above.
+    const over = at(0.6);
+    expect(over.armFront[1].y).toBeLessThan(over.chest.y - 0.05);
+    // Press: the lead elbow is above its hand (the hand planted on the top, the arm driving down).
+    const press = at(0.82);
+    expect(press.armFront[1].y).toBeLessThan(press.armFront[2].y - 0.1);
+    // Mantle: both arms nearly straight, hands below the chest, pushing the body up.
+    const mantle = at(1);
+    for (const arm of [mantle.armFront, mantle.armBack]) expect(arm[2].y).toBeGreaterThan(mantle.chest.y + 0.3);
+    // Every stage blends smoothly: no joint jumps more than 30 degrees per 2% of the climb (the
+    // lead arm's biggest sweep, forward-up to back-down as the shoulder rises over the elbow, stays under it).
+    for (let p = 0; p < 2; p += 0.02) {
+      const a = climbPose(p);
+      const b = climbPose(p + 0.02);
+      for (const k of ['armFront', 'armBack', 'legFront', 'legBack'] as const) {
+        expect(Math.abs(a[k].root - b[k].root)).toBeLessThan((30 * Math.PI) / 180);
+        expect(Math.abs(a[k].bend - b[k].bend)).toBeLessThan((30 * Math.PI) / 180);
+      }
+    }
+  });
+});

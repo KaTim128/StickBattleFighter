@@ -23,6 +23,16 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 12/11/2026: Targeting, fourth abilities, walk/run, climbing, Braxon fixes, HUD (owner requests; Master Developer)
+- **Controls:** J attack, K ultimate, L dodge, F ability 3, R ability 4; aimed abilities enter and confirm with their own key, WASD or the joystick move the target (Teleport faster than the leap), Escape or the touch ✕ cancel, instructions on screen. Settings storage v2 resets saved key layouts once.
+- **New R abilities** (owner's picks): Flame Detonation (Inferno), Grapple Slam (Braxon), Grave Chains (Necro). Fighter details: fighter-coloured stat bars, unique combo icons.
+- **Movement:** a proper walk without Shift; run only with Shift; relaxed idle after 3 s calm. Climbable furniture, ledge grab and Space-to-climb with an elbow-press animation and a smooth step-up, fall damage by height and weight.
+- **Braxon:** connected pelvis and legs, head centred behind the near arm and facing forward; the charge runs until a wall. Heavy steel sound for metal props, louder for harder hits. Top HUD restyled.
+- **Tests:** 354 unit/integration tests pass; browser suite run (results in the session report). Docs: spec REQ-ABL-17, REQ-CTL-21, REQ-ANI-13, REQ-PHY-12, REQ-UI-30, SUP-20, SUP-21; TD-056; TESTING_CHECKLIST §13d.
+- **Known limits:** the steel sound was not listened to (no audio in the cloud browser); the opponent AI does not use the new abilities or climb; portrait-phone HUD overlap still open.
+- **Next task:** owner playtest of the climb and targeting feel on a phone and desktop.
+
+
 ### 10/11/2026: Phase I, project initialisation (Master Developer)
 
 **Reference inspection**

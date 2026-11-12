@@ -318,6 +318,16 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Ability bar and touch ability buttons show each ability's picture; the name appears on hover
 - [x] No button's text goes outside its button on desktop, a portrait phone or a sideways phone (`tests/e2e/button-fit.spec.ts`)
 
+## 13d. Controls, abilities, movement and climbing (owner, 12/11/2026)
+- [x] J/K/L/F/R defaults; K only the ultimate; saved layouts reset to the new defaults (`bindings.test.ts`, `input.test.ts`)
+- [x] Aimed abilities: own key enters and confirms, WASD/joystick moves the target (Teleport faster), Escape/✕ cancels, on-screen instructions (`abilities.test.ts`, `necro.test.ts`, `controls.spec.ts`, `phase6.spec.ts`)
+- [x] Fourth abilities: Flame Detonation, Grapple Slam, Grave Chains (`fourth-abilities.test.ts`)
+- [x] Walk without Shift, run with Shift, relaxed idle after 3 s (`walk-run-relax.test.ts`, `fourth-abilities.test.ts`)
+- [x] Braxon's charge runs until a wall (`rampage.test.ts`); Braxon head and pelvis (browser check)
+- [x] Jump onto a desk, ledge grab and climb with Space, hit at ~70% falls, fall damage by height and weight (`climbing.test.ts`); climb poses with the elbow press (`walk-run-relax.test.ts`, browser check)
+- [x] Fighter details: stat bars in the fighter's colour, unique combo icons; top HUD restyle (browser check, desktop and phone)
+- [ ] Heavy steel cabinet sound: listen on a real device (not verifiable in the cloud browser)
+
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green
 - [ ] Previous milestones' acceptance tests re-run

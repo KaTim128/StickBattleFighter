@@ -1,3 +1,4 @@
+import { climbRise } from '../../animation/greybox-motion';
 import type { ArenaProps } from '../../environment/arena-props';
 import {
   CLIMBING,
@@ -78,26 +79,50 @@ export class SceneClimbing {
         f.fallPeakM = f.hop.heightM;
         return false;
       }
+      if (c.stepUp) {
+        // Up and over: the body moves in over the top as it rises off its hands (no snap).
+        const u = (c.stepUp.t = Math.min(1, c.stepUp.t + stepS / STEP_UP_S));
+        const k = u * u * (3 - 2 * u);
+        // (Moved directly: placeAt is a teleport and would end the climb.)
+        const at = {
+          x: c.stepUp.from.x + (c.stepUp.to.x - c.stepUp.from.x) * k,
+          y: c.stepUp.from.y + (c.stepUp.to.y - c.stepUp.from.y) * k,
+        };
+        f.body?.setTranslation(at, true);
+        Object.assign(f.curr, at);
+        f.hop =
+          u >= 1
+            ? { heightM: c.surface.topM, verticalSpeedMps: 0, floorM: c.surface.topM }
+            : { heightM: c.hangM + (c.surface.topM - c.hangM) * climbRise(1 + u), verticalSpeedMps: 0 };
+        if (u >= 1) {
+          f.fallPeakM = c.surface.topM;
+          f.climb = null;
+          this.hooks.onClimb(f, 'top');
+        }
+        f.body?.setLinvel({ x: 0, y: 0 }, true);
+        return true;
+      }
       if (jumpPressed) {
         c.progress = Math.min(1, c.progress + CLIMBING.pullPerPress);
         this.hooks.onClimb(f, 'pull');
-      } else c.progress = Math.max(0, c.progress - CLIMBING.slipPerS * stepS);
-      f.hop = { heightM: c.hangM + (c.surface.topM - c.hangM) * easeOut(c.progress), verticalSpeedMps: 0 };
-      if (c.progress >= 1) {
-        // Over the top: step onto it, clear of the edge.
+      } else if (c.progress < 1) c.progress = Math.max(0, c.progress - CLIMBING.slipPerS * stepS); // over the edge: committed
+      // The body follows each heave with weight: quick to start, easing in (a spring, not a jump).
+      c.shown += (c.progress - c.shown) * Math.min(1, stepS * HEAVE_RATE);
+      f.hop = { heightM: c.hangM + (c.surface.topM - c.hangM) * climbRise(c.shown), verticalSpeedMps: 0 };
+      if (c.progress >= 1 && c.shown > 0.97) {
+        // Over the edge: step in, clear of the edge where the top is wide enough, else along its
+        // middle (a narrow shelf).
         const s = c.surface;
-        // Clear of the edge where the top is wide enough, else along its middle (a narrow shelf).
         const inset = f.def.body.footRadiusM + 0.12;
         const along = (lo: number, hi: number, want: number) =>
           hi - lo > inset * 2 ? Math.min(hi - inset, Math.max(lo + inset, want)) : (lo + hi) / 2;
         const reach = f.def.body.footRadiusM + 0.4;
-        const cx = along(s.x0, s.x1, f.x + c.dir.x * reach);
-        const cy = along(s.y0, s.y1, f.y + c.dir.y * reach);
-        f.placeAt({ x: cx, y: cy });
-        f.hop = { heightM: s.topM, verticalSpeedMps: 0, floorM: s.topM };
-        f.fallPeakM = s.topM;
-        f.climb = null;
-        this.hooks.onClimb(f, 'top');
+        c.shown = 1;
+        c.stepUp = {
+          t: 0,
+          from: { x: f.x, y: f.y },
+          to: { x: along(s.x0, s.x1, f.x + c.dir.x * reach), y: along(s.y0, s.y1, f.y + c.dir.y * reach) },
+        };
       }
       f.body?.setLinvel({ x: 0, y: 0 }, true);
       return true; // hanging, or just stepped onto the top this step
@@ -121,7 +146,7 @@ export class SceneClimbing {
       const hangM = Math.max(f.hop.floorM ?? 0, s.topM - CLIMBING.hangDepthM * (f.def.sizeScale ?? 1));
       f.combo.interrupt();
       f.placeAt({ x: cx - dir.x * (body.radiusM + 0.03), y: cy - dir.y * (body.radiusM + 0.03) });
-      f.climb = { surface: s, progress: 0, hangM, dir };
+      f.climb = { surface: s, progress: 0, shown: 0, hangM, dir, stepUp: null };
       f.hop = { heightM: Math.max(hangM, Math.min(f.hop.heightM, s.topM)), verticalSpeedMps: 0 };
       f.climb.hangM = f.hop.heightM;
       f.faceToward(dir.x, dir.y);
@@ -177,4 +202,7 @@ export class SceneClimbing {
   }
 }
 
-const easeOut = (t: number): number => 1 - (1 - t) * (1 - t);
+/** How quickly the body catches up with each heave (per second). */
+const HEAVE_RATE = 9;
+/** Seconds to rise off the hands and step in over the top. */
+const STEP_UP_S = 0.4;

@@ -464,3 +464,13 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
   - `fighterSheet()` builds the details screen from data (pure), so ability text never drifts from the numbers.
 - **Alternatives:** hand-written stat bars (drift from data); per-ability scene branches for teleport (rejected: data-driven delivery instead).
 - **Status:** ACCEPTED.
+
+### TD-056: Targeting, a fourth slot, grabs and pulls, walk/run split, climbing — ACCEPTED (owner requests 12/11/2026)
+- **Targeting:** one targeting state in the scene for aimed abilities; the move input (keys or joystick) slides the target at the delivery's `aimSpeedMps`; the ability's own key confirms; an `aimCancel` intent (Escape, touch ✕) cancels. The `ultimateLaunch` binding is removed so no key is shared; settings storage moves to v2 (volumes carried over, keys reset to the new defaults).
+- **Fourth slot:** `AbilitySlot` gains `a4` (kit field required); HUD, touch, bindings and the fighter sheet iterate the slots. New framework pieces: payload `pull` (the world drags the target with `drive`), delivery `grab` (hold, hoist with `drive` lift, slam), host `hold`; dashes with `untilBlocked` run until a solid stop, and the caster's recovery waits while it is still driven.
+- **Animation:** the animator walks unless `sprinting` (or a charge drives the body) and blends a relaxed stand after 3 s calm; jump height is measured from the floor the feet stand on.
+- **Climbing:** `HopState.floorM` (surfaces you stand on); `PropKind.climbable`; `src/physics/climbing.ts` pure rules (grab reach, fall damage by drop and mass); `SceneClimbing` toggles a fighter's furniture collisions above furniture height and blocks taller pieces itself.
+- **Braxon:** muscle bodies draw both legs before the torso so the pelvis covers the hip joints, and the head before the near arm.
+- **Alternatives:** per-prop Rapier filters (too fine-grained for 2D top-down); mouse aiming kept alongside keys (rejected: the owner asked for keyboard targeting and K conflicts).
+- **Status:** ACCEPTED.
+

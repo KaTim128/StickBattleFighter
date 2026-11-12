@@ -2,17 +2,16 @@ import type { Page } from '@playwright/test';
 
 /**
  * Where tests click in the game area: below and left of centre, clear of the HUD and the
- * settings button (desktop default: left click = tap attack, owner 11/11/2026).
+ * settings button.
  */
 export async function gamePoint(page: Page): Promise<{ x: number; y: number }> {
   const size = page.viewportSize() ?? { width: 1280, height: 720 };
   return { x: Math.round(size.width * 0.42), y: Math.round(size.height * 0.62) };
 }
 
-/** One left-click tap attack. */
+/** One tap attack: J (owner, 12/11/2026: the default attack key; it was left click). */
 export async function tapAttack(page: Page): Promise<void> {
-  const p = await gamePoint(page);
-  await page.mouse.click(p.x, p.y);
+  await page.keyboard.press('KeyJ');
 }
 
 /**
