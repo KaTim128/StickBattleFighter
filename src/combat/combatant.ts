@@ -114,6 +114,8 @@ export class Combatant {
   private koAgeS = -1;
   private burnS = 0;
   private burnKo = false;
+  /** Multiplies damage taken (a durability buff such as Rampage Mode sets 0.85). */
+  damageTakenScale = 1;
   private burnDps = 0;
 
   constructor(readonly stats: CombatStats) {
@@ -246,7 +248,7 @@ export class Combatant {
     if (this.isKo) return none('ignored');
     if (this.invulnS > 0) return none('dodged');
 
-    const raw = (hit.baseDamage * hit.attackerPower) / this.stats.defence;
+    const raw = ((hit.baseDamage * hit.attackerPower) / this.stats.defence) * this.damageTakenScale;
     const kbKeep = 1 - this.stats.knockbackResistance;
 
     if (this.guardUp && hit.fromFront) {

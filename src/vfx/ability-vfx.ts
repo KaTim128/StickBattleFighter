@@ -80,6 +80,24 @@ export interface ChargeFx {
   readonly body: boolean;
 }
 
+/** A fighter under a fury buff: motes and steam rising, a glow on the floor (Rampage Mode). */
+export interface AuraFx {
+  readonly x: number;
+  readonly y: number;
+  readonly palette: MagicLook['palette'];
+  /** 0..1 (fades out at the end). */
+  readonly strength: number;
+}
+
+/** A charging body kicking up the ground behind it (Rhino Charge). */
+export interface DashTrailFx {
+  readonly x: number;
+  readonly y: number;
+  readonly dirX: number;
+  readonly dirY: number;
+  readonly look: MagicLook;
+}
+
 export interface AbilityVfxInput {
   readonly aim?: AimIndicator | null;
   readonly impacts: readonly ImpactBurst[];
@@ -93,6 +111,8 @@ export interface AbilityVfxInput {
   readonly limbFlames?: readonly LimbFlames[];
   /** Casts charging this frame. */
   readonly charges?: readonly ChargeFx[];
+  readonly auras?: readonly AuraFx[];
+  readonly trails?: readonly DashTrailFx[];
   /** Continuous beams (Fire Beam). */
   readonly beams?: readonly Beam[];
   /** Smoke rising this frame (a burn going out, a body burning away), world points. */
@@ -228,6 +248,66 @@ export class AbilityVfx {
       else this.emitAt(p.x, p.y, BOLT_HEIGHT_M, 2, 0.6, 0.3, 0.09);
     }
     for (const c of input.charges ?? []) this.chargeParticles(c, dtS);
+    for (const a of input.auras ?? []) {
+      const n = this.count(30 * a.strength * dtS);
+      for (let i = 0; i < n; i++) {
+        const ang = this.rand() * Math.PI * 2;
+        this.emitAt(
+          a.x + Math.cos(ang) * 0.3,
+          a.y + Math.sin(ang) * 0.2,
+          0.3 + this.rand() * 1.4,
+          1,
+          0.3,
+          0.6,
+          0.08,
+          a.palette,
+        );
+      }
+      // Steam off the shoulders.
+      if (this.rand() < 4 * a.strength * dtS) {
+        const p = this.free();
+        if (p) {
+          Object.assign(p, {
+            live: true,
+            kind: 'smoke',
+            colour: 0xe8e0d8,
+            x: a.x + (this.rand() - 0.5) * 0.3,
+            y: a.y,
+            z: 1.45,
+            vx: (this.rand() - 0.5) * 0.3,
+            vy: (this.rand() - 0.5) * 0.2,
+            vz: 0.8 + this.rand() * 0.5,
+            ageS: 0,
+            lifeS: 0.8,
+            size: 0.09,
+            pal: a.palette,
+          });
+        }
+      }
+    }
+    for (const tr of input.trails ?? []) {
+      const pal = tr.look.palette;
+      const n = this.count((tr.look.flight?.trailPerS ?? 60) * dtS);
+      for (let i = 0; i < n; i++) {
+        const p = this.free();
+        if (!p) break;
+        Object.assign(p, {
+          live: true,
+          kind: this.rand() < 0.5 ? 'smoke' : 'ember',
+          colour: pal.bright,
+          x: tr.x - tr.dirX * 0.3 + (this.rand() - 0.5) * 0.4,
+          y: tr.y - tr.dirY * 0.3 + (this.rand() - 0.5) * 0.4,
+          z: 0.05 + this.rand() * 0.3,
+          vx: -tr.dirX * (1 + this.rand() * 2) + (this.rand() - 0.5),
+          vy: -tr.dirY * (1 + this.rand() * 2) + (this.rand() - 0.5),
+          vz: 0.4 + this.rand(),
+          ageS: 0,
+          lifeS: 0.5 + this.rand() * 0.4,
+          size: 0.1 + this.rand() * 0.1,
+          pal,
+        });
+      }
+    }
     for (const s of input.smoke ?? []) {
       for (let n = 0; n < s.count; n++) {
         const p = this.free();
@@ -428,7 +508,7 @@ export class AbilityVfx {
         ageS: -0.07,
         lifeS: 0.55,
       });
-      this.flameRings.push({ x: fx.x, y: fx.y, r1: im.ringM, ageS: 0, lifeS: 0.9, pal });
+      if (im.groundFire !== false) this.flameRings.push({ x: fx.x, y: fx.y, r1: im.ringM, ageS: 0, lifeS: 0.9, pal });
     }
     if (im.scorchM) {
       this.scorches.push({ x: fx.x, y: fx.y, r: im.scorchM, ageS: 0 });
@@ -442,7 +522,7 @@ export class AbilityVfx {
       Object.assign(p, {
         live: true,
         kind: 'smoke',
-        colour: SMOKE,
+        colour: im.smokeColour ?? SMOKE,
         x: fx.x + Math.cos(a) * 0.2,
         y: fx.y + Math.sin(a) * 0.2,
         z: z * 0.6,
@@ -821,6 +901,13 @@ export class AbilityVfx {
           fr.pal,
         );
       }
+    }
+
+    // Fury auras: a pulsing glow on the floor under the fighter.
+    for (const a of input.auras ?? []) {
+      const pulse = 0.8 + 0.2 * Math.sin(t * 9);
+      f.circle(a.x, a.y, 0.75 * pulse).fill({ color: a.palette.hot, alpha: 0.22 * a.strength });
+      f.circle(a.x, a.y, 0.95).stroke({ width: 0.05, color: a.palette.bright, alpha: 0.45 * a.strength * pulse });
     }
 
     // Charging casts: a core swelling in the palm, heat shimmer, and a glow on the floor for body charges.

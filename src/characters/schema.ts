@@ -205,6 +205,11 @@ export interface ObjectHandling {
   readonly throwPower: number;
   /** Thrown objects burst into flame: flammable ones burn, hits set the target alight. */
   readonly ignitesThrown?: boolean;
+  /**
+   * Can pick up movable furniture (drawer units, chairs) as well as small throwables, up to
+   * `maxLiftKg` (Rampage's Heavy Throw, owner 12/11/2026). Default false.
+   */
+  readonly liftsFurniture?: boolean;
 }
 
 export const DEFAULT_OBJECT_HANDLING: ObjectHandling = { maxLiftKg: 15, throwPower: 1, ignitesThrown: false };
@@ -239,9 +244,9 @@ export interface EffectsProfile {
   readonly body?: BodyStyle;
 }
 
-export const HEAD_STYLES = ['round', 'flame'] as const;
+export const HEAD_STYLES = ['round', 'flame', 'rhino'] as const;
 export type HeadStyle = (typeof HEAD_STYLES)[number];
-export const BODY_STYLES = ['solid', 'flame'] as const;
+export const BODY_STYLES = ['solid', 'flame', 'armour'] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */

@@ -45,6 +45,65 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-12), head: deg(10), armFront: limb(86, 10), armBack: limb(80, 22), ...CROUCH },
     settle: 0.2,
   },
+  // Ground Smash (Rampage): both fists raised high over the horn, then hammered into the floor in a deep squat.
+  groundSmash: {
+    windup: { lean: deg(14), head: deg(-12), armFront: limb(172, 40), armBack: limb(165, 48), legFront: limb(30, -40) },
+    release: {
+      lean: deg(-58),
+      head: deg(40),
+      armFront: limb(40, 8),
+      armBack: limb(32, 14),
+      legFront: limb(70, -120),
+      legBack: limb(-20, -95),
+    },
+    settle: 0.35,
+  },
+  // Rhino Charge (Rampage): drops onto all fours, head down and horn forward, pawing the ground for a
+  // second; then charges low on all fours (held while the charge carries him).
+  rhinoCharge: {
+    windup: {
+      lean: deg(-74),
+      head: deg(55),
+      armFront: limb(80, 8),
+      armBack: limb(62, 14),
+      legFront: limb(35, -55),
+      legBack: limb(-20, -40),
+    },
+    release: {
+      lean: deg(-78),
+      head: deg(60),
+      armFront: limb(95, 12),
+      armBack: limb(45, 30),
+      legFront: limb(45, -70),
+      legBack: limb(-35, -25),
+    },
+    settle: 0.2,
+  },
+  // Crushing Strike (Rampage): the rear fist cocked high behind the head, then brought straight down.
+  crushingStrike: {
+    windup: { lean: deg(18), head: deg(-10), armBack: limb(178, 70), armFront: limb(60, 110), legFront: limb(35, -50) },
+    release: {
+      lean: deg(-40),
+      head: deg(30),
+      armBack: limb(78, 10),
+      armFront: limb(20, 100),
+      legFront: limb(55, -90),
+      legBack: limb(-20, -60),
+    },
+    settle: 0.4,
+  },
+  // Rampage Mode (Rampage): hunched and coiled, then rearing up with fists flexed out and roaring.
+  rampageMode: {
+    windup: { lean: deg(-30), head: deg(30), armFront: limb(40, 130), armBack: limb(30, 130), legFront: limb(55, -90) },
+    release: {
+      lean: deg(16),
+      head: deg(-28),
+      armFront: limb(120, 95),
+      armBack: limb(110, 100),
+      legFront: limb(30, -30),
+    },
+    settle: 0.5,
+  },
   // Eruption (owner, 11/11/2026): squat deep and gather fire, spring up wrapped in flame (AIR),
   // then crash down fist-first into the floor (the release is the landing slam, held briefly).
   eruption: {

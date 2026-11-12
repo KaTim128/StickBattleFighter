@@ -1,0 +1,115 @@
+{
+  "id": "rampage-moveset",
+  "starters": {
+    "tap": "hammer-jab",
+    "air-tap": "body-slam"
+  },
+  "moves": [
+    {
+      "id": "hammer-jab",
+      "displayName": "Hammer jab",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 0.85,
+        "radiusM": 0.48
+      },
+      "damage": 45,
+      "strength": 600,
+      "knockbackMps": 1.6,
+      "lungeMps": 0.5,
+      "moveFactor": 0.35,
+      "impact": "knuckle-heavy",
+      "shake": 0.22,
+      "zoomPunch": 0.02,
+      "requires": ["canPunch"],
+      "next": {
+        "tap": "haymaker"
+      }
+    },
+    {
+      "id": "haymaker",
+      "displayName": "Haymaker",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.13,
+      "activeS": 0.09,
+      "recoveryS": 0.24,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 0.9,
+        "radiusM": 0.55
+      },
+      "damage": 60,
+      "strength": 900,
+      "knockbackMps": 2.2,
+      "lungeMps": 1.2,
+      "moveFactor": 0.3,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.025,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "double-hammer"
+      }
+    },
+    {
+      "id": "double-hammer",
+      "displayName": "Double-fist hammer (finisher)",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.22,
+      "activeS": 0.1,
+      "recoveryS": 0.42,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.6
+      },
+      "damage": 170,
+      "strength": 1800,
+      "knockbackMps": 9,
+      "lungeMps": 1.2,
+      "moveFactor": 0.15,
+      "impact": "knuckle-heavy",
+      "shake": 0.55,
+      "zoomPunch": 0.05,
+      "requires": ["canPunch", "canUseCombos"]
+    },
+    {
+      "id": "body-slam",
+      "displayName": "Leaping body slam",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.08,
+      "activeS": 0.18,
+      "recoveryS": 0.3,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.9,
+        "radiusM": 0.7
+      },
+      "damage": 110,
+      "strength": 1500,
+      "knockbackMps": 7,
+      "lungeMps": 0,
+      "moveFactor": 0.6,
+      "impact": "knuckle-heavy",
+      "shake": 0.45,
+      "zoomPunch": 0.04,
+      "requires": ["canUseAerialPunches"]
+    }
+  ]
+}

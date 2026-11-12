@@ -349,11 +349,15 @@ export class ArenaProps {
     behindM: number,
     /** The fighter's lifting limit (Stats Profile `objects.maxLiftKg`). */
     maxLiftKg = Number.POSITIVE_INFINITY,
+    /** Strong enough to lift movable furniture too (Stats Profile `objects.liftsFurniture`). */
+    liftsFurniture = false,
   ): ArenaProp | null {
     let best: ArenaProp | null = null;
     let bestD = Number.POSITIVE_INFINITY;
     for (const prop of this.props) {
-      if (!prop.kind.throwable || prop.broken || prop.held || prop.flight || prop.kind.decal) continue;
+      const liftable =
+        prop.kind.throwable || (liftsFurniture && prop.kind.movable && (prop.placement.elevationM ?? 0) === 0);
+      if (!liftable || prop.broken || prop.held || prop.flight || prop.kind.decal) continue;
       if (prop.kind.massKg > maxLiftKg) continue;
       const loose = prop.looseFall;
       if (loose && (loose.heightM > 0 || (prop.body && Math.hypot(prop.body.linvel().x, prop.body.linvel().y) > 0.5)))

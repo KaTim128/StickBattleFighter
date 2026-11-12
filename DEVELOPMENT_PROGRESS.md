@@ -407,6 +407,21 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - **Evidence:** lint clean; typecheck 0; `npm test` 297/297; `npm run e2e` 31 passed; `docs/screenshots/phase8-top-hud.png`.
 - **Next task:** an independent QA review of Phase 8 (`qa-specialist`, if the owner agrees), then Phase 9 (the full initial roster).
 
+### 12/11/2026: Rampage, main menu, Leave game, phone layout (owner)
+- **Rampage** (REQ-ABL-14, TD-052), the second fighter. Fighters are now added one at a time; Necro comes next, once you have reviewed Rampage.
+  - **Look:** a rhino head and an armoured body.
+  - **Movement:** slow (3.9 m/s top speed, low acceleration).
+  - **Combo:** three punches ending in a knockdown.
+  - **Abilities:** Ground Smash, Rhino Charge (smashes breakable walls and furniture, keeps its line), Crushing Strike (stun), and Rampage Mode (8 s, +15% speed, 15% less damage taken, rage aura). Heavy Throw is his grab: furniture up to 60 kg, ×1.8 throw power.
+  - **Sounds:** new grunts, snort, stampede, ground smash, crushing impact, roar, heavy steps and landing.
+- **Menu and Settings:** a main menu with fighter and arena; Settings has Leave game and Fullscreen.
+- **Phones:** fullscreen on the first tap, and a compact HUD and touch cluster for short landscape screens (REQ-CTL-19).
+- **Tests:** a Rampage integration suite (speed, 3-hit combo, smash, stun, wall-smashing charge, heavy throw, buff) and a menu e2e test.
+- **Evidence:**
+  - lint clean; typecheck 0; `npm test` 304/304; `npm run e2e` 33 passed;
+  - screenshots `docs/screenshots/rampage-abilities.png`, `main-menu.png`, `mobile-landscape-hud.png` (emulated 800×360 landscape phone).
+- **Limitations:** fullscreen cannot be tested headless, so check it on your phone. The menu reloads the page to switch fighter.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

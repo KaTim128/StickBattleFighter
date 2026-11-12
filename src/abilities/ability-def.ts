@@ -34,6 +34,13 @@ export interface AbilityPayload {
   readonly impact?: ImpactId;
   /** Closer hits deal more (owner, 11/11/2026): see `falloffFactor`. Absent = the same at any range. */
   readonly falloff?: DamageFalloff;
+  /** Stuns the target this long after it lands (Crushing Strike). */
+  readonly stunS?: number;
+  /**
+   * Smashes through obstacles (Rhino Charge): breakable wall sections take this much damage, and
+   * furniture and doors in the way are hit with the payload's full strength. Solid walls still stop it.
+   */
+  readonly wallDamage?: number;
 }
 
 /**
@@ -113,7 +120,34 @@ export interface BeamDelivery {
   readonly tickS: number;
 }
 
-export type Delivery = ProjectileDelivery | DashDelivery | NovaDelivery | LeapDelivery | BeamDelivery;
+/** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */
+export interface StrikeDelivery {
+  readonly type: 'strike';
+  readonly reachM: number;
+  readonly radiusM: number;
+}
+
+/**
+ * A timed self-buff (Rampage Mode): faster movement and less damage taken for `durationS`. No
+ * hit; the release is the activation (roar, shockwave look) and the aura lasts while it runs.
+ */
+export interface BuffDelivery {
+  readonly type: 'buff';
+  readonly durationS: number;
+  /** Multiplies movement speed (1.15 = 15% faster). */
+  readonly speedFactor: number;
+  /** Multiplies damage taken (0.85 = 15% more durable). */
+  readonly damageTakenFactor: number;
+}
+
+export type Delivery =
+  | ProjectileDelivery
+  | DashDelivery
+  | NovaDelivery
+  | LeapDelivery
+  | BeamDelivery
+  | StrikeDelivery
+  | BuffDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,
@@ -142,6 +176,10 @@ export interface MagicLook {
     readonly ringM: number;
     readonly scorchM?: number;
     readonly smoke?: number;
+    /** Big blasts spread fire across the floor; false for non-fire impacts (dust, debris). Default true. */
+    readonly groundFire?: boolean;
+    /** Smoke or dust colour (default dark smoke). */
+    readonly smokeColour?: number;
   };
   /** The target's body flashes this colour on contact (white for the Fireball). */
   readonly hitFlash?: number;

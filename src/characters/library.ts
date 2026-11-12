@@ -8,6 +8,12 @@ import infernoCharacter from '../data/characters/inferno/character.json';
 import infernoEffects from '../data/characters/inferno/effects.json';
 import infernoMoveset from '../data/characters/inferno/moveset.json';
 import infernoStats from '../data/characters/inferno/stats.json';
+import rampageAnimation from '../data/characters/rampage/animation-profile.json';
+import rampageAudio from '../data/characters/rampage/audio.json';
+import rampageCharacter from '../data/characters/rampage/character.json';
+import rampageEffects from '../data/characters/rampage/effects.json';
+import rampageMoveset from '../data/characters/rampage/moveset.json';
+import rampageStats from '../data/characters/rampage/stats.json';
 import defaultAi from '../data/characters/shared/ai-default.json';
 import defaultAnimation from '../data/characters/shared/animation-default.json';
 import boxingAnimation from '../data/characters/shared/animation-style-boxing.json';
@@ -38,18 +44,19 @@ const byId = <T extends { id: string }>(items: readonly unknown[]): Record<strin
   Object.fromEntries((items as T[]).map((x) => [x.id, x]));
 
 export const BUILT_IN_LIBRARY: CharacterLibrary = {
-  characters: byId<CharacterDefinition>([baseCharacter, infernoCharacter, dummyCharacter]),
+  characters: byId<CharacterDefinition>([baseCharacter, infernoCharacter, rampageCharacter, dummyCharacter]),
   animation: byId<AnimationProfile>([
     defaultAnimation,
     boxingAnimation,
     taekwondoAnimation,
     baseAnimation,
     infernoAnimation,
+    rampageAnimation,
   ]),
-  moveset: byId<MovesetProfile>([baseMoveset, infernoMoveset]),
-  stats: byId<StatsProfile>([baseStats, infernoStats, dummyStats]),
-  effects: byId<EffectsProfile>([defaultEffects, infernoEffects]),
-  audio: byId<AudioProfile>([defaultAudio, infernoAudio]),
+  moveset: byId<MovesetProfile>([baseMoveset, infernoMoveset, rampageMoveset]),
+  stats: byId<StatsProfile>([baseStats, infernoStats, rampageStats, dummyStats]),
+  effects: byId<EffectsProfile>([defaultEffects, infernoEffects, rampageEffects]),
+  audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio]),
   ai: byId<AiProfile>([defaultAi, dummyAi]),
 };
 

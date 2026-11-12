@@ -64,6 +64,8 @@ export interface AbilityHost {
   drive(casterId: string, velocity: Vec2 | null, heightM: number): void;
   /** Set fighters standing in a fire trail alight. */
   burnFighter(targetId: string, burn: Burn): void;
+  /** Start (or end, null) a timed self-buff on a caster. */
+  buff(casterId: string, buff: { speedFactor: number; damageTakenFactor: number; durationS: number } | null): void;
   emit(fx: AbilityFx): void;
 }
 
@@ -257,6 +259,59 @@ export class AbilityWorld {
         this.beams.push(beam);
         break;
       }
+      case 'strike': {
+        // One heavy blow straight ahead: everyone in reach, then whatever furniture or door it meets.
+        const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
+        let landed = false;
+        for (const f of host.fighters()) {
+          if (f.id === casterId || !f.hittable) continue;
+          if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
+          if (host.hitFighter(casterId, f.id, def.payload, dir, def.look?.hitFlash)) {
+            landed = true;
+            host.emit({
+              kind: 'impact',
+              ability: def.id,
+              look: def.look,
+              vfx: def.vfx,
+              sfx: def.sfx.impact,
+              x: f.x,
+              y: f.y,
+              radiusM: 0.8,
+            });
+          }
+        }
+        host.hitEnvironment(casterId, reach, d.radiusM, def.payload, dir, false);
+        if (!landed) {
+          host.emit({
+            kind: 'impact',
+            ability: def.id,
+            look: def.look,
+            vfx: def.vfx,
+            sfx: def.sfx.impact,
+            x: reach.x,
+            y: reach.y,
+            radiusM: 0.8,
+          });
+        }
+        break;
+      }
+      case 'buff':
+        host.buff(casterId, {
+          speedFactor: d.speedFactor,
+          damageTakenFactor: d.damageTakenFactor,
+          durationS: d.durationS,
+        });
+        host.emit({
+          kind: 'impact',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.impact,
+          x: at.x,
+          y: at.y,
+          radiusM: 2.2,
+        });
+        break;
       case 'leap': {
         // Land on the target (within range), short of any wall or furniture in the way.
         const want = Math.min(d.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));

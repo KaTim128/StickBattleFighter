@@ -1,0 +1,65 @@
+{
+  "id": "rampage",
+  "template": "base-stickman",
+  "displayName": "Rampage",
+  "description": "A rhino-hearted brawler: thick armoured hide, a great horn and fists like boulders. Slow to turn, impossible to stop: he smashes the floor, charges through walls, crushes with a single overhead blow and flies into a rampage.",
+  "characterType": "fighter",
+  "element": "earth",
+  "combatStyle": "brawling",
+  "profiles": {
+    "animation": "rampage-animation",
+    "moveset": "rampage-moveset",
+    "stats": "rampage-stats",
+    "effects": "rampage-effects",
+    "audio": "rampage-audio",
+    "ai": "default-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.07,
+      "headRadius": 0.18,
+      "upperArm": 0.29,
+      "foreArm": 0.27,
+      "thigh": 0.4,
+      "shin": 0.39
+    },
+    "colour": "#8a8f98",
+    "colourBack": "#5f646d",
+    "outline": "#1d2026",
+    "limbWidthM": 0.12,
+    "outlineWidthM": 0.04
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "rampage-kit"
+}

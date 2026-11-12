@@ -1,0 +1,17 @@
+{
+  "id": "rampage-effects",
+  "punchImpact": "impact-heavy",
+  "kickImpact": "impact-kick",
+  "heavyImpact": "impact-crush",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#ffffff",
+  "shakeScale": 1.5,
+  "hitstopScale": 1.3,
+  "head": "rhino",
+  "body": "armour"
+}

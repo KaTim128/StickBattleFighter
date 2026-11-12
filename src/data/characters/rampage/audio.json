@@ -1,0 +1,17 @@
+{
+  "id": "rampage-audio",
+  "lightPunch": ["rampage-punch", "punch-heavy"],
+  "heavyPunch": ["rampage-heavy-punch"],
+  "lightKick": ["kick-heavy"],
+  "heavyKick": ["kick-heavy"],
+  "block": ["block"],
+  "parry": ["parry"],
+  "footstep": ["heavy-footstep"],
+  "jump": ["jump"],
+  "land": ["heavy-land"],
+  "wallImpact": ["wall-thud"],
+  "clash": ["clash-collide"],
+  "finisher": ["clash-break", "ground-smash"],
+  "defeat": ["ko"],
+  "disintegration": ["dust"]
+}

@@ -389,6 +389,23 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Verification:** 30 s clips were rendered offline through the real engine (an `OfflineAudioContext`, with a `lookaheadS` constructor option) and measured. The office holds steady around -18 dB with sparse events; the Colosseum surges by about 4 dB and lifts at a KO. Previews are in `docs/audio-previews/`.
 - **Trade-offs:** synthesised crowds are less realistic than recordings. Recorded or licensed ambiences can replace beds later without changing the API. The build environment cannot play audio, so the owner's ear is the acceptance test.
 
+### TD-052: Rampage's building blocks; main menu and fullscreen — ACCEPTED (owner request 12/11/2026)
+- **New delivery types:**
+  - `strike`: one close blow straight ahead, hitting fighters, furniture and doors in reach;
+  - `buff`: a timed self-buff with speed and damage-taken factors, through `host.buff`, `FighterEntity.buff` and `Combatant.damageTakenScale`.
+- **New payload fields:**
+  - `stunS`: the hit path stuns the target;
+  - `wallDamage`: breakable wall sections take this instead of the payload damage, so a charge smashes them while solid walls still stop the body.
+- **Magic look additions:** `impact.groundFire` (off for dust and debris) and `impact.smokeColour`.
+- **Effects:** a fury aura (motes, steam, a floor glow) and a dash dust trail are drawn by the shared effects layer from the ability's look.
+- **Object handling:** `objects.liftsFurniture` lets a fighter pick up movable furniture up to `maxLiftKg`.
+- **Looks:** head style `rhino` and body style `armour` (plates, muscle, chest plate and shoulder pads), plus a `rage` tint on the view. The flame head and body styles still need the fire-effects capability; other styles always show.
+- **Menu:** `MainMenu` lists every built-in playable fighter made from a template. Play reloads with `?character`, `?scene` and `?play`; the same choice just resumes. Settings and the menu share one pause mechanism.
+- **Fullscreen:** `enterFullscreen` runs from a tap: on Play, on the first tap of a game on touch devices, and from the Settings button.
+- **Alternatives:**
+  - a fourth ability slot (rejected by the owner);
+  - an in-place scene swap on Play (deferred: a reload is simpler and resets cleanly; fullscreen comes back on the first tap).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

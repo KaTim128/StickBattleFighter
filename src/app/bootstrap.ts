@@ -4,7 +4,7 @@ import { AmbiencePlayer } from '../audio/ambience';
 import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
-import { BUILT_IN_LIBRARY, withEntries } from '../characters/library';
+import { BUILT_IN_LIBRARY, DEFAULT_CAST, withEntries } from '../characters/library';
 import type { CharacterLibrary } from '../characters/schema';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
@@ -23,6 +23,7 @@ import { attachTouchControls, showDodgeReady, showUtilityAction } from '../input
 import { AbilityHud } from '../interface/ability-hud';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
+import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { initPhysics } from '../physics/physics-world';
@@ -125,6 +126,28 @@ function castFromParams(params: URLSearchParams): { player?: string; opponent?: 
 /** A blow this big gets a reaction from a crowd. */
 const HEAVY_HIT_FOR_CROWD = 100;
 
+/** Arenas on the main menu (the training yard is the Colosseum floor until it has its own arena). */
+const MENU_ARENAS = [
+  { id: 'office', name: 'Office' },
+  { id: 'training-yard', name: 'Colosseum' },
+] as const;
+
+/** Playable fighters for the main menu: every built-in fighter made from a template. */
+function menuFighters(): MenuFighter[] {
+  return Object.values(BUILT_IN_LIBRARY.characters)
+    .filter((c) => c.template !== undefined && c.capabilities.isPlayable && c.characterType === 'fighter')
+    .map((c) => {
+      const head = BUILT_IN_LIBRARY.effects[c.profiles.effects]?.head;
+      return {
+        id: c.id,
+        name: c.displayName,
+        blurb: c.description,
+        portrait: head === 'flame' || head === 'rhino' ? head : 'round',
+        colour: c.rig.colour,
+      };
+    });
+}
+
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   status.textContent = 'Loading…';
@@ -142,8 +165,9 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const intents = new PlayerIntents();
   // Settings (owner, 11/11/2026): saved in this browser; bindings apply the moment they change.
   const settings = new SettingsState(browserStorage());
-  let settingsOpen = false;
-  const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => settingsOpen });
+  // Overlays that pause the fight (Settings, the main menu): the game ignores input while any is open.
+  const pausedBy = new Set<string>();
+  const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => pausedBy.size > 0 });
   attachKeyboard(window, desktop);
   attachMouse(container, desktop, intents);
   attachTouchControls(document.body, intents);
@@ -347,15 +371,56 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
 
   // The settings screen pauses the fight while open (the game ignores input, nothing moves).
   let timeScaleBeforeSettings = loop.timeScale;
-  new SettingsPanel(document.body, settings, (open) => {
-    settingsOpen = open;
+  const setPaused = (reason: string, on: boolean): void => {
+    const was = pausedBy.size > 0;
+    if (on) pausedBy.add(reason);
+    else pausedBy.delete(reason);
+    const now = pausedBy.size > 0;
+    if (was === now) return;
     desktop.releaseAll();
     intents.clear();
-    if (open) {
+    if (now) {
       timeScaleBeforeSettings = loop.timeScale;
       loop.timeScale = 0;
     } else loop.timeScale = timeScaleBeforeSettings;
+  };
+  // Phones and tablets fill the whole screen (owner, 12/11/2026): fullscreen on the first tap.
+  const touchDevice = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  // The main menu (owner: Settings has a button to leave the game): fighter and arena, then Play.
+  const currentChoice = { fighter: castFromParams(params).player ?? DEFAULT_CAST.player, arena: sceneName };
+  const menu = new MainMenu(
+    document.body,
+    menuFighters(),
+    MENU_ARENAS,
+    currentChoice,
+    (choice) => {
+      if (touchDevice) enterFullscreen();
+      if (choice.fighter === currentChoice.fighter && choice.arena === currentChoice.arena) {
+        menu.setOpen(false);
+        return;
+      }
+      const next = new URLSearchParams();
+      next.set('character', choice.fighter);
+      if (choice.arena !== 'office') next.set('scene', choice.arena);
+      if (params.has('mute')) next.set('mute', '');
+      next.set('play', '');
+      window.location.search = next.toString();
+    },
+    (open) => setPaused('menu', open),
+  );
+  new SettingsPanel(document.body, settings, (open) => setPaused('settings', open), {
+    leave: () => menu.setOpen(true),
+    fullscreen: () => (document.fullscreenElement ? exitFullscreen() : enterFullscreen()),
   });
+  if (scene instanceof FightArenaScene && !automated && !params.has('play')) menu.setOpen(true);
+  if (touchDevice) {
+    // After choosing on the menu the page reloads, which leaves fullscreen: the first tap restores it.
+    const once = (): void => {
+      window.removeEventListener('pointerdown', once);
+      if (!menu.isOpen) enterFullscreen();
+    };
+    window.addEventListener('pointerdown', once);
+  }
   settings.onChange(() => {
     applyAudio();
     status.textContent = readyStatus();

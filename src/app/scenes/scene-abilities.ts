@@ -28,6 +28,8 @@ export type StrikeFn = (
     impact: ImpactId;
     /** The target's body flashes this colour (magic attacks: white), instead of the attacker's. */
     flashColour?: number;
+    /** Stun the target this long if the blow lands unguarded. */
+    stunS?: number;
   },
 ) => boolean;
 
@@ -175,6 +177,7 @@ export class SceneAbilities implements AbilityHost {
       burn: payload.burn,
       impact: payload.impact ?? (payload.heavy ? 'fire-heavy' : 'fire'),
       flashColour: hitFlash,
+      stunS: payload.stunS,
     });
   }
 
@@ -204,8 +207,8 @@ export class SceneAbilities implements AbilityHost {
     }
     // Breakable wall sections: blasts chip them harder than fists, but only the sections in reach.
     const w = this.walls?.hitWhere((r) => circleTouchesRect(at, radiusM, r), {
-      damage: payload.damage,
-      blast: !continuous,
+      damage: payload.wallDamage ?? payload.damage,
+      blast: !continuous && payload.wallDamage === undefined,
       direction: radial ? { x: 0, y: 1 } : dir,
       at, // the blast cracks the section nearest its centre, never the whole wall
     });
@@ -229,6 +232,13 @@ export class SceneAbilities implements AbilityHost {
     if (!velocity && f.driveVelocity) f.body?.setLinvel({ x: 0, y: 0 }, true);
     f.driveVelocity = velocity ? { x: velocity.x, y: velocity.y } : null;
     f.abilityLift = heightM;
+  }
+
+  buff(casterId: string, buff: { speedFactor: number; damageTakenFactor: number; durationS: number } | null): void {
+    const f = this.byName(casterId);
+    if (!f) return;
+    f.buff = buff ? { ...buff, leftS: buff.durationS } : null;
+    f.combatant.damageTakenScale = buff ? buff.damageTakenFactor : 1;
   }
 
   burnFighter(targetId: string, burn: Burn): void {

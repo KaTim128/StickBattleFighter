@@ -1,0 +1,137 @@
+import type { AbilityKit } from '../../abilities/ability-def';
+
+/**
+ * Rampage's kit (owner, 12/11/2026): a rhino-themed brute built on strength and durability.
+ * Earth and dust for his blows, blood-red for his rage, never fire (Magic Attack VFX Standard:
+ * each fighter in his own colours). His fourth requested ability, Heavy Throw, is his grab and
+ * throw (G) with a far heavier lift and harder throws (Stats Profile `objects`), so the kit keeps
+ * three abilities and an ultimate (owner's choice). All numbers PROVISIONAL (OQ-05).
+ */
+const DUST = { deep: 0x4a3a2a, hot: 0x7d6448, bright: 0xb89a74, core: 0xeadcc2 } as const;
+const RAGE = { deep: 0x5a0a0a, hot: 0xb3201a, bright: 0xff5a3a, core: 0xffd2c0 } as const;
+
+export const RAMPAGE_KIT: AbilityKit = {
+  // A1: Ground Smash. Both fists come down on the floor: a shockwave that knocks everyone nearby away.
+  a1: {
+    id: 'groundSmash',
+    name: 'Ground Smash',
+    label: 'SMASH',
+    slot: 'a1',
+    staminaCost: 25,
+    cooldownS: 5,
+    castS: 0.35,
+    recoveryS: 0.55,
+    aimRangeM: 0,
+    moveFactor: 0,
+    interruptible: true,
+    payload: { damage: 120, knockbackMps: 8, heavy: true, strength: 900, impact: 'knuckle-heavy' },
+    delivery: { type: 'nova', radiusM: 2.6, telegraphS: 0.12 },
+    vfx: 'ground-smash',
+    sfx: { cast: 'rampage-grunt', release: 'ground-crack', impact: 'ground-smash' },
+    look: {
+      palette: DUST,
+      charge: { gatherRadiusM: 0.9, motesPerS: 40, coreMaxM: 0 },
+      impact: {
+        flashM: 1.2,
+        sparks: 50,
+        motes: 70,
+        ringM: 2.6,
+        scorchM: 1.6,
+        smoke: 22,
+        groundFire: false,
+        smokeColour: 0x8a7a66,
+      },
+      hitFlash: 0xffffff,
+    },
+  },
+  // A2: Rhino Charge. One second down on all fours, then a locked-direction charge (it cannot turn)
+  // that bowls fighters over and smashes through breakable walls, doors and furniture.
+  a2: {
+    id: 'rhinoCharge',
+    name: 'Rhino Charge',
+    label: 'CHARGE',
+    slot: 'a2',
+    staminaCost: 35,
+    cooldownS: 7,
+    castS: 1,
+    recoveryS: 0.95,
+    aimRangeM: 8,
+    moveFactor: 0,
+    interruptible: true,
+    payload: {
+      damage: 150,
+      knockbackMps: 11,
+      heavy: true,
+      strength: 2500,
+      impact: 'knuckle-heavy',
+      wallDamage: 3000,
+    },
+    delivery: { type: 'dash', distanceM: 7, speedMps: 11, hitRadiusM: 0.8 },
+    vfx: 'rhino-charge',
+    sfx: { cast: 'rhino-snort', release: 'rhino-stampede', impact: 'charge-impact' },
+    look: {
+      palette: DUST,
+      charge: { gatherRadiusM: 0.8, motesPerS: 50, coreMaxM: 0 },
+      flight: { trailPerS: 90, sparksPerS: 10, shimmer: false },
+      impact: { flashM: 0.9, sparks: 30, motes: 30, ringM: 1.2, smoke: 10, groundFire: false, smokeColour: 0x8a7a66 },
+      hitFlash: 0xffffff,
+    },
+  },
+  // A3: Crushing Strike. A huge overhead punch: massive damage, and the target is stunned for a moment.
+  a3: {
+    id: 'crushingStrike',
+    name: 'Crushing Strike',
+    label: 'CRUSH',
+    slot: 'a3',
+    staminaCost: 30,
+    cooldownS: 6,
+    castS: 0.45,
+    recoveryS: 0.45,
+    aimRangeM: 2.5,
+    moveFactor: 0.2,
+    interruptible: true,
+    payload: { damage: 190, knockbackMps: 3, heavy: false, strength: 1200, impact: 'knuckle-heavy', stunS: 1.1 },
+    delivery: { type: 'strike', reachM: 1.1, radiusM: 0.55 },
+    vfx: 'crushing-strike',
+    sfx: { cast: 'rampage-grunt', release: 'heavy-whoosh', impact: 'crushing-impact' },
+    look: {
+      palette: DUST,
+      impact: {
+        flashM: 0.9,
+        sparks: 30,
+        motes: 24,
+        ringM: 1.2,
+        scorchM: 0.55,
+        smoke: 8,
+        groundFire: false,
+        smokeColour: 0x8a7a66,
+      },
+      hitFlash: 0xffffff,
+    },
+  },
+  // ULT: Rampage Mode. A bellowing roar, then 8 s faster (+15%) and tougher (15% less damage taken),
+  // wrapped in a red rage aura with steam pouring off him.
+  ult: {
+    id: 'rampageMode',
+    name: 'Rampage Mode',
+    label: 'ULT',
+    slot: 'ult',
+    staminaCost: 0,
+    cooldownS: 1,
+    castS: 0.7,
+    recoveryS: 0.35,
+    aimRangeM: 0,
+    moveFactor: 0,
+    interruptible: false,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: { type: 'buff', durationS: 8, speedFactor: 1.15, damageTakenFactor: 0.85 },
+    vfx: 'rampage-mode',
+    sfx: { cast: 'rampage-roar', release: 'rage-burst', impact: 'rage-burst' },
+    look: {
+      palette: RAGE,
+      charge: { gatherRadiusM: 1.4, motesPerS: 120, coreMaxM: 0 },
+      impact: { flashM: 1.6, sparks: 40, motes: 60, ringM: 2.4, smoke: 16, groundFire: false, smokeColour: 0xd8d0c8 },
+    },
+  },
+  charge: { max: 100, perDamageDealt: 0.25, perDamageTaken: 0.2, perSecond: 1 },
+};

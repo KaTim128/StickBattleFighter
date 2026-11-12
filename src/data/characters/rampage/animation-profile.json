@@ -1,0 +1,12 @@
+{
+  "id": "rampage-animation",
+  "extends": "style-boxing",
+  "states": {
+    "Jab": "rampage.hammer-jab",
+    "Hook": "rampage.haymaker",
+    "HeavyPunch": "rampage.double-hammer",
+    "DownwardAerialKick": "rampage.body-slam",
+    "ClashFinisher": "rampage.double-hammer",
+    "ClashWin": "rampage.double-hammer"
+  }
+}

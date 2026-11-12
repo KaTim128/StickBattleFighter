@@ -246,6 +246,94 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.45, gain: 0.35, type: 'highpass', freq: 2600, freqEnd: 5200, attack: 0.01 } },
     { crackle: { dur: 0.5, gain: 0.2, count: 9 } },
   ],
+  // ---- Rampage (owner, 12/11/2026): weight, stone and breath; no fire anywhere.
+  // A short effortful grunt as he winds up.
+  'rampage-grunt': [
+    { tone: { wave: 'sawtooth', f0: 120, f1: 85, dur: 0.22, gain: 0.18, attack: 0.03, drive: 0.4 } },
+    { noise: { dur: 0.2, gain: 0.22, type: 'bandpass', freq: 500, freqEnd: 320, q: 2, attack: 0.03 } },
+  ],
+  // The floor cracking under his fists, a split second before the shockwave.
+  'ground-crack': [
+    { noise: { dur: 0.12, gain: 0.5, type: 'highpass', freq: 1800, attack: 0.002 } },
+    { crackle: { dur: 0.25, gain: 0.3, count: 10 } },
+  ],
+  // Ground Smash: a deep thud through the floor, rubble rattling down after it.
+  'ground-smash': [
+    { tone: { wave: 'sine', f0: 70, f1: 28, dur: 0.55, gain: 1, drive: 0.3 } },
+    { noise: { dur: 0.5, gain: 0.7, type: 'lowpass', freq: 900, freqEnd: 150, attack: 0.004, drive: 0.3 } },
+    { noise: { dur: 0.7, gain: 0.18, type: 'bandpass', freq: 2400, q: 0.8, attack: 0.05, delay: 0.08 } },
+    { crackle: { dur: 0.8, gain: 0.3, count: 22 } },
+  ],
+  // Rhino Charge wind-up: a snort and the ground being pawed.
+  'rhino-snort': [
+    { noise: { dur: 0.3, gain: 0.45, type: 'bandpass', freq: 900, freqEnd: 500, q: 1.5, attack: 0.02 } },
+    { noise: { dur: 0.25, gain: 0.35, type: 'bandpass', freq: 800, freqEnd: 450, q: 1.5, attack: 0.02, delay: 0.45 } },
+    { tone: { wave: 'sine', f0: 90, f1: 60, dur: 0.12, gain: 0.4, delay: 0.75 } },
+  ],
+  // The charge: a stampede of heavy footfalls under a rush of air.
+  'rhino-stampede': [
+    { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.1, gain: 0.7 } },
+    { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.1, gain: 0.7, delay: 0.16 } },
+    { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.1, gain: 0.7, delay: 0.32 } },
+    { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.1, gain: 0.7, delay: 0.48 } },
+    { noise: { dur: 0.7, gain: 0.35, type: 'bandpass', freq: 600, freqEnd: 250, q: 0.6, attack: 0.05, flutter: 12 } },
+  ],
+  // The charge connecting: a crunching body blow.
+  'charge-impact': [
+    { tone: { wave: 'sine', f0: 110, f1: 35, dur: 0.35, gain: 0.95, drive: 0.4 } },
+    { noise: { dur: 0.25, gain: 0.6, type: 'lowpass', freq: 1500, freqEnd: 300, attack: 0.003, drive: 0.3 } },
+    { crackle: { dur: 0.3, gain: 0.25, count: 8 } },
+  ],
+  // A huge fist cutting the air.
+  'heavy-whoosh': [
+    { noise: { dur: 0.3, gain: 0.5, type: 'bandpass', freq: 380, freqEnd: 1100, q: 0.8, attack: 0.08 } },
+  ],
+  // Crushing Strike landing: a bone-deep crunch and a ringing thud.
+  'crushing-impact': [
+    { tone: { wave: 'sine', f0: 95, f1: 32, dur: 0.45, gain: 1, drive: 0.45 } },
+    { noise: { dur: 0.08, gain: 0.6, type: 'bandpass', freq: 2200, q: 1.2 } },
+    { noise: { dur: 0.35, gain: 0.5, type: 'lowpass', freq: 1100, freqEnd: 200, attack: 0.004 } },
+    { tone: { wave: 'triangle', f0: 260, f1: 180, dur: 0.3, gain: 0.12, delay: 0.02 } },
+  ],
+  // Rampage Mode: a long bellowing roar, rough and rising.
+  'rampage-roar': [
+    { tone: { wave: 'sawtooth', f0: 85, f1: 140, dur: 0.8, gain: 0.35, attack: 0.15, drive: 0.6 } },
+    { tone: { wave: 'sawtooth', f0: 128, f1: 210, dur: 0.8, gain: 0.18, attack: 0.15, drive: 0.5 } },
+    {
+      noise: {
+        dur: 0.85,
+        gain: 0.45,
+        type: 'bandpass',
+        freq: 700,
+        freqEnd: 1100,
+        q: 1,
+        attack: 0.12,
+        flutter: 20,
+        drive: 0.3,
+      },
+    },
+  ],
+  // The rage taking hold: a burst of pressure and steam.
+  'rage-burst': [
+    { tone: { wave: 'sine', f0: 60, f1: 30, dur: 0.5, gain: 0.9, drive: 0.3 } },
+    { noise: { dur: 0.9, gain: 0.35, type: 'highpass', freq: 2500, freqEnd: 1200, attack: 0.02 } },
+  ],
+  // His punches: heavier, deeper and meatier than a normal fighter's.
+  'rampage-punch': [
+    { tone: { wave: 'sine', f0: 120, f1: 45, dur: 0.16, gain: 0.85, drive: 0.25 } },
+    { noise: { dur: 0.08, gain: 0.55, type: 'bandpass', freq: 1500, q: 1 } },
+  ],
+  'rampage-heavy-punch': [
+    { tone: { wave: 'sine', f0: 105, f1: 32, dur: 0.32, gain: 1, drive: 0.4 } },
+    { noise: { dur: 0.14, gain: 0.6, type: 'lowpass', freq: 1700, freqEnd: 400, attack: 0.002 } },
+    { crackle: { dur: 0.25, gain: 0.2, count: 6 } },
+  ],
+  // Heavy feet: a low thump with each step, and a ground-shaking landing.
+  'heavy-footstep': [{ tone: { wave: 'sine', f0: 70, f1: 40, dur: 0.09, gain: 0.4 } }],
+  'heavy-land': [
+    { tone: { wave: 'sine', f0: 75, f1: 30, dur: 0.25, gain: 0.8, drive: 0.2 } },
+    { noise: { dur: 0.2, gain: 0.3, type: 'lowpass', freq: 600, attack: 0.003 } },
+  ],
   'fire-charge': [
     { noise: { dur: 0.28, gain: 0.22, type: 'bandpass', freq: 400, freqEnd: 1700, q: 1.5, attack: 0.16 } },
   ],

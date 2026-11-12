@@ -52,8 +52,10 @@ import { tallestPropM } from '../../rendering/prop-view';
 import type { DodgeLook } from '../../rendering/stickman-view';
 import {
   AbilityVfx,
+  type AuraFx,
   type BurningThing,
   type ChargeFx,
+  type DashTrailFx,
   type DustSource,
   type ImpactBurst,
   type LimbFlames,
@@ -388,7 +390,12 @@ export class FightArenaScene implements ArenaScene {
         stamina: c.stamina,
         maxStamina: c.stats.maxStamina,
         status,
-        portrait: f.def.capabilities.usesFireEffects && f.def.effects.head === 'flame' ? 'flame' : 'round',
+        portrait:
+          f.def.effects.head === 'rhino'
+            ? 'rhino'
+            : f.def.capabilities.usesFireEffects && f.def.effects.head === 'flame'
+              ? 'flame'
+              : 'round',
         colour: `#${f.def.look.limb.toString(16).padStart(6, '0')}`,
       };
     };
@@ -546,6 +553,14 @@ export class FightArenaScene implements ArenaScene {
       f.burnTextS = Math.max(0, f.burnTextS - stepS);
       f.flashS = Math.max(0, f.flashS - stepS);
       f.shieldS = Math.max(0, f.shieldS - stepS);
+      // A timed self-buff runs out (or ends at a KO).
+      if (f.buff) {
+        f.buff.leftS -= stepS;
+        if (f.buff.leftS <= 0 || f.combatant.isKo) {
+          f.buff = null;
+          f.combatant.damageTakenScale = 1;
+        }
+      }
       f.recoilS = Math.max(0, f.recoilS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
@@ -758,6 +773,7 @@ export class FightArenaScene implements ArenaScene {
         THROWING.reachM + f.def.body.footRadiusM,
         THROWING.behindM,
         f.def.objects.maxLiftKg,
+        f.def.objects.liftsFurniture === true,
       ) ?? null
     );
   }
@@ -1073,7 +1089,13 @@ export class FightArenaScene implements ArenaScene {
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
       const sprint = f.sprinting && !attack && !cast && c.state !== 'guarding' && !air ? SPRINT.speedFactor : 1;
-      next = stepVelocity(v, move, { ...tuning, maxSpeedMps: tuning.maxSpeedMps * sprint, decelMps2: decel }, stepS);
+      const buffed = f.buff?.speedFactor ?? 1;
+      next = stepVelocity(
+        v,
+        move,
+        { ...tuning, maxSpeedMps: tuning.maxSpeedMps * sprint * buffed, decelMps2: decel },
+        stepS,
+      );
       if (!attack && !cast && Math.hypot(moveIn.x, moveIn.y) > 0.1 && f === this.playerFighter)
         f.faceToward(moveIn.x, moveIn.y);
     }
@@ -1131,6 +1153,8 @@ export class FightArenaScene implements ArenaScene {
       groundBounce?: boolean;
       /** The target's body flashes this colour instead of the attacker's flash colour. */
       flashColour?: number;
+      /** Stun the target this long if the blow lands unguarded (Crushing Strike). */
+      stunS?: number;
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
@@ -1195,6 +1219,7 @@ export class FightArenaScene implements ArenaScene {
       target.combo.interrupt();
       this.abilities?.interrupt(target, result.outcome === 'ko');
       if (s.burn && result.outcome !== 'ko') target.combatant.ignite(s.burn.dps, s.burn.durationS);
+      if (s.stunS && result.outcome !== 'ko') target.combatant.stun(s.stunS);
     }
 
     const speed = s.knockbackMps * result.knockbackScale;
@@ -1724,6 +1749,8 @@ export class FightArenaScene implements ArenaScene {
       this.shake.punch(0.06);
     }
     const charges: ChargeFx[] = [];
+    const auras: AuraFx[] = [];
+    const trails: DashTrailFx[] = [];
     const burning: BurningThing[] = this.frameBurning.splice(0, this.frameBurning.length);
     const smoke = this.frameSmoke.splice(0, this.frameSmoke.length);
     for (const f of this.fighters) {
@@ -1768,6 +1795,22 @@ export class FightArenaScene implements ArenaScene {
           body: cast.def.delivery.type !== 'projectile',
         });
       }
+      // A fury buff: red motes and steam rise off the body, with a red glow on the floor.
+      if (f.buff && !c.isKo) {
+        const look = f.caster?.def('ult').look;
+        if (look) auras.push({ x: f.x, y: f.y, palette: look.palette, strength: Math.min(1, f.buff.leftS) });
+      }
+      // A charge (a dash with a look): dust kicked up behind the feet.
+      if (f.driveVelocity && cast?.def.delivery.type === 'dash' && cast.def.look?.flight) {
+        const sp = Math.hypot(f.driveVelocity.x, f.driveVelocity.y) || 1;
+        trails.push({
+          x: f.x,
+          y: f.y,
+          dirX: f.driveVelocity.x / sp,
+          dirY: f.driveVelocity.y / sp,
+          look: cast.def.look,
+        });
+      }
       // Eruption in the air: the whole body wrapped in flames and glowing embers.
       if (f.abilityLift > 0.05) {
         const pts = [0.2, 0.6, 1.0, 1.4].map((z) =>
@@ -1800,6 +1843,8 @@ export class FightArenaScene implements ArenaScene {
       fx,
       burning,
       charges,
+      auras,
+      trails,
       beams: world.beams,
       smoke,
     });
@@ -1929,6 +1974,8 @@ export class FightArenaScene implements ArenaScene {
     f.view.guard = c.state === 'guarding' ? 1 : 0;
     f.view.shieldFlare = f.shieldS / SHIELD_FLARE_S;
     f.view.stunned = c.state === 'stunned';
+    // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
+    f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
     f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, flashColour, dodge);
     this.limbEffects(f, x, y);
     for (let n = f.animator.takeFootfalls(); n > 0; n--) this.characterSound(f, 'footstep', 0.5);

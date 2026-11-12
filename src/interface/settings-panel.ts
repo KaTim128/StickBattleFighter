@@ -20,6 +20,8 @@ export class SettingsPanel {
     parent: HTMLElement,
     private readonly settings: SettingsState,
     private readonly onOpenChange: (open: boolean) => void,
+    /** Game actions shown at the bottom (owner, 12/11/2026): leave the fight, toggle fullscreen. */
+    actions: { leave?: () => void; fullscreen?: () => void } = {},
   ) {
     this.button = document.createElement('button');
     this.button.className = 'settings-button';
@@ -61,9 +63,22 @@ export class SettingsPanel {
           <div class="settings-binds"></div>
           <button type="button" class="settings-reset">Reset to defaults</button>
         </section>
+        <div class="settings-actions">
+          <button type="button" class="settings-fullscreen">Fullscreen</button>
+          <button type="button" class="settings-leave">Leave game</button>
+        </div>
       </div>`;
     parent.appendChild(this.root);
     this.message = this.root.querySelector('.settings-message')!;
+    const leave = this.root.querySelector<HTMLButtonElement>('.settings-leave')!;
+    const full = this.root.querySelector<HTMLButtonElement>('.settings-fullscreen')!;
+    leave.hidden = !actions.leave;
+    full.hidden = !actions.fullscreen;
+    leave.addEventListener('click', () => {
+      this.setOpen(false);
+      actions.leave?.();
+    });
+    full.addEventListener('click', () => actions.fullscreen?.());
 
     this.root.querySelector('.settings-close')!.addEventListener('click', () => this.setOpen(false));
     // Clicking the dimmed backdrop (not the card) closes it.

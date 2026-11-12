@@ -1,0 +1,41 @@
+{
+  "id": "rampage-stats",
+  "maxHp": 1300,
+  "maxStamina": 100,
+  "staminaRegenPerS": 26,
+  "staminaRegenDelayS": 0.8,
+  "movement": {
+    "maxSpeedMps": 3.9,
+    "accelMps2": 24,
+    "decelMps2": 30,
+    "jumpSpeedMps": 5.4,
+    "gravityMps2": 22
+  },
+  "body": {
+    "footRadiusM": 0.4,
+    "massKg": 140
+  },
+  "power": 1.35,
+  "defence": 1.25,
+  "critChance": 0.04,
+  "critMultiplier": 1.6,
+  "knockbackResistance": 0.5,
+  "multipliers": {
+    "attackSpeed": 0.85,
+    "punchDamage": 1.2,
+    "kickDamage": 1,
+    "aerialDamage": 1.1,
+    "knockback": 1.4,
+    "movementSpeed": 1,
+    "jumpForce": 0.85,
+    "clashPower": 1.3,
+    "specialCharge": 1
+  },
+  "hitStunResistance": 0.35,
+  "objects": {
+    "maxLiftKg": 60,
+    "throwPower": 1.8,
+    "ignitesThrown": false,
+    "liftsFurniture": true
+  }
+}

@@ -26,6 +26,9 @@ export interface DodgeLook {
   dash?: { amount: number; dirX: number; dirY: number };
 }
 
+/** Armoured body colours (Rampage, owner 12/11/2026). */
+const ARMOUR = { rage: 0xd8281a } as const;
+
 /** Living-flame body colours (Inferno, owner 11/11/2026). */
 const FLAME = { glow: 0xff5a14, ember: 0x6a1404, deep: 0xd8320c, core: 0xffd56a } as const;
 
@@ -49,6 +52,8 @@ export class StickmanView {
   /** 0..1 guarding (a faint shield in front); `shieldFlare` 0..1 flares it after a block (PRS-5). */
   guard = 0;
   shieldFlare = 0;
+  /** 0..1 a fury buff is on (Rampage Mode): the hide flushes red and the eyes burn. */
+  rage = 0;
   /** Stunned: stars circle the head (PRS-6). */
   stunned = false;
   private readonly status = new Graphics();
@@ -189,10 +194,14 @@ export class StickmanView {
       for (const [pts] of limbs) stroke(pts, FLAME.glow, w * 3.4, 0.16);
     }
     // Back limbs first (darker), then torso, front limbs, head.
-    limbs.forEach(([pts, colour], i) => {
+    const armoured = this.bodyStyle === 'armour';
+    limbs.forEach(([pts, rawColour], i) => {
+      // Rampage Mode flushes the hide red (owner, 12/11/2026).
+      const colour = this.rage > 0 ? toward(rawColour, ARMOUR.rage, this.rage * 0.3) : rawColour;
       if (!fiery) {
         stroke(pts, outline, w + o * 2);
         stroke(pts, colour, w);
+        if (armoured) this.armourDetail(g, pts, w, colour, outline, i === 2);
         return;
       }
       const edge = toward(FLAME.ember, flashColour, flash * 0.85);
@@ -209,6 +218,7 @@ export class StickmanView {
       // Dodge: the body becomes a small, quick streak of flame at chest height (owner: smaller, no grey).
       this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
     } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
+    else if (this.head === 'rhino') this.rhinoHead(g, s, limb, outline, o);
     else {
       g.circle(s.head.x, s.head.y, this.bones.headRadius)
         .fill(limb)
@@ -360,6 +370,124 @@ export class StickmanView {
           .fill({ color: 0xffe066, alpha: 0.95 })
           .stroke({ width: 0.012, color: 0x7a5a00 });
       }
+    }
+  }
+
+  /**
+   * Armoured hide (Rampage, owner 12/11/2026: "thick armour-like skin", muscular): darker plates
+   * over the forearms and shins with a light top edge, bulging muscle where the upper arms and thighs
+   * meet the body, and on the torso a broad chest plate with heavy shoulder pads.
+   */
+  private armourDetail(
+    g: Graphics,
+    pts: readonly Point[],
+    w: number,
+    colour: number,
+    outline: number,
+    torso: boolean,
+  ): void {
+    const plate = toward(colour, 0x000000, 0.28);
+    const shine = toward(colour, 0xffffff, 0.35);
+    if (torso) {
+      const [pelvis, chest] = pts;
+      if (!pelvis || !chest) return;
+      // A broad chest plate along the spine, and round shoulder pads at the top.
+      g.moveTo(pelvis.x, pelvis.y)
+        .lineTo(chest.x, chest.y)
+        .stroke({ width: w * 2.1, color: outline, cap: 'round' })
+        .moveTo(pelvis.x, pelvis.y)
+        .lineTo(chest.x, chest.y)
+        .stroke({ width: w * 1.75, color: plate, cap: 'round' });
+      for (const k of [0.35, 0.65]) {
+        const x = pelvis.x + (chest.x - pelvis.x) * k;
+        const y = pelvis.y + (chest.y - pelvis.y) * k;
+        g.moveTo(x - w * 0.7, y)
+          .lineTo(x + w * 0.7, y)
+          .stroke({ width: w * 0.12, color: shine, alpha: 0.5 });
+      }
+      g.circle(chest.x, chest.y, w * 1.05)
+        .fill(plate)
+        .stroke({ width: w * 0.3, color: outline });
+      g.circle(chest.x - w * 0.25, chest.y - w * 0.3, w * 0.35).fill({ color: shine, alpha: 0.5 });
+      return;
+    }
+    const [root, mid, end] = pts;
+    if (!root || !mid || !end) return;
+    // Muscle: a bulge on the upper segment.
+    g.moveTo(root.x + (mid.x - root.x) * 0.25, root.y + (mid.y - root.y) * 0.25)
+      .lineTo(root.x + (mid.x - root.x) * 0.7, root.y + (mid.y - root.y) * 0.7)
+      .stroke({ width: w * 1.45, color: colour, cap: 'round' });
+    // A plate over the lower segment (forearm or shin) with a bright top edge.
+    const a = { x: mid.x + (end.x - mid.x) * 0.2, y: mid.y + (end.y - mid.y) * 0.2 };
+    const b = { x: mid.x + (end.x - mid.x) * 0.85, y: mid.y + (end.y - mid.y) * 0.85 };
+    g.moveTo(a.x, a.y)
+      .lineTo(b.x, b.y)
+      .stroke({ width: w * 1.3, color: outline, cap: 'round' });
+    g.moveTo(a.x, a.y)
+      .lineTo(b.x, b.y)
+      .stroke({ width: w * 1.05, color: plate, cap: 'round' });
+    g.moveTo(a.x, a.y - w * 0.25)
+      .lineTo(b.x, b.y - w * 0.25)
+      .stroke({ width: w * 0.16, color: shine, alpha: 0.6 });
+  }
+
+  /**
+   * A rhino's head (Rampage): a big heavy skull pushed forward, a great curved horn rising from the
+   * snout with a smaller one behind it, a small ear, a heavy brow over a narrow eye that glows red in
+   * Rampage Mode. Drawn in the figure's frame (+x = forward).
+   */
+  private rhinoHead(
+    g: Graphics,
+    s: ReturnType<typeof solveSkeleton>,
+    colour: number,
+    outline: number,
+    o: number,
+  ): void {
+    const r = this.bones.headRadius;
+    const hx = s.head.x;
+    const hy = s.head.y;
+    const skin = this.rage > 0 ? toward(colour, ARMOUR.rage, this.rage * 0.3) : colour;
+    const horn = 0xe8dcc0;
+    // Ear behind.
+    g.ellipse(hx - r * 0.55, hy - r * 0.85, r * 0.22, r * 0.38)
+      .fill(skin)
+      .stroke({ width: o, color: outline });
+    // Skull and long snout.
+    g.ellipse(hx, hy, r * 1.08, r * 0.95)
+      .fill(skin)
+      .stroke({ width: o * 1.4, color: outline });
+    g.roundRect(hx + r * 0.2, hy - r * 0.25, r * 1.15, r * 0.95, r * 0.4)
+      .fill(skin)
+      .stroke({ width: o * 1.4, color: outline });
+    // The great horn: a curved cone from the end of the snout, and a small one behind it.
+    g.moveTo(hx + r * 0.95, hy - r * 0.2)
+      .quadraticCurveTo(hx + r * 1.55, hy - r * 0.6, hx + r * 1.35, hy - r * 1.55)
+      .quadraticCurveTo(hx + r * 1.2, hy - r * 0.7, hx + r * 0.55, hy - r * 0.25)
+      .closePath()
+      .fill(horn)
+      .stroke({ width: o, color: outline });
+    g.moveTo(hx + r * 0.45, hy - r * 0.35)
+      .quadraticCurveTo(hx + r * 0.7, hy - r * 0.75, hx + r * 0.6, hy - r * 1.05)
+      .quadraticCurveTo(hx + r * 0.45, hy - r * 0.7, hx + r * 0.2, hy - r * 0.45)
+      .closePath()
+      .fill(horn)
+      .stroke({ width: o * 0.8, color: outline });
+    // Heavy brow and a narrow eye (red-hot in Rampage Mode), and a nostril.
+    g.moveTo(hx - r * 0.05, hy - r * 0.42)
+      .lineTo(hx + r * 0.5, hy - r * 0.3)
+      .stroke({ width: o * 1.6, color: outline, cap: 'round' });
+    const eye = this.rage > 0 ? toward(0xfff1c0, 0xff2a1a, this.rage) : 0xfff1c0;
+    if (this.rage > 0)
+      g.circle(hx + r * 0.25, hy - r * 0.15, r * 0.3).fill({ color: 0xff3a1a, alpha: 0.35 * this.rage });
+    g.ellipse(hx + r * 0.25, hy - r * 0.15, r * 0.14, r * 0.08)
+      .fill(eye)
+      .stroke({ width: o * 0.6, color: outline });
+    g.circle(hx + r * 1.1, hy + r * 0.25, r * 0.07).fill(outline);
+    // Wrinkled, armour-thick hide: a few creases on the neck.
+    for (const k of [0, 1]) {
+      g.moveTo(hx - r * 0.7, hy + r * (0.25 + k * 0.25))
+        .quadraticCurveTo(hx - r * 0.45, hy + r * (0.45 + k * 0.25), hx - r * 0.15, hy + r * (0.35 + k * 0.25))
+        .stroke({ width: o * 0.7, color: toward(skin, 0x000000, 0.35), alpha: 0.7 });
     }
   }
 

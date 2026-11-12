@@ -72,6 +72,7 @@ Dependency-aware plan based on Playbook §12. Each phase is broken into tasks by
 **Acceptance:** original 2D rig and art (TD-022); complete animation set; presentation targets PRS-1 to PRS-11 if adopted (OQ-15); asset validation test passes; QA review recorded.
 
 ## Phase 9: Full initial roster
+**Owner, 12/11/2026:** fighters are added one at a time, each reviewed before the next (Rampage done; Necro next).
 **Exit:** five unique fighters pass matchup and ability tests.
 **Acceptance:** distinct silhouettes, proportions and movement; no recolours; pairwise combat regression (all 10 pairs + mirrors); balance report.
 

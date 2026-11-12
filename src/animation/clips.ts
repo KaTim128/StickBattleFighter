@@ -263,6 +263,44 @@ const STRIKES = {
     { lean: deg(-26), head: deg(-14), armBack: limb(150, 30), armFront: limb(40, 120), legBack: limb(-45, -6) },
   ),
 
+  // ---- Rampage's own (a heavyweight brawler: big wind-ups, his whole mass behind every blow).
+  'rampage.hammer-jab': strike(
+    { lean: deg(8), head: deg(4), armFront: limb(60, 120), armBack: limb(45, 125) },
+    { lean: deg(-18), head: deg(14), armFront: limb(92, 12), armBack: limb(40, 120) },
+  ),
+  'rampage.haymaker': strike(
+    { lean: deg(16), head: deg(-4), armBack: limb(-40, 100), armFront: limb(60, 120) },
+    { lean: deg(-26), head: deg(18), armBack: limb(100, 25), armFront: limb(30, 110) },
+  ),
+  'rampage.double-hammer': strike(
+    { lean: deg(20), head: deg(-16), armFront: limb(175, 40), armBack: limb(170, 45), legFront: limb(30, -40) },
+    {
+      lean: deg(-48),
+      head: deg(36),
+      armFront: limb(70, 20),
+      armBack: limb(64, 26),
+      legFront: limb(55, -95),
+      legBack: limb(-25, -70),
+    },
+  ),
+  'rampage.body-slam': strike(
+    {
+      lean: deg(-10),
+      armFront: limb(150, 50),
+      armBack: limb(140, 60),
+      legFront: limb(70, -110),
+      legBack: limb(30, -100),
+    },
+    {
+      lean: deg(-38),
+      head: deg(28),
+      armFront: limb(60, 20),
+      armBack: limb(50, 30),
+      legFront: limb(40, -80),
+      legBack: limb(-10, -70),
+    },
+  ),
+
   // ---- Safe fallback: a plain push of the lead hand (used only when nothing else resolves).
   'safe.strike': strike({ armFront: limb(70, 100) }, { lean: deg(-12), armFront: limb(88, 20) }),
 } as const satisfies Record<string, StrikeClip>;

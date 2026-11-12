@@ -60,6 +60,7 @@ describe('beam delivery', () => {
       position: () => ({ x: 0, y: 0 }),
       drive: () => {},
       burnFighter: () => {},
+      buff: () => {},
       emit: () => {},
     };
     return { h, hits };

@@ -52,6 +52,8 @@ export class FighterEntity {
   /** KO presentation: the boom and the dusting sound play once per KO. */
   koSounded = false;
   dustSounded = false;
+  /** A timed self-buff (Rampage Mode): speed and durability, with seconds left. */
+  buff: { speedFactor: number; damageTakenFactor: number; durationS: number; leftS: number } | null = null;
   /** Consecutive landed hits (PRS-4 combo counter) and when the last one landed (sim seconds). */
   comboCount = 0;
   lastLandS = -99;
@@ -166,8 +168,13 @@ export class FighterEntity {
     this.view = new StickmanView(
       this.def.bones,
       this.def.look,
-      this.def.capabilities.usesFireEffects ? (this.def.effects.head ?? 'round') : 'round',
-      this.def.capabilities.usesFireEffects ? (this.def.effects.body ?? 'solid') : 'solid',
+      // Flame styles need the fire-effects capability; other styles (a rhino's head, armour) always show.
+      this.def.effects.head === 'flame' && !this.def.capabilities.usesFireEffects
+        ? 'round'
+        : (this.def.effects.head ?? 'round'),
+      this.def.effects.body === 'flame' && !this.def.capabilities.usesFireEffects
+        ? 'solid'
+        : (this.def.effects.body ?? 'solid'),
     );
     actors.add(this.view.root, 0);
     this.bars = new FighterBars(this.showStamina);
@@ -197,6 +204,8 @@ export class FighterEntity {
     this.dustSounded = false;
     this.koByFire = false;
     this.smokeS = 0;
+    this.buff = null;
+    this.combatant.damageTakenScale = 1;
     if (this.view) {
       this.view.root.alpha = 1;
       this.view.burnAway = 0;

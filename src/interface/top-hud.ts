@@ -12,7 +12,7 @@ export interface HudFighter {
   /** Status chips: 'burning', 'stunned', 'guarding', 'down', 'ko'. */
   readonly status: readonly string[];
   /** Portrait style: a living flame or a plain head, in the fighter's colour. */
-  readonly portrait: 'flame' | 'round';
+  readonly portrait: 'flame' | 'rhino' | 'round';
   readonly colour: string;
 }
 

@@ -47,6 +47,8 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 1.4, colour: 0xffa53a },
     scorchM: 1.1,
   },
+  // A crushing blow: stone-dust shrapnel and a wide, dull shockwave ring (Rampage).
+  'impact-crush': { sparks: { count: 26, speedMps: 8, colour: 0xd9c7a6 }, ring: { sizeM: 0.95, colour: 0xeadcc2 } },
   'clash-white': { sparks: { count: 14, speedMps: 6, colour: 0xffffff }, ring: { sizeM: 0.5, colour: 0xffffff } },
   'clash-fire': {
     sparks: { count: 16, speedMps: 6.5, colour: 0xffb060 },

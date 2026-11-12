@@ -166,6 +166,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] V `docs/screenshots/phase8-top-hud.png` (desktop and Pixel 7).
 - [ ] Owner: HUD layout on your phone; the showcase flash; the combo callouts.
 
+## 0zd. Rampage, menu, phone layout (verified 12/11/2026)
+- [x] Rampage: slower than Inferno; a 3-hit combo with a knockdown finisher; Ground Smash knockback; Crushing Strike stun; Rhino Charge breaks a wall section and keeps its line; lifts a drawer unit (Inferno cannot) and throws it for over 200; Rampage Mode +15% speed and -15% damage for 8 s.
+- [x] Main menu → Rampage in the Colosseum → Leave game back to the menu (e2e).
+- [ ] Owner: Rampage's feel and look; fullscreen and layout on your phone.
+
 ## 0o. Office centre cubicles and breakables (verified 11/11/2026)
 - [x] `npm test`: **220 tests**. 12 cubicles as six back-to-back pairs (north and south partners share a back panel, in the centre); every cubicle has chair, computer, keyboard, mouse and drawer pedestal; aisles and every walkway connected; every cubicle enterable; boss room sealed until the door breaks; tough tables, drawers and cabinets; a table survives a full combo and breaks on the second (wood sound, keyboard falls); a punch shatters a monitor into glass shards; a surviving desk item is knocked off; a steel drawer rings when hit, survives a combo and breaks with a metal sound; a cabinet takes 240 and moves.
 - [x] `npm run e2e`: office door flow from the open area before the door.
