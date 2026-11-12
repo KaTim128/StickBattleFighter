@@ -66,6 +66,10 @@ export class StickmanView {
   magic = 0;
   /** 0..1 blinded (Soul Drain): a band of dark violet smoke wraps the head. */
   blind = 0;
+  /** 0..1 cursed (Curse of Decay): green rot clings to the body and a weakened mark hangs overhead. */
+  decay = 0;
+  /** 0..1 in the dark (Hunting Frenzy): black shadow pools over the eyes. */
+  dark = 0;
   /** 0..1 how far a held staff follows the swinging arm (a staff strike) instead of standing upright. */
   heldSwing = 0;
   /** Stunned: stars circle the head (PRS-6). */
@@ -299,6 +303,78 @@ export class StickmanView {
     // Necro's violet magic belongs to the staff: other casters show their power through their VFX.
     if (this.magic > 0 && this.held === 'staff') this.drawMagic(s);
     if (this.blind > 0.01) this.drawBlind(s);
+    if (this.decay > 0.01) this.drawDecay(s);
+    if (this.dark > 0.01) this.drawDark(s);
+  }
+
+  /**
+   * Curse of Decay (owner, 12/11/2026): a sickly green film along the limbs, flecks of rot that
+   * lift off the body and drip down, and two falling green chevrons over the head (weaker blows,
+   * weaker guard) so the debuff reads at a glance.
+   */
+  private drawDecay(s: ReturnType<typeof solveSkeleton>): void {
+    const g = this.status;
+    const a = this.decay;
+    const t = this.clockS;
+    const r = this.bones.headRadius;
+    for (const pts of [s.armBack, s.legBack, [s.pelvis, s.chest, s.neck], s.legFront, s.armFront]) {
+      const [first, ...rest] = pts;
+      if (!first) continue;
+      g.moveTo(first.x, first.y);
+      for (const p of rest) g.lineTo(p.x, p.y);
+      g.stroke({ width: 0.09, color: 0x7fb03a, alpha: 0.28 * a, cap: 'round', join: 'round' });
+    }
+    const top = s.head.y - r;
+    const bottom = Math.max(s.legFront.at(-1)?.y ?? 0, s.legBack.at(-1)?.y ?? 0);
+    for (let i = 0; i < 9; i++) {
+      const k = (t * 0.55 + i / 9) % 1; // each fleck drifts up and fades
+      const x = Math.sin(i * 2.4 + t * 0.8) * 0.28;
+      const y = bottom + (top - bottom) * (0.15 + k * 0.95);
+      g.circle(x, y, 0.025 + 0.02 * (1 - k)).fill({ color: i % 3 ? 0x9cd04a : 0x2c3a14, alpha: 0.8 * a * (1 - k) });
+    }
+    // Drips falling from the body.
+    for (let i = 0; i < 3; i++) {
+      const k = (t * 1.3 + i / 3) % 1;
+      const x = (i - 1) * 0.16;
+      const y = s.pelvis.y + (bottom - s.pelvis.y) * k;
+      g.ellipse(x, y, 0.022, 0.04).fill({ color: 0x6f9a2e, alpha: 0.7 * a * (1 - k * 0.7) });
+    }
+    // Weakened: two green chevrons pointing down, bobbing above the head.
+    const cy = s.head.y - r * 2.1 + Math.sin(t * 4) * r * 0.12;
+    for (const off of [0, r * 0.5]) {
+      const y = cy + off;
+      g.moveTo(s.head.x - r * 0.55, y - r * 0.25)
+        .lineTo(s.head.x, y + r * 0.2)
+        .lineTo(s.head.x + r * 0.55, y - r * 0.25)
+        .stroke({ width: r * 0.32, color: 0x1a2410, alpha: 0.9 * a, cap: 'round', join: 'round' });
+      g.moveTo(s.head.x - r * 0.55, y - r * 0.25)
+        .lineTo(s.head.x, y + r * 0.2)
+        .lineTo(s.head.x + r * 0.55, y - r * 0.25)
+        .stroke({ width: r * 0.18, color: 0xa8d84c, alpha: a, cap: 'round', join: 'round' });
+    }
+  }
+
+  /**
+   * In the dark (owner, 12/11/2026, Hunting Frenzy): black shadow pools over the eyes and wisps
+   * of it curl round the head, so Shroud's player can see the opponent cannot see.
+   */
+  private drawDark(s: ReturnType<typeof solveSkeleton>): void {
+    const g = this.status;
+    const a = this.dark;
+    const t = this.clockS;
+    const r = this.bones.headRadius;
+    g.circle(s.head.x, s.head.y, r * 1.25).fill({ color: 0x050508, alpha: 0.35 * a });
+    g.roundRect(s.head.x - r * 1.2, s.head.y - r * 0.4, r * 2.4, r * 0.75, r * 0.37).fill({
+      color: 0x050508,
+      alpha: 0.9 * a,
+    });
+    for (let i = 0; i < 4; i++) {
+      const ang = t * 1.6 + (i * Math.PI) / 2;
+      g.ellipse(s.head.x + Math.cos(ang) * r * 1.35, s.head.y + Math.sin(ang) * r * 0.7, r * 0.38, r * 0.16).fill({
+        color: 0x0b0b12,
+        alpha: 0.6 * a,
+      });
+    }
   }
 
   /** Bone and wood colours for Necro's armour and staff, and the souls' violet glow. */

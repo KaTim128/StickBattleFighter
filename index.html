@@ -17,7 +17,7 @@
         pointer-events: none; max-width: min(44vw, 520px); box-sizing: border-box;
       }
       #status[data-state='error'] { background: rgba(160, 20, 20, 0.85); }
-      .touch-controls { position: fixed; inset: 0; pointer-events: none; }
+      .touch-controls { position: fixed; inset: 0; pointer-events: none; z-index: 7; } /* above the blind and dark veils */
       /* Holding a button (block) must not select or highlight its label, or open the iOS/Android callout. */
       .touch-controls, .touch-controls * {
         -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
@@ -39,6 +39,24 @@
           rgba(26, 13, 38, 0.92) 30%, rgba(10, 4, 18, 0.97) 100%);
         transition: opacity 0.15s linear;
       }
+      /* Lights out (owner, 12/11/2026, Hunting Frenzy): the darkened player sees only a small circle. */
+      .dark-veil {
+        position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 5; display: none;
+        background: radial-gradient(circle var(--r, 80px) at var(--x, 50%) var(--y, 50%),
+          rgba(2, 2, 6, 0) 0, rgba(2, 2, 6, 0) 55%, rgba(2, 2, 6, 0.9) 85%, rgba(1, 1, 3, 0.985) 100%);
+      }
+      .dark-veil.on { display: block; }
+      /* ...while Shroud sees in the dark like night vision: green, grainy, nothing hidden. */
+      .night-vision {
+        position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 5; display: none;
+        backdrop-filter: grayscale(0.9) brightness(0.8) contrast(1.25);
+        background:
+          repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+          radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 55%, rgba(0, 10, 2, 0.6) 100%),
+          rgba(70, 255, 120, 0.16);
+        transition: opacity 0.2s linear;
+      }
+      .night-vision.on { display: block; }
       /* Fire Beam on touch (owner, 12/11/2026): the joystick aims the beam while it pours. */
       body.aiming .joystick, .joystick.aiming { border-color: rgba(255, 140, 40, 0.95); box-shadow: 0 0 14px rgba(255, 110, 20, 0.6); }
       body.aiming .joystick::after, .joystick.aiming::after {
@@ -110,7 +128,7 @@
       .ability-button.ult.ready, .ability-slot.ult.ready { animation: ult-glow 0.9s ease-in-out infinite alternate; }
       @keyframes ult-glow { from { box-shadow: 0 0 6px 2px rgba(255, 190, 40, 0.5); } to { box-shadow: 0 0 22px 8px rgba(255, 120, 20, 0.9); } }
       .ability-bar {
-        position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 8px;
+        position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 7;
         pointer-events: none; font: 600 11px system-ui, sans-serif; color: #e8edf5;
       }
       .ability-bar[hidden], body.touch-mode .ability-bar { display: none; }

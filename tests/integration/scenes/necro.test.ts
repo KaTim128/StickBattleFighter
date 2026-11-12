@@ -4,7 +4,6 @@ import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
 import { NECRO_KIT } from '../../../src/data/abilities/necro';
 import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
-import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
@@ -111,90 +110,48 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scenes.clear();
   });
 
-  // Teleport (owner, 12/11/2026, SUP-24): one press away from the opponent, two presses in close.
-  const gapTo = (scene: { player: { x: number; y: number }; dummy: { x: number; y: number } }) =>
-    Math.hypot(scene.player.x - scene.dummy.x, scene.player.y - scene.dummy.y);
-
-  it('Teleport, single press: no aiming; he reappears about 7 m further from the opponent, facing it', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup({ x: 12, y: 10 }, { x: 15, y: 10 });
-    const stamina = scene.player.stamina;
-    intents.pressAbility('a3');
+  // Curse of Decay (owner, 12/11/2026, SUP-25): replaced Teleport on F.
+  it('Curse of Decay: a bolt that, on a hit, cuts the target damage by 30% and its defence by 20% for 6 s', async () => {
+    const { scene, scenes, run, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
+    expect(scene.pointAimState).toBeNull();
+    cast('a3');
+    runUntil(() => scene.dummyFighter.combatant.decayLeftS > 0, 3);
+    const foe = scene.dummyFighter.combatant;
+    expect(foe.decayLeftS).toBeGreaterThan(5.5);
+    expect(foe.attackFactor).toBeCloseTo(0.7, 6);
+    expect(foe.defenceFactor).toBeCloseTo(0.8, 6);
+    expect(scene.playerFighter.caster!.cooldown('a3')).toBeGreaterThan(K.a3.cooldownS - 2);
+    // Its blows on Necro land 30% lighter.
+    scene.dummyAttacks = true;
+    scene.playerFighter.placeAt({ x: 16.9, y: 13 });
+    const hp = scene.player.hp;
+    runUntil(() => scene.player.hp < hp, 3);
+    const cursedBlow = hp - scene.player.hp;
+    // The curse runs out: the rot flakes away (its own effect and sound), and it is back to normal.
+    scene.dummyAttacks = false;
+    scene.abilities!.recentFx.length = 0;
+    runUntil(() => foe.decayLeftS === 0, 7);
     run(STEP * 2);
-    expect(scene.pointAimState).toBeNull(); // never enters targeting
-    expect(scene.playerFighter.caster!.cast?.def.id).toBe('teleport');
-    runUntil(() => Math.hypot(scene.player.x - 12, scene.player.y - 10) > 1, 1);
-    run(0.1);
-    expect(scene.player.x).toBeLessThan(12 - 6); // straight back, away from it
-    expect(Math.abs(scene.player.y - 10)).toBeLessThan(0.4);
-    expect(gapTo(scene)).toBeGreaterThan(9);
-    expect(scene.player.facing).toBe(1); // turned to face the opponent
-    expect(stamina - scene.player.stamina).toBeGreaterThanOrEqual(K.a3.staminaCost - 1);
-    expect(scene.playerFighter.caster!.cooldown('a3')).toBeGreaterThan(K.a3.cooldownS - 1);
+    expect(scene.abilities!.recentFx.some((e) => e.vfx === 'decay-fade' && e.sfx === 'decay-fade')).toBe(true);
+    expect(foe.attackFactor).toBe(1);
+    expect(foe.defenceFactor).toBe(1);
+    scene.playerFighter.combatant.hp = 1000;
+    scene.dummyAttacks = true;
+    const hp2 = scene.player.hp;
+    runUntil(() => scene.player.hp < hp2, 3);
+    const normalBlow = hp2 - scene.player.hp;
+    expect(cursedBlow).toBeLessThan(normalBlow);
+    expect(cursedBlow / normalBlow).toBeCloseTo(0.7, 1);
     scenes.clear();
   });
 
-  it('Teleport, double press: a quick rush that reforms him just in front of the opponent; one stamina cost, its own cooldown', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup({ x: 6, y: 10 }, { x: 15, y: 12 });
-    const stamina = scene.player.stamina;
-    intents.pressAbility('a3');
-    run(STEP * 4); // well inside the 0.3 s wind-up
-    intents.pressAbility('a3');
-    run(STEP * 2);
-    expect(scene.playerFighter.caster!.cast?.def.id).toBe('teleportStrike');
-    runUntil(() => gapTo(scene) < 3, 1);
-    run(0.1);
-    expect(gapTo(scene)).toBeLessThan(1.8); // right in front of it
-    expect(gapTo(scene)).toBeGreaterThan(0.5); // but not on top of it
-    expect(scene.player.x).toBeLessThan(15); // on his own side
-    expect(scene.player.facing).toBe(1);
-    expect(stamina - scene.player.stamina).toBeLessThan(K.a3.staminaCost + 1); // paid once
-    const strike = K.a3.doubleTap!;
-    expect(scene.playerFighter.caster!.cooldown('a3')).toBeGreaterThan(strike.cooldownS - 1);
-    expect(strike.castS).toBeLessThan(K.a3.castS); // the rush is the quicker of the two
-    expect(strike.vfx).not.toBe(K.a3.vfx); // and looks different
-    expect(strike.sfx.release).not.toBe(K.a3.sfx.release);
-    // On cooldown: pressing again does nothing.
-    const at = { x: scene.player.x, y: scene.player.y };
-    run(0.5);
-    intents.pressAbility('a3');
-    run(0.6);
-    expect(Math.hypot(scene.player.x - at.x, scene.player.y - at.y)).toBeLessThan(0.3);
-    scenes.clear();
-  });
-
-  it('Teleport retreat with his back to the arena edge turns aside: inside the arena and still further away', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup({ x: 1.2, y: 10 }, { x: 3.5, y: 10 });
-    const before = gapTo(scene);
-    intents.pressAbility('a3');
-    runUntil(() => Math.hypot(scene.player.x - 1.2, scene.player.y - 10) > 1, 1);
-    run(0.2);
-    expect(scene.player.x).toBeGreaterThan(0.3);
-    expect(scene.player.x).toBeLessThan(TRAINING_YARD.widthM - 0.3);
-    expect(scene.player.y).toBeGreaterThan(0.3);
-    expect(scene.player.y).toBeLessThan(TRAINING_YARD.heightM - 0.3);
-    expect(gapTo(scene)).toBeGreaterThan(before + 2);
-    expect(scene.physics!.isFree({ x: scene.player.x, y: scene.player.y }, 0.25)).toBe(true);
-    scenes.clear();
-  });
-
-  it('Teleport in the office: both directions land on clear floor, never in walls or furniture', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 4, y: 4 }, { x: 12, y: 9 }, OFFICE);
-    for (let n = 0; n < 2; n++) {
-      // Away, then (after the cooldown) back in.
-      intents.pressAbility('a3');
-      if (n === 1) {
-        run(STEP * 3);
-        intents.pressAbility('a3');
-      }
-      run(0.8);
-      expect(scene.physics!.isFree({ x: scene.player.x, y: scene.player.y }, 0.25)).toBe(true);
-      expect(scene.player.x).toBeGreaterThan(0.3);
-      expect(scene.player.y).toBeGreaterThan(0.3);
-      expect(scene.player.x).toBeLessThan(OFFICE.widthM - 0.3);
-      expect(scene.player.y).toBeLessThan(OFFICE.heightM - 0.3);
-      run(K.a3.doubleTap!.cooldownS);
-    }
-    expect(gapTo(scene)).toBeLessThan(2.5);
+  it('Curse of Decay: a miss does nothing to anyone', async () => {
+    const { scene, scenes, run, cast } = await setup({ x: 13, y: 13 }, { x: 13, y: 3 });
+    scene.playerFighter.faceToward(1, 0);
+    cast('a3'); // nobody in front: it flies off and misses
+    run(2);
+    expect(scene.dummyFighter.combatant.decayLeftS).toBe(0);
+    expect(scene.dummyFighter.combatant.attackFactor).toBe(1);
     scenes.clear();
   });
 

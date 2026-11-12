@@ -2,7 +2,7 @@ import type { AbilityKit } from '../../abilities/ability-def';
 
 /**
  * Necro's kit (owner, 12/11/2026): a hooded death mage. Q Soul Drain (blinds), E Death Eruption,
- * F Teleport (one press away from the opponent, two presses in close, SUP-24) and the ultimate Undead
+ * F Curse of Decay (weakens attack and defence, SUP-25) and the ultimate Undead
  * Army (4 skeletons near the enemy for 10 s; replaced Death's Dominion, SUP-19/SUP-24). His magic is in the violet of drawn souls and the
  * bone-white of the dead (Magic Attack VFX Standard: each fighter in his own colours). All his magic
  * glows in the violet soul palette (the bone spikes and skeletons are drawn in bone by their own art),
@@ -10,8 +10,8 @@ import type { AbilityKit } from '../../abilities/ability-def';
  * PROVISIONAL (OQ-05).
  */
 const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff } as const;
-/** The aggressive Teleport's colours: the same soul violet run hot into crimson. */
-const STRIKE = { deep: 0x3a0a24, hot: 0xb0205a, bright: 0xff4f9a, core: 0xffe2f0 } as const;
+/** Curse of Decay's colours: rot green over the grave's dark. */
+const DECAY = { deep: 0x1c2410, hot: 0x5d8a1e, bright: 0xa8d84c, core: 0xecffc8 } as const;
 
 export const NECRO_KIT: AbilityKit = {
   comboIcon: 'staff-swing',
@@ -81,55 +81,42 @@ export const NECRO_KIT: AbilityKit = {
       hitFlash: 0xd9c8ff,
     },
   },
-  // A3: Teleport (owner, 12/11/2026, SUP-24: no longer aimed). One press: he sinks into violet
-  // smoke and reforms 7 m away from the opponent to make distance (turned aside from walls). Press
-  // again during that 0.3 s wind-up for the aggressive form: a quick crimson rush that reforms him
-  // just in front of the opponent. Never inside walls, furniture or outside the arena.
+  // A3 (F): Curse of Decay (owner, 12/11/2026, SUP-25, replacing Teleport). He draws rot out of
+  // the staff's skull and flings a sickly green bolt of decay at the opponent. If it lands, the
+  // target rots for 6 s: its blows deal 30% less damage and its defence drops by 20% (it takes
+  // 25% more). A new curse refreshes the time; it never stacks. When it ends the rot flakes away.
   a3: {
-    id: 'teleport',
-    name: 'Teleport',
-    label: 'BLINK',
-    icon: 'teleport',
+    id: 'curseOfDecay',
+    name: 'Curse of Decay',
+    label: 'DECAY',
+    icon: 'curse-of-decay',
     description:
-      'Press once to dissolve into violet smoke and reform away from the opponent. Press twice quickly to rush in through crimson shadow and reform right in front of them.',
+      'Flings a bolt of decay at the opponent. If it hits, the target rots for 6 seconds: it deals 30% less damage and its defence drops by 20%.',
     slot: 'a3',
     staminaCost: 30,
-    cooldownS: 7,
-    castS: 0.3,
-    recoveryS: 0.2,
-    aimRangeM: 9,
-    moveFactor: 0,
+    cooldownS: 12,
+    castS: 0.45,
+    recoveryS: 0.3,
+    aimRangeM: 10,
+    moveFactor: 0.3,
     interruptible: true,
-    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'teleport', maxRangeM: 9, retreatM: 7 },
-    vfx: 'teleport',
-    sfx: { cast: 'soul-gather', release: 'teleport-out', impact: 'teleport-in' },
-    look: {
-      palette: SOUL,
-      impact: { flashM: 0.7, sparks: 14, motes: 30, ringM: 1.1, smoke: 8, groundFire: false, smokeColour: 0x2e2438 },
+    payload: {
+      damage: 35,
+      knockbackMps: 1.5,
+      heavy: false,
+      strength: 150,
+      impact: 'knuckle-light',
+      decay: { durationS: 6, attackFactor: 0.7, defenceFactor: 0.8 },
     },
-    // Double press: Shadow Step in. Quicker (0.12 s), and a second longer to come back.
-    doubleTap: {
-      id: 'teleportStrike',
-      name: 'Teleport (rush in)',
-      label: 'BLINK',
-      icon: 'teleport',
-      slot: 'a3',
-      staminaCost: 30,
-      cooldownS: 8,
-      castS: 0.12,
-      recoveryS: 0.25,
-      aimRangeM: 12,
-      moveFactor: 0,
-      interruptible: true,
-      payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-      delivery: { type: 'teleport', maxRangeM: 12, approachGapM: 0.9 },
-      vfx: 'teleport-strike',
-      sfx: { cast: 'blink-rush', release: 'blink-tear', impact: 'blink-arrive' },
-      look: {
-        palette: STRIKE,
-        impact: { flashM: 0.9, sparks: 22, motes: 18, ringM: 1.5, smoke: 4, groundFire: false, smokeColour: 0x3a1024 },
-      },
+    delivery: { type: 'projectile', speedMps: 13, radiusM: 0.3, maxRangeM: 10 },
+    vfx: 'curse-of-decay',
+    sfx: { cast: 'decay-gather', release: 'decay-cast', impact: 'decay-hit' },
+    look: {
+      palette: DECAY,
+      charge: { gatherRadiusM: 0.9, motesPerS: 50, coreMaxM: 0.2 },
+      flight: { trailPerS: 110, sparksPerS: 22, shimmer: true },
+      impact: { flashM: 0.8, sparks: 22, motes: 40, ringM: 1.1, smoke: 12, groundFire: false, smokeColour: 0x24301a },
+      hitFlash: 0xc8f08a,
     },
   },
   // A4 (R): Grave Chains (owner, 12/11/2026). He thrusts the staff forward and spectral chains lash

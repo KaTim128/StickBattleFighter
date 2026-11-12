@@ -127,6 +127,13 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-8), head: deg(6), armFront: limb(95, 6), armBack: limb(70, 30) },
     settle: 0.5,
   },
+  // Curse of Decay (owner, 12/11/2026): the free hand clawed and pulled back to the shoulder as
+  // the rot gathers, a hunch over it; then the hand flung open toward the target, leaning in.
+  curseOfDecay: {
+    windup: { lean: deg(10), head: deg(-4), armFront: limb(140, 120), armBack: limb(30, 50) },
+    release: { lean: deg(-12), head: deg(8), armFront: limb(88, 2), armBack: limb(60, 30) },
+    settle: 0.5,
+  },
   // Death Eruption: the staff lifted, then driven down; the ground answers where he points.
   deathEruption: {
     windup: { lean: deg(4), head: deg(-6), armBack: limb(150, 20), armFront: limb(90, 10) },
@@ -157,41 +164,13 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.35,
   },
-  // Teleport: a still, gathering moment (the staff lifted a little, the free hand drawn in), then
-  // he is gone; he reforms in the same calm stance.
-  teleport: {
-    windup: { lean: deg(2), head: deg(-4), armFront: limb(60, 70), armBack: limb(30, 40) },
-    release: { lean: deg(0), head: deg(-2), armFront: limb(20, 30), armBack: limb(30, 40) },
+  // Shroud (owner, 12/11/2026): every cast stays hunched. Shadow Escape: a flinch away, knife arm
+  // pulled in to guard the face, sinking into a low crouch as the shadow takes him; he rises out of
+  // it still low and wary, the knife held close, then straightens into his stalk.
+  shadowEscape: {
+    windup: { lean: deg(-50), head: deg(-10), armFront: limb(-40, 150), armBack: limb(-60, 120), ...CROUCH },
+    release: { lean: deg(-38), head: deg(-4), armFront: limb(20, 130), armBack: limb(-30, 60), ...CROUCH },
     settle: 0.6,
-  },
-  // Teleport, double press (rush in): no calm here. He pitches forward over the staff, which he
-  // levels like a spear, the free arm swept back, weight on the front foot; he reappears still
-  // lunging and straightens as he lands in front of the enemy.
-  teleportStrike: {
-    windup: {
-      lean: deg(-26),
-      head: deg(8),
-      armFront: limb(100, 10),
-      armBack: limb(-50, 30),
-      legFront: limb(30, -30),
-      legBack: limb(-30, -6),
-    },
-    release: {
-      lean: deg(-18),
-      head: deg(4),
-      armFront: limb(90, 6),
-      armBack: limb(-40, 40),
-      legFront: limb(36, -36),
-      legBack: limb(-24, -10),
-    },
-    settle: 0.55,
-  },
-  // Shroud (owner, 12/11/2026): every cast stays hunched. Thrown Blade: the knife hand drawn back
-  // past the ear, then flicked out flat and fast.
-  thrownBlade: {
-    windup: { lean: deg(-22), armFront: limb(150, 100), armBack: limb(20, 40), legFront: limb(34, -40) },
-    release: { lean: deg(-34), armFront: limb(96, 4), armBack: limb(-20, 30), legFront: limb(44, -50) },
-    settle: 0.5,
   },
   // Stalker Lunge: coiled low like a spring, knife back; then flat out, knife arm thrust ahead.
   stalkerLunge: {

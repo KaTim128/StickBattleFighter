@@ -80,6 +80,8 @@ const BEHIND_PENALTY_M = 0.6;
 
 /** How fast a landed piece tips onto the face it rests on, radians per second. */
 const ROLL_SETTLE_RADPS = 7;
+/** Downward pull on a loose piece's height, m/s². */
+const FLIGHT_GRAVITY = 18;
 
 /**
  * The face a tumbling box comes to rest on: the nearest quarter turn (upright, either side, upside
@@ -91,6 +93,18 @@ export function wrapAngle(a: number): number {
   if (r > Math.PI) r -= 2 * Math.PI;
   if (r <= -Math.PI) r += 2 * Math.PI;
   return r;
+}
+
+/**
+ * How fast a thrown piece pitches over in flight: an even quarter turn (heavier pieces less) spread
+ * over the time it is in the air, so every throw of the same piece turns the same way.
+ */
+export function throwRollRadPs(velocity: Vec2, heightM: number, upMps: number, massKg: number): number {
+  const side = Math.sign(velocity.x - velocity.y) || 1;
+  const up = Math.max(0, upMps);
+  const airS = Math.max(0.15, (up + Math.sqrt(up * up + 4 * (FLIGHT_GRAVITY / 2) * heightM)) / FLIGHT_GRAVITY);
+  const turn = (Math.PI / 2) * Math.min(1, Math.max(0.35, 1.15 - massKg / 80));
+  return (side * turn) / airS;
 }
 
 export function restingRoll(roll: number): number {
@@ -350,7 +364,7 @@ export class ArenaProps {
           this.physics.setFlyingHigh(prop.body, high);
         }
         if (f.heightM > 0 || f.vz > 0) {
-          f.vz -= 18 * stepS;
+          f.vz -= FLIGHT_GRAVITY * stepS;
           f.heightM = Math.max(0, f.heightM + f.vz * stepS);
           prop.roll += prop.rollVel * stepS; // tumbling through the air
           if (f.heightM === 0 && f.vz < 0) this.land(prop, -f.vz);
@@ -463,19 +477,17 @@ export class ArenaProps {
       position: { x: from.x, y: from.y },
       halfExtents: { x: Math.max(0.05, w / 2), y: Math.max(0.05, d / 2) },
       velocity,
-      spin: thrown ? (prop.index % 2 ? 1 : -1) * 7 : 0,
+      // No spin of its own (owner, 12/11/2026: no random spinning): any turn on the floor comes
+      // from what it hits.
+      spin: 0,
       massKg: Math.max(0.1, prop.kind.massKg),
     });
     // Thrown things travel far: less floor drag while airborne (restored once it lands).
     if (thrown) prop.body.setLinearDamping(0.15);
-    // It tumbles end over end with the throw's momentum: faster for a hard throw, slower for a tall
-    // or heavy piece; it rolls toward the side of the screen it is thrown to. Put down: no tumble.
-    if (thrown) {
-      const speed = Math.hypot(velocity.x, velocity.y) + Math.max(0, upMps);
-      const screenSide = Math.sign(velocity.x - velocity.y) || (prop.index % 2 ? 1 : -1);
-      const inertia = Math.max(0.6, prop.size.h) * (1 + prop.kind.massKg / 120);
-      prop.rollVel = screenSide * Math.min(16, (speed * 1.5) / inertia);
-    } else prop.rollVel = 0;
+    // Owner, 12/11/2026: a steady, intentional arc. Released from overhead, it pitches forward a
+    // little over the whole flight (at most a quarter turn, less for heavy pieces), never spinning
+    // freely; it turns toward the side of the screen it is thrown to. Put down: no turn at all.
+    prop.rollVel = thrown ? throwRollRadPs(velocity, heightM, upMps, prop.kind.massKg) : 0;
     prop.looseFall = { heightM, vz: upMps };
     prop.flyingHigh = false; // set on the next update from the height
     prop.flight =

@@ -148,7 +148,7 @@ export class SceneSummons {
   private think(f: FighterEntity, stepS: number): void {
     const owner = f.summon!.owner;
     let target: FighterEntity | null = null;
-    let best = SIGHT_M;
+    let best = Math.min(SIGHT_M, f.combatant.sightM); // in the dark: only what is close
     for (const o of this.host.fighters()) {
       if (o.team === f.team || o.combatant.isKo) continue;
       const d = Math.hypot(o.x - f.x, o.y - f.y);

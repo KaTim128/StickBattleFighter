@@ -94,15 +94,21 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
     scenes.clear();
   });
 
-  it('a thrown chair tumbles with its momentum and comes to rest on a face, not snapped upright (owner, 12/11/2026)', async () => {
+  it('a thrown chair flies a steady arc (owner, 12/11/2026): no random spin, at most a quarter turn over, and it rests on a face', async () => {
     const { scene, scenes, run, tap, pickUp } = await setup();
     run(0.1);
     pickUp();
     tap(); // throw
     const prop = scene.props!.props.find((p) => p.kind.label && p.placement.kind === 'office-chair')!;
-    expect(Math.abs(prop.rollVel)).toBeGreaterThan(1); // spinning end over end
-    run(0.25);
-    expect(Math.abs(prop.roll)).toBeGreaterThan(0.3); // rolled over in the air
+    expect(Math.abs(prop.body!.angvel())).toBeLessThan(1e-6); // no spin round the vertical
+    expect(Math.abs(prop.rollVel)).toBeGreaterThan(0.3); // pitching forward with the throw
+    let most = 0;
+    for (let i = 0; i < 30 && prop.looseFall && prop.looseFall.heightM > 0; i++) {
+      run(1 / 60);
+      most = Math.max(most, Math.abs(prop.roll));
+    }
+    expect(most).toBeGreaterThan(0.2); // it does turn in the air
+    expect(most).toBeLessThanOrEqual(Math.PI / 2 + 1e-6); // but never tumbles freely
     run(3);
     expect(prop.awake).toBe(false); // at rest and planted again
     const q = prop.roll / (Math.PI / 2);
@@ -111,6 +117,14 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
     run(2);
     expect(prop.roll).toBe(rest); // kept: no scripted upright reset
     scenes.clear();
+  });
+
+  it('the same throw turns the same way every time: the pitch comes from the throw, not chance', async () => {
+    const { throwRollRadPs } = await import('../../../src/environment/arena-props');
+    const a = throwRollRadPs({ x: 6, y: 0 }, 1.6, 3, 12);
+    expect(throwRollRadPs({ x: 6, y: 0 }, 1.6, 3, 12)).toBe(a);
+    expect(Math.sign(throwRollRadPs({ x: -6, y: 0 }, 1.6, 3, 12))).toBe(-Math.sign(a)); // toward the throw's side
+    expect(Math.abs(throwRollRadPs({ x: 6, y: 0 }, 1.6, 3, 60))).toBeLessThan(Math.abs(a)); // heavy: less
   });
 
   it('a chair put down (not thrown) stays upright', async () => {

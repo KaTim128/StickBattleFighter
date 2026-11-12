@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AbilityCaster } from '../../../src/abilities/ability-caster';
 import { ABILITY_SLOTS } from '../../../src/abilities/ability-def';
-import { hasAbilityPose } from '../../../src/animation/ability-poses';
 import { INFERNO_KIT } from '../../../src/data/abilities/inferno';
-import { NECRO_KIT } from '../../../src/data/abilities/necro';
 
 const READY = { canAct: true, stamina: 100, airborne: false };
 const run = (c: AbilityCaster, s: number) => {
@@ -108,41 +106,5 @@ describe('Phase 8: complete animation set for the kit', () => {
     }
     const ult = INFERNO_KIT.ult.id;
     expect(abilityPose(base, ult, 'recovery', 0.5, true)).not.toEqual(abilityPose(base, ult, 'recovery', 0.5, false));
-  });
-});
-
-describe('double-press forms (owner, 12/11/2026: Necro Teleport)', () => {
-  it('a second press during the wind-up switches form, restarts the wind-up and sets that cooldown', () => {
-    const c = new AbilityCaster(NECRO_KIT);
-    c.start('a3');
-    run(c, 0.1);
-    const form = c.switchToDoubleTap('a3');
-    expect(form?.id).toBe('teleportStrike');
-    expect(c.cast?.def.id).toBe('teleportStrike');
-    expect(c.cast?.from?.id).toBe('teleport'); // the pose carries on from the first wind-up
-    expect(c.cast?.t).toBe(0);
-    expect(c.cooldown('a3')).toBe(NECRO_KIT.a3.doubleTap!.cooldownS);
-    expect(c.switchToDoubleTap('a3')).toBeNull(); // no third form
-    const ev = run(c, 1);
-    expect(ev.released).toEqual(['teleportStrike']); // released once, as the rush only
-  });
-
-  it('never switches after the wind-up, for another slot, or for abilities without a second form', () => {
-    const c = new AbilityCaster(NECRO_KIT);
-    expect(c.switchToDoubleTap('a3')).toBeNull(); // nothing casting
-    c.start('a3');
-    expect(c.switchToDoubleTap('a1')).toBeNull();
-    run(c, NECRO_KIT.a3.castS + 0.02);
-    expect(c.switchToDoubleTap('a3')).toBeNull(); // too late: already gone
-    const i = new AbilityCaster(INFERNO_KIT);
-    i.start('a1');
-    expect(i.switchToDoubleTap('a1')).toBeNull();
-  });
-
-  it('the rush has its own animation, sound and effects', () => {
-    const f = NECRO_KIT.a3.doubleTap!;
-    expect(hasAbilityPose(f.id)).toBe(true);
-    expect(f.sfx.cast && f.sfx.release && f.sfx.impact).toBeTruthy();
-    expect(f.vfx).not.toBe(NECRO_KIT.a3.vfx);
   });
 });

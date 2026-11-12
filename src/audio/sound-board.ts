@@ -330,20 +330,6 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 90, f1: 60, dur: 0.18, gain: 0.5 } },
     { noise: { dur: 0.35, gain: 0.3, type: 'bandpass', freq: 500, freqEnd: 1800, q: 2.5, attack: 0.12 } },
   ],
-  // Teleport rush in (double press): a sharp intake that snaps tight, harder and quicker than the
-  // retreat's soft breath; a ripping tear as he goes; a hard crack as he lands in someone's face.
-  'blink-rush': [
-    { noise: { dur: 0.14, gain: 0.45, type: 'bandpass', freq: 900, freqEnd: 3200, q: 3, attack: 0.08 } },
-    { tone: { wave: 'sawtooth', f0: 110, f1: 220, dur: 0.14, gain: 0.12, attack: 0.06, drive: 0.4 } },
-  ],
-  'blink-tear': [
-    { noise: { dur: 0.16, gain: 0.55, type: 'highpass', freq: 1800, freqEnd: 600, q: 1.5, attack: 0.005 } },
-    { tone: { wave: 'square', f0: 300, f1: 90, dur: 0.12, gain: 0.1 } },
-  ],
-  'blink-arrive': [
-    { tone: { wave: 'sine', f0: 140, f1: 50, dur: 0.16, gain: 0.6, drive: 0.3 } },
-    { noise: { dur: 0.12, gain: 0.45, type: 'bandpass', freq: 2600, freqEnd: 1200, q: 2, attack: 0.003 } },
-  ],
   // Ground Smash: a deep thud through the floor, rubble rattling down after it.
   'ground-smash': [
     { tone: { wave: 'sine', f0: 70, f1: 28, dur: 0.55, gain: 1, drive: 0.3 } },
@@ -473,9 +459,6 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'triangle', f0: 2650, f1: 2600, dur: 0.25, gain: 0.03, delay: 0.08 } },
   ],
   // A thrown knife spinning away: a rising, fluttering whirr.
-  'knife-throw': [
-    { noise: { dur: 0.25, gain: 0.35, type: 'bandpass', freq: 1500, freqEnd: 3500, q: 3, attack: 0.01, flutter: 32 } },
-  ],
   // The blade going in: a wet, dull thud with a short sharp cut on top.
   'knife-stab': [
     { tone: { wave: 'sine', f0: 140, f1: 60, dur: 0.14, gain: 0.7 } },
@@ -497,6 +480,16 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   'shade-rush': [
     { noise: { dur: 0.35, gain: 0.5, type: 'bandpass', freq: 300, freqEnd: 1200, q: 0.8, attack: 0.04, flutter: 18 } },
   ],
+  // Shadow Escape (owner, 12/11/2026): a sudden swallowed gulp as he sinks into his shadow, and
+  // a cold, breathy exhale where he slips out.
+  'shadow-sink': [
+    { noise: { dur: 0.22, gain: 0.5, type: 'bandpass', freq: 1400, freqEnd: 250, q: 2, attack: 0.01 } },
+    { tone: { wave: 'sine', f0: 220, f1: 55, dur: 0.22, gain: 0.3 } },
+  ],
+  'shadow-rise': [
+    { noise: { dur: 0.4, gain: 0.3, type: 'bandpass', freq: 300, freqEnd: 1100, q: 2.5, attack: 0.08 } },
+    { tone: { wave: 'sine', f0: 50, f1: 70, dur: 0.25, gain: 0.35 } },
+  ],
   // Shadow gathering round him: a breathy, hollow inhale.
   'shade-gather': [{ noise: { dur: 0.3, gain: 0.3, type: 'bandpass', freq: 600, freqEnd: 1500, q: 2.5, attack: 0.2 } }],
   // Hunting Frenzy: a building, ragged heartbeat and breath, then a sharp snap into the frenzy.
@@ -505,6 +498,38 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 62, f1: 50, dur: 0.12, gain: 0.8, delay: 0.25 } },
     { tone: { wave: 'sine', f0: 64, f1: 50, dur: 0.12, gain: 0.9, delay: 0.45 } },
     { noise: { dur: 0.6, gain: 0.25, type: 'bandpass', freq: 500, freqEnd: 1300, q: 1.8, attack: 0.4, flutter: 9 } },
+  ],
+  // Curse of Decay (owner, 12/11/2026): rot gathered with a wet, sucking hiss; flung with a low,
+  // sour groan; landing as a soft rotten splatter with a fizz; and, when it wears off, a dry crumble.
+  'decay-gather': [
+    { noise: { dur: 0.45, gain: 0.3, type: 'bandpass', freq: 500, freqEnd: 1400, q: 3, attack: 0.3, flutter: 11 } },
+    { tone: { wave: 'triangle', f0: 70, f1: 95, dur: 0.45, gain: 0.18, attack: 0.3, drive: 0.3 } },
+  ],
+  'decay-cast': [
+    { noise: { dur: 0.3, gain: 0.4, type: 'bandpass', freq: 900, freqEnd: 400, q: 2, attack: 0.02 } },
+    { tone: { wave: 'sawtooth', f0: 160, f1: 85, dur: 0.3, gain: 0.14, drive: 0.4 } },
+  ],
+  'decay-hit': [
+    { noise: { dur: 0.12, gain: 0.6, type: 'lowpass', freq: 900, attack: 0.004 } },
+    { noise: { dur: 0.6, gain: 0.25, type: 'highpass', freq: 3200, freqEnd: 1800, attack: 0.05, flutter: 14 } },
+    { tone: { wave: 'sine', f0: 140, f1: 60, dur: 0.2, gain: 0.35 } },
+  ],
+  'decay-fade': [
+    { crackle: { dur: 0.5, gain: 0.25, count: 18 } },
+    { noise: { dur: 0.4, gain: 0.12, type: 'bandpass', freq: 2400, freqEnd: 900, q: 1.5 } },
+  ],
+  // Hunting Frenzy's activation (owner, 12/11/2026): a light bulb bursting overhead. A brief
+  // electric fizz, a sharp glassy pop, then thin shards tinkling down, with the frenzy's own snap
+  // underneath. Original synthesis.
+  'bulb-burst': [
+    { tone: { wave: 'sawtooth', f0: 120, f1: 100, dur: 0.09, gain: 0.08, drive: 0.6 } },
+    { noise: { dur: 0.05, gain: 0.9, type: 'highpass', freq: 2600, delay: 0.07 } },
+    { tone: { wave: 'sine', f0: 2400, f1: 900, dur: 0.05, gain: 0.25, delay: 0.07 } },
+    { noise: { dur: 0.05, gain: 0.35, type: 'bandpass', freq: 6200, q: 6, delay: 0.16 } },
+    { noise: { dur: 0.04, gain: 0.3, type: 'bandpass', freq: 7400, q: 7, delay: 0.24 } },
+    { noise: { dur: 0.05, gain: 0.25, type: 'bandpass', freq: 5600, q: 6, delay: 0.33 } },
+    { noise: { dur: 0.04, gain: 0.18, type: 'bandpass', freq: 8000, q: 8, delay: 0.44 } },
+    { tone: { wave: 'sine', f0: 90, f1: 30, dur: 0.4, gain: 0.7, drive: 0.4, delay: 0.08 } },
   ],
   'frenzy-snap': [
     { tone: { wave: 'sine', f0: 90, f1: 30, dur: 0.4, gain: 0.9, drive: 0.4 } },

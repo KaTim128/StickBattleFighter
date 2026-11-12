@@ -100,17 +100,6 @@ export class SceneAbilities implements AbilityHost {
     return null;
   }
 
-  /**
-   * The slot's key pressed again during its wind-up: switch to the double-press form (owner,
-   * 12/11/2026, Necro's Teleport). True if it switched; its own cast pose, effects and sound start.
-   */
-  switchForm(f: FighterEntity, slot: AbilitySlot): boolean {
-    const form = f.caster?.switchToDoubleTap(slot);
-    if (!form) return false;
-    this.emit({ kind: 'cast', ability: form.id, vfx: form.vfx, sfx: form.sfx.cast, x: f.x, y: f.y });
-    return true;
-  }
-
   /** Advance a fighter's cast; start the delivery at the release event. */
   stepCaster(f: FighterEntity, stepS: number): void {
     const caster = f.caster;
@@ -211,6 +200,11 @@ export class SceneAbilities implements AbilityHost {
     if (landed && payload.bleed) target.combatant.bleed(payload.bleed.dps, payload.bleed.durationS);
     // Soul Drain: the target is blinded for a while.
     if (landed && payload.blindS) target.combatant.blind(payload.blindS);
+    // Curse of Decay: weaker blows and weaker defence for a while.
+    if (landed && payload.decay) {
+      const d = payload.decay;
+      target.combatant.decay(d.durationS, d.attackFactor, d.defenceFactor);
+    }
     // Soul Drain: the caster takes back a share of the life it drained.
     if (landed && payload.lifesteal && !attacker.combatant.isKo) {
       const c = attacker.combatant;
@@ -306,6 +300,10 @@ export class SceneAbilities implements AbilityHost {
     if (!f) return;
     f.buff = buff ? { ...buff, leftS: buff.durationS } : null;
     f.combatant.damageTakenScale = buff ? buff.damageTakenFactor : 1;
+    // Hunting Frenzy puts the lights out on every enemy for as long as it lasts.
+    if (buff?.darkensFoes)
+      for (const o of this.fightersOf())
+        if (o.team !== f.team && !o.combatant.isKo) o.combatant.darken(buff.durationS, buff.darkensFoes.visibleM);
   }
 
   burnFighter(targetId: string, burn: Burn): void {

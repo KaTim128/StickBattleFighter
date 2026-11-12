@@ -33,6 +33,7 @@ import { fighterSheet } from '../interface/fighter-sheet';
 import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
+import { VisionVeil } from '../interface/vision-veil';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
@@ -180,6 +181,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // Overlays that pause the fight (Settings, the main menu): the game ignores input while any is open.
   const pausedBy = new Set<string>();
   const blindVeil = new BlindVeil(document.body);
+  const visionVeil = new VisionVeil(document.body);
   const aimHint = new AimHint(document.body);
   const fightIntro = new FightIntro(document.body);
   const announcer = new Announcer(
@@ -340,6 +342,17 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         showDodgeReady(document.body, debug.player.dodgeReady);
         showStickAiming(document.body, debug.player.beamAiming);
         blindVeil.update(debug.player.blindS);
+        {
+          // Lights out: the circle the player can still see, centred on their body, in screen pixels.
+          const p = debug.player;
+          const at = p.darkS > 0 ? scene.worldToScreen(p.x, p.y, 0.9) : null;
+          const edge =
+            at && Number.isFinite(p.sightM)
+              ? scene.worldToScreen(p.x + p.sightM * Math.SQRT1_2, p.y - p.sightM * Math.SQRT1_2, 0.9)
+              : null;
+          const r = at && edge ? Math.hypot(edge.x - at.x, edge.y - at.y) : 0;
+          visionVeil.update(p.darkS, at, r, p.nightVisionS);
+        }
         aimHint.update(
           scene.targeting,
           document.body.classList.contains('touch-mode'),

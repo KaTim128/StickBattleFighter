@@ -23,8 +23,6 @@ export interface ActiveCast {
   phase: CastPhase;
   /** Seconds into the current phase. */
   t: number;
-  /** Switched from another form mid wind-up: where that wind-up had got to, so the pose blends on. */
-  readonly from?: { readonly id: string; readonly progress: number };
 }
 
 export interface CastEvents {
@@ -109,21 +107,6 @@ export class AbilityCaster {
     this.cooldowns.set(slot, def.cooldownS);
     if (slot === 'ult') this.meterValue = 0;
     return def;
-  }
-
-  /**
-   * The same key pressed again during the wind-up (owner, 12/11/2026): switch to the ability's
-   * double-press form, which starts its own wind-up and sets its own cooldown. Returns the form,
-   * or null when there is nothing to switch (no cast, past the wind-up, or no second form).
-   */
-  switchToDoubleTap(slot: AbilitySlot): AbilityDef | null {
-    const c = this.active;
-    const form = c && c.phase === 'windup' && c.def.slot === slot ? c.def.doubleTap : undefined;
-    if (!c || !form) return null;
-    const from = { id: c.def.id, progress: Math.min(1, c.t / c.def.castS) };
-    this.active = { def: form, phase: 'windup', t: 0, from };
-    this.cooldowns.set(slot, form.cooldownS);
-    return form;
   }
 
   /** A hit landed on this fighter during the cast. Returns true if the cast was cancelled. */

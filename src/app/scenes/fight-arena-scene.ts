@@ -99,6 +99,14 @@ export interface PlayerState {
   lifting: boolean;
   /** Seconds of blindness left (Soul Drain): the player's view darkens. */
   blindS: number;
+  /** Seconds of darkness left (an enemy's Hunting Frenzy): only a small circle round them shows. */
+  darkS: number;
+  /** How far the player can see in that darkness, metres (Infinity when not in the dark). */
+  sightM: number;
+  /** Seconds of the player's own Hunting Frenzy left: they see the dark like night vision. */
+  nightVisionS: number;
+  /** Seconds of Curse of Decay left on the player. */
+  decayS: number;
   /** The player's beam is pouring: the touch joystick aims it instead of moving. */
   beamAiming: boolean;
   /** What the contextual utility button does now: jump, pick up or throw. */
@@ -538,6 +546,10 @@ export class FightArenaScene implements ArenaScene {
       carrying: f.carrying?.placement.kind ?? null,
       lifting: f.liftS > 0,
       blindS: f.combatant.blindLeftS,
+      darkS: f.combatant.darkLeftS,
+      sightM: f.combatant.sightM,
+      nightVisionS: f.buff?.darkensFoes ? f.buff.leftS : 0,
+      decayS: f.combatant.decayLeftS,
       beamAiming: this.abilities?.world.beams.some((b) => b.casterId === f.name) ?? false,
       utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
       dodgeReady: 1 - f.combatant.dodgeCooldownLeftS / f.combatant.dodgeCooldownTotalS,
@@ -670,6 +682,16 @@ export class FightArenaScene implements ArenaScene {
       }
       const wasKo = f.combatant.isKo;
       const burned = f.combatant.update(stepS);
+      // Curse of Decay ran out: the rot flakes away from the body with a dry crumble.
+      if (f.combatant.decayEnded)
+        this.abilities?.emit({
+          kind: 'release',
+          ability: 'decay-end',
+          vfx: 'decay-fade',
+          sfx: 'decay-fade',
+          x: f.x,
+          y: f.y,
+        });
       if (burned > 0) this.showBurn(f, burned);
       if (!wasKo && f.combatant.isKo) this.abilities?.interrupt(f, true); // burned out
       f.burnTextS = Math.max(0, f.burnTextS - stepS);
@@ -820,10 +842,7 @@ export class FightArenaScene implements ArenaScene {
     }
 
     // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
-    const abilityKey = this.intents.consumeAbility();
-    // The same key again during the wind-up switches to the ability's double-press form (Necro's
-    // Teleport); that press does nothing else.
-    const slot = abilityKey && this.abilities?.switchForm(f, abilityKey) ? null : abilityKey;
+    const slot = this.intents.consumeAbility();
     if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
     else if (slot && this.needsPointAim(f, slot)) this.beginPointAim(f, slot);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
@@ -1074,7 +1093,8 @@ export class FightArenaScene implements ArenaScene {
   private lockTarget(f: FighterEntity): FighterEntity | null {
     if (f.combatant.blinded || !this.physics) return null;
     let best: FighterEntity | null = null;
-    let bestD = TARGET_LOCK_SIGHT_M;
+    // In the dark (Hunting Frenzy) it only finds someone inside its small circle of sight.
+    let bestD = Math.min(TARGET_LOCK_SIGHT_M, f.combatant.sightM);
     for (const o of this.fighters) {
       if (o.team === f.team || o.combatant.isKo || o.appearS > 0) continue;
       const d = Math.hypot(o.x - f.x, o.y - f.y);
@@ -1178,15 +1198,10 @@ export class FightArenaScene implements ArenaScene {
     this.pointAim = { slot, spot: this.clampToReach(f, slot, this.insideMap(start)) };
   }
 
-  /** A teleport the player aims (not one that picks its own spot, like "Behind You" or Necro's blinks). */
+  /** A teleport the player aims (not one that picks its own spot, like "Behind You" or "Shadow Escape"). */
   private needsPointAim(f: FighterEntity, slot: AbilitySlot): boolean {
     const d = f.caster?.def(slot).delivery;
-    return (
-      d?.type === 'teleport' &&
-      d.behindTargetM === undefined &&
-      d.retreatM === undefined &&
-      d.approachGapM === undefined
-    );
+    return d?.type === 'teleport' && d.behindTargetM === undefined && d.retreatM === undefined;
   }
 
   /** How fast WASD or the joystick moves this ability's target (per ability data, owner 12/11/2026). */
@@ -1397,9 +1412,11 @@ export class FightArenaScene implements ArenaScene {
   private controlDummy(f: FighterEntity, stepS: number): void {
     const p = this.playerFighter;
     const c = f.combatant;
-    if (c.canAct && !f.combo.attack && !c.blinded) f.faceToward(p.x - f.x, p.y - f.y);
+    // Blinded, or in the dark with the player outside its small circle of sight: it cannot find them.
+    const sees = !c.blinded && Math.hypot(p.x - f.x, p.y - f.y) <= c.sightM;
+    if (c.canAct && !f.combo.attack && sees) f.faceToward(p.x - f.x, p.y - f.y);
     if (
-      !c.blinded &&
+      sees &&
       this.dummyAttacks &&
       c.state === 'free' &&
       !f.combo.attack &&
@@ -1559,7 +1576,8 @@ export class FightArenaScene implements ArenaScene {
     const result = target.combatant.receive(
       {
         baseDamage: s.damage,
-        attackerPower: attacker.def.stats.power,
+        // Curse of Decay weakens everything the cursed fighter deals (owner, 12/11/2026).
+        attackerPower: attacker.def.stats.power * attacker.combatant.attackFactor,
         heavy: s.heavy,
         fromFront,
         critRoll: this.rng(),
@@ -2395,10 +2413,6 @@ export class FightArenaScene implements ArenaScene {
     }
     const cast = f.caster?.cast;
     if (cast && f.caster) {
-      // A form switched mid wind-up (Necro's double-press Teleport) carries on from where the
-      // first wind-up had got to, so the body never snaps back to the stance.
-      const from = cast.phase === 'windup' ? cast.from : undefined;
-      if (from) pose = abilityPose(pose, from.id, 'windup', from.progress, false);
       pose = abilityPose(
         pose,
         cast.def.id,
@@ -2497,6 +2511,9 @@ export class FightArenaScene implements ArenaScene {
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
     // Blinded (Soul Drain): dark smoke wraps the head, thinning in its last half second.
     f.view.blind = Math.min(1, c.blindLeftS / 0.5);
+    // Cursed (Curse of Decay) and in the dark (Hunting Frenzy), each easing off at its end.
+    f.view.decay = Math.min(1, c.decayLeftS / 0.5);
+    f.view.dark = Math.min(1, c.darkLeftS / 0.5);
     // Magic at work (owner, 12/11/2026): casting, or a power buff, lights the staff skull's eyes and
     // gathers violet energy; a staff strike swings the staff with the arm.
     const casting = f.caster?.cast !== null && f.caster?.cast !== undefined;

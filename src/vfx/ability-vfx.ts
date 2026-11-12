@@ -174,6 +174,8 @@ const MAX_PARTICLES = 480;
 const CONTACT_FLASH_S = 0.09;
 const SCORCH_LIFE_S = 6;
 const FIRE: Palette = { deep: 0xd8320c, hot: 0xff6a00, bright: 0xffa53a, core: 0xfff1a8 };
+/** Curse of Decay flaking away (dry rot green). */
+const DECAY_FLAKES: Palette = { deep: 0x1c2410, hot: 0x5d8a1e, bright: 0xa8d84c, core: 0xd8eaa0 };
 /** A beam pours at chest height. */
 const BEAM_HEIGHT_M = 1.05;
 const SMOKE = 0x2c2420;
@@ -388,6 +390,28 @@ export class AbilityVfx {
       this.emitAt(fx.x, fx.y, 1.0, 10, 1.8, 0.3, 0.1, fx.look.palette);
       return;
     }
+    if (fx.vfx === 'decay-fade') {
+      // Curse of Decay ends (owner, 12/11/2026): the rot dries and flakes away up the body.
+      for (let i = 0; i < 3; i++) this.emitAt(fx.x, fx.y, 0.3 + i * 0.5, 8, 1.1, 0.6, 0.1, DECAY_FLAKES);
+      return;
+    }
+    if (fx.kind === 'release' && fx.vfx === 'shadow-escape' && fx.look) {
+      // Shadow Escape out (owner, 12/11/2026): he sinks into his own shadow. A pool of black spreads
+      // under him and snaps shut while dark smoke boils up and drains down into it.
+      for (let i = 0; i < 3; i++) this.emitAt(fx.x, fx.y, 1.1 - i * 0.4, 10, 0.8, 0.5, 0.14, fx.look.palette);
+      this.rings.push({ colour: fx.look.palette.deep, x: fx.x, y: fx.y, z: 0, r0: 0.2, r1: 1.0, ageS: 0, lifeS: 0.18 });
+      this.rings.push({
+        colour: fx.look.palette.bright,
+        x: fx.x,
+        y: fx.y,
+        z: 0,
+        r0: 1.0,
+        r1: 0.05,
+        ageS: 0,
+        lifeS: 0.4,
+      });
+      return;
+    }
     if (fx.kind === 'release' && fx.vfx === 'teleport' && fx.look) {
       // Teleport out (owner, 12/11/2026): the body breaks into violet smoke that collapses inward,
       // and a dark ring snaps shut on the floor where he stood.
@@ -402,19 +426,6 @@ export class AbilityVfx {
         ageS: 0,
         lifeS: 0.35,
       });
-      return;
-    }
-    if (fx.kind === 'release' && fx.vfx === 'teleport-strike' && fx.look) {
-      // Teleport rush in (owner, 12/11/2026): the opposite of the retreat's soft inward collapse.
-      // He tears out of the world: a hot crimson flash at chest height, shards flung wide and fast,
-      // and two rings snapping outward on the floor.
-      this.emitAt(fx.x, fx.y, 1.0, 18, 4.2, 0.28, 0.09, fx.look.palette);
-      this.emitAt(fx.x, fx.y, 0.3, 10, 2.6, 0.22, 0.12, fx.look.palette);
-      for (const [r0, r1, lifeS] of [
-        [0.15, 1.3, 0.22],
-        [0.1, 0.8, 0.3],
-      ] as const)
-        this.rings.push({ colour: fx.look.palette.bright, x: fx.x, y: fx.y, z: 0, r0, r1, ageS: 0, lifeS });
       return;
     }
     switch (fx.kind) {
@@ -1121,25 +1132,6 @@ export class AbilityVfx {
     // Fireballs: glow, body, white-hot core and a fading trail; a shadow on the floor.
     for (const p of input.projectiles) {
       const look = p.def.look;
-      if (p.def.vfx === 'thrown-blade') {
-        // A thrown knife (Shroud): a steel blade spinning end over end, a faint arc of motion behind.
-        const c = P(p.x, p.y, BOLT_HEIGHT_M);
-        const spin = p.travelledM * 9;
-        const ux = Math.cos(spin);
-        const uy = Math.sin(spin) * 0.6;
-        f.ellipse(p.x, p.y, 0.15, 0.08).fill({ color: 0x000000, alpha: 0.25 });
-        g.circle(c.x, c.y, 0.2).stroke({ width: 0.03, color: 0xdfe5ee, alpha: 0.25 });
-        g.moveTo(c.x - ux * 0.12, c.y - uy * 0.12)
-          .lineTo(c.x + ux * 0.16, c.y + uy * 0.16)
-          .stroke({ width: 0.05, color: 0x2c3038, cap: 'round' })
-          .moveTo(c.x - ux * 0.02, c.y - uy * 0.02)
-          .lineTo(c.x + ux * 0.16, c.y + uy * 0.16)
-          .stroke({ width: 0.032, color: 0xdfe5ee, cap: 'round' })
-          .moveTo(c.x - ux * 0.12, c.y - uy * 0.12)
-          .lineTo(c.x - ux * 0.02, c.y - uy * 0.02)
-          .stroke({ width: 0.04, color: 0x1e1e24, cap: 'round' });
-        continue;
-      }
       if (look?.flight) {
         this.magicProjectile(f, g, p, look, t);
         continue;

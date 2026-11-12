@@ -2,49 +2,42 @@ import type { AbilityKit } from '../../abilities/ability-def';
 
 /**
  * Shroud's kit (owner, 12/11/2026): an original masked slasher who hunts with a knife. Cuts bleed;
- * he throws blades, lunges through his prey, appears behind them and, in his ultimate, Hunting
- * Frenzy, cuts faster, deeper and bloodier. Values are PROVISIONAL (OQ-05) and balanced by the
+ * he slips away into shadow, lunges through his prey, appears behind them and, in his ultimate,
+ * Hunting Frenzy, puts the lights out on them and cuts faster and bloodier. Values are PROVISIONAL (OQ-05) and balanced by the
  * fighter ratings test (REQ-ABL-16).
  */
-/** Cold steel with a red edge (his blades) and blood red (his frenzy). */
-const STEEL = { deep: 0x3a3f4a, hot: 0x9aa3b2, bright: 0xdfe5ee, core: 0xffffff } as const;
+/** Blood red (his cuts and frenzy) and shadow (his escapes). */
 const BLOOD = { deep: 0x4a0408, hot: 0xa30d16, bright: 0xe5242e, core: 0xff9a9a } as const;
 const SHADE = { deep: 0x07070a, hot: 0x1c1c25, bright: 0x3b3b4a, core: 0x9a9aae } as const;
 
 export const SHROUD_KIT: AbilityKit = {
   comboIcon: 'knife-slash',
   heavyIcon: 'gutting-stab',
-  // A1 (Q): Thrown Blade. A flick of the wrist: a spinning knife flies straight and fast; the cut bleeds.
+  // A1 (Q): Shadow Escape (owner, 12/11/2026, SUP-25, replacing Thrown Blade). Strictly a flight,
+  // never an attack: he flinches into a crouch, sinks into his own shadow and slips out 7 m away
+  // from the opponent (turned aside from walls), back to the wall and facing it. No damage.
   a1: {
-    id: 'thrownBlade',
-    name: 'Thrown Blade',
-    label: 'BLADE',
-    description: 'Flicks a spinning knife at the target; a hit cuts deep and keeps bleeding.',
-    icon: 'thrown-blade',
+    id: 'shadowEscape',
+    name: 'Shadow Escape',
+    label: 'ESCAPE',
+    description:
+      'He sinks into his own shadow and slips out well away from the opponent: a way out of trouble, never an attack.',
+    icon: 'shadow-escape',
     slot: 'a1',
-    staminaCost: 18,
-    cooldownS: 2.8,
-    castS: 0.2,
+    staminaCost: 25,
+    cooldownS: 9,
+    castS: 0.12,
     recoveryS: 0.2,
-    aimRangeM: 10,
-    moveFactor: 0.4,
-    interruptible: true,
-    payload: {
-      damage: 50,
-      knockbackMps: 1.5,
-      heavy: false,
-      strength: 200,
-      impact: 'knuckle-light',
-      bleed: { dps: 10, durationS: 3 },
-    },
-    delivery: { type: 'projectile', speedMps: 22, radiusM: 0.22, maxRangeM: 10 },
-    vfx: 'thrown-blade',
-    sfx: { cast: 'knife-draw', release: 'knife-throw', impact: 'knife-stab' },
+    aimRangeM: 0,
+    moveFactor: 0,
+    interruptible: false,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: { type: 'teleport', maxRangeM: 7, retreatM: 7 },
+    vfx: 'shadow-escape',
+    sfx: { cast: 'shade-gather', release: 'shadow-sink', impact: 'shadow-rise' },
     look: {
-      palette: STEEL,
-      flight: { trailPerS: 40, sparksPerS: 10, shimmer: false },
-      impact: { flashM: 0.5, sparks: 14, motes: 10, ringM: 0.5, groundFire: false, smokeColour: 0x7a0a10 },
-      hitFlash: 0xff5a5a,
+      palette: SHADE,
+      impact: { flashM: 0.4, sparks: 6, motes: 26, ringM: 1, smoke: 12, groundFire: false, smokeColour: 0x0a0a10 },
     },
   },
   // A2 (E): Stalker Lunge. He coils low, then darts through his prey in a black blur, slashing
@@ -140,14 +133,16 @@ export const SHROUD_KIT: AbilityKit = {
       hitFlash: 0xff5a5a,
     },
   },
-  // ULT (K): Hunting Frenzy. He hunches lower, shaking, then snaps into a frenzy for 8 s: 25% faster,
-  // knife strikes 40% quicker and 35% deadlier, every cut bleeding, wrapped in a red aura.
+  // ULT (I): Hunting Frenzy. He hunches lower, shaking, then snaps into a frenzy for 8 s: 25% faster,
+  // knife strikes 40% quicker and 10% deadlier, every cut bleeding, wrapped in a red aura. As it
+  // snaps a light bulb bursts and the lights go out on the opponent: for those 8 s it sees only a
+  // small circle (1.6 m) round itself, everything else almost black.
   ult: {
     id: 'huntingFrenzy',
     name: 'Hunting Frenzy',
     label: 'ULT',
     description:
-      'Snaps into a killing frenzy for 8 seconds: faster on his feet, quicker and deadlier with the knife, and every cut bleeds.',
+      'A light bulb bursts and the lights go out on the opponent, who can see only a small circle around itself. For 8 seconds he is faster, quicker and deadlier with the knife, and every cut bleeds.',
     icon: 'hunting-frenzy',
     slot: 'ult',
     staminaCost: 0,
@@ -164,11 +159,14 @@ export const SHROUD_KIT: AbilityKit = {
       speedFactor: 1.25,
       damageTakenFactor: 1,
       attackSpeedFactor: 1.4,
-      meleeDamageFactor: 1.35,
+      // Owner, 12/11/2026: the knife buff is 10% (was 35%); the lights go out on the opponent.
+      meleeDamageFactor: 1.1,
       meleeBleed: { dps: 8, durationS: 3 },
+      darkensFoes: { visibleM: 1.6 },
     },
     vfx: 'hunting-frenzy',
-    sfx: { cast: 'frenzy-build', release: 'frenzy-snap', impact: 'frenzy-snap' },
+    // The snap now comes with a light bulb bursting overhead (owner, 12/11/2026).
+    sfx: { cast: 'frenzy-build', release: 'bulb-burst', impact: 'frenzy-snap' },
     look: {
       palette: BLOOD,
       charge: { gatherRadiusM: 1.3, motesPerS: 110, coreMaxM: 0 },

@@ -228,3 +228,43 @@ describe('Combatant: abilities support', () => {
     expect(c.receive(HIT).outcome).toBe('dodged');
   });
 });
+
+describe('Combatant: Curse of Decay and darkness (owner, 12/11/2026)', () => {
+  it('cursed: its blows are scaled to 70% and its defence to 80% (25% more damage taken) until it runs out', () => {
+    const c = new Combatant(STATS);
+    c.decay(6, 0.7, 0.8);
+    expect(c.attackFactor).toBeCloseTo(0.7, 6);
+    const r = c.receive(HIT);
+    expect(r.damage).toBe(125); // 100 / (1 × 0.8)
+    tick(c, 5.9);
+    expect(c.decayEnded).toBe(false);
+    let ended = false;
+    for (let i = 0; i < 12; i++) {
+      c.update(1 / 60);
+      ended ||= c.decayEnded;
+    }
+    expect(ended).toBe(true); // reported once, the step it ran out
+    expect(c.attackFactor).toBe(1);
+    expect(c.defenceFactor).toBe(1);
+    c.update(1 / 60);
+    expect(c.decayEnded).toBe(false);
+  });
+
+  it('a second curse refreshes the time but never stacks the weakening', () => {
+    const c = new Combatant(STATS);
+    c.decay(6, 0.7, 0.8);
+    tick(c, 3);
+    c.decay(6, 0.7, 0.8);
+    expect(c.decayLeftS).toBeCloseTo(6, 6);
+    expect(c.attackFactor).toBeCloseTo(0.7, 6);
+  });
+
+  it('in the dark it sees only its small circle, then normally again', () => {
+    const c = new Combatant(STATS);
+    expect(c.sightM).toBe(Number.POSITIVE_INFINITY);
+    c.darken(8, 1.6);
+    expect(c.sightM).toBe(1.6);
+    tick(c, 8.05);
+    expect(c.sightM).toBe(Number.POSITIVE_INFINITY);
+  });
+});

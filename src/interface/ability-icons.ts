@@ -7,7 +7,7 @@
  * deliberate shape. Original artwork; one per icon id (`AbilityDef.icon`, `AbilityKit.comboIcon`,
  * `AbilityKit.heavyIcon`).
  */
-type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade';
+type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -16,6 +16,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   soul: ['#ecdcff', '#7a35d0', '#170622'],
   blood: ['#ffb0a8', '#b3121c', '#1a0204'],
   shade: ['#b9bfcc', '#383a48', '#060609'],
+  decay: ['#e2f7b8', '#4f7a1c', '#0f1608'],
 };
 
 const MATERIALS = `
@@ -24,6 +25,7 @@ const MATERIALS = `
 <linearGradient id="st" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#d3dae4"/><stop offset=".52" stop-color="#7c8696"/><stop offset=".58" stop-color="#c3cbd6"/><stop offset=".85" stop-color="#eef2f7"/><stop offset="1" stop-color="#596273"/></linearGradient>
 <radialGradient id="gr" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#e2e5ec"/><stop offset=".45" stop-color="#8f929d"/><stop offset=".85" stop-color="#4b4d57"/><stop offset="1" stop-color="#2e3038"/></radialGradient>
 <radialGradient id="sl" cx="38%" cy="35%" r="65%"><stop offset="0" stop-color="#fbf6ff"/><stop offset=".3" stop-color="#c9a6ff"/><stop offset=".65" stop-color="#7a35d0"/><stop offset="1" stop-color="#26093a"/></radialGradient>
+<radialGradient id="dc" cx="38%" cy="35%" r="65%"><stop offset="0" stop-color="#f4ffd8"/><stop offset=".3" stop-color="#b6e05a"/><stop offset=".65" stop-color="#4f7a1c"/><stop offset="1" stop-color="#16200a"/></radialGradient>
 <linearGradient id="bn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffcf2"/><stop offset=".5" stop-color="#e3d8bf"/><stop offset="1" stop-color="#9e9178"/></linearGradient>
 <radialGradient id="bd" cx="40%" cy="35%" r="65%"><stop offset="0" stop-color="#ffc2c2"/><stop offset=".35" stop-color="#ec2a34"/><stop offset=".8" stop-color="#7a0a10"/><stop offset="1" stop-color="#3a0306"/></radialGradient>
 <radialGradient id="sh" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#5d5d70"/><stop offset=".5" stop-color="#22222c"/><stop offset="1" stop-color="#07070a"/></radialGradient>
@@ -167,11 +169,11 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 42, 14, '#e8dcff', 0.2),
     `<path d="M0 42 H48 V48 H0 Z" fill="#170622"/><g filter="url(#ds)" fill="url(#bn)" stroke="#2a241c" stroke-width="1.3" stroke-linejoin="round"><path d="M6 43 L11 18 L16 43 Z"/><path d="M17 43 L24 9 L31 43 Z"/><path d="M32 43 L37 20 L42 43 Z"/></g><ellipse cx="24" cy="42" rx="20" ry="2.6" fill="#c9a6ff" opacity=".8" filter="url(#gl)"/>`,
   ),
-  // Teleport: a hooded figure dissolving into a violet vortex.
-  teleport: icon(
-    'soul',
-    swirl('#e8dcff', 0.5),
-    `<g filter="url(#ds)"><path d="M14 44 L16 22 C16 12 32 12 32 22 L34 44 Z" fill="#4a3a63" stroke="#120e18" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="24.5" cy="24.5" rx="3.6" ry="4.4" fill="#07050a"/></g><path d="M14 40 C20 34 28 44 34 38" stroke="#c9a6ff" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".9"/>`,
+  // Curse of Decay: a rotting green orb with a cracked skull in it, dripping, over a sour swirl.
+  'curse-of-decay': icon(
+    'decay',
+    swirl('#e8ffc0', 0.42),
+    `<g filter="url(#gl)"><circle cx="24" cy="22" r="12.5" fill="url(#dc)" stroke="#0f1608" stroke-width="1.4"/></g><g fill="#101a08" opacity=".85"><ellipse cx="20" cy="21" rx="2.6" ry="3.1"/><ellipse cx="28" cy="21" rx="2.6" ry="3.1"/><path d="M22.5 27 L24 25 L25.5 27 Z"/></g><path d="M24 10 L22.5 15 L25 17" stroke="#101a08" stroke-width="1.2" fill="none"/><g fill="#a8d84c"><path d="M15 31 C15 37 13 38 13 40 C13 42 17 42 17 40 C17 38 15 37 15 31 Z"/><path d="M31 33 C31 38 29.5 39 29.5 40.5 C29.5 42.2 32.5 42.2 32.5 40.5 C32.5 39 31 38 31 33 Z"/></g><ellipse cx="20" cy="16.5" rx="4" ry="2.4" fill="#fff" opacity=".55"/>`,
   ),
   // Undead Army: three skulls rising out of violet earth.
   'undead-army': icon(
@@ -198,11 +200,11 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     `<circle cx="32" cy="18" r="9" fill="url(#sl)" filter="url(#gl)"/><g filter="url(#ds)"><path d="M8 42 L28 22" stroke="#2a241c" stroke-width="6" stroke-linecap="round"/><path d="M8 42 L28 22" stroke="url(#bn)" stroke-width="3.6" stroke-linecap="round"/></g><circle cx="30" cy="16" r="3.4" fill="#fff" opacity=".85"/>`,
   ),
   // ---------------- Shroud (blood and shadow) ----------------
-  // Thrown Blade: a spinning knife flying through a red blur.
-  'thrown-blade': icon(
-    'blood',
-    rays(32, 18, 14, '#ffd0c8', 0.16),
-    `<g transform="translate(8 34) rotate(-40)" filter="url(#ds)">${KNIFE}</g><path d="M36 13.5 L39.5 9.5" stroke="#ec2a34" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>`,
+  // Shadow Escape: the masked figure sinking away backward into a black pool, smoke trailing.
+  'shadow-escape': icon(
+    'shade',
+    swirl('#c9cfdc', 0.3),
+    `<ellipse cx="22" cy="40" rx="17" ry="4.6" fill="#000" opacity=".9"/><path d="M40 16 C34 20 34 28 38 34" stroke="#c9cfdc" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".55" filter="url(#gl)"/><g opacity=".92">${MASKED(18, 24, 0.95)}</g><path d="M6 40 C12 32 30 32 38 40 Z" fill="#000"/><path d="M40 22 L46 24 L40 26" stroke="#c9cfdc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>`,
   ),
   // Stalker Lunge: the masked figure darting forward, a red slash behind the knife.
   'stalker-lunge': icon(

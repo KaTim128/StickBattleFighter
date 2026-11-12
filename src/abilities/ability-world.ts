@@ -340,24 +340,12 @@ export class AbilityWorld {
         let to: Vec2;
         let face: Vec2 | null = null;
         if (d.retreatM !== undefined) {
-          // Away from the nearest enemy (Necro's single press): straight away if the way is clear,
+          // Away from the nearest enemy (Shroud's Shadow Escape): straight away if the way is clear,
           // otherwise turned aside from the wall, whichever spot ends furthest from the enemy.
           const foe = this.nearestEnemy(casterId, at, Number.POSITIVE_INFINITY, host);
           const away = foe ? norm({ x: at.x - foe.x, y: at.y - foe.y }) : { x: -dir.x, y: -dir.y };
           to = this.retreatSpot(at, away, d.retreatM, foe, host);
           if (foe) face = norm({ x: foe.x - to.x, y: foe.y - to.y });
-        } else if (d.approachGapM !== undefined) {
-          // In close to the nearest enemy (Necro's double press), stopping just in front of it.
-          const foe = this.nearestEnemy(casterId, at, Number.POSITIVE_INFINITY, host);
-          if (!foe) {
-            host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
-            break;
-          }
-          const toward = norm({ x: foe.x - at.x, y: foe.y - at.y });
-          const gap = Math.hypot(foe.x - at.x, foe.y - at.y) - foe.radiusM - d.approachGapM;
-          const travel = Math.min(d.maxRangeM, Math.max(0, gap));
-          to = { x: at.x + toward.x * travel, y: at.y + toward.y * travel };
-          face = toward;
         } else if (d.behindTargetM !== undefined) {
           // Behind the nearest enemy in range, on its far side (Shroud's "Behind You").
           const best = this.nearestEnemy(casterId, at, d.maxRangeM, host);

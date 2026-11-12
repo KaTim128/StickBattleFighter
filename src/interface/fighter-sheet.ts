@@ -55,6 +55,11 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
   if (p.burn) out.push({ label: 'Burn', value: `${p.burn.dps}/s for ${s1(p.burn.durationS)} s` });
   if (p.stunS) out.push({ label: 'Stun', value: `${s1(p.stunS)} s` });
   if (p.blindS) out.push({ label: 'Blind', value: `${s1(p.blindS)} s` });
+  if (p.decay) {
+    out.push({ label: 'Target damage', value: `-${Math.round((1 - p.decay.attackFactor) * 100)}%` });
+    out.push({ label: 'Target defence', value: `-${Math.round((1 - p.decay.defenceFactor) * 100)}%` });
+    out.push({ label: 'Curse lasts', value: `${s1(p.decay.durationS)} s` });
+  }
   if (p.bleed) out.push({ label: 'Bleed', value: `${p.bleed.dps}/s for ${s1(p.bleed.durationS)} s` });
   if (p.lifesteal) out.push({ label: 'Heals', value: `${Math.round(p.lifesteal * 100)}% of damage dealt` });
   if (p.heavy) out.push({ label: 'Knockdown', value: 'yes' });
@@ -67,6 +72,7 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
       out.push({ label: 'Knife damage', value: `+${Math.round((d.meleeDamageFactor - 1) * 100)}%` });
     if (d.meleeBleed)
       out.push({ label: 'Cuts bleed', value: `${d.meleeBleed.dps}/s for ${s1(d.meleeBleed.durationS)} s` });
+    if (d.darkensFoes) out.push({ label: 'Enemy sight', value: `${s1(d.darkensFoes.visibleM)} m in the dark` });
     if (d.damageTakenFactor !== 1)
       out.push({ label: 'Damage taken', value: `-${Math.round((1 - d.damageTakenFactor) * 100)}%` });
   }
@@ -74,11 +80,9 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
     out.push({ label: 'Summons', value: `${d.count} ${d.character.replace(/-/g, ' ')}s` });
     out.push({ label: 'Lasts', value: d.lifeS === null ? 'until destroyed' : `${s1(d.lifeS)} s` });
   }
-  if (d.type === 'teleport' && d.retreatM !== undefined) {
-    out.push({ label: 'Retreat', value: `${s1(d.retreatM)} m away from the opponent` });
-    const rush = a.doubleTap?.delivery;
-    if (rush?.type === 'teleport') out.push({ label: 'Rush in', value: `up to ${s1(rush.maxRangeM)} m` });
-  } else if (d.type === 'teleport') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
+  if (d.type === 'teleport' && d.retreatM !== undefined)
+    out.push({ label: 'Escape', value: `${s1(d.retreatM)} m away from the opponent` });
+  else if (d.type === 'teleport') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
   else if (d.type === 'leap') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
   else if (d.type === 'beam') out.push({ label: 'Range', value: `${s1(d.rangeM)} m` });
   else if (d.type === 'projectile') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
@@ -102,8 +106,8 @@ function howTo(a: AbilityDef, device: Device, keys: Bindings): string {
     const ready = a.slot === 'ult' ? ' once it reads READY' : '';
     if (d.type === 'teleport' && d.behindTargetM !== undefined)
       return `Tap ${button}: he appears behind the nearest enemy in range.`;
-    if (d.type === 'teleport' && d.retreatM !== undefined && a.doubleTap)
-      return `Tap ${button} once to teleport away from the opponent. Double-tap it quickly to teleport right in front of them.`;
+    if (d.type === 'teleport' && d.retreatM !== undefined)
+      return `Tap ${button}: he vanishes and reappears well away from the opponent.`;
     if (d.type === 'teleport')
       return `Tap ${button} to start aiming, move the marker with the joystick, then tap ${button} again to teleport there. Tap ✕ to cancel.`;
     if (d.type === 'leap')
@@ -118,8 +122,8 @@ function howTo(a: AbilityDef, device: Device, keys: Bindings): string {
   const ready = a.slot === 'ult' ? ' when the ultimate meter is full' : '';
   if (d.type === 'teleport' && d.behindTargetM !== undefined)
     return `Press ${key}: he appears behind the nearest enemy in range.`;
-  if (d.type === 'teleport' && d.retreatM !== undefined && a.doubleTap)
-    return `Press ${key} once to teleport away from the opponent. Double-press ${key} quickly to teleport right in front of them.`;
+  if (d.type === 'teleport' && d.retreatM !== undefined)
+    return `Press ${key}: he vanishes and reappears well away from the opponent.`;
   if (d.type === 'teleport')
     return `Press ${key} to start aiming, move the marker with ${move}, then press ${key} again to teleport there. Esc cancels.`;
   if (d.type === 'leap')

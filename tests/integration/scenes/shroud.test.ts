@@ -67,15 +67,33 @@ describe('Shroud', () => {
     scenes.clear();
   });
 
-  it('Thrown Blade hits at range and the cut keeps bleeding', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup({ x: 12, y: 13 }, { x: 18, y: 13 });
+  it('Shadow Escape (owner, 12/11/2026): he slips away about 7 m from the opponent at once, never hurting it', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 10 }, { x: 15.5, y: 10 });
     intents.pressAbility('a1');
-    runUntil(() => scene.dummy.hp < 1000, 2);
-    const afterHit = scene.dummy.hp;
-    expect(afterHit).toBeLessThan(1000);
-    expect(scene.dummyFighter.combatant.bleeding).toBe(true);
-    run(1.5);
-    expect(scene.dummy.hp).toBeLessThan(afterHit - 8); // still losing blood
+    runUntil(() => Math.hypot(scene.player.x - 14, scene.player.y - 10) > 1, 0.6); // quick: well inside 0.6 s
+    run(0.1);
+    expect(scene.player.x).toBeLessThan(14 - 5); // straight away from it
+    expect(scene.dummy.hp).toBe(1000); // a flight, not an attack
+    expect(scene.player.facing).toBe(1); // still watching it
+    expect(scene.physics!.isFree({ x: scene.player.x, y: scene.player.y }, 0.25)).toBe(true);
+    expect(scene.playerFighter.caster!.cooldown('a1')).toBeGreaterThan(8);
+    scenes.clear();
+  });
+
+  it('Shadow Escape against the arena edge turns aside: inside the arena, still further away', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 1, y: 10 }, { x: 3, y: 10 });
+    intents.pressAbility('a1');
+    runUntil(() => Math.hypot(scene.player.x - 1, scene.player.y - 10) > 1, 1);
+    run(0.2);
+    expect(Math.hypot(scene.player.x - 3, scene.player.y - 10)).toBeGreaterThan(4);
+    for (const [v, max] of [
+      [scene.player.x, TRAINING_YARD.widthM],
+      [scene.player.y, TRAINING_YARD.heightM],
+    ] as const) {
+      expect(v).toBeGreaterThan(0.3);
+      expect(v).toBeLessThan(max - 0.3);
+    }
+    expect(scene.physics!.isFree({ x: scene.player.x, y: scene.player.y }, 0.25)).toBe(true);
     scenes.clear();
   });
 
@@ -107,7 +125,7 @@ describe('Shroud', () => {
     scenes.clear();
   });
 
-  it('Hunting Frenzy: faster on his feet, quicker and deadlier knife, cuts bleed, red aura', async () => {
+  it('Hunting Frenzy: faster on his feet, quicker knife only 10% deadlier (owner), cuts bleed', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 15, y: 13 }, { x: 16.2, y: 13 });
     // No random critical hits, so the comparison is fair.
     (scene.playerFighter.def.stats as { critChance: number }).critChance = 0;
@@ -123,12 +141,43 @@ describe('Shroud', () => {
     const b = scene.playerFighter.buff!;
     expect(b.speedFactor).toBeGreaterThan(1.2);
     expect(b.attackSpeedFactor).toBeGreaterThan(1.3);
+    expect(b.meleeDamageFactor).toBeCloseTo(1.1, 6);
     run(0.4);
     const hp0 = scene.dummy.hp;
     intents.pressMelee();
     runUntil(() => scene.dummy.hp < hp0, 1);
-    expect(hp0 - scene.dummy.hp).toBeGreaterThan(plain * 1.25); // deadlier knife
+    expect(hp0 - scene.dummy.hp).toBeGreaterThan(plain); // a little deadlier
+    expect(hp0 - scene.dummy.hp).toBeLessThanOrEqual(Math.ceil(plain * 1.1) + 1); // but only 10%
     expect(scene.dummyFighter.combatant.bleeding).toBe(true); // the cut bleeds
+    scenes.clear();
+  });
+
+  it('Hunting Frenzy puts the lights out (owner): a bulb bursts, the enemy sees only 1.6 m round itself, Shroud sees all', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 12, y: 13 }, { x: 15, y: 13 });
+    scene.dummyAttacks = true;
+    scene.playerFighter.caster!.fillMeter();
+    scene.drainEvents();
+    intents.pressAbility('ult');
+    runUntil(() => scene.playerFighter.buff !== null, 2);
+    const fx = scene.abilities!.recentFx.map((e) => e.sfx);
+    expect(fx).toContain('bulb-burst');
+    const foe = scene.dummyFighter.combatant;
+    expect(foe.darkLeftS).toBeGreaterThan(7.5); // for the frenzy's 8 s
+    expect(foe.sightM).toBeCloseTo(1.6, 6);
+    expect(scene.player.sightM).toBe(Number.POSITIVE_INFINITY); // night vision: he sees everything
+    expect(scene.player.nightVisionS).toBeGreaterThan(7.5);
+    // 3 m away in the dark: it cannot find him, so it never turns to face him.
+    scene.dummyFighter.faceToward(1, 0); // looking away from him (he is on its left)
+    run(0.5);
+    expect(scene.dummyFighter.facing).toBe(1);
+    // Inside its little circle it sees him again.
+    scene.playerFighter.placeAt({ x: 13.9, y: 13 });
+    run(0.3);
+    expect(scene.dummyFighter.facing).toBe(-1);
+    // When the frenzy ends the lights come back.
+    run(8.5);
+    expect(foe.darkLeftS).toBe(0);
+    expect(foe.sightM).toBe(Number.POSITIVE_INFINITY);
     scenes.clear();
   });
 });

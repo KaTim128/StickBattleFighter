@@ -110,6 +110,15 @@ export class Combatant {
   private invulnS = 0;
   /** Seconds of blindness left (Soul Drain, owner 12/11/2026). */
   private blindS = 0;
+  /** Curse of Decay (owner, 12/11/2026): seconds left, and what it does to attack and defence. */
+  private decayS = 0;
+  private decayAttack = 1;
+  private decayDefence = 1;
+  /** The curse ran out during the last update (the scene plays its fading effect once). */
+  decayEnded = false;
+  /** Lights out (Shroud's Hunting Frenzy): seconds left, and how far it can still see. */
+  private darkS = 0;
+  private darkSightM = Number.POSITIVE_INFINITY;
   private dodgeS = 0;
   private dodgeCooldownS = 0;
   private sinceStaminaUseS = 0;
@@ -266,7 +275,8 @@ export class Combatant {
     if (this.isKo) return none('ignored');
     if (this.invulnS > 0) return none('dodged');
 
-    const raw = ((hit.baseDamage * hit.attackerPower) / this.stats.defence) * this.damageTakenScale;
+    const raw =
+      ((hit.baseDamage * hit.attackerPower) / (this.stats.defence * this.defenceFactor)) * this.damageTakenScale;
     const kbKeep = 1 - this.stats.knockbackResistance;
 
     if (this.guardUp && hit.fromFront) {
@@ -352,6 +362,46 @@ export class Combatant {
     return this.blindS;
   }
 
+  /** Seconds of Curse of Decay left (0 = none). */
+  get decayLeftS(): number {
+    return this.decayS;
+  }
+
+  /** Multiplier on the damage this fighter deals (Curse of Decay: 0.7 while it lasts). */
+  get attackFactor(): number {
+    return this.decayS > 0 ? this.decayAttack : 1;
+  }
+
+  /** Multiplier on this fighter's defence (Curse of Decay: 0.8 while it lasts). */
+  get defenceFactor(): number {
+    return this.decayS > 0 ? this.decayDefence : 1;
+  }
+
+  /** Cursed for `seconds`: a new curse refreshes the time; the weakening never stacks. */
+  decay(seconds: number, attackFactor: number, defenceFactor: number): void {
+    if (this.koAgeS >= 0) return;
+    this.decayS = Math.max(this.decayS, seconds);
+    this.decayAttack = attackFactor;
+    this.decayDefence = defenceFactor;
+  }
+
+  /** Seconds of darkness left (0 = it sees normally). */
+  get darkLeftS(): number {
+    return this.darkS;
+  }
+
+  /** How far it can see, metres: unlimited, or the small circle left to it in the dark. */
+  get sightM(): number {
+    return this.darkS > 0 ? this.darkSightM : Number.POSITIVE_INFINITY;
+  }
+
+  /** Plunged into darkness for `seconds`, seeing only `sightM` round itself. Refreshes, never stacks. */
+  darken(seconds: number, sightM: number): void {
+    if (this.koAgeS >= 0) return;
+    this.darkS = Math.max(this.darkS, seconds);
+    this.darkSightM = sightM;
+  }
+
   /** Blind for `seconds` (a longer blind replaces a shorter one; never stacks). */
   blind(seconds: number): void {
     if (this.koAgeS >= 0) return;
@@ -360,6 +410,10 @@ export class Combatant {
 
   update(dtS: number): number {
     this.blindS = Math.max(0, this.blindS - dtS);
+    const cursed = this.decayS > 0;
+    this.decayS = Math.max(0, this.decayS - dtS);
+    this.decayEnded = cursed && this.decayS === 0;
+    this.darkS = Math.max(0, this.darkS - dtS);
     const burned = this.tickBurn(dtS) + this.tickBleed(dtS);
     if (this.koAgeS >= 0) {
       this.koAgeS += dtS;
@@ -439,6 +493,8 @@ export class Combatant {
   reset(): void {
     this.bleedS = 0;
     this.blindS = 0;
+    this.decayS = 0;
+    this.darkS = 0;
     this.hp = this.stats.maxHp;
     this.stamina = this.stats.maxStamina;
     this.guardUp = false;
