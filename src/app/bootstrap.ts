@@ -2,6 +2,7 @@ import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
 import { AmbiencePlayer } from '../audio/ambience';
 import { Announcer } from '../audio/announcer';
+import { AudioClip, MusicLoop } from '../audio/music';
 import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
@@ -17,6 +18,7 @@ import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { AMBIENCES } from '../data/audio/ambiences';
+import { BATTLE_MUSIC, FIGHT_STINGER } from '../data/audio/music';
 import { codeLabel } from '../input/bindings';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
@@ -75,6 +77,8 @@ export interface EngineDebugInfo {
   sounds: string[];
   /** The background ambience playing (or waiting for the first input to start). */
   ambience: string | null;
+  /** The battle music is playing (owner, 12/11/2026). */
+  musicPlaying: boolean;
   /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
   setDummyHp(hp: number): void;
   /** The Punch Clash in progress (power, timer), or null. */
@@ -241,18 +245,37 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const arenaAmbience = scene instanceof FightArenaScene && !automated ? scene.arena.ambience : undefined;
   const ambienceId = params.get('ambience') ?? arenaAmbience;
   music.play(ambienceId ? (AMBIENCES[ambienceId] ?? null) : null);
+  // Battle music (owner, 12/11/2026): the map's own track loops from FIGHT! for the whole fight.
+  // `?music=<id>` picks any, `?music=none` turns it off; automated browsers skip it like the ambience.
+  const musicId =
+    params.get('music') ?? (scene instanceof FightArenaScene && !automated ? scene.arena.music : undefined);
+  const musicDef = musicId ? BATTLE_MUSIC[musicId] : undefined;
+  const battleMusic = musicDef ? new MusicLoop(new AudioClip(musicDef)) : null;
+  battleMusic?.setMuted(sound.muted);
+  const stinger = new AudioClip(FIGHT_STINGER);
+  let stingerPlayed = false;
+  /** The fight has begun (FIGHT!, or straight away without an intro): start the music once audio is on. */
+  let fightStarted = false;
+  const startBattleMusic = (): void => {
+    if (fightStarted && battleMusic && sound.context && sound.musicBus)
+      battleMusic.start(sound.context, sound.musicBus);
+  };
   // The game falls silent the moment its tab is hidden, and plays on when you come back (owner).
   pauseAudioWhenHidden(document, () => sound.context, window);
   onFirstInput(window, () => {
     sound.unlock();
     if (sound.context && sound.musicBus) music.attach(sound.context, sound.musicBus);
+    if (sound.context) void stinger.load(sound.context); // ready before READY
+    startBattleMusic();
   });
   onToggleMute(window, () => {
     sound.muted = !sound.muted;
     music.setMuted(sound.muted);
+    battleMusic?.setMuted(sound.muted);
   });
   const applyAudio = (): void => {
     music.setVolume(settings.current.musicVolume);
+    battleMusic?.setVolume(settings.current.musicVolume);
     sound.setVolume(settings.current.sfxVolume);
   };
   applyAudio();
@@ -286,6 +309,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sfx: [],
     sounds: [],
     ambience: music.current,
+    musicPlaying: false,
     setDummyHp() {}, // replaced once the scene exists
     clash: null,
     startClash() {}, // replaced once the scene exists
@@ -361,13 +385,23 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         );
         // The intro's words, voice and impacts all start on the frame its phase begins.
         const began = fightIntro.update(scene.introState);
+        // The recorded stinger (owner, 12/11/2026) carries READY's hit, the build and FIGHT's impact
+        // and echo from this one start; until it has loaded the synthesised hits stand in.
         if (began === 'ready') {
           announcer.say('ready');
-          sound.play('intro-ready');
+          if (!sound.playClip(stinger.ready, FIGHT_STINGER.level)) sound.play('intro-ready');
+          stingerPlayed = stinger.ready !== null && !sound.muted;
         } else if (began === 'fight') {
           announcer.say('fight');
-          sound.play('intro-fight', 1.2);
+          if (!stingerPlayed) sound.play('intro-fight', 1.2);
+          fightStarted = true;
+          startBattleMusic();
         }
+        if (!scene.introState && !fightStarted && !menu.isOpen) {
+          fightStarted = true; // no intro (skipped): the music starts with the fight
+          startBattleMusic();
+        }
+        debug.musicPlaying = battleMusic?.playing ?? false;
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;

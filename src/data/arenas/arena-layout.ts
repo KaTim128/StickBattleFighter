@@ -33,6 +33,11 @@ export interface ArenaLayout {
   readonly interiorWalls?: readonly WallRect[];
   /** Background ambience: a soundscape id from src/data/audio/ambiences.ts (each map its own; no music). */
   readonly ambience?: string;
+  /**
+   * Battle music (owner, 12/11/2026): a track id from src/data/audio/music.ts, looping from FIGHT!
+   * for the whole fight. The training yard (Testing Area) has none (SUP-22).
+   */
+  readonly music?: string;
   /** Doors in gaps of the interior walls. */
   readonly doors?: readonly DoorSpec[];
 }

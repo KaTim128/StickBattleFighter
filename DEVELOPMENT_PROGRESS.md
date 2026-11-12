@@ -23,6 +23,17 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 12/11/2026 (evening): Necro and Shroud reworks, steady throws, battle music and stinger (owner requests; Master Developer)
+- Necro: Undead Army skeletons last 10 s again (SUP-24). Teleport was reworked (one press away, double press in: af0d35e), then replaced by **Curse of Decay** on F at the owner's request (REQ-ABL-20).
+- Shroud: **Shadow Escape** on Q (defensive blink away); Hunting Frenzy bursts a bulb and puts the lights out on the opponent (1.6 m sight, black screen with a circle for a player) while Shroud sees in night vision; knife +10% (REQ-ABL-21).
+- Thrown furniture: no random spin; a steady arc with at most a quarter-turn pitch (REQ-PHY-13, SUP-26).
+- Audio: original battle music "Steel Rain" (office; loops from FIGHT!) and a recorded READY... FIGHT! stinger, rendered by `tools/audio/` (REQ-AUD-10, TD-058). Measured against the owner's references: tempo 184 BPM (reference about 184), D minor, similar band balance; loop decodes to exactly 83.478 s in Chromium (Ogg and MP3) with no leading gap.
+- Files: `src/combat/combatant.ts`, `src/abilities/*`, `src/data/abilities/{necro,shroud}.ts`, `src/app/scenes/*`, `src/rendering/stickman-view.ts`, `src/vfx/ability-vfx.ts`, `src/interface/{vision-veil,ability-icons,fighter-sheet}.ts`, `src/audio/{music,sound-board}.ts`, `src/data/audio/music.ts`, `src/environment/arena-props.ts`, `tools/audio/*`, `assets/audio/*`.
+- Tests: 378 unit/integration pass (`npx vitest run`); e2e 42 pass (`npx playwright test --trace off`), including the new `music.spec.ts`; lint, typecheck and build clean. Browser screenshots checked: Curse bolt and rot, night vision, darkened player view, Shadow Escape.
+- Limits: the music and stinger could not be listened to in the cloud session (checked by measurement only); the announcer is still the device's speech voice (no offline voice engine was reachable); the AI does not use the new abilities.
+- Next: owner listening test of the music and stinger; tune levels if needed.
+
+
 ### 12/11/2026 (later): Shroud, Heavy Attack, intro, target lock, beam, icons (owner requests; Master Developer)
 - New fighter Shroud; Heavy Attack on K for all fighters; ultimate on I; Fire Beam build-up and J/L sweep with its own Settings section; target lock; READY/FIGHT intro; tumbling thrown furniture; centred heads behind the near arm; testing area silent; icons restyled.
 - Tests: 368 unit/integration pass; key browser suites pass. Preview deployed at c7ef392; this batch deploys after CI.

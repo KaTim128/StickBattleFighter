@@ -22,3 +22,4 @@ Thumbs.db
 # Reference media is kept by the owner, not committed (TD-012)
 *.mp4
 *.mov
+__pycache__/

@@ -483,3 +483,14 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 - Props carry `roll`/`rollVel`; landing settles to the nearest quarter turn; replanting keeps roll and yaw.
 - **Status:** ACCEPTED.
 
+
+### TD-058: Status effects in the shared combatant, recorded audio assets, offline audio tooling — ACCEPTED (owner requests 12/11/2026)
+**Context.** The owner asked for a debuff (Curse of Decay), a vision limit (Hunting Frenzy's lights out), battle music and a recorded fight stinger modelled on supplied references, and stable throws.
+**Decision.**
+- *Statuses:* decay (attack and defence factors) and darkness (sight radius) live in `Combatant` next to blind and bleed, so the one damage path applies them to every blow, ability and throw, and every system that looks for targets (player lock, dummy AI, summons) reads `sightM`. Presentation reads them; it never changes them.
+- *Audio assets:* the first recorded runtime audio. Tracks are rendered offline by `tools/audio/*.py` (numpy synthesis: taiko family, Karplus-Strong strings, breathy flute, additive strings and brass, convolution hall) into `assets/audio/` as Ogg Vorbis plus MP3, imported with Vite `?url` (hashed). `MusicLoop` loops on the Web Audio clock with loop points from the musical length measured from the first sound, so encoder padding never opens a gap. Automated browsers skip music unless `?music=` asks for it (as with the ambience).
+- *The announcer voice* stays the browser's speech engine: no offline voice engine or voice model could be reached from the build environment; the stinger carries the drama around it.
+- *Throws:* no scripted yaw spin; the pitch is a pure function of the throw (`throwRollRadPs`).
+- The Teleport double-press form framework (TD-057 era, `doubleTap`) was removed with Teleport; it is in history (af0d35e) if a later ability needs it.
+**Alternatives.** Procedural Web Audio music (rejected: the owner asked for real assets); using the supplied reference files (rejected: references are guides only, spec §2); a status-effect component system (premature with four statuses).
+**Trade-offs.** About 3.6 MB of audio (both formats; a browser downloads one); the music cannot be heard in CI, so its checks are measured (tempo, balance, loop length, decode in the browser) and the owner's listening is the final judge.

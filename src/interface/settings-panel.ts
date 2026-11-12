@@ -50,7 +50,7 @@ export class SettingsPanel {
           <button type="button" role="tab" data-tab="controls">Controls</button>
         </div>
         <section data-pane="audio">
-          <label class="settings-slider">Ambience volume
+          <label class="settings-slider">Music and ambience volume
             <input type="range" min="0" max="100" step="1" data-volume="musicVolume" />
             <output></output>
           </label>

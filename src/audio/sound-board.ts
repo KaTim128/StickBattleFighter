@@ -808,6 +808,20 @@ export class SoundBoard {
     }
   }
 
+  /** Play a recorded clip (the fight stinger) at the effects volume. Returns false if it could not. */
+  playClip(buffer: AudioBuffer | null, gain = 1): boolean {
+    const ctx = this.ctx;
+    const out = this.out;
+    if (!ctx || !out || !buffer || this.muted) return false;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(out);
+    src.start(ctx.currentTime + 0.005);
+    return true;
+  }
+
   private envelope(ctx: Ctx, t: number, dur: number, gain: number, attack = 0.002): GainNode {
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);

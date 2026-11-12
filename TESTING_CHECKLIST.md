@@ -328,6 +328,15 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Fighter details: stat bars in the fighter's colour, unique combo icons; top HUD restyle (browser check, desktop and phone)
 - [ ] Heavy steel cabinet sound: listen on a real device (not verifiable in the cloud browser)
 
+## 13e. Necro and Shroud reworks, throws, music (owner, 12/11/2026)
+- [x] Undead Army skeletons crumble after 10 s (`necro.test.ts`)
+- [x] Curse of Decay: hit applies -30% damage dealt, -20% defence for 6 s; miss does nothing; fade effect and sound at the end (`necro.test.ts`, `combatant.test.ts`); rot and chevrons visible (browser)
+- [x] Shadow Escape: 7 m away, no damage, inside the arena and on clear floor, turns aside at an edge (`shroud.test.ts`)
+- [x] Hunting Frenzy: bulb sound, opponent sight 1.6 m for 8 s, Shroud unlimited, knife +10% (`shroud.test.ts`); night vision and darkened view (browser)
+- [x] Thrown furniture: no yaw spin, at most a quarter-turn pitch, same throw same turn (`throwing.test.ts`)
+- [x] Battle music starts at FIGHT and keeps playing (`music.spec.ts`); loop points and format choice (`music.test.ts`)
+- [ ] Listen: music balance under combat sounds, loop seam, stinger timing with the voice (real device)
+
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green
 - [ ] Previous milestones' acceptance tests re-run
