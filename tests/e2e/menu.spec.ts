@@ -9,7 +9,7 @@ test('main menu: pick Rampage and the Colosseum, play, then leave the game back 
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   const menu = page.locator('.main-menu');
   await expect(menu).toBeVisible();
-  await expect(menu.locator('[data-fighter]')).toHaveCount(2); // Inferno and Rampage
+  await expect(menu.locator('[data-fighter]')).toHaveCount(3); // Inferno, Braxon and Necro (summons are never in the menu)
   await menu.locator('[data-fighter="rampage"]').click();
   await menu.locator('[data-arena="training-yard"]').click();
   await Promise.all([page.waitForURL(/character=rampage/), menu.locator('.mm-play').click()]);

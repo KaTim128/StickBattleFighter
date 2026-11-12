@@ -54,7 +54,14 @@ export class CharacterPreview {
   setCharacter(def: FighterDef): void {
     this.def = def;
     this.view?.destroy();
-    this.view = new StickmanView(def.bones, def.look, def.effects.head ?? 'round', def.effects.body ?? 'solid');
+    this.view = new StickmanView(
+      def.bones,
+      def.look,
+      def.effects.head ?? 'round',
+      def.effects.body ?? 'solid',
+      def.sizeScale ?? 1,
+      def.effects.held ?? null,
+    );
     this.world.addChild(this.view.root);
     const idle = def.animation.clips.Idle[0];
     this.animator = new StickmanAnimator(def.bones, idleStyleFor(idle?.kind === 'procedural' ? idle.id : undefined));

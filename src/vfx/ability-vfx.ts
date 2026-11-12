@@ -342,8 +342,29 @@ export class AbilityVfx {
     this.air.destroy();
   }
 
+  /**
+   * Bone spikes and skeletal hands bursting from the ground (Death Eruption, owner 12/11/2026):
+   * each shoots up fast, holds for a moment, then sinks back into a dark stain.
+   */
+  private readonly spikes: { x: number; y: number; h: number; lean: number; hand: boolean; ageS: number }[] = [];
+
   private onFx(fx: AbilityFx): void {
     const r = fx.radiusM ?? 0.5;
+    if (fx.kind === 'impact' && fx.vfx === 'death-eruption') {
+      for (let i = 0; i < 11; i++) {
+        const a = this.rand() * Math.PI * 2;
+        const d = Math.sqrt(this.rand()) * r * 0.9;
+        this.spikes.push({
+          x: fx.x + Math.cos(a) * d,
+          y: fx.y + Math.sin(a) * d,
+          h: 0.45 + this.rand() * 0.55,
+          lean: (this.rand() - 0.5) * 0.5,
+          hand: i % 4 === 0,
+          ageS: -this.rand() * 0.08,
+        });
+      }
+      if (this.spikes.length > 60) this.spikes.splice(0, this.spikes.length - 60);
+    }
     if (fx.kind === 'impact' && fx.look?.impact) {
       this.magicImpact(fx, fx.look);
       return;
@@ -816,7 +837,7 @@ export class AbilityVfx {
     }
   }
 
-  private draw(input: AbilityVfxInput, _dtS: number): void {
+  private draw(input: AbilityVfxInput, dtS: number): void {
     // `f` draws flat on the floor in world metres (the floor layer projects it);
     // `g` draws in the air at projected points (P), heights straight up the screen.
     const f = this.floor.clear();
@@ -827,6 +848,37 @@ export class AbilityVfx {
     for (const s of this.scorches) {
       const a = 0.32 * (1 - s.ageS / SCORCH_LIFE_S);
       f.circle(s.x, s.y, s.r).fill({ color: 0x15100c, alpha: a });
+    }
+
+    // Death Eruption: spikes and hands up out of a violet-black stain, then back down.
+    for (let i = this.spikes.length - 1; i >= 0; i--) {
+      const s = this.spikes[i]!;
+      s.ageS += dtS;
+      if (s.ageS > 1.1) {
+        this.spikes.splice(i, 1);
+        continue;
+      }
+      if (s.ageS < 0) continue;
+      const rise = s.ageS < 0.12 ? s.ageS / 0.12 : s.ageS < 0.6 ? 1 : 1 - (s.ageS - 0.6) / 0.5;
+      f.circle(s.x, s.y, 0.22).fill({ color: 0x1a0d26, alpha: 0.45 * Math.min(1, rise + 0.3) });
+      const base = P(s.x, s.y, 0);
+      const h = s.h * rise;
+      if (h < 0.02) continue;
+      if (!s.hand) {
+        const tip = { x: base.x + s.lean * h, y: base.y - h };
+        g.poly([base.x - 0.06, base.y, tip.x, tip.y, base.x + 0.06, base.y]).fill(0x2a241c);
+        g.poly([base.x - 0.04, base.y, tip.x, tip.y + 0.02, base.x + 0.035, base.y]).fill(0xe6dfcf);
+      } else {
+        // A skeletal hand clawing up: a forearm bone and three curled fingers.
+        const wrist = { x: base.x + s.lean * h * 0.6, y: base.y - h * 0.8 };
+        g.moveTo(base.x, base.y).lineTo(wrist.x, wrist.y).stroke({ width: 0.05, color: 0xe6dfcf, cap: 'round' });
+        for (const k of [-1, 0, 1]) {
+          g.moveTo(wrist.x, wrist.y)
+            .lineTo(wrist.x + k * 0.07, wrist.y - 0.12)
+            .lineTo(wrist.x + k * 0.1 + 0.03, wrist.y - 0.18)
+            .stroke({ width: 0.025, color: 0xe6dfcf, cap: 'round', join: 'round' });
+        }
+      }
     }
 
     // Ultimate aiming: the maximum-range ring, a dotted arc to the spot and the landing zone.

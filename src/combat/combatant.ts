@@ -292,6 +292,18 @@ export class Combatant {
     return { outcome: crit ? 'crit' : 'hit', damage, knockbackScale: kbKeep, attackerStunS: 0 };
   }
 
+  /** Fall at once, as at a KO (a summoned minion whose time is up crumbles). */
+  expire(): void {
+    if (this.hp === 0) return;
+    this.hp = 0;
+    this.guardUp = false;
+    this.downS = 0;
+    this.koAgeS = 0;
+    this.stunS = 0;
+    this.knockdownS = 0;
+    this.getUpS = 0;
+  }
+
   /** Advance timers. Returns burn damage taken this step (for floating numbers and the ultimate meter). */
   update(dtS: number): number {
     const burned = this.tickBurn(dtS);

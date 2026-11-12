@@ -120,6 +120,30 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.5,
   },
+  // Necro (owner, 12/11/2026). Soul Drain: the staff drawn back as souls gather, then thrust out.
+  soulDrain: {
+    windup: { lean: deg(10), head: deg(4), armFront: limb(30, 120), armBack: limb(10, 110) },
+    release: { lean: deg(-14), head: deg(12), armFront: limb(95, 6), armBack: limb(70, 50) },
+    settle: 0.5,
+  },
+  // Death Eruption: the staff raised high, then driven into the floor; the ground answers.
+  deathEruption: {
+    windup: { lean: deg(8), head: deg(-10), armFront: limb(165, 30), armBack: limb(150, 45) },
+    release: { lean: deg(-30), head: deg(24), armFront: limb(40, 10), armBack: limb(35, 40), ...CROUCH },
+    settle: 0.4,
+  },
+  // Undead Army: both arms spread low, palms down, then swept up as the dead rise.
+  undeadArmy: {
+    windup: { lean: deg(-18), head: deg(16), armFront: limb(30, 20), armBack: limb(-25, 20), ...CROUCH },
+    release: { lean: deg(10), head: deg(-16), armFront: limb(140, 20), armBack: limb(-140, 20) },
+    settle: 0.4,
+  },
+  // Death's Dominion: hunched, gathering darkness, then rising with the staff held high.
+  deathsDominion: {
+    windup: { lean: deg(-34), head: deg(30), armFront: limb(40, 120), armBack: limb(20, 130), ...CROUCH },
+    release: { lean: deg(14), head: deg(-24), armFront: limb(170, 10), armBack: limb(120, 60) },
+    settle: 0.5,
+  },
   // Eruption (owner, 11/11/2026): squat deep and gather fire, spring up wrapped in flame (AIR),
   // then crash down fist-first into the floor (the release is the landing slam, held briefly).
   eruption: {

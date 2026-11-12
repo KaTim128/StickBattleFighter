@@ -257,6 +257,61 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.12, gain: 0.5, type: 'highpass', freq: 1800, attack: 0.002 } },
     { crackle: { dur: 0.25, gain: 0.3, count: 10 } },
   ],
+  // ---- Necro (owner, 12/11/2026): wood and bone, and the hollow, whispering hiss of drawn souls.
+  // A staff cutting the air: a long, airy whoosh.
+  'staff-whoosh': [
+    { noise: { dur: 0.22, gain: 0.4, type: 'bandpass', freq: 600, freqEnd: 1600, q: 0.9, attack: 0.05 } },
+    { tone: { wave: 'sine', f0: 160, f1: 90, dur: 0.06, gain: 0.3, delay: 0.12 } },
+  ],
+  // The staff slamming down: a hard wooden crack over a dark, booming pulse.
+  'staff-slam': [
+    { noise: { dur: 0.05, gain: 0.6, type: 'bandpass', freq: 1800, q: 1.4 } },
+    { tone: { wave: 'sine', f0: 90, f1: 30, dur: 0.5, gain: 0.85, drive: 0.3 } },
+    { noise: { dur: 0.45, gain: 0.25, type: 'bandpass', freq: 500, freqEnd: 250, q: 2, attack: 0.04, delay: 0.03 } },
+  ],
+  // Souls being drawn into the staff: a rising, breathy whisper.
+  'soul-gather': [
+    { noise: { dur: 0.4, gain: 0.32, type: 'bandpass', freq: 500, freqEnd: 1900, q: 3, attack: 0.25, flutter: 9 } },
+    { tone: { wave: 'triangle', f0: 220, f1: 330, dur: 0.4, gain: 0.08, attack: 0.2 } },
+  ],
+  // Soul Drain flying: a hollow wail sliding down.
+  'soul-cast': [
+    { noise: { dur: 0.35, gain: 0.4, type: 'bandpass', freq: 1400, freqEnd: 600, q: 4, attack: 0.02 } },
+    { tone: { wave: 'sine', f0: 520, f1: 260, dur: 0.35, gain: 0.12 } },
+  ],
+  // Soul Drain landing: a dull hit and a sucking, rising whoosh (the life flowing back).
+  'soul-drain-hit': [
+    { tone: { wave: 'sine', f0: 140, f1: 55, dur: 0.2, gain: 0.7 } },
+    { noise: { dur: 0.45, gain: 0.35, type: 'bandpass', freq: 400, freqEnd: 2200, q: 2.5, attack: 0.2, delay: 0.05 } },
+  ],
+  // The ground answering a call from below: a deep, rumbling groan.
+  'grave-call': [
+    { tone: { wave: 'sawtooth', f0: 55, f1: 42, dur: 0.6, gain: 0.25, attack: 0.2, drive: 0.4 } },
+    { noise: { dur: 0.6, gain: 0.3, type: 'lowpass', freq: 400, attack: 0.25 } },
+  ],
+  'grave-rumble': [{ noise: { dur: 0.6, gain: 0.4, type: 'lowpass', freq: 300, freqEnd: 120, attack: 0.1 } }],
+  // Bone spikes and hands bursting up: a sharp crunch, rattling bone and a thud.
+  'bone-eruption': [
+    { tone: { wave: 'sine', f0: 100, f1: 35, dur: 0.4, gain: 0.9, drive: 0.35 } },
+    { noise: { dur: 0.06, gain: 0.6, type: 'bandpass', freq: 2600, q: 1.5 } },
+    { crackle: { dur: 0.5, gain: 0.3, count: 18 } },
+  ],
+  // A skeleton clawing out of the ground: gritty earth and a dry rattle of bones.
+  'summon-rise': [
+    { noise: { dur: 0.5, gain: 0.35, type: 'lowpass', freq: 700, freqEnd: 250, attack: 0.15 } },
+    { crackle: { dur: 0.45, gain: 0.22, count: 12 } },
+    { tone: { wave: 'triangle', f0: 380, f1: 300, dur: 0.18, gain: 0.08, delay: 0.25 } },
+  ],
+  // Death's Dominion: a swelling choir-like hiss of souls (noise, no notes) and a low drone.
+  'dominion-rise': [
+    { noise: { dur: 0.9, gain: 0.4, type: 'bandpass', freq: 700, freqEnd: 1800, q: 2, attack: 0.6, flutter: 7 } },
+    { tone: { wave: 'sawtooth', f0: 50, f1: 70, dur: 0.9, gain: 0.25, attack: 0.5, drive: 0.5 } },
+  ],
+  'dominion-burst': [
+    { tone: { wave: 'sine', f0: 80, f1: 28, dur: 0.8, gain: 1, drive: 0.4 } },
+    { noise: { dur: 0.8, gain: 0.55, type: 'bandpass', freq: 900, freqEnd: 300, q: 1, attack: 0.01 } },
+    { noise: { dur: 1.2, gain: 0.2, type: 'bandpass', freq: 2000, q: 3, attack: 0.3, delay: 0.1, flutter: 6 } },
+  ],
   // Ground Smash: a deep thud through the floor, rubble rattling down after it.
   'ground-smash': [
     { tone: { wave: 'sine', f0: 70, f1: 28, dur: 0.55, gain: 1, drive: 0.3 } },

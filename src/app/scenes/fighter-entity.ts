@@ -54,7 +54,13 @@ export class FighterEntity {
   koSounded = false;
   dustSounded = false;
   /** A timed self-buff (Rampage Mode): speed and durability, with seconds left. */
-  buff: { speedFactor: number; damageTakenFactor: number; durationS: number; leftS: number } | null = null;
+  buff: {
+    speedFactor: number;
+    damageTakenFactor: number;
+    durationS: number;
+    leftS: number;
+    abilityDamageFactor?: number;
+  } | null = null;
   /** Consecutive landed hits (PRS-4 combo counter) and when the last one landed (sim seconds). */
   comboCount = 0;
   lastLandS = -99;
@@ -67,6 +73,13 @@ export class FighterEntity {
   /** The burn's starting length, so the flames can shrink as it runs out. */
   burnTotalS = 0;
   burnTextS = 0;
+  /**
+   * Which side it fights for. Blows, throws and abilities never hit a fighter on their own team
+   * (the player's summons, owner 12/11/2026).
+   */
+  team: 'player' | 'opponent' = 'player';
+  /** A summoned minion: who raised it and how long it has left (null for real fighters). */
+  summon: { readonly owner: FighterEntity; leftS: number } | null = null;
   body: RigidBody | null = null;
   view: StickmanView | null = null;
   bars: FighterBars | null = null;
@@ -177,6 +190,7 @@ export class FighterEntity {
         ? 'solid'
         : (this.def.effects.body ?? 'solid'),
       this.def.sizeScale ?? 1,
+      this.def.effects.held ?? null,
     );
     actors.add(this.view.root, 0);
     this.bars = new FighterBars(this.showStamina);

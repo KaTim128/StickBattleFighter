@@ -264,6 +264,38 @@ const STRIKES = {
     { lean: deg(-26), head: deg(-14), armBack: limb(150, 30), armFront: limb(40, 120), legBack: limb(-45, -6) },
   ),
 
+  // ---- Necro's own (owner, 12/11/2026): a staff fighter. Both hands on the staff, the lead hand
+  // leading the swing; magic in the thrust, the whole body behind the finishing slam.
+  'necro.staff-sweep': strike(
+    { lean: deg(10), head: deg(2), armFront: limb(20, 90), armBack: limb(-10, 100) },
+    { lean: deg(-16), head: deg(12), armFront: limb(100, 20), armBack: limb(70, 60) },
+  ),
+  'necro.soul-thrust': strike(
+    { lean: deg(14), head: deg(-4), armFront: limb(40, 130), armBack: limb(20, 120), legFront: limb(30, -30) },
+    { lean: deg(-24), head: deg(18), armFront: limb(92, 4), armBack: limb(80, 40), legBack: limb(-30, -10) },
+  ),
+  'necro.grave-slam': strike(
+    { lean: deg(18), head: deg(-14), armFront: limb(170, 30), armBack: limb(160, 40), legFront: limb(30, -40) },
+    {
+      lean: deg(-44),
+      head: deg(34),
+      armFront: limb(60, 10),
+      armBack: limb(50, 30),
+      legFront: limb(55, -90),
+      legBack: limb(-25, -60),
+    },
+  ),
+  'necro.staff-plunge': strike(
+    {
+      lean: deg(-8),
+      armFront: limb(160, 40),
+      armBack: limb(150, 50),
+      legFront: limb(60, -100),
+      legBack: limb(20, -90),
+    },
+    { lean: deg(-34), head: deg(24), armFront: limb(50, 10), armBack: limb(40, 30), legFront: limb(40, -70) },
+  ),
+
   // ---- Rampage's own (a heavyweight brawler: big wind-ups, his whole mass behind every blow).
   'rampage.hammer-jab': strike(
     { lean: deg(8), head: deg(4), armFront: limb(60, 120), armBack: limb(45, 125) },

@@ -1,0 +1,115 @@
+{
+  "id": "necro-moveset",
+  "starters": {
+    "tap": "staff-sweep",
+    "air-tap": "staff-plunge"
+  },
+  "moves": [
+    {
+      "id": "staff-sweep",
+      "displayName": "Staff sweep",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.15,
+        "radiusM": 0.5
+      },
+      "damage": 40,
+      "strength": 350,
+      "knockbackMps": 1.8,
+      "lungeMps": 0.6,
+      "moveFactor": 0.35,
+      "impact": "knuckle-light",
+      "shake": 0.18,
+      "zoomPunch": 0.015,
+      "requires": ["canPunch"],
+      "next": {
+        "tap": "soul-thrust"
+      }
+    },
+    {
+      "id": "soul-thrust",
+      "displayName": "Soul-charged thrust",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.12,
+      "activeS": 0.09,
+      "recoveryS": 0.24,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.3,
+        "radiusM": 0.45
+      },
+      "damage": 55,
+      "strength": 500,
+      "knockbackMps": 2.4,
+      "lungeMps": 1.0,
+      "moveFactor": 0.3,
+      "impact": "knuckle-light",
+      "shake": 0.24,
+      "zoomPunch": 0.02,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "grave-slam"
+      }
+    },
+    {
+      "id": "grave-slam",
+      "displayName": "Grave slam (finisher)",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.2,
+      "activeS": 0.1,
+      "recoveryS": 0.4,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.25,
+        "radiusM": 0.65
+      },
+      "damage": 120,
+      "strength": 1200,
+      "knockbackMps": 7,
+      "lungeMps": 0.8,
+      "moveFactor": 0.2,
+      "impact": "knuckle-heavy",
+      "shake": 0.45,
+      "zoomPunch": 0.04,
+      "requires": ["canPunch", "canUseCombos"]
+    },
+    {
+      "id": "staff-plunge",
+      "displayName": "Plunging staff strike",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.08,
+      "activeS": 0.16,
+      "recoveryS": 0.3,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.6
+      },
+      "damage": 80,
+      "strength": 900,
+      "knockbackMps": 5,
+      "lungeMps": 0,
+      "moveFactor": 0.6,
+      "impact": "knuckle-heavy",
+      "shake": 0.35,
+      "zoomPunch": 0.03,
+      "requires": ["canUseAerialPunches"]
+    }
+  ]
+}

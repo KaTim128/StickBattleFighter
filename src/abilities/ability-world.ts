@@ -1,4 +1,11 @@
-import { type AbilityDef, type AbilityPayload, type Burn, type MagicLook, payloadAt } from './ability-def';
+import {
+  type AbilityDef,
+  type AbilityPayload,
+  type Burn,
+  type MagicLook,
+  payloadAt,
+  type SummonSpec,
+} from './ability-def';
 
 /**
  * Ability deliveries in the arena (REQ-ABL-1): projectiles, dashes with fire
@@ -20,6 +27,8 @@ export interface AbilityTarget {
   readonly radiusM: number;
   /** Can be hit (not KO). */
   readonly hittable: boolean;
+  /** Side it fights for: abilities never hit the caster's own team (summons, owner 12/11/2026). */
+  readonly team?: string;
 }
 
 export type FxKind = 'cast' | 'release' | 'impact' | 'telegraph' | 'fizzle';
@@ -72,7 +81,12 @@ export interface AbilityHost {
   /** Turn a caster to face a direction (it follows its steered beam). Optional. */
   face?(casterId: string, dir: Vec2): void;
   /** Start (or end, null) a timed self-buff on a caster. */
-  buff(casterId: string, buff: { speedFactor: number; damageTakenFactor: number; durationS: number } | null): void;
+  buff(
+    casterId: string,
+    buff: { speedFactor: number; damageTakenFactor: number; durationS: number; abilityDamageFactor?: number } | null,
+  ): void;
+  /** Raise minions for the caster (summons, owner 12/11/2026). Optional (hosts without summons ignore it). */
+  summon?(casterId: string, spec: SummonSpec): void;
   emit(fx: AbilityFx): void;
 }
 
@@ -125,6 +139,8 @@ export interface Telegraph {
   ageS: number;
   /** Follows the caster (a ring around it) instead of staying put. */
   readonly onCaster: boolean;
+  /** A ring placed at a spot (aimed nova): it erupts there when its warning ends. */
+  readonly erupts?: boolean;
 }
 
 interface DashAction {
@@ -231,15 +247,25 @@ export class AbilityWorld {
         });
         break;
       case 'nova': {
+        // Around the caster, or where it aims (within range, short of any wall in the way).
+        let spot = at;
+        if (d.atTarget) {
+          const want = Math.min(def.aimRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+          const end = { x: at.x + dir.x * want, y: at.y + dir.y * want };
+          const block = host.blocked(at, end);
+          const reach = block === null ? want : Math.max(0, want * block - 0.3);
+          spot = { x: at.x + dir.x * reach, y: at.y + dir.y * reach };
+        }
         const t: Telegraph = {
           casterId,
           def,
-          x: at.x,
-          y: at.y,
+          x: spot.x,
+          y: spot.y,
           radiusM: d.radiusM,
           durationS: d.telegraphS,
           ageS: 0,
-          onCaster: true,
+          onCaster: !d.atTarget,
+          erupts: d.atTarget === true,
         };
         this.telegraphs.push(t);
         host.emit({
@@ -248,12 +274,25 @@ export class AbilityWorld {
           look: def.look,
           vfx: def.vfx,
           sfx: null,
-          x: at.x,
-          y: at.y,
+          x: spot.x,
+          y: spot.y,
           radiusM: d.radiusM,
         });
         break;
       }
+      case 'summon':
+        host.summon?.(casterId, d);
+        host.emit({
+          kind: 'impact',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.impact,
+          x: at.x,
+          y: at.y,
+          radiusM: 1.4,
+        });
+        break;
       case 'beam': {
         const beam: Beam = {
           casterId,
@@ -275,7 +314,7 @@ export class AbilityWorld {
         const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
         let landed = false;
         for (const f of host.fighters()) {
-          if (f.id === casterId || !f.hittable) continue;
+          if (this.friendly(f, casterId, host) || !f.hittable) continue;
           if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
           if (host.hitFighter(casterId, f.id, def.payload, dir, def.look?.hitFlash)) {
             landed = true;
@@ -311,7 +350,9 @@ export class AbilityWorld {
           speedFactor: d.speedFactor,
           damageTakenFactor: d.damageTakenFactor,
           durationS: d.durationS,
+          abilityDamageFactor: d.abilityDamageFactor,
         });
+        if (d.summon) host.summon?.(casterId, d.summon);
         host.emit({
           kind: 'impact',
           ability: def.id,
@@ -393,7 +434,7 @@ export class AbilityWorld {
       // Fighters first: anyone (except the caster) the shot passes through this step.
       let done = false;
       for (const f of host.fighters()) {
-        if (f.id === p.casterId || !f.hittable) continue;
+        if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!host.hitFighter(p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash)) continue; // dodged: flies on
         this.impact(p, f, host);
@@ -492,7 +533,7 @@ export class AbilityWorld {
       const caster = host.position(b.casterId);
       b.touching = [];
       for (const f of host.fighters()) {
-        if (f.id === b.casterId || !f.hittable) continue;
+        if (this.friendly(f, b.casterId, host) || !f.hittable) continue;
         if (segmentDistance(b.from, b.to, f) > d.widthM / 2 + f.radiusM) continue;
         const dist = Math.hypot(f.x - caster.x, f.y - caster.y);
         if (
@@ -521,6 +562,13 @@ export class AbilityWorld {
       // The end of the beam scorches whatever stopped it (sets furniture alight, chips doors and walls).
       host.hitEnvironment(b.casterId, b.to, 0.3, b.def.payload, b.dir, true);
     }
+  }
+
+  /** The caster itself, or a fighter on its team (its summons, its summoner): never hit. */
+  private friendly(f: AbilityTarget, casterId: string, host: AbilityHost): boolean {
+    if (f.id === casterId) return true;
+    if (f.team === undefined) return false;
+    return host.fighters().find((o) => o.id === casterId)?.team === f.team;
   }
 
   private updateActions(dtS: number, host: AbilityHost): void {
@@ -557,7 +605,7 @@ export class AbilityWorld {
       });
     }
     for (const f of host.fighters()) {
-      if (f.id === a.casterId || !f.hittable || a.hit.has(f.id)) continue;
+      if (this.friendly(f, a.casterId, host) || !f.hittable || a.hit.has(f.id)) continue;
       if (Math.hypot(f.x - at.x, f.y - at.y) > d.hitRadiusM + f.radiusM) continue;
       a.hit.add(f.id);
       if (host.hitFighter(a.casterId, f.id, a.def.payload, a.dir, a.def.look?.hitFlash)) {
@@ -631,7 +679,7 @@ export class AbilityWorld {
         t.y = at.y;
       }
       // Leap telegraphs are resolved by the leap itself; rings erupt when their warning ends.
-      if (!t.onCaster || t.ageS < t.durationS) continue;
+      if ((!t.onCaster && !t.erupts) || t.ageS < t.durationS) continue;
       this.telegraphs.splice(i, 1);
       this.blast(t.casterId, t.def, t, t.radiusM, host);
     }
@@ -640,7 +688,7 @@ export class AbilityWorld {
   /** An area impact: every fighter inside (except the caster) and every prop and door touching it. */
   private blast(casterId: string, def: AbilityDef, at: Vec2, radiusM: number, host: AbilityHost): void {
     for (const f of host.fighters()) {
-      if (f.id === casterId || !f.hittable) continue;
+      if (this.friendly(f, casterId, host) || !f.hittable) continue;
       const dist = Math.hypot(f.x - at.x, f.y - at.y);
       if (dist > radiusM + f.radiusM) continue;
       // Closer to the centre of the blast hits harder (distance falloff, owner 11/11/2026).
@@ -669,7 +717,7 @@ export class AbilityWorld {
         continue;
       }
       for (const f of host.fighters()) {
-        if (f.id === z.casterId || !f.hittable) continue;
+        if (this.friendly(f, z.casterId, host) || !f.hittable) continue;
         if (Math.hypot(f.x - z.x, f.y - z.y) <= z.radiusM + f.radiusM) host.burnFighter(f.id, z.burn);
       }
     }

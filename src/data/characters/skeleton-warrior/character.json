@@ -1,0 +1,66 @@
+{
+  "id": "skeleton-warrior",
+  "template": "base-stickman",
+  "displayName": "Skeleton Warrior",
+  "description": "A skeleton raised by Necro's Undead Army: it hunts the nearest enemy with a bone blade, then crumbles.",
+  "characterType": "summon",
+  "element": "none",
+  "combatStyle": "blade",
+  "profiles": {
+    "animation": "base-stickman-animation",
+    "moveset": "skeleton-moveset",
+    "stats": "skeleton-stats",
+    "effects": "skeleton-effects",
+    "audio": "default-audio",
+    "ai": "skeleton-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#e6dfcf",
+    "colourBack": "#bfb6a3",
+    "outline": "#2a241c",
+    "limbWidthM": 0.06,
+    "outlineWidthM": 0.035,
+    "scale": 0.9
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": false,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": true
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Practice only."
+  },
+  "abilityKit": null
+}

@@ -8,6 +8,12 @@ import infernoCharacter from '../data/characters/inferno/character.json';
 import infernoEffects from '../data/characters/inferno/effects.json';
 import infernoMoveset from '../data/characters/inferno/moveset.json';
 import infernoStats from '../data/characters/inferno/stats.json';
+import necroAnimation from '../data/characters/necro/animation-profile.json';
+import necroAudio from '../data/characters/necro/audio.json';
+import necroCharacter from '../data/characters/necro/character.json';
+import necroEffects from '../data/characters/necro/effects.json';
+import necroMoveset from '../data/characters/necro/moveset.json';
+import necroStats from '../data/characters/necro/stats.json';
 import rampageAnimation from '../data/characters/rampage/animation-profile.json';
 import rampageAudio from '../data/characters/rampage/audio.json';
 import rampageCharacter from '../data/characters/rampage/character.json';
@@ -20,6 +26,11 @@ import boxingAnimation from '../data/characters/shared/animation-style-boxing.js
 import taekwondoAnimation from '../data/characters/shared/animation-style-taekwondo.json';
 import defaultAudio from '../data/characters/shared/audio-default.json';
 import defaultEffects from '../data/characters/shared/effects-default.json';
+import skeletonAi from '../data/characters/skeleton-warrior/ai.json';
+import skeletonCharacter from '../data/characters/skeleton-warrior/character.json';
+import skeletonEffects from '../data/characters/skeleton-warrior/effects.json';
+import skeletonMoveset from '../data/characters/skeleton-warrior/moveset.json';
+import skeletonStats from '../data/characters/skeleton-warrior/stats.json';
 import dummyAi from '../data/characters/training-dummy/ai.json';
 import dummyCharacter from '../data/characters/training-dummy/character.json';
 import dummyStats from '../data/characters/training-dummy/stats.json';
@@ -44,7 +55,14 @@ const byId = <T extends { id: string }>(items: readonly unknown[]): Record<strin
   Object.fromEntries((items as T[]).map((x) => [x.id, x]));
 
 export const BUILT_IN_LIBRARY: CharacterLibrary = {
-  characters: byId<CharacterDefinition>([baseCharacter, infernoCharacter, rampageCharacter, dummyCharacter]),
+  characters: byId<CharacterDefinition>([
+    baseCharacter,
+    infernoCharacter,
+    rampageCharacter,
+    necroCharacter,
+    skeletonCharacter,
+    dummyCharacter,
+  ]),
   animation: byId<AnimationProfile>([
     defaultAnimation,
     boxingAnimation,
@@ -52,12 +70,13 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     baseAnimation,
     infernoAnimation,
     rampageAnimation,
+    necroAnimation,
   ]),
-  moveset: byId<MovesetProfile>([baseMoveset, infernoMoveset, rampageMoveset]),
-  stats: byId<StatsProfile>([baseStats, infernoStats, rampageStats, dummyStats]),
-  effects: byId<EffectsProfile>([defaultEffects, infernoEffects, rampageEffects]),
-  audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio]),
-  ai: byId<AiProfile>([defaultAi, dummyAi]),
+  moveset: byId<MovesetProfile>([baseMoveset, infernoMoveset, rampageMoveset, necroMoveset, skeletonMoveset]),
+  stats: byId<StatsProfile>([baseStats, infernoStats, rampageStats, necroStats, skeletonStats, dummyStats]),
+  effects: byId<EffectsProfile>([defaultEffects, infernoEffects, rampageEffects, necroEffects, skeletonEffects]),
+  audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio, necroAudio]),
+  ai: byId<AiProfile>([defaultAi, dummyAi, skeletonAi]),
 };
 
 /** Who fights by default (the player's fighter and the Practice opponent). */

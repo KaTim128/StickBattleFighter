@@ -41,6 +41,8 @@ export interface AbilityPayload {
    * furniture and doors in the way are hit with the payload's full strength. Solid walls still stop it.
    */
   readonly wallDamage?: number;
+  /** Restores this fraction of the damage to the caster when it lands (Soul Drain, owner 12/11/2026). */
+  readonly lifesteal?: number;
 }
 
 /**
@@ -101,6 +103,28 @@ export interface NovaDelivery {
   readonly type: 'nova';
   readonly radiusM: number;
   readonly telegraphS: number;
+  /**
+   * Erupts where the caster aims (the soft-locked target, within `aimRangeM`, short of walls)
+   * instead of around the caster (Death Eruption, owner 12/11/2026).
+   */
+  readonly atTarget?: boolean;
+}
+
+/**
+ * Raise summoned minions (Undead Army, owner 12/11/2026): `count` of the character `character`
+ * appear around the caster, fight for its side under their own AI for `lifeS`, then crumble.
+ * Never more than `maxAlive` of the caster's summons at once (the oldest crumble first); they
+ * never appear inside walls or furniture.
+ */
+export interface SummonSpec {
+  readonly character: string;
+  readonly count: number;
+  readonly lifeS: number;
+  readonly maxAlive: number;
+}
+
+export interface SummonDelivery extends SummonSpec {
+  readonly type: 'summon';
 }
 
 /** The caster leaps to the target spot (telegraphed while airborne) and slams down in an area. */
@@ -150,6 +174,10 @@ export interface BuffDelivery {
   readonly speedFactor: number;
   /** Multiplies damage taken (0.85 = 15% more durable). */
   readonly damageTakenFactor: number;
+  /** Multiplies the damage of the caster's abilities while it lasts (Death's Dominion). */
+  readonly abilityDamageFactor?: number;
+  /** Raises minions as it begins (Death's Dominion's extra undead). */
+  readonly summon?: SummonSpec;
 }
 
 export type Delivery =
@@ -159,7 +187,8 @@ export type Delivery =
   | LeapDelivery
   | BeamDelivery
   | StrikeDelivery
-  | BuffDelivery;
+  | BuffDelivery
+  | SummonDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,

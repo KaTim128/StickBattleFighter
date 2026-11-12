@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
-import type { BodyStyle, HeadStyle } from '../characters/schema';
+import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
 
 export interface StickmanLook {
   readonly limb: number;
@@ -57,7 +57,7 @@ export class StickmanView {
   /** 0..1 guarding (a faint shield in front); `shieldFlare` 0..1 flares it after a block (PRS-5). */
   guard = 0;
   shieldFlare = 0;
-  /** 0..1 a fury buff is on (Rampage Mode): the hide flushes red. */
+  /** 0..1 a fury buff is on (Rampage Mode): a muscle body's hide flushes red. */
   rage = 0;
   /** Stunned: stars circle the head (PRS-6). */
   stunned = false;
@@ -73,6 +73,8 @@ export class StickmanView {
     private readonly bodyStyle: BodyStyle = 'solid',
     /** Drawn size (1 = standard; Rampage is 2): the shadow, trail and figure all scale about the feet. */
     private readonly size = 1,
+    /** Held in the lead hand (Necro's staff, a skeleton's bone blade). */
+    private readonly held: HeldItem | null = null,
   ) {
     this.root.label = 'stickman';
     this.fire.blendMode = 'add';
@@ -211,9 +213,16 @@ export class StickmanView {
     }
     // Back limbs first (darker), then torso, front limbs, head.
     const muscled = this.bodyStyle === 'muscle';
+    const robed = this.bodyStyle === 'robe';
+    const bony = this.bodyStyle === 'bones';
     limbs.forEach(([pts, rawColour, profile], i) => {
+      if (bony) {
+        // A skeleton (owner, 12/11/2026): bare bones with knobbly joints and a ribcage.
+        this.boneDetail(g, pts, w, rawColour, toward(rawColour, outline, 0.7), i);
+        return;
+      }
       // Rampage Mode flushes the hide red (owner, 12/11/2026).
-      const colour = this.rage > 0 ? toward(rawColour, BRUTE.rage, this.rage * 0.3) : rawColour;
+      const colour = this.rage > 0 && muscled ? toward(rawColour, BRUTE.rage, this.rage * 0.3) : rawColour;
       const widths = profile.map((k) => k * w);
       if (!fiery) {
         // No black ink lines: each body's edge is a deep shade of its own colour.
@@ -227,6 +236,8 @@ export class StickmanView {
         taper(g, pts, widths, colour);
         if (muscled) this.muscleDetail(g, pts, w, colour, edge, i);
         else celShade(g, pts, widths, colour, i === 2);
+        // Necro: skeletal armour on the chest, the robe falling over both legs, a bone pauldron.
+        if (robed) this.robeDetail(g, s, w, colour, edge, i);
         return;
       }
       const edge = toward(FLAME.ember, flashColour, flash * 0.85);
@@ -256,7 +267,278 @@ export class StickmanView {
       this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
     } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
     else if (this.head === 'brute') this.bruteHead(g, s, limb, toward(limb, outline, 0.68), o);
+    else if (this.head === 'hood') this.hoodHead(g, s, limb, toward(limb, outline, 0.68), o);
+    else if (this.head === 'skull') this.skullHead(g, s, limb, toward(limb, outline, 0.7), o);
     else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
+    if (this.held && flame < 0.01) this.drawHeld(g, s, o);
+  }
+
+  /** Bone and wood colours for Necro's armour and staff, and the souls' violet glow. */
+  private static readonly DEATH = {
+    bone: 0xe6dfcf,
+    boneShade: 0xb3a994,
+    wood: 0x3b2a1e,
+    woodLit: 0x6a4e36,
+    soul: 0xa970ff,
+    soulCore: 0xf1e8ff,
+    void: 0x07050a,
+  } as const;
+
+  /**
+   * Necro's robe and skeletal armour (owner, 12/11/2026: "a unique hooded appearance ... skeletal
+   * armour details"), drawn as the limbs go down: a ribcage plate of bone over the chest (torso),
+   * the robe's skirt falling from the waist over both legs to the shins (after the lead leg, so the
+   * legs move inside it), and a bone pauldron on the lead shoulder (with the lead arm).
+   */
+  private robeDetail(
+    g: Graphics,
+    s: ReturnType<typeof solveSkeleton>,
+    w: number,
+    colour: number,
+    edge: number,
+    part: number,
+  ): void {
+    const D = StickmanView.DEATH;
+    const o = this.look.outlineWidthM;
+    if (part === 2) {
+      // Ribcage plate: curved bone bars across the chest, a sternum down the middle.
+      const { pelvis, chest } = s;
+      const at = (k: number, side: number) => ({
+        x: pelvis.x + (chest.x - pelvis.x) * k + side,
+        y: pelvis.y + (chest.y - pelvis.y) * k,
+      });
+      for (const k of [0.62, 0.74, 0.86]) {
+        const a = at(k, -w * 0.75);
+        const b = at(k - 0.04, w * 0.95);
+        g.moveTo(a.x, a.y)
+          .lineTo(b.x, b.y)
+          .stroke({ width: w * 0.22 + o, color: edge, cap: 'round' });
+        g.moveTo(a.x, a.y)
+          .lineTo(b.x, b.y)
+          .stroke({ width: w * 0.22, color: D.bone, cap: 'round' });
+      }
+      const top = at(0.92, w * 0.2);
+      const bottom = at(0.55, w * 0.2);
+      g.moveTo(top.x, top.y)
+        .lineTo(bottom.x, bottom.y)
+        .stroke({ width: w * 0.26, color: D.boneShade, cap: 'round' });
+      return;
+    }
+    if (part === 3) {
+      // The robe's skirt: from a sash at the waist out to just below both knees, swaying with them.
+      const waist = s.pelvis;
+      const kneeF = s.legFront[1];
+      const kneeB = s.legBack[1];
+      const shinF = {
+        x: kneeF.x + (s.legFront[2].x - kneeF.x) * 0.35,
+        y: kneeF.y + (s.legFront[2].y - kneeF.y) * 0.35,
+      };
+      const shinB = { x: kneeB.x + (s.legBack[2].x - kneeB.x) * 0.35, y: kneeB.y + (s.legBack[2].y - kneeB.y) * 0.35 };
+      const left = Math.min(shinF.x, shinB.x) - w * 0.9;
+      const right = Math.max(shinF.x, shinB.x) + w * 0.9;
+      const hem = Math.max(shinF.y, shinB.y);
+      const poly = [
+        waist.x - w * 1.1,
+        waist.y - w * 0.4,
+        waist.x + w * 1.1,
+        waist.y - w * 0.4,
+        right,
+        hem - w * 0.3,
+        (left + right) / 2 + w * 0.4,
+        hem + w * 0.15,
+        left,
+        hem - w * 0.1,
+      ];
+      g.poly(poly).fill(edge);
+      g.poly(poly.map((v, k) => (k % 2 === 0 ? v + (v > waist.x ? -o : o) : v - o * 0.5))).fill(colour);
+      // Folds and a pale rim on the leading edge.
+      for (const k of [0.3, 0.6]) {
+        const x0 = waist.x - w * 0.6 + w * 1.2 * k;
+        const x1 = left + (right - left) * k;
+        g.moveTo(x0, waist.y)
+          .lineTo(x1, hem - w * 0.2)
+          .stroke({ width: o * 0.8, color: toward(colour, 0x000000, 0.35), alpha: 0.8 });
+      }
+      g.moveTo(waist.x + w * 1.05, waist.y)
+        .lineTo(right - w * 0.05, hem - w * 0.35)
+        .stroke({
+          width: o * 0.9,
+          color: toward(colour, 0xffffff, 0.35),
+          alpha: 0.6,
+        });
+      // Sash with a small bone clasp.
+      g.roundRect(waist.x - w * 1.15, waist.y - w * 0.55, w * 2.3, w * 0.5, w * 0.15).fill(
+        toward(colour, 0x000000, 0.45),
+      );
+      g.circle(waist.x + w * 0.2, waist.y - w * 0.3, w * 0.28).fill(D.bone);
+      return;
+    }
+    if (part === 4) {
+      // Bone pauldron on the lead shoulder: three overlapping curved plates.
+      const sh = s.armFront[0];
+      for (const [dx, dy, r] of [
+        [-w * 0.35, -w * 0.1, w * 1.05],
+        [0, -w * 0.25, w * 0.9],
+        [w * 0.35, -w * 0.35, w * 0.7],
+      ] as const) {
+        g.circle(sh.x + dx, sh.y + dy, r + o).fill(edge);
+        g.circle(sh.x + dx, sh.y + dy, r).fill(D.bone);
+        g.circle(sh.x + dx - r * 0.2, sh.y + dy - r * 0.25, r * 0.45).fill({ color: 0xffffff, alpha: 0.35 });
+      }
+    }
+  }
+
+  /** A skeleton's bones (summoned warriors): thin shafts with knobbly joints, a spine, ribs and a pelvis. */
+  private boneDetail(g: Graphics, pts: readonly Point[], w: number, colour: number, edge: number, part: number): void {
+    const o = this.look.outlineWidthM;
+    const line = (a: Point, b: Point, width: number, c: number) =>
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width, color: c, cap: 'round' });
+    if (part === 2) {
+      const [pelvis, chest, neck] = pts;
+      if (!pelvis || !chest || !neck) return;
+      line(pelvis, neck, w * 0.7 + o * 2, edge);
+      line(pelvis, neck, w * 0.7, colour);
+      // Ribs: three curved bars, longest at the top.
+      for (const [k, len] of [
+        [0.5, 0.7],
+        [0.66, 0.85],
+        [0.82, 0.95],
+      ] as const) {
+        const c = { x: pelvis.x + (chest.x - pelvis.x) * k, y: pelvis.y + (chest.y - pelvis.y) * k };
+        const a = { x: c.x - w * 1.5 * len, y: c.y + w * 0.35 };
+        const b = { x: c.x + w * 1.5 * len, y: c.y + w * 0.35 };
+        g.moveTo(a.x, a.y)
+          .quadraticCurveTo(c.x, c.y - w * 0.6, b.x, b.y)
+          .stroke({ width: w * 0.45 + o * 2, color: edge, cap: 'round' });
+        g.moveTo(a.x, a.y)
+          .quadraticCurveTo(c.x, c.y - w * 0.6, b.x, b.y)
+          .stroke({ width: w * 0.45, color: colour, cap: 'round' });
+      }
+      // Pelvis bone.
+      g.ellipse(pelvis.x, pelvis.y - w * 0.2, w * 1.4 + o, w * 0.6 + o).fill(edge);
+      g.ellipse(pelvis.x, pelvis.y - w * 0.2, w * 1.4, w * 0.6).fill(colour);
+      return;
+    }
+    for (let i = 0; i + 1 < pts.length; i++) {
+      line(pts[i]!, pts[i + 1]!, w + o * 2, edge);
+      line(pts[i]!, pts[i + 1]!, w, colour);
+    }
+    // Knobbly joints at the elbow or knee and the wrist or ankle.
+    for (const p of pts.slice(1)) {
+      g.circle(p.x, p.y, w * 0.85 + o).fill(edge);
+      g.circle(p.x, p.y, w * 0.85).fill(colour);
+    }
+  }
+
+  /**
+   * Necro's hood: a deep cowl peaked at the back, falling to the shoulders, around a face that is
+   * only darkness (no eyes, owner 12/11/2026).
+   */
+  private hoodHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
+    const r = this.bones.headRadius;
+    const hx = s.head.x;
+    const hy = s.head.y;
+    const cowl = [
+      hx - r * 1.25,
+      hy + r * 1.25,
+      hx - r * 1.2,
+      hy - r * 0.4,
+      hx - r * 0.75,
+      hy - r * 1.25,
+      hx - r * 0.1,
+      hy - r * 1.55,
+      hx + r * 0.65,
+      hy - r * 1.05,
+      hx + r * 1.15,
+      hy - r * 0.15,
+      hx + r * 1.0,
+      hy + r * 1.1,
+    ];
+    g.poly(cowl).fill(edge);
+    g.poly(cowl.map((v, k) => (k % 2 === 0 ? hx + (v - hx) * 0.9 : hy + (v - hy) * 0.9))).fill(colour);
+    // The face opening: a dark hollow on the front, lit faintly violet at its rim.
+    g.ellipse(hx + r * 0.42, hy + r * 0.05, r * 0.55, r * 0.75).fill(StickmanView.DEATH.void);
+    g.ellipse(hx + r * 0.42, hy + r * 0.05, r * 0.55, r * 0.75).stroke({
+      width: o * 0.8,
+      color: StickmanView.DEATH.soul,
+      alpha: 0.35,
+    });
+    // Light along the top of the hood, shadow down its back.
+    g.moveTo(hx - r * 0.7, hy - r * 1.1)
+      .lineTo(hx - r * 0.1, hy - r * 1.4)
+      .lineTo(hx + r * 0.55, hy - r * 0.95)
+      .stroke({ width: r * 0.12, color: toward(colour, 0xffffff, 0.3), alpha: 0.6, cap: 'round', join: 'round' });
+  }
+
+  /** A skeleton's skull: a bone cranium with a jaw and a line of teeth (no eyes, owner 12/11/2026). */
+  private skullHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
+    const r = this.bones.headRadius;
+    const hx = s.head.x;
+    const hy = s.head.y;
+    g.circle(hx, hy - r * 0.1, r + o).fill(edge);
+    g.circle(hx, hy - r * 0.1, r).fill(colour);
+    g.roundRect(hx - r * 0.2, hy + r * 0.35, r * 1.0, r * 0.6, r * 0.2).fill(edge);
+    g.roundRect(hx - r * 0.2 + o, hy + r * 0.35 + o, r * 1.0 - o * 2, r * 0.6 - o * 2, r * 0.15).fill(colour);
+    for (const k of [0.05, 0.3, 0.55]) g.rect(hx + r * k, hy + r * 0.42, o * 0.6, r * 0.3).fill(edge);
+    g.ellipse(hx - r * 0.3, hy - r * 0.5, r * 0.35, r * 0.2).fill({ color: 0xffffff, alpha: 0.35 });
+  }
+
+  /**
+   * What the fighter holds in its lead hand, along the forearm: Necro's staff (dark wood, a bone
+   * crown cradling a glowing soul crystal) or a skeleton's bone blade.
+   */
+  private drawHeld(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number): void {
+    const [, elbow, hand] = s.armFront;
+    const dx = hand.x - elbow.x;
+    const dy = hand.y - elbow.y;
+    const l = Math.hypot(dx, dy) || 1;
+    const ux = dx / l;
+    const uy = dy / l;
+    const D = StickmanView.DEATH;
+    if (this.held === 'staff') {
+      const butt = { x: hand.x - ux * 0.5, y: hand.y - uy * 0.5 };
+      const tip = { x: hand.x + ux * 1.0, y: hand.y + uy * 1.0 };
+      g.moveTo(butt.x, butt.y)
+        .lineTo(tip.x, tip.y)
+        .stroke({ width: 0.06 + o * 2, color: 0x120c08, cap: 'round' });
+      g.moveTo(butt.x, butt.y).lineTo(tip.x, tip.y).stroke({ width: 0.06, color: D.wood, cap: 'round' });
+      g.moveTo(butt.x, butt.y)
+        .lineTo(tip.x, tip.y)
+        .stroke({ width: 0.018, color: D.woodLit, alpha: 0.7, cap: 'round' });
+      // Bone crown: three claws curling round the crystal.
+      const nx = -uy;
+      const ny = ux;
+      for (const side of [-1, 0, 1]) {
+        const base = { x: tip.x - ux * 0.04 + nx * side * 0.05, y: tip.y - uy * 0.04 + ny * side * 0.05 };
+        const end = { x: tip.x + ux * 0.16 + nx * side * 0.08, y: tip.y + uy * 0.16 + ny * side * 0.08 };
+        g.moveTo(base.x, base.y)
+          .lineTo(end.x, end.y)
+          .stroke({ width: 0.03 + o, color: 0x2a241c, cap: 'round' });
+        g.moveTo(base.x, base.y).lineTo(end.x, end.y).stroke({ width: 0.03, color: D.bone, cap: 'round' });
+      }
+      // The soul crystal, glowing (additive) and pulsing.
+      const c = { x: tip.x + ux * 0.1, y: tip.y + uy * 0.1 };
+      const pulse = 0.75 + 0.25 * Math.sin(this.clockS * 4);
+      this.fire.circle(c.x, c.y, 0.2).fill({ color: D.soul, alpha: 0.28 * pulse });
+      g.poly([c.x, c.y - 0.08, c.x + 0.05, c.y, c.x, c.y + 0.08, c.x - 0.05, c.y]).fill(D.soul);
+      g.poly([c.x, c.y - 0.05, c.x + 0.025, c.y, c.x, c.y + 0.04, c.x - 0.02, c.y]).fill(D.soulCore);
+      return;
+    }
+    // Bone blade: a pale, tapering blade with a knobbed hilt.
+    const tip = { x: hand.x + ux * 0.6, y: hand.y + uy * 0.6 };
+    const nx = -uy * 0.045;
+    const ny = ux * 0.045;
+    const blade = [hand.x + nx, hand.y + ny, tip.x, tip.y, hand.x - nx, hand.y - ny];
+    g.poly(blade).fill(0x2a241c);
+    g.poly([
+      hand.x + nx * 0.7,
+      hand.y + ny * 0.7,
+      tip.x - ux * 0.03,
+      tip.y - uy * 0.03,
+      hand.x - nx * 0.7,
+      hand.y - ny * 0.7,
+    ]).fill(D.bone);
+    g.circle(hand.x - ux * 0.06, hand.y - uy * 0.06, 0.04).fill(D.boneShade);
   }
 
   /** Quick dodge speed lines: short streaks trailing opposite the dash, fading in and out with it. */

@@ -1,4 +1,5 @@
 import { INFERNO_KIT } from '../data/abilities/inferno';
+import { NECRO_KIT } from '../data/abilities/necro';
 import { RAMPAGE_KIT } from '../data/abilities/rampage';
 import type { AbilityKit } from './ability-def';
 
@@ -6,4 +7,5 @@ import type { AbilityKit } from './ability-def';
 export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'inferno-kit': INFERNO_KIT,
   'rampage-kit': RAMPAGE_KIT,
+  'necro-kit': NECRO_KIT,
 };

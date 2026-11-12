@@ -1,0 +1,18 @@
+{
+  "id": "skeleton-effects",
+  "punchImpact": "impact-light",
+  "kickImpact": "impact-kick",
+  "heavyImpact": "impact-heavy",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#ffffff",
+  "shakeScale": 0.6,
+  "hitstopScale": 0.7,
+  "head": "skull",
+  "body": "bones",
+  "held": "bone-sword"
+}

@@ -211,6 +211,22 @@ export class PhysicsWorld {
     return { fraction: hit.timeOfImpact, body: hit.collider.parent() };
   }
 
+  /**
+   * True if a circle of `radiusM` at `at` overlaps no wall, door or furniture (somewhere a summoned
+   * minion can stand, owner 12/11/2026).
+   */
+  isFree(at: Vec2, radiusM: number): boolean {
+    const RAPIER = rapier();
+    const hit = this.world.intersectionWithShape(
+      at,
+      0,
+      new RAPIER.Ball(radiusM),
+      undefined,
+      groups(0xffff, GROUP.WORLD | GROUP.FURNITURE),
+    );
+    return hit === null || hit === undefined;
+  }
+
   /** Advance the simulation by one fixed step. */
   step(stepS: number): void {
     this.world.timestep = stepS;

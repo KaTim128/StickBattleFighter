@@ -247,12 +247,16 @@ export interface EffectsProfile {
    * edges, charred streaks, a white-hot core and flame tongues licking up from the joints.
    */
   readonly body?: BodyStyle;
+  /** Something held in the lead hand (Necro's staff, a skeleton's bone blade, owner 12/11/2026). */
+  readonly held?: HeldItem;
 }
 
-export const HEAD_STYLES = ['round', 'flame', 'brute'] as const;
+export const HEAD_STYLES = ['round', 'flame', 'brute', 'hood', 'skull'] as const;
 export type HeadStyle = (typeof HEAD_STYLES)[number];
-export const BODY_STYLES = ['solid', 'flame', 'muscle'] as const;
+export const BODY_STYLES = ['solid', 'flame', 'muscle', 'robe', 'bones'] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
+export const HELD_ITEMS = ['staff', 'bone-sword'] as const;
+export type HeldItem = (typeof HELD_ITEMS)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */
 export interface AudioProfile {
@@ -333,7 +337,8 @@ export interface CharacterDefinition {
   readonly description: string;
   /** Another definition this one starts from (the Base Stickman template); its fields fill any left out here. */
   readonly template?: string;
-  readonly characterType: 'fighter' | 'boss' | 'training';
+  /** `summon`: a minion raised by an ability (never playable, never in the menu). */
+  readonly characterType: 'fighter' | 'boss' | 'training' | 'summon';
   readonly element: 'none' | 'fire' | 'electric' | 'ice' | 'shadow' | 'earth';
   readonly combatStyle: string;
   readonly profiles: {

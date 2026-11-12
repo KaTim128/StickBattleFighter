@@ -65,6 +65,7 @@ import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
 import { SceneAbilities } from './scene-abilities';
 import { type ClashBanner, type ClashHudState, SceneClash } from './scene-clash';
+import { SceneSummons } from './scene-summons';
 
 /** Live player state for the debug overlay and browser tests. */
 export interface PlayerState {
@@ -277,6 +278,8 @@ export class FightArenaScene implements ArenaScene {
   private overlay: Container | null = null;
   /** Validation reports for the fighters in this scene (shown when a character fell back). */
   readonly characters: { readonly player: LoadedCharacter; readonly opponent: LoadedCharacter };
+  /** Where this fight's characters come from (summons load from it too). */
+  private readonly library: CharacterLibrary | undefined;
   /** Presentation-only randomness (sound and effect variations), separate from combat rolls. */
   private readonly fxRng = seededRandom(98765);
 
@@ -291,11 +294,13 @@ export class FightArenaScene implements ArenaScene {
     cast: { player?: string; opponent?: string; library?: CharacterLibrary } = {},
   ) {
     this.name = arena.id;
+    this.library = cast.library;
     const player = loadCharacter(cast.player ?? DEFAULT_CAST.player, cast.library);
     const opponent = loadCharacter(cast.opponent ?? DEFAULT_CAST.opponent, cast.library);
     this.characters = { player, opponent };
     this.playerFighter = new FighterEntity('player', player.def, arena.playerStart, true);
     this.dummyFighter = new FighterEntity('dummy', opponent.def, arena.dummyStart, false);
+    this.dummyFighter.team = 'opponent';
     this.clashes = new SceneClash({
       player: this.playerFighter,
       opponent: this.dummyFighter,
@@ -345,8 +350,56 @@ export class FightArenaScene implements ArenaScene {
   }
 
   private get fighters(): FighterEntity[] {
-    return [this.playerFighter, this.dummyFighter];
+    return this.summons.list.length > 0
+      ? [this.playerFighter, this.dummyFighter, ...this.summons.list]
+      : [this.playerFighter, this.dummyFighter];
   }
+
+  /** Summoned minions now in the fight (tests and the debug hook). */
+  get summonStates(): { name: string; team: string; x: number; y: number; hp: number; ko: boolean; leftS: number }[] {
+    return this.summons.list.map((f) => ({
+      name: f.name,
+      team: f.team,
+      x: f.x,
+      y: f.y,
+      hp: f.combatant.hp,
+      ko: f.combatant.isKo,
+      leftS: f.summon?.leftS ?? 0,
+    }));
+  }
+
+  /** Summoned minions (Undead Army, owner 12/11/2026): fighters on their summoner's team with their own AI. */
+  private readonly summons = new SceneSummons({
+    loadDef: (id) => loadCharacter(id, this.library).def,
+    attach: (f) => {
+      if (this.physics && this.view && this.overlay) f.attach(this.physics, this.view.actors, this.overlay);
+    },
+    detach: (f) => {
+      // Out of the depth sort first (it keeps a reference), then the body, view and bars go.
+      if (f.view) this.view?.actors.remove(f.view.root);
+      f.detach();
+    },
+    blocked: (from, to) => this.physics?.castWorldRay(from, to)?.fraction ?? null,
+    isFree: (at, r) =>
+      (this.physics?.isFree(at, r) ?? false) &&
+      at.x > r &&
+      at.y > r &&
+      at.x < this.arena.widthM - r &&
+      at.y < this.arena.heightM - r,
+    fighters: () => this.fighters,
+    step: (f, stepS, move) => this.stepFighter(f, stepS, move, false),
+    attack: (f) => f.combo.press(GROUND),
+    risen: (f) => {
+      this.frameDust.push({
+        points: [0, 1, 2].map((k) => ({ x: f.x + (k - 1) * 0.15, y: f.y, z: 0.1 + k * 0.2 })),
+        colour: 0x6b5b7a,
+        colours: [0x4a3d58, 0x8a7a9c, 0x2a2230],
+        count: 30,
+      });
+      this.queueSound('summon-rise', 0.7);
+    },
+    random: () => this.rng(),
+  });
 
   /** The arena's display objects (tests and tools inspect props and wall sections). */
   get arenaView(): ArenaView | null {
@@ -497,6 +550,7 @@ export class FightArenaScene implements ArenaScene {
       this.walls,
     );
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
+    this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
     this.occlusion = new OcclusionFader();
@@ -558,7 +612,8 @@ export class FightArenaScene implements ArenaScene {
       f.recoilS = Math.max(0, f.recoilS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
-      if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS) f.respawn();
+      // Fighters get back up; summoned minions crumble away instead (SceneSummons).
+      if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS && !f.summon) f.respawn();
     }
 
     // A Punch Clash takes over both fighters while it runs.
@@ -566,6 +621,7 @@ export class FightArenaScene implements ArenaScene {
       this.controlPlayer(this.playerFighter, stepS);
       this.trackLastAction();
       this.controlDummy(this.dummyFighter, stepS);
+      this.summons.update(stepS);
       this.clashes.maybeStart(this.simTimeS);
     }
     if (this.abilities) this.abilities.world.update(stepS, this.abilities);
@@ -797,7 +853,7 @@ export class FightArenaScene implements ArenaScene {
 
   /** Where a throw goes: the locked target if roughly ahead and in range, else the way the fighter moves or faces. */
   private throwDir(f: FighterEntity): { x: number; y: number } {
-    const target = this.fighters.find((o) => o !== f && !o.combatant.isKo);
+    const target = this.fighters.find((o) => o.team !== f.team && !o.combatant.isKo);
     const m = this.intents.move;
     let dir = Math.hypot(m.x, m.y) > 0.3 ? { x: m.x, y: m.y } : { x: f.aim.x, y: f.aim.y };
     if (target) {
@@ -897,6 +953,7 @@ export class FightArenaScene implements ArenaScene {
       for (let i = 0; i < this.fighters.length; i++) {
         const target = this.fighters[i]!;
         if (i === flight.by || flight.hit.has(i) || target.combatant.isKo || !target.body) continue;
+        if (this.fighters[flight.by]?.team === target.team) continue; // never the thrower's own side
         if (!circleTouchesRect(target, target.def.body.footRadiusM + 0.1, prop.rect)) continue;
         const thrower = this.fighters[flight.by] ?? target;
         const mass = prop.kind.massKg;
@@ -925,7 +982,7 @@ export class FightArenaScene implements ArenaScene {
     let best: FighterEntity | null = null;
     let bestD = SOFT_LOCK_M;
     for (const o of this.fighters) {
-      if (o === f || o.combatant.isKo) continue;
+      if (o.team === f.team || o.combatant.isKo) continue;
       const dx = o.x - f.x;
       const dy = o.y - f.y;
       const d = Math.hypot(dx, dy);
@@ -961,7 +1018,7 @@ export class FightArenaScene implements ArenaScene {
     let best: FighterEntity | null = null;
     let bestD = Number.POSITIVE_INFINITY;
     for (const o of this.fighters) {
-      if (o === f || o.combatant.isKo) continue;
+      if (o.team === f.team || o.combatant.isKo) continue;
       const d = Math.hypot(o.x - f.x, o.y - f.y);
       if (d < bestD) {
         best = o;
@@ -1472,7 +1529,7 @@ export class FightArenaScene implements ArenaScene {
     }
 
     for (const target of this.fighters) {
-      if (target === attacker || !target.body || target.combatant.isKo) continue;
+      if (target.team === attacker.team || !target.body || target.combatant.isKo) continue;
       const t = target.body.translation();
       if (distanceToCapsule(capsule, t.x, t.y) > a.hitRadiusM + target.def.body.footRadiusM) continue;
       reachedFighter = true;
@@ -1545,7 +1602,7 @@ export class FightArenaScene implements ArenaScene {
     if (!reachedFighter) {
       // MISS (PRS-4), only when someone was close enough that the swing was meant for them.
       const near = this.fighters.some(
-        (o) => o !== attacker && !o.combatant.isKo && Math.hypot(o.x - p.x, o.y - p.y) < MISS_CALLOUT_RANGE_M,
+        (o) => o.team !== attacker.team && !o.combatant.isKo && Math.hypot(o.x - p.x, o.y - p.y) < MISS_CALLOUT_RANGE_M,
       );
       if (near)
         this.events.push({ kind: 'miss', target: attacker.name, x: p.x, y: p.y - headTop(attacker), amount: 0 });
@@ -2226,6 +2283,7 @@ export class FightArenaScene implements ArenaScene {
 
   unload(): void {
     for (const f of this.fighters) f.detach();
+    this.summons.list.length = 0;
     this.view?.destroy();
     this.physics?.dispose();
     this.view = null;

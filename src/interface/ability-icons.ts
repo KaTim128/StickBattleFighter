@@ -42,6 +42,22 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
   'rampage-mode': svg(
     `<defs><radialGradient id="rg" cx="50%" cy="55%" r="50%"><stop offset="0" stop-color="#ffd2c0"/><stop offset=".45" stop-color="#ff5a3a"/><stop offset="1" stop-color="#5a0a0a" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="26" r="23" fill="url(#rg)"/><path d="M15 30 C8 30 4 24 6 16 C7 12 11 12 12 16 C12 20 14 22 17 22" fill="#6e6e78" stroke="#141418" stroke-width="2" stroke-linejoin="round"/><path d="M33 30 C40 30 44 24 42 16 C41 12 37 12 36 16 C36 20 34 22 31 22" fill="#6e6e78" stroke="#141418" stroke-width="2" stroke-linejoin="round"/><circle cx="8.5" cy="13" r="3.5" fill="#6e6e78" stroke="#141418" stroke-width="2"/><circle cx="39.5" cy="13" r="3.5" fill="#6e6e78" stroke="#141418" stroke-width="2"/><path d="M14 22 C14 20 34 20 34 22 L32 40 C28 43 20 43 16 40 Z" fill="#6e6e78" stroke="#141418" stroke-width="2" stroke-linejoin="round"/><path d="M24 24 V38 M18 30 H30 M19 35 H29" stroke="#4c4c55" stroke-width="1.5"/><circle cx="24" cy="13" r="7" fill="#6e6e78" stroke="#141418" stroke-width="2"/><path d="M20 12 L23 13.5 M25 13.5 L28 12" stroke="#ff3a1a" stroke-width="2.2" stroke-linecap="round"/>`,
   ),
+  // Necro (owner, 12/11/2026). Soul Drain: a violet orb of souls trailing ghostly wisps.
+  'soul-drain': svg(
+    `<defs><radialGradient id="sg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f1e8ff"/><stop offset=".45" stop-color="#a970ff"/><stop offset="1" stop-color="#2a0d3d"/></radialGradient></defs><path d="M4 32 C12 24 16 34 22 26 C18 36 26 38 30 30" stroke="#a970ff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><path d="M6 20 C12 16 16 22 22 18" stroke="#d9c8ff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7"/><circle cx="32" cy="24" r="11" fill="url(#sg)" stroke="#1a0826" stroke-width="2"/>`,
+  ),
+  // Death Eruption: bone spikes and a skeletal hand bursting from cracked ground.
+  'death-eruption': svg(
+    `<path d="M2 40 H46" stroke="#2e2438" stroke-width="4" stroke-linecap="round"/><path d="M8 40 L12 22 L16 40 Z M30 40 L35 18 L40 40 Z" fill="#e6dfcf" stroke="#2a241c" stroke-width="1.5" stroke-linejoin="round"/><path d="M18 40 V26 M22 40 V22 M26 40 V24 M18 30 C18 26 26 26 26 30" stroke="#e6dfcf" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="24" cy="42" rx="20" ry="3" fill="#a970ff" opacity=".45"/>`,
+  ),
+  // Undead Army: three skulls rising out of the ground.
+  'undead-army': svg(
+    `<path d="M2 42 H46" stroke="#2e2438" stroke-width="4" stroke-linecap="round"/><g fill="#e6dfcf" stroke="#2a241c" stroke-width="1.5"><circle cx="12" cy="30" r="6"/><circle cx="24" cy="22" r="7"/><circle cx="36" cy="30" r="6"/><rect x="9" y="34" width="7" height="5" rx="1.5"/><rect x="20" y="27" width="8" height="6" rx="1.5"/><rect x="33" y="34" width="7" height="5" rx="1.5"/></g><path d="M8 40 V44 M24 34 V44 M40 40 V44" stroke="#bfb6a3" stroke-width="3"/>`,
+  ),
+  // Death's Dominion: a hooded figure in a storm of violet energy.
+  'deaths-dominion': svg(
+    `<defs><radialGradient id="dg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f1e8ff"/><stop offset=".4" stop-color="#a970ff"/><stop offset="1" stop-color="#2a0d3d" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="24" r="23" fill="url(#dg)"/><path d="M14 44 L16 22 C16 12 32 12 32 22 L34 44 Z" fill="#33284a" stroke="#120e18" stroke-width="2" stroke-linejoin="round"/><path d="M18 12 L24 4 L30 12 C30 18 18 18 18 12 Z" fill="#4a3a63" stroke="#120e18" stroke-width="2"/><ellipse cx="25" cy="16" rx="3.5" ry="4" fill="#07050a"/><path d="M36 6 V40" stroke="#3b2a1e" stroke-width="3"/><circle cx="36" cy="6" r="3" fill="#a970ff"/>`,
+  ),
 };
 
 let instance = 0;

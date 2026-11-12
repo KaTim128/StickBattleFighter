@@ -1,0 +1,8 @@
+{
+  "id": "skeleton-ai",
+  "attackEveryS": 0.9,
+  "aggression": 0.5,
+  "clashMashRate": 4,
+  "settleDecelMps2": 18,
+  "reactionS": 0.3
+}

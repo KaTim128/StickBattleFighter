@@ -27,6 +27,8 @@ function placeFighter(def: FighterDef): Slot {
     def.look,
     def.effects.head === 'flame' && !def.capabilities.usesFireEffects ? 'round' : (def.effects.head ?? 'round'),
     def.effects.body === 'flame' && !def.capabilities.usesFireEffects ? 'solid' : (def.effects.body ?? 'solid'),
+    1,
+    def.effects.held ?? null,
   );
   const pose = idlePose(0.2, def.bones);
   view.draw(pose, 1, 0);

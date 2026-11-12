@@ -11,6 +11,7 @@ import {
   type CharacterDefinition,
   type CharacterLibrary,
   HEAD_STYLES,
+  HELD_ITEMS,
   LIMITS,
   MOVE_INPUTS,
   type MoveInput,
@@ -279,6 +280,9 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
     num(`${e}.hitstopScale`, fx.hitstopScale, 'hitstopScale');
     if (fx.body !== undefined && !(BODY_STYLES as readonly string[]).includes(fx.body)) {
       errors.push(`${e}.body: unknown body style "${fx.body}" (use ${BODY_STYLES.join(' or ')}).`);
+    }
+    if (fx.held !== undefined && !(HELD_ITEMS as readonly string[]).includes(fx.held)) {
+      errors.push(`${e}.held: unknown held item "${fx.held}" (use ${HELD_ITEMS.join(' or ')}).`);
     }
     if (fx.head !== undefined && !(HEAD_STYLES as readonly string[]).includes(fx.head)) {
       errors.push(`${e}.head: unknown head style "${fx.head}" (use ${HEAD_STYLES.join(' or ')}).`);

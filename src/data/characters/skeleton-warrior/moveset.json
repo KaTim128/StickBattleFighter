@@ -1,0 +1,61 @@
+{
+  "id": "skeleton-moveset",
+  "starters": {
+    "tap": "bone-slash"
+  },
+  "moves": [
+    {
+      "id": "bone-slash",
+      "displayName": "Bone slash",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.14,
+      "activeS": 0.08,
+      "recoveryS": 0.3,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 0.9,
+        "radiusM": 0.45
+      },
+      "damage": 28,
+      "strength": 250,
+      "knockbackMps": 1.5,
+      "lungeMps": 0.5,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.1,
+      "zoomPunch": 0.01,
+      "requires": ["canPunch"],
+      "next": {
+        "tap": "bone-chop"
+      }
+    },
+    {
+      "id": "bone-chop",
+      "displayName": "Bone chop",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.16,
+      "activeS": 0.09,
+      "recoveryS": 0.34,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 0.95,
+        "radiusM": 0.5
+      },
+      "damage": 36,
+      "strength": 320,
+      "knockbackMps": 2.2,
+      "lungeMps": 0.6,
+      "moveFactor": 0.35,
+      "impact": "knuckle-light",
+      "shake": 0.14,
+      "zoomPunch": 0.012,
+      "requires": ["canPunch", "canUseCombos"]
+    }
+  ]
+}

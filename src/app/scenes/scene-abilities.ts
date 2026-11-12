@@ -1,5 +1,5 @@
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
-import type { AbilityDef, AbilityPayload, AbilitySlot, Burn } from '../../abilities/ability-def';
+import type { AbilityDef, AbilityPayload, AbilitySlot, Burn, SummonSpec } from '../../abilities/ability-def';
 import {
   type AbilityFx,
   type AbilityHost,
@@ -51,6 +51,8 @@ export class SceneAbilities implements AbilityHost {
   readonly sfxLog: string[] = [];
   /** Recent FX events, newest last (tests and the debug hook; the VFX layer drains `pending`). */
   readonly recentFx: AbilityFx[] = [];
+  /** Raises a caster's minions (set by the scene, which owns the fighters). */
+  summonSource: (f: FighterEntity, spec: SummonSpec) => void = () => {};
   /** Where a fighter is steering its beam (set by the scene: player input or the AI's target). */
   steerSource: (f: FighterEntity, fresh: boolean) => Vec2 | null = () => null;
   /** Sound ids not yet played (the sound board drains them every frame). */
@@ -164,6 +166,7 @@ export class SceneAbilities implements AbilityHost {
       y: f.y,
       radiusM: f.def.body.footRadiusM,
       hittable: !f.combatant.isKo && f.body !== null,
+      team: f.team,
     }));
   }
 
@@ -171,8 +174,10 @@ export class SceneAbilities implements AbilityHost {
     const attacker = this.byName(casterId);
     const target = this.byName(targetId);
     if (!attacker || !target) return false;
-    return this.strike(attacker, target, {
-      damage: payload.damage,
+    // A power buff (Death's Dominion) strengthens the caster's abilities while it lasts.
+    const damage = payload.damage * (attacker.buff?.abilityDamageFactor ?? 1);
+    const landed = this.strike(attacker, target, {
+      damage,
       heavy: payload.heavy,
       knockbackMps: payload.knockbackMps,
       dir,
@@ -182,6 +187,17 @@ export class SceneAbilities implements AbilityHost {
       flashColour: hitFlash,
       stunS: payload.stunS,
     });
+    // Soul Drain: the caster takes back a share of the life it drained.
+    if (landed && payload.lifesteal && !attacker.combatant.isKo) {
+      const c = attacker.combatant;
+      c.hp = Math.min(c.stats.maxHp, c.hp + damage * payload.lifesteal);
+    }
+    return landed;
+  }
+
+  summon(casterId: string, spec: SummonSpec): void {
+    const f = this.byName(casterId);
+    if (f) this.summonSource(f, spec);
   }
 
   hitEnvironment(
@@ -248,7 +264,10 @@ export class SceneAbilities implements AbilityHost {
     f.abilityLift = heightM;
   }
 
-  buff(casterId: string, buff: { speedFactor: number; damageTakenFactor: number; durationS: number } | null): void {
+  buff(
+    casterId: string,
+    buff: { speedFactor: number; damageTakenFactor: number; durationS: number; abilityDamageFactor?: number } | null,
+  ): void {
     const f = this.byName(casterId);
     if (!f) return;
     f.buff = buff ? { ...buff, leftS: buff.durationS } : null;

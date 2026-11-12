@@ -1,0 +1,12 @@
+{
+  "id": "necro-animation",
+  "extends": "style-boxing",
+  "states": {
+    "Jab": "necro.staff-sweep",
+    "Hook": "necro.soul-thrust",
+    "HeavyPunch": "necro.grave-slam",
+    "DownwardAerialKick": "necro.staff-plunge",
+    "ClashFinisher": "necro.grave-slam",
+    "ClashWin": "necro.grave-slam"
+  }
+}
