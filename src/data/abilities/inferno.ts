@@ -11,6 +11,7 @@ const FIRE_PALETTE = { deep: 0xd8320c, hot: 0xff6a00, bright: 0xffa53a, core: 0x
 
 export const INFERNO_KIT: AbilityKit = {
   comboIcon: 'flaming-fist',
+  heavyIcon: 'blazing-axe-kick',
   // A1: Fireball (owner, 11/11/2026: renamed from Fire Bolt and made the Magic Attack VFX
   // benchmark). Inferno pulls fire out of the air into his palm (0.4 s charge, interruptible),
   // hurls a white-hot ball (18 m/s, up to 10 m), and it bursts on contact, setting the target

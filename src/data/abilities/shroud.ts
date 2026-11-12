@@ -13,6 +13,7 @@ const SHADE = { deep: 0x07070a, hot: 0x1c1c25, bright: 0x3b3b4a, core: 0x9a9aae 
 
 export const SHROUD_KIT: AbilityKit = {
   comboIcon: 'knife-slash',
+  heavyIcon: 'gutting-stab',
   // A1 (Q): Thrown Blade. A flick of the wrist: a spinning knife flies straight and fast; the cut bleeds.
   a1: {
     id: 'thrownBlade',

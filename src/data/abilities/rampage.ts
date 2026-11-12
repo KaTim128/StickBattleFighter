@@ -12,6 +12,7 @@ const RAGE = { deep: 0x5a0a0a, hot: 0xb3201a, bright: 0xff5a3a, core: 0xffd2c0 }
 
 export const RAMPAGE_KIT: AbilityKit = {
   comboIcon: 'heavy-fist',
+  heavyIcon: 'sledgehammer',
   // A1: Ground Smash. Both fists come down on the floor: a shockwave that knocks everyone nearby away.
   a1: {
     id: 'groundSmash',

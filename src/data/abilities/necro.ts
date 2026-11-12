@@ -13,6 +13,7 @@ const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff }
 
 export const NECRO_KIT: AbilityKit = {
   comboIcon: 'staff-swing',
+  heavyIcon: 'soul-rend',
   // A1: Soul Drain. A dark bolt of drawn souls flies from the staff; when it lands it tears life out
   // of the target (half of it flows back to Necro) and blinds it for 3 s (owner, 12/11/2026).
   a1: {
