@@ -140,7 +140,9 @@ describe('breakable curved wall (owner, 11/11/2026)', () => {
     expect(inferno.combos).toBeLessThanOrEqual(Math.ceil(base.combos * 0.45));
     // Damage builds steadily on that section, round after round, until it gives way.
     for (let i = 1; i < inferno.lefts.length; i++) expect(inferno.lefts[i]!).toBeLessThan(inferno.lefts[i - 1]!);
-  });
+    // Two full fight scenes, simulated for several seconds each: 2.4 s locally, about twice that
+    // on the shared CI runner, so it gets its own time budget (assertions unchanged).
+  }, 20_000);
 
   it('a fire hit is reported as fire, so the section scorches and its cracks glow', async () => {
     const { scene, scenes, n } = await setup();
