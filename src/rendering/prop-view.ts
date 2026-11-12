@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import { footprint, kindOf, PROP_KINDS, type PropPlacement } from '../data/objects/props';
+import { drawBookshelf } from './bookshelf-view';
 import { face, faceQuad, isoBlock, isoCylinder, isoShadow, shade } from './iso-draw';
 import { iso } from './projection';
 
@@ -230,25 +231,10 @@ export function buildPropView(p: PropPlacement): Container {
       isoBlock(g, bx0, by0, bx1, by1, 0.5, 0.95, { colour: 0x6b4228, noAo: true });
       break;
     }
-    case 'bookshelf': {
-      const wood = 0xcfa36c;
-      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: shade(wood, 0.75) });
-      const fr = frontOf(p, x0, y0, x1, y1);
-      if (!fr) break; // its back panel faces us
-      const { at: front, a0, a1 } = fr;
-      const palette = [0xc0504d, 0x3e6e9e, 0xe3b23c, 0x5b8c5a, 0x7d5ba6, 0xe07b39, 0x2f4858];
-      for (let s = 0; s < 4; s++) {
-        const v0 = 0.06 + (s * (h - 0.1)) / 4;
-        const v1 = v0 + (h - 0.1) / 4;
-        faceQuad(g, front, a0 + 0.04, v0, a1 - 0.04, v1 - 0.04).fill(0x3a2a1c);
-        for (let u = a0 + 0.07, k = s * 5; u < a1 - 0.1; u += 0.09, k++) {
-          const bh = v1 - v0 - 0.1 - ((k * 7) % 3) * 0.04;
-          faceQuad(g, front, u, v0 + 0.01, u + 0.075, v0 + 0.01 + bh).fill(palette[k % palette.length]!);
-        }
-        faceQuad(g, front, a0 + 0.02, v1 - 0.04, a1 - 0.02, v1).fill(wood);
-      }
+    case 'bookshelf':
+      // Premium redesign prototype (owner, 13/11/2026): src/rendering/bookshelf-view.ts.
+      drawBookshelf(g, p, x0, y0, x1, y1, h);
       break;
-    }
     case 'kitchen-counter': {
       isoBlock(g, x0, y0, x1, y1, 0, h - 0.05, { colour: 0xc89a66 });
       isoBlock(g, x0 - 0.02, y0, x1 + 0.02, y1 + 0.03, h - 0.05, h, { colour: 0xece8e0, noAo: true });

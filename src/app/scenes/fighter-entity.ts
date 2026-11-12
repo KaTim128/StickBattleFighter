@@ -208,7 +208,7 @@ export class FighterEntity {
       this.def.effects.head === 'flame' && !this.def.capabilities.usesFireEffects
         ? 'round'
         : (this.def.effects.head ?? 'round'),
-      this.def.effects.body === 'flame' && !this.def.capabilities.usesFireEffects
+      (this.def.effects.body === 'flame' || this.def.effects.body === 'magma') && !this.def.capabilities.usesFireEffects
         ? 'solid'
         : (this.def.effects.body ?? 'solid'),
       this.def.sizeScale ?? 1,

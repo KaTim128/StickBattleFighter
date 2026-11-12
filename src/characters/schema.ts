@@ -260,7 +260,8 @@ export interface EffectsProfile {
 
 export const HEAD_STYLES = ['round', 'flame', 'brute', 'hood', 'skull', 'mask'] as const;
 export type HeadStyle = (typeof HEAD_STYLES)[number];
-export const BODY_STYLES = ['solid', 'flame', 'muscle', 'robe', 'bones', 'cloak'] as const;
+/** `magma`: Inferno's premium model (owner, 13/11/2026; src/rendering/magma-model.ts). */
+export const BODY_STYLES = ['solid', 'flame', 'muscle', 'robe', 'bones', 'cloak', 'magma'] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
 export const HELD_ITEMS = ['staff', 'bone-sword', 'knife'] as const;
 export type HeldItem = (typeof HELD_ITEMS)[number];

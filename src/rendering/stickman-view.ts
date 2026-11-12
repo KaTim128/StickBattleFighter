@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
+import { MagmaModel } from './magma-model';
 
 export interface StickmanLook {
   readonly limb: number;
@@ -78,6 +79,8 @@ export class StickmanView {
   /** 0..1 how fast the fighter is moving: the flames stream back. */
   motion = 0;
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
+  /** Inferno's premium model (body style `magma`), drawn on the same rig. */
+  private readonly magma: MagmaModel | null;
 
   constructor(
     private readonly bones: BoneLengths,
@@ -90,6 +93,7 @@ export class StickmanView {
     private readonly held: HeldItem | null = null,
   ) {
     this.root.label = 'stickman';
+    this.magma = bodyStyle === 'magma' ? new MagmaModel() : null;
     this.fire.blendMode = 'add';
     this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
     const scaled = new Container();
@@ -293,10 +297,25 @@ export class StickmanView {
       else if (this.head === 'mask') this.maskHead(g, s, limb, toward(limb, outline, 0.68), o);
       else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
     };
-    for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);
-    if (flame <= 0.01) drawHead();
-    drawPart(limbs[4]!, 4);
-    if (flame > 0.01) drawHead();
+    if (this.magma) {
+      // Inferno's premium model: the whole body, head and fire details in one pass (it keeps the
+      // head behind the near arm itself). A flame dodge still turns him into a streak of fire.
+      this.magma.draw(g, this.fire, s, {
+        facing,
+        t,
+        flash,
+        flashColour,
+        w,
+        headRadius: this.bones.headRadius,
+        motion: this.motion,
+      });
+      if (flame > 0.01) drawHead();
+    } else {
+      for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);
+      if (flame <= 0.01) drawHead();
+      drawPart(limbs[4]!, 4);
+      if (flame > 0.01) drawHead();
+    }
     if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
     this.drawStatus(s, t);
     if (this.held && flame < 0.01) this.drawHeld(g, s, o);
