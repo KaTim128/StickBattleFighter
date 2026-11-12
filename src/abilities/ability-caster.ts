@@ -37,6 +37,7 @@ export interface AbilitySlotState {
   readonly slot: AbilitySlot;
   readonly label: string;
   readonly name: string;
+  readonly icon?: string;
   readonly cooldownS: number;
   readonly cooldownMaxS: number;
   readonly staminaCost: number;

@@ -125,6 +125,7 @@ export class SceneAbilities implements AbilityHost {
       return {
         slot,
         label: def.label,
+        icon: def.icon,
         name: def.name,
         cooldownS: caster.cooldown(slot),
         cooldownMaxS: def.cooldownS,

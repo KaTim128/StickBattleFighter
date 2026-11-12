@@ -32,6 +32,11 @@
         position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; border-radius: 50%;
         background: rgba(232, 237, 245, 0.75); transform: translate(-50%, -50%);
       }
+      /* Button text always stays inside its button (owner, 12/11/2026): no padding eating the
+         width, centred, one line; tests/e2e/button-fit.spec.ts checks every button. */
+      .util-button, .dodge-button, .melee-button, .ability-button {
+        display: grid; place-items: center; padding: 0; white-space: nowrap;
+      }
       .util-button {
         position: fixed; right: calc(24px + env(safe-area-inset-right)); bottom: 190px;
         width: 64px; height: 64px; border-radius: 18px; border: 3px solid rgba(232, 237, 245, 0.6);
@@ -75,7 +80,7 @@
       }
       .ability-bar[hidden], body.touch-mode .ability-bar { display: none; }
       .ability-slot {
-        position: relative; width: 84px; height: 58px; border-radius: 8px; overflow: hidden;
+        position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden;
         border: 2px solid rgba(255, 140, 60, 0.7); display: flex; flex-direction: column;
         align-items: center; justify-content: center; gap: 2px;
         background: linear-gradient(to top, rgba(200, 70, 20, 0.75) var(--fill, 100%), rgba(20, 22, 28, 0.8) 0);
@@ -85,7 +90,11 @@
         background: linear-gradient(to top, rgba(255, 170, 30, 0.85) var(--fill, 0%), rgba(20, 22, 28, 0.8) 0);
       }
       .ab-key { position: absolute; left: 4px; top: 2px; font-weight: 800; color: #ffd8b0; }
-      .ab-name { margin-top: 10px; font-weight: 700; font-size: 11px; line-height: 1.05; text-align: center; padding: 0 3px; }
+      /* Ability pictures (owner, 12/11/2026) on the bar and the touch buttons. */
+      .ab-icon { display: grid; place-items: center; margin-top: 8px; width: 34px; height: 34px; font-weight: 700; font-size: 11px; }
+      .ab-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6)); }
+      .ability-button .ab-icon { margin: 0; width: 72%; height: 72%; pointer-events: none; }
+      .ability-button .ab-ult { position: absolute; bottom: 6px; left: 0; right: 0; font: 800 9px system-ui, sans-serif; color: #fff2a8; text-shadow: 0 1px 0 #000; pointer-events: none; }
       .ab-cost { font-size: 10px; opacity: 0.85; }
       .clash-hud {
         position: fixed; left: 50%; top: 46px; transform: translateX(-50%); pointer-events: none;
@@ -320,6 +329,7 @@
         .ability-button.ult { right: calc(18px + env(safe-area-inset-right)); bottom: 20px; width: 58px; height: 58px; }
         .util-button { right: calc(18px + env(safe-area-inset-right)); bottom: 96px; width: 52px; height: 52px; }
         .dodge-button { right: calc(18px + env(safe-area-inset-right)); bottom: 156px; width: 52px; height: 52px; }
+        .util-button, .dodge-button { font-size: 10px; letter-spacing: -0.2px; }
         .main-menu { justify-content: flex-start; gap: 6px; padding: 10px; }
         .mm-card { width: min(40vw, 200px); padding: 6px; }
         .mm-card small { -webkit-line-clamp: 2; }

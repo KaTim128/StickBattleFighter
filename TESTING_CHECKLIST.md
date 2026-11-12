@@ -297,6 +297,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] D input latency acceptable on touch devices
 - [ ] I particle and debris budgets enforced on mobile
 
+## 13a. HUD buttons (owner, 12/11/2026)
+- [x] Ability bar and touch ability buttons show each ability's picture; the name appears on hover
+- [x] No button's text goes outside its button on desktop, a portrait phone or a sideways phone (`tests/e2e/button-fit.spec.ts`)
+
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green
 - [ ] Previous milestones' acceptance tests re-run

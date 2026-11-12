@@ -434,6 +434,20 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - **CI:** the CI lint failed on a duplicate `height` in `index.html`; it is now an `@supports` rule. Run `npm run lint` (the whole repository) before pushing, not just `src` and `tests`.
 - **Evidence:** `npm run lint` clean (1 info, in an old mockup); typecheck 0; `npm test` 304/304; `npm run e2e` 33 passed; `docs/screenshots/portraits-and-rampage-look.png`.
 
+### 12/11/2026: Ability pictures and button text that always fits (owner requests)
+- **Ability icons:** the ability bar and the touch ability buttons show a picture per ability instead of its name ("change the text to ability images so it can fit the buttons"). The name stays as the tooltip and screen-reader label.
+  - The icons are original inline SVGs in `src/interface/ability-icons.ts`: Fireball, Flame Dash, Fire Beam, Eruption, Ground Smash, Rhino Charge, Crushing Strike and Rampage Mode.
+  - Each ability names its icon in its data (`AbilityDef.icon`); if an icon is missing, the label shows instead.
+  - Each copy gets its own gradient ids, so a hidden copy cannot break the visible one.
+  - When the ultimate is full, its touch button shows a small READY.
+- **Button text fit** ("text must not be outside of the button"):
+  - On a sideways phone, DODGE and THROW spilled past the edge of their 52 px buttons.
+  - Touch buttons are now centred, with no padding and a single line, and the compact layout uses 10 px text.
+  - The new `tests/e2e/button-fit.spec.ts` checks that every visible button's text fits inside its box, for both fighters, on desktop, a portrait phone and a sideways phone. The longest utility label is THROW.
+  - The test failed before the fix ("THROW 46.3px in 46.0px") and passes after it.
+- **Evidence:** `npm run lint` clean (1 info, in an old mockup); typecheck 0; `npm test` 304/304; full e2e 38 passed.
+  - `phase4` (the door) failed once in the full run. It passed when run alone, both with and without this change (3/3 and 9/9), so it is timing under load and unrelated to this change.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

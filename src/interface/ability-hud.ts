@@ -1,4 +1,5 @@
 import type { AbilityHudState, AbilitySlotState } from '../abilities/ability-caster';
+import { abilityIcon } from './ability-icons';
 
 /**
  * Ability HUD (CONTROL_SCHEME §3, REQ-CTL): on desktop a bar at the bottom
@@ -22,7 +23,7 @@ export class AbilityHud {
       const el = document.createElement('div');
       el.className = `ability-slot${slot === 'ult' ? ' ult' : ''}`;
       el.dataset.slot = slot;
-      el.innerHTML = `<span class="ab-key">${KEYS[slot]}</span><span class="ab-name"></span><span class="ab-cost"></span>`;
+      el.innerHTML = `<span class="ab-key">${KEYS[slot]}</span><span class="ab-icon"></span><span class="ab-cost"></span>`;
       this.bar.appendChild(el);
       const button = root.querySelector<HTMLElement>(`.ability-button[data-slot="${slot}"]`);
       this.targets.set(slot, button ? [el, button] : [el]);
@@ -51,8 +52,18 @@ function paint(el: HTMLElement, s: AbilitySlotState, state: AbilityHudState): vo
   el.classList.toggle('no-stamina', s.block === 'stamina');
   el.classList.toggle('ready', s.block === null);
   el.classList.toggle('casting', state.casting !== null);
-  const name = el.querySelector('.ab-name');
-  if (name && name.textContent !== s.name) name.textContent = s.name;
+  // The ability's picture (its name stays as the tooltip and for screen readers).
+  if (el.dataset.ability !== s.name) {
+    el.dataset.ability = s.name;
+    el.title = s.name;
+    el.setAttribute('aria-label', s.name);
+    const icon = abilityIcon(s.icon);
+    const holder = el.classList.contains('ability-button') ? el : el.querySelector('.ab-icon');
+    if (holder && icon) {
+      if (holder === el) el.innerHTML = `<span class="ab-icon">${icon}</span><span class="ab-ult"></span>`;
+      else holder.innerHTML = icon;
+    } else if (holder && holder !== el) holder.textContent = s.label;
+  }
   const cost = el.querySelector('.ab-cost');
   if (cost) {
     const text = isUlt
@@ -63,7 +74,14 @@ function paint(el: HTMLElement, s: AbilitySlotState, state: AbilityHudState): vo
     if (cost.textContent !== text) cost.textContent = text;
   }
   if (el.classList.contains('ability-button')) {
-    const label = isUlt && s.block === null ? 'ULT!' : s.label;
-    if (el.textContent !== label) el.textContent = label;
+    if (!el.querySelector('.ab-icon')) {
+      const label = isUlt && s.block === null ? 'ULT!' : s.label;
+      if (el.textContent !== label) el.textContent = label;
+    } else if (isUlt) {
+      // Over the ultimate's icon: a small READY when the meter is full.
+      const tag = el.querySelector('.ab-ult');
+      const text = s.block === null ? 'READY' : '';
+      if (tag && tag.textContent !== text) tag.textContent = text;
+    }
   }
 }

@@ -190,6 +190,8 @@ export interface AbilityDef {
   readonly name: string;
   /** Short label for buttons and the ability bar. */
   readonly label: string;
+  /** Picture shown on the ability bar and touch buttons (src/interface/ability-icons.ts); falls back to the label. */
+  readonly icon?: string;
   readonly slot: AbilitySlot;
   /** Stamina spent on cast (the ultimate uses its meter instead). */
   readonly staminaCost: number;
