@@ -54,7 +54,8 @@ test('fighter details: stat bars fill, abilities explain themselves, Back keeps 
   await teleport.click();
   const info = details.locator('.mm-d-ab-info:visible');
   await expect(info).toHaveCount(1);
-  await expect(info).toContainText('Range');
+  await expect(info).toContainText('Retreat');
+  await expect(info).toContainText('Rush in');
   await expect(info.locator('.mm-d-how')).toContainText(
     test.info().project.name.includes('mobile') ? /^How to use: Tap/ : /^How to use: Press/,
   );

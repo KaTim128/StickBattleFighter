@@ -100,6 +100,17 @@ export class SceneAbilities implements AbilityHost {
     return null;
   }
 
+  /**
+   * The slot's key pressed again during its wind-up: switch to the double-press form (owner,
+   * 12/11/2026, Necro's Teleport). True if it switched; its own cast pose, effects and sound start.
+   */
+  switchForm(f: FighterEntity, slot: AbilitySlot): boolean {
+    const form = f.caster?.switchToDoubleTap(slot);
+    if (!form) return false;
+    this.emit({ kind: 'cast', ability: form.id, vfx: form.vfx, sfx: form.sfx.cast, x: f.x, y: f.y });
+    return true;
+  }
+
   /** Advance a fighter's cast; start the delivery at the release event. */
   stepCaster(f: FighterEntity, stepS: number): void {
     const caster = f.caster;

@@ -74,7 +74,11 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
     out.push({ label: 'Summons', value: `${d.count} ${d.character.replace(/-/g, ' ')}s` });
     out.push({ label: 'Lasts', value: d.lifeS === null ? 'until destroyed' : `${s1(d.lifeS)} s` });
   }
-  if (d.type === 'teleport') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
+  if (d.type === 'teleport' && d.retreatM !== undefined) {
+    out.push({ label: 'Retreat', value: `${s1(d.retreatM)} m away from the opponent` });
+    const rush = a.doubleTap?.delivery;
+    if (rush?.type === 'teleport') out.push({ label: 'Rush in', value: `up to ${s1(rush.maxRangeM)} m` });
+  } else if (d.type === 'teleport') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
   else if (d.type === 'leap') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
   else if (d.type === 'beam') out.push({ label: 'Range', value: `${s1(d.rangeM)} m` });
   else if (d.type === 'projectile') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
@@ -98,6 +102,8 @@ function howTo(a: AbilityDef, device: Device, keys: Bindings): string {
     const ready = a.slot === 'ult' ? ' once it reads READY' : '';
     if (d.type === 'teleport' && d.behindTargetM !== undefined)
       return `Tap ${button}: he appears behind the nearest enemy in range.`;
+    if (d.type === 'teleport' && d.retreatM !== undefined && a.doubleTap)
+      return `Tap ${button} once to teleport away from the opponent. Double-tap it quickly to teleport right in front of them.`;
     if (d.type === 'teleport')
       return `Tap ${button} to start aiming, move the marker with the joystick, then tap ${button} again to teleport there. Tap ✕ to cancel.`;
     if (d.type === 'leap')
@@ -112,6 +118,8 @@ function howTo(a: AbilityDef, device: Device, keys: Bindings): string {
   const ready = a.slot === 'ult' ? ' when the ultimate meter is full' : '';
   if (d.type === 'teleport' && d.behindTargetM !== undefined)
     return `Press ${key}: he appears behind the nearest enemy in range.`;
+  if (d.type === 'teleport' && d.retreatM !== undefined && a.doubleTap)
+    return `Press ${key} once to teleport away from the opponent. Double-press ${key} quickly to teleport right in front of them.`;
   if (d.type === 'teleport')
     return `Press ${key} to start aiming, move the marker with ${move}, then press ${key} again to teleport there. Esc cancels.`;
   if (d.type === 'leap')

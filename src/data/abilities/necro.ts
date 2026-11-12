@@ -2,14 +2,16 @@ import type { AbilityKit } from '../../abilities/ability-def';
 
 /**
  * Necro's kit (owner, 12/11/2026): a hooded death mage. Q Soul Drain (blinds), E Death Eruption,
- * R Teleport (replaced Undead Army) and the ultimate Undead Army (4 skeletons near the enemy that
- * stay until killed; replaced Death's Dominion, SUP-19). His magic is in the violet of drawn souls and the
+ * F Teleport (one press away from the opponent, two presses in close, SUP-24) and the ultimate Undead
+ * Army (4 skeletons near the enemy for 10 s; replaced Death's Dominion, SUP-19/SUP-24). His magic is in the violet of drawn souls and the
  * bone-white of the dead (Magic Attack VFX Standard: each fighter in his own colours). All his magic
  * glows in the violet soul palette (the bone spikes and skeletons are drawn in bone by their own art),
  * and the energy gathering round him is subtle so it never hides him (CHARACTER_STYLE_QA S7). All numbers
  * PROVISIONAL (OQ-05).
  */
 const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff } as const;
+/** The aggressive Teleport's colours: the same soul violet run hot into crimson. */
+const STRIKE = { deep: 0x3a0a24, hot: 0xb0205a, bright: 0xff4f9a, core: 0xffe2f0 } as const;
 
 export const NECRO_KIT: AbilityKit = {
   comboIcon: 'staff-swing',
@@ -79,29 +81,55 @@ export const NECRO_KIT: AbilityKit = {
       hitFlash: 0xd9c8ff,
     },
   },
-  // A3: Teleport (owner, 12/11/2026, replacing Undead Army). He dissolves into violet smoke and
-  // reforms at the chosen spot (desktop: R, then left click; touch: R, then tap the spot).
+  // A3: Teleport (owner, 12/11/2026, SUP-24: no longer aimed). One press: he sinks into violet
+  // smoke and reforms 7 m away from the opponent to make distance (turned aside from walls). Press
+  // again during that 0.3 s wind-up for the aggressive form: a quick crimson rush that reforms him
+  // just in front of the opponent. Never inside walls, furniture or outside the arena.
   a3: {
     id: 'teleport',
     name: 'Teleport',
     label: 'BLINK',
     icon: 'teleport',
-    description: 'Dissolves into violet smoke and reforms at the chosen spot, up to 9 metres away, even past walls.',
+    description:
+      'Press once to dissolve into violet smoke and reform away from the opponent. Press twice quickly to rush in through crimson shadow and reform right in front of them.',
     slot: 'a3',
     staminaCost: 30,
     cooldownS: 7,
-    castS: 0.25,
+    castS: 0.3,
     recoveryS: 0.2,
     aimRangeM: 9,
     moveFactor: 0,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'teleport', maxRangeM: 9, aimSpeedMps: 18 },
+    delivery: { type: 'teleport', maxRangeM: 9, retreatM: 7 },
     vfx: 'teleport',
     sfx: { cast: 'soul-gather', release: 'teleport-out', impact: 'teleport-in' },
     look: {
       palette: SOUL,
       impact: { flashM: 0.7, sparks: 14, motes: 30, ringM: 1.1, smoke: 8, groundFire: false, smokeColour: 0x2e2438 },
+    },
+    // Double press: Shadow Step in. Quicker (0.12 s), and a second longer to come back.
+    doubleTap: {
+      id: 'teleportStrike',
+      name: 'Teleport (rush in)',
+      label: 'BLINK',
+      icon: 'teleport',
+      slot: 'a3',
+      staminaCost: 30,
+      cooldownS: 8,
+      castS: 0.12,
+      recoveryS: 0.25,
+      aimRangeM: 12,
+      moveFactor: 0,
+      interruptible: true,
+      payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+      delivery: { type: 'teleport', maxRangeM: 12, approachGapM: 0.9 },
+      vfx: 'teleport-strike',
+      sfx: { cast: 'blink-rush', release: 'blink-tear', impact: 'blink-arrive' },
+      look: {
+        palette: STRIKE,
+        impact: { flashM: 0.9, sparks: 22, motes: 18, ringM: 1.5, smoke: 4, groundFire: false, smokeColour: 0x3a1024 },
+      },
     },
   },
   // A4 (R): Grave Chains (owner, 12/11/2026). He thrusts the staff forward and spectral chains lash
@@ -143,14 +171,14 @@ export const NECRO_KIT: AbilityKit = {
   },
   // ULTIMATE: Undead Army (owner, 12/11/2026, replacing Death's Dominion). He rises off the ground
   // with his free arm raised and four skeleton warriors claw up at random spots around the enemy.
-  // They fight until they are destroyed: no timer, and they stay even if he falls.
+  // They fight for 10 s (owner, SUP-24: the timer is back), then crumble; they also fall with him.
   ult: {
     id: 'undeadArmy',
     name: 'Undead Army',
     label: 'ULT',
     icon: 'undead-army',
     description:
-      'Four skeleton warriors claw out of the ground around the enemy and fight for Necro until they are destroyed.',
+      'Four skeleton warriors claw out of the ground around the enemy and fight for Necro for 10 seconds, then crumble.',
     slot: 'ult',
     staminaCost: 0,
     cooldownS: 1,
@@ -164,10 +192,10 @@ export const NECRO_KIT: AbilityKit = {
       type: 'summon',
       character: 'skeleton-warrior',
       count: 4,
-      lifeS: null,
+      // Owner, 12/11/2026 (SUP-24): the skeletons are on a timer again, as Undead Army first was.
+      lifeS: 10,
       maxAlive: 8,
       near: 'enemy',
-      persistent: true,
     },
     vfx: 'undead-army',
     sfx: { cast: 'dominion-rise', release: 'grave-call', impact: 'summon-rise' },

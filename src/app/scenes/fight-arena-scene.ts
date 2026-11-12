@@ -820,7 +820,10 @@ export class FightArenaScene implements ArenaScene {
     }
 
     // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
-    const slot = this.intents.consumeAbility();
+    const abilityKey = this.intents.consumeAbility();
+    // The same key again during the wind-up switches to the ability's double-press form (Necro's
+    // Teleport); that press does nothing else.
+    const slot = abilityKey && this.abilities?.switchForm(f, abilityKey) ? null : abilityKey;
     if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
     else if (slot && this.needsPointAim(f, slot)) this.beginPointAim(f, slot);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
@@ -1175,10 +1178,15 @@ export class FightArenaScene implements ArenaScene {
     this.pointAim = { slot, spot: this.clampToReach(f, slot, this.insideMap(start)) };
   }
 
-  /** A teleport the player aims (not one that picks its own spot, like "Behind You"). */
+  /** A teleport the player aims (not one that picks its own spot, like "Behind You" or Necro's blinks). */
   private needsPointAim(f: FighterEntity, slot: AbilitySlot): boolean {
     const d = f.caster?.def(slot).delivery;
-    return d?.type === 'teleport' && d.behindTargetM === undefined;
+    return (
+      d?.type === 'teleport' &&
+      d.behindTargetM === undefined &&
+      d.retreatM === undefined &&
+      d.approachGapM === undefined
+    );
   }
 
   /** How fast WASD or the joystick moves this ability's target (per ability data, owner 12/11/2026). */
@@ -1278,8 +1286,14 @@ export class FightArenaScene implements ArenaScene {
     const physics = this.physics;
     if (!physics) return null;
     const r = f.def.body.footRadiusM;
+    const edge = r + 0.05;
     const inside = (p: { x: number; y: number }) =>
-      p.x > r + 0.05 && p.y > r + 0.05 && p.x < this.arena.widthM - r - 0.05 && p.y < this.arena.heightM - r - 0.05;
+      p.x > edge && p.y > edge && p.x < this.arena.widthM - edge && p.y < this.arena.heightM - edge;
+    // Never past the arena's edge: the search starts from the nearest spot inside it.
+    to = {
+      x: Math.min(this.arena.widthM - edge - 0.01, Math.max(edge + 0.01, to.x)),
+      y: Math.min(this.arena.heightM - edge - 0.01, Math.max(edge + 0.01, to.y)),
+    };
     for (const ring of [0, 0.35, 0.7, 1.05, 1.4]) {
       const steps = ring === 0 ? 1 : 12;
       for (let k = 0; k < steps; k++) {
@@ -2381,6 +2395,10 @@ export class FightArenaScene implements ArenaScene {
     }
     const cast = f.caster?.cast;
     if (cast && f.caster) {
+      // A form switched mid wind-up (Necro's double-press Teleport) carries on from where the
+      // first wind-up had got to, so the body never snaps back to the stance.
+      const from = cast.phase === 'windup' ? cast.from : undefined;
+      if (from) pose = abilityPose(pose, from.id, 'windup', from.progress, false);
       pose = abilityPose(
         pose,
         cast.def.id,

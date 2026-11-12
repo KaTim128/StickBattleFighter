@@ -163,6 +163,16 @@ export interface TeleportDelivery {
    * side, facing it (Shroud's "Behind You"). Nobody in range: it fizzles.
    */
   readonly behindTargetM?: number;
+  /**
+   * Not aimed: the caster blinks this far away from the nearest enemy to make distance, turning
+   * aside from walls in the way (Necro's single press, owner 12/11/2026).
+   */
+  readonly retreatM?: number;
+  /**
+   * Not aimed: the caster blinks in toward the nearest enemy (up to `maxRangeM`) and reappears this
+   * far in front of it, facing it (Necro's double press, owner 12/11/2026).
+   */
+  readonly approachGapM?: number;
 }
 
 export interface SummonDelivery extends SummonSpec {
@@ -349,6 +359,12 @@ export interface AbilityDef {
   readonly sfx: { readonly cast: string; readonly release: string; readonly impact: string };
   /** The ability's look under the Magic Attack VFX Standard (optional: older looks fall back to defaults). */
   readonly look?: MagicLook;
+  /**
+   * A second form of the same slot (owner, 12/11/2026: Necro's Teleport). Pressing the key again
+   * during this ability's wind-up switches to it: the stamina already paid covers it, its own
+   * wind-up starts, and the slot's cooldown becomes its cooldown. It has no second form itself.
+   */
+  readonly doubleTap?: AbilityDef;
 }
 
 /** How the ultimate meter fills (OQ-04 answered by the owner 11/11/2026: a charge meter). */

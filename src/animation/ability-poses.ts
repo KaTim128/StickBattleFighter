@@ -164,6 +164,28 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(0), head: deg(-2), armFront: limb(20, 30), armBack: limb(30, 40) },
     settle: 0.6,
   },
+  // Teleport, double press (rush in): no calm here. He pitches forward over the staff, which he
+  // levels like a spear, the free arm swept back, weight on the front foot; he reappears still
+  // lunging and straightens as he lands in front of the enemy.
+  teleportStrike: {
+    windup: {
+      lean: deg(-26),
+      head: deg(8),
+      armFront: limb(100, 10),
+      armBack: limb(-50, 30),
+      legFront: limb(30, -30),
+      legBack: limb(-30, -6),
+    },
+    release: {
+      lean: deg(-18),
+      head: deg(4),
+      armFront: limb(90, 6),
+      armBack: limb(-40, 40),
+      legFront: limb(36, -36),
+      legBack: limb(-24, -10),
+    },
+    settle: 0.55,
+  },
   // Shroud (owner, 12/11/2026): every cast stays hunched. Thrown Blade: the knife hand drawn back
   // past the ear, then flicked out flat and fast.
   thrownBlade: {

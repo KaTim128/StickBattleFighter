@@ -19,10 +19,10 @@ const C = Math.SQRT1_2;
 const screenX = (p: { x: number; y: number }) => (p.x - p.y) * C;
 const screenY = (p: { x: number; y: number }) => (p.x + p.y) * C * 0.5;
 
-async function open(page: Page, errors: string[]) {
+async function open(page: Page, errors: string[], query = '') {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-  await page.goto('/?scene=training-yard');
+  await page.goto(`/?scene=training-yard${query}`);
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   expect(await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.scene)).toBe('training-yard');
 }
@@ -32,7 +32,9 @@ test('keyboard moves the stickman front/back/left/right, it jumps, and the camer
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop keyboard test');
   const errors: string[] = [];
-  await open(page, errors);
+  // The dummy stands out of lock-on range (14 m, REQ-CTL-22): with an opponent in sight the
+  // stickman keeps facing it, and this test checks that free movement turns it to walk.
+  await open(page, errors, '&dummyAt=1,1');
   await expect(page.locator('.touch-controls')).toBeHidden(); // REQ-CTL-2
 
   const start = await player(page);

@@ -404,6 +404,19 @@ export class AbilityVfx {
       });
       return;
     }
+    if (fx.kind === 'release' && fx.vfx === 'teleport-strike' && fx.look) {
+      // Teleport rush in (owner, 12/11/2026): the opposite of the retreat's soft inward collapse.
+      // He tears out of the world: a hot crimson flash at chest height, shards flung wide and fast,
+      // and two rings snapping outward on the floor.
+      this.emitAt(fx.x, fx.y, 1.0, 18, 4.2, 0.28, 0.09, fx.look.palette);
+      this.emitAt(fx.x, fx.y, 0.3, 10, 2.6, 0.22, 0.12, fx.look.palette);
+      for (const [r0, r1, lifeS] of [
+        [0.15, 1.3, 0.22],
+        [0.1, 0.8, 0.3],
+      ] as const)
+        this.rings.push({ colour: fx.look.palette.bright, x: fx.x, y: fx.y, z: 0, r0, r1, ageS: 0, lifeS });
+      return;
+    }
     switch (fx.kind) {
       case 'release':
         // A small puff where the hand was, in the ability's own colours (never fire for others).

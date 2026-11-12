@@ -330,6 +330,20 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 90, f1: 60, dur: 0.18, gain: 0.5 } },
     { noise: { dur: 0.35, gain: 0.3, type: 'bandpass', freq: 500, freqEnd: 1800, q: 2.5, attack: 0.12 } },
   ],
+  // Teleport rush in (double press): a sharp intake that snaps tight, harder and quicker than the
+  // retreat's soft breath; a ripping tear as he goes; a hard crack as he lands in someone's face.
+  'blink-rush': [
+    { noise: { dur: 0.14, gain: 0.45, type: 'bandpass', freq: 900, freqEnd: 3200, q: 3, attack: 0.08 } },
+    { tone: { wave: 'sawtooth', f0: 110, f1: 220, dur: 0.14, gain: 0.12, attack: 0.06, drive: 0.4 } },
+  ],
+  'blink-tear': [
+    { noise: { dur: 0.16, gain: 0.55, type: 'highpass', freq: 1800, freqEnd: 600, q: 1.5, attack: 0.005 } },
+    { tone: { wave: 'square', f0: 300, f1: 90, dur: 0.12, gain: 0.1 } },
+  ],
+  'blink-arrive': [
+    { tone: { wave: 'sine', f0: 140, f1: 50, dur: 0.16, gain: 0.6, drive: 0.3 } },
+    { noise: { dur: 0.12, gain: 0.45, type: 'bandpass', freq: 2600, freqEnd: 1200, q: 2, attack: 0.003 } },
+  ],
   // Ground Smash: a deep thud through the floor, rubble rattling down after it.
   'ground-smash': [
     { tone: { wave: 'sine', f0: 70, f1: 28, dur: 0.55, gain: 1, drive: 0.3 } },

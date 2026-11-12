@@ -61,7 +61,8 @@ test('the dodge (L) always goes straight back from the facing, even with a movem
   page,
 }) => {
   const errors: string[] = [];
-  await open(page, errors, 'scene=training-yard&playerAt=10,10');
+  // The dummy out of lock-on range (REQ-CTL-22), so the walk alone sets the facing.
+  await open(page, errors, 'scene=training-yard&playerAt=10,10&dummyAt=29,19');
   const screenX = (s: { x: number; y: number }) => s.x - s.y; // iso: right on screen is +(x − y)
   // Walk right a moment so the fighter faces right, then stop.
   await page.keyboard.down('KeyD');

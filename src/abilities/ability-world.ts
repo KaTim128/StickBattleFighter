@@ -212,6 +212,11 @@ const MUZZLE_M = 0.5;
 /** A beam pours from just in front of the caster's hands. */
 const BEAM_MUZZLE_M = 0.45;
 
+/** Turns tried, in order, when a retreating blink meets a wall (straight away first). */
+const RETREAT_TURNS_DEG = [0, 30, -30, 60, -60, 90, -90, 120, -120] as const;
+/** How far short of a wall a blink stops, metres. */
+const WALL_CLEARANCE_M = 0.5;
+
 const norm = (v: Vec2): Vec2 => {
   const l = Math.hypot(v.x, v.y);
   return l > 1e-6 ? { x: v.x / l, y: v.y / l } : { x: 1, y: 0 };
@@ -334,18 +339,28 @@ export class AbilityWorld {
         // Vanish here, reappear there (within range); the host finds a free spot to stand on.
         let to: Vec2;
         let face: Vec2 | null = null;
-        if (d.behindTargetM !== undefined) {
-          // Behind the nearest enemy in range, on its far side (Shroud's "Behind You").
-          let best: AbilityTarget | null = null;
-          let bestD = d.maxRangeM;
-          for (const f of host.fighters()) {
-            if (this.friendly(f, casterId, host) || !f.hittable) continue;
-            const dd = Math.hypot(f.x - at.x, f.y - at.y);
-            if (dd <= bestD) {
-              best = f;
-              bestD = dd;
-            }
+        if (d.retreatM !== undefined) {
+          // Away from the nearest enemy (Necro's single press): straight away if the way is clear,
+          // otherwise turned aside from the wall, whichever spot ends furthest from the enemy.
+          const foe = this.nearestEnemy(casterId, at, Number.POSITIVE_INFINITY, host);
+          const away = foe ? norm({ x: at.x - foe.x, y: at.y - foe.y }) : { x: -dir.x, y: -dir.y };
+          to = this.retreatSpot(at, away, d.retreatM, foe, host);
+          if (foe) face = norm({ x: foe.x - to.x, y: foe.y - to.y });
+        } else if (d.approachGapM !== undefined) {
+          // In close to the nearest enemy (Necro's double press), stopping just in front of it.
+          const foe = this.nearestEnemy(casterId, at, Number.POSITIVE_INFINITY, host);
+          if (!foe) {
+            host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+            break;
           }
+          const toward = norm({ x: foe.x - at.x, y: foe.y - at.y });
+          const gap = Math.hypot(foe.x - at.x, foe.y - at.y) - foe.radiusM - d.approachGapM;
+          const travel = Math.min(d.maxRangeM, Math.max(0, gap));
+          to = { x: at.x + toward.x * travel, y: at.y + toward.y * travel };
+          face = toward;
+        } else if (d.behindTargetM !== undefined) {
+          // Behind the nearest enemy in range, on its far side (Shroud's "Behind You").
+          const best = this.nearestEnemy(casterId, at, d.maxRangeM, host);
           if (!best) {
             host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
             break;
@@ -360,6 +375,8 @@ export class AbilityWorld {
         }
         const landed = host.teleport?.(casterId, to) ?? null;
         if (landed && face) host.face?.(casterId, face);
+        if (!landed)
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
         if (landed)
           host.emit({
             kind: 'impact',
@@ -686,6 +703,48 @@ export class AbilityWorld {
       // The end of the beam scorches whatever stopped it (sets furniture alight, chips doors and walls).
       host.hitEnvironment(b.casterId, b.to, 0.3, b.def.payload, b.dir, true);
     }
+  }
+
+  /** The nearest hittable enemy of the caster within `rangeM` of `at`, or null. */
+  private nearestEnemy(casterId: string, at: Vec2, rangeM: number, host: AbilityHost): AbilityTarget | null {
+    let best: AbilityTarget | null = null;
+    let bestD = rangeM;
+    for (const f of host.fighters()) {
+      if (this.friendly(f, casterId, host) || !f.hittable) continue;
+      const dd = Math.hypot(f.x - at.x, f.y - at.y);
+      if (dd <= bestD) {
+        best = f;
+        bestD = dd;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Where a retreating blink lands: up to `distM` along `away`, or turned up to 120° aside when a
+   * wall is in the way (short of the wall, never through it), keeping the spot that ends furthest
+   * from the enemy. Straight away wins ties, so open floor always gives the plain retreat.
+   */
+  private retreatSpot(at: Vec2, away: Vec2, distM: number, foe: AbilityTarget | null, host: AbilityHost): Vec2 {
+    let best = at;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    for (const deg of RETREAT_TURNS_DEG) {
+      const a = (deg * Math.PI) / 180;
+      const u = {
+        x: away.x * Math.cos(a) - away.y * Math.sin(a),
+        y: away.x * Math.sin(a) + away.y * Math.cos(a),
+      };
+      const block = host.blocked(at, { x: at.x + u.x * distM, y: at.y + u.y * distM });
+      const reach = block === null ? distM : Math.max(0, distM * block - WALL_CLEARANCE_M);
+      const p = { x: at.x + u.x * reach, y: at.y + u.y * reach };
+      // Without an enemy, simply the longest clear blink.
+      const score = foe ? Math.hypot(p.x - foe.x, p.y - foe.y) : reach;
+      if (score > bestScore + 0.3) {
+        best = p;
+        bestScore = score;
+      }
+    }
+    return best;
   }
 
   /** The caster itself, or a fighter on its team (its summons, its summoner): never hit. */
