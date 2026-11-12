@@ -97,6 +97,9 @@ export class FighterEntity {
   wallSlammed = false;
   /** The object carried overhead (Phase 7), and how long the interact button has been held. */
   carrying: ArenaProp | null = null;
+  /** Lifting what it just grabbed (owner, 12/11/2026): time left, and the whole lift's length. */
+  liftS = 0;
+  liftTotalS = 0;
   /** Presentation: how far into the arms-up carry pose (0..1), and time left in a throw follow-through. */
   carryWeight = 0;
   throwFollowS = 0;
@@ -175,6 +178,7 @@ export class FighterEntity {
       this.def.effects.body === 'flame' && !this.def.capabilities.usesFireEffects
         ? 'solid'
         : (this.def.effects.body ?? 'solid'),
+      this.def.sizeScale ?? 1,
     );
     actors.add(this.view.root, 0);
     this.bars = new FighterBars(this.showStamina);

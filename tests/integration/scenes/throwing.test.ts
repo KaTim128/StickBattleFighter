@@ -52,7 +52,12 @@ async function setup(arena: ArenaLayout = ROOM, player = 'base-stickman') {
     run(STEP * 2);
   };
   const chair = () => scene.propStates.find((p) => p.kind === 'office-chair')!;
-  return { intents, scene, scenes, run, runUntil, tap, chair };
+  /** Grab it, then wait while it is heaved up overhead (heavier takes longer, owner 12/11/2026). */
+  const pickUp = () => {
+    tap();
+    runUntil(() => !scene.player.lifting, 2);
+  };
+  return { intents, scene, scenes, run, runUntil, tap, pickUp, chair };
 }
 
 describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
@@ -90,9 +95,9 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
   });
 
   it('a short press throws it at the target: it flies, hits and hurts the dummy, then lands and is furniture again', async () => {
-    const { scene, scenes, run, runUntil, tap, chair } = await setup();
+    const { scene, scenes, run, runUntil, tap, pickUp, chair } = await setup();
     run(0.1);
-    tap(); // pick up
+    pickUp();
     tap(); // throw
     expect(scene.player.carrying).toBeNull();
     runUntil(() => scene.dummy.hp < 1000, 2);
@@ -105,9 +110,9 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
   });
 
   it('holding the button while carrying puts the object down instead of throwing it', async () => {
-    const { intents, scene, scenes, run, tap, chair } = await setup();
+    const { intents, scene, scenes, run, pickUp, chair } = await setup();
     run(0.1);
-    tap();
+    pickUp();
     intents.interactPress();
     run(THROWING.dropHoldS + 0.1);
     expect(scene.player.carrying).toBeNull();
@@ -138,6 +143,32 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
     intents.setMove('t', { x: 0, y: 0 });
     run(3);
     expect(scene.propStates.find((p) => p.kind === 'computer')!.broken).toBe(true);
+    scenes.clear();
+  });
+
+  it('heavier objects take longer to lift (owner, 12/11/2026): rooted while heaving it up, no throw until it is overhead', async () => {
+    expect(THROWING.liftTimeFor(0.3)).toBe(0); // a mug comes up at once
+    expect(THROWING.liftTimeFor(12)).toBeLessThan(THROWING.liftTimeFor(40));
+    expect(THROWING.liftTimeFor(40)).toBeLessThan(THROWING.liftTimeFor(60));
+    const { intents, scene, scenes, run, tap } = await setup();
+    run(0.1);
+    tap();
+    expect(scene.player.carrying).toBe('office-chair');
+    expect(scene.player.lifting).toBe(true);
+    const x0 = scene.player.x;
+    intents.setMove('t', { x: 0, y: 1 });
+    run(0.1);
+    expect(Math.abs(scene.player.x - x0) + Math.abs(scene.player.y - 4)).toBeLessThan(0.02); // rooted
+    tap(); // a press while lifting does not throw
+    expect(scene.player.carrying).toBe('office-chair');
+    intents.setMove('t', { x: 0, y: 0 });
+    let liftedAfterS = 0.17 + STEP * 2; // time already spent lifting above: the taps and the 0.1 s rooted check
+    while (scene.player.lifting && liftedAfterS < 2) {
+      run(STEP);
+      liftedAfterS += STEP;
+    }
+    expect(scene.player.lifting).toBe(false);
+    expect(liftedAfterS).toBeGreaterThan(THROWING.liftTimeFor(12) - 0.1);
     scenes.clear();
   });
 
@@ -177,9 +208,9 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
   });
 
   it("Inferno's throws catch fire: the chair hits the dummy and sets it alight", async () => {
-    const { scene, scenes, run, runUntil, tap } = await setup(ROOM, 'inferno');
+    const { scene, scenes, run, runUntil, tap, pickUp } = await setup(ROOM, 'inferno');
     run(0.1);
-    tap();
+    pickUp();
     tap();
     runUntil(() => scene.dummy.hp < 1000, 2);
     expect(scene.dummy.hp).toBeLessThan(1000);
@@ -188,13 +219,13 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
   });
 
   it('a fire extinguisher bursts into foam when it breaks', async () => {
-    const { scene, scenes, run, tap, runUntil } = await setup({
+    const { scene, scenes, run, tap, pickUp, runUntil } = await setup({
       ...ROOM,
       props: [{ kind: 'fire-extinguisher', x: 4.0, y: 4 }],
       dummyStart: { x: 1, y: 1 },
     });
     run(0.1);
-    tap(); // pick it up
+    pickUp(); // pick it up
     expect(scene.player.carrying).toBe('fire-extinguisher');
     scene.drainSounds();
     tap(); // throw it into the far wall (it is metal: it may need more than one landing)

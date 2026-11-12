@@ -30,6 +30,8 @@ export interface FighterDef {
   readonly movement: MovementTuning & HopTuning;
   readonly body: { readonly footRadiusM: number; readonly massKg: number };
   readonly bones: BoneLengths;
+  /** Drawn size relative to a standard fighter (1 when absent). */
+  readonly sizeScale?: number;
   readonly look: {
     readonly limb: number;
     readonly limbBack: number;

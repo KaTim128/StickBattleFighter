@@ -75,6 +75,28 @@ describe('beam delivery', () => {
     expect(w.beams).toHaveLength(0);
   });
 
+  it('steers (owner, 12/11/2026): turns toward where the caster steers it, no faster than its turn rate, and the caster turns with it', () => {
+    const { h } = host(3, null);
+    const d = INFERNO_KIT.a3.delivery;
+    if (d.type !== 'beam' || !d.turnRadPerS) throw new Error('Fire Beam steers');
+    let want: Vec2 | null = { x: 0, y: 1 }; // steer straight "down" (a quarter turn)
+    const faced: Vec2[] = [];
+    const steering: AbilityHost = { ...h, steer: () => want, face: (_id, dir) => faced.push({ ...dir }) };
+    const w = new AbilityWorld();
+    w.release('me', INFERNO_KIT.a3, { x: 5, y: 0 }, steering);
+    for (let i = 0; i < 6; i++) w.update(1 / 60, steering);
+    const turned = Math.atan2(w.beams[0]!.dir.y, w.beams[0]!.dir.x);
+    expect(turned).toBeGreaterThan(0); // turning toward the steer
+    expect(turned).toBeLessThanOrEqual(d.turnRadPerS * (6 / 60) + 1e-6); // but not snapping
+    for (let i = 0; i < 40; i++) w.update(1 / 60, steering);
+    expect(w.beams[0]!.dir.y).toBeCloseTo(1, 3); // got there
+    expect(w.beams[0]!.to.y).toBeGreaterThan(5); // the beam itself now pours that way
+    expect(faced.at(-1)!.y).toBeCloseTo(1, 3); // the caster faces along it
+    want = null; // let go: it holds where it is
+    w.update(1 / 60, steering);
+    expect(w.beams[0]!.dir.y).toBeCloseTo(1, 3);
+  });
+
   it('is stopped by a wall: nobody behind it is hit', () => {
     const { h, hits } = host(4, 2);
     const w = new AbilityWorld();

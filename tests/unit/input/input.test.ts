@@ -114,3 +114,29 @@ describe('ability buttons (Buttons 2–5)', () => {
     expect([intents.consumeAbility(), intents.consumeAbility()]).toEqual(['a3', 'ult']);
   });
 });
+
+describe('swipe to steer (owner, 12/11/2026: swipe on the empty space to steer the Fire Beam)', () => {
+  it('ignores a resting finger, then reports the way the finger moves; turning the swipe turns it at once', async () => {
+    const { SwipeTracker } = await import('../../../src/input/touch-controls');
+    const s = new SwipeTracker(12, 40);
+    s.start(100, 100);
+    expect(s.move(105, 103)).toBeNull(); // within the dead zone
+    const right = s.move(160, 100)!;
+    expect(right.x).toBeCloseTo(1, 6);
+    // Now swipe down: the anchor trails at most 40 px behind, so the direction swings quickly.
+    const down = s.move(160, 180)!;
+    expect(down.y).toBeGreaterThan(0.85); // mostly down after one 80 px stroke (anchor was 40 px behind)
+    expect(s.move(160, 260)!.y).toBeGreaterThan(0.98); // and nearly straight down as the swipe continues
+    s.end();
+    expect(s.move(200, 200)).toBeNull();
+  });
+
+  it('becomes a world direction in the intents, and clears when the finger lifts', () => {
+    const intents = new PlayerIntents();
+    intents.screenToWorld = (v) => ({ x: v.y, y: -v.x });
+    intents.setSwipeFromScreen({ x: 3, y: 0 });
+    expect(intents.swipe).toEqual({ x: 0, y: -1 });
+    intents.setSwipeFromScreen(null);
+    expect(intents.swipe).toBeNull();
+  });
+});

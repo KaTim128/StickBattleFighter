@@ -85,6 +85,7 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
   // ---- rig
   if (!def.rig?.bones) errors.push('rig.bones are missing.');
   else for (const [k, v] of Object.entries(def.rig.bones)) num(`rig.bones.${k}`, v, 'boneM');
+  if (def.rig?.scale !== undefined) num('rig.scale', def.rig.scale, 'sizeScale');
   hex('rig.colour', def.rig?.colour);
   hex('rig.colourBack', def.rig?.colourBack);
   hex('rig.outline', def.rig?.outline);

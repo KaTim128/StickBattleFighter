@@ -29,6 +29,16 @@ export const THROWING = {
   },
   /** Heavy objects count as heavy blows (knock down). */
   heavyFromKg: 8,
+  /**
+   * Lifting takes longer the heavier it is (owner, 12/11/2026): light things come up at once, a
+   * chair in about a third of a second, a desk in most of a second, a filing cabinet in over one.
+   * The fighter stands still while lifting, and a hit makes them drop it. Seconds.
+   */
+  liftTimeFor(massKg: number): number {
+    return massKg < 2 ? 0 : Math.min(1.5, 0.05 + massKg * 0.02);
+  },
+  /** While lifting, the object starts from about this height (in the hands, low). */
+  liftStartHeightM: 0.45,
   /** Walking while carrying: heavier is slower. */
   carrySpeedFactor(massKg: number): number {
     return Math.min(1, Math.max(0.6, 1 - massKg / 40));

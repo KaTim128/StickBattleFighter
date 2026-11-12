@@ -118,6 +118,12 @@ export interface BeamDelivery {
   readonly widthM: number;
   readonly durationS: number;
   readonly tickS: number;
+  /**
+   * Steering (owner, 12/11/2026): while the beam pours, it turns toward where the caster
+   * steers it (the mouse on desktop, a swipe on touch) at up to this rate, radians per second.
+   * Absent or 0 = it fires straight ahead.
+   */
+  readonly turnRadPerS?: number;
 }
 
 /** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */

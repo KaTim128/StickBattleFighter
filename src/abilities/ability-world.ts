@@ -64,6 +64,13 @@ export interface AbilityHost {
   drive(casterId: string, velocity: Vec2 | null, heightM: number): void;
   /** Set fighters standing in a fire trail alight. */
   burnFighter(targetId: string, burn: Burn): void;
+  /**
+   * Where a caster is steering its beam: a world direction, or null to hold it. `fresh` = the
+   * beam has just started (the host can ignore a stale mouse position). Optional.
+   */
+  steer?(casterId: string, fresh: boolean): Vec2 | null;
+  /** Turn a caster to face a direction (it follows its steered beam). Optional. */
+  face?(casterId: string, dir: Vec2): void;
   /** Start (or end, null) a timed self-buff on a caster. */
   buff(casterId: string, buff: { speedFactor: number; damageTakenFactor: number; durationS: number } | null): void;
   emit(fx: AbilityFx): void;
@@ -84,7 +91,8 @@ export interface Projectile {
 export interface Beam {
   readonly casterId: string;
   readonly def: AbilityDef;
-  readonly dir: Vec2;
+  /** Where it points (turns while steered). */
+  dir: Vec2;
   ageS: number;
   /** Time since the last damage tick. */
   sinceTickS: number;
@@ -440,6 +448,19 @@ export class AbilityWorld {
     b.to = { x: from.x + b.dir.x * reach, y: from.y + b.dir.y * reach };
   }
 
+  /** Turn a beam toward where its caster steers it, no faster than its turn rate; the caster turns with it. */
+  private steerBeam(b: Beam, turnRadPerS: number, dtS: number, host: AbilityHost): void {
+    const want = host.steer?.(b.casterId, b.ageS <= dtS);
+    if (want && Math.hypot(want.x, want.y) > 1e-6) {
+      const now = Math.atan2(b.dir.y, b.dir.x);
+      let delta = Math.atan2(want.y, want.x) - now;
+      delta = Math.atan2(Math.sin(delta), Math.cos(delta)); // shortest way round
+      const step = Math.max(-turnRadPerS * dtS, Math.min(turnRadPerS * dtS, delta));
+      b.dir = { x: Math.cos(now + step), y: Math.sin(now + step) };
+    }
+    host.face?.(b.casterId, b.dir);
+  }
+
   private updateBeams(dtS: number, host: AbilityHost): void {
     for (let i = this.beams.length - 1; i >= 0; i--) {
       const b = this.beams[i]!;
@@ -459,6 +480,7 @@ export class AbilityWorld {
         });
         continue;
       }
+      if (d.turnRadPerS) this.steerBeam(b, d.turnRadPerS, dtS, host);
       this.aimBeam(b, host);
       b.sinceTickS += dtS;
       if (b.sinceTickS < d.tickS) continue;

@@ -148,6 +148,19 @@ export class PlayerIntents {
     return queued;
   }
 
+  // ---- Swipe on the empty part of the screen (touch, owner 12/11/2026): steers a beam. The
+  // direction the finger is moving, as a world direction, or null with no swipe.
+  private swipeValue: Vec2 | null = null;
+
+  setSwipeFromScreen(v: Vec2 | null): void {
+    const len = v ? Math.hypot(v.x, v.y) : 0;
+    this.swipeValue = v && len > 0 ? this.screenToWorld({ x: v.x / len, y: v.y / len }) : null;
+  }
+
+  get swipe(): Vec2 | null {
+    return this.swipeValue;
+  }
+
   // ---- Mouse pointer (desktop): where the cursor is over the game, in CSS pixels of the game
   // area. `pointerMoves` counts moves so the game can tell a fresh hover from a stale one.
   private pointerAt: Vec2 | null = null;

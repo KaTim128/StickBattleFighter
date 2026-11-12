@@ -74,11 +74,16 @@ export class StickmanView {
     private readonly look: StickmanLook,
     private readonly head: HeadStyle = 'round',
     private readonly bodyStyle: BodyStyle = 'solid',
+    /** Drawn size (1 = standard; Rampage is 2): the shadow, trail and figure all scale about the feet. */
+    private readonly size = 1,
   ) {
     this.root.label = 'stickman';
     this.fire.blendMode = 'add';
     this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
-    this.root.addChild(this.shadow, this.trail, this.figure);
+    const scaled = new Container();
+    scaled.scale.set(size);
+    scaled.addChild(this.shadow, this.trail, this.figure);
+    this.root.addChild(scaled);
   }
 
   /** Seconds since this view was made (render-only animation clock for the flame head). */
@@ -109,7 +114,7 @@ export class StickmanView {
     const outline = toward(this.look.outline, flashColour, flash * 0.85);
 
     // A soft contact shadow, cast a little down-right (light from the top-left), shrinking with height.
-    const shrink = 1 / (1 + heightM * 0.8);
+    const shrink = 1 / (1 + (heightM / this.size) * 0.8);
     this.shadow.clear();
     for (const [k, a] of [
       [1.25, 0.08],
@@ -147,7 +152,7 @@ export class StickmanView {
     } else {
       this.figure.x = 0;
       this.figure.pivot.set(0, 0);
-      this.figure.y = -heightM;
+      this.figure.y = -heightM / this.size; // the hop height is real metres, not scaled with the body
       // Falling backwards, away from the facing direction.
       this.figure.rotation = -facing * tiltRad;
     }
@@ -412,13 +417,20 @@ export class StickmanView {
       const [pelvis, chest, neck] = pts;
       if (!pelvis || !chest || !neck) return;
       // A broad, deep chest tapering to the waist: a wedge of hide with a lit edge.
-      seg(pelvis, chest, w * 2.2, outline, 1, 0.15, 1);
-      seg(pelvis, chest, w * 1.9, colour, 1, 0.15, 1);
-      seg(pelvis, chest, w * 0.5, lit, 0.55, 0.3, 0.95, -w * 0.55);
-      seg(pelvis, chest, w * 0.45, shade, 0.5, 0.2, 0.95, w * 0.6);
-      // Thick neck.
-      seg(chest, neck, w * 1.5, outline);
-      seg(chest, neck, w * 1.25, colour);
+      // Owner, 12/11/2026: "way buffer": a barrel chest and a hunched mound of shoulder muscle.
+      seg(pelvis, chest, w * 2.4, outline, 1, 0.05, 0.5);
+      seg(pelvis, chest, w * 3.3, outline, 1, 0.4, 1);
+      seg(pelvis, chest, w * 2.1, colour, 1, 0.05, 0.5);
+      seg(pelvis, chest, w * 3.0, colour, 1, 0.4, 1);
+      seg(pelvis, chest, w * 0.6, lit, 0.55, 0.35, 0.97, -w * 0.95);
+      seg(pelvis, chest, w * 0.55, shade, 0.5, 0.2, 0.95, w * 0.95);
+      // Pectoral line and abdominal plates.
+      seg(pelvis, chest, w * 0.16, shade, 0.7, 0.62, 0.66, 0);
+      for (const k of [0.25, 0.4]) seg(pelvis, chest, w * 0.12, shade, 0.55, k, k + 0.02, 0);
+      // Thick neck buried in a hump of trapezius muscle.
+      seg(chest, neck, w * 2.5, outline);
+      seg(chest, neck, w * 2.2, colour);
+      seg(chest, neck, w * 0.5, lit, 0.5, 0, 0.8, -w * 0.7);
       // Bronze chest strap across the torso, with rivets.
       const mx = (pelvis.x + chest.x) / 2;
       const my = (pelvis.y + chest.y) / 2;
@@ -453,12 +465,14 @@ export class StickmanView {
     if (!root || !mid || !end) return;
     const arm = part === 0 || part === 4;
     // Muscle: thick upper segment (bicep or thigh) tapering to the joint, lit on top and shaded below.
-    seg(root, mid, w * 1.55, outline, 1, 0.08, 0.78);
-    seg(root, mid, w * 1.3, colour, 1, 0.08, 0.78);
-    seg(root, mid, w * 0.35, lit, 0.6, 0.15, 0.7, -w * 0.38);
-    seg(root, mid, w * 0.35, shade, 0.55, 0.15, 0.7, w * 0.4);
-    // Lower segment lit edge.
-    seg(mid, end, w * 0.28, lit, 0.5, 0.1, 0.8, -w * 0.3);
+    seg(root, mid, w * 2.05, outline, 1, 0.08, 0.8);
+    seg(root, mid, w * 1.8, colour, 1, 0.08, 0.8);
+    seg(root, mid, w * 0.42, lit, 0.6, 0.15, 0.72, -w * 0.55);
+    seg(root, mid, w * 0.42, shade, 0.55, 0.15, 0.72, w * 0.58);
+    // Lower segment: a thick forearm or calf, bulging just below the joint.
+    seg(mid, end, w * 1.6, outline, 1, 0.08, 0.5);
+    seg(mid, end, w * 1.38, colour, 1, 0.08, 0.5);
+    seg(mid, end, w * 0.3, lit, 0.5, 0.1, 0.8, -w * 0.42);
     if (arm) {
       // Bronze bracer near the wrist, and a big fist wrapped in red cloth.
       seg(mid, end, w * 1.35, outline, 1, 0.42, 0.78);
@@ -558,17 +572,38 @@ export class StickmanView {
       .closePath()
       .fill(ARMOUR.horn)
       .stroke({ width: o * 0.9, color: outline });
-    // Heavy brow ridge, the glowing eye under it, and a flared nostril.
+    // Menacing eyes (owner, 12/11/2026: visible and menacing): a deep-set, slanted slit glowing
+    // red-orange under a brow that scowls down toward the snout, the far eye peeking past it,
+    // with a glow that is always on and blazes in Rampage Mode.
     const rage = this.rage;
-    const eye = toward(ARMOUR.eye, 0xff2a1a, rage);
-    g.circle(hx + r * 0.3, hy - r * 0.12, r * 0.3).fill({ color: eye, alpha: 0.22 + 0.3 * rage });
-    g.ellipse(hx + r * 0.3, hy - r * 0.12, r * 0.15, r * 0.1)
-      .fill(eye)
-      .stroke({ width: o * 0.7, color: outline });
-    g.circle(hx + r * 0.34, hy - r * 0.13, r * 0.045).fill(outline);
-    g.moveTo(hx - r * 0.05, hy - r * 0.38)
-      .quadraticCurveTo(hx + r * 0.3, hy - r * 0.48, hx + r * 0.62, hy - r * 0.28)
-      .stroke({ width: o * 2, color: outline, cap: 'round' });
+    const eye = toward(ARMOUR.eye, 0xff2a1a, 0.7 + 0.3 * rage);
+    const pulse = 0.85 + 0.15 * Math.sin(this.clockS * 5);
+    const slit = (cx: number, cy: number, k: number): void => {
+      // A dark socket, then a narrow angry slit (inner corner, toward the snout, pulled down),
+      // a white-hot line through it and a black pupil: sharp enough to read at a glance.
+      g.ellipse(cx, cy, r * 0.3 * k, r * 0.17 * k).fill({ color: 0x14100c, alpha: 0.85 });
+      // Explicit points (tiny curves at metre scale can collapse to nothing).
+      const P = (u: number, v: number): number[] => [cx + r * u * k, cy + r * v * k];
+      g.poly([...P(-0.27, -0.12), ...P(-0.05, -0.04), ...P(0.26, 0.06), ...P(0.05, 0.1), ...P(-0.16, 0.03)]).fill(eye);
+      g.poly([...P(-0.2, -0.08), ...P(0.18, 0.05), ...P(0.02, 0.06)]).fill(0xfff1b0);
+      g.ellipse(cx + r * 0.02 * k, cy + r * 0.015 * k, r * 0.03 * k, r * 0.055 * k).fill(0x140402);
+    };
+    // A tight glow on the additive layer: the eyes light the hide around them (stronger in Rampage Mode).
+    this.fire
+      .ellipse(hx + r * 0.3, hy - r * 0.12, r * 0.42, r * 0.24)
+      .fill({ color: eye, alpha: (0.22 + 0.3 * rage) * pulse });
+    this.fire
+      .ellipse(hx + r * 0.8, hy - r * 0.32, r * 0.24, r * 0.15)
+      .fill({ color: eye, alpha: (0.18 + 0.25 * rage) * pulse });
+    slit(hx + r * 0.8, hy - r * 0.32, 0.75); // the far eye, just showing past the brow
+    slit(hx + r * 0.3, hy - r * 0.12, 1.4);
+    // The scowling brow: a heavy V that drops down toward the snout over both eyes.
+    // It sits just above the slit (pressing down on its inner corner), never over it.
+    g.moveTo(hx - r * 0.08, hy - r * 0.5)
+      .lineTo(hx + r * 0.46, hy - r * 0.33)
+      .lineTo(hx + r * 0.62, hy - r * 0.44)
+      .lineTo(hx + r * 1.02, hy - r * 0.6)
+      .stroke({ width: o * 1.5, color: outline, cap: 'round', join: 'round' });
     g.ellipse(hx + r * 1.28, hy + r * 0.22, r * 0.1, r * 0.07).fill(outline);
   }
 
@@ -642,8 +677,9 @@ export class StickmanView {
     const c = Math.cos(l.rot);
     const sn = Math.sin(l.rot);
     const at = (p: Point) => {
-      const lx = p.x * l.facing;
-      const ly = p.y - l.heightM;
+      const k = this.size;
+      const lx = p.x * l.facing * k;
+      const ly = p.y * k - l.heightM;
       const x = lx * c - ly * sn;
       const y = lx * sn + ly * c;
       return { x, y: 0, z: -y };

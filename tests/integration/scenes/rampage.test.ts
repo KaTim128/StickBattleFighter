@@ -43,6 +43,20 @@ describe('Rampage (owner, 12/11/2026): the rhino brawler', () => {
     await initPhysics();
   });
 
+  it("is twice Inferno's size, bulkier and wider, and his Rhino Charge winds up in 0.5 s (owner, 12/11/2026)", async () => {
+    const r = await setup('rampage', { x: 5, y: 5 });
+    const i = await setup('inferno', { x: 5, y: 5 });
+    const rd = r.scene.playerFighter.def;
+    const id = i.scene.playerFighter.def;
+    expect(rd.sizeScale).toBe(2);
+    expect(id.sizeScale ?? 1).toBe(1);
+    expect(rd.body.footRadiusM).toBeGreaterThan(id.body.footRadiusM);
+    expect(rd.look.limbWidthM).toBeGreaterThan(id.look.limbWidthM);
+    expect(K.a2.castS).toBe(0.5);
+    r.scenes.clear();
+    i.scenes.clear();
+  });
+
   it('is noticeably slower than Inferno, and turns slower', async () => {
     const top = async (who: string) => {
       const { intents, scene, scenes, run } = await setup(who, { x: 5, y: 5 });
@@ -136,7 +150,8 @@ describe('Rampage (owner, 12/11/2026): the rhino brawler', () => {
       t.intents.interactPress();
       t.run(0.1);
       t.intents.interactRelease();
-      t.run(0.2);
+      t.runUntil(() => !t.scene.player.lifting, 2); // a heavy drawer unit takes a while to heave up
+      t.run(0.05);
       return t;
     };
     const inferno = await lift('inferno');

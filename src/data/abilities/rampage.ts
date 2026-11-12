@@ -55,7 +55,7 @@ export const RAMPAGE_KIT: AbilityKit = {
     slot: 'a2',
     staminaCost: 35,
     cooldownS: 7,
-    castS: 1,
+    castS: 0.5, // owner 12/11/2026: 0.5 s quicker (was 1 s)
     recoveryS: 0.95,
     aimRangeM: 8,
     moveFactor: 0,

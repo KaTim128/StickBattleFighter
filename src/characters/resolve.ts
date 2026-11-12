@@ -247,6 +247,7 @@ export function resolveCharacter(id: string, lib: CharacterLibrary): FighterDef 
     },
     body: { ...stats.body },
     bones: { ...def.rig.bones },
+    sizeScale: def.rig.scale ?? 1,
     look: {
       limb: colour(def.rig.colour),
       limbBack: colour(def.rig.colourBack),

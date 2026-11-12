@@ -17,7 +17,7 @@
       "recoveryS": 0.22,
       "cancelAt": 0.3,
       "hitbox": {
-        "reachM": 0.85,
+        "reachM": 1.2,
         "radiusM": 0.48
       },
       "damage": 45,
@@ -45,7 +45,7 @@
       "recoveryS": 0.24,
       "cancelAt": 0.3,
       "hitbox": {
-        "reachM": 0.9,
+        "reachM": 1.25,
         "radiusM": 0.55
       },
       "damage": 60,
@@ -73,7 +73,7 @@
       "recoveryS": 0.42,
       "cancelAt": 1,
       "hitbox": {
-        "reachM": 1.0,
+        "reachM": 1.35,
         "radiusM": 0.6
       },
       "damage": 170,
@@ -98,7 +98,7 @@
       "recoveryS": 0.3,
       "cancelAt": 1,
       "hitbox": {
-        "reachM": 0.9,
+        "reachM": 1.25,
         "radiusM": 0.7
       },
       "damage": 110,

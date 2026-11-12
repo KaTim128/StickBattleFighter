@@ -13,6 +13,47 @@ export function joystickVector(dx: number, dy: number, radiusPx: number, deadZon
 const RADIUS_PX = 56;
 
 /**
+ * A swipe on the empty part of the screen (owner, 12/11/2026: steer the Fire Beam by swiping).
+ * Reports the way the finger is moving: the anchor trails at most `trailPx` behind the finger,
+ * so turning the swipe turns the direction at once. Nothing until it has moved `deadPx`.
+ */
+export class SwipeTracker {
+  private anchor: Vec2 | null = null;
+  private moved = false;
+
+  constructor(
+    private readonly deadPx = 12,
+    private readonly trailPx = 40,
+  ) {}
+
+  start(x: number, y: number): void {
+    this.anchor = { x, y };
+    this.moved = false;
+  }
+
+  /** The finger is here now: the swipe direction (screen, unit length), or null if not swiping yet. */
+  move(x: number, y: number): Vec2 | null {
+    const a = this.anchor;
+    if (!a) return null;
+    const dx = x - a.x;
+    const dy = y - a.y;
+    const d = Math.hypot(dx, dy);
+    if (!this.moved && d < this.deadPx) return null;
+    this.moved = true;
+    if (d < 1e-6) return null;
+    if (d > this.trailPx) {
+      a.x = x - (dx / d) * this.trailPx;
+      a.y = y - (dy / d) * this.trailPx;
+    }
+    return { x: dx / d, y: dy / d };
+  }
+
+  end(): void {
+    this.anchor = null;
+  }
+}
+
+/**
  * Flick detection for dodge (REQ-CTL-12): the stick goes from near-centre to
  * near-full deflection within a short window. Ordinary steering ramps up more
  * slowly and never triggers it.
@@ -88,10 +129,20 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     layer.hidden = false;
     document.body.classList.add('touch-mode'); // the HUD shows cooldowns on the buttons instead of the desktop bar
   };
+  // A finger on the empty right part of the screen swipes (steers a beam).
+  let swipePointer: number | null = null;
+  const swipe = new SwipeTracker();
   const onDown = (e: PointerEvent): void => {
     showForTouch(e);
-    if (e.pointerType !== 'touch' || stickPointer !== null) return;
-    if (e.target instanceof HTMLButtonElement || e.clientX > window.innerWidth * 0.4) return;
+    if (e.pointerType !== 'touch' || e.target instanceof HTMLButtonElement) return;
+    if (e.clientX > window.innerWidth * 0.4) {
+      if (swipePointer === null && !(e.target as Element | null)?.closest?.('.settings-panel, .main-menu')) {
+        swipePointer = e.pointerId;
+        swipe.start(e.clientX, e.clientY);
+      }
+      return;
+    }
+    if (stickPointer !== null) return;
     stickPointer = e.pointerId;
     origin = { x: e.clientX, y: e.clientY };
     stick.style.left = `${origin.x}px`;
@@ -102,6 +153,11 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     flick.sample(0, e.timeStamp);
   };
   const onMove = (e: PointerEvent): void => {
+    if (e.pointerId === swipePointer) {
+      const v = swipe.move(e.clientX, e.clientY);
+      if (v) intents.setSwipeFromScreen(v);
+      return;
+    }
     if (e.pointerId !== stickPointer) return;
     const dx = e.clientX - origin.x;
     const dy = e.clientY - origin.y;
@@ -112,6 +168,12 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     if (flick.sample(Math.hypot(v.x, v.y), e.timeStamp)) intents.pressDodge();
   };
   const onUp = (e: PointerEvent): void => {
+    if (e.pointerId === swipePointer) {
+      swipePointer = null;
+      swipe.end();
+      intents.setSwipeFromScreen(null);
+      return;
+    }
     if (e.pointerId !== stickPointer) return;
     stickPointer = null;
     stick.hidden = true;

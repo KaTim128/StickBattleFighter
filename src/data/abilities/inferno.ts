@@ -105,7 +105,7 @@ export const INFERNO_KIT: AbilityKit = {
       ignites: true,
       falloff: { fullWithinM: 1.5, minFactor: 0.45 },
     },
-    delivery: { type: 'beam', rangeM: 6.5, widthM: 0.6, durationS: 1.4, tickS: 0.15 },
+    delivery: { type: 'beam', rangeM: 6.5, widthM: 0.6, durationS: 1.4, tickS: 0.15, turnRadPerS: 3.5 },
     vfx: 'fire-beam',
     sfx: { cast: 'beam-charge', release: 'beam-roar', impact: 'beam-sear' },
     look: {

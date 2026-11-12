@@ -91,6 +91,8 @@ export interface PlayerState {
   burning: boolean;
   /** Kind of object carried overhead (Phase 7), or null. */
   carrying: string | null;
+  /** Still heaving the carried object up (heavier takes longer). */
+  lifting: boolean;
   /** What the contextual utility button does now: jump, pick up or throw. */
   utility: 'jump' | 'pickup' | 'throw';
   /** 1 = a dodge is ready, falling to 0 just after one (weight-based cooldown). */
@@ -216,6 +218,8 @@ const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
 const ULT_AIM_SPEED_MPS = 7;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
 const HEAD_TOP_M = 1.75;
+/** The top of a fighter's head over its feet (big fighters are drawn bigger: rig.scale). */
+const headTop = (f: FighterEntity): number => HEAD_TOP_M * (f.def.sizeScale ?? 1);
 
 /**
  * Plays any arena layout (training yard, office, ...): the player and the
@@ -435,6 +439,7 @@ export class FightArenaScene implements ArenaScene {
       meter: f.caster?.meter ?? 0,
       burning: f.combatant.burning,
       carrying: f.carrying?.placement.kind ?? null,
+      lifting: f.liftS > 0,
       utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
       dodgeReady: 1 - f.combatant.dodgeCooldownLeftS / f.combatant.dodgeCooldownTotalS,
     };
@@ -503,6 +508,7 @@ export class FightArenaScene implements ArenaScene {
       () => this.shake.addTrauma(0.35),
       this.walls,
     );
+    this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
     this.occlusion = new OcclusionFader();
@@ -617,10 +623,18 @@ export class FightArenaScene implements ArenaScene {
       this.intents.consumeUltLaunch();
       if (c.state === 'guarding') c.setGuard(false);
       f.meleeTracking = false;
-      if (this.intents.consumeDodge() && !air && c.tryDodge()) {
+      if (this.intents.consumeDodge() && f.liftS <= 0 && !air && c.tryDodge()) {
         const m = this.intents.move;
         const len = Math.hypot(m.x, m.y);
         Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.aim.x, y: -f.aim.y });
+      }
+      if (f.liftS > 0) {
+        // Still heaving it up: rooted, no jump or dodge until it is overhead.
+        f.liftS = Math.max(0, f.liftS - stepS);
+        this.intents.consumeJump();
+        f.sprinting = false;
+        this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
+        return;
       }
       const slow = THROWING.carrySpeedFactor(f.carrying.kind.massKg);
       const m = this.intents.move;
@@ -733,13 +747,16 @@ export class FightArenaScene implements ArenaScene {
     if (f.carrying && (f.carrying.broken || !f.combatant.canAct)) this.dropCarried(f, 0); // hit while carrying: it falls
     if (edge?.down) {
       if (f.carrying) {
-        f.interactTracking = true;
+        // A press while still lifting does nothing (it cannot be thrown before it is up).
+        f.interactTracking = f.liftS <= 0;
         f.interactHoldS = 0;
       } else {
         const grab = this.pickupFor(f);
         if (grab && props && !f.airborne && !f.combo.attack && !f.caster?.cast) {
           props.pickUp(grab, this.fighters.indexOf(f), this.holdPoint(f));
           f.carrying = grab;
+          f.liftTotalS = THROWING.liftTimeFor(grab.kind.massKg);
+          f.liftS = f.liftTotalS;
           f.interactTracking = false; // this press was the pickup, not a throw
           this.characterSound(f, 'jump', 0.5);
         } else if (edge.orJump) {
@@ -761,7 +778,17 @@ export class FightArenaScene implements ArenaScene {
 
   /** Where a carried object rides: over the head, a touch in front so it draws over the fighter. */
   private holdPoint(f: FighterEntity): { x: number; y: number; heightM: number } {
-    return { x: f.x + f.aim.x * 0.08, y: f.y + f.aim.y * 0.08 + 0.02, heightM: THROWING.holdHeightM + f.hop.heightM };
+    // While lifting, it rises from the hands to overhead (eased: slow off the floor, then up).
+    const k = this.liftProgress(f);
+    const eased = k * k * (3 - 2 * k);
+    const k0 = f.def.sizeScale ?? 1; // a bigger fighter holds it higher
+    const heightM = (THROWING.liftStartHeightM + (THROWING.holdHeightM - THROWING.liftStartHeightM) * eased) * k0;
+    return { x: f.x + f.aim.x * 0.08, y: f.y + f.aim.y * 0.08 + 0.02, heightM: heightM + f.hop.heightM };
+  }
+
+  /** 0..1 how far through lifting the carried object (1 = overhead). */
+  private liftProgress(f: FighterEntity): number {
+    return f.liftS > 0 && f.liftTotalS > 0 ? 1 - f.liftS / f.liftTotalS : 1;
   }
 
   private pickupFor(f: FighterEntity): ArenaProp | null {
@@ -818,6 +845,7 @@ export class FightArenaScene implements ArenaScene {
       },
     );
     f.carrying = null;
+    f.liftS = 0;
     f.interactTracking = false;
     f.throwFollowS = 0.28;
     this.characterSound(f, 'jump', 0.8);
@@ -853,6 +881,7 @@ export class FightArenaScene implements ArenaScene {
   private dropCarried(f: FighterEntity, forwardMps: number): void {
     const prop = f.carrying;
     f.carrying = null;
+    f.liftS = 0;
     f.interactTracking = false;
     if (!prop || !this.props || prop.broken) return;
     this.props.release(
@@ -916,6 +945,36 @@ export class FightArenaScene implements ArenaScene {
       }
     }
     if (best) f.faceToward(best.x - f.x, best.y - f.y);
+  }
+
+  /** Mouse moves counted when the player's beam started: the beam follows the cursor once it moves. */
+  private beamPointerMoves = -1;
+
+  /**
+   * Where a fighter steers its beam (owner, 12/11/2026). The player: a swipe on the touch screen,
+   * or the mouse cursor once it moves (a cursor left lying somewhere does not yank the beam).
+   * Opponents track the nearest standing fighter.
+   */
+  private beamSteer(f: FighterEntity, fresh: boolean): { x: number; y: number } | null {
+    if (f === this.playerFighter) {
+      if (fresh) this.beamPointerMoves = this.intents.pointerMoves;
+      const swipe = this.intents.swipe;
+      if (swipe) return swipe;
+      if (this.intents.pointerMoves === this.beamPointerMoves) return null;
+      const p = this.pointerOnFloor();
+      return p ? { x: p.x - f.x, y: p.y - f.y } : null;
+    }
+    let best: FighterEntity | null = null;
+    let bestD = Number.POSITIVE_INFINITY;
+    for (const o of this.fighters) {
+      if (o === f || o.combatant.isKo) continue;
+      const d = Math.hypot(o.x - f.x, o.y - f.y);
+      if (d < bestD) {
+        best = o;
+        bestD = d;
+      }
+    }
+    return best ? { x: best.x - f.x, y: best.y - f.y } : null;
   }
 
   /** I / F / ULT: start aiming the leap, or launch it at the aimed spot (owner, 11/11/2026). */
@@ -1174,7 +1233,13 @@ export class FightArenaScene implements ArenaScene {
       attacker.def.stats.critMultiplier,
     );
     if (result.outcome === 'ignored') return false;
-    this.events.push({ kind: result.outcome, target: target.name, x: t.x, y: t.y - HEAD_TOP_M, amount: result.damage });
+    this.events.push({
+      kind: result.outcome,
+      target: target.name,
+      x: t.x,
+      y: t.y - headTop(target),
+      amount: result.damage,
+    });
 
     if (result.outcome === 'dodged') return false;
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
@@ -1189,7 +1254,7 @@ export class FightArenaScene implements ArenaScene {
           kind: 'combo',
           target: target.name,
           x: t.x,
-          y: t.y - HEAD_TOP_M - 0.45,
+          y: t.y - headTop(target) - 0.45,
           amount: attacker.comboCount,
         });
       }
@@ -1388,7 +1453,7 @@ export class FightArenaScene implements ArenaScene {
     f.caster?.onDamage(0, damage);
     f.burnShown += damage;
     if (f.burnShown < 1 || f.burnTextS > 0) return;
-    this.events.push({ kind: 'burn', target: f.name, x: f.x, y: f.y - HEAD_TOP_M, amount: Math.round(f.burnShown) });
+    this.events.push({ kind: 'burn', target: f.name, x: f.x, y: f.y - headTop(f), amount: Math.round(f.burnShown) });
     f.burnShown = 0;
     f.burnTextS = 0.5;
   }
@@ -1482,7 +1547,8 @@ export class FightArenaScene implements ArenaScene {
       const near = this.fighters.some(
         (o) => o !== attacker && !o.combatant.isKo && Math.hypot(o.x - p.x, o.y - p.y) < MISS_CALLOUT_RANGE_M,
       );
-      if (near) this.events.push({ kind: 'miss', target: attacker.name, x: p.x, y: p.y - HEAD_TOP_M, amount: 0 });
+      if (near)
+        this.events.push({ kind: 'miss', target: attacker.name, x: p.x, y: p.y - headTop(attacker), amount: 0 });
     }
   }
 
@@ -1901,7 +1967,8 @@ export class FightArenaScene implements ArenaScene {
     }
 
     // Carrying overhead: arms up (blended); a throw whips them forward for a moment.
-    f.carryWeight += ((f.carrying ? 1 : 0) - f.carryWeight) * smoothing(16, frameDtS);
+    const carryTarget = f.carrying ? this.liftProgress(f) : 0; // the arms rise with the lift
+    f.carryWeight += (carryTarget - f.carryWeight) * smoothing(16, frameDtS);
     if (f.carryWeight > 0.01) pose = blendPose(pose, carryPose(pose), f.carryWeight);
     if (f.throwFollowS > 0) {
       f.throwFollowS = Math.max(0, f.throwFollowS - frameDtS);
@@ -1998,7 +2065,7 @@ export class FightArenaScene implements ArenaScene {
     this.koDissolve(f, x, y, drawnHeight, frameDtS);
     f.bars?.draw(
       at.x,
-      at.y - heightM - HEAD_TOP_M * Math.cos(f.tilt),
+      at.y - heightM - headTop(f) * Math.cos(f.tilt),
       c.hp / c.stats.maxHp,
       c.stamina / c.stats.maxStamina,
       !c.isKo,

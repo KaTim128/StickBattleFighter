@@ -27,8 +27,9 @@
     "colour": "#8e8982",
     "colourBack": "#6a655f",
     "outline": "#26211c",
-    "limbWidthM": 0.12,
-    "outlineWidthM": 0.04
+    "limbWidthM": 0.13,
+    "outlineWidthM": 0.04,
+    "scale": 2
   },
   "capabilities": {
     "canWalk": true,

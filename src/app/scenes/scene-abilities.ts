@@ -51,6 +51,8 @@ export class SceneAbilities implements AbilityHost {
   readonly sfxLog: string[] = [];
   /** Recent FX events, newest last (tests and the debug hook; the VFX layer drains `pending`). */
   readonly recentFx: AbilityFx[] = [];
+  /** Where a fighter is steering its beam (set by the scene: player input or the AI's target). */
+  steerSource: (f: FighterEntity, fresh: boolean) => Vec2 | null = () => null;
   /** Sound ids not yet played (the sound board drains them every frame). */
   private readonly sounds: string[] = [];
 
@@ -219,6 +221,15 @@ export class SceneAbilities implements AbilityHost {
 
   blocked(from: Vec2, to: Vec2): number | null {
     return this.physics.castWorldRay(from, to)?.fraction ?? null;
+  }
+
+  steer(casterId: string, fresh: boolean): Vec2 | null {
+    const f = this.byName(casterId);
+    return f ? this.steerSource(f, fresh) : null;
+  }
+
+  face(casterId: string, dir: Vec2): void {
+    this.byName(casterId)?.faceToward(dir.x, dir.y);
   }
 
   position(casterId: string): Vec2 {

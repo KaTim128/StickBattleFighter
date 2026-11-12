@@ -355,6 +355,11 @@ export interface CharacterDefinition {
     readonly outline: string;
     readonly limbWidthM: number;
     readonly outlineWidthM: number;
+    /**
+     * Drawn size relative to a standard fighter (owner, 12/11/2026: Rampage "two times the size
+     * of Inferno"). Scales the whole figure; collision size and reach stay in the stats and moves.
+     */
+    readonly scale?: number;
   };
   readonly capabilities: Partial<Capabilities>;
   readonly unlock: UnlockProfile;
@@ -413,6 +418,7 @@ export const LIMITS = {
   shakeScale: [0, 3],
   hitstopScale: [0, 3],
   boneM: [0.02, 1.5],
+  sizeScale: [0.5, 2.5],
   maxLiftKg: [0, 500],
   throwPower: [0.2, 3],
 } as const satisfies Record<string, readonly [number, number]>;
