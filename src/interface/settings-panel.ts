@@ -22,6 +22,8 @@ export class SettingsPanel {
     private readonly onOpenChange: (open: boolean) => void,
     /** Game actions shown at the bottom (owner, 12/11/2026): leave the fight, toggle fullscreen. */
     actions: { leave?: () => void; fullscreen?: () => void } = {},
+    /** Escape cancels an ability being aimed instead (owner, 12/11/2026); true when it did. */
+    private readonly escapeTaken: () => boolean = () => false,
   ) {
     this.button = document.createElement('button');
     this.button.className = 'settings-button';
@@ -188,6 +190,7 @@ export class SettingsPanel {
     }
     if (e.code === 'Escape' && !e.repeat) {
       e.preventDefault();
+      if (!this.openState && this.escapeTaken()) return;
       this.setOpen(!this.openState);
     }
   };

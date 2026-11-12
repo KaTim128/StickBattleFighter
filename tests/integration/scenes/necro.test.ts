@@ -109,42 +109,64 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scenes.clear();
   });
 
-  it('Teleport (desktop): R, then a left click on the spot: he reappears there, past furniture', async () => {
+  /** Hold the move input toward `to` until the teleport marker is there (WASD or the joystick). */
+  const steerMarker = (
+    scene: { pointAimState: { to: { x: number; y: number } } | null },
+    intents: { setMove(src: string, v: { x: number; y: number }): void },
+    run: (s: number) => void,
+    to: { x: number; y: number },
+  ) => {
+    for (let i = 0; i < 400; i++) {
+      const at = scene.pointAimState!.to;
+      const dx = to.x - at.x;
+      const dy = to.y - at.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 0.2) break;
+      const k = Math.min(1, d / 0.3);
+      intents.setMove('t', { x: (dx / d) * k, y: (dy / d) * k });
+      run(STEP);
+    }
+    intents.setMove('t', { x: 0, y: 0 });
+  };
+
+  it('Teleport (desktop): R aims, WASD moves the marker fast, R again teleports there; he never walks meanwhile', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 10, y: 10 }, { x: 25, y: 18 });
     intents.pressAbility('a3');
     run(STEP * 2);
     expect(scene.pointAimState).not.toBeNull(); // aiming, nothing cast yet
-    // Point the mouse at a spot 6 m away (screen position of that floor point).
-    const w = scene.arenaView!.world;
+    expect(scene.targeting?.name).toBe('Teleport');
+    // Much faster than Inferno's 7 m/s: 0.3 s of a held key moves it more than 4 m.
+    const m0 = scene.pointAimState!.to;
+    intents.setMove('t', { x: 0, y: 1 });
+    run(0.3);
+    intents.setMove('t', { x: 0, y: 0 });
+    expect(scene.pointAimState!.to.y - m0.y).toBeGreaterThan(4);
+    expect(Math.hypot(scene.player.x - 10, scene.player.y - 10)).toBeLessThan(0.05);
     const to = { x: 16, y: 10 };
-    const p = iso(to.x, to.y);
-    intents.setPointer({ x: w.position.x + p.x * w.scale.x, y: w.position.y + p.y * w.scale.y });
-    run(STEP * 2);
-    intents.pressUltLaunch(); // left click (the aim-confirm binding)
+    steerMarker(scene, intents, run, to);
+    intents.pressAbility('a3'); // the same key confirms
     runUntil(() => Math.hypot(scene.player.x - to.x, scene.player.y - to.y) < 0.6, 2);
     expect(Math.hypot(scene.player.x - to.x, scene.player.y - to.y)).toBeLessThan(0.6);
     expect(scene.pointAimState).toBeNull();
     scenes.clear();
   });
 
-  it('Teleport (touch): tap R, then tap the destination; never lands inside walls or furniture; R again cancels', async () => {
+  it('Teleport (touch): the joystick moves the marker; ✕ cancels; never lands inside walls or furniture', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 4, y: 4 }, { x: 25, y: 13 }, OFFICE);
-    const w = () => scene.arenaView!.world;
-    const screenOf = (x: number, y: number) => {
-      const p = iso(x, y);
-      return { x: w().position.x + p.x * w().scale.x, y: w().position.y + p.y * w().scale.y };
-    };
-    // Press, then press again: called off, nothing cast.
+    // Aim, then cancel: nothing cast, no stamina spent.
+    const stamina = scene.player.stamina;
     intents.pressAbility('a3');
     run(STEP * 2);
-    intents.pressAbility('a3');
+    intents.pressAimCancel();
     run(STEP * 2);
     expect(scene.pointAimState).toBeNull();
-    // Press, then tap a spot right on a desk: he lands next to it, never inside it.
+    expect(scene.player.stamina).toBeGreaterThanOrEqual(stamina);
+    // Aim at a desk: he lands next to it, never inside it.
     const desk = OFFICE.props!.find((p) => p.kind === 'desk' && Math.hypot(p.x - 4, p.y - 4) < 8)!;
     intents.pressAbility('a3');
     run(STEP * 2);
-    intents.tap(screenOf(desk.x, desk.y));
+    steerMarker(scene, intents, run, desk);
+    intents.pressAbility('a3');
     runUntil(() => Math.hypot(scene.player.x - 4, scene.player.y - 4) > 1, 2);
     run(0.3);
     expect(Math.hypot(scene.player.x - 4, scene.player.y - 4)).toBeGreaterThan(1);

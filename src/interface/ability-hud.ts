@@ -1,4 +1,5 @@
 import type { AbilityHudState, AbilitySlotState } from '../abilities/ability-caster';
+import { type Bindings, codeLabel, DEFAULT_BINDINGS, SLOT_ACTION } from '../input/bindings';
 import { abilityIcon } from './ability-icons';
 
 /**
@@ -8,23 +9,29 @@ import { abilityIcon } from './ability-icons';
  * bar is hidden in touch mode). Read-only: it never changes gameplay.
  * Create it after the touch controls so it can find their buttons.
  */
-const KEYS: Record<AbilitySlotState['slot'], string> = { a1: 'Q', a2: 'E', a3: 'R', ult: 'F' };
 
 export class AbilityHud {
   private readonly bar: HTMLElement;
   /** Desktop bar slot plus the matching touch button (if any), per slot. Looked up once. */
   private readonly targets = new Map<string, HTMLElement[]>();
+  private readonly keyLabels = new Map<keyof typeof SLOT_ACTION, HTMLElement>();
+  private shownKeys: Bindings | null = null;
 
-  constructor(root: HTMLElement) {
+  /** The key labels on the desktop bar follow the player's own bindings. */
+  constructor(
+    root: HTMLElement,
+    private readonly keys: () => Bindings = () => DEFAULT_BINDINGS,
+  ) {
     this.bar = document.createElement('div');
     this.bar.className = 'ability-bar';
     this.bar.hidden = true;
-    for (const slot of ['a1', 'a2', 'a3', 'ult'] as const) {
+    for (const slot of ['a1', 'a2', 'a3', 'a4', 'ult'] as const) {
       const el = document.createElement('div');
       el.className = `ability-slot${slot === 'ult' ? ' ult' : ''}`;
       el.dataset.slot = slot;
-      el.innerHTML = `<span class="ab-key">${KEYS[slot]}</span><span class="ab-icon"></span><span class="ab-cost"></span>`;
+      el.innerHTML = `<span class="ab-key">${codeLabel(this.keys()[SLOT_ACTION[slot]])}</span><span class="ab-icon"></span><span class="ab-cost"></span>`;
       this.bar.appendChild(el);
+      this.keyLabels.set(slot, el.querySelector<HTMLElement>('.ab-key')!);
       const button = root.querySelector<HTMLElement>(`.ability-button[data-slot="${slot}"]`);
       this.targets.set(slot, button ? [el, button] : [el]);
     }
@@ -34,6 +41,12 @@ export class AbilityHud {
   update(state: AbilityHudState | null): void {
     this.bar.hidden = state === null;
     if (!state) return;
+    const keys = this.keys();
+    if (keys !== this.shownKeys) {
+      // Only when the bindings object changes (a rebind), never every frame.
+      this.shownKeys = keys;
+      for (const [slot, key] of this.keyLabels) key.textContent = codeLabel(keys[SLOT_ACTION[slot]]);
+    }
     for (const s of state.slots) for (const el of this.targets.get(s.slot) ?? []) paint(el, s, state);
   }
 

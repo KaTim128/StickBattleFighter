@@ -284,6 +284,19 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 140, f1: 55, dur: 0.2, gain: 0.7 } },
     { noise: { dur: 0.45, gain: 0.35, type: 'bandpass', freq: 400, freqEnd: 2200, q: 2.5, attack: 0.2, delay: 0.05 } },
   ],
+  // Grave Chains (owner, 12/11/2026): iron links lashing out, a cold metallic rattle on a hollow whoosh.
+  'chain-lash': [
+    { noise: { dur: 0.3, gain: 0.35, type: 'bandpass', freq: 900, freqEnd: 2400, q: 1.2, attack: 0.02 } },
+    { crackle: { dur: 0.35, gain: 0.22, count: 12 } },
+    { tone: { wave: 'triangle', f0: 1650, f1: 1500, dur: 0.18, gain: 0.05, delay: 0.04 } },
+  ],
+  // The chains biting and yanking: a clank, a taut snap and a dragging scrape.
+  'chain-catch': [
+    { tone: { wave: 'triangle', f0: 980, f1: 760, dur: 0.12, gain: 0.18 } },
+    { noise: { dur: 0.05, gain: 0.55, type: 'bandpass', freq: 2600, q: 2 } },
+    { noise: { dur: 0.45, gain: 0.28, type: 'bandpass', freq: 700, freqEnd: 300, q: 1.5, attack: 0.05, delay: 0.06 } },
+    { crackle: { dur: 0.4, gain: 0.18, count: 8 } },
+  ],
   // The ground answering a call from below: a deep, rumbling groan.
   'grave-call': [
     { tone: { wave: 'sawtooth', f0: 55, f1: 42, dur: 0.6, gain: 0.25, attack: 0.2, drive: 0.4 } },
@@ -393,6 +406,25 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   'heavy-land': [
     { tone: { wave: 'sine', f0: 75, f1: 30, dur: 0.25, gain: 0.8, drive: 0.2 } },
     { noise: { dur: 0.2, gain: 0.3, type: 'lowpass', freq: 600, attack: 0.003 } },
+  ],
+  // Flame Detonation (owner, 12/11/2026): the gathered fire bursting outward, a short sharp blast
+  // with a deep thump and a rush of flame.
+  'detonation-blast': [
+    { tone: { wave: 'sine', f0: 95, f1: 28, dur: 0.5, gain: 1, drive: 0.4 } },
+    { noise: { dur: 0.06, gain: 0.7, type: 'bandpass', freq: 1600, q: 0.8 } },
+    {
+      noise: {
+        dur: 0.55,
+        gain: 0.7,
+        type: 'lowpass',
+        freq: 2400,
+        freqEnd: 250,
+        attack: 0.003,
+        flutter: 22,
+        drive: 0.4,
+      },
+    },
+    { crackle: { dur: 0.6, gain: 0.25, count: 14 } },
   ],
   'fire-charge': [
     { noise: { dur: 0.28, gain: 0.22, type: 'bandpass', freq: 400, freqEnd: 1700, q: 1.5, attack: 0.16 } },

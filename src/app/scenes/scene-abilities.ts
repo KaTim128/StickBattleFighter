@@ -126,7 +126,7 @@ export class SceneAbilities implements AbilityHost {
     const caster = f.caster;
     if (!caster) return null;
     const ctx = { canAct: f.combatant.canAct && !f.combo.attack, stamina: f.combatant.stamina, airborne: f.airborne };
-    const slots = (['a1', 'a2', 'a3', 'ult'] as const).map((slot) => {
+    const slots = (['a1', 'a2', 'a3', 'a4', 'ult'] as const).map((slot) => {
       const def = caster.def(slot);
       return {
         slot,
@@ -202,6 +202,14 @@ export class SceneAbilities implements AbilityHost {
   teleport(casterId: string, to: Vec2): Vec2 | null {
     const f = this.byName(casterId);
     return f ? this.teleportSource(f, to) : null;
+  }
+
+  hold(targetId: string, seconds: number): void {
+    const f = this.byName(targetId);
+    if (!f) return;
+    f.combo.interrupt();
+    f.combatant.setGuard(false);
+    f.combatant.stun(seconds);
   }
 
   summon(casterId: string, spec: SummonSpec): void {

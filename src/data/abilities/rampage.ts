@@ -11,6 +11,7 @@ const DUST = { deep: 0x4a3a2a, hot: 0x7d6448, bright: 0xb89a74, core: 0xeadcc2 }
 const RAGE = { deep: 0x5a0a0a, hot: 0xb3201a, bright: 0xff5a3a, core: 0xffd2c0 } as const;
 
 export const RAMPAGE_KIT: AbilityKit = {
+  comboIcon: 'heavy-fist',
   // A1: Ground Smash. Both fists come down on the floor: a shockwave that knocks everyone nearby away.
   a1: {
     id: 'groundSmash',
@@ -112,6 +113,43 @@ export const RAMPAGE_KIT: AbilityKit = {
         ringM: 1.2,
         scorchM: 0.55,
         smoke: 8,
+        groundFire: false,
+        smokeColour: 0x8a7a66,
+      },
+      hitFlash: 0xffffff,
+    },
+  },
+  // A4 (R): Grapple Slam (owner, 12/11/2026). He lunges a hand out (0.3 s), seizes the enemy in
+  // front, hoists them overhead (0.5 s) and drives them into the floor: heavy damage, a knockdown and
+  // a dust blast that shakes the furniture round the impact. Nobody in reach: he grasps at air.
+  a4: {
+    id: 'grappleSlam',
+    name: 'Grapple Slam',
+    label: 'SLAM',
+    description:
+      'Seizes the enemy in front, hoists them overhead and slams them into the floor for heavy damage and a knockdown.',
+    icon: 'grapple-slam',
+    slot: 'a4',
+    staminaCost: 35,
+    cooldownS: 8,
+    castS: 0.3,
+    recoveryS: 0.85,
+    aimRangeM: 2.5,
+    moveFactor: 0.3,
+    interruptible: true,
+    payload: { damage: 150, knockbackMps: 2, heavy: true, strength: 900, impact: 'knuckle-heavy' },
+    delivery: { type: 'grab', reachM: 1.2, radiusM: 0.5, liftS: 0.5, liftM: 1.1, slamRadiusM: 1.4 },
+    vfx: 'grapple-slam',
+    sfx: { cast: 'rampage-grunt', release: 'heavy-whoosh', impact: 'crushing-impact' },
+    look: {
+      palette: DUST,
+      impact: {
+        flashM: 1,
+        sparks: 26,
+        motes: 30,
+        ringM: 1.4,
+        scorchM: 0.6,
+        smoke: 12,
         groundFire: false,
         smokeColour: 0x8a7a66,
       },

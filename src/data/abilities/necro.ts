@@ -12,6 +12,7 @@ import type { AbilityKit } from '../../abilities/ability-def';
 const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff } as const;
 
 export const NECRO_KIT: AbilityKit = {
+  comboIcon: 'staff-swing',
   // A1: Soul Drain. A dark bolt of drawn souls flies from the staff; when it lands it tears life out
   // of the target (half of it flows back to Necro) and blinds it for 3 s (owner, 12/11/2026).
   a1: {
@@ -94,12 +95,49 @@ export const NECRO_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'teleport', maxRangeM: 9 },
+    delivery: { type: 'teleport', maxRangeM: 9, aimSpeedMps: 18 },
     vfx: 'teleport',
     sfx: { cast: 'soul-gather', release: 'teleport-out', impact: 'teleport-in' },
     look: {
       palette: SOUL,
       impact: { flashM: 0.7, sparks: 14, motes: 30, ringM: 1.1, smoke: 8, groundFire: false, smokeColour: 0x2e2438 },
+    },
+  },
+  // A4 (R): Grave Chains (owner, 12/11/2026). He thrusts the staff forward and spectral chains lash
+  // out (16 m/s, up to 8 m); the first enemy they catch is dragged back to his feet and held for a
+  // moment, set up for his staff combo.
+  a4: {
+    id: 'graveChains',
+    name: 'Grave Chains',
+    label: 'CHAIN',
+    description:
+      'Spectral chains lash out from his staff; the first enemy caught is dragged back to him and held for a moment.',
+    icon: 'grave-chains',
+    slot: 'a4',
+    staminaCost: 25,
+    cooldownS: 8,
+    castS: 0.3,
+    recoveryS: 0.3,
+    aimRangeM: 8,
+    moveFactor: 0.2,
+    interruptible: true,
+    payload: {
+      damage: 40,
+      knockbackMps: 0,
+      heavy: false,
+      strength: 150,
+      impact: 'knuckle-light',
+      stunS: 0.8,
+      pull: { speedMps: 16, stopM: 0.9 },
+    },
+    delivery: { type: 'projectile', speedMps: 16, radiusM: 0.3, maxRangeM: 8 },
+    vfx: 'grave-chains',
+    sfx: { cast: 'soul-gather', release: 'chain-lash', impact: 'chain-catch' },
+    look: {
+      palette: SOUL,
+      flight: { trailPerS: 70, sparksPerS: 16, shimmer: false },
+      impact: { flashM: 0.6, sparks: 16, motes: 16, ringM: 0.8, groundFire: false, smokeColour: 0x3a2050 },
+      hitFlash: 0xd9c2ff,
     },
   },
   // ULTIMATE: Undead Army (owner, 12/11/2026, replacing Death's Dominion). He rises off the ground

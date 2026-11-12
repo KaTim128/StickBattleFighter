@@ -9,9 +9,9 @@ import type { ImpactId } from '../data/combat/impacts';
  * abilities themselves are original.
  */
 
-/** Buttons 2–5: ability 1, 2, 3 and the ultimate. */
-export type AbilitySlot = 'a1' | 'a2' | 'a3' | 'ult';
-export const ABILITY_SLOTS: readonly AbilitySlot[] = ['a1', 'a2', 'a3', 'ult'];
+/** Four abilities and the ultimate (owner, 12/11/2026: a fourth ability on R for every fighter). */
+export type AbilitySlot = 'a1' | 'a2' | 'a3' | 'a4' | 'ult';
+export const ABILITY_SLOTS: readonly AbilitySlot[] = ['a1', 'a2', 'a3', 'a4', 'ult'];
 
 /** Damage-over-time on fighters (and burning on flammable props). */
 export interface Burn {
@@ -48,6 +48,11 @@ export interface AbilityPayload {
    * to anyone; a computer-controlled fighter cannot find its target; a player's view goes dark.
    */
   readonly blindS?: number;
+  /**
+   * Drags the target toward the caster when it lands (Grave Chains, owner 12/11/2026), at
+   * `speedMps`, stopping `stopM` in front of the caster or at anything solid in the way.
+   */
+  readonly pull?: { readonly speedMps: number; readonly stopM: number };
 }
 
 /**
@@ -142,6 +147,8 @@ export interface SummonSpec {
 export interface TeleportDelivery {
   readonly type: 'teleport';
   readonly maxRangeM: number;
+  /** How fast WASD or the joystick moves the destination while aiming (owner, 12/11/2026). */
+  readonly aimSpeedMps?: number;
 }
 
 export interface SummonDelivery extends SummonSpec {
@@ -155,6 +162,8 @@ export interface LeapDelivery {
   readonly airS: number;
   readonly peakM: number;
   readonly radiusM: number;
+  /** How fast WASD or the joystick moves the landing spot while aiming (owner, 12/11/2026). */
+  readonly aimSpeedMps?: number;
 }
 
 /**
@@ -201,6 +210,21 @@ export interface BuffDelivery {
   readonly summon?: SummonSpec;
 }
 
+/**
+ * A grab and slam (Braxon's Grapple Slam, owner 12/11/2026): at release the nearest enemy within
+ * `reachM` (and `radiusM` either side) is seized, hoisted overhead over `liftS` to `liftM`, held,
+ * then slammed into the floor in front of the caster with the payload, a dust blast of `slamRadiusM`
+ * hitting furniture around it. Nobody in reach: a heavy grasp at the air.
+ */
+export interface GrabDelivery {
+  readonly type: 'grab';
+  readonly reachM: number;
+  readonly radiusM: number;
+  readonly liftS: number;
+  readonly liftM: number;
+  readonly slamRadiusM: number;
+}
+
 export type Delivery =
   | ProjectileDelivery
   | DashDelivery
@@ -210,7 +234,8 @@ export type Delivery =
   | StrikeDelivery
   | BuffDelivery
   | SummonDelivery
-  | TeleportDelivery;
+  | TeleportDelivery
+  | GrabDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,
@@ -298,6 +323,9 @@ export interface AbilityKit {
   readonly a1: AbilityDef;
   readonly a2: AbilityDef;
   readonly a3: AbilityDef;
+  readonly a4: AbilityDef;
   readonly ult: AbilityDef;
   readonly charge: UltimateCharge;
+  /** The basic combo's picture on the fighter details screen (owner, 12/11/2026: unique per fighter). */
+  readonly comboIcon?: string;
 }

@@ -181,57 +181,60 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
-  it('mouse aiming (owner, 11/11/2026): F aims, the spot follows the hovered cursor, left click launches without a punch', async () => {
+  it('keyboard targeting (owner): K aims, WASD slides the spot at 7 m/s, K again launches; J meanwhile does not punch', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
     run(STEP);
-    expect(scene.ultAim).not.toBeNull();
-    // Hover over a spot up and to the left of the fighter (inside the leap's range).
-    const want = { x: 12.5, y: 10.5 };
-    intents.setPointer(scene.worldToScreen(want.x, want.y));
-    run(STEP);
-    const aim = scene.ultAim!;
-    expect(Math.hypot(aim.to.x - want.x, aim.to.y - want.y)).toBeLessThan(0.05);
-    // Keys still nudge it until the mouse moves again.
-    intents.setMove('t', { x: 1, y: 0 });
-    run(0.2);
+    const start = scene.ultAim!;
+    expect(start).not.toBeNull();
+    expect(scene.targeting?.slot).toBe('ult');
+    intents.setMove('t', { x: 0, y: -1 });
+    run(0.5);
     intents.setMove('t', { x: 0, y: 0 });
-    expect(scene.ultAim!.to.x).toBeGreaterThan(want.x + 0.3);
-    intents.setPointer(scene.worldToScreen(want.x, want.y));
-    run(STEP);
-    expect(scene.ultAim!.to.x).toBeCloseTo(want.x, 1);
-    // Left click: the attack press and the launch arrive together; only the launch happens.
-    intents.meleePress();
-    intents.pressUltLaunch();
+    const aim = scene.ultAim!;
+    expect(start.to.y - aim.to.y).toBeGreaterThan(3.2); // 7 m/s for 0.5 s, Inferno's speed kept
+    expect(start.to.y - aim.to.y).toBeLessThan(3.8);
+    intents.meleePress(); // an attack press while aiming is dropped
     run(STEP);
     intents.meleeRelease();
+    run(STEP);
+    expect(scene.player.attack).toBeNull();
+    expect(scene.ultAim).not.toBeNull();
+    intents.pressAbility('ult'); // the same key launches
+    run(STEP);
     expect(scene.ultAim).toBeNull();
     expect(scene.player.ability).toBe('eruption');
-    expect(scene.player.attack).toBeNull();
     runUntil(() => scene.player.ability === null, 3);
-    expect(Math.hypot(scene.player.x - want.x, scene.player.y - want.y)).toBeLessThan(0.8); // landed where hovered
-    expect(scene.player.attack).toBeNull(); // the release after the click did not punch either
+    expect(Math.hypot(scene.player.x - aim.to.x, scene.player.y - aim.to.y)).toBeLessThan(0.8);
     scenes.clear();
   });
 
-  it('a hovered spot beyond the leap is clamped to its range; a plain click with no aim is just an attack', async () => {
+  it('Escape (or the touch ✕) cancels targeting without casting and keeps the meter; other ability keys are ignored', async () => {
     const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 });
-    intents.meleePress();
-    intents.pressUltLaunch();
-    run(STEP);
-    intents.meleeRelease();
-    run(STEP);
-    expect(scene.player.attack).toBe('jab');
-    expect(scene.ultAim).toBeNull();
-    run(0.8);
     scene.playerFighter.caster!.fillMeter();
-    intents.setPointer(scene.worldToScreen(2, 2)); // far away
     intents.pressAbility('ult');
     run(STEP);
-    const a = scene.ultAim!;
-    expect(Math.hypot(a.to.x - a.from.x, a.to.y - a.from.y)).toBeLessThanOrEqual(a.maxRangeM + 1e-6);
-    expect(a.to.x).toBeLessThan(a.from.x); // toward the cursor
+    intents.pressAbility('a1'); // not the aimed ability: ignored
+    run(STEP);
+    expect(scene.ultAim).not.toBeNull();
+    expect(scene.player.ability).toBeNull();
+    intents.pressAimCancel();
+    run(STEP);
+    expect(scene.ultAim).toBeNull();
+    expect(scene.targeting).toBeNull();
+    expect(scene.player.ability).toBeNull();
+    expect(scene.player.meter).toBeGreaterThanOrEqual(100);
+    // Movement is back at once.
+    const x0 = scene.player.x;
+    intents.setMove('t', { x: 1, y: 0 });
+    run(0.3);
+    intents.setMove('t', { x: 0, y: 0 });
+    expect(scene.player.x).toBeGreaterThan(x0 + 0.3);
+    // A stray cancel with nothing aimed does nothing.
+    intents.pressAimCancel();
+    run(STEP);
+    expect(scene.player.ability).toBeNull();
     scenes.clear();
   });
 
@@ -254,7 +257,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
-  it('aiming the ultimate (owner): I enters aim mode in a jump-prep crouch; WASD moves the spot, not the fighter', async () => {
+  it('aiming the ultimate (owner): K enters aim mode in a jump-prep crouch; WASD moves the spot, not the fighter', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
@@ -280,7 +283,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
-  it('the aimed spot never goes beyond the maximum jump range; a touch drag places it directly', async () => {
+  it('the aimed spot never goes beyond the maximum jump range', async () => {
     const { intents, scene, scenes, run } = await setup({ x: 14, y: 10 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
@@ -290,11 +293,6 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     intents.setMove('t', { x: 0, y: 0 });
     const a = scene.ultAim!;
     expect(Math.hypot(a.to.x - a.from.x, a.to.y - a.from.y)).toBeLessThanOrEqual(a.maxRangeM + 1e-6);
-    intents.setUltDrag({ x: 0, y: 0.5 }); // drag down, half range
-    run(STEP);
-    const b = scene.ultAim!;
-    expect(b.to.x).toBeCloseTo(b.from.x, 3);
-    expect(b.to.y - b.from.y).toBeCloseTo(b.maxRangeM / 2, 1);
     scenes.clear();
   });
 

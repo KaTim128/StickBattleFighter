@@ -23,6 +23,7 @@ import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
 import { SettingsState } from '../input/settings-store';
 import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
+import { AimHint } from '../interface/aim-hint';
 import { BlindVeil } from '../interface/blind-veil';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
@@ -173,6 +174,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // Overlays that pause the fight (Settings, the main menu): the game ignores input while any is open.
   const pausedBy = new Set<string>();
   const blindVeil = new BlindVeil(document.body);
+  const aimHint = new AimHint(document.body);
   const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => pausedBy.size > 0 });
   attachKeyboard(window, desktop);
   attachMouse(container, desktop, intents);
@@ -210,7 +212,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   if (params.has('debug')) overlay.setVisible(true);
   onDebugToggle(window, () => overlay.toggle());
   const combatText = new CombatText(document.body);
-  const abilityHud = new AbilityHud(document.body); // after the touch controls: it paints their ability buttons
+  const abilityHud = new AbilityHud(document.body, () => settings.bindings); // after the touch controls: it paints their ability buttons
   const clashHud = new ClashHud(document.body);
   const topHud = new TopHud(document.body);
   const showcase = new UltimateShowcase(document.body);
@@ -244,7 +246,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const controlsHint = (): string => {
     const b = settings.bindings;
     const k = codeLabel;
-    return `move ${k(b.moveUp)}${k(b.moveLeft)}${k(b.moveDown)}${k(b.moveRight)} · sprint ${k(b.sprint)} · jump ${k(b.jump)} · ${k(b.attack)}: attack (hold: block) · ${k(b.dodge)}: dodge · ${k(b.ability1)}/${k(b.ability2)}/${k(b.ability3)} abilities · ${k(b.ultimate)} ultimate (leaps: aim with the mouse, ${k(b.ultimateLaunch)} to jump) · ${k(b.grab)} grab / throw · Esc settings`;
+    return `move ${k(b.moveUp)}${k(b.moveLeft)}${k(b.moveDown)}${k(b.moveRight)} · sprint ${k(b.sprint)} · jump ${k(b.jump)} · ${k(b.attack)}: attack (hold: block) · ${k(b.dodge)}: dodge · ${k(b.ability1)}/${k(b.ability2)}/${k(b.ability3)} abilities · ${k(b.ultimate)} ultimate (aimed abilities: WASD moves the target, the same key again confirms, Esc cancels) · ${k(b.grab)} grab / throw · Esc settings`;
   };
   onToggleDummyAttacks(window, () => {
     if (!(scene instanceof FightArenaScene)) return;
@@ -325,6 +327,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         showDodgeReady(document.body, debug.player.dodgeReady);
         showStickAiming(document.body, debug.player.beamAiming);
         blindVeil.update(debug.player.blindS);
+        aimHint.update(scene.targeting, document.body.classList.contains('touch-mode'), settings.bindings);
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;
@@ -421,10 +424,21 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings);
     },
   );
-  new SettingsPanel(document.body, settings, (open) => setPaused('settings', open), {
-    leave: () => menu.setOpen(true),
-    fullscreen: () => (document.fullscreenElement ? exitFullscreen() : enterFullscreen()),
-  });
+  new SettingsPanel(
+    document.body,
+    settings,
+    (open) => setPaused('settings', open),
+    {
+      leave: () => menu.setOpen(true),
+      fullscreen: () => (document.fullscreenElement ? exitFullscreen() : enterFullscreen()),
+    },
+    () => {
+      // Escape while aiming cancels the aim (owner, 12/11/2026) rather than opening the settings.
+      if (!(scene instanceof FightArenaScene) || !scene.targeting) return false;
+      intents.pressAimCancel();
+      return true;
+    },
+  );
   if (scene instanceof FightArenaScene && !automated && !params.has('play')) menu.setOpen(true);
   // Portraits are the fighters themselves, drawn by the game's own renderer (owner, 12/11/2026).
   // All in one GPU read-back, once the page is idle, so the first moments of a fight never stall.

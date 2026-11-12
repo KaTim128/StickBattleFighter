@@ -92,12 +92,13 @@ export class FlickDetector {
  * Mobile and tablet controls (CONTROL_SCHEME §3): a floating joystick in the
  * left 40% of the screen and the contextual utility button (jump for now).
  * Hidden until the first touch, so desktop never shows them (REQ-CTL-2).
- * Five combat buttons (REQ-CTL-1, INV-9): MELEE plus A1, A2, A3 and ULT in an arc; JUMP sits apart.
+ * Combat buttons (REQ-CTL-1; owner 12/11/2026 added a fourth ability, SUP-20): MELEE plus A1–A4 and ULT in an arc; JUMP sits apart.
  */
-/** Dragging this far from where the ULT press started aims at the maximum range. */
-const ULT_DRAG_FULL_PX = 120;
-/** Smaller drags are ignored (a plain tap aims at the soft-locked target). */
-const ULT_DRAG_DEADZONE_PX = 10;
+/*
+ * Targeting (owner, 12/11/2026): tapping an aimed ability (Teleport, the leaping ultimate) enters
+ * targeting; while it lasts the joystick moves the target instead of the fighter, tapping the same
+ * button again confirms, and the ✕ button (shown only while targeting) cancels.
+ */
 
 export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): () => void {
   const layer = document.createElement('div');
@@ -111,7 +112,9 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     <button class="ability-button" data-slot="a1" type="button" aria-label="Ability 1">A1</button>
     <button class="ability-button" data-slot="a2" type="button" aria-label="Ability 2">A2</button>
     <button class="ability-button" data-slot="a3" type="button" aria-label="Ability 3">A3</button>
-    <button class="ability-button ult" data-slot="ult" type="button" aria-label="Ultimate">ULT</button>`;
+    <button class="ability-button" data-slot="a4" type="button" aria-label="Ability 4">A4</button>
+    <button class="ability-button ult" data-slot="ult" type="button" aria-label="Ultimate">ULT</button>
+    <button class="aim-cancel-button" type="button" aria-label="Cancel targeting">✕</button>`;
   root.appendChild(layer);
   const stick = layer.querySelector<HTMLElement>('.joystick')!;
   const knob = layer.querySelector<HTMLElement>('.joystick-knob')!;
@@ -135,9 +138,6 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   const onDown = (e: PointerEvent): void => {
     showForTouch(e);
     if (e.pointerType !== 'touch' || e.target instanceof HTMLButtonElement) return;
-    // Any tap on the game area can pick a destination (Teleport: tap R, then tap where to go).
-    const box = root.getBoundingClientRect();
-    intents.tap({ x: e.clientX - box.left, y: e.clientY - box.top });
     if (e.clientX > window.innerWidth * 0.4) {
       if (swipePointer === null && !(e.target as Element | null)?.closest?.('.settings-panel, .main-menu')) {
         swipePointer = e.pointerId;
@@ -201,38 +201,16 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   const onAbility = (e: PointerEvent): void => {
     e.preventDefault();
     const slot = (e.currentTarget as HTMLElement).dataset.slot;
-    if (slot === 'a1' || slot === 'a2' || slot === 'a3') intents.pressAbility(slot);
+    if (slot === 'a1' || slot === 'a2' || slot === 'a3' || slot === 'a4' || slot === 'ult') intents.pressAbility(slot);
   };
   for (const b of abilityButtons) b.addEventListener('pointerdown', onAbility);
 
-  // ULT: press to start aiming, drag to place the landing spot, release to jump (owner, 11/11/2026).
-  const ult = layer.querySelector<HTMLButtonElement>('.ability-button.ult')!;
-  let ultPointer: number | null = null;
-  let ultOrigin = { x: 0, y: 0 };
-  const onUltDown = (e: PointerEvent): void => {
+  const cancel = layer.querySelector<HTMLButtonElement>('.aim-cancel-button')!;
+  const onCancel = (e: PointerEvent): void => {
     e.preventDefault();
-    ultPointer = e.pointerId;
-    ultOrigin = { x: e.clientX, y: e.clientY };
-    intents.setUltDrag(null);
-    intents.pressAbility('ult'); // start aiming
+    intents.pressAimCancel();
   };
-  const onUltMove = (e: PointerEvent): void => {
-    if (e.pointerId !== ultPointer) return;
-    const dx = e.clientX - ultOrigin.x;
-    const dy = e.clientY - ultOrigin.y;
-    if (Math.hypot(dx, dy) < ULT_DRAG_DEADZONE_PX) return;
-    intents.setUltDragFromScreen({ x: dx / ULT_DRAG_FULL_PX, y: dy / ULT_DRAG_FULL_PX });
-  };
-  const onUltUp = (e: PointerEvent): void => {
-    if (e.pointerId !== ultPointer) return;
-    ultPointer = null;
-    intents.pressAbility('ult'); // launch (the drag, if any, sets where)
-  };
-  ult.addEventListener('pointerdown', onUltDown);
-  window.addEventListener('pointermove', onUltMove);
-  window.addEventListener('pointerup', onUltUp);
-  window.addEventListener('pointercancel', onUltUp);
-  // A long press (holding MELEE to block) must not select the label or open the context menu.
+  cancel.addEventListener('pointerdown', onCancel);
   const noDefault = (e: Event): void => e.preventDefault();
   layer.addEventListener('contextmenu', noDefault);
   layer.addEventListener('selectstart', noDefault);
@@ -250,10 +228,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   melee.addEventListener('pointercancel', onMeleeUp);
   melee.addEventListener('pointerleave', onMeleeUp);
   return () => {
-    ult.removeEventListener('pointerdown', onUltDown);
-    window.removeEventListener('pointermove', onUltMove);
-    window.removeEventListener('pointerup', onUltUp);
-    window.removeEventListener('pointercancel', onUltUp);
+    cancel.removeEventListener('pointerdown', onCancel);
     for (const b of abilityButtons) b.removeEventListener('pointerdown', onAbility);
     layer.removeEventListener('contextmenu', noDefault);
     layer.removeEventListener('selectstart', noDefault);

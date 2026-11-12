@@ -42,6 +42,31 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
   'rampage-mode': svg(
     `<defs><radialGradient id="rg" cx="50%" cy="55%" r="50%"><stop offset="0" stop-color="#ffd2c0"/><stop offset=".45" stop-color="#ff5a3a"/><stop offset="1" stop-color="#5a0a0a" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="26" r="23" fill="url(#rg)"/><path d="M15 30 C8 30 4 24 6 16 C7 12 11 12 12 16 C12 20 14 22 17 22" fill="#6e6e78" stroke="#141418" stroke-width="2" stroke-linejoin="round"/><path d="M33 30 C40 30 44 24 42 16 C41 12 37 12 36 16 C36 20 34 22 31 22" fill="#6e6e78" stroke="#141418" stroke-width="2" stroke-linejoin="round"/><circle cx="8.5" cy="13" r="3.5" fill="#6e6e78" stroke="#141418" stroke-width="2"/><circle cx="39.5" cy="13" r="3.5" fill="#6e6e78" stroke="#141418" stroke-width="2"/><path d="M14 22 C14 20 34 20 34 22 L32 40 C28 43 20 43 16 40 Z" fill="#6e6e78" stroke="#141418" stroke-width="2" stroke-linejoin="round"/><path d="M24 24 V38 M18 30 H30 M19 35 H29" stroke="#4c4c55" stroke-width="1.5"/><circle cx="24" cy="13" r="7" fill="#6e6e78" stroke="#141418" stroke-width="2"/><path d="M20 12 L23 13.5 M25 13.5 L28 12" stroke="#ff3a1a" stroke-width="2.2" stroke-linecap="round"/>`,
   ),
+  // Flame Detonation (owner, 12/11/2026): two cupped hands round a white-hot core, bursting outward.
+  'flame-detonation': svg(
+    `${FIRE_GLOW}<path d="M24 2 L27 13 L37 6 L32 17 L45 16 L35 23 L46 30 L33 30 L38 42 L28 34 L24 46 L20 34 L10 42 L15 30 L2 30 L13 23 L3 16 L16 17 L11 6 L21 13 Z" fill="#ff7a1a" stroke="#7a1a06" stroke-width="1.5" stroke-linejoin="round"/><circle cx="24" cy="24" r="10" fill="url(#fg)"/><path d="M12 30 C12 38 18 40 22 36 M36 30 C36 38 30 40 26 36" stroke="#7a1a06" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,
+  ),
+  // Grapple Slam: a grey fist gripping a small figure overhead, a curved arrow down to the floor.
+  'grapple-slam': svg(
+    `<path d="M2 44 H46" stroke="#5a4632" stroke-width="4" stroke-linecap="round"/><ellipse cx="34" cy="42" rx="10" ry="3" fill="#b89a74" opacity=".8"/><path d="M8 34 C6 18 16 8 28 8" stroke="#eadcc2" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="4 3"/><path d="M4 30 L8 38 L13 31 Z" fill="#eadcc2"/><circle cx="34" cy="10" r="4" fill="#d9dce4" stroke="#141418" stroke-width="1.5"/><path d="M34 14 V24 M34 18 L28 14 M34 18 L40 14 M34 24 L30 30 M34 24 L38 30" stroke="#d9dce4" stroke-width="2.5" stroke-linecap="round"/><rect x="26" y="20" width="16" height="12" rx="5" fill="#6e6e78" stroke="#141418" stroke-width="2"/><path d="M31 21 V27 M36 21 V27" stroke="#141418" stroke-width="1.3"/><path d="M34 32 V40" stroke="#4c4c55" stroke-width="7" stroke-linecap="round"/>`,
+  ),
+  // Grave Chains: violet spectral chain links lashing out to a hook.
+  'grave-chains': svg(
+    `<g fill="none" stroke-width="3.2" stroke-linecap="round"><ellipse cx="9" cy="36" rx="5" ry="3.2" transform="rotate(-35 9 36)" stroke="#6a2bb0"/><ellipse cx="17" cy="30" rx="5" ry="3.2" transform="rotate(-35 17 30)" stroke="#a970ff"/><ellipse cx="25" cy="24" rx="5" ry="3.2" transform="rotate(-35 25 24)" stroke="#6a2bb0"/><ellipse cx="33" cy="18" rx="5" ry="3.2" transform="rotate(-35 33 18)" stroke="#a970ff"/></g><path d="M37 15 C42 10 46 14 43 19 C41 22 37 21 37 18" stroke="#e6dfcf" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="40" cy="9" r="2" fill="#d9c8ff" opacity=".8"/><circle cx="45" cy="25" r="1.6" fill="#a970ff" opacity=".7"/>`,
+  ),
+  // Basic combos, one per fighter (owner, 12/11/2026: "unique" combo symbols).
+  // A flaming fist driving forward (Inferno).
+  'flaming-fist': svg(
+    `<path d="M2 18 C8 14 10 22 16 18 M2 30 C8 26 10 34 16 30" stroke="#ff7a1a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M16 12 C20 4 30 4 30 12 C34 6 42 10 38 18 C44 20 44 30 38 32 C40 40 30 44 26 38 C22 44 14 40 16 34 Z" fill="#ff7a1a" opacity=".6"/><rect x="18" y="14" width="20" height="18" rx="6" fill="#e2701d" stroke="#7a1a06" stroke-width="2.2"/><path d="M23 15 V23 M28 15 V23 M33 15 V23" stroke="#7a1a06" stroke-width="1.4"/><path d="M20 18 H36" stroke="#ffd25a" stroke-width="1.6" opacity=".8"/>`,
+  ),
+  // A heavy grey fist with an impact burst (Braxon).
+  'heavy-fist': svg(
+    `<path d="M36 6 L38 14 L46 12 L40 19 L46 25 L38 24 L36 32 L33 24 L26 26 L31 19 L26 12 L34 14 Z" fill="#eadcc2" stroke="#7d6448" stroke-width="1.2"/><path d="M4 26 H12" stroke="#4c4c55" stroke-width="9" stroke-linecap="round"/><rect x="10" y="16" width="22" height="20" rx="7" fill="#6e6e78" stroke="#141418" stroke-width="2.5"/><path d="M16 17 V26 M21 17 V26 M26 17 V26" stroke="#141418" stroke-width="1.5"/><path d="M12 21 H30" stroke="#d9dce4" stroke-width="1.5" opacity=".7"/>`,
+  ),
+  // A bone staff sweeping round in a violet arc (Necro).
+  'staff-swing': svg(
+    `<path d="M6 34 C6 16 22 6 40 10" stroke="#a970ff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".55"/><path d="M10 34 C12 22 22 14 36 14" stroke="#d9c8ff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".7"/><path d="M12 44 L34 14" stroke="#2a241c" stroke-width="5.5" stroke-linecap="round"/><path d="M12 44 L34 14" stroke="#e6dfcf" stroke-width="3" stroke-linecap="round"/><path d="M17 37 L20 39 M24 28 L27 30" stroke="#2a241c" stroke-width="1.5"/><circle cx="36" cy="11" r="6" fill="#e6dfcf" stroke="#2a241c" stroke-width="1.8"/><circle cx="34" cy="10.5" r="1.4" fill="#a970ff"/><circle cx="38" cy="10.5" r="1.4" fill="#a970ff"/>`,
+  ),
   // Necro (owner, 12/11/2026). Soul Drain: a violet orb of souls trailing ghostly wisps.
   'soul-drain': svg(
     `<defs><radialGradient id="sg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f1e8ff"/><stop offset=".45" stop-color="#a970ff"/><stop offset="1" stop-color="#2a0d3d"/></radialGradient></defs><path d="M4 32 C12 24 16 34 22 26 C18 36 26 38 30 30" stroke="#a970ff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/><path d="M6 20 C12 16 16 22 22 18" stroke="#d9c8ff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7"/><circle cx="32" cy="24" r="11" fill="url(#sg)" stroke="#1a0826" stroke-width="2"/>`,

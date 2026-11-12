@@ -34,7 +34,7 @@ test.beforeEach(async ({}, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'desktop keyboard and mouse');
 });
 
-test('right click dodges and never opens the browser menu over the game', async ({ page }) => {
+test('L dodges (owner, 12/11/2026); the browser menu never opens over the game', async ({ page }) => {
   const errors: string[] = [];
   await open(page, errors);
   const p = await gamePoint(page);
@@ -47,23 +47,21 @@ test('right click dodges and never opens the browser menu over the game', async 
   }, p);
   expect(prevented).toBe(true);
   let sawDodge = false;
-  await page.mouse.move(p.x, p.y);
-  await page.mouse.down({ button: 'right' });
+  await page.keyboard.down('KeyL');
   for (let i = 0; i < 40 && !sawDodge; i++) {
     sawDodge = (await hook(page)).player.state === 'dodging';
     await page.waitForTimeout(10);
   }
-  await page.mouse.up({ button: 'right' });
+  await page.keyboard.up('KeyL');
   expect(sawDodge).toBe(true);
   expect(errors).toEqual([]);
 });
 
-test('right click always dodges straight back from the facing, even with a movement key held (owner, 12/11/2026)', async ({
+test('the dodge (L) always goes straight back from the facing, even with a movement key held (owner, 12/11/2026)', async ({
   page,
 }) => {
   const errors: string[] = [];
   await open(page, errors, 'scene=training-yard&playerAt=10,10');
-  const p = await gamePoint(page);
   const screenX = (s: { x: number; y: number }) => s.x - s.y; // iso: right on screen is +(x − y)
   // Walk right a moment so the fighter faces right, then stop.
   await page.keyboard.down('KeyD');
@@ -73,7 +71,7 @@ test('right click always dodges straight back from the facing, even with a movem
   const before = await hook(page);
   // Hold "right" (toward the facing) and dodge: it still steps back, to the left, still facing right.
   await page.keyboard.down('KeyD');
-  await page.mouse.click(p.x, p.y, { button: 'right' });
+  await page.keyboard.press('KeyL');
   await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000, intervals: [10] }).toBe('dodging');
   expect((await hook(page)).player.facing).toBe(before.player.facing);
   await page.keyboard.up('KeyD');
@@ -82,23 +80,34 @@ test('right click always dodges straight back from the facing, even with a movem
   expect(errors).toEqual([]);
 });
 
-test('Inferno ultimate: F, hover the mouse over the spot, left click jumps there', async ({ page }, testInfo) => {
+test('Inferno ultimate on the keyboard (owner, 12/11/2026): K aims with WASD and on-screen help; Esc cancels; K again jumps', async ({
+  page,
+}, testInfo) => {
   const errors: string[] = [];
   await open(page, errors);
   await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
+  const hint = page.locator('.aim-hint');
+  // K aims; the instructions name the keys; Escape cancels without opening the settings or casting.
+  await page.keyboard.press('KeyK');
+  await expect(hint).toBeVisible();
+  await expect(hint).toHaveText(/W A S D to move the target · K to launch · Esc to cancel/);
+  await page.keyboard.press('Escape');
+  await expect(hint).toBeHidden();
+  await expect(page.locator('.settings-panel')).toBeHidden();
+  expect((await hook(page)).player.ability).toBeNull();
+  // Again: W slides the spot up the screen (the fighter stays put), K launches the leap there.
   const start = await hook(page);
-  await page.keyboard.press('KeyF');
-  // Hover well up the screen from the fighter.
-  const size = page.viewportSize()!;
-  await page.mouse.move(size.width * 0.5, size.height * 0.5);
-  await page.mouse.move(size.width * 0.5, size.height * 0.22, { steps: 5 });
-  await page.waitForTimeout(200);
-  expect((await hook(page)).player.ability).toBeNull(); // still aiming
-  await page.screenshot({ path: testInfo.outputPath('ult-mouse-aim.png') });
-  await page.mouse.down();
-  await page.mouse.up();
+  await page.keyboard.press('KeyK');
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(1500);
+  await page.keyboard.up('KeyW');
+  expect(
+    Math.hypot((await hook(page)).player.x - start.player.x, (await hook(page)).player.y - start.player.y),
+  ).toBeLessThan(0.1);
+  await page.screenshot({ path: testInfo.outputPath('ult-keyboard-aim.png') });
+  await page.keyboard.press('KeyK');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
-  expect((await hook(page)).player.attack).toBeNull(); // the click launched; it did not punch
+  await expect(hint).toBeHidden();
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull();
   const end = await hook(page);
   expect(end.player.x + end.player.y).toBeLessThan(start.player.x + start.player.y - 1.5); // landed up the screen
@@ -110,7 +119,7 @@ test('settings: Esc opens and pauses; volumes and keys save, clash with a clear 
 }, testInfo) => {
   const errors: string[] = [];
   await open(page, errors);
-  await page.evaluate(() => localStorage.removeItem('stickman-arena.settings.v1'));
+  await page.evaluate(() => localStorage.removeItem('stickman-arena.settings.v2'));
   await page.keyboard.press('Escape');
   const panel = page.locator('.settings-panel');
   await expect(panel).toBeVisible();
@@ -130,10 +139,10 @@ test('settings: Esc opens and pauses; volumes and keys save, clash with a clear 
   await page.keyboard.press('KeyW');
   await expect(panel.locator('.settings-message')).toHaveText('W is already assigned to Move up. Choose another key.');
   await expect(panel.locator('[data-action="ability1"]')).toHaveText('Q');
-  // The aimed-ultimate launch cannot take a movement or ability key either.
-  await panel.locator('[data-action="ultimateLaunch"]').click();
-  await page.keyboard.press('KeyE');
-  await expect(panel.locator('.settings-message')).toContainText('already assigned to Ability 2');
+  // K belongs to the ultimate alone: no other action may take it.
+  await panel.locator('[data-action="ability4"]').click();
+  await page.keyboard.press('KeyK');
+  await expect(panel.locator('.settings-message')).toContainText('already assigned to Ultimate');
   // A free key is accepted.
   await panel.locator('[data-action="jump"]').click();
   await page.keyboard.press('KeyC');

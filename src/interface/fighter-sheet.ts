@@ -1,7 +1,7 @@
 import type { AbilityDef, AbilitySlot } from '../abilities/ability-def';
 import { type FighterRatings, fighterRatings } from '../characters/ratings';
 import type { FighterDef } from '../data/fighters/fighter-def';
-import { type Bindings, codeLabel } from '../input/bindings';
+import { type Bindings, codeLabel, SLOT_ACTION } from '../input/bindings';
 
 /**
  * Everything the fighter details screen shows (owner, 12/11/2026): the six ratings, and each
@@ -27,8 +27,13 @@ export interface FighterSheet {
 
 export type Device = 'desktop' | 'touch';
 
-const SLOT_BUTTON: Readonly<Record<AbilitySlot, string>> = { a1: 'first', a2: 'second', a3: 'third', ult: 'ULT' };
-const SLOT_ACTION = { a1: 'ability1', a2: 'ability2', a3: 'ability3', ult: 'ultimate' } as const;
+const SLOT_BUTTON: Readonly<Record<AbilitySlot, string>> = {
+  a1: 'first',
+  a2: 'second',
+  a3: 'third',
+  a4: 'fourth',
+  ult: 'ULT',
+};
 
 const s1 = (n: number) => (Math.round(n * 10) / 10).toString();
 
@@ -79,19 +84,21 @@ function howTo(a: AbilityDef, device: Device, keys: Bindings): string {
     const button = a.slot === 'ult' ? 'the ULT button' : `the ${SLOT_BUTTON[a.slot]} ability button`;
     const ready = a.slot === 'ult' ? ' once it reads READY' : '';
     if (d.type === 'teleport')
-      return `Tap ${button}, then tap the spot on the map to teleport there. Tap the button again to cancel.`;
-    if (d.type === 'leap') return `Hold ${button}${ready} and drag to place the landing spot; let go to jump.`;
+      return `Tap ${button} to start aiming, move the marker with the joystick, then tap ${button} again to teleport there. Tap ✕ to cancel.`;
+    if (d.type === 'leap')
+      return `Tap ${button}${ready} to start aiming, move the landing spot with the joystick, then tap ${button} again to jump. Tap ✕ to cancel.`;
     if (d.type === 'beam')
       return `Tap ${button}. While the beam pours, drag the joystick (or swipe on the right) to steer it.`;
     if (d.type === 'nova' && d.atTarget) return `Tap ${button}${ready}: it lands on the opponent you face.`;
     return `Tap ${button}${ready}.`;
   }
   const key = codeLabel(keys[SLOT_ACTION[a.slot]]);
-  const confirm = codeLabel(keys.ultimateLaunch);
+  const move = `${codeLabel(keys.moveUp)} ${codeLabel(keys.moveLeft)} ${codeLabel(keys.moveDown)} ${codeLabel(keys.moveRight)}`;
   const ready = a.slot === 'ult' ? ' when the ultimate meter is full' : '';
   if (d.type === 'teleport')
-    return `Press ${key}, move the mouse to the spot, then ${confirm} to teleport there. Press ${key} again to cancel.`;
-  if (d.type === 'leap') return `Press ${key}${ready}, hover the mouse over the landing spot, then ${confirm} to jump.`;
+    return `Press ${key} to start aiming, move the marker with ${move}, then press ${key} again to teleport there. Esc cancels.`;
+  if (d.type === 'leap')
+    return `Press ${key}${ready} to start aiming, move the landing spot with ${move}, then press ${key} again to jump. Esc cancels.`;
   if (d.type === 'beam') return `Press ${key}. While the beam pours, move the mouse to steer it.`;
   if (d.type === 'nova' && d.atTarget) return `Press ${key}${ready}: it lands on the opponent you face.`;
   return `Press ${key}${ready}.`;
@@ -116,7 +123,7 @@ function comboEntry(def: FighterDef, device: Device, keys: Bindings): SheetAbili
     slot: 'combo',
     key: device === 'touch' ? 'MELEE' : attack,
     name: 'Basic combo',
-    icon: null,
+    icon: def.abilities?.comboIcon ?? null,
     description: `A ${chain.length}-hit string of blows; the last one is the finisher.`,
     stats: [...hits, { label: 'Stamina', value: 'none' }],
     howTo:
@@ -130,7 +137,7 @@ export function fighterSheet(def: FighterDef, device: Device, keys: Bindings): F
   const kit = def.abilities;
   const abilities: SheetAbility[] = [comboEntry(def, device, keys)];
   if (kit) {
-    for (const slot of ['a1', 'a2', 'a3', 'ult'] as const) {
+    for (const slot of ['a1', 'a2', 'a3', 'a4', 'ult'] as const) {
       const a = kit[slot];
       abilities.push({
         slot,

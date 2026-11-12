@@ -10,6 +10,7 @@ import type { AbilityKit } from '../../abilities/ability-def';
 const FIRE_PALETTE = { deep: 0xd8320c, hot: 0xff6a00, bright: 0xffa53a, core: 0xfff1a8 } as const;
 
 export const INFERNO_KIT: AbilityKit = {
+  comboIcon: 'flaming-fist',
   // A1: Fireball (owner, 11/11/2026: renamed from Fire Bolt and made the Magic Attack VFX
   // benchmark). Inferno pulls fire out of the air into his palm (0.4 s charge, interruptible),
   // hurls a white-hot ball (18 m/s, up to 10 m), and it bursts on contact, setting the target
@@ -122,6 +123,44 @@ export const INFERNO_KIT: AbilityKit = {
       hitFlash: 0xffffff,
     },
   },
+  // A4 (R): Flame Detonation (owner, 12/11/2026). He cups his hands and gathers a swelling ball of
+  // fire between them (0.55 s, interruptible), then thrusts them out: a short-range explosion all
+  // round him that hurls enemies backwards. Hardest up close.
+  a4: {
+    id: 'flameDetonation',
+    name: 'Flame Detonation',
+    label: 'BLAST',
+    description:
+      'Gathers fire between his hands, then releases it in a short-range explosion that sends nearby enemies flying backwards.',
+    icon: 'flame-detonation',
+    slot: 'a4',
+    staminaCost: 30,
+    cooldownS: 7,
+    castS: 0.55,
+    recoveryS: 0.35,
+    aimRangeM: 3,
+    moveFactor: 0,
+    interruptible: true,
+    payload: {
+      damage: 85,
+      knockbackMps: 15,
+      heavy: true,
+      strength: 900,
+      burn: { dps: 10, durationS: 1.5 },
+      ignites: true,
+      falloff: { fullWithinM: 1, minFactor: 0.55 },
+      impact: 'fire-heavy',
+    },
+    delivery: { type: 'nova', radiusM: 2.3, telegraphS: 0.05 },
+    vfx: 'flame-detonation',
+    sfx: { cast: 'fireball-charge', release: 'detonation-blast', impact: 'fireball-boom' },
+    look: {
+      palette: FIRE_PALETTE,
+      charge: { gatherRadiusM: 1.1, motesPerS: 120, coreMaxM: 0.32 },
+      impact: { flashM: 1.6, sparks: 46, motes: 40, ringM: 2.3, scorchM: 0.9, smoke: 14 },
+      hitFlash: 0xffffff,
+    },
+  },
   // ULT: Eruption (owner, 11/11/2026, renamed from Meteor Fist and redesigned as a jumping ground
   // slam). Inferno squats and gathers flames (0.55 s), launches himself into the air wrapped in
   // fire, and crashes down: a fiery explosion with a clearly marked 3.2 m radius. Damage falls off
@@ -149,7 +188,7 @@ export const INFERNO_KIT: AbilityKit = {
       ignites: true,
       falloff: { fullWithinM: 1, minFactor: 0.45 },
     },
-    delivery: { type: 'leap', maxRangeM: 8, airS: 0.75, peakM: 2.4, radiusM: 3.2 },
+    delivery: { type: 'leap', maxRangeM: 8, airS: 0.75, peakM: 2.4, radiusM: 3.2, aimSpeedMps: 7 },
     vfx: 'eruption-slam',
     sfx: { cast: 'fire-roar', release: 'leap-whoosh', impact: 'meteor-impact' },
     look: {

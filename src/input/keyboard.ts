@@ -82,11 +82,11 @@ export class DesktopInput {
         case 'ability3':
           i.pressAbility('a3');
           break;
+        case 'ability4':
+          i.pressAbility('a4');
+          break;
         case 'ultimate':
           i.pressAbility('ult');
-          break;
-        case 'ultimateLaunch':
-          i.pressUltLaunch();
           break;
         default:
           break;

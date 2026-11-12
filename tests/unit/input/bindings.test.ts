@@ -31,23 +31,25 @@ describe('default controls (owner, 11/11/2026; REQ-CTL-15)', () => {
       moveRight: 'KeyD',
       sprint: 'ShiftLeft',
       jump: 'Space',
-      attack: 'Mouse0',
-      dodge: 'Mouse2',
+      attack: 'KeyJ',
+      dodge: 'KeyL',
       ability1: 'KeyQ',
       ability2: 'KeyE',
-      ability3: 'KeyR',
-      ultimate: 'KeyF',
-      ultimateLaunch: 'Mouse0',
+      ability3: 'KeyF',
+      ability4: 'KeyR',
+      ultimate: 'KeyK',
       grab: 'KeyG',
     });
     expect(BIND_ACTIONS.map((a) => a.action).sort()).toEqual(Object.keys(DEFAULT_BINDINGS).sort());
   });
 
-  it('every default is conflict-free; left click is the attack and (while aiming) the ultimate launch', () => {
+  it('every default is conflict-free; K is only the ultimate (owner, 12/11/2026)', () => {
     for (const { action } of BIND_ACTIONS)
       expect(checkBinding(DEFAULT_BINDINGS, action, DEFAULT_BINDINGS[action])).toEqual({ ok: true });
-    expect(actionsFor(DEFAULT_BINDINGS, 'Mouse0').sort()).toEqual(['attack', 'ultimateLaunch']);
-    expect(actionsFor(DEFAULT_BINDINGS, 'Mouse2')).toEqual(['dodge']);
+    expect(actionsFor(DEFAULT_BINDINGS, 'KeyK')).toEqual(['ultimate']);
+    expect(actionsFor(DEFAULT_BINDINGS, 'KeyJ')).toEqual(['attack']);
+    expect(actionsFor(DEFAULT_BINDINGS, 'KeyL')).toEqual(['dodge']);
+    expect(actionsFor(DEFAULT_BINDINGS, 'Mouse0')).toEqual([]);
   });
 });
 
@@ -70,28 +72,13 @@ describe('rebinding and conflicts', () => {
   });
 
   it('moving the attack onto the dodge button is refused', () => {
-    expect(rebind(DEFAULT_BINDINGS, 'attack', 'Mouse2').check).toMatchObject({ ok: false, with: 'dodge' });
+    expect(rebind(DEFAULT_BINDINGS, 'attack', 'KeyL').check).toMatchObject({ ok: false, with: 'dodge' });
   });
 
-  it('the ultimate launch may share only with the attack or the ultimate key, never movement or abilities', () => {
-    expect(checkBinding(DEFAULT_BINDINGS, 'ultimateLaunch', 'KeyF').ok).toBe(true); // press the ultimate again
-    expect(checkBinding(DEFAULT_BINDINGS, 'ultimateLaunch', 'Mouse0').ok).toBe(true);
-    for (const [code, other] of [
-      ['KeyW', 'moveUp'],
-      ['KeyD', 'moveRight'],
-      ['ShiftLeft', 'sprint'],
-      ['Space', 'jump'],
-      ['Mouse2', 'dodge'],
-      ['KeyQ', 'ability1'],
-      ['KeyE', 'ability2'],
-      ['KeyR', 'ability3'],
-      ['KeyG', 'grab'],
-    ] as const) {
-      expect(checkBinding(DEFAULT_BINDINGS, 'ultimateLaunch', code)).toMatchObject({ ok: false, with: other });
-    }
-    // ...and the other direction: an ability cannot take the launch key when it is not shared.
-    const moved = rebind(DEFAULT_BINDINGS, 'ultimateLaunch', 'KeyX').bindings;
-    expect(checkBinding(moved, 'ability2', 'KeyX')).toMatchObject({ ok: false, with: 'ultimateLaunch' });
+  it('no key may drive two actions: the ultimate key cannot also be the attack or an ability', () => {
+    expect(checkBinding(DEFAULT_BINDINGS, 'attack', 'KeyK')).toMatchObject({ ok: false, with: 'ultimate' });
+    expect(checkBinding(DEFAULT_BINDINGS, 'ability1', 'KeyK')).toMatchObject({ ok: false, with: 'ultimate' });
+    expect(checkBinding(DEFAULT_BINDINGS, 'ultimate', 'KeyJ')).toMatchObject({ ok: false, with: 'attack' });
   });
 
   it('reserved keys (settings, mute, debug) are refused', () => {
@@ -152,12 +139,11 @@ describe('desktop input from bindings', () => {
     expect(i.sprint).toBe(true);
     input.up('ShiftLeft');
     expect(i.sprint).toBe(false);
-    input.down('Mouse2');
+    input.down('KeyL');
     expect(i.consumeDodge()).toBe(true);
-    input.down('Mouse0');
+    input.down('KeyJ');
     expect(i.meleeHeld).toBe(true);
-    expect(i.consumeUltLaunch()).toBe(true);
-    input.up('Mouse0');
+    input.up('KeyJ');
     expect(i.consumeMeleeEdges()).toEqual({ pressed: true, released: true });
   });
 

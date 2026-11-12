@@ -117,6 +117,15 @@ export interface AbilityVfxInput {
   readonly trails?: readonly DashTrailFx[];
   /** Continuous beams (Fire Beam). */
   readonly beams?: readonly Beam[];
+  /**
+   * Spectral chains this frame (Grave Chains, owner 12/11/2026): from the caster's staff to the
+   * flying hook, then to the enemy being dragged in. World points at chest height.
+   */
+  readonly chains?: readonly {
+    readonly from: { readonly x: number; readonly y: number };
+    readonly to: { readonly x: number; readonly y: number };
+    readonly palette: Palette;
+  }[];
   /** Smoke rising this frame (a burn going out, a body burning away), world points. */
   readonly smoke?: readonly { readonly x: number; readonly y: number; readonly z: number; readonly count: number }[];
 }
@@ -180,6 +189,8 @@ interface FlameRing {
 }
 /** A fireball flies at chest height. */
 const BOLT_HEIGHT_M = 1.0;
+/** Grave Chains run at the staff's height. */
+const CHAIN_HEIGHT_M = 1.05;
 
 export class AbilityVfx {
   readonly floor = new Graphics();
@@ -1055,6 +1066,43 @@ export class AbilityVfx {
       this.core(g, a0.x, a0.y, w * 0.55, pal, t, false);
       g.circle(a1.x, a1.y, w * (0.8 + 0.15 * Math.sin(t * 40))).fill({ color: pal.bright, alpha: 0.7 * amount });
       g.circle(a1.x, a1.y, w * 0.4).fill({ color: pal.core, alpha: amount });
+    }
+
+    // Spectral chains: a line of interlocking links, alternately face-on and edge-on, glowing
+    // violet with a pale core, swaying a little; a hook at the far end.
+    for (const ch of input.chains ?? []) {
+      const a0 = P(ch.from.x, ch.from.y, CHAIN_HEIGHT_M);
+      const a1 = P(ch.to.x, ch.to.y, CHAIN_HEIGHT_M);
+      const len = Math.hypot(a1.x - a0.x, a1.y - a0.y);
+      if (len < 0.05) continue;
+      const ux = (a1.x - a0.x) / len;
+      const uy = (a1.y - a0.y) / len;
+      g.moveTo(a0.x, a0.y).lineTo(a1.x, a1.y).stroke({ width: 0.16, color: ch.palette.hot, alpha: 0.25, cap: 'round' });
+      const links = Math.max(2, Math.floor(len / 0.17));
+      for (let i = 0; i < links; i++) {
+        const u = (i + 0.5) / links;
+        const sway = Math.sin(u * Math.PI) * Math.sin(t * 9 + u * 6) * 0.04;
+        const cx = a0.x + (a1.x - a0.x) * u - uy * sway;
+        const cy = a0.y + (a1.y - a0.y) * u + ux * sway;
+        const face = i % 2 === 0;
+        const hw = 0.1;
+        const hh = face ? 0.055 : 0.018;
+        // An oval link along the chain: outline in the deep shade, a bright body.
+        const pts: number[] = [];
+        for (let k = 0; k < 10; k++) {
+          const a = (k / 10) * Math.PI * 2;
+          const lx = Math.cos(a) * hw;
+          const ly = Math.sin(a) * hh;
+          pts.push(cx + ux * lx - uy * ly, cy + uy * lx + ux * ly);
+        }
+        g.poly(pts).stroke({ width: 0.04, color: ch.palette.deep, alpha: 0.9 });
+        g.poly(pts).stroke({ width: 0.022, color: face ? ch.palette.bright : ch.palette.core, alpha: 0.95 });
+      }
+      g.circle(a1.x, a1.y, 0.09).fill({ color: ch.palette.bright, alpha: 0.5 });
+      g.moveTo(a1.x - uy * 0.08, a1.y + ux * 0.08)
+        .lineTo(a1.x + ux * 0.1, a1.y + uy * 0.1)
+        .lineTo(a1.x + uy * 0.08, a1.y - ux * 0.08)
+        .stroke({ width: 0.035, color: ch.palette.core, alpha: 1, cap: 'round', join: 'round' });
     }
 
     // Fireballs: glow, body, white-hot core and a fading trail; a shadow on the floor.

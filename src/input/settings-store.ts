@@ -12,7 +12,12 @@ export interface PlayerSettings {
   bindings: Bindings;
 }
 
-export const SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v1';
+/**
+ * v2 (owner, 12/11/2026): the default layout changed (J attack, K ultimate, L dodge, F ability 3,
+ * no launch key), so key layouts saved under v1 are not carried over; volumes are.
+ */
+export const SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v2';
+const OLD_SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v1';
 
 export const DEFAULT_SETTINGS: PlayerSettings = { musicVolume: 0.8, sfxVolume: 0.8, bindings: DEFAULT_BINDINGS };
 
@@ -26,7 +31,12 @@ export function loadSettings(storage: SettingsStorage | null): PlayerSettings {
   let raw: unknown = null;
   try {
     const text = storage?.getItem(SETTINGS_STORAGE_KEY);
-    raw = text ? JSON.parse(text) : null;
+    if (text) raw = JSON.parse(text);
+    else {
+      const old = storage?.getItem(OLD_SETTINGS_STORAGE_KEY);
+      const parsed: unknown = old ? JSON.parse(old) : null;
+      if (parsed && typeof parsed === 'object') raw = { ...parsed, bindings: null };
+    }
   } catch (error) {
     console.warn('[settings] saved settings unreadable, using defaults', error);
   }

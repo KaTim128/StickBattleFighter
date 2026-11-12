@@ -48,8 +48,8 @@ test('fighter details: stat bars fill, abilities explain themselves, Back keeps 
   const target = Number(await hp.getAttribute('data-value'));
   expect(target).toBeGreaterThan(0);
   await expect.poll(async () => hp.evaluate((el) => el.style.width)).toBe(`${target}%`);
-  // Five entries: the combo and four abilities; one opens at a time with the how-to for this device.
-  await expect(details.locator('.mm-d-ab-btn')).toHaveCount(5);
+  // Six entries: the combo, four abilities and the ultimate; one opens at a time with the how-to for this device.
+  await expect(details.locator('.mm-d-ab-btn')).toHaveCount(6);
   const teleport = details.locator('.mm-d-ab-btn[data-ability="a3"]');
   await teleport.click();
   const info = details.locator('.mm-d-ab-info:visible');

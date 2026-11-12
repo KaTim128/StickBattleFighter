@@ -18,7 +18,7 @@ export function clampToUnit(v: Vec2): Vec2 {
 const MAX_QUEUED_MELEE_EDGES = 6;
 
 /** Which ability button was pressed (the same ids as the ability framework's slots). */
-export type AbilityPress = 'a1' | 'a2' | 'a3' | 'ult';
+export type AbilityPress = 'a1' | 'a2' | 'a3' | 'a4' | 'ult';
 
 export class PlayerIntents {
   private readonly sources = new Map<string, Vec2>();
@@ -122,34 +122,17 @@ export class PlayerIntents {
     return this.abilityQueue.shift() ?? null;
   }
 
-  // ---- Ultimate aiming by drag (touch: hold ULT and drag). A vector of length ≤ 1:
-  // its direction is where to land, its length the fraction of the maximum range.
-  private ultDragValue: Vec2 | null = null;
+  // ---- Cancel targeting (owner, 12/11/2026): Escape on desktop, the ✕ button on touch. While an
+  // ability is being aimed this calls it off without casting; otherwise it is ignored.
+  private aimCancelQueued = false;
 
-  /** The ultimate drag as a screen vector (touch), mapped to the world like movement. */
-  setUltDragFromScreen(v: Vec2 | null): void {
-    this.setUltDrag(v ? this.screenToWorld(clampToUnit(v)) : null);
+  pressAimCancel(): void {
+    this.aimCancelQueued = true;
   }
 
-  setUltDrag(v: Vec2 | null): void {
-    this.ultDragValue = v ? clampToUnit(v) : null;
-  }
-
-  get ultDrag(): Vec2 | null {
-    return this.ultDragValue;
-  }
-
-  // ---- Aimed ultimate launch (owner, 11/11/2026): while a leaping ultimate is being aimed, this
-  // press launches it (default left click, so the mouse aims and clicks). Ignored otherwise.
-  private ultLaunchQueued = false;
-
-  pressUltLaunch(): void {
-    this.ultLaunchQueued = true;
-  }
-
-  consumeUltLaunch(): boolean {
-    const queued = this.ultLaunchQueued;
-    this.ultLaunchQueued = false;
+  consumeAimCancel(): boolean {
+    const queued = this.aimCancelQueued;
+    this.aimCancelQueued = false;
     return queued;
   }
 
@@ -164,21 +147,6 @@ export class PlayerIntents {
 
   get swipe(): Vec2 | null {
     return this.swipeValue;
-  }
-
-  // ---- A tap on the game area (touch, owner 12/11/2026): picks the spot for a point-aimed ability
-  // (Teleport: tap the ability, then tap where to go). In CSS pixels of the game area, like the
-  // mouse pointer. Remembered until a step consumes it.
-  private tapAt: Vec2 | null = null;
-
-  tap(p: Vec2): void {
-    this.tapAt = { x: p.x, y: p.y };
-  }
-
-  consumeTap(): Vec2 | null {
-    const t = this.tapAt;
-    this.tapAt = null;
-    return t;
   }
 
   // ---- Mouse pointer (desktop): where the cursor is over the game, in CSS pixels of the game
@@ -248,9 +216,8 @@ export class PlayerIntents {
     this.meleeDown = false;
     this.meleeEdges.length = 0;
     this.dodgeQueued = false;
-    this.ultLaunchQueued = false;
+    this.aimCancelQueued = false;
     this.sprint = false;
     this.abilityQueue.length = 0;
-    this.ultDragValue = null;
   }
 }

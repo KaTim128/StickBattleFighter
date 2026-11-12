@@ -15,14 +15,14 @@ const run = (c: AbilityCaster, s: number) => {
 };
 
 describe('Inferno kit data (REQ-ABL-2)', () => {
-  it('has exactly three abilities and one ultimate, each with VFX and SFX hooks', () => {
+  it('has four abilities and one ultimate (owner, 12/11/2026), each with VFX and SFX hooks', () => {
     for (const slot of ABILITY_SLOTS) {
       const d = INFERNO_KIT[slot];
       expect(d.slot).toBe(slot);
       expect(d.vfx).not.toBe('');
       expect(d.sfx.cast && d.sfx.release && d.sfx.impact).toBeTruthy();
     }
-    expect(new Set(ABILITY_SLOTS.map((s) => INFERNO_KIT[s].id)).size).toBe(4);
+    expect(new Set(ABILITY_SLOTS.map((s) => INFERNO_KIT[s].id)).size).toBe(5);
     expect(INFERNO_KIT.ult.interruptible).toBe(false);
   });
 

@@ -164,6 +164,36 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(0), head: deg(-2), armFront: limb(20, 30), armBack: limb(30, 40) },
     settle: 0.6,
   },
+  // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
+  // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
+  // caught enemy in.
+  graveChains: {
+    windup: { lean: deg(6), head: deg(-2), armBack: limb(130, 40), armFront: limb(40, 90) },
+    release: { lean: deg(-14), head: deg(10), armBack: limb(92, 6), armFront: limb(-20, 100), legFront: limb(30, -30) },
+    settle: 0.45,
+  },
+  // Flame Detonation (Inferno, owner 12/11/2026): both palms cupped together before his chest as
+  // the fire swells between them, a slight crouch; then both arms flung wide and out as it bursts.
+  flameDetonation: {
+    windup: { lean: deg(10), head: deg(8), armFront: limb(70, 95), armBack: limb(64, 100), ...CROUCH },
+    release: { lean: deg(-10), head: deg(6), armFront: limb(130, 8), armBack: limb(40, 10), legFront: limb(34, -40) },
+    tremble: deg(2),
+    settle: 0.45,
+  },
+  // Grapple Slam (Braxon, owner 12/11/2026): a lunging grab with the lead hand, then both arms
+  // high overhead hoisting the enemy; the settle brings them crashing down for the slam.
+  grappleSlam: {
+    windup: { lean: deg(-26), head: deg(20), armFront: limb(96, 20), armBack: limb(70, 40), legFront: limb(46, -60) },
+    release: {
+      lean: deg(12),
+      head: deg(-20),
+      armFront: limb(170, 30),
+      armBack: limb(162, 36),
+      legFront: limb(26, -34),
+      legBack: limb(-16, -20),
+    },
+    settle: 0.45,
+  },
 
   // Eruption (owner, 11/11/2026): squat deep and gather fire, spring up wrapped in flame (AIR),
   // then crash down fist-first into the floor (the release is the landing slam, held briefly).

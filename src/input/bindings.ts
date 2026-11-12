@@ -3,10 +3,8 @@
  *
  * Every desktop action has exactly one input code: a `KeyboardEvent.code` (e.g. "KeyW", "Space")
  * or a mouse button written "Mouse0" (left), "Mouse1" (middle), "Mouse2" (right). One code drives
- * one action, with one exception: the aimed-ultimate launch only matters while an ultimate is
- * being aimed, so it may share its code with the tap attack (the default: aim with the mouse,
- * left click to launch) or with the ultimate key itself (press it again to launch). It may not
- * share with movement, sprint, jump, dodge, grab or the abilities.
+ * one action, with no exceptions (owner, 12/11/2026: K is only the ultimate). An ability that needs
+ * a target is confirmed by pressing its own key again, so there is no separate launch key.
  */
 export type BindAction =
   | 'moveUp'
@@ -20,13 +18,22 @@ export type BindAction =
   | 'ability1'
   | 'ability2'
   | 'ability3'
+  | 'ability4'
   | 'ultimate'
-  | 'ultimateLaunch'
   | 'grab';
 
 export type Bindings = Readonly<Record<BindAction, string>>;
 
-/** The owner's default layout (11/11/2026). */
+/** The binding that uses each ability slot. */
+export const SLOT_ACTION = {
+  a1: 'ability1',
+  a2: 'ability2',
+  a3: 'ability3',
+  a4: 'ability4',
+  ult: 'ultimate',
+} as const satisfies Record<string, BindAction>;
+
+/** The owner's default layout (12/11/2026): J attack, K ultimate, L dodge, F ability 3, R the new ability 4. */
 export const DEFAULT_BINDINGS: Bindings = {
   moveUp: 'KeyW',
   moveDown: 'KeyS',
@@ -34,13 +41,13 @@ export const DEFAULT_BINDINGS: Bindings = {
   moveRight: 'KeyD',
   sprint: 'ShiftLeft',
   jump: 'Space',
-  attack: 'Mouse0',
-  dodge: 'Mouse2',
+  attack: 'KeyJ',
+  dodge: 'KeyL',
   ability1: 'KeyQ',
   ability2: 'KeyE',
-  ability3: 'KeyR',
-  ultimate: 'KeyF',
-  ultimateLaunch: 'Mouse0',
+  ability3: 'KeyF',
+  ability4: 'KeyR',
+  ultimate: 'KeyK',
   grab: 'KeyG',
 };
 
@@ -57,8 +64,8 @@ export const BIND_ACTIONS: readonly { action: BindAction; label: string; group: 
   { action: 'ability1', label: 'Ability 1', group: 'Combat' },
   { action: 'ability2', label: 'Ability 2', group: 'Combat' },
   { action: 'ability3', label: 'Ability 3', group: 'Combat' },
-  { action: 'ultimate', label: 'Ultimate', group: 'Combat' },
-  { action: 'ultimateLaunch', label: 'Launch aimed ultimate (leap)', group: 'Combat' },
+  { action: 'ability4', label: 'Ability 4', group: 'Combat' },
+  { action: 'ultimate', label: 'Ultimate (again: launch)', group: 'Combat' },
   { action: 'grab', label: 'Grab (again: throw)', group: 'Combat' },
 ];
 
@@ -68,19 +75,12 @@ export function actionLabel(action: BindAction): string {
 
 /** Keys the game keeps for itself: the settings screen and developer toggles. */
 export const RESERVED_CODES: Readonly<Record<string, string>> = {
-  Escape: 'Settings',
+  Escape: 'Settings and cancelling an aimed ability',
   Backquote: 'Debug overlay',
   KeyM: 'Mute',
   KeyT: 'Dummy attacks toggle',
   KeyP: 'Debug impact',
 };
-
-/** Actions the launch key may share with (both only conflict-free because of context). */
-const LAUNCH_MAY_SHARE: ReadonlySet<BindAction> = new Set(['attack', 'ultimate']);
-
-function mayShare(a: BindAction, b: BindAction): boolean {
-  return (a === 'ultimateLaunch' && LAUNCH_MAY_SHARE.has(b)) || (b === 'ultimateLaunch' && LAUNCH_MAY_SHARE.has(a));
-}
 
 export type BindCheck =
   | { ok: true }
@@ -92,7 +92,7 @@ export function checkBinding(bindings: Bindings, action: BindAction, code: strin
   const reserved = RESERVED_CODES[code];
   if (reserved) return { ok: false, reason: 'reserved', message: `${codeLabel(code)} is reserved for ${reserved}.` };
   for (const other of Object.keys(bindings) as BindAction[]) {
-    if (other === action || bindings[other] !== code || mayShare(action, other)) continue;
+    if (other === action || bindings[other] !== code) continue;
     return {
       ok: false,
       reason: 'conflict',
@@ -109,7 +109,7 @@ export function rebind(bindings: Bindings, action: BindAction, code: string): { 
   return { bindings: check.ok ? { ...bindings, [action]: code } : bindings, check };
 }
 
-/** Every action a code triggers (usually one; the launch key may add a second). */
+/** Every action a code triggers (at most one with a valid layout). */
 export function actionsFor(bindings: Bindings, code: string): BindAction[] {
   const out: BindAction[] = [];
   for (const a of Object.keys(bindings) as BindAction[]) if (bindings[a] === code) out.push(a);

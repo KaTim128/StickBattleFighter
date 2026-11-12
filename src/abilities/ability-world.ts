@@ -92,6 +92,8 @@ export interface AbilityHost {
    * returns it, or null if there is none (the cast fizzles). Optional.
    */
   teleport?(casterId: string, to: Vec2): Vec2 | null;
+  /** Keep a fighter helpless for this long (seized by a grab). Optional. */
+  hold?(targetId: string, seconds: number): void;
   emit(fx: AbilityFx): void;
 }
 
@@ -172,7 +174,30 @@ interface LeapAction {
   readonly telegraph: Telegraph;
 }
 
-type Action = DashAction | LeapAction;
+/** A target being dragged to its caster (Grave Chains). */
+interface PullAction {
+  readonly kind: 'pull';
+  readonly casterId: string;
+  readonly targetId: string;
+  readonly speedMps: number;
+  readonly stopM: number;
+  ageS: number;
+}
+
+/** A seized target hoisted overhead, then slammed down (Grapple Slam). */
+interface GrabAction {
+  readonly kind: 'grab';
+  readonly casterId: string;
+  readonly targetId: string;
+  readonly def: AbilityDef;
+  readonly dir: Vec2;
+  ageS: number;
+}
+
+type Action = DashAction | LeapAction | PullAction | GrabAction;
+
+/** A pull never lasts longer than this (it gives up if something holds the target back). */
+const PULL_MAX_S = 1.2;
 
 const TRAIL_SPACING_M = 0.45;
 const TRAIL_POINTS = 8;
@@ -205,7 +230,20 @@ export class AbilityWorld {
 
   /** Is this caster mid-dash or mid-leap (its body is driven by the world)? */
   driving(casterId: string): boolean {
-    return this.actions.some((a) => a.casterId === casterId);
+    return this.actions.some((a) => (a.kind === 'dash' || a.kind === 'leap') && a.casterId === casterId);
+  }
+
+  /** Who is dragging whom right now (Grave Chains), for the chain drawn between them. */
+  forEachPull(visit: (casterId: string, targetId: string) => void): void {
+    for (const a of this.actions) if (a.kind === 'pull') visit(a.casterId, a.targetId);
+  }
+
+  /** How high a grabbed fighter is hoisted this step (render lift), or 0. */
+  heldLiftOf(targetId: string): number {
+    const a = this.actions.find((x) => x.kind === 'grab' && x.targetId === targetId) as GrabAction | undefined;
+    const d = a?.def.delivery;
+    if (!a || d?.type !== 'grab') return 0;
+    return d.liftM * Math.min(1, a.ageS / d.liftS);
   }
 
   /**
@@ -339,7 +377,7 @@ export class AbilityWorld {
         for (const f of host.fighters()) {
           if (this.friendly(f, casterId, host) || !f.hittable) continue;
           if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
-          if (host.hitFighter(casterId, f.id, def.payload, dir, def.look?.hitFlash)) {
+          if (this.hit(host, casterId, f.id, def.payload, dir, def.look?.hitFlash)) {
             landed = true;
             host.emit({
               kind: 'impact',
@@ -366,6 +404,36 @@ export class AbilityWorld {
             radiusM: 0.8,
           });
         }
+        break;
+      }
+      case 'grab': {
+        // Seize the nearest enemy within reach in front; nobody there: a heavy grasp at the air.
+        const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
+        let best: AbilityTarget | null = null;
+        let bestD = Number.POSITIVE_INFINITY;
+        for (const f of host.fighters()) {
+          if (this.friendly(f, casterId, host) || !f.hittable) continue;
+          if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
+          const dd = Math.hypot(f.x - at.x, f.y - at.y);
+          if (dd < bestD) {
+            best = f;
+            bestD = dd;
+          }
+        }
+        if (!best) {
+          host.emit({
+            kind: 'fizzle',
+            ability: def.id,
+            look: def.look,
+            vfx: def.vfx,
+            sfx: null,
+            x: reach.x,
+            y: reach.y,
+          });
+          break;
+        }
+        host.hold?.(best.id, d.liftS + 0.5);
+        this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0 });
         break;
       }
       case 'buff':
@@ -459,7 +527,7 @@ export class AbilityWorld {
       for (const f of host.fighters()) {
         if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
-        if (!host.hitFighter(p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash)) continue; // dodged: flies on
+        if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash)) continue; // dodged: flies on
         this.impact(p, f, host);
         done = true;
         break;
@@ -560,7 +628,8 @@ export class AbilityWorld {
         if (segmentDistance(b.from, b.to, f) > d.widthM / 2 + f.radiusM) continue;
         const dist = Math.hypot(f.x - caster.x, f.y - caster.y);
         if (
-          !host.hitFighter(
+          !this.hit(
+            host,
             b.casterId,
             f.id,
             payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M),
@@ -594,15 +663,108 @@ export class AbilityWorld {
     return host.fighters().find((o) => o.id === casterId)?.team === f.team;
   }
 
+  /** Hit a fighter; a pulling payload then drags it to the caster (Grave Chains). */
+  private hit(
+    host: AbilityHost,
+    casterId: string,
+    targetId: string,
+    payload: AbilityPayload,
+    dir: Vec2,
+    hitFlash?: number,
+  ): boolean {
+    const landed = host.hitFighter(casterId, targetId, payload, dir, hitFlash);
+    if (landed && payload.pull) {
+      for (let i = this.actions.length - 1; i >= 0; i--) {
+        const a = this.actions[i]!;
+        if ((a.kind === 'pull' || a.kind === 'grab') && a.targetId === targetId) this.actions.splice(i, 1);
+      }
+      this.actions.push({
+        kind: 'pull',
+        casterId,
+        targetId,
+        speedMps: payload.pull.speedMps,
+        stopM: payload.pull.stopM,
+        ageS: 0,
+      });
+    }
+    return landed;
+  }
+
   private updateActions(dtS: number, host: AbilityHost): void {
     for (let i = this.actions.length - 1; i >= 0; i--) {
       const a = this.actions[i]!;
-      const finished = a.kind === 'dash' ? this.stepDash(a, dtS, host) : this.stepLeap(a, dtS, host);
+      const finished =
+        a.kind === 'dash'
+          ? this.stepDash(a, dtS, host)
+          : a.kind === 'leap'
+            ? this.stepLeap(a, dtS, host)
+            : a.kind === 'pull'
+              ? this.stepPull(a, dtS, host)
+              : this.stepGrab(a, dtS, host);
       if (finished) {
-        this.actions.splice(i, 1);
-        host.drive(a.casterId, null, 0);
+        // The action may have been removed meanwhile (a new pull on the same target).
+        const at = this.actions.indexOf(a);
+        if (at >= 0) this.actions.splice(at, 1);
+        host.drive(a.kind === 'pull' || a.kind === 'grab' ? a.targetId : a.casterId, null, 0);
       }
     }
+  }
+
+  /** Drag the target toward the caster until it is `stopM` away, stuck, or out of time. */
+  private stepPull(a: PullAction, dtS: number, host: AbilityHost): boolean {
+    a.ageS += dtS;
+    const target = host.fighters().find((f) => f.id === a.targetId);
+    if (!target || !target.hittable || a.ageS > PULL_MAX_S) return true;
+    const c = host.position(a.casterId);
+    const dx = c.x - target.x;
+    const dy = c.y - target.y;
+    const d = Math.hypot(dx, dy);
+    const gap = d - a.stopM - target.radiusM;
+    if (gap <= 0.05) return true;
+    const speed = Math.min(a.speedMps, gap / dtS);
+    host.drive(a.targetId, { x: (dx / d) * speed, y: (dy / d) * speed }, 0);
+    return false;
+  }
+
+  /** Hoist the seized target overhead in front of the caster, then slam it down. */
+  private stepGrab(a: GrabAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'grab') return true;
+    a.ageS += dtS;
+    const target = host.fighters().find((f) => f.id === a.targetId);
+    const caster = host.fighters().find((f) => f.id === a.casterId);
+    if (!target || !caster || !caster.hittable) return true; // the grabber fell: the target drops
+    // Keep the target held just in front of the caster, rising overhead.
+    const hold = {
+      x: caster.x + a.dir.x * (caster.radiusM + target.radiusM),
+      y: caster.y + a.dir.y * (caster.radiusM + target.radiusM),
+    };
+    const lift = d.liftM * Math.min(1, a.ageS / d.liftS);
+    host.drive(
+      a.targetId,
+      { x: (hold.x - target.x) / Math.max(dtS, 1e-3), y: (hold.y - target.y) / Math.max(dtS, 1e-3) },
+      lift,
+    );
+    if (a.ageS < d.liftS) return false;
+    // The slam: down in front, with the full payload and a dust blast.
+    host.drive(a.targetId, null, 0);
+    const land = {
+      x: caster.x + a.dir.x * (caster.radiusM + target.radiusM + 0.2),
+      y: caster.y + a.dir.y * (caster.radiusM + target.radiusM + 0.2),
+    };
+    host.hitFighter(a.casterId, a.targetId, a.def.payload, a.dir, a.def.look?.hitFlash);
+    host.hitEnvironment(a.casterId, land, d.slamRadiusM, a.def.payload, { x: 0, y: 0 }, false);
+    host.emit({
+      kind: 'impact',
+      ability: a.def.id,
+      look: a.def.look,
+      vfx: a.def.vfx,
+      sfx: a.def.sfx.impact,
+      x: land.x,
+      y: land.y,
+      radiusM: d.slamRadiusM,
+    });
+    return true;
   }
 
   private stepDash(a: DashAction, dtS: number, host: AbilityHost): boolean {
@@ -631,7 +793,7 @@ export class AbilityWorld {
       if (this.friendly(f, a.casterId, host) || !f.hittable || a.hit.has(f.id)) continue;
       if (Math.hypot(f.x - at.x, f.y - at.y) > d.hitRadiusM + f.radiusM) continue;
       a.hit.add(f.id);
-      if (host.hitFighter(a.casterId, f.id, a.def.payload, a.dir, a.def.look?.hitFlash)) {
+      if (this.hit(host, a.casterId, f.id, a.def.payload, a.dir, a.def.look?.hitFlash)) {
         host.emit({
           kind: 'impact',
           ability: a.def.id,
@@ -716,7 +878,7 @@ export class AbilityWorld {
       if (dist > radiusM + f.radiusM) continue;
       // Closer to the centre of the blast hits harder (distance falloff, owner 11/11/2026).
       const payload = payloadAt(def.payload, dist, radiusM + f.radiusM);
-      host.hitFighter(casterId, f.id, payload, norm({ x: f.x - at.x, y: f.y - at.y }), def.look?.hitFlash);
+      this.hit(host, casterId, f.id, payload, norm({ x: f.x - at.x, y: f.y - at.y }), def.look?.hitFlash);
     }
     host.hitEnvironment(casterId, at, radiusM, def.payload, { x: 0, y: 0 }, false);
     host.emit({

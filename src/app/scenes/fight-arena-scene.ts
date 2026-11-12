@@ -1,6 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
-import type { AbilitySlot, Burn } from '../../abilities/ability-def';
+import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../../abilities/ability-def';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
@@ -204,7 +204,8 @@ const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
   plant: { hit: 'hit-soft', break: 'break-soft' },
 };
 /** How fast WASD slides the ultimate's landing spot while aiming, m/s. */
-const ULT_AIM_SPEED_MPS = 7;
+/** Target speed under WASD or the joystick when an ability's data sets none (Inferno's leap, owner 11/11/2026). */
+const DEFAULT_AIM_SPEED_MPS = 7;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
 const HEAD_TOP_M = 1.75;
 /** After a teleport the body fades back in over this long, seconds. */
@@ -274,7 +275,6 @@ export class FightArenaScene implements ArenaScene {
   /** Where the player is aiming the leaping ultimate, while aiming (else null). */
   private ultAimPoint: { x: number; y: number } | null = null;
   /** The pointer's move count when the aim last followed it (a hover only steers when it moves). */
-  private ultPointerMoves = 0;
   private aimPrepT = 0;
   /** Why the player's last ability press did not cast (HUD feedback), or null. */
   lastAbilityBlock: CastBlock | null = null;
@@ -318,7 +318,7 @@ export class FightArenaScene implements ArenaScene {
         }
         this.intents.consumeDodge();
         this.intents.consumeJump();
-        this.intents.consumeUltLaunch();
+        this.intents.consumeAimCancel();
         return pressed ? 1 : 0;
       },
       finisher: (winner, loser, f) =>
@@ -351,6 +351,10 @@ export class FightArenaScene implements ArenaScene {
         f.knockFlightS = 0;
       },
     });
+  }
+
+  private fighterByName(name: string): FighterEntity | undefined {
+    return this.fighters.find((f) => f.name === name);
   }
 
   private get fighters(): FighterEntity[] {
@@ -671,7 +675,7 @@ export class FightArenaScene implements ArenaScene {
       // Hands full: the combat buttons do nothing until it is thrown or put down (CONTROL_SCHEME §2).
       this.intents.consumeMeleeEdges();
       this.intents.consumeAbility();
-      this.intents.consumeUltLaunch();
+      this.intents.consumeAimCancel();
       if (c.state === 'guarding') c.setGuard(false);
       f.meleeTracking = false;
       if (this.intents.consumeDodge() && f.liftS <= 0 && !air && c.tryDodge()) this.startBackDodge(f);
@@ -691,40 +695,21 @@ export class FightArenaScene implements ArenaScene {
       return;
     }
 
-    if (this.pointAim) {
-      // Aiming a point-aimed ability (Teleport, owner 12/11/2026): the spot follows the mouse and a
-      // left click (the aim-confirm binding) casts; on touch, tapping the map casts there. Pressing
-      // the ability again, or being hit, calls it off.
+    if (this.pointAim || this.ultAimPoint) {
+      // Targeting (owner, 12/11/2026): the fighter stands still while WASD (or the joystick on touch)
+      // moves the target; the ability's own key confirms, Escape (or the touch ✕) cancels. Attacks,
+      // jumps and dodges pressed meanwhile are dropped so nothing fires by accident.
       this.intents.consumeMeleeEdges();
+      this.intents.consumeJump();
+      this.intents.consumeDodge();
       f.meleeTracking = false;
       if (c.state === 'guarding') c.setGuard(false);
-      this.stepPointAim(f);
+      this.stepTargeting(f, stepS);
       f.sprinting = false;
       this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
       return;
     }
-
-    if (this.ultAimPoint) {
-      // Aiming the leaping ultimate (owner, 11/11/2026): hover the mouse (or slide with WASD, or drag
-      // on touch) to pick the spot, then the launch button (default left click) or the ultimate key
-      // again jumps. The attack button does not punch while aiming: its click is the launch.
-      this.intents.consumeMeleeEdges();
-      f.meleeTracking = false;
-      if (c.state === 'guarding') c.setGuard(false);
-      const launch = this.intents.consumeUltLaunch();
-      const slot = this.intents.consumeAbility();
-      if (launch || slot === 'ult') this.ultimatePress(f);
-      if (this.ultAimPoint) {
-        this.steerUltimateAim(f, stepS);
-        f.sprinting = false;
-        this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
-        return;
-      }
-      f.sprinting = false;
-      this.stepFighter(f, stepS, { x: 0, y: 0 }, false); // the leap has just begun
-      return;
-    }
-    this.intents.consumeUltLaunch(); // nothing to launch: a plain click is just an attack
+    this.intents.consumeAimCancel(); // nothing being aimed: Escape just opens the settings
 
     // Button 1: decide tap vs hold on the fixed step.
     const { pressed, released } = this.intents.consumeMeleeEdges();
@@ -758,15 +743,8 @@ export class FightArenaScene implements ArenaScene {
     if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
     else if (slot && f.caster?.def(slot).delivery.type === 'teleport') this.beginPointAim(f, slot);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
-    if (this.pointAim) {
-      this.intents.consumeTap(); // only taps after the press pick the spot
-      f.sprinting = false;
-      this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
-      return;
-    }
-    if (this.ultAimPoint) {
-      // Aiming starts: Inferno crouches to spring; the mouse, WASD or a drag picks the landing spot.
-      this.steerUltimateAim(f, stepS);
+    if (this.pointAim || this.ultAimPoint) {
+      // Targeting starts: Inferno crouches to spring, Necro gathers his smoke.
       f.sprinting = false;
       this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
       return;
@@ -1057,9 +1035,9 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /** A point-aimed ability being aimed by the player (Teleport), with the spot it will go to. */
-  private pointAim: { slot: AbilitySlot; spot: { x: number; y: number }; moves: number } | null = null;
+  private pointAim: { slot: AbilitySlot; spot: { x: number; y: number } } | null = null;
 
-  /** Start aiming a point-aimed ability, if it can be cast now. */
+  /** Start aiming a point-aimed ability, if it can be cast now: the target starts 3 m ahead. */
   private beginPointAim(f: FighterEntity, slot: AbilitySlot): void {
     if (!f.caster || !this.abilities) return;
     const block = f.caster.check(slot, {
@@ -1069,38 +1047,67 @@ export class FightArenaScene implements ArenaScene {
     });
     this.lastAbilityBlock = block;
     if (block || (slot !== 'ult' && f.combatant.stamina < f.caster.def(slot).staminaCost)) return;
-    const start = this.pointerOnFloor() ?? { x: f.x + f.aim.x * 3, y: f.y + f.aim.y * 3 };
-    this.pointAim = { slot, spot: this.clampToReach(f, slot, start), moves: this.intents.pointerMoves };
+    const start = { x: f.x + f.aim.x * 3, y: f.y + f.aim.y * 3 };
+    this.pointAim = { slot, spot: this.clampToReach(f, slot, this.insideMap(start)) };
   }
 
-  /** While aiming: follow the mouse, cast on the confirm click or a tap, cancel on a second press. */
-  private stepPointAim(f: FighterEntity): void {
-    const aim = this.pointAim;
-    if (!aim || !this.abilities) return;
-    const again = this.intents.consumeAbility();
-    if (again === aim.slot || !f.combatant.canAct) {
+  /** How fast WASD or the joystick moves this ability's target (per ability data, owner 12/11/2026). */
+  private aimSpeed(f: FighterEntity, slot: AbilitySlot): number {
+    const d = f.caster?.def(slot).delivery;
+    return (d && 'aimSpeedMps' in d ? d.aimSpeedMps : undefined) ?? DEFAULT_AIM_SPEED_MPS;
+  }
+
+  /** Keep a target on the floor of the map. */
+  private insideMap(p: { x: number; y: number }): { x: number; y: number } {
+    const m = 0.3;
+    return {
+      x: Math.min(this.arena.widthM - m, Math.max(m, p.x)),
+      y: Math.min(this.arena.heightM - m, Math.max(m, p.y)),
+    };
+  }
+
+  /**
+   * One step of targeting (owner, 12/11/2026): the same key confirms, Escape or ✕ cancels, being
+   * hit or stunned calls it off, and the move input slides the target at the ability's aim speed.
+   */
+  private stepTargeting(f: FighterEntity, stepS: number): void {
+    const slot = this.pointAim?.slot ?? 'ult';
+    const cancel = this.intents.consumeAimCancel();
+    let confirm = false;
+    for (let press = this.intents.consumeAbility(); press; press = this.intents.consumeAbility())
+      if (press === slot) confirm = true; // other ability keys are ignored while aiming
+    if (cancel || !f.combatant.canAct) {
       this.pointAim = null;
-      this.intents.consumeUltLaunch();
+      this.ultAimPoint = null; // the meter and cooldown are kept
       return;
     }
-    if (this.intents.pointerMoves !== aim.moves) {
-      aim.moves = this.intents.pointerMoves;
-      const p = this.pointerOnFloor();
-      if (p) aim.spot = this.clampToReach(f, aim.slot, p);
+    const m = this.intents.move;
+    const speed = this.aimSpeed(f, slot) * stepS;
+    if (this.pointAim) {
+      const aim = this.pointAim;
+      aim.spot = this.clampToReach(
+        f,
+        slot,
+        this.insideMap({ x: aim.spot.x + m.x * speed, y: aim.spot.y + m.y * speed }),
+      );
+      if (Math.hypot(aim.spot.x - f.x, aim.spot.y - f.y) > 0.1) f.faceToward(aim.spot.x - f.x, aim.spot.y - f.y);
+      if (!confirm || !this.abilities) return;
+      this.pointAim = null;
+      this.lastAbilityBlock = this.abilities.tryCast(f, aim.slot, aim.spot);
+      return;
     }
-    let go = this.intents.consumeUltLaunch();
-    const tap = this.intents.consumeTap();
-    if (tap) {
-      const p = this.screenToFloor(tap);
-      if (p) {
-        aim.spot = this.clampToReach(f, aim.slot, p);
-        go = true;
-      }
+    if (confirm) {
+      this.ultimatePress(f);
+      return;
     }
-    if (Math.hypot(aim.spot.x - f.x, aim.spot.y - f.y) > 0.1) f.faceToward(aim.spot.x - f.x, aim.spot.y - f.y);
-    if (!go) return;
-    this.pointAim = null;
-    this.lastAbilityBlock = this.abilities.tryCast(f, aim.slot, aim.spot);
+    this.steerUltimateAim(f, stepS);
+  }
+
+  /** Is the player choosing a target right now (Escape then cancels instead of opening settings)? */
+  get targeting(): { slot: AbilitySlot; name: string } | null {
+    const slot = this.pointAim?.slot ?? (this.ultAimPoint ? 'ult' : null);
+    const def = slot ? this.playerFighter.caster?.def(slot) : undefined;
+    return slot && def ? { slot, name: def.name } : null;
   }
 
   /** The point-aimed ability's aiming state (indicator and tests). */
@@ -1185,10 +1192,7 @@ export class FightArenaScene implements ArenaScene {
     });
     this.lastAbilityBlock = block;
     if (block) return;
-    const start = this.abilities.aimFor(f, f.caster.def('ult'));
-    const hover = this.pointerOnFloor();
-    this.ultAimPoint = this.clampToRange(f, hover ?? start);
-    this.ultPointerMoves = this.intents.pointerMoves;
+    this.ultAimPoint = this.clampToRange(f, this.insideMap(this.abilities.aimFor(f, f.caster.def('ult'))));
   }
 
   /** The floor point under the mouse cursor (null without a mouse over the game). */
@@ -1199,30 +1203,13 @@ export class FightArenaScene implements ArenaScene {
     return isoToWorld((p.x - w.position.x) / w.scale.x, (p.y - w.position.y) / w.scale.y); // inverse of worldToScreen
   }
 
-  /** Move the aimed spot: a touch drag places it directly; keys slide it; always within the leap's range. */
+  /** Slide the aimed landing spot with WASD or the joystick, always within the leap's range. */
   private steerUltimateAim(f: FighterEntity, stepS: number): void {
     const aim = this.ultAimPoint;
-    const caster = f.caster;
-    if (!aim || !caster) return;
-    if (!f.combatant.canAct) {
-      this.ultAimPoint = null; // hit while aiming: the jump is called off (the meter is kept)
-      return;
-    }
-    const range = this.ultRange(f);
-    const drag = this.intents.ultDrag;
-    let next = aim;
-    const hover = this.intents.pointerMoves !== this.ultPointerMoves ? this.pointerOnFloor() : null;
-    if (drag) {
-      next = { x: f.x + drag.x * range, y: f.y + drag.y * range };
-    } else if (hover) {
-      // The mouse moved: the spot follows the cursor (keys take over again until it moves).
-      this.ultPointerMoves = this.intents.pointerMoves;
-      next = hover;
-    } else {
-      const m = this.intents.move;
-      next = { x: aim.x + m.x * ULT_AIM_SPEED_MPS * stepS, y: aim.y + m.y * ULT_AIM_SPEED_MPS * stepS };
-    }
-    this.ultAimPoint = this.clampToRange(f, next);
+    if (!aim || !f.caster) return;
+    const m = this.intents.move;
+    const speed = this.aimSpeed(f, 'ult') * stepS;
+    this.ultAimPoint = this.clampToRange(f, this.insideMap({ x: aim.x + m.x * speed, y: aim.y + m.y * speed }));
     if (Math.hypot(this.ultAimPoint.x - f.x, this.ultAimPoint.y - f.y) > 0.1)
       f.faceToward(this.ultAimPoint.x - f.x, this.ultAimPoint.y - f.y);
   }
@@ -2103,8 +2090,9 @@ export class FightArenaScene implements ArenaScene {
           look: cast.def.look,
         });
       }
-      // Eruption in the air: the whole body wrapped in flames and glowing embers.
-      if (f.abilityLift > 0.05) {
+      // Eruption in the air: the whole body wrapped in flames and glowing embers (only the leaper's
+      // own leap; a fighter hoisted by a grab is lifted too, without fire).
+      if (f.abilityLift > 0.05 && cast?.def.delivery.type === 'leap') {
         const pts = [0.2, 0.6, 1.0, 1.4].map((z) =>
           besideOnScreen(f.x, f.y, (this.fxRng() - 0.5) * 0.3, f.abilityLift + z),
         );
@@ -2120,6 +2108,22 @@ export class FightArenaScene implements ArenaScene {
       }
     }
     const world = this.abilities.world;
+    // Grave Chains: from the caster to the flying hook, then to the enemy being dragged in.
+    const chains: { from: { x: number; y: number }; to: { x: number; y: number }; palette: MagicLook['palette'] }[] =
+      [];
+    for (const p of world.projectiles) {
+      const caster = p.def.payload.pull && p.def.look ? this.fighterByName(p.casterId) : null;
+      if (caster && p.def.look)
+        chains.push({ from: { x: caster.x, y: caster.y }, to: { x: p.x, y: p.y }, palette: p.def.look.palette });
+    }
+    world.forEachPull((casterId, targetId) => {
+      const caster = this.fighterByName(casterId);
+      const target = this.fighterByName(targetId);
+      const kit = caster?.caster;
+      const look = kit ? ABILITY_SLOTS.map((s) => kit.def(s)).find((d) => d.payload.pull)?.look : undefined;
+      if (caster && target && look)
+        chains.push({ from: { x: caster.x, y: caster.y }, to: { x: target.x, y: target.y }, palette: look.palette });
+    });
     const impacts = this.impacts.splice(0, this.impacts.length);
     const dust = this.frameDust.splice(0, this.frameDust.length);
     const limbFlames = this.frameFlames.splice(0, this.frameFlames.length);
@@ -2138,6 +2142,7 @@ export class FightArenaScene implements ArenaScene {
       auras,
       trails,
       beams: world.beams,
+      chains,
       smoke,
     });
   }
