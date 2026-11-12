@@ -10,7 +10,6 @@ import {
   flinchPose,
   getUpFrame,
   knockdownFrame,
-  type QuickDodgeKind,
   quickDodgePose,
   throwPose,
   tuckPose,
@@ -623,11 +622,7 @@ export class FightArenaScene implements ArenaScene {
       this.intents.consumeUltLaunch();
       if (c.state === 'guarding') c.setGuard(false);
       f.meleeTracking = false;
-      if (this.intents.consumeDodge() && f.liftS <= 0 && !air && c.tryDodge()) {
-        const m = this.intents.move;
-        const len = Math.hypot(m.x, m.y);
-        Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.aim.x, y: -f.aim.y });
-      }
+      if (this.intents.consumeDodge() && f.liftS <= 0 && !air && c.tryDodge()) this.startBackDodge(f);
       if (f.liftS > 0) {
         // Still heaving it up: rooted, no jump or dodge until it is overhead.
         f.liftS = Math.max(0, f.liftS - stepS);
@@ -705,13 +700,11 @@ export class FightArenaScene implements ArenaScene {
       return;
     }
 
-    // Dodge (right click / flick): a quick invulnerable dash toward the movement keys (back with
-    // none held), cancelling an attack (not an ability already cast).
+    // Dodge (right click / flick / DODGE): a quick invulnerable back-step, cancelling an attack (not
+    // an ability already cast).
     if (this.intents.consumeDodge() && !air && !f.caster?.cast && c.tryDodge()) {
       f.combo.interrupt();
-      const m = this.intents.move;
-      const len = Math.hypot(m.x, m.y);
-      Object.assign(f.dodgeDir, len > 0.1 ? { x: m.x / len, y: m.y / len } : { x: -f.aim.x, y: -f.aim.y });
+      this.startBackDodge(f);
     }
 
     const jump =
@@ -723,6 +716,14 @@ export class FightArenaScene implements ArenaScene {
       !f.caster?.cast;
     f.sprinting = this.intents.sprint;
     this.stepFighter(f, stepS, this.intents.move, jump);
+  }
+
+  /**
+   * Dodges always go straight back from where the fighter faces, whatever the movement keys or
+   * stick say (owner, 12/11/2026, REQ-CTL-20), and the facing does not change during the dodge.
+   */
+  private startBackDodge(f: FighterEntity): void {
+    Object.assign(f.dodgeDir, { x: -f.aim.x, y: -f.aim.y });
   }
 
   /** Notice when the player starts a new attack or ability, for the top HUD's action name. */
@@ -1127,7 +1128,10 @@ export class FightArenaScene implements ArenaScene {
     if (f.driveVelocity) {
       next = f.driveVelocity; // dash or leap: the ability world moves the body
     } else if (c.state === 'dodging') {
-      next = { x: f.dodgeDir.x * DEFENCE.dodgeSpeedMps, y: f.dodgeDir.y * DEFENCE.dodgeSpeedMps };
+      // Fast off the mark, easing to a stop: speed falls linearly over the dodge, averaging
+      // dodgeSpeedMps, so every dodge covers the same distance and ends without a slide.
+      const speed = DEFENCE.dodgeSpeedMps * 2 * (1 - c.dodgeProgress);
+      next = { x: f.dodgeDir.x * speed, y: f.dodgeDir.y * speed };
     } else if (!c.canAct) {
       // Stunned, knocked down or KO: slide to a stop (further while flying from a heavy blow).
       const decel = f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : SETTLE_DECEL;
@@ -2033,13 +2037,11 @@ export class FightArenaScene implements ArenaScene {
         pose = blendPose(pose, tuckPose(pose), Math.min(1, p / 0.15, (1 - p) / 0.15));
         dodge.roll = p;
       } else {
-        // Quick dodge (the default): snap into a low dash pose toward the dodge direction, then out.
+        // Quick dodge (the default): snap into the back-step pose, then ease out of it.
         const sx = (f.dodgeDir.x - f.dodgeDir.y) * ISO_C; // the dash on screen
         const sy = (f.dodgeDir.x + f.dodgeDir.y) * ISO_C * ISO_T;
-        const kind: QuickDodgeKind =
-          Math.abs(sx) < Math.abs(sy) * 0.8 ? 'side' : sx * f.facing > 0 ? 'forward' : 'back';
         const amount = Math.min(1, p / 0.12, (1 - p) / 0.3);
-        pose = blendPose(pose, quickDodgePose(pose, kind), amount);
+        pose = blendPose(pose, quickDodgePose(pose), amount);
         dodge.dash = { amount, dirX: sx, dirY: sy };
       }
     }

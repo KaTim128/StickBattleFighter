@@ -10,6 +10,7 @@ interface Hook {
     jumps: number;
     airborne: boolean;
     dodgeReady: number;
+    facing: 1 | -1;
     speed: number;
     x: number;
     y: number;
@@ -57,28 +58,27 @@ test('right click dodges and never opens the browser menu over the game', async 
   expect(errors).toEqual([]);
 });
 
-test('right click dodges in the direction of the held movement key', async ({ page }) => {
+test('right click always dodges straight back from the facing, even with a movement key held (owner, 12/11/2026)', async ({
+  page,
+}) => {
   const errors: string[] = [];
   await open(page, errors, 'scene=training-yard&playerAt=10,10');
   const p = await gamePoint(page);
-  const before = await hook(page);
   const screenX = (s: { x: number; y: number }) => s.x - s.y; // iso: right on screen is +(x − y)
+  // Walk right a moment so the fighter faces right, then stop.
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(250);
+  await page.keyboard.up('KeyD');
+  await expect.poll(async () => (await hook(page)).player.speed, { timeout: 3000 }).toBeLessThan(0.05);
+  const before = await hook(page);
+  // Hold "right" (toward the facing) and dodge: it still steps back, to the left, still facing right.
   await page.keyboard.down('KeyD');
   await page.mouse.click(p.x, p.y, { button: 'right' });
-  // Game time, not wall time: a software-rendered CI browser runs slower than real time.
   await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000, intervals: [10] }).toBe('dodging');
-  await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000 }).not.toBe('dodging');
+  expect((await hook(page)).player.facing).toBe(before.player.facing);
   await page.keyboard.up('KeyD');
-  expect(screenX((await hook(page)).player)).toBeGreaterThan(screenX(before.player) + 1.5);
-  // No key held: a back-step, away from where the fighter faces (it now faces right). Wait for the
-  // weight-based dodge cooldown and for the fighter to stop first.
-  await expect.poll(async () => (await hook(page)).player.dodgeReady, { timeout: 5000 }).toBe(1);
-  await expect.poll(async () => (await hook(page)).player.speed, { timeout: 3000 }).toBeLessThan(0.05);
-  const mid = await hook(page);
-  await page.mouse.click(p.x, p.y, { button: 'right' });
-  await expect
-    .poll(async () => screenX((await hook(page)).player), { timeout: 3000 })
-    .toBeLessThan(screenX(mid.player) - 1);
+  await expect.poll(async () => (await hook(page)).player.state, { timeout: 3000 }).not.toBe('dodging');
+  expect(screenX((await hook(page)).player)).toBeLessThan(screenX(before.player) - 1);
   expect(errors).toEqual([]);
 });
 

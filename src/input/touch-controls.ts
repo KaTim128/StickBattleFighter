@@ -185,7 +185,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     intents.interactPress(true);
   };
   const onUtilUp = (): void => intents.interactRelease();
-  // Dodge: the way the stick points, or backwards when it is centred.
+  // Dodge: always a back-step away from where the fighter faces (owner, 12/11/2026).
   const onDodge = (e: PointerEvent): void => {
     e.preventDefault();
     intents.pressDodge();

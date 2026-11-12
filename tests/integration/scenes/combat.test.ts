@@ -250,11 +250,48 @@ describe('Phase 5 combat in the arena', () => {
     scenes.clear();
   });
 
+  it('dodge always steps straight back from the facing, ignoring movement input, with the same distance every time (owner, 12/11/2026)', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup();
+    scene.respawnDummy({ x: 3, y: 3 }); // out of the way
+    intents.setMove('t', { x: 1, y: 0 }); // face +x
+    run(0.3);
+    intents.setMove('t', { x: 0, y: 0 });
+    run(0.6);
+    const f = scene.playerFighter;
+    const aim = { ...f.aim };
+    const dodge = (move: { x: number; y: number }) => {
+      runUntil(() => scene.player.dodgeReady === 1, 3);
+      const from = { x: scene.player.x, y: scene.player.y };
+      intents.setMove('t', move);
+      intents.pressDodge();
+      run(STEP * 2);
+      expect(scene.player.state).toBe('dodging');
+      intents.setMove('t', { x: 0, y: 0 }); // let go: only the dodge moves the body
+      runUntil(() => scene.player.state !== 'dodging', 1);
+      expect(f.aim.x).toBeCloseTo(aim.x, 6); // facing unchanged
+      expect(f.aim.y).toBeCloseTo(aim.y, 6);
+      run(0.3);
+      return { dx: scene.player.x - from.x, dy: scene.player.y - from.y };
+    };
+    const sideways = dodge({ x: 0, y: 1 }); // holding "down" does not steer it
+    const forward = dodge({ x: 1, y: 0 }); // holding "toward" does not reverse it
+    const still = dodge({ x: 0, y: 0 });
+    for (const d of [sideways, forward, still]) {
+      expect(d.dx).toBeLessThan(-1.8); // backwards, away from the facing (+x)
+      expect(Math.abs(d.dy)).toBeLessThan(0.15);
+    }
+    expect(Math.abs(sideways.dx - still.dx)).toBeLessThan(0.15); // consistent distance
+    expect(Math.abs(forward.dx - still.dx)).toBeLessThan(0.15);
+    scenes.clear();
+  });
+
   it('dodging through a jab: invulnerable during the dash', async () => {
     const { intents, scene, scenes, runUntil, lineUp } = await setup();
     lineUp();
     scene.dummyAttacks = true;
-    intents.setMove('t', { x: 1, y: 0 }); // dash straight into the jab
+    // Turned away from the dummy, so the back-step (dodges always go backwards) carries the player
+    // straight into its jab.
+    scene.playerFighter.faceToward(-1, 0);
     intents.pressDodge();
     const events: string[] = [];
     runUntil(() => {
@@ -264,7 +301,6 @@ describe('Phase 5 combat in the arena', () => {
     expect(events).toEqual(['dodged']);
     expect(scene.player.hp).toBe(1000);
     expect(scene.player.stamina).toBeLessThan(100);
-    intents.setMove('t', { x: 0, y: 0 });
     scenes.clear();
   });
 
