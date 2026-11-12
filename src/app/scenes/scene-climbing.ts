@@ -81,7 +81,8 @@ export class SceneClimbing {
       }
       if (c.stepUp) {
         // Up and over: the body moves in over the top as it rises off its hands (no snap).
-        const u = (c.stepUp.t = Math.min(1, c.stepUp.t + stepS / STEP_UP_S));
+        c.stepUp.t = Math.min(1, c.stepUp.t + stepS / STEP_UP_S);
+        const u = c.stepUp.t;
         const k = u * u * (3 - 2 * u);
         // (Moved directly: placeAt is a teleport and would end the climb.)
         const at = {

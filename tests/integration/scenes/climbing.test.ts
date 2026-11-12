@@ -109,7 +109,7 @@ describe('furniture climbing', () => {
   });
 
   it('hit at about 70% of the climb: the climb is cancelled and the fighter falls back to the floor', async () => {
-    const { intents, scene, scenes, run, runUntil, p, jumpRight, pull } = await setup('inferno', { x: 18.2, y: 3 });
+    const { intents, scene, scenes, runUntil, p, jumpRight, pull } = await setup('inferno', { x: 18.2, y: 3 });
     jumpRight();
     runUntil(() => p.climb !== null, 1.2);
     intents.setMove('t', { x: 0, y: 0 });

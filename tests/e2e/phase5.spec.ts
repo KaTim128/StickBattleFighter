@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { comboToHeavy, gamePoint } from './combo';
+import { comboToHeavy } from './combo';
 
 interface Hook {
   player: { hp: number; stamina: number; state: string; attack: string | null };
