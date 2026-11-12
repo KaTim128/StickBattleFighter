@@ -1,7 +1,14 @@
+import { accentColour } from './accent-colour';
+
 /**
  * Top HUD (PRS-10, owner-adopted presentation targets): both fighters at a glance across the top
  * of the screen: portrait, name, health and stamina bars, status chips (PRS-6), a match timer
  * in the middle and the name of the player's last action. Original design.
+ *
+ * Look (owner, 12/11/2026, styled after a reference image of an arcade fighter's HUD, not copied):
+ * slanted, framed bars with glossy fills, a tick scale and a red damage trail; bold italic names
+ * and a big italic timer on a slanted plate; slanted portrait frames; each side in its fighter's
+ * colour.
  */
 export interface HudFighter {
   readonly name: string;
@@ -93,6 +100,8 @@ class Side {
     this.name.textContent = f.name;
     if (!this.hasImage) this.portrait.dataset.style = f.portrait;
     this.portrait.style.setProperty('--fighter', f.colour);
+    // Each side's frame and glow take its fighter's own colour (owner, 12/11/2026).
+    this.root.style.setProperty('--accent', accentColour(f.colour));
     this.status.replaceChildren(
       ...f.status.map((s) => {
         const chip = document.createElement('span');
