@@ -174,6 +174,23 @@ export class AmbiencePlayer {
     wet.gain.value = def.reverb.wet;
     dry.connect(verb);
     verb.connect(wet).connect(out);
+    if (def.echo) {
+      // Slapback off the far walls: a few delay taps, each feeding back a little, darker each repeat.
+      const echoOut = ctx.createGain();
+      echoOut.gain.value = def.echo.wet;
+      echoOut.connect(out);
+      for (const d of def.echo.delaysS) {
+        const delay = ctx.createDelay(2);
+        delay.delayTime.value = d;
+        const dark = this.filter(ctx, 'lowpass', def.echo.lowpassHz, 0.7);
+        const fb = ctx.createGain();
+        fb.gain.value = def.echo.feedback;
+        dry.connect(delay);
+        delay.connect(dark);
+        dark.connect(fb).connect(delay);
+        dark.connect(echoOut);
+      }
+    }
 
     const scape: LiveScape = {
       def,
@@ -407,6 +424,46 @@ export class AmbiencePlayer {
           f.frequency.exponentialRampToValueAtTime(b, t + dur);
           src.connect(f).connect(this.env(ctx, pan, t, dur, gain * k * 1.6, dur * 0.25));
           src.stop(t + dur + 0.1);
+        }
+        break;
+      }
+      case 'distant-cheer': {
+        // The far side of the bowl cheering: muffled by distance, slow to swell, mostly echo.
+        const dur = 2.2 + r() * 2;
+        for (const [hz, k] of [
+          [420, 1],
+          [850, 0.7],
+          [1500, 0.3],
+        ] as const) {
+          this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz * (0.9 + r() * 0.2), gain * k * 0.7, pan, dur * 0.45, 1.3);
+        }
+        break;
+      }
+      case 'gasp': {
+        // An excited reaction: a sharp intake of breath across a section, rising fast, cut short.
+        const dur = 0.5 + r() * 0.3;
+        for (const [a, b, k] of [
+          [900, 1500, 1],
+          [1800, 2600, 0.6],
+        ] as const) {
+          const src = this.loop(ctx, 'pink');
+          const f = this.filter(ctx, 'bandpass', a, 3);
+          f.frequency.setValueAtTime(a, t);
+          f.frequency.exponentialRampToValueAtTime(b, t + dur);
+          src.connect(f).connect(this.env(ctx, pan, t, dur, gain * k * 1.2, dur * 0.6));
+          src.stop(t + dur + 0.1);
+        }
+        break;
+      }
+      case 'murmur-rise': {
+        // Suspense: the crowd's murmur building as something seems about to happen, then settling.
+        const dur = 4 + r() * 3;
+        for (const [hz, k] of [
+          [260, 0.8],
+          [520, 1],
+          [1000, 0.6],
+        ] as const) {
+          this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz * (0.9 + r() * 0.2), gain * k * 0.55, pan, dur * 0.7, 1.6);
         }
         break;
       }

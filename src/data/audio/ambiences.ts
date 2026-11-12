@@ -66,11 +66,23 @@ export const AMBIENT_EVENTS = [
   'whistle',
   'ooh',
   'roar',
+  'distant-cheer',
+  'gasp',
+  'murmur-rise',
 ] as const;
 export type AmbientEventId = (typeof AMBIENT_EVENTS)[number];
 
 /** Crowd sounds: never in a soundscape meant to be empty of people. */
-export const CROWD_EVENTS: readonly AmbientEventId[] = ['cheer', 'applause', 'whistle', 'ooh', 'roar'];
+export const CROWD_EVENTS: readonly AmbientEventId[] = [
+  'cheer',
+  'applause',
+  'whistle',
+  'ooh',
+  'roar',
+  'distant-cheer',
+  'gasp',
+  'murmur-rise',
+];
 
 export interface AmbientEvent {
   readonly id: AmbientEventId;
@@ -91,6 +103,16 @@ export interface AmbienceDef {
   readonly reverb: { readonly seconds: number; readonly wet: number };
   /** Heard through a wall or a tunnel: everything above this is muffled. */
   readonly muffleHz?: number;
+  /**
+   * Distinct echoes off far walls (a stone arena's slapback), on top of the reverb: delay taps in
+   * seconds, how much each repeat feeds the next, darkened above `lowpassHz`, at level `wet`.
+   */
+  readonly echo?: {
+    readonly delaysS: readonly number[];
+    readonly feedback: number;
+    readonly lowpassHz: number;
+    readonly wet: number;
+  };
   readonly beds: readonly AmbientBed[];
   readonly events: readonly AmbientEvent[];
   /** Events played when something happens in the fight. */
@@ -141,52 +163,61 @@ const OFFICE_EMPTY: AmbienceDef = {
 };
 
 /**
- * COLOSSEUM DURING A LIVE TOURNAMENT (owner, 12/11/2026): tense, intimidating and immersive. A
- * huge bowl of thousands murmuring under a low roar that surges every few seconds, cheers,
- * applause, whistles and "ooh"s from the stands, and now and then the whole crowd erupting, all
- * echoing round the stone. The crowd answers the fight: a big blow draws an "ooh", a KO a roar.
- * The owner's reference track set the shape (a dense, low-heavy, constant tension with regular
- * swells and occasional big surges); none of it is copied, and there is no music in it.
+ * COLOSSEUM DURING A LIVE TOURNAMENT (owner, 12/11/2026, second brief: "suspenseful ambience inside a
+ * massive Colosseum ... tense, intimidating and immersive", designed from that brief alone and not
+ * modelled on any audio the owner supplied earlier).
+ * - Bed: thousands of supporters murmuring over a low rumble of the bowl; the murmur rises and falls
+ *   slowly and irregularly (no regular surges), which keeps it uneasy.
+ * - Events: distant cheering from the far stands, the crowd's murmur building nervously and settling
+ *   back (suspense), occasional applause, whistles, sharp excited gasps, nearer cheers, and now and
+ *   then the whole bowl erupting.
+ * - Space: a long stone reverb plus slapback echoes off the arena walls.
+ * The crowd answers the fight: a big blow draws an "ooh", a KO a roar. No music, melody, beats or
+ * instruments: all synthesised noise and voices-like swells (src/audio/ambience.ts).
  */
 const COLOSSEUM: AmbienceDef = {
   id: 'colosseum',
   title: 'Colosseum, tournament in progress',
   level: 0.85,
-  reverb: { seconds: 4.5, wet: 0.5 },
+  reverb: { seconds: 5.5, wet: 0.55 },
+  echo: { delaysS: [0.21, 0.37, 0.58], feedback: 0.32, lowpassHz: 1800, wet: 0.3 },
   beds: [
     {
       kind: 'crowd',
-      bands: 9,
-      lowHz: 220,
-      highHz: 2600,
-      gain: 1,
-      chatterHz: [3, 7],
-      swell: { everyS: [4, 7], depth: 0.7 },
+      bands: 12,
+      lowHz: 180,
+      highHz: 2400,
+      gain: 0.9,
+      chatterHz: [2, 6],
+      swell: { everyS: [9, 20], depth: 0.35 },
     },
     {
       kind: 'noise',
       colour: 'brown',
       filter: 'lowpass',
-      freqHz: 240,
-      gain: 0.2,
-      swell: { everyS: [4, 7], depth: 0.6 },
+      freqHz: 200,
+      gain: 0.22,
+      swell: { everyS: [12, 25], depth: 0.4 },
     },
     {
       kind: 'noise',
       colour: 'pink',
       filter: 'bandpass',
-      freqHz: 650,
+      freqHz: 500,
       q: 0.5,
-      gain: 0.08,
-      swell: { everyS: [10, 20], depth: 0.4 },
+      gain: 0.06,
+      swell: { everyS: [15, 30], depth: 0.3 },
     },
   ],
   events: [
-    { id: 'cheer', everyS: [5, 12], gain: 1.4 },
-    { id: 'applause', everyS: [8, 18], gain: 1.2 },
-    { id: 'whistle', everyS: [6, 16], gain: 0.5 },
-    { id: 'ooh', everyS: [10, 22], gain: 1.3 },
-    { id: 'roar', everyS: [30, 60], gain: 2.4 },
+    { id: 'distant-cheer', everyS: [6, 14], gain: 1.1 },
+    { id: 'murmur-rise', everyS: [14, 28], gain: 1 },
+    { id: 'applause', everyS: [12, 26], gain: 0.9 },
+    { id: 'whistle', everyS: [8, 18], gain: 0.45 },
+    { id: 'gasp', everyS: [16, 34], gain: 1 },
+    { id: 'ooh', everyS: [25, 50], gain: 1 },
+    { id: 'cheer', everyS: [18, 35], gain: 1.1 },
+    { id: 'roar', everyS: [45, 90], gain: 2 },
   ],
   reactions: { 'heavy-hit': 'ooh', ko: 'roar' },
 };

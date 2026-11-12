@@ -44,12 +44,13 @@ describe('background ambience, never music (owner, 12/11/2026)', () => {
     expect(office.beds.some((b) => b.kind === 'hum')).toBe(true); // ventilation and mains hum
   });
 
-  it('the Colosseum has a crowd: murmur, cheers, applause, whistles, oohs and roars, answering the fight', () => {
+  it('the Colosseum has a crowd: murmur, distant and near cheers, nervous murmur swells, applause, whistles, gasps, oohs and roars, with arena echoes, answering the fight', () => {
     const arena = AMBIENCES.colosseum!;
     expect(arena.beds.some((b) => b.kind === 'crowd')).toBe(true);
     expect(arena.events.map((e) => e.id).sort()).toEqual([...CROWD_EVENTS].sort());
     expect(arena.reverb.seconds).toBeGreaterThan(AMBIENCES[OFFICE.ambience!]!.reverb.seconds); // a vast stone bowl
     expect(arena.reactions).toEqual({ 'heavy-hit': 'ooh', ko: 'roar' });
+    expect(arena.echo?.delaysS.length).toBeGreaterThanOrEqual(2); // slapback off the stone walls
     expect(AMBIENCES.tunnel!.muffleHz).toBeLessThan(1000); // the menu hears it through stone
   });
 
