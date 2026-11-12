@@ -28,6 +28,10 @@
         position: fixed; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%;
         border: 3px solid rgba(232, 237, 245, 0.45); background: rgba(0, 0, 0, 0.18);
       }
+      .joystick-knob {
+        position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; border-radius: 50%;
+        background: rgba(232, 237, 245, 0.75); transform: translate(-50%, -50%);
+      }
       /* Fire Beam on touch (owner, 12/11/2026): the joystick aims the beam while it pours. */
       .joystick.aiming { border-color: rgba(255, 140, 40, 0.95); box-shadow: 0 0 14px rgba(255, 110, 20, 0.6); }
       .joystick.aiming::after {
@@ -35,10 +39,6 @@
         font: 800 11px system-ui, sans-serif; color: #ffb35c; text-shadow: 0 1px 0 #000;
       }
       .joystick.aiming .joystick-knob { background: rgba(255, 150, 60, 0.9); }
-      .joystick-knob {
-        position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; border-radius: 50%;
-        background: rgba(232, 237, 245, 0.75); transform: translate(-50%, -50%);
-      }
       /* Button text always stays inside its button (owner, 12/11/2026): no padding eating the
          width, centred, one line; tests/e2e/button-fit.spec.ts checks every button. */
       .util-button, .dodge-button, .melee-button, .ability-button {

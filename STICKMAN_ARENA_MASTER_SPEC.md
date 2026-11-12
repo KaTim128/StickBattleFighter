@@ -515,6 +515,7 @@ Browser verification uses the documented dev command and browser automation: tes
 
 | Date | Change | By |
 |---|---|---|
+| 12/11/2026 | Owner: Rampage's walk on straighter legs; Inferno breaks walls far faster, with damage accumulating on the struck section and progressive cracks, spalls, cavity and scorch; on touch, the joystick aims the Fire Beam while it pours; the Colosseum ambience redesigned (suspenseful crowd with arena echoes, not based on supplied audio); the Dummy, Inferno and Rampage restyled after the owner's reference art (tapered limbs, cel shading, coloured edges, angular eyes) with sizes and gameplay unchanged. | Master Developer |
 | 12/11/2026 | Owner: dodge always straight back from the facing, with a consistent distance (REQ-CTL-20, SUP-17). | Master Developer |
 | 12/11/2026 | Owner: Rampage Buffer resized to 1.1× Inferno (was 1.6×); body radius 0.38 m and reach +0.1 m over his original moves (REQ-ABL-14). | Master Developer |
 | 12/11/2026 | Owner: Rampage Buffer leaner, with shaded (not drawn) muscles and no belt blob; a heavyweight idle, walk and run (REQ-ABL-14). | Master Developer |

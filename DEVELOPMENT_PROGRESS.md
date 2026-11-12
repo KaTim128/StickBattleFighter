@@ -491,6 +491,24 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - `rig.scale` is now 1.1 (was 1.6), with a body radius of 0.38 m (was 0.55; Inferno's is 0.32). His reach is 0.1 m over his original moves (was +0.35), and Rampage Charge's hit radius is 0.85 m.
 - **Evidence:** `npm test` 316/316; a phone-landscape screenshot of him next to Inferno.
 
+### 12/11/2026: back-dodge, Rampage walk, Inferno wall breaking, mobile beam aiming, Colosseum ambience, styled characters (owner requests)
+- **Dodge:** always straight back from the facing, whatever the movement input. The facing is kept, and the speed falls over the dodge, so every dodge covers about 2.4 m (REQ-CTL-20, SUP-17).
+- **Rampage walk:** straighter legs. The hips ride near full leg length, so the planted leg is nearly straight and the swing leg peaks around 40°. Steps are grounded and smooth.
+- **Inferno and walls:**
+  - `objects.wallBreakPower` (stats data) is 3 for Inferno, applied to melee and abilities.
+  - Damage accumulates on exactly the section struck. Each chip redraws that section's damage (`src/rendering/wall-damage.ts`): spreading, branching cracks; spalls past 40%; a caved cavity with brick past 75%; soot and glowing cracks from fire hits. More dust, chips and embers as it weakens.
+- **Mobile Fire Beam:** while the beam pours, the joystick aims it (it turns orange and reads AIM). Movement returns when the beam ends.
+- **Colosseum ambience:** redesigned from the new brief, not modelled on the audio supplied earlier.
+  - Sound: a murmuring crowd with slow, irregular swells; distant cheers; nervous murmur rises; applause; whistles; gasps; near cheers; rare roars; a 5.5 s stone reverb plus slapback echoes (`AmbienceDef.echo`).
+  - Preview: re-rendered offline as `docs/audio-previews/colosseum.mp3`, holding a steady level around -16 dB.
+- **Styled characters (after the owner's reference art):**
+  - Shapes: tapered limbs (thick at the shoulder and thigh, slim at the wrist and ankle) and V-shaped torsos.
+  - Shading: cel shading with a lit band toward the light, a shadow band and a pale rim on the torso.
+  - Edges and faces: edges in a deep shade of each body's colour instead of black ink; angular eyes (white-hot slits on Inferno, dark slits on the Dummy).
+  - Limbs are slightly thicker on Inferno, the Dummy and the Base Stickman. Heights, scale (Rampage is still 1.1× Inferno), abilities, animations and controls are unchanged.
+- **Fix:** the CSS order of the joystick aim style and a `forEach` that returned a value failed the whole-repo lint.
+- **Evidence:** `npm test` 321/321; e2e 39 passed; lint clean (1 info, in an old mockup); browser screenshots of each change.
+
 ## Decisions requiring owner attention
 
 

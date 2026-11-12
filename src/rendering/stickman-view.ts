@@ -194,12 +194,18 @@ export class StickmanView {
     };
     const fiery = this.bodyStyle === 'flame';
     const t = this.clockS;
-    const limbs: [readonly Point[], number][] = [
-      [s.armBack, limbBack],
-      [s.legBack, limbBack],
-      [[s.pelvis, s.chest, s.neck], limb],
-      [s.legFront, limb],
-      [s.armFront, limb],
+    // Styled figure (owner, 12/11/2026: "professionally designed, polished", after the reference
+    // art): tapered limbs, thick at the shoulder and thigh and slim at the wrist and ankle, and a
+    // V-shaped torso. Widths in limb widths, root to end.
+    const ARM = [1.2, 0.92, 0.72] as const;
+    const LEG = [1.4, 1.02, 0.78] as const;
+    const TORSO = [1.55, 2.15, 0.85] as const;
+    const limbs: [readonly Point[], number, readonly number[]][] = [
+      [s.armBack, limbBack, ARM],
+      [s.legBack, limbBack, LEG],
+      [[s.pelvis, s.chest, s.neck], limb, TORSO],
+      [s.legFront, limb, LEG],
+      [s.armFront, limb, ARM],
     ];
     if (fiery) {
       // A living flame (owner, 11/11/2026): a soft glow around the whole body first.
@@ -207,22 +213,43 @@ export class StickmanView {
     }
     // Back limbs first (darker), then torso, front limbs, head.
     const muscled = this.bodyStyle === 'muscle';
-    limbs.forEach(([pts, rawColour], i) => {
+    limbs.forEach(([pts, rawColour, profile], i) => {
       // Rampage Mode flushes the hide red (owner, 12/11/2026).
       const colour = this.rage > 0 ? toward(rawColour, BRUTE.rage, this.rage * 0.3) : rawColour;
+      const widths = profile.map((k) => k * w);
       if (!fiery) {
-        stroke(pts, outline, w + o * 2);
-        stroke(pts, colour, w);
-        if (muscled) this.muscleDetail(g, pts, w, colour, outline, i);
+        // No black ink lines: each body's edge is a deep shade of its own colour.
+        const edge = toward(colour, outline, 0.68);
+        taper(
+          g,
+          pts,
+          widths.map((x) => x + o * 2),
+          edge,
+        );
+        taper(g, pts, widths, colour);
+        if (muscled) this.muscleDetail(g, pts, w, colour, edge, i);
+        else celShade(g, pts, widths, colour, i === 2);
         return;
       }
       const edge = toward(FLAME.ember, flashColour, flash * 0.85);
-      stroke(pts, edge, w + o * 1.6); // ember-dark edges instead of a black outline
-      stroke(pts, colour, w);
+      taper(
+        g,
+        pts,
+        widths.map((x) => x + o * 1.6),
+        edge,
+      ); // ember-dark edges instead of a black outline
+      taper(g, pts, widths, colour);
+      celShade(g, pts, widths, colour, i === 2);
       this.charStreaks(g, pts, w, t + i * 1.7, edge);
       // A white-hot core that flickers along the limb.
       const pulse = 0.55 + 0.25 * Math.sin(t * 11 + i * 2.3) + 0.2 * Math.sin(t * 23 + i);
-      stroke(pts, toward(FLAME.core, flashColour, flash), w * 0.42, Math.min(1, pulse));
+      taper(
+        g,
+        pts,
+        widths.map((x) => x * 0.38),
+        toward(FLAME.core, flashColour, flash),
+        Math.min(1, pulse),
+      );
     });
     if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
     this.drawStatus(s, t);
@@ -230,12 +257,8 @@ export class StickmanView {
       // Dodge: the body becomes a small, quick streak of flame at chest height (owner: smaller, no grey).
       this.flameHead(0, -0.75, 0.19 + 0.05 * flame, flash, 1.2 * flame, flame);
     } else if (this.head === 'flame') this.flameHead(s.head.x, s.head.y, this.bones.headRadius * 1.15, flash);
-    else if (this.head === 'brute') this.bruteHead(g, s, limb, outline, o);
-    else {
-      g.circle(s.head.x, s.head.y, this.bones.headRadius)
-        .fill(limb)
-        .stroke({ width: o * 1.4, color: outline });
-    }
+    else if (this.head === 'brute') this.bruteHead(g, s, limb, toward(limb, outline, 0.68), o);
+    else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
   }
 
   /** Quick dodge speed lines: short streaks trailing opposite the dash, fading in and out with it. */
@@ -313,13 +336,17 @@ export class StickmanView {
     c.circle(x, y, r).fill({ color: 0xff8c1e, alpha: 0.95 });
     c.circle(x - r * 0.15, y - r * 0.12, r * 0.68).fill({ color: 0xffc94a, alpha: 0.95 });
     c.circle(x - r * 0.2, y - r * 0.2, r * 0.35).fill({ color: 0xfff6d2, alpha: 0.95 });
-    // Eyes: two bright slits rimmed in ember red, burning out of the fire.
-    for (const [ex, ey, ew, eh] of [
-      [0.28, -0.05, 0.1, 0.22],
-      [0.62, -0.02, 0.09, 0.2],
+    // Eyes (styled after the reference art, owner 12/11/2026): two angular white-hot slits, slanting
+    // down toward the middle of the face, rimmed in ember red, burning out of the fire.
+    for (const [ex, ey, k] of [
+      [0.3, -0.04, 1],
+      [0.7, -0.08, 0.7],
     ] as const) {
-      c.ellipse(x + r * ex, y + r * ey, r * (ew + 0.05), r * (eh + 0.05)).fill({ color: FLAME.ember, alpha: 0.85 });
-      c.ellipse(x + r * ex, y + r * ey, r * ew, r * eh).fill(0xfffbe6);
+      const P = (u: number, v: number): number[] => [x + r * (ex + u * k), y + r * (ey + v * k)];
+      const slit = [...P(-0.24, -0.12), ...P(0.24, 0.04), ...P(0.2, 0.14), ...P(-0.2, 0.06)];
+      const rim = [...P(-0.3, -0.18), ...P(0.3, 0.0), ...P(0.26, 0.2), ...P(-0.26, 0.12)];
+      c.poly(rim).fill({ color: FLAME.ember, alpha: 0.85 });
+      c.poly(slit).fill(0xfffbe6);
     }
     if (flash > 0) c.circle(x, y, r).fill({ color: 0xffffff, alpha: flash * 0.6 });
   }
@@ -524,6 +551,41 @@ export class StickmanView {
   }
 
   /**
+   * The plain round head (training dummy, base stickman), styled like the reference art (owner,
+   * 12/11/2026): flat colour with a lit crescent toward the light, a shadowed underside, an edge in a
+   * deep shade of its own colour, and two narrow angular eyes looking the way it faces.
+   */
+  private plainHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
+    const r = this.bones.headRadius;
+    const hx = s.head.x;
+    const hy = s.head.y;
+    g.circle(hx, hy, r + o).fill(edge);
+    g.circle(hx, hy, r).fill(colour);
+    // Shadow on the lower back of the skull, light on the upper front (light from up-left on screen).
+    g.circle(hx - r * 0.18, hy + r * 0.2, r * 0.82).fill({ color: toward(colour, 0x000000, 0.25), alpha: 0.45 });
+    g.circle(hx + r * 0.05, hy - r * 0.08, r * 0.78).fill(colour);
+    g.ellipse(hx - r * 0.25, hy - r * 0.42, r * 0.38, r * 0.22).fill({
+      color: toward(colour, 0xffffff, 0.45),
+      alpha: 0.6,
+    });
+    // Narrow angular eyes, slanting down toward the middle of the face.
+    const eye = toward(colour, 0x000000, 0.75);
+    const P = (cx: number, cy: number, k: number, u: number, v: number): number[] => [cx + r * u * k, cy + r * v * k];
+    for (const [cx, k] of [
+      [hx + r * 0.68, 0.9],
+      [hx + r * 0.3, 1.4],
+    ] as const) {
+      const cy = hy - r * 0.04;
+      g.poly([
+        ...P(cx, cy, k, -0.18, -0.08),
+        ...P(cx, cy, k, 0.2, 0.03),
+        ...P(cx, cy, k, 0.16, 0.1),
+        ...P(cx, cy, k, -0.15, 0.04),
+      ]).fill(eye);
+    }
+  }
+
+  /**
    * A plain round stickman head (Rampage Buffer, owner 12/11/2026: "a simple round human stickman
    * head"), with two narrow eyes that glow red under a scowling brow, so he stays menacing (owner,
    * 12/11/2026: "make sure the eyes are visible and look menacing"). Drawn in the figure's frame
@@ -670,4 +732,76 @@ function toward(colour: number, target: number, k: number): number {
     return Math.round(c + (g - c) * t);
   };
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
+
+/**
+ * A tapered limb: each segment a quad from its start width to its end width, with round joints, so
+ * a limb narrows smoothly from shoulder to wrist (styled figures, owner 12/11/2026).
+ */
+function taper(g: Graphics, pts: readonly Point[], widths: readonly number[], colour: number, alpha = 1): void {
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const p = pts[i]!;
+    const q = pts[i + 1]!;
+    const a = (widths[i] ?? widths[widths.length - 1]!) / 2;
+    const b = (widths[i + 1] ?? widths[widths.length - 1]!) / 2;
+    const dx = q.x - p.x;
+    const dy = q.y - p.y;
+    const l = Math.hypot(dx, dy) || 1;
+    const nx = -dy / l;
+    const ny = dx / l;
+    g.poly([
+      p.x + nx * a,
+      p.y + ny * a,
+      q.x + nx * b,
+      q.y + ny * b,
+      q.x - nx * b,
+      q.y - ny * b,
+      p.x - nx * a,
+      p.y - ny * a,
+    ]);
+  }
+  for (const [i, p] of pts.entries()) g.circle(p.x, p.y, (widths[i] ?? widths[widths.length - 1]!) / 2);
+  g.fill({ color: colour, alpha });
+}
+
+/**
+ * Cel shading on a tapered limb, in the flat, two-tone look of the reference art: a lit band on the
+ * side facing the light (up and to the left on screen), a shadow band on the far side and, on the
+ * torso, a thin pale rim of back-light.
+ */
+function celShade(g: Graphics, pts: readonly Point[], widths: readonly number[], colour: number, torso: boolean): void {
+  const lit = toward(colour, 0xffffff, 0.3);
+  const dark = toward(colour, 0x000000, 0.28);
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const p = pts[i]!;
+    const q = pts[i + 1]!;
+    const a = (widths[i] ?? 0) / 2;
+    const b = (widths[i + 1] ?? 0) / 2;
+    const dx = q.x - p.x;
+    const dy = q.y - p.y;
+    const l = Math.hypot(dx, dy) || 1;
+    let nx = -dy / l;
+    let ny = dx / l;
+    // Point the normal toward the light (up-left on screen; +y is down).
+    if (nx * -0.6 + ny * -0.8 < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const band = (from: number, to: number, side: number, c: number, alpha: number) =>
+      g
+        .poly([
+          p.x + nx * a * from * side,
+          p.y + ny * a * from * side,
+          q.x + nx * b * from * side,
+          q.y + ny * b * from * side,
+          q.x + nx * b * to * side,
+          q.y + ny * b * to * side,
+          p.x + nx * a * to * side,
+          p.y + ny * a * to * side,
+        ])
+        .fill({ color: c, alpha });
+    band(0.15, 0.85, 1, lit, 0.45);
+    band(0.35, 0.95, -1, dark, 0.4);
+    if (torso) band(0.82, 0.97, -1, toward(colour, 0xffffff, 0.55), 0.35);
+  }
 }
