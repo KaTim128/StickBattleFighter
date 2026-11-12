@@ -10,6 +10,7 @@
     "ClashWin": "necro.grave-slam",
     "Idle": "proc.idle.mage",
     "FightingStance": "proc.idle.mage",
-    "Turn": "proc.idle.mage"
+    "Turn": "proc.idle.mage",
+    "HeavyAttack": "necro.soul-rend"
   }
 }

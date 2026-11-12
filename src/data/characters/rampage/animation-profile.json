@@ -10,6 +10,7 @@
     "ClashWin": "rampage.double-hammer",
     "Idle": "proc.idle.heavyweight",
     "FightingStance": "proc.idle.heavyweight",
-    "Turn": "proc.idle.heavyweight"
+    "Turn": "proc.idle.heavyweight",
+    "HeavyAttack": "rampage.sledgehammer"
   }
 }

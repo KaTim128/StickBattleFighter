@@ -37,18 +37,23 @@ describe('default controls (owner, 11/11/2026; REQ-CTL-15)', () => {
       ability2: 'KeyE',
       ability3: 'KeyF',
       ability4: 'KeyR',
-      ultimate: 'KeyK',
+      heavyAttack: 'KeyK',
+      ultimate: 'KeyI',
+      beamLeft: 'KeyJ',
+      beamRight: 'KeyL',
       grab: 'KeyG',
     });
     expect(BIND_ACTIONS.map((a) => a.action).sort()).toEqual(Object.keys(DEFAULT_BINDINGS).sort());
   });
 
-  it('every default is conflict-free; K is only the ultimate (owner, 12/11/2026)', () => {
+  it('every default is conflict-free; K is the Heavy Attack and I the ultimate (owner, 12/11/2026)', () => {
     for (const { action } of BIND_ACTIONS)
       expect(checkBinding(DEFAULT_BINDINGS, action, DEFAULT_BINDINGS[action])).toEqual({ ok: true });
-    expect(actionsFor(DEFAULT_BINDINGS, 'KeyK')).toEqual(['ultimate']);
-    expect(actionsFor(DEFAULT_BINDINGS, 'KeyJ')).toEqual(['attack']);
-    expect(actionsFor(DEFAULT_BINDINGS, 'KeyL')).toEqual(['dodge']);
+    expect(actionsFor(DEFAULT_BINDINGS, 'KeyK')).toEqual(['heavyAttack']);
+    expect(actionsFor(DEFAULT_BINDINGS, 'KeyI')).toEqual(['ultimate']);
+    // The Fire Beam keys share J and L with the attack and dodge: they only act while a beam pours.
+    expect(actionsFor(DEFAULT_BINDINGS, 'KeyJ').sort()).toEqual(['attack', 'beamLeft']);
+    expect(actionsFor(DEFAULT_BINDINGS, 'KeyL').sort()).toEqual(['beamRight', 'dodge']);
     expect(actionsFor(DEFAULT_BINDINGS, 'Mouse0')).toEqual([]);
   });
 });
@@ -75,10 +80,12 @@ describe('rebinding and conflicts', () => {
     expect(rebind(DEFAULT_BINDINGS, 'attack', 'KeyL').check).toMatchObject({ ok: false, with: 'dodge' });
   });
 
-  it('no key may drive two actions: the ultimate key cannot also be the attack or an ability', () => {
-    expect(checkBinding(DEFAULT_BINDINGS, 'attack', 'KeyK')).toMatchObject({ ok: false, with: 'ultimate' });
-    expect(checkBinding(DEFAULT_BINDINGS, 'ability1', 'KeyK')).toMatchObject({ ok: false, with: 'ultimate' });
-    expect(checkBinding(DEFAULT_BINDINGS, 'ultimate', 'KeyJ')).toMatchObject({ ok: false, with: 'attack' });
+  it('no key may drive two normal actions; the beam keys may share only with normal actions', () => {
+    expect(checkBinding(DEFAULT_BINDINGS, 'attack', 'KeyI')).toMatchObject({ ok: false, with: 'ultimate' });
+    expect(checkBinding(DEFAULT_BINDINGS, 'ability1', 'KeyK')).toMatchObject({ ok: false, with: 'heavyAttack' });
+    expect(checkBinding(DEFAULT_BINDINGS, 'ultimate', 'KeyQ')).toMatchObject({ ok: false, with: 'ability1' });
+    expect(checkBinding(DEFAULT_BINDINGS, 'beamLeft', 'KeyL')).toMatchObject({ ok: false, with: 'beamRight' });
+    expect(checkBinding(DEFAULT_BINDINGS, 'beamLeft', 'KeyQ').ok).toBe(true);
   });
 
   it('reserved keys (settings, mute, debug) are refused', () => {

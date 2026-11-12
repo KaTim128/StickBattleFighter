@@ -54,6 +54,8 @@ export interface AttackDef {
   readonly effect: string | null;
   /** Burn applied to the target on a clean hit. */
   readonly burn: { readonly dps: number; readonly durationS: number } | null;
+  /** The target bleeds when hit (Shroud). */
+  readonly bleed?: { readonly dps: number; readonly durationS: number } | null;
   /** The target bounces off the floor. */
   readonly groundBounce: boolean;
 }

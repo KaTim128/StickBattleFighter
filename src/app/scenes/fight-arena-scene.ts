@@ -397,6 +397,7 @@ export class FightArenaScene implements ArenaScene {
     i.consumeDodge();
     i.consumeJump();
     i.consumeAimCancel();
+    i.consumeHeavy();
     this.playerFighter.meleeTracking = false;
     this.playerFighter.sprinting = false;
   }
@@ -748,6 +749,7 @@ export class FightArenaScene implements ArenaScene {
       this.intents.consumeMeleeEdges();
       this.intents.consumeAbility();
       this.intents.consumeAimCancel();
+      this.intents.consumeHeavy();
       if (c.state === 'guarding') c.setGuard(false);
       f.meleeTracking = false;
       if (this.intents.consumeDodge() && f.liftS <= 0 && !air && c.tryDodge()) this.startBackDodge(f);
@@ -774,6 +776,7 @@ export class FightArenaScene implements ArenaScene {
       this.intents.consumeMeleeEdges();
       this.intents.consumeJump();
       this.intents.consumeDodge();
+      this.intents.consumeHeavy();
       f.meleeTracking = false;
       if (c.state === 'guarding') c.setGuard(false);
       this.stepTargeting(f, stepS);
@@ -809,6 +812,12 @@ export class FightArenaScene implements ArenaScene {
       f.meleeTracking = false;
     }
     if (!this.intents.meleeHeld && c.state === 'guarding') c.setGuard(false);
+
+    // Heavy Attack (owner, 12/11/2026): the fighter's own heavy blow, from the ground.
+    if (this.intents.consumeHeavy() && c.canAct && !f.caster?.cast && c.state !== 'guarding' && !air) {
+      this.softLock(f);
+      f.combo.pressHeavy({ airborne: false, falling: false, forward: false });
+    }
 
     // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
     const slot = this.intents.consumeAbility();
@@ -1091,6 +1100,14 @@ export class FightArenaScene implements ArenaScene {
     if (best) f.faceToward(best.x - f.x, best.y - f.y);
   }
 
+  /** Where the player's beam pointed when it started (its key-driven sweep is limited to ±π from it). */
+  private beamStartAngle = 0;
+
+  /** The player is pouring a beam (the on-screen beam controls show). */
+  get beaming(): boolean {
+    return this.abilities?.world.beams.some((b) => b.casterId === this.playerFighter.name) ?? false;
+  }
+
   /** Mouse moves counted when the player's beam started: the beam follows the cursor once it moves. */
   private beamPointerMoves = -1;
 
@@ -1101,7 +1118,23 @@ export class FightArenaScene implements ArenaScene {
    */
   private beamSteer(f: FighterEntity, fresh: boolean): { x: number; y: number } | null {
     if (f === this.playerFighter) {
-      if (fresh) this.beamPointerMoves = this.intents.pointerMoves;
+      const beam = this.abilities?.world.beams.find((b) => b.casterId === f.name);
+      const angle = beam ? Math.atan2(beam.dir.y, beam.dir.x) : Math.atan2(f.aim.y, f.aim.x);
+      if (fresh) {
+        this.beamPointerMoves = this.intents.pointerMoves;
+        this.beamStartAngle = angle;
+      }
+      // Keys (owner, 12/11/2026): held J sweeps the beam left and L right, up to half a turn each way
+      // from where it started; the world turns it smoothly at the beam's own turn rate.
+      const turn = this.intents.beamTurn;
+      if (turn !== 0) {
+        // On screen, left is anticlockwise: a smaller world angle (the 2.5D view keeps orientation).
+        const want = Math.min(
+          this.beamStartAngle + Math.PI,
+          Math.max(this.beamStartAngle - Math.PI, angle + turn * (Math.PI / 2)),
+        );
+        return { x: Math.cos(want), y: Math.sin(want) };
+      }
       const swipe = this.intents.swipe;
       if (swipe) return swipe;
       // Touch (owner, 12/11/2026): while the beam pours, the movement joystick aims it (the caster
@@ -1791,6 +1824,7 @@ export class FightArenaScene implements ArenaScene {
         connected = true;
         hitFighter = true;
         if (frenzy?.meleeBleed) target.combatant.bleed(frenzy.meleeBleed.dps, frenzy.meleeBleed.durationS);
+        if (a.bleed) target.combatant.bleed(a.bleed.dps, a.bleed.durationS);
       }
     }
 

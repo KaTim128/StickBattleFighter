@@ -56,7 +56,7 @@
       .aim-hint[hidden] { display: none; }
       /* Button text always stays inside its button (owner, 12/11/2026): no padding eating the
          width, centred, one line; tests/e2e/button-fit.spec.ts checks every button. */
-      .util-button, .dodge-button, .melee-button, .ability-button {
+      .util-button, .dodge-button, .melee-button, .heavy-button, .ability-button {
         display: grid; place-items: center; padding: 0; white-space: nowrap;
       }
       .util-button {
@@ -72,6 +72,11 @@
         width: 64px; height: 64px; border-radius: 18px; border: 3px solid rgba(140, 200, 255, 0.75);
         color: #e8f4ff; font: 700 12px system-ui, sans-serif; pointer-events: auto; touch-action: none;
         background: conic-gradient(rgba(40, 110, 170, 0.8) var(--fill, 100%), rgba(20, 22, 28, 0.85) 0);
+      }
+      .heavy-button {
+        position: fixed; right: calc(286px + env(safe-area-inset-right)); bottom: 30px; width: 58px; height: 58px;
+        border-radius: 50%; border: 3px solid rgba(255, 110, 80, 0.85); background: rgba(110, 30, 20, 0.75);
+        color: #fff0e6; font: 800 11px system-ui, sans-serif; pointer-events: auto; touch-action: none;
       }
       .aim-cancel-button {
         position: fixed; left: calc(24px + env(safe-area-inset-left)); top: 110px; display: none;
@@ -499,6 +504,7 @@
         .ability-button[data-slot='a2'] { right: calc(164px + env(safe-area-inset-right)); bottom: 74px; }
         .ability-button[data-slot='a3'] { right: calc(110px + env(safe-area-inset-right)); bottom: 100px; }
         .ability-button[data-slot='a4'] { right: calc(112px + env(safe-area-inset-right)); bottom: 152px; }
+        .heavy-button { right: calc(226px + env(safe-area-inset-right)); bottom: 12px; width: 48px; height: 48px; font-size: 10px; }
         .ability-button.ult { right: calc(18px + env(safe-area-inset-right)); bottom: 20px; width: 58px; height: 58px; }
         .util-button { right: calc(18px + env(safe-area-inset-right)); bottom: 96px; width: 52px; height: 52px; }
         .dodge-button { right: calc(18px + env(safe-area-inset-right)); bottom: 156px; width: 52px; height: 52px; }

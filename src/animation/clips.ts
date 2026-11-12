@@ -268,6 +268,46 @@ const STRIKES = {
     { lean: deg(-26), head: deg(-14), armBack: limb(150, 30), armFront: limb(40, 120), legBack: limb(-45, -6) },
   ),
 
+  // ---- Heavy Attacks (owner, 12/11/2026): one per fighter, in its own style.
+  // Inferno: the lead leg swung high overhead, then axed down through the target in a blaze.
+  'inferno.blazing-axe-kick': strike(
+    {
+      lean: deg(16),
+      legFront: limb(168, -18),
+      legBack: limb(-8, -30),
+      armFront: limb(120, 60),
+      armBack: limb(-30, 50),
+    },
+    { lean: deg(-22), legFront: limb(48, -6), legBack: limb(-30, -40), armFront: limb(40, 80), armBack: limb(-50, 60) },
+  ),
+  // Braxon: both fists raised far overhead, the whole body arched back, then hammered down together.
+  'rampage.sledgehammer': strike(
+    { lean: deg(22), armFront: limb(176, 36), armBack: limb(170, 44), legFront: limb(30, -40) },
+    { lean: deg(-56), armFront: limb(46, 6), armBack: limb(38, 12), legFront: limb(72, -118), legBack: limb(-22, -90) },
+  ),
+  // Necro: the staff swept back over his shoulder, then driven forward in a soul-charged thrust.
+  'necro.soul-rend': strike(
+    { lean: deg(14), armBack: limb(-60, 110), armFront: limb(150, 40), legFront: limb(26, -24) },
+    { lean: deg(-30), armBack: limb(96, 4), armFront: limb(90, 10), legFront: limb(46, -60), legBack: limb(-34, -10) },
+  ),
+  // Shroud: sinking low with the knife drawn back to the hip, then an upward, gutting stab.
+  'shroud.gutting-stab': strike(
+    {
+      lean: deg(-44),
+      armFront: limb(-40, 120),
+      armBack: limb(20, 60),
+      legFront: limb(60, -100),
+      legBack: limb(-20, -80),
+    },
+    {
+      lean: deg(-18),
+      armFront: limb(110, 20),
+      armBack: limb(-30, 50),
+      legFront: limb(40, -50),
+      legBack: limb(-40, -20),
+    },
+  ),
+
   // ---- Shroud's own (owner, 12/11/2026): a hunched knife fighter. The knife is in his lead hand;
   // every strike starts low and close, the body staying bent over (never upright).
   'shroud.knife-slash': strike(

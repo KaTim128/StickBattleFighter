@@ -16,8 +16,9 @@ export interface PlayerSettings {
  * v2 (owner, 12/11/2026): the default layout changed (J attack, K ultimate, L dodge, F ability 3,
  * no launch key), so key layouts saved under v1 are not carried over; volumes are.
  */
-export const SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v2';
-const OLD_SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v1';
+export const SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v3';
+/** Older layouts (v2: before the Heavy Attack on K and the ultimate on I): volumes carried over, keys reset. */
+const OLD_SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v2';
 
 export const DEFAULT_SETTINGS: PlayerSettings = { musicVolume: 0.8, sfxVolume: 0.8, bindings: DEFAULT_BINDINGS };
 

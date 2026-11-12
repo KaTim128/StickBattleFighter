@@ -100,10 +100,10 @@ describe('ability buttons (Buttons 2–5)', () => {
     expect(intents.consumeAbility()).toBeNull();
   });
 
-  it('maps Q/E/F/R/K to the four abilities and the ultimate by default (owner, 12/11/2026)', () => {
+  it('maps Q/E/F/R/I to the four abilities and the ultimate, and K to the Heavy Attack (owner, 12/11/2026)', () => {
     const intents = new PlayerIntents();
     const input = new DesktopInput(intents);
-    for (const code of ['KeyQ', 'KeyE', 'KeyF', 'KeyR', 'KeyK']) {
+    for (const code of ['KeyQ', 'KeyE', 'KeyF', 'KeyR', 'KeyI']) {
       input.down(code);
       input.up(code);
     }
@@ -112,8 +112,10 @@ describe('ability buttons (Buttons 2–5)', () => {
     input.down('KeyF');
     input.down('KeyR');
     expect([intents.consumeAbility(), intents.consumeAbility()]).toEqual(['a3', 'a4']);
-    input.down('KeyK');
+    input.down('KeyI');
     expect(intents.consumeAbility()).toBe('ult');
+    input.down('KeyK');
+    expect(intents.consumeHeavy()).toBe(true);
   });
 });
 

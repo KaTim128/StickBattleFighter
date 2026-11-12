@@ -88,6 +88,15 @@ export class DesktopInput {
         case 'ultimate':
           i.pressAbility('ult');
           break;
+        case 'heavyAttack':
+          i.pressHeavy();
+          break;
+        case 'beamLeft':
+          i.beamTurnLeft = true;
+          break;
+        case 'beamRight':
+          i.beamTurnRight = true;
+          break;
         default:
           break;
       }
@@ -99,6 +108,8 @@ export class DesktopInput {
     if (!this.heldCodes.delete(code)) return;
     for (const action of actionsFor(this.bindings, code)) {
       if (action === 'attack') this.intents.meleeRelease();
+      if (action === 'beamLeft') this.intents.beamTurnLeft = false;
+      if (action === 'beamRight') this.intents.beamTurnRight = false;
       if (action === 'grab') this.intents.interactRelease();
     }
     this.sync();

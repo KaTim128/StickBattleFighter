@@ -3,8 +3,8 @@
  *
  * Every desktop action has exactly one input code: a `KeyboardEvent.code` (e.g. "KeyW", "Space")
  * or a mouse button written "Mouse0" (left), "Mouse1" (middle), "Mouse2" (right). One code drives
- * one action, with no exceptions (owner, 12/11/2026: K is only the ultimate). An ability that needs
- * a target is confirmed by pressing its own key again, so there is no separate launch key.
+ * one action, except the Fire Beam keys, which only act while a beam pours and may share a key with a
+ * normal action. An ability that needs a target is confirmed by pressing its own key again.
  */
 export type BindAction =
   | 'moveUp'
@@ -19,7 +19,10 @@ export type BindAction =
   | 'ability2'
   | 'ability3'
   | 'ability4'
+  | 'heavyAttack'
   | 'ultimate'
+  | 'beamLeft'
+  | 'beamRight'
   | 'grab';
 
 export type Bindings = Readonly<Record<BindAction, string>>;
@@ -33,7 +36,10 @@ export const SLOT_ACTION = {
   ult: 'ultimate',
 } as const satisfies Record<string, BindAction>;
 
-/** The owner's default layout (12/11/2026): J attack, K ultimate, L dodge, F ability 3, R the new ability 4. */
+/**
+ * The owner's default layout (12/11/2026): J attack, K Heavy Attack, L dodge, Q E F R abilities,
+ * I ultimate; while a Fire Beam pours, J sweeps it left and L right.
+ */
 export const DEFAULT_BINDINGS: Bindings = {
   moveUp: 'KeyW',
   moveDown: 'KeyS',
@@ -47,7 +53,10 @@ export const DEFAULT_BINDINGS: Bindings = {
   ability2: 'KeyE',
   ability3: 'KeyF',
   ability4: 'KeyR',
-  ultimate: 'KeyK',
+  heavyAttack: 'KeyK',
+  ultimate: 'KeyI',
+  beamLeft: 'KeyJ',
+  beamRight: 'KeyL',
   grab: 'KeyG',
 };
 
@@ -65,8 +74,11 @@ export const BIND_ACTIONS: readonly { action: BindAction; label: string; group: 
   { action: 'ability2', label: 'Ability 2', group: 'Combat' },
   { action: 'ability3', label: 'Ability 3', group: 'Combat' },
   { action: 'ability4', label: 'Ability 4', group: 'Combat' },
+  { action: 'heavyAttack', label: 'Heavy attack', group: 'Combat' },
   { action: 'ultimate', label: 'Ultimate (again: launch)', group: 'Combat' },
   { action: 'grab', label: 'Grab (again: throw)', group: 'Combat' },
+  { action: 'beamLeft', label: 'Rotate beam left', group: 'Fire Beam controls' },
+  { action: 'beamRight', label: 'Rotate beam right', group: 'Fire Beam controls' },
 ];
 
 export function actionLabel(action: BindAction): string {
@@ -82,6 +94,15 @@ export const RESERVED_CODES: Readonly<Record<string, string>> = {
   KeyP: 'Debug impact',
 };
 
+/**
+ * The Fire Beam keys only act while a beam pours (and then the beam takes them), so they may share a
+ * key with any normal action, but not with each other.
+ */
+const BEAM_KEYS: ReadonlySet<BindAction> = new Set(['beamLeft', 'beamRight']);
+function mayShare(a: BindAction, b: BindAction): boolean {
+  return BEAM_KEYS.has(a) !== BEAM_KEYS.has(b);
+}
+
 export type BindCheck =
   | { ok: true }
   | { ok: false; reason: 'reserved'; message: string }
@@ -92,7 +113,7 @@ export function checkBinding(bindings: Bindings, action: BindAction, code: strin
   const reserved = RESERVED_CODES[code];
   if (reserved) return { ok: false, reason: 'reserved', message: `${codeLabel(code)} is reserved for ${reserved}.` };
   for (const other of Object.keys(bindings) as BindAction[]) {
-    if (other === action || bindings[other] !== code) continue;
+    if (other === action || bindings[other] !== code || mayShare(action, other)) continue;
     return {
       ok: false,
       reason: 'conflict',
@@ -109,7 +130,7 @@ export function rebind(bindings: Bindings, action: BindAction, code: string): { 
   return { bindings: check.ok ? { ...bindings, [action]: code } : bindings, check };
 }
 
-/** Every action a code triggers (at most one with a valid layout). */
+/** Every action a code triggers (one normal action, plus a Fire Beam key sharing it). */
 export function actionsFor(bindings: Bindings, code: string): BindAction[] {
   const out: BindAction[] = [];
   for (const a of Object.keys(bindings) as BindAction[]) if (bindings[a] === code) out.push(a);

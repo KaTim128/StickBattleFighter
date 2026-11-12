@@ -109,6 +109,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     <button class="util-button" type="button" aria-label="Jump">JUMP</button>
     <button class="dodge-button" type="button" aria-label="Dodge">DODGE</button>
     <button class="melee-button" type="button" aria-label="Melee">MELEE</button>
+    <button class="heavy-button" type="button" aria-label="Heavy attack">HEAVY</button>
     <button class="ability-button" data-slot="a1" type="button" aria-label="Ability 1">A1</button>
     <button class="ability-button" data-slot="a2" type="button" aria-label="Ability 2">A2</button>
     <button class="ability-button" data-slot="a3" type="button" aria-label="Ability 3">A3</button>
@@ -205,6 +206,12 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   };
   for (const b of abilityButtons) b.addEventListener('pointerdown', onAbility);
 
+  const heavy = layer.querySelector<HTMLButtonElement>('.heavy-button')!;
+  const onHeavy = (e: PointerEvent): void => {
+    e.preventDefault();
+    intents.pressHeavy();
+  };
+  heavy.addEventListener('pointerdown', onHeavy);
   const cancel = layer.querySelector<HTMLButtonElement>('.aim-cancel-button')!;
   const onCancel = (e: PointerEvent): void => {
     e.preventDefault();
@@ -229,6 +236,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   melee.addEventListener('pointerleave', onMeleeUp);
   return () => {
     cancel.removeEventListener('pointerdown', onCancel);
+    heavy.removeEventListener('pointerdown', onHeavy);
     for (const b of abilityButtons) b.removeEventListener('pointerdown', onAbility);
     layer.removeEventListener('contextmenu', noDefault);
     layer.removeEventListener('selectstart', noDefault);

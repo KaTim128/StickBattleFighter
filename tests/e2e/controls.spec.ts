@@ -80,7 +80,7 @@ test('the dodge (L) always goes straight back from the facing, even with a movem
   expect(errors).toEqual([]);
 });
 
-test('Inferno ultimate on the keyboard (owner, 12/11/2026): K aims with WASD and on-screen help; Esc cancels; K again jumps', async ({
+test('Inferno ultimate on the keyboard (owner, 12/11/2026): I aims with WASD and on-screen help; Esc cancels; I again jumps', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -88,16 +88,16 @@ test('Inferno ultimate on the keyboard (owner, 12/11/2026): K aims with WASD and
   await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
   const hint = page.locator('.aim-hint');
   // K aims; the instructions name the keys; Escape cancels without opening the settings or casting.
-  await page.keyboard.press('KeyK');
+  await page.keyboard.press('KeyI');
   await expect(hint).toBeVisible();
-  await expect(hint).toHaveText(/W A S D to move the target · K to launch · Esc to cancel/);
+  await expect(hint).toHaveText(/W A S D to move the target · I to launch · Esc to cancel/);
   await page.keyboard.press('Escape');
   await expect(hint).toBeHidden();
   await expect(page.locator('.settings-panel')).toBeHidden();
   expect((await hook(page)).player.ability).toBeNull();
   // Again: W slides the spot up the screen (the fighter stays put), K launches the leap there.
   const start = await hook(page);
-  await page.keyboard.press('KeyK');
+  await page.keyboard.press('KeyI');
   await page.keyboard.down('KeyW');
   await page.waitForTimeout(3000); // the aim moves in game time; a software-rendered CI browser runs slower than real time
   await page.keyboard.up('KeyW');
@@ -105,7 +105,7 @@ test('Inferno ultimate on the keyboard (owner, 12/11/2026): K aims with WASD and
     Math.hypot((await hook(page)).player.x - start.player.x, (await hook(page)).player.y - start.player.y),
   ).toBeLessThan(0.1);
   await page.screenshot({ path: testInfo.outputPath('ult-keyboard-aim.png') });
-  await page.keyboard.press('KeyK');
+  await page.keyboard.press('KeyI');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
   await expect(hint).toBeHidden();
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull();
@@ -119,7 +119,7 @@ test('settings: Esc opens and pauses; volumes and keys save, clash with a clear 
 }, testInfo) => {
   const errors: string[] = [];
   await open(page, errors);
-  await page.evaluate(() => localStorage.removeItem('stickman-arena.settings.v2'));
+  await page.evaluate(() => localStorage.removeItem('stickman-arena.settings.v3'));
   await page.keyboard.press('Escape');
   const panel = page.locator('.settings-panel');
   await expect(panel).toBeVisible();
@@ -139,10 +139,15 @@ test('settings: Esc opens and pauses; volumes and keys save, clash with a clear 
   await page.keyboard.press('KeyW');
   await expect(panel.locator('.settings-message')).toHaveText('W is already assigned to Move up. Choose another key.');
   await expect(panel.locator('[data-action="ability1"]')).toHaveText('Q');
-  // K belongs to the ultimate alone: no other action may take it.
+  // I belongs to the ultimate alone: no other normal action may take it.
   await panel.locator('[data-action="ability4"]').click();
-  await page.keyboard.press('KeyK');
+  await page.keyboard.press('KeyI');
   await expect(panel.locator('.settings-message')).toContainText('already assigned to Ultimate');
+  // The Fire Beam keys have their own section and can be rebound too.
+  await expect(panel.getByText('Fire Beam controls', { exact: false })).toBeVisible();
+  await panel.locator('[data-action="beamLeft"]').click();
+  await page.keyboard.press('KeyU');
+  await expect(panel.locator('[data-action="beamLeft"]')).toHaveText('U');
   // A free key is accepted.
   await panel.locator('[data-action="jump"]').click();
   await page.keyboard.press('KeyC');

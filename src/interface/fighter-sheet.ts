@@ -9,7 +9,7 @@ import { type Bindings, codeLabel, SLOT_ACTION } from '../input/bindings';
  * keys come from the player's own bindings). Pure: built from the fighter's data.
  */
 export interface SheetAbility {
-  readonly slot: AbilitySlot | 'combo';
+  readonly slot: AbilitySlot | 'combo' | 'heavy';
   /** The key or button that uses it: "Q", "Left click", "ULT". */
   readonly key: string;
   readonly name: string;
@@ -150,9 +150,36 @@ function comboEntry(def: FighterDef, device: Device, keys: Bindings): SheetAbili
   };
 }
 
+/** The Heavy Attack (owner, 12/11/2026): the fighter's own heavy blow. */
+function heavyEntry(def: FighterDef, device: Device, keys: Bindings): SheetAbility | null {
+  const id = def.starters.heavy;
+  const m = id ? def.moves[id] : undefined;
+  if (!m) return null;
+  const stats = [
+    { label: 'Damage', value: `${Math.round(m.damage * def.stats.power)}` },
+    { label: 'Wind-up', value: `${s1(m.windupS)} s` },
+  ];
+  if (m.heavy) stats.push({ label: 'Knockdown', value: 'yes' });
+  if (m.burn) stats.push({ label: 'Burn', value: `${m.burn.dps}/s for ${s1(m.burn.durationS)} s` });
+  if (m.bleed) stats.push({ label: 'Bleed', value: `${m.bleed.dps}/s for ${s1(m.bleed.durationS)} s` });
+  stats.push({ label: 'Stamina', value: 'none' });
+  const key = device === 'touch' ? 'HEAVY' : codeLabel(keys.heavyAttack);
+  return {
+    slot: 'heavy',
+    key,
+    name: m.label,
+    icon: def.abilities?.heavyIcon ?? null,
+    description: 'His own heavy blow: slower to start than the combo, but it hits hard and knocks down.',
+    stats,
+    howTo: device === 'touch' ? 'Tap HEAVY on the ground.' : `Press ${key} on the ground.`,
+  };
+}
+
 export function fighterSheet(def: FighterDef, device: Device, keys: Bindings): FighterSheet {
   const kit = def.abilities;
   const abilities: SheetAbility[] = [comboEntry(def, device, keys)];
+  const heavy = heavyEntry(def, device, keys);
+  if (heavy) abilities.push(heavy);
   if (kit) {
     for (const slot of ['a1', 'a2', 'a3', 'a4', 'ult'] as const) {
       const a = kit[slot];

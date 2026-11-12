@@ -4,7 +4,8 @@
     "tap": "jab",
     "tap-forward": "front-kick",
     "air-tap": "jumping-front-kick",
-    "falling-tap": "meteor-kick"
+    "falling-tap": "meteor-kick",
+    "heavy": "blazing-axe-kick"
   },
   "moves": [
     {
@@ -272,6 +273,38 @@
         }
       },
       "groundBounce": true
+    },
+    {
+      "id": "blazing-axe-kick",
+      "displayName": "Blazing axe kick",
+      "animationState": "HeavyAttack",
+      "category": "kick",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.32,
+      "activeS": 0.1,
+      "recoveryS": 0.42,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.25,
+        "radiusM": 0.6
+      },
+      "damage": 105,
+      "strength": 1100,
+      "knockbackMps": 7,
+      "lungeMps": 0.8,
+      "moveFactor": 0.25,
+      "impact": "fire-heavy",
+      "shake": 0.55,
+      "zoomPunch": 0.05,
+      "requires": ["canKick"],
+      "effect": "flame-burst-directional",
+      "status": {
+        "burn": {
+          "dps": 12,
+          "durationS": 2
+        }
+      }
     }
   ]
 }

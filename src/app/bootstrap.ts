@@ -340,7 +340,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         showDodgeReady(document.body, debug.player.dodgeReady);
         showStickAiming(document.body, debug.player.beamAiming);
         blindVeil.update(debug.player.blindS);
-        aimHint.update(scene.targeting, document.body.classList.contains('touch-mode'), settings.bindings);
+        aimHint.update(
+          scene.targeting,
+          document.body.classList.contains('touch-mode'),
+          settings.bindings,
+          scene.beaming,
+        );
         // The intro's words, voice and impacts all start on the frame its phase begins.
         const began = fightIntro.update(scene.introState);
         if (began === 'ready') {

@@ -18,13 +18,20 @@ export class AimHint {
     parent.appendChild(this.el);
   }
 
-  update(targeting: { slot: AbilitySlot; name: string } | null, touch: boolean, keys: Bindings): void {
-    const text = targeting ? aimHintText(targeting, touch, keys) : '';
+  update(
+    targeting: { slot: AbilitySlot; name: string } | null,
+    touch: boolean,
+    keys: Bindings,
+    /** A Fire Beam is pouring: show its rotation keys (owner, 12/11/2026). */
+    beaming = false,
+  ): void {
+    const text = targeting ? aimHintText(targeting, touch, keys) : beaming ? beamHintText(touch, keys) : '';
     if (text === this.shown) return;
     this.shown = text;
     this.el.hidden = !text;
     this.el.textContent = text;
-    document.body.classList.toggle('aiming', Boolean(text));
+    // Only targeting shows the touch ✕ and turns the joystick into an aim stick.
+    document.body.classList.toggle('aiming', targeting !== null);
   }
 }
 
@@ -36,4 +43,10 @@ export function aimHintText(targeting: { slot: AbilitySlot; name: string }, touc
   const k = codeLabel;
   const move = `${k(keys.moveUp)} ${k(keys.moveLeft)} ${k(keys.moveDown)} ${k(keys.moveRight)}`;
   return `${targeting.name}: ${move} to move the target · ${k(keys[SLOT_ACTION[targeting.slot]])} to ${verb} · Esc to cancel`;
+}
+
+/** The Fire Beam controls while it pours, with the player's own keys. */
+export function beamHintText(touch: boolean, keys: Bindings): string {
+  if (touch) return 'Fire Beam: steer it with the joystick or a swipe';
+  return `Fire Beam: hold ${codeLabel(keys.beamLeft)} to sweep left · hold ${codeLabel(keys.beamRight)} to sweep right`;
 }

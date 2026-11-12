@@ -2,7 +2,8 @@
   "id": "necro-moveset",
   "starters": {
     "tap": "staff-sweep",
-    "air-tap": "staff-plunge"
+    "air-tap": "staff-plunge",
+    "heavy": "soul-rend"
   },
   "moves": [
     {
@@ -110,6 +111,31 @@
       "shake": 0.35,
       "zoomPunch": 0.03,
       "requires": ["canUseAerialPunches"]
+    },
+    {
+      "id": "soul-rend",
+      "displayName": "Soul rend",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.3,
+      "activeS": 0.1,
+      "recoveryS": 0.4,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.4,
+        "radiusM": 0.55
+      },
+      "damage": 105,
+      "strength": 1000,
+      "knockbackMps": 7.5,
+      "lungeMps": 1.2,
+      "moveFactor": 0.25,
+      "impact": "knuckle-heavy",
+      "shake": 0.45,
+      "zoomPunch": 0.04,
+      "requires": ["canPunch"]
     }
   ]
 }

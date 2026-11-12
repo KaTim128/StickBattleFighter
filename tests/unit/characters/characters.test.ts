@@ -59,6 +59,7 @@ describe('2. Inferno: fire element, taekwondo style, its own profiles', () => {
       'tap-forward': 'front-kick',
       'air-tap': 'jumping-front-kick',
       'falling-tap': 'meteor-kick',
+      heavy: 'blazing-axe-kick', // the Heavy Attack (owner, 12/11/2026)
     });
     const meteor = d.moves['meteor-kick']!;
     expect(meteor.aerial).toBe(true);

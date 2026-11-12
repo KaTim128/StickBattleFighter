@@ -14,6 +14,8 @@
 /** Gameplay states an Animation Profile maps to animation clips. */
 export const ANIMATION_STATES = [
   'Idle',
+  // Each fighter's own Heavy Attack (owner, 12/11/2026).
+  'HeavyAttack',
   'Walk',
   'Run',
   'StartRun',
@@ -102,9 +104,10 @@ export interface AnimationProfile {
 /**
  * How a move is started on Button 1 (the five-button layout, INV-9, is kept):
  * `tap`, `tap-forward` (tap while moving towards where you face), `air-tap`
- * (in the air) and `falling-tap` (in the air on the way down).
+ * (in the air), `falling-tap` (in the air on the way down) and `heavy` (the Heavy Attack key,
+ * owner 12/11/2026: each fighter's own heavy blow, started from the ground).
  */
-export const MOVE_INPUTS = ['tap', 'tap-forward', 'air-tap', 'falling-tap'] as const;
+export const MOVE_INPUTS = ['tap', 'tap-forward', 'air-tap', 'falling-tap', 'heavy'] as const;
 export type MoveInput = (typeof MOVE_INPUTS)[number];
 
 export type MoveCategory = 'punch' | 'kick';
@@ -143,7 +146,11 @@ export interface MoveDef {
   readonly next?: Partial<Record<MoveInput, string>>;
   /** Effect played on contact (Effects library id), on top of the profile's defaults. */
   readonly effect?: string;
-  readonly status?: { readonly burn?: { readonly dps: number; readonly durationS: number } };
+  readonly status?: {
+    readonly burn?: { readonly dps: number; readonly durationS: number };
+    /** The target bleeds (Shroud's knife). */
+    readonly bleed?: { readonly dps: number; readonly durationS: number };
+  };
   /** The target bounces off the floor (downward kicks). */
   readonly groundBounce?: boolean;
   /** Capabilities this move needs (it is removed from the moveset when any is off). */

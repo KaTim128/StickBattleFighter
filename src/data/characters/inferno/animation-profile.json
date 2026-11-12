@@ -6,6 +6,7 @@
     "DownwardAerialKick": "inferno.meteor-kick",
     "ClashFinisher": "inferno.flame-uppercut",
     "ClashWin": "inferno.flame-uppercut",
-    "Dodge": "proc.dodge.flame"
+    "Dodge": "proc.dodge.flame",
+    "HeavyAttack": "inferno.blazing-axe-kick"
   }
 }

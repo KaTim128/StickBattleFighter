@@ -368,4 +368,6 @@ export interface AbilityKit {
   readonly charge: UltimateCharge;
   /** The basic combo's picture on the fighter details screen (owner, 12/11/2026: unique per fighter). */
   readonly comboIcon?: string;
+  /** The Heavy Attack's picture on the fighter details screen. */
+  readonly heavyIcon?: string;
 }

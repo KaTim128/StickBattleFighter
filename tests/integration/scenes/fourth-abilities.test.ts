@@ -215,3 +215,29 @@ describe('target lock facing', () => {
     scenes.clear();
   });
 });
+
+/** Owner, 12/11/2026: a Heavy Attack on its own key (K), unique to every fighter. */
+describe('heavy attacks', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
+  it('each fighter has its own heavy blow that hits hard and knocks down', async () => {
+    const names = new Set<string>();
+    for (const id of ['inferno', 'rampage', 'necro', 'shroud']) {
+      const { intents, scene, scenes, run, runUntil } = await setup(id, { x: 14, y: 13 }, { x: 15.3, y: 13 });
+      (scene.playerFighter.def.stats as { critChance: number }).critChance = 0;
+      intents.pressHeavy();
+      run(1 / 30);
+      const attack = scene.player.attack;
+      expect(attack, id).not.toBeNull();
+      names.add(attack!);
+      runUntil(() => scene.dummy.hp < 1000, 1.5);
+      expect(1000 - scene.dummy.hp, id).toBeGreaterThan(80);
+      runUntil(() => scene.dummy.state === 'knockdown', 0.5);
+      expect(scene.dummy.state, id).toBe('knockdown');
+      scenes.clear();
+    }
+    expect(names.size).toBe(4); // all different
+  });
+});

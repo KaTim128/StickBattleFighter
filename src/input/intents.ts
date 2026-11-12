@@ -122,6 +122,29 @@ export class PlayerIntents {
     return this.abilityQueue.shift() ?? null;
   }
 
+  // ---- Heavy Attack (owner, 12/11/2026): each fighter's own heavy blow. One press queued at most.
+  private heavyQueued = false;
+
+  pressHeavy(): void {
+    this.heavyQueued = true;
+  }
+
+  consumeHeavy(): boolean {
+    const queued = this.heavyQueued;
+    this.heavyQueued = false;
+    return queued;
+  }
+
+  // ---- Fire Beam rotation (owner, 12/11/2026): while a beam pours, held keys sweep it left (−1)
+  // or right (+1). Outside a beam these keys do their normal jobs.
+  beamTurnLeft = false;
+  beamTurnRight = false;
+
+  /** −1 sweeping left, +1 right, 0 neither or both. */
+  get beamTurn(): number {
+    return (this.beamTurnRight ? 1 : 0) - (this.beamTurnLeft ? 1 : 0);
+  }
+
   // ---- Cancel targeting (owner, 12/11/2026): Escape on desktop, the ✕ button on touch. While an
   // ability is being aimed this calls it off without casting; otherwise it is ignored.
   private aimCancelQueued = false;
@@ -217,6 +240,9 @@ export class PlayerIntents {
     this.meleeEdges.length = 0;
     this.dodgeQueued = false;
     this.aimCancelQueued = false;
+    this.heavyQueued = false;
+    this.beamTurnLeft = false;
+    this.beamTurnRight = false;
     this.sprint = false;
     this.abilityQueue.length = 0;
   }

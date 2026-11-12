@@ -11,6 +11,7 @@
     "Idle": "proc.idle.stalker",
     "FightingStance": "proc.idle.stalker",
     "Turn": "proc.idle.stalker",
-    "Dodge": "proc.dodge.shade"
+    "Dodge": "proc.dodge.shade",
+    "HeavyAttack": "shroud.gutting-stab"
   }
 }

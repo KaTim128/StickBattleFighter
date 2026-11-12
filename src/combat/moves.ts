@@ -89,6 +89,20 @@ export class MoveController {
     this.begin(move);
   }
 
+  /**
+   * The Heavy Attack key (owner, 12/11/2026): the fighter's own heavy blow, from the ground and only
+   * when no other move is running (it never chains). Returns whether it started.
+   */
+  pressHeavy(ctx: MoveContext): boolean {
+    if (this.current || ctx.airborne) return false;
+    const id = this.starters.heavy;
+    const move = id ? this.moves[id] : undefined;
+    if (!move) return false;
+    this.chainIndex = 0;
+    this.begin(move);
+    return true;
+  }
+
   /** Cancel the current move (the fighter was hit, parried, or dodged). */
   interrupt(): void {
     this.current = null;

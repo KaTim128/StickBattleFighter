@@ -29,6 +29,7 @@ import {
 /** Which states play keyframed strikes (the rest are procedural motions). */
 export const STRIKE_STATES: ReadonlySet<AnimationState> = new Set<AnimationState>([
   'Jab',
+  'HeavyAttack',
   'StraightPunch',
   'Hook',
   'Uppercut',
@@ -203,6 +204,7 @@ export function resolveMoves(
       next: next as Partial<Record<MoveInput, string>>,
       effect: m.effect ?? null,
       burn: m.status?.burn ?? null,
+      bleed: m.status?.bleed ?? null,
       groundBounce: (m.groundBounce ?? false) && caps.canGroundBounce,
     };
   }

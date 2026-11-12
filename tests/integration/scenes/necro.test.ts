@@ -55,7 +55,10 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
   it('is a little slower than Inferno and swings a 3-hit staff combo ending in a knockdown', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 15, y: 13 }, { x: 16.4, y: 13 });
     expect(scene.playerFighter.def.movement.maxSpeedMps).toBeLessThan(5 * 1.05);
-    expect(Object.values(scene.playerFighter.def.moves).filter((m) => !m.aerial)).toHaveLength(3);
+    // Three combo moves on the ground, plus the Heavy Attack (owner, 12/11/2026).
+    expect(
+      Object.values(scene.playerFighter.def.moves).filter((m) => !m.aerial && m.animationState !== 'HeavyAttack'),
+    ).toHaveLength(3);
     const seen: string[] = [];
     for (let k = 0; k < 3; k++) {
       intents.pressMelee();

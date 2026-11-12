@@ -2,7 +2,8 @@
   "id": "rampage-moveset",
   "starters": {
     "tap": "hammer-jab",
-    "air-tap": "body-slam"
+    "air-tap": "body-slam",
+    "heavy": "sledgehammer"
   },
   "moves": [
     {
@@ -110,6 +111,32 @@
       "shake": 0.45,
       "zoomPunch": 0.04,
       "requires": ["canUseAerialPunches"]
+    },
+    {
+      "id": "sledgehammer",
+      "displayName": "Sledgehammer",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.4,
+      "activeS": 0.1,
+      "recoveryS": 0.5,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.25,
+        "radiusM": 0.7
+      },
+      "damage": 135,
+      "strength": 1600,
+      "knockbackMps": 6,
+      "lungeMps": 0.5,
+      "moveFactor": 0.15,
+      "impact": "knuckle-heavy",
+      "shake": 0.7,
+      "zoomPunch": 0.06,
+      "requires": ["canPunch"],
+      "groundBounce": true
     }
   ]
 }

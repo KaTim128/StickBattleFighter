@@ -35,7 +35,7 @@ test('abilities: Q fires a Fireball that hits and burns the dummy; the ability b
   await page.screenshot({ path: testInfo.outputPath('fireball.png') });
 
   // The ultimate is not ready at the start (charge meter, OQ-04).
-  await page.keyboard.press('KeyK');
+  await page.keyboard.press('KeyI');
   await page.waitForTimeout(200);
   expect((await hook(page)).player.ability).not.toBe('eruption');
   expect(errors).toEqual([]);
@@ -60,21 +60,21 @@ test('touch: six combat buttons (MELEE, A1–A4, ULT; owner 12/11/2026); A1 cast
   expect(errors).toEqual([]);
 });
 
-test('ultimate aiming (desktop): K aims in a crouch, W moves the spot, K again launches the leap there', async ({
+test('ultimate aiming (desktop): I aims in a crouch, W moves the spot, I again launches the leap there', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   const errors: string[] = [];
   await open(page, errors);
   await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
-  await page.keyboard.press('KeyK');
+  await page.keyboard.press('KeyI');
   await page.keyboard.down('KeyW');
   await page.waitForTimeout(2500); // the aim moves in game time; a software-rendered browser runs slower than real time
   await page.keyboard.up('KeyW');
   const before = await hook(page);
   expect(before.player.ability).toBeNull(); // still aiming
   await page.screenshot({ path: testInfo.outputPath('ult-aiming.png') });
-  await page.keyboard.press('KeyK');
+  await page.keyboard.press('KeyI');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull(); // headroom for a slow software-rendered browser
   expect((await hook(page)).player.y).toBeLessThan(before.player.y - 1); // landed up the screen, where aimed
