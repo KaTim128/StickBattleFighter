@@ -474,3 +474,12 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 - **Alternatives:** per-prop Rapier filters (too fine-grained for 2D top-down); mouse aiming kept alongside keys (rejected: the owner asked for keyboard targeting and K conflicts).
 - **Status:** ACCEPTED.
 
+### TD-057: Heavy Attack input, bleed, buff effects, beam ramp and sweep, target lock, fight intro, tumbling props — ACCEPTED (owner requests 12/11/2026)
+- `MoveInput` gains `heavy` (`MoveController.pressHeavy`, never chained); animation state `HeavyAttack` is a strike state. Moves may carry `status.bleed`.
+- `Combatant.bleed()` (damage over time beside burn); payload `bleed`; `BuffEffect` adds attack speed, melee damage and melee bleed (applied in melee resolution and combo timing). Teleport delivery `behindTargetM` lands behind the nearest enemy.
+- Beam `ramp` (per-target contact time, reset on a missed tick). Beam keys `beamLeft`/`beamRight` may share keys with normal actions only.
+- Target lock in `stepFighter` (sight range, wall ray, not blinded); pickup accepts pieces behind (front preferred).
+- Fight intro: a fixed scene timeline locks control; presentation (DOM overlay, speech synthesis, synthesised impacts) keys off the same phases. Speech is the browser engine's: quality varies by device.
+- Props carry `roll`/`rollVel`; landing settles to the nearest quarter turn; replanting keeps roll and yaw.
+- **Status:** ACCEPTED.
+

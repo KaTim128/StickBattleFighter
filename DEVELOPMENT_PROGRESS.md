@@ -23,6 +23,12 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 12/11/2026 (later): Shroud, Heavy Attack, intro, target lock, beam, icons (owner requests; Master Developer)
+- New fighter Shroud; Heavy Attack on K for all fighters; ultimate on I; Fire Beam build-up and J/L sweep with its own Settings section; target lock; READY/FIGHT intro; tumbling thrown furniture; centred heads behind the near arm; testing area silent; icons restyled.
+- Tests: 368 unit/integration pass; key browser suites pass. Preview deployed at c7ef392; this batch deploys after CI.
+- Limits: the announcer uses the device's speech engine (no recorded voice); the AI does not yet use heavy attacks, climbing or the new abilities; Shroud's look reviewed at 3x in the browser, not on a phone.
+
+
 ### 12/11/2026: Targeting, fourth abilities, walk/run, climbing, Braxon fixes, HUD (owner requests; Master Developer)
 - **Controls:** J attack, K ultimate, L dodge, F ability 3, R ability 4; aimed abilities enter and confirm with their own key, WASD or the joystick move the target (Teleport faster than the leap), Escape or the touch ✕ cancel, instructions on screen. Settings storage v2 resets saved key layouts once.
 - **New R abilities** (owner's picks): Flame Detonation (Inferno), Grapple Slam (Braxon), Grave Chains (Necro). Fighter details: fighter-coloured stat bars, unique combo icons.
