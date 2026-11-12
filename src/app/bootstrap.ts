@@ -1,6 +1,7 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
 import { AmbiencePlayer } from '../audio/ambience';
+import { Announcer } from '../audio/announcer';
 import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
@@ -27,6 +28,7 @@ import { AimHint } from '../interface/aim-hint';
 import { BlindVeil } from '../interface/blind-veil';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
+import { FightIntro } from '../interface/fight-intro';
 import { fighterSheet } from '../interface/fighter-sheet';
 import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
@@ -177,6 +179,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const pausedBy = new Set<string>();
   const blindVeil = new BlindVeil(document.body);
   const aimHint = new AimHint(document.body);
+  const fightIntro = new FightIntro(document.body);
+  const announcer = new Announcer(
+    () => settings.current.sfxVolume,
+    () => sound.muted,
+  );
   const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => pausedBy.size > 0 });
   attachKeyboard(window, desktop);
   attachMouse(container, desktop, intents);
@@ -331,6 +338,15 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         showStickAiming(document.body, debug.player.beamAiming);
         blindVeil.update(debug.player.blindS);
         aimHint.update(scene.targeting, document.body.classList.contains('touch-mode'), settings.bindings);
+        // The intro's words, voice and impacts all start on the frame its phase begins.
+        const began = fightIntro.update(scene.introState);
+        if (began === 'ready') {
+          announcer.say('ready');
+          sound.play('intro-ready');
+        } else if (began === 'fight') {
+          announcer.say('fight');
+          sound.play('intro-fight', 1.2);
+        }
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;
@@ -442,7 +458,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       return true;
     },
   );
-  if (scene instanceof FightArenaScene && !automated && !params.has('play')) menu.setOpen(true);
+  const menuFirst = scene instanceof FightArenaScene && !automated && !params.has('play');
+  if (menuFirst) menu.setOpen(true);
+  // READY... FIGHT! before every fight (owner, 12/11/2026). The menu's Play starts a new fight page,
+  // which gets its own intro; automated browsers skip it unless asked (`?intro`).
+  if (scene instanceof FightArenaScene && !menuFirst && (!automated || params.has('intro')) && !params.has('nointro'))
+    scene.startIntro();
   // Portraits are the fighters themselves, drawn by the game's own renderer (owner, 12/11/2026).
   // All in one GPU read-back, once the page is idle, so the first moments of a fight never stall.
   const drawPortraits = async (): Promise<void> => {

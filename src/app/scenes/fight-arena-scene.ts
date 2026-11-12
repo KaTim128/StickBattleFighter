@@ -208,6 +208,12 @@ const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
 /** How fast WASD slides the ultimate's landing spot while aiming, m/s. */
 /** Target speed under WASD or the joystick when an ability's data sets none (Inferno's leap, owner 11/11/2026). */
 const DEFAULT_AIM_SPEED_MPS = 7;
+/**
+ * The fight intro's timeline (owner, 12/11/2026), in seconds of game time: a short lead-in, the
+ * announcer's "READY...", then "FIGHT!"; combat unlocks the moment FIGHT has been said. The
+ * presentation (text, voice, impact sounds) keys off the same times, so they stay in sync.
+ */
+export const FIGHT_INTRO = { readyAtS: 0.35, fightAtS: 1.85, combatAtS: 2.5, endS: 3.1 } as const;
 /** Standing relaxed after this long without fighting (owner, 12/11/2026). */
 const RELAX_AFTER_S = 3;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
@@ -357,6 +363,39 @@ export class FightArenaScene implements ArenaScene {
         f.knockFlightS = 0;
       },
     });
+  }
+
+  /** The fight intro running (seconds since it began), or null once combat is on. */
+  private intro: { t: number } | null = null;
+
+  /** Start the READY... FIGHT! sequence: combat is locked until it ends (every fight, owner 12/11/2026). */
+  startIntro(): void {
+    this.intro = { t: 0 };
+  }
+
+  /** Where the intro is, for the presentation (null once the fight is on). */
+  get introState(): { t: number; phase: 'ready' | 'fight' | 'lead-in' } | null {
+    const i = this.intro;
+    if (!i) return null;
+    const phase = i.t < FIGHT_INTRO.readyAtS ? 'lead-in' : i.t < FIGHT_INTRO.fightAtS ? 'ready' : 'fight';
+    return { t: i.t, phase };
+  }
+
+  /** Throw away anything the player pressed (the intro locks the controls). */
+  private dropPlayerInputs(): void {
+    const i = this.intents;
+    i.consumeMeleeEdges();
+    while (i.consumeAbility()) {
+      /* dropped */
+    }
+    while (i.consumeInteract()) {
+      /* dropped */
+    }
+    i.consumeDodge();
+    i.consumeJump();
+    i.consumeAimCancel();
+    this.playerFighter.meleeTracking = false;
+    this.playerFighter.sprinting = false;
   }
 
   private fighterByName(name: string): FighterEntity | undefined {
@@ -649,8 +688,14 @@ export class FightArenaScene implements ArenaScene {
     }
 
     this.climbing?.refresh();
-    // A Punch Clash takes over both fighters while it runs.
-    if (!this.clashes.step(stepS, this.simTimeS)) {
+    if (this.intro) {
+      // READY... FIGHT! (owner, 12/11/2026): both fighters stand still and nothing can be done
+      // until the announcer has said FIGHT. Inputs pressed meanwhile are dropped, not queued.
+      this.intro.t += stepS;
+      this.dropPlayerInputs();
+      for (const f of this.fighters) this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
+      if (this.intro.t >= FIGHT_INTRO.combatAtS) this.intro = null;
+    } else if (!this.clashes.step(stepS, this.simTimeS)) {
       this.controlPlayer(this.playerFighter, stepS);
       this.trackLastAction();
       this.controlDummy(this.dummyFighter, stepS);

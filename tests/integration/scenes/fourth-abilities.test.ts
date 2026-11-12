@@ -138,3 +138,40 @@ describe('relaxed idle in a fight', () => {
     scenes.clear();
   });
 });
+
+/** Owner, 12/11/2026: READY... FIGHT! before every fight; nothing moves until FIGHT. */
+describe('fight intro lock', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
+  it('both fighters stay put and nothing fires until the announcer has said FIGHT, then combat is on', async () => {
+    const { FIGHT_INTRO } = await import('../../../src/app/scenes/fight-arena-scene');
+    const { intents, scene, scenes, run } = await setup('inferno', { x: 14, y: 13 }, { x: 15.3, y: 13 });
+    scene.dummyAttacks = true;
+    scene.startIntro();
+    expect(scene.introState?.phase).toBe('lead-in');
+    const x0 = scene.player.x;
+    intents.setMove('t', { x: -1, y: 0 });
+    intents.pressMelee();
+    intents.pressAbility('a1');
+    run(FIGHT_INTRO.readyAtS + 0.1);
+    expect(scene.introState?.phase).toBe('ready');
+    run(FIGHT_INTRO.fightAtS - FIGHT_INTRO.readyAtS);
+    expect(scene.introState?.phase).toBe('fight');
+    expect(Math.abs(scene.player.x - x0)).toBeLessThan(0.02); // never moved
+    expect(scene.player.attack).toBeNull();
+    expect(scene.player.ability).toBeNull();
+    expect(scene.player.hp).toBe(1000); // the dummy did not attack either
+    expect(scene.dummy.hp).toBe(1000);
+    run(FIGHT_INTRO.combatAtS - FIGHT_INTRO.fightAtS + 0.05);
+    expect(scene.introState).toBeNull();
+    // The presses made during the intro were dropped, not saved up.
+    expect(scene.player.attack).toBeNull();
+    run(0.4);
+    expect(scene.player.x).toBeLessThan(x0 - 0.3); // the held stick moves it now
+    intents.setMove('t', { x: 0, y: 0 });
+    scenes.clear();
+  });
+});
+

@@ -426,6 +426,24 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     },
     { crackle: { dur: 0.6, gain: 0.25, count: 14 } },
   ],
+  // Fight intro (owner, 12/11/2026). READY: a deep, swelling riser under the announcer, a low
+  // drum hit and a metallic shimmer, building tension.
+  'intro-ready': [
+    { tone: { wave: 'sine', f0: 48, f1: 62, dur: 1.3, gain: 0.5, attack: 0.5 } },
+    { noise: { dur: 1.3, gain: 0.25, type: 'bandpass', freq: 300, freqEnd: 1600, q: 1.2, attack: 1.0 } },
+    { tone: { wave: 'sine', f0: 90, f1: 38, dur: 0.5, gain: 0.8, drive: 0.3 } },
+    { tone: { wave: 'triangle', f0: 1240, f1: 1200, dur: 0.9, gain: 0.04, attack: 0.3 } },
+  ],
+  // FIGHT: a huge impact on the word: a sub-bass drop, a cracking slam, a rush of air and a long
+  // ringing metallic tail.
+  'intro-fight': [
+    { tone: { wave: 'sine', f0: 70, f1: 24, dur: 0.9, gain: 1, drive: 0.5 } },
+    { noise: { dur: 0.08, gain: 0.9, type: 'bandpass', freq: 2200, q: 0.7 } },
+    { noise: { dur: 0.7, gain: 0.7, type: 'lowpass', freq: 3000, freqEnd: 200, attack: 0.002, drive: 0.4 } },
+    { noise: { dur: 0.5, gain: 0.3, type: 'highpass', freq: 3500, freqEnd: 1500, attack: 0.01 } },
+    { tone: { wave: 'triangle', f0: 523, f1: 510, dur: 1.2, gain: 0.08, delay: 0.02 } },
+    { tone: { wave: 'triangle', f0: 784, f1: 770, dur: 1, gain: 0.05, delay: 0.02 } },
+  ],
   'fire-charge': [
     { noise: { dur: 0.28, gain: 0.22, type: 'bandpass', freq: 400, freqEnd: 1700, q: 1.5, attack: 0.16 } },
   ],
