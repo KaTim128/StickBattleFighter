@@ -7,6 +7,9 @@
     "HeavyPunch": "rampage.double-hammer",
     "DownwardAerialKick": "rampage.body-slam",
     "ClashFinisher": "rampage.double-hammer",
-    "ClashWin": "rampage.double-hammer"
+    "ClashWin": "rampage.double-hammer",
+    "Idle": "proc.idle.heavyweight",
+    "FightingStance": "proc.idle.heavyweight",
+    "Turn": "proc.idle.heavyweight"
   }
 }

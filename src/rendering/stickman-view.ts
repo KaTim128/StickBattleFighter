@@ -448,24 +448,28 @@ export class StickmanView {
       // A bodybuilder's V-taper (owner, 12/11/2026): a tight waist flaring into a barrel chest far
       // wider than it, a trapezius hump and a thick neck, all one shape; pants over the hips.
       const pants = this.look.pants;
-      mass(pelvis, chest, w * 2.05, 0.0, 0.38, 0, pants ?? colour);
-      mass(pelvis, chest, w * 2.5, 0.34, 0.62, w * 0.1);
-      mass(pelvis, chest, w * 4.3, 0.56, 1.0, w * 0.1);
-      mass(chest, neck, w * 2.6, 0, 0.75);
+      mass(pelvis, chest, w * 1.85, 0.0, 0.38, 0, pants ?? colour);
+      mass(pelvis, chest, w * 2.15, 0.34, 0.62, w * 0.05);
+      mass(pelvis, chest, w * 3.7, 0.56, 1.0, w * 0.1);
+      mass(chest, neck, w * 2.2, 0, 0.75);
       paint();
-      if (pants !== undefined) {
-        // Waistband: a dark belt where the pants meet the abs.
-        seg(pelvis, chest, w * 0.42, outline, 1, 0.33, 0.33, 0);
-        seg(pelvis, chest, w * 2.15, outline, 1, 0.33, 0.4, 0);
-        seg(pelvis, chest, w * 1.95, toward(pants, 0x000000, 0.45), 1, 0.34, 0.39, 0);
+      // (The pants' own edge marks the waist: no belt or seam line.)
+      // Muscle definition is shaded, not drawn (owner, 12/11/2026: "the abs look like they're drawn
+      // and not real"): soft light on each muscle's bulge and soft shadow in the grooves, with no
+      // hard lines. Pecs: a lit slab with a soft shadow under it.
+      seg(pelvis, chest, w * 1.25, lit, 0.4, 0.76, 0.95, w * 1.05);
+      seg(pelvis, chest, w * 0.5, shade, 0.4, 0.665, 0.69, w * 1.05);
+      // Abs (above the waistband): a soft centre groove, then three pairs of rounded, lit blocks.
+      seg(pelvis, chest, w * 0.2, shade, 0.35, 0.42, 0.64, w * 0.85);
+      for (const [k0, k1] of [
+        [0.425, 0.46],
+        [0.5, 0.535],
+        [0.575, 0.61],
+      ] as const) {
+        seg(pelvis, chest, w * 0.42, lit, 0.3, k0, k1, w * 0.5);
+        seg(pelvis, chest, w * 0.42, lit, 0.3, k0, k1, w * 1.2);
+        seg(pelvis, chest, w * 0.16, shade, 0.22, k1 + 0.012, k1 + 0.016, w * 0.85); // soft groove below
       }
-      // Pecs: a lit slab on the chest's front with a deep line under it.
-      seg(pelvis, chest, w * 1.2, lit, 0.55, 0.76, 0.95, w * 1.1);
-      line(at(pelvis, chest, 0.7, w * 0.3), at(pelvis, chest, 0.66, w * 1.95), o * 0.8, outline);
-      // Abs: two columns of blocks down the front, split by a centre line.
-      seg(pelvis, chest, o * 0.55, shade, 0.95, 0.14, 0.62, w * 0.95);
-      for (const k of [0.24, 0.38, 0.52])
-        line(at(pelvis, chest, k, w * 0.4), at(pelvis, chest, k, w * 1.5), o * 0.5, shade, 0.95);
       // Lats' shadow down the back; a pale rim light across the shoulders.
       seg(pelvis, chest, w * 0.45, shade, 0.5, 0.15, 0.85, -w * 1.2);
       seg(pelvis, chest, w * 0.22, rim, 0.7, 0.62, 0.97, -w * 1.55);
@@ -477,12 +481,12 @@ export class StickmanView {
     if (arm) {
       // Massive capped deltoid, biceps and triceps bulging into the elbow, a forearm widest near the
       // elbow, and a big fist.
-      ball(root.x, root.y, w * 1.65);
-      mass(root, mid, w * 2.3, 0.12, 0.62, w * 0.25);
-      mass(root, mid, w * 1.7, 0.5, 0.95);
-      mass(mid, end, w * 1.95, 0.06, 0.5);
-      mass(mid, end, w * 1.45, 0.45, 0.85);
-      ball(end.x, end.y, w * 1.05, toward(colour, 0x000000, 0.1));
+      ball(root.x, root.y, w * 1.4);
+      mass(root, mid, w * 1.95, 0.12, 0.62, w * 0.2);
+      mass(root, mid, w * 1.45, 0.5, 0.95);
+      mass(mid, end, w * 1.65, 0.06, 0.5);
+      mass(mid, end, w * 1.25, 0.45, 0.85);
+      ball(end.x, end.y, w * 0.95, toward(colour, 0x000000, 0.1));
       paint();
       g.moveTo(root.x + Math.cos(Math.PI * 1.05) * w * 1.15, root.y + Math.sin(Math.PI * 1.05) * w * 1.15)
         .arc(root.x, root.y, w * 1.15, Math.PI * 1.05, Math.PI * 1.6)
@@ -497,10 +501,10 @@ export class StickmanView {
     // pants (owner, 12/11/2026) when the fighter has them, ending just above the foot.
     const pants = this.look.pants;
     const cloth = pants ?? colour;
-    mass(root, mid, w * 2.2, 0.0, 0.6, w * 0.15, cloth);
-    mass(root, mid, w * 1.85, 0.5, 1.0, 0, cloth);
-    mass(mid, end, w * 1.75, 0.0, 0.55, -w * 0.15, cloth);
-    mass(mid, end, w * 1.45, 0.5, pants !== undefined ? 0.78 : 0.88, 0, cloth);
+    mass(root, mid, w * 1.8, 0.0, 0.6, w * 0.1, cloth);
+    mass(root, mid, w * 1.5, 0.5, 1.0, 0, cloth);
+    mass(mid, end, w * 1.45, 0.0, 0.55, -w * 0.1, cloth);
+    mass(mid, end, w * 1.2, 0.5, pants !== undefined ? 0.78 : 0.88, 0, cloth);
     paint();
     g.ellipse(end.x + w * 0.45, end.y, w * 1.05, w * 0.5)
       .fill(toward(colour, 0x000000, 0.18))

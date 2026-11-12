@@ -1,6 +1,7 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { StickmanAnimator } from '../animation/animator';
 import { strikePose } from '../animation/clips';
+import { idleStyleFor } from '../animation/greybox-motion';
 import { blockPose, flinchPose, getUpFrame, knockdownFrame } from '../animation/reaction-poses';
 import type { Pose } from '../animation/skeleton';
 import { STRIKE_STATES } from '../characters/resolve';
@@ -56,10 +57,7 @@ export class CharacterPreview {
     this.view = new StickmanView(def.bones, def.look, def.effects.head ?? 'round', def.effects.body ?? 'solid');
     this.world.addChild(this.view.root);
     const idle = def.animation.clips.Idle[0];
-    this.animator = new StickmanAnimator(
-      def.bones,
-      idle?.kind === 'procedural' && idle.id === 'proc.idle.taekwondo' ? 'taekwondo' : 'boxer',
-    );
+    this.animator = new StickmanAnimator(def.bones, idleStyleFor(idle?.kind === 'procedural' ? idle.id : undefined));
     if (this.moveId && !def.moves[this.moveId]) this.moveId = null;
   }
 

@@ -4,6 +4,7 @@ import { AbilityCaster } from '../../abilities/ability-caster';
 import { StickmanAnimator } from '../../animation/animator';
 import type { Clip, StrikeClip } from '../../animation/clips';
 import { CLIPS } from '../../animation/clips';
+import { idleStyleFor } from '../../animation/greybox-motion';
 import type { AnimationState } from '../../characters/schema';
 import { Combatant, seededRandom } from '../../combat/combatant';
 import { MoveController } from '../../combat/moves';
@@ -131,10 +132,7 @@ export class FighterEntity {
     this.combatant = new Combatant(def.stats);
     this.combo = new MoveController(def.moves, def.starters, seededRandom(name.length * 7919 + 17));
     const idle = def.animation.clips.Idle[0];
-    this.animator = new StickmanAnimator(
-      def.bones,
-      idle?.kind === 'procedural' && idle.id === 'proc.idle.taekwondo' ? 'taekwondo' : 'boxer',
-    );
+    this.animator = new StickmanAnimator(def.bones, idleStyleFor(idle?.kind === 'procedural' ? idle.id : undefined));
     this.caster = def.abilities ? new AbilityCaster(def.abilities) : null;
   }
 

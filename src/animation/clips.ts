@@ -28,6 +28,7 @@ export interface StrikeClip {
 export const PROCEDURAL_CLIPS = [
   'proc.idle.boxer',
   'proc.idle.taekwondo',
+  'proc.idle.heavyweight',
   'proc.walk',
   'proc.run',
   'proc.air.rise',

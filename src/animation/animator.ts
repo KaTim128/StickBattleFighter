@@ -78,11 +78,11 @@ export class StickmanAnimator {
     this.riseWeight += (riseTarget - this.riseWeight) * smoothing(10, dtS);
 
     const running = blendPose(
-      runPose(this.walkPhase, this.bones),
-      sprintPose(this.walkPhase, this.bones),
+      runPose(this.walkPhase, this.bones, this.idleStyle),
+      sprintPose(this.walkPhase, this.bones, this.idleStyle),
       this.sprintWeight,
     );
-    const gait = blendPose(walkPose(this.walkPhase, this.bones), running, this.runWeight);
+    const gait = blendPose(walkPose(this.walkPhase, this.bones, this.idleStyle), running, this.runWeight);
     const stance = blendPose(idlePose(this.timeS, this.bones, this.idleStyle), gait, this.walkWeight);
     const grounded = blendPose(stance, landingPose(this.bones), this.landWeight * 0.8);
     const air = blendPose(AIR_FALL_POSE, AIR_RISE_POSE, this.riseWeight);

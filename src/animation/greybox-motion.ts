@@ -96,10 +96,51 @@ export const TAEKWONDO_STANCE = {
   guardLow: 1,
 } as const;
 
-export type IdleStyle = 'boxer' | 'taekwondo';
+/**
+ * HEAVYWEIGHT STANCE (style `proc.idle.heavyweight`, owner 12/11/2026: Rampage Buffer, "a heavy,
+ * muscular fighting stance with a slightly forward leaning upper body"): a wide, planted base,
+ * the chest leaning in over it, fists clenched in a lower, wider guard, and no bounce, only a slow
+ * heavy breath that lifts the shoulders.
+ */
+export const HEAVYWEIGHT_STANCE = {
+  leadFootX: 0.3,
+  rearFootX: -0.4,
+  pelvisM: 0.69,
+  lean: -14,
+  head: 17,
+  breathHz: 0.55,
+  breathM: 0.012,
+  guardLow: 0.45,
+} as const;
+
+/** Movement style: the stance, walk and run a fighter's Animation Profile picks (via its Idle clip). */
+export type IdleStyle = 'boxer' | 'taekwondo' | 'heavyweight';
+
+/** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
+export function idleStyleFor(clipId: string | undefined): IdleStyle {
+  if (clipId === 'proc.idle.taekwondo') return 'taekwondo';
+  if (clipId === 'proc.idle.heavyweight') return 'heavyweight';
+  return 'boxer';
+}
 
 /** Idle: planted wide stance with a light bounce on the balls of the feet (1.8 bounces per second). */
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'heavyweight') {
+    const t = HEAVYWEIGHT_STANCE;
+    const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * t.breathHz);
+    return fightingStance(
+      {
+        pelvisM: t.pelvisM - breath * t.breathM,
+        leadFootX: t.leadFootX,
+        rearFootX: t.rearFootX,
+        lean: t.lean + breath * 1.5, // the chest rises a little with each breath
+        head: t.head,
+        guard: breath * 0.5,
+        guardLow: t.guardLow,
+      },
+      bones,
+    );
+  }
   if (style === 'taekwondo') {
     const t = TAEKWONDO_STANCE;
     const b = 0.5 + 0.5 * Math.sin(timeS * TAU * t.bounceHz);
@@ -164,6 +205,8 @@ function gaitPose(
     sway: number;
     head: number;
     arms: ArmSwing;
+    /** Heavy foot planting: the hips sink sharply at each heel strike, metres (0 = none). */
+    plant?: number;
   },
 ): Pose {
   const a = phase * TAU;
@@ -175,7 +218,7 @@ function gaitPose(
   const leadLift = g.lift * Math.max(0, c);
   const rearLift = g.lift * Math.max(0, -c);
   // Up as the feet pass under the body, down at heel strike: a springy, proud bounce.
-  const pelvisM = g.pelvisM + g.bob * Math.cos(2 * a);
+  const pelvisM = g.pelvisM + g.bob * Math.cos(2 * a) - (g.plant ?? 0) * Math.abs(s) ** 4;
   const arms = g.arms;
   return {
     // The chest drives forward a touch at each heel strike, then rises again.
@@ -196,7 +239,8 @@ function gaitPose(
  * with a little chest roll on each step. The guard comes back up the moment
  * the fighter stops (idle stance) or attacks.
  */
-export function walkPose(phase: number, bones: BoneLengths): Pose {
+export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'heavyweight') return heavyWalkPose(phase, bones);
   return gaitPose(phase, bones, {
     pelvisM: 0.735,
     bob: 0.02,
@@ -208,6 +252,30 @@ export function walkPose(phase: number, bones: BoneLengths): Pose {
     sway: 2.5,
     head: 2,
     arms: { lead: { x: 0.13, y: 0.43 }, rear: { x: 0.09, y: 0.44 }, swingX: 0.18, swingY: 0.06 },
+  });
+}
+
+/**
+ * HEAVYWEIGHT WALK (owner, 12/11/2026: Rampage Buffer "should walk like a massive heavyweight
+ * fighter", "powerful, aggressive and intimidating rather than exaggerated or overly bouncy"):
+ * hips low and steady with almost no bounce, the chest leaning forward over the stride, shorter,
+ * deliberate steps with the feet kept low and planted hard (the hips sink at each heel strike),
+ * the weight rolling side to side with each step, and clenched fists swinging firmly and
+ * compactly opposite the legs, carried high and wide like a guard that never fully drops.
+ */
+function heavyWalkPose(phase: number, bones: BoneLengths): Pose {
+  return gaitPose(phase, bones, {
+    pelvisM: 0.705,
+    bob: 0.006,
+    plant: 0.022,
+    leadX: 0.05,
+    rearX: -0.06,
+    reach: 0.23,
+    lift: 0.065,
+    lean: -10,
+    sway: 3.5,
+    head: 12,
+    arms: { lead: { x: 0.2, y: 0.36 }, rear: { x: 0.1, y: 0.38 }, swingX: 0.13, swingY: 0.05 },
   });
 }
 
@@ -325,14 +393,48 @@ const SPRINT_STYLE: RunStyle = {
   pumpBack: { shoulder: -50, elbow: 85 },
 };
 
+/**
+ * HEAVYWEIGHT RUN (owner, 12/11/2026): a driving, ground-bound run rather than a bounding one:
+ * longer foot contact and little flight, knees kept lower, hips steady, the chest leaning hard
+ * into it, and a short, firm pump of clenched fists close to the body.
+ */
+const HEAVY_RUN: RunStyle = {
+  pelvisM: 0.66,
+  bob: 0.015,
+  reachM: 0.3,
+  pushM: 0.32,
+  stance: 0.46,
+  swingLiftM: 0.26,
+  lean: -16,
+  drive: 3,
+  head: 13,
+  pumpFront: { shoulder: 52, elbow: 112 },
+  pumpBack: { shoulder: -30, elbow: 96 },
+};
+
+/** Heavyweight sprint (and his charge): lower and leaning further, stronger drive, still grounded. */
+const HEAVY_SPRINT: RunStyle = {
+  pelvisM: 0.645,
+  bob: 0.02,
+  reachM: 0.32,
+  pushM: 0.36,
+  stance: 0.4,
+  swingLiftM: 0.32,
+  lean: -21,
+  drive: 4,
+  head: 16,
+  pumpFront: { shoulder: 62, elbow: 108 },
+  pumpBack: { shoulder: -42, elbow: 92 },
+};
+
 /** POWER RUN: the running cycle at a run. */
-export function runPose(phase: number, bones: BoneLengths): Pose {
-  return runningPose(phase, bones, RUN);
+export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  return runningPose(phase, bones, style === 'heavyweight' ? HEAVY_RUN : RUN);
 }
 
 /** SPRINT: the running cycle at full effort. */
-export function sprintPose(phase: number, bones: BoneLengths): Pose {
-  return runningPose(phase, bones, SPRINT_STYLE);
+export function sprintPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  return runningPose(phase, bones, style === 'heavyweight' ? HEAVY_SPRINT : SPRINT_STYLE);
 }
 
 /** Distance (m) covered by one walk cycle (two steps) and one run cycle. */
