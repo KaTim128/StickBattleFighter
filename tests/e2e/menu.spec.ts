@@ -15,7 +15,7 @@ test('main menu: pick Rampage and the Colosseum, play, then leave the game back 
   await Promise.all([page.waitForURL(/character=rampage/), menu.locator('.mm-play').click()]);
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.locator('.main-menu')).toBeHidden(); // straight into the fight
-  await expect(page.locator('.th-left .th-name')).toHaveText('Rampage Buffer'); // owner 12/11/2026: renamed from Rampage
+  await expect(page.locator('.th-left .th-name')).toHaveText('Braxon'); // owner 12/11/2026: renamed from Rampage Buffer
   await page.locator('.settings-button').click();
   await page.locator('.settings-leave').click();
   await expect(page.locator('.main-menu')).toBeVisible();

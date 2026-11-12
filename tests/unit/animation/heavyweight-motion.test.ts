@@ -8,7 +8,7 @@ const sample = (f: (phase: number) => ReturnType<typeof walkPose>, n = 40) =>
   Array.from({ length: n }, (_, i) => ({ pose: f(i / n), s: solveSkeleton(f(i / n), BONES) }));
 const range = (xs: number[]) => Math.max(...xs) - Math.min(...xs);
 
-describe('heavyweight movement (owner, 12/11/2026: Rampage Buffer walks like a massive heavyweight)', () => {
+describe('heavyweight movement (owner, 12/11/2026: Braxon walks like a massive heavyweight)', () => {
   it('is picked by the Idle clip proc.idle.heavyweight; anything else stays the boxer default', () => {
     expect(idleStyleFor('proc.idle.heavyweight')).toBe('heavyweight');
     expect(idleStyleFor('proc.idle.taekwondo')).toBe('taekwondo');

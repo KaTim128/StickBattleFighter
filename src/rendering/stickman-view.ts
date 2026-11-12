@@ -28,12 +28,10 @@ export interface DodgeLook {
   dash?: { amount: number; dirX: number; dirY: number };
 }
 
-/** Muscle body colours (Rampage Buffer, owner 12/11/2026): a grey hide with a pale rim light. */
+/** Muscle body colours (Braxon, formerly Rampage Buffer, owner 12/11/2026): a grey hide with a pale rim light. */
 const BRUTE = {
   rage: 0xd8281a,
   rim: 0xd9dce4,
-  eye: 0xff3a1a,
-  eyeHot: 0xffe2a0,
 } as const;
 
 /** Living-flame body colours (Inferno, owner 11/11/2026). */
@@ -59,7 +57,7 @@ export class StickmanView {
   /** 0..1 guarding (a faint shield in front); `shieldFlare` 0..1 flares it after a block (PRS-5). */
   guard = 0;
   shieldFlare = 0;
-  /** 0..1 a fury buff is on (Rampage Mode): the hide flushes red and the eyes burn. */
+  /** 0..1 a fury buff is on (Rampage Mode): the hide flushes red. */
   rage = 0;
   /** Stunned: stars circle the head (PRS-6). */
   stunned = false;
@@ -284,7 +282,7 @@ export class StickmanView {
   /**
    * A living flame for a head (owner-approved mockup, TD-045): layered tongues (red, orange,
    * yellow) that flicker on their own rhythms and stream back as the fighter moves, a glowing
-   * ball of fire with a deep-red rim at the neck, rising embers and two bright ember-rimmed eyes.
+   * ball of fire with a deep-red rim at the neck, rising embers, and no eyes (owner, 12/11/2026).
    * Original procedural design; drawn in the figure's frame (it mirrors with the facing).
    */
   private flameHead(x: number, y: number, r: number, flash: number, lean?: number, alpha = 1): void {
@@ -336,18 +334,7 @@ export class StickmanView {
     c.circle(x, y, r).fill({ color: 0xff8c1e, alpha: 0.95 });
     c.circle(x - r * 0.15, y - r * 0.12, r * 0.68).fill({ color: 0xffc94a, alpha: 0.95 });
     c.circle(x - r * 0.2, y - r * 0.2, r * 0.35).fill({ color: 0xfff6d2, alpha: 0.95 });
-    // Eyes (styled after the reference art, owner 12/11/2026): two angular white-hot slits, slanting
-    // down toward the middle of the face, rimmed in ember red, burning out of the fire.
-    for (const [ex, ey, k] of [
-      [0.3, -0.04, 1],
-      [0.7, -0.08, 0.7],
-    ] as const) {
-      const P = (u: number, v: number): number[] => [x + r * (ex + u * k), y + r * (ey + v * k)];
-      const slit = [...P(-0.24, -0.12), ...P(0.24, 0.04), ...P(0.2, 0.14), ...P(-0.2, 0.06)];
-      const rim = [...P(-0.3, -0.18), ...P(0.3, 0.0), ...P(0.26, 0.2), ...P(-0.26, 0.12)];
-      c.poly(rim).fill({ color: FLAME.ember, alpha: 0.85 });
-      c.poly(slit).fill(0xfffbe6);
-    }
+    // No eyes (owner, 12/11/2026: "remove the eyes for all stickmen"): a featureless ball of fire.
     if (flash > 0) c.circle(x, y, r).fill({ color: 0xffffff, alpha: flash * 0.6 });
   }
 
@@ -413,7 +400,7 @@ export class StickmanView {
   }
 
   /**
-   * Muscle (Rampage Buffer, owner 12/11/2026: "heavily muscular … a much broader chest, massive
+   * Muscle (Braxon, formerly Rampage Buffer, owner 12/11/2026: "heavily muscular … a much broader chest, massive
    * shoulders, thick arms, powerful legs and visibly defined muscles", grey, no gear). Over each
    * stroked limb: a V-shaped torso with a barrel chest, pecs, abs and a trapezius hump; capped
    * deltoids, bulging biceps and forearms and big fists; thick quads and calves. Every muscle is
@@ -553,7 +540,7 @@ export class StickmanView {
   /**
    * The plain round head (training dummy, base stickman), styled like the reference art (owner,
    * 12/11/2026): flat colour with a lit crescent toward the light, a shadowed underside, an edge in a
-   * deep shade of its own colour, and two narrow angular eyes looking the way it faces.
+   * deep shade of its own colour, and no eyes (owner, 12/11/2026).
    */
   private plainHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
     const r = this.bones.headRadius;
@@ -568,28 +555,13 @@ export class StickmanView {
       color: toward(colour, 0xffffff, 0.45),
       alpha: 0.6,
     });
-    // Narrow angular eyes, slanting down toward the middle of the face.
-    const eye = toward(colour, 0x000000, 0.75);
-    const P = (cx: number, cy: number, k: number, u: number, v: number): number[] => [cx + r * u * k, cy + r * v * k];
-    for (const [cx, k] of [
-      [hx + r * 0.68, 0.9],
-      [hx + r * 0.3, 1.4],
-    ] as const) {
-      const cy = hy - r * 0.04;
-      g.poly([
-        ...P(cx, cy, k, -0.18, -0.08),
-        ...P(cx, cy, k, 0.2, 0.03),
-        ...P(cx, cy, k, 0.16, 0.1),
-        ...P(cx, cy, k, -0.15, 0.04),
-      ]).fill(eye);
-    }
+    // No eyes (owner, 12/11/2026): a clean, featureless head.
   }
 
   /**
-   * A plain round stickman head (Rampage Buffer, owner 12/11/2026: "a simple round human stickman
-   * head"), with two narrow eyes that glow red under a scowling brow, so he stays menacing (owner,
-   * 12/11/2026: "make sure the eyes are visible and look menacing"). Drawn in the figure's frame
-   * (+x = forward).
+   * A plain round stickman head (Braxon, owner 12/11/2026: "a simple round human stickman head"),
+   * shaded with a pale rim and a shadowed jaw. No eyes (owner, 12/11/2026: "remove the eyes for all
+   * stickmen"). Drawn in the figure's frame (+x = forward).
    */
   private bruteHead(
     g: Graphics,
@@ -615,23 +587,7 @@ export class StickmanView {
       color: toward(skin, 0x000000, 0.3),
       alpha: 0.6,
     });
-    const rage = this.rage;
-    const eye = toward(BRUTE.eye, 0xff0000, rage);
-    const pulse = 0.85 + 0.15 * Math.sin(this.clockS * 5);
-    // Narrow slanted slits (explicit points: tiny curves at metre scale can collapse to nothing).
-    const slit = (cx: number, cy: number, k: number): void => {
-      const P = (u: number, v: number): number[] => [cx + r * u * k, cy + r * v * k];
-      g.poly([...P(-0.2, -0.1), ...P(0.22, 0.02), ...P(0.18, 0.1), ...P(-0.16, 0.04)]).fill(eye);
-      g.poly([...P(-0.12, -0.04), ...P(0.15, 0.04), ...P(0.02, 0.05)]).fill(BRUTE.eyeHot);
-      this.fire.ellipse(cx, cy, r * 0.32 * k, r * 0.2 * k).fill({ color: eye, alpha: (0.3 + 0.35 * rage) * pulse });
-    };
-    slit(hx + r * 0.72, hy - r * 0.08, 0.7); // the far eye, near the edge of the face
-    slit(hx + r * 0.3, hy - r * 0.02, 1.0);
-    // The scowl: a hard brow dropping toward the middle of the face.
-    g.moveTo(hx - r * 0.02, hy - r * 0.3)
-      .lineTo(hx + r * 0.5, hy - r * 0.12)
-      .lineTo(hx + r * 0.88, hy - r * 0.32)
-      .stroke({ width: o * 1.3, color: outline, cap: 'round', join: 'round' });
+    // No eyes or brow (owner, 12/11/2026): a featureless head.
   }
 
   /** Charred streaks: short dark flecks drifting along a limb, so the fire has darker detail. */

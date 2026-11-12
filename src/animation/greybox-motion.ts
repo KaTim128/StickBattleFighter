@@ -97,7 +97,7 @@ export const TAEKWONDO_STANCE = {
 } as const;
 
 /**
- * HEAVYWEIGHT STANCE (style `proc.idle.heavyweight`, owner 12/11/2026: Rampage Buffer, "a heavy,
+ * HEAVYWEIGHT STANCE (style `proc.idle.heavyweight`, owner 12/11/2026: Braxon, "a heavy,
  * muscular fighting stance with a slightly forward leaning upper body"): a wide, planted base,
  * the chest leaning in over it, fists clenched in a lower, wider guard, and no bounce, only a slow
  * heavy breath that lifts the shoulders.
@@ -256,7 +256,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
 }
 
 /**
- * HEAVYWEIGHT WALK (owner, 12/11/2026: Rampage Buffer "should walk like a massive heavyweight
+ * HEAVYWEIGHT WALK (owner, 12/11/2026: Braxon "should walk like a massive heavyweight
  * fighter", "powerful, aggressive and intimidating rather than exaggerated or overly bouncy"):
  * hips high and steady (legs nearly straight) with almost no bounce, the chest leaning forward over the stride, shorter,
  * deliberate steps with the feet kept low and planted hard (the hips sink at each heel strike),
