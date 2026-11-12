@@ -144,7 +144,7 @@ function menuFighters(): MenuFighter[] {
         id: c.id,
         name: c.displayName,
         blurb: c.description,
-        portrait: head === 'flame' || head === 'rhino' ? head : 'round',
+        portrait: head === 'flame' || head === 'brute' ? head : 'round',
         colour: c.rig.colour,
       };
     });

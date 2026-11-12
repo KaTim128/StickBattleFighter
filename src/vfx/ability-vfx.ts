@@ -89,7 +89,7 @@ export interface AuraFx {
   readonly strength: number;
 }
 
-/** A charging body kicking up the ground behind it (Rhino Charge). */
+/** A charging body kicking up the ground behind it (Rampage Charge). */
 export interface DashTrailFx {
   readonly x: number;
   readonly y: number;

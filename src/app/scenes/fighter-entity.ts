@@ -171,7 +171,7 @@ export class FighterEntity {
     this.view = new StickmanView(
       this.def.bones,
       this.def.look,
-      // Flame styles need the fire-effects capability; other styles (a rhino's head, armour) always show.
+      // Flame styles need the fire-effects capability; other styles (a brute's head, muscle) always show.
       this.def.effects.head === 'flame' && !this.def.capabilities.usesFireEffects
         ? 'round'
         : (this.def.effects.head ?? 'round'),

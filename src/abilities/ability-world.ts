@@ -133,6 +133,8 @@ interface DashAction {
   readonly def: AbilityDef;
   readonly dir: Vec2;
   remainingS: number;
+  /** Time since the dash started. */
+  ageS: number;
   readonly hit: Set<string>;
   sinceTrailM: number;
   lastX: number;
@@ -221,6 +223,7 @@ export class AbilityWorld {
           def,
           dir,
           remainingS: d.distanceM / d.speedMps,
+          ageS: 0,
           hit: new Set(),
           sinceTrailM: TRAIL_SPACING_M,
           lastX: at.x,
@@ -535,8 +538,10 @@ export class AbilityWorld {
     const d = a.def.delivery;
     if (d.type !== 'dash') return true;
     const at = host.position(a.casterId);
+    const movedM = Math.hypot(at.x - a.lastX, at.y - a.lastY);
+    a.ageS += dtS;
     // Fire trail behind, laid by distance actually travelled (a wall stops the dash; the trail stops too).
-    a.sinceTrailM += Math.hypot(at.x - a.lastX, at.y - a.lastY);
+    a.sinceTrailM += movedM;
     a.lastX = at.x;
     a.lastY = at.y;
     if (d.trail && a.sinceTrailM >= TRAIL_SPACING_M) {
@@ -564,9 +569,26 @@ export class AbilityWorld {
           sfx: a.def.sfx.impact,
           x: f.x,
           y: f.y,
-          radiusM: 0.7,
+          radiusM: d.collision?.radiusM ?? 0.7,
         });
+        if (d.collision) return true; // a body charge stops dead in the target
       }
+    }
+    // Slammed into something solid (barely moved last step although driven at full speed).
+    if (d.collision && a.ageS > 0.1 && movedM < d.speedMps * dtS * 0.3) {
+      const front = { x: at.x + a.dir.x * 0.6, y: at.y + a.dir.y * 0.6 };
+      host.hitEnvironment(a.casterId, front, d.hitRadiusM, a.def.payload, a.dir, false);
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: a.def.sfx.impact,
+        x: front.x,
+        y: front.y,
+        radiusM: d.collision.radiusM,
+      });
+      return true;
     }
     host.hitEnvironment(
       a.casterId,

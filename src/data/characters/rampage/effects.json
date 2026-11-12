@@ -12,6 +12,6 @@
   "flashColour": "#ffffff",
   "shakeScale": 1.5,
   "hitstopScale": 1.3,
-  "head": "rhino",
-  "body": "armour"
+  "head": "brute",
+  "body": "muscle"
 }

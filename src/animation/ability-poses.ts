@@ -20,6 +20,14 @@ interface CastShape {
   settle: number;
   /** Held while a leap carries the fighter through the air (then the release is the landing slam). */
   air?: Partial<Pose>;
+  /**
+   * Upper body held while a charge drives the fighter: the legs keep the gait's running cycle,
+   * so it runs on two legs. Once the drive ends, `after` replaces the release (the collision).
+   */
+  run?: Partial<Pose>;
+  after?: Partial<Pose>;
+  /** The wind-up trembles with building power: lean wobble amplitude (radians), growing with progress. */
+  tremble?: number;
 }
 
 const CROUCH: Partial<Pose> = { legFront: limb(50, -95), legBack: limb(-20, -70) };
@@ -58,26 +66,34 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.35,
   },
-  // Rhino Charge (Rampage): drops onto all fours, head down and horn forward, pawing the ground for a
-  // second; then charges low on all fours (held while the charge carries him).
-  rhinoCharge: {
+  // Rampage Charge (owner, 12/11/2026: powerful, heavy, aggressive, always on two legs). WINDUP:
+  // a sprinter's set, standing: the upper body leans hard in, shoulders dropped, both arms pulled
+  // back, the rear leg braced far behind, trembling as the momentum builds. RUN (held while the
+  // charge drives him): the legs keep their sprint cycle, the body stays bent forward behind a
+  // lowered lead shoulder, the lead forearm up as a battering ram and the rear arm pumping back.
+  // AFTER (the charge stops, in a target or a wall): the shoulder driven through, the body
+  // compressed by the collision, then he straightens up.
+  rampageCharge: {
     windup: {
-      lean: deg(-74),
-      head: deg(55),
-      armFront: limb(80, 8),
-      armBack: limb(62, 14),
-      legFront: limb(35, -55),
-      legBack: limb(-20, -40),
+      lean: deg(-40),
+      head: deg(34),
+      armFront: limb(-38, 70),
+      armBack: limb(-58, 55),
+      legFront: limb(48, -78),
+      legBack: limb(-38, -22),
     },
-    release: {
-      lean: deg(-78),
-      head: deg(60),
-      armFront: limb(95, 12),
-      armBack: limb(45, 30),
-      legFront: limb(45, -70),
-      legBack: limb(-35, -25),
+    tremble: deg(3),
+    run: { lean: deg(-44), head: deg(36), armFront: limb(72, 112), armBack: limb(-48, 72) },
+    release: { lean: deg(-44), head: deg(36), armFront: limb(72, 112), armBack: limb(-48, 72) },
+    after: {
+      lean: deg(-52),
+      head: deg(42),
+      armFront: limb(96, 70),
+      armBack: limb(-30, 90),
+      legFront: limb(62, -96),
+      legBack: limb(-34, -20),
     },
-    settle: 0.2,
+    settle: 0.3,
   },
   // Crushing Strike (Rampage): the rear fist cocked high behind the head, then brought straight down.
   crushingStrike: {
@@ -139,13 +155,20 @@ export function abilityPose(
   phase: 'windup' | 'recovery',
   progress: number,
   airborne: boolean,
+  driving = false,
 ): Pose {
   const shape = SHAPES[abilityId];
   if (!shape) return base;
   const windup = { ...base, ...shape.windup };
-  if (phase === 'windup') return blendPose(base, windup, ease(progress * 1.6));
+  if (phase === 'windup') {
+    const pose = blendPose(base, windup, ease(progress * 1.6));
+    if (!shape.tremble) return pose;
+    // Building power: a fast, growing shudder through the body.
+    return { ...pose, lean: pose.lean + Math.sin(progress * 70) * shape.tremble * progress };
+  }
   if (shape.air && airborne) return { ...base, ...shape.air };
-  const release = { ...base, ...shape.release };
+  if (shape.run && driving) return { ...base, ...shape.run };
+  const release = { ...base, ...(shape.run && shape.after ? shape.after : shape.release) };
   // Snap into the release quickly, hold it, then ease back to the stance.
   const settleFrom = 1 - shape.settle;
   if (progress < 0.12) return blendPose(windup, release, ease(progress / 0.12));

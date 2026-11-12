@@ -244,9 +244,9 @@ export interface EffectsProfile {
   readonly body?: BodyStyle;
 }
 
-export const HEAD_STYLES = ['round', 'flame', 'rhino'] as const;
+export const HEAD_STYLES = ['round', 'flame', 'brute'] as const;
 export type HeadStyle = (typeof HEAD_STYLES)[number];
-export const BODY_STYLES = ['solid', 'flame', 'armour'] as const;
+export const BODY_STYLES = ['solid', 'flame', 'muscle'] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */

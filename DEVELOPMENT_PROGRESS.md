@@ -448,6 +448,24 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - **Evidence:** `npm run lint` clean (1 info, in an old mockup); typecheck 0; `npm test` 304/304; full e2e 38 passed.
   - `phase4` (the door) failed once in the full run. It passed when run alone, both with and without this change (3/3 and 9/9), so it is timing under load and unrelated to this change.
 
+### 12/11/2026: Rampage Buffer redesign, size, lift time, quicker charge, steerable Fire Beam (owner requests)
+- **Rampage Buffer:** now a heavily muscular grey human stickman, drawn twice Inferno's size (`rig.scale` 2) in the same line style as Inferno.
+  - He has a much broader chest, massive shoulders, thick arms, powerful legs and defined pecs, abs, biceps and quads.
+  - His head is round with narrow glowing red eyes under a scowling brow. The rhino head, horns and bronze gear are gone, and the display name is "Rampage Buffer".
+  - Wider body (foot radius 0.55 m) and longer reach (+0.35 m).
+  - The new icons are grey.
+- **Rampage Charge** (renamed from Rhino Charge):
+  - Wind-up: 0.5 s standing on two legs. He leans in with his shoulders lowered and arms pulled back, trembling while dust gathers.
+  - Charge: an 11 m run on two legs at 15 m/s, shoulder first, with a dust trail.
+  - Stop: he stops dead in the first fighter he hits, or in a solid wall, with a big collision burst and screen shake, then a follow-through pose. Breakable walls, doors and furniture are still smashed through.
+- **Lifting:** heavier objects take longer to heave up: about 0.3 s for a chair, 0.85 s for a desk and 1.25 s at 60 kg. You are rooted while lifting and cannot throw until the object is overhead.
+- **Fire Beam:** while it pours, it follows the mouse on desktop, or a swipe on the empty right side of the screen on touch, turning at up to 3.5 rad/s. Inferno stays rooted.
+- **Fix:** an arc that started without `moveTo` drew a stray line across the figure. Each arc now starts at its own point.
+- **Tests:**
+  - New: size and bulk; the charge stops in the target with a large burst; the charge stops at a solid wall; lift time and rooting; beam steering (unit); swipe tracking (unit).
+  - The throw tests now wait out the lift, because throwing during the lift is no longer allowed.
+- **Evidence:** typecheck 0; `npm test` 311/311; `npm run lint` clean (1 info, in an old mockup); browser screenshots of the redesign, the wind-up, the two-legged run, the impact, and the steered beam.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

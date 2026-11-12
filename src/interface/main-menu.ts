@@ -8,7 +8,7 @@ export interface MenuFighter {
   readonly name: string;
   readonly blurb: string;
   /** Portrait look for the card. */
-  readonly portrait: 'flame' | 'rhino' | 'round';
+  readonly portrait: 'flame' | 'brute' | 'round';
   readonly colour: string;
 }
 

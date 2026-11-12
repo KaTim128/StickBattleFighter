@@ -395,8 +395,8 @@ export class FightArenaScene implements ArenaScene {
         maxStamina: c.stats.maxStamina,
         status,
         portrait:
-          f.def.effects.head === 'rhino'
-            ? 'rhino'
+          f.def.effects.head === 'brute'
+            ? 'brute'
             : f.def.capabilities.usesFireEffects && f.def.effects.head === 'flame'
               ? 'flame'
               : 'round',
@@ -1963,7 +1963,14 @@ export class FightArenaScene implements ArenaScene {
     }
     const cast = f.caster?.cast;
     if (cast && f.caster) {
-      pose = abilityPose(pose, cast.def.id, cast.phase, f.caster.phaseProgress, f.abilityLift > 0.05);
+      pose = abilityPose(
+        pose,
+        cast.def.id,
+        cast.phase,
+        f.caster.phaseProgress,
+        f.abilityLift > 0.05,
+        f.driveVelocity !== null,
+      );
     }
 
     // Carrying overhead: arms up (blended); a throw whips them forward for a moment.

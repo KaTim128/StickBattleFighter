@@ -37,7 +37,7 @@ export interface AbilityPayload {
   /** Stuns the target this long after it lands (Crushing Strike). */
   readonly stunS?: number;
   /**
-   * Smashes through obstacles (Rhino Charge): breakable wall sections take this much damage, and
+   * Smashes through obstacles (Rampage Charge): breakable wall sections take this much damage, and
    * furniture and doors in the way are hit with the payload's full strength. Solid walls still stop it.
    */
   readonly wallDamage?: number;
@@ -88,6 +88,12 @@ export interface DashDelivery {
   readonly speedMps: number;
   readonly hitRadiusM: number;
   readonly trail?: { readonly lifeS: number; readonly radiusM: number; readonly burn: Burn };
+  /**
+   * A body charge (Rampage Charge, owner 12/11/2026): it stops dead on the first fighter it hits
+   * or when it slams into something that does not give (a wall), with a collision burst of this
+   * radius (2 m or more also shakes the screen). Absent = the dash passes through.
+   */
+  readonly collision?: { readonly radiusM: number };
 }
 
 /** A ring around the caster: telegraphed on the floor first (REQ-ABL-6), then it erupts. */

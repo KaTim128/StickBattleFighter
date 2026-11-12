@@ -38,12 +38,12 @@ async function setup(player: string, at: { x: number; y: number }, arena: ArenaL
   return { intents, scene, scenes, run, runUntil };
 }
 
-describe('Rampage (owner, 12/11/2026): the rhino brawler', () => {
+describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
   beforeAll(async () => {
     await initPhysics();
   });
 
-  it("is twice Inferno's size, bulkier and wider, and his Rhino Charge winds up in 0.5 s (owner, 12/11/2026)", async () => {
+  it("is twice Inferno's size, bulkier and wider, and his Rampage Charge winds up in 0.5 s (owner, 12/11/2026)", async () => {
     const r = await setup('rampage', { x: 5, y: 5 });
     const i = await setup('inferno', { x: 5, y: 5 });
     const rd = r.scene.playerFighter.def;
@@ -114,7 +114,7 @@ describe('Rampage (owner, 12/11/2026): the rhino brawler', () => {
     scenes.clear();
   });
 
-  it('Rhino Charge: 1 s on all fours, then a locked charge that smashes through a breakable wall', async () => {
+  it('Rampage Charge: a 0.5 s wind-up on two legs, then a locked charge that smashes through a breakable wall', async () => {
     // Beside the office's curved wall, facing it, with the dummy far away.
     const walls = OFFICE.interiorWalls!;
     const i = walls.findIndex((w) => w.durability !== undefined && Math.abs((w.y0 + w.y1) / 2 - 3.2) < 0.4);
@@ -137,6 +137,39 @@ describe('Rampage (owner, 12/11/2026): the rhino brawler', () => {
     expect(scene.walls!.states.find((s) => s.index === i)!.broken).toBe(true);
     expect(scene.player.x).toBeGreaterThan(cx); // through the hole
     expect(Math.abs(scene.player.y - cy)).toBeLessThan(0.9); // did not turn
+    scenes.clear();
+  });
+
+  it('Rampage Charge stops dead in the first fighter it hits, with a big collision burst (owner, 12/11/2026)', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 6, y: 13 });
+    scene.respawnDummy({ x: 11, y: 13 });
+    intents.setMove('t', { x: 1, y: 0 });
+    run(0.1);
+    intents.setMove('t', { x: 0, y: 0 });
+    intents.pressAbility('a2');
+    runUntil(() => scene.dummy.hp < 1000, 2);
+    expect(scene.dummy.hp).toBeLessThan(1000);
+    const xHit = scene.player.x;
+    runUntil(() => scene.player.ability === null, 3);
+    expect(scene.player.x - xHit).toBeLessThan(0.6); // stopped in the target instead of running on
+    const burst = scene.abilities!.recentFx.find((e) => e.kind === 'impact' && e.ability === 'rampageCharge');
+    expect(burst?.radiusM).toBeGreaterThanOrEqual(2); // big enough to shake the screen
+    scenes.clear();
+  });
+
+  it('Rampage Charge slams into a solid wall and stops there with a collision burst', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 3, y: 13 });
+    scene.respawnDummy({ x: 28, y: 18 }); // out of the charge's aim range, so it goes the way he faces
+    intents.setMove('t', { x: -1, y: 0 });
+    run(0.1);
+    intents.setMove('t', { x: 0, y: 0 });
+    intents.pressAbility('a2');
+    run(0.1); // the press starts the cast on the next step
+    expect(scene.player.ability).toBe('rampageCharge');
+    runUntil(() => scene.player.ability === null, 3);
+    const burst = scene.abilities!.recentFx.find((e) => e.kind === 'impact' && e.ability === 'rampageCharge');
+    expect(burst).toBeDefined();
+    expect(burst!.x).toBeLessThan(scene.player.x); // in front of him, at the wall
     scenes.clear();
   });
 

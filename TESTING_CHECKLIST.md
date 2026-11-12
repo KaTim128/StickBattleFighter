@@ -297,6 +297,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] D input latency acceptable on touch devices
 - [ ] I particle and debris budgets enforced on mobile
 
+## 13b. Rampage Buffer and Inferno updates (owner, 12/11/2026)
+- [x] Rampage Buffer: grey muscular human, round head with glowing eyes, twice Inferno's size (browser check)
+- [x] Rampage Charge: 0.5 s two-legged wind-up, long fast run on two legs, stops in the target or a wall with a collision burst (`rampage.test.ts`)
+- [x] Heavier objects take longer to lift; rooted while lifting; no throw until overhead (`throwing.test.ts`)
+- [x] Fire Beam follows the mouse or a swipe while it pours; Inferno stays rooted (`ability-world.test.ts`, `input.test.ts`, browser check)
+- [ ] Real-device check of swipe steering on a phone (manual)
+
 ## 13a. HUD buttons (owner, 12/11/2026)
 - [x] Ability bar and touch ability buttons show each ability's picture; the name appears on hover
 - [x] No button's text goes outside its button on desktop, a portrait phone or a sideways phone (`tests/e2e/button-fit.spec.ts`)

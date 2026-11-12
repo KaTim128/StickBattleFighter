@@ -399,12 +399,28 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Magic look additions:** `impact.groundFire` (off for dust and debris) and `impact.smokeColour`.
 - **Effects:** a fury aura (motes, steam, a floor glow) and a dash dust trail are drawn by the shared effects layer from the ability's look.
 - **Object handling:** `objects.liftsFurniture` lets a fighter pick up movable furniture up to `maxLiftKg`.
-- **Looks:** head style `rhino` and body style `armour` (plates, muscle, chest plate and shoulder pads), plus a `rage` tint on the view. The flame head and body styles still need the fire-effects capability; other styles always show.
+- **Looks:** head style `brute` (round, with glowing eyes) and body style `muscle` (TD-053; replaced the first `rhino`/`armour` styles), plus a `rage` tint on the view. The flame head and body styles still need the fire-effects capability; other styles always show.
 - **Menu:** `MainMenu` lists every built-in playable fighter made from a template. Play reloads with `?character`, `?scene` and `?play`; the same choice just resumes. Settings and the menu share one pause mechanism.
 - **Fullscreen:** `enterFullscreen` runs from a tap: on Play, on the first tap of a game on touch devices, and from the Settings button.
 - **Alternatives:**
   - a fourth ability slot (rejected by the owner);
   - an in-place scene swap on Play (deferred: a reload is simpler and resets cleanly; fullscreen comes back on the first tap).
+
+### TD-053: Fighter size scale, muscle body style, body-charge collisions, steerable beams, lift time — ACCEPTED (owner requests 12/11/2026)
+- **Context:** the owner asked for Rampage to be twice Inferno's size and far more muscular, then redesigned him as Rampage Buffer (a grey, muscular human stickman with a round head) with a powerful two-legged charge; heavier furniture should take longer to lift; Inferno's Fire Beam should be steerable.
+- **Decisions:**
+  - `rig.scale` (character data, validated 0.5–2.5) draws a fighter bigger. `StickmanView` scales an inner container about the feet. The hop height, limb tips, the bar and number positions above the head, and the carry height follow it. Collision size and reach stay in the stats and moves (Rampage: foot radius 0.55 m, reach +0.35 m).
+  - Body style `muscle`: the muscle masses of each limb are drawn in two passes (all outlines, then all fills), so they merge into one smooth silhouette in the house line style. Definition lines, highlights and a pale rim light go on top. Head style `brute`: a round head with glowing slit eyes. The rhino head and armour styles are removed (SUP-16).
+  - `DashDelivery.collision`: a body charge stops dead in the first fighter it hits, or when it barely moves although driven at full speed (a solid wall). It then emits a collision burst of the given radius; 2 m or more shakes the screen.
+  - Ability animations: a `run` upper-body pose is held while a charge drives the body, and the legs keep the gait's sprint cycle, so the fighter runs on two legs. An `after` pose plays once the drive stops, and a `tremble` makes the wind-up shudder.
+  - `BeamDelivery.turnRadPerS` with optional host hooks `steer` and `face`. The scene steers the player's beam by touch swipe, or by the mouse once it moves; the AI tracks the nearest opponent. The beam turns at a limited rate, and the caster turns with it while staying rooted.
+  - `THROWING.liftTimeFor(massKg)`: lifting is a timed phase. The fighter is rooted, the object rises from the hands to overhead, and it cannot be thrown until it is up. A hit drops it.
+- **Alternatives:**
+  - scaling bone lengths instead of drawing at a scale (more knock-on changes to poses and anchors);
+  - a separate quadruped charge rig (rejected by the owner: two legs).
+- **Trade-offs:**
+  - Hit sparks from other fighters' blows still appear at standard heights on the big fighter.
+  - The charge now hits only one fighter (it stops in the first). This is fine for 1v1; revisit for 3v3.
 
 ## Unresolved technical questions
 - Performance budgets (OQ-10).

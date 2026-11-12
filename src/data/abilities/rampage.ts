@@ -1,7 +1,7 @@
 import type { AbilityKit } from '../../abilities/ability-def';
 
 /**
- * Rampage's kit (owner, 12/11/2026): a rhino-themed brute built on strength and durability.
+ * Rampage's kit (owner, 12/11/2026): a heavily muscled brute built on strength and durability.
  * Earth and dust for his blows, blood-red for his rage, never fire (Magic Attack VFX Standard:
  * each fighter in his own colours). His fourth requested ability, Heavy Throw, is his grab and
  * throw (G) with a far heavier lift and harder throws (Stats Profile `objects`), so the kit keeps
@@ -45,19 +45,21 @@ export const RAMPAGE_KIT: AbilityKit = {
       hitFlash: 0xffffff,
     },
   },
-  // A2: Rhino Charge. One second down on all fours, then a locked-direction charge (it cannot turn)
-  // that bowls fighters over and smashes through breakable walls, doors and furniture.
+  // A2: Rampage Charge (owner, 12/11/2026: "extremely powerful, heavy and aggressive", on two legs).
+  // Half a second leaning in, shoulders down and arms pulled back, building momentum; then a long,
+  // fast, locked-direction charge (it cannot turn) that smashes through breakable walls, doors and
+  // furniture and stops dead in the first fighter it hits or in a wall, in a collision burst.
   a2: {
-    id: 'rhinoCharge',
-    name: 'Rhino Charge',
+    id: 'rampageCharge',
+    name: 'Rampage Charge',
     label: 'CHARGE',
-    icon: 'rhino-charge',
+    icon: 'rampage-charge',
     slot: 'a2',
     staminaCost: 35,
     cooldownS: 7,
     castS: 0.5, // owner 12/11/2026: 0.5 s quicker (was 1 s)
-    recoveryS: 0.95,
-    aimRangeM: 8,
+    recoveryS: 1.05,
+    aimRangeM: 11,
     moveFactor: 0,
     interruptible: true,
     payload: {
@@ -68,14 +70,14 @@ export const RAMPAGE_KIT: AbilityKit = {
       impact: 'knuckle-heavy',
       wallDamage: 3000,
     },
-    delivery: { type: 'dash', distanceM: 7, speedMps: 11, hitRadiusM: 0.8 },
-    vfx: 'rhino-charge',
-    sfx: { cast: 'rhino-snort', release: 'rhino-stampede', impact: 'charge-impact' },
+    delivery: { type: 'dash', distanceM: 11, speedMps: 15, hitRadiusM: 1, collision: { radiusM: 2.2 } },
+    vfx: 'rampage-charge',
+    sfx: { cast: 'charge-stomp', release: 'charge-rush', impact: 'charge-impact' },
     look: {
       palette: DUST,
-      charge: { gatherRadiusM: 0.8, motesPerS: 50, coreMaxM: 0 },
-      flight: { trailPerS: 90, sparksPerS: 10, shimmer: false },
-      impact: { flashM: 0.9, sparks: 30, motes: 30, ringM: 1.2, smoke: 10, groundFire: false, smokeColour: 0x8a7a66 },
+      charge: { gatherRadiusM: 1.1, motesPerS: 90, coreMaxM: 0 },
+      flight: { trailPerS: 160, sparksPerS: 24, shimmer: false },
+      impact: { flashM: 1.6, sparks: 55, motes: 70, ringM: 2.6, smoke: 26, groundFire: false, smokeColour: 0x8a7a66 },
       hitFlash: 0xffffff,
     },
   },

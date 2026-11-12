@@ -264,14 +264,14 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.7, gain: 0.18, type: 'bandpass', freq: 2400, q: 0.8, attack: 0.05, delay: 0.08 } },
     { crackle: { dur: 0.8, gain: 0.3, count: 22 } },
   ],
-  // Rhino Charge wind-up: a snort and the ground being pawed.
-  'rhino-snort': [
+  // Rampage Charge wind-up: a snort and the ground being pawed.
+  'charge-stomp': [
     { noise: { dur: 0.3, gain: 0.45, type: 'bandpass', freq: 900, freqEnd: 500, q: 1.5, attack: 0.02 } },
     { noise: { dur: 0.25, gain: 0.35, type: 'bandpass', freq: 800, freqEnd: 450, q: 1.5, attack: 0.02, delay: 0.45 } },
     { tone: { wave: 'sine', f0: 90, f1: 60, dur: 0.12, gain: 0.4, delay: 0.75 } },
   ],
   // The charge: a stampede of heavy footfalls under a rush of air.
-  'rhino-stampede': [
+  'charge-rush': [
     { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.1, gain: 0.7 } },
     { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.1, gain: 0.7, delay: 0.16 } },
     { tone: { wave: 'sine', f0: 80, f1: 40, dur: 0.1, gain: 0.7, delay: 0.32 } },
