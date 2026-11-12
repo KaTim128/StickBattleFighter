@@ -174,4 +174,3 @@ describe('fight intro lock', () => {
     scenes.clear();
   });
 });
-
