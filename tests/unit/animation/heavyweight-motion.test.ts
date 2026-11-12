@@ -26,6 +26,16 @@ describe('heavyweight movement (owner, 12/11/2026: Rampage Buffer walks like a m
     expect(lift(heavy)).toBeLessThanOrEqual(lift(normal) + 1e-9);
   });
 
+  it('walks on straighter legs than the standard walk (owner, 12/11/2026: less knee bending)', () => {
+    const meanKnee = (style?: 'heavyweight') =>
+      sample((p) => walkPose(p, BONES, style)).reduce(
+        (a, x) => a + Math.abs(x.pose.legFront.bend) + Math.abs(x.pose.legBack.bend),
+        0,
+      ) / 80;
+    expect(meanKnee('heavyweight')).toBeLessThan(meanKnee() * 0.75);
+    expect(meanKnee('heavyweight')).toBeLessThan((25 * Math.PI) / 180); // under 25° on average
+  });
+
   it('plants each step: the hips sink hardest when the stride is widest (heel strike)', () => {
     const at = (p: number) => solveSkeleton(walkPose(p, BONES, 'heavyweight'), BONES).pelvis.y;
     // phase 0.25 = widest stride (heel strike), 0 = feet passing under the body. +y is down.

@@ -105,7 +105,7 @@ export const TAEKWONDO_STANCE = {
 export const HEAVYWEIGHT_STANCE = {
   leadFootX: 0.3,
   rearFootX: -0.4,
-  pelvisM: 0.69,
+  pelvisM: 0.725,
   lean: -14,
   head: 17,
   breathHz: 0.55,
@@ -258,20 +258,22 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
 /**
  * HEAVYWEIGHT WALK (owner, 12/11/2026: Rampage Buffer "should walk like a massive heavyweight
  * fighter", "powerful, aggressive and intimidating rather than exaggerated or overly bouncy"):
- * hips low and steady with almost no bounce, the chest leaning forward over the stride, shorter,
+ * hips high and steady (legs nearly straight) with almost no bounce, the chest leaning forward over the stride, shorter,
  * deliberate steps with the feet kept low and planted hard (the hips sink at each heel strike),
  * the weight rolling side to side with each step, and clenched fists swinging firmly and
  * compactly opposite the legs, carried high and wide like a guard that never fully drops.
  */
 function heavyWalkPose(phase: number, bones: BoneLengths): Pose {
+  // Owner, 12/11/2026: "reducing the excessive knee bending ... straighter legs": the hips ride
+  // close to full leg length (0.79 m for Rampage), so the planted leg is nearly straight.
   return gaitPose(phase, bones, {
-    pelvisM: 0.705,
-    bob: 0.006,
-    plant: 0.022,
-    leadX: 0.05,
-    rearX: -0.06,
-    reach: 0.23,
-    lift: 0.065,
+    pelvisM: 0.775,
+    bob: 0.004,
+    plant: 0.01,
+    leadX: 0.04,
+    rearX: -0.05,
+    reach: 0.2,
+    lift: 0.04,
     lean: -10,
     sway: 3.5,
     head: 12,
