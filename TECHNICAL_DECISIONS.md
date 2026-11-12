@@ -422,6 +422,31 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
   - Hit sparks from other fighters' blows still appear at standard heights on the big fighter.
   - The charge now hits only one fighter (it stops in the first). This is fine for 1v1; revisit for 3v3.
 
+### TD-054: Teams, summoned minions and Necro's building blocks — ACCEPTED (owner request 12/11/2026)
+- **Context:** Necro raises skeleton warriors that need independent AI, targeting, attacks and deaths; they must not spawn inside walls or furniture, must expire, and must not pile up without limit.
+- **Decisions:**
+  - Every `FighterEntity` has a `team`. Melee, throws and abilities skip their own side; `AbilityTarget.team` lets the ability world skip friendly fighters.
+  - Summons are real fighters on the summoner's team (`src/app/scenes/scene-summons.ts`), so the shared combat engine (INV-5) gives them movement, attacks, hit reactions, KO and the crumble for free.
+    - Their AI goes for the nearest enemy in sight, attacks in reach, and otherwise follows the summoner.
+    - They have a lifetime, crumble when it runs out or their summoner falls, and are capped per summoner (the oldest goes first).
+    - Spawn spots are ray-checked from the summoner, and `PhysicsWorld.isFree` rejects overlaps.
+    - A summon leaves the depth sort before its view is destroyed.
+  - Ability framework additions:
+    - payload `lifesteal`;
+    - nova `atTarget`;
+    - a `summon` delivery;
+    - buff `abilityDamageFactor` and `summon`;
+    - `Combatant.expire()`.
+  - Character data additions:
+    - the character type `summon` (never playable or listed);
+    - head styles `hood` and `skull`;
+    - body styles `robe` and `bones`;
+    - effects `held` (`staff`, `bone-sword`);
+    - the idle style `proc.idle.mage`.
+  - View states: `StickmanView.magic` (glowing skull eyes and violet energy) and `heldSwing` (the staff follows a swinging arm, otherwise it stands upright, planted when the hand is low). Ability poses can levitate through `liftM`.
+- **Alternatives:** a separate lightweight minion system with its own hit detection (rejected: it duplicates the combat engine).
+- **Trade-offs:** summons add bodies to the physics world (at most 6 per summoner).
+
 ## Unresolved technical questions
 - Performance budgets (OQ-10).
 - Final backend sign-off at Phase 14 (TD-008, TD-017).

@@ -509,6 +509,19 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - **Fix:** the CSS order of the joystick aim style and a `forEach` that returned a value failed the whole-repo lint.
 - **Evidence:** `npm test` 321/321; e2e 39 passed; lint clean (1 info, in an old mockup); browser screenshots of each change.
 
+### 12/11/2026: eyes removed, Braxon, Necro (third fighter) with summons, Necro design pass (owner requests)
+- **No eyes** on any stickman (SUP-18). Rampage Buffer is renamed **Braxon**.
+- **Necro** (REQ-ABL-15, TD-054):
+  - Kit: Soul Drain (heals), Death Eruption (bone spikes and hands, trap), Undead Army (3 skeletons, 10 s, capped at 4) and Death's Dominion (8 s, ×1.5 ability damage, 2 more skeletons). Zombie Summon was dropped by the owner's choice.
+  - Teams and summons are built on the shared combat engine.
+- **Design pass:** a straight mage idle with the bone staff planted in his left hand, a skull on the staff whose eyes glow purple during magic, a levitating summon with the free arm raised, subtle purple energy, a peaked hood and a robe to the ankles.
+- **Fix:** a crumbled summon stayed in the depth-sort layer and crashed rendering. It now leaves the layer first.
+- **Tests:** `necro.test.ts` (6) and `necro-motion.test.ts` (2). The menu e2e now expects three fighters.
+- **Evidence:** `npm test` 329/329; e2e 39 passed; lint clean (1 info, in an old mockup); browser screenshots (slow motion for the summon wind-up).
+- **Known limits:**
+  - The opponent AI does not cast abilities, so Necro as an admin-chosen opponent only uses melee.
+  - Summon numbers are provisional (OQ-05).
+
 ## Decisions requiring owner attention
 
 

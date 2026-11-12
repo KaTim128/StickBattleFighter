@@ -116,6 +116,9 @@ export class FighterEntity {
   liftTotalS = 0;
   /** Presentation: how far into the arms-up carry pose (0..1), and time left in a throw follow-through. */
   carryWeight = 0;
+  /** Presentation: how strongly magic glows on it (0..1), and how far a held staff follows a swing. */
+  magicGlow = 0;
+  staffSwing = 0;
   throwFollowS = 0;
   interactHoldS = 0;
   interactTracking = false;

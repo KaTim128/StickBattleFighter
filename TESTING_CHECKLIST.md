@@ -307,6 +307,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Rampage Buffer heavyweight idle, walk and run: forward lean, low planted steps, less bounce, arms opposite legs (`heavyweight-motion.test.ts`, browser check)
 - [x] Admin editor: the Opponent selector opens Try in game against the chosen character (browser check)
 
+## 13c. Necro and summons (owner, 12/11/2026)
+- [x] Necro: 3-hit staff combo ending in a knockdown; slightly slower than Inferno (`necro.test.ts`)
+- [x] Soul Drain heals half its damage; Death Eruption lands at the target and traps; Undead Army raises 3 allied skeletons that hunt enemies, never hit him, and crumble; never more than 4; never inside walls or furniture; Death's Dominion ×1.5 ability damage and +2 skeletons (`necro.test.ts`)
+- [x] Mage idle upright with straight legs; summon pose levitates with the free arm raised (`necro-motion.test.ts`)
+- [x] Bone staff in his left hand planted at rest, skull eyes glowing while casting, purple energy (browser check)
+- [x] No eyes on any stickman (browser check)
+
 ## 13a. HUD buttons (owner, 12/11/2026)
 - [x] Ability bar and touch ability buttons show each ability's picture; the name appears on hover
 - [x] No button's text goes outside its button on desktop, a portrait phone or a sideways phone (`tests/e2e/button-fit.spec.ts`)

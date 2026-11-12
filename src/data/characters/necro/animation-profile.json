@@ -7,6 +7,9 @@
     "HeavyPunch": "necro.grave-slam",
     "DownwardAerialKick": "necro.staff-plunge",
     "ClashFinisher": "necro.grave-slam",
-    "ClashWin": "necro.grave-slam"
+    "ClashWin": "necro.grave-slam",
+    "Idle": "proc.idle.mage",
+    "FightingStance": "proc.idle.mage",
+    "Turn": "proc.idle.mage"
   }
 }

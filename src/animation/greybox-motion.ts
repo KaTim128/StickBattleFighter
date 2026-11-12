@@ -114,17 +114,33 @@ export const HEAVYWEIGHT_STANCE = {
 } as const;
 
 /** Movement style: the stance, walk and run a fighter's Animation Profile picks (via its Idle clip). */
-export type IdleStyle = 'boxer' | 'taekwondo' | 'heavyweight';
+export type IdleStyle = 'boxer' | 'taekwondo' | 'heavyweight' | 'mage';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.taekwondo') return 'taekwondo';
   if (clipId === 'proc.idle.heavyweight') return 'heavyweight';
+  if (clipId === 'proc.idle.mage') return 'mage';
   return 'boxer';
 }
 
 /** Idle: planted wide stance with a light bounce on the balls of the feet (1.8 bounces per second). */
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'mage') {
+    // MAGE STANCE (owner, 12/11/2026, Necro: "a straight, confident idle stance, using the staff as
+    // a support"): standing tall on nearly straight legs, chin level, the staff hand (rear, his left)
+    // gripping the planted staff at chest height, the free hand loose at his side. Only a slow,
+    // calm breath moves him.
+    const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.35);
+    return {
+      lean: deg(1 + breath * 1.2),
+      head: deg(-2),
+      armBack: armIk(0.2, 0.32 - breath * 0.01, bones.upperArm, bones.foreArm),
+      armFront: { root: deg(8), bend: deg(18 + breath * 4) },
+      legFront: legIk(0.13, 0.775, bones.thigh, bones.shin),
+      legBack: legIk(-0.15, 0.775, bones.thigh, bones.shin),
+    };
+  }
   if (style === 'heavyweight') {
     const t = HEAVYWEIGHT_STANCE;
     const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * t.breathHz);

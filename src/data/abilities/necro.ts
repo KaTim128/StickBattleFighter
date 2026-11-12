@@ -86,7 +86,8 @@ export const NECRO_KIT: AbilityKit = {
     look: {
       palette: BONE,
       charge: { gatherRadiusM: 1.4, motesPerS: 90, coreMaxM: 0 },
-      impact: { flashM: 1.2, sparks: 20, motes: 60, ringM: 2, smoke: 24, groundFire: false, smokeColour: 0x2e2438 },
+      // A low ring of grave energy at his feet; it never hides him (owner, 12/11/2026).
+      impact: { flashM: 0.4, sparks: 6, motes: 16, ringM: 2, smoke: 5, groundFire: false, smokeColour: 0x2e2438 },
     },
   },
   // ULTIMATE: Death's Dominion. A necromantic transformation for 8 s: dark energy swirls round him,

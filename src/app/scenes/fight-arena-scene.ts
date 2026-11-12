@@ -394,7 +394,7 @@ export class FightArenaScene implements ArenaScene {
         points: [0, 1, 2].map((k) => ({ x: f.x + (k - 1) * 0.15, y: f.y, z: 0.1 + k * 0.2 })),
         colour: 0x6b5b7a,
         colours: [0x4a3d58, 0x8a7a9c, 0x2a2230],
-        count: 30,
+        count: 12, // a light puff of grave dirt: the summoner stays in view
       });
       this.queueSound('summon-rise', 0.7);
     },
@@ -2125,6 +2125,14 @@ export class FightArenaScene implements ArenaScene {
     f.view.stunned = c.state === 'stunned';
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
+    // Magic at work (owner, 12/11/2026): casting, or a power buff, lights the staff skull's eyes and
+    // gathers violet energy; a staff strike swings the staff with the arm.
+    const casting = f.caster?.cast !== null && f.caster?.cast !== undefined;
+    const empowered = (f.buff?.abilityDamageFactor ?? 1) > 1;
+    f.magicGlow += ((casting || empowered ? 1 : 0) - f.magicGlow) * smoothing(8, frameDtS);
+    f.staffSwing += ((f.combo.attack ? 1 : 0) - f.staffSwing) * smoothing(18, frameDtS);
+    f.view.magic = f.magicGlow;
+    f.view.heldSwing = f.staffSwing;
     f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, flashColour, dodge);
     this.limbEffects(f, x, y);
     const stepDust = f.def.effects.aura ? EFFECTS[f.def.effects.aura]?.stepDust : undefined;

@@ -59,6 +59,13 @@ export class StickmanView {
   shieldFlare = 0;
   /** 0..1 a fury buff is on (Rampage Mode): a muscle body's hide flushes red. */
   rage = 0;
+  /**
+   * 0..1 casting magic (Necro, owner 12/11/2026): the staff skull's eyes glow purple and violet
+   * energy gathers at the hood, the staff and around the body.
+   */
+  magic = 0;
+  /** 0..1 how far a held staff follows the swinging arm (a staff strike) instead of standing upright. */
+  heldSwing = 0;
   /** Stunned: stars circle the head (PRS-6). */
   stunned = false;
   private readonly status = new Graphics();
@@ -271,6 +278,7 @@ export class StickmanView {
     else if (this.head === 'skull') this.skullHead(g, s, limb, toward(limb, outline, 0.7), o);
     else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
     if (this.held && flame < 0.01) this.drawHeld(g, s, o);
+    if (this.magic > 0) this.drawMagic(s);
   }
 
   /** Bone and wood colours for Necro's armour and staff, and the souls' violet glow. */
@@ -329,11 +337,12 @@ export class StickmanView {
       const waist = s.pelvis;
       const kneeF = s.legFront[1];
       const kneeB = s.legBack[1];
+      // To the ankles (owner, 12/11/2026: a silhouette that reads "powerful Necromancer" at once).
       const shinF = {
-        x: kneeF.x + (s.legFront[2].x - kneeF.x) * 0.35,
-        y: kneeF.y + (s.legFront[2].y - kneeF.y) * 0.35,
+        x: kneeF.x + (s.legFront[2].x - kneeF.x) * 0.8,
+        y: kneeF.y + (s.legFront[2].y - kneeF.y) * 0.8,
       };
-      const shinB = { x: kneeB.x + (s.legBack[2].x - kneeB.x) * 0.35, y: kneeB.y + (s.legBack[2].y - kneeB.y) * 0.35 };
+      const shinB = { x: kneeB.x + (s.legBack[2].x - kneeB.x) * 0.8, y: kneeB.y + (s.legBack[2].y - kneeB.y) * 0.8 };
       const left = Math.min(shinF.x, shinB.x) - w * 0.9;
       const right = Math.max(shinF.x, shinB.x) + w * 0.9;
       const hem = Math.max(shinF.y, shinB.y);
@@ -443,10 +452,12 @@ export class StickmanView {
       hy + r * 1.25,
       hx - r * 1.2,
       hy - r * 0.4,
-      hx - r * 0.75,
-      hy - r * 1.25,
-      hx - r * 0.1,
-      hy - r * 1.55,
+      hx - r * 0.85,
+      hy - r * 1.35,
+      hx - r * 0.55,
+      hy - r * 2.05,
+      hx - r * 0.05,
+      hy - r * 1.5,
       hx + r * 0.65,
       hy - r * 1.05,
       hx + r * 1.15,
@@ -484,6 +495,99 @@ export class StickmanView {
   }
 
   /**
+   * Necro's bone staff (owner, 12/11/2026: "a bone/skeleton staff in his left hand ... raised rather
+   * than hanging low"): held in the rear (left) hand. At rest it stands upright and is planted on
+   * the floor beside him as a support; when he raises his hand it rises with it, never hanging; in
+   * a staff strike it follows the swinging forearm. A shaft of vertebra-like bone topped by a skull
+   * whose eyes glow purple while he works magic.
+   */
+  private drawStaff(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number): void {
+    const D = StickmanView.DEATH;
+    const [, elbow, hand] = s.armBack;
+    const fx = hand.x - elbow.x;
+    const fy = hand.y - elbow.y;
+    const fl = Math.hypot(fx, fy) || 1;
+    const k = Math.min(1, Math.max(0, this.heldSwing));
+    let ux = (fx / fl) * k;
+    let uy = -(1 - k) + (fy / fl) * k;
+    const ul = Math.hypot(ux, uy) || 1;
+    ux /= ul;
+    uy /= ul;
+    const LENGTH = 1.95;
+    // Upright: the butt rests on the floor (y = 0) when the hand is low enough; otherwise it rises.
+    const below = Math.min(Math.max(0, -hand.y), 0.78) * (1 - k) + 0.45 * k;
+    const butt = { x: hand.x - ux * below, y: hand.y - uy * below };
+    const top = { x: butt.x + ux * LENGTH, y: butt.y + uy * LENGTH };
+    const shaft = (w: number, c: number, a = 1) =>
+      g.moveTo(butt.x, butt.y).lineTo(top.x, top.y).stroke({ width: w, color: c, alpha: a, cap: 'round' });
+    shaft(0.055 + o * 2, 0x241c14);
+    shaft(0.055, D.bone);
+    shaft(0.018, 0xffffff, 0.45);
+    // Vertebra knobs down the shaft.
+    for (let d = 0.18; d < LENGTH - 0.15; d += 0.17) {
+      const p = { x: butt.x + ux * d, y: butt.y + uy * d };
+      g.circle(p.x, p.y, 0.038).fill(0x241c14);
+      g.circle(p.x, p.y, 0.03).fill(D.boneShade);
+    }
+    // The skull on top, facing forward (+x), with two curved prongs of bone behind it.
+    const c = { x: top.x + ux * 0.07, y: top.y + uy * 0.07 };
+    for (const side of [-1, 1]) {
+      g.moveTo(c.x - 0.02, c.y + 0.02)
+        .lineTo(c.x - 0.09, c.y - 0.06 * side - 0.04)
+        .lineTo(c.x - 0.05, c.y - 0.13 * side - 0.02)
+        .stroke({ width: 0.022, color: D.boneShade, cap: 'round', join: 'round' });
+    }
+    g.circle(c.x, c.y, 0.095).fill(0x241c14);
+    g.circle(c.x, c.y, 0.083).fill(D.bone);
+    g.roundRect(c.x - 0.01, c.y + 0.035, 0.08, 0.055, 0.015)
+      .fill(D.bone)
+      .stroke({ width: 0.008, color: 0x241c14 });
+    for (const t of [0.01, 0.03, 0.05]) g.rect(c.x + t, c.y + 0.045, 0.006, 0.03).fill(0x241c14);
+    // Eye sockets: dark, or burning purple while he casts.
+    const m = this.magic;
+    for (const [ex, ey] of [
+      [0.03, -0.01],
+      [0.065, -0.005],
+    ] as const) {
+      g.ellipse(c.x + ex, c.y + ey, 0.017, 0.021).fill(m > 0.05 ? toward(0x1a0826, D.soul, m) : 0x1a0826);
+      if (m > 0.05) {
+        this.fire.circle(c.x + ex, c.y + ey, 0.07).fill({ color: D.soul, alpha: 0.5 * m });
+        g.circle(c.x + ex, c.y + ey, 0.008).fill({ color: D.soulCore, alpha: m });
+      }
+    }
+    if (m > 0.05) this.fire.circle(c.x, c.y, 0.28).fill({ color: D.soul, alpha: 0.16 * m });
+  }
+
+  /**
+   * Violet energy while he works magic (owner, 12/11/2026: "subtle purple magical energy around his
+   * eyes, staff, and body during summoning"): a glow in the hood's face, a faint aura along the
+   * body, and a few motes slowly circling him. Subtle, drawn additively.
+   */
+  private drawMagic(s: ReturnType<typeof solveSkeleton>): void {
+    const m = this.magic;
+    if (m < 0.03) return;
+    const D = StickmanView.DEATH;
+    const f = this.fire;
+    const r = this.bones.headRadius;
+    f.ellipse(s.head.x + r * 0.42, s.head.y, r * 0.65, r * 0.85).fill({ color: D.soul, alpha: 0.35 * m });
+    for (const pts of [s.armBack, s.legBack, [s.pelvis, s.chest, s.neck], s.legFront, s.armFront]) {
+      const [first, ...rest] = pts;
+      if (!first) continue;
+      f.moveTo(first.x, first.y);
+      for (const p of rest) f.lineTo(p.x, p.y);
+      f.stroke({ width: 0.3, color: D.soul, alpha: 0.07 * m, cap: 'round', join: 'round' });
+    }
+    const t = this.clockS;
+    const cy = (s.chest.y + s.pelvis.y) / 2;
+    for (let i = 0; i < 7; i++) {
+      const a = t * 0.9 + (i * Math.PI * 2) / 7;
+      const x = Math.cos(a) * 0.42;
+      const y = cy + Math.sin(a * 1.3 + i) * 0.45;
+      f.circle(x, y, 0.03 + 0.015 * Math.sin(t * 3 + i)).fill({ color: i % 2 ? D.soulCore : D.soul, alpha: 0.7 * m });
+    }
+  }
+
+  /**
    * What the fighter holds in its lead hand, along the forearm: Necro's staff (dark wood, a bone
    * crown cradling a glowing soul crystal) or a skeleton's bone blade.
    */
@@ -496,32 +600,7 @@ export class StickmanView {
     const uy = dy / l;
     const D = StickmanView.DEATH;
     if (this.held === 'staff') {
-      const butt = { x: hand.x - ux * 0.5, y: hand.y - uy * 0.5 };
-      const tip = { x: hand.x + ux * 1.0, y: hand.y + uy * 1.0 };
-      g.moveTo(butt.x, butt.y)
-        .lineTo(tip.x, tip.y)
-        .stroke({ width: 0.06 + o * 2, color: 0x120c08, cap: 'round' });
-      g.moveTo(butt.x, butt.y).lineTo(tip.x, tip.y).stroke({ width: 0.06, color: D.wood, cap: 'round' });
-      g.moveTo(butt.x, butt.y)
-        .lineTo(tip.x, tip.y)
-        .stroke({ width: 0.018, color: D.woodLit, alpha: 0.7, cap: 'round' });
-      // Bone crown: three claws curling round the crystal.
-      const nx = -uy;
-      const ny = ux;
-      for (const side of [-1, 0, 1]) {
-        const base = { x: tip.x - ux * 0.04 + nx * side * 0.05, y: tip.y - uy * 0.04 + ny * side * 0.05 };
-        const end = { x: tip.x + ux * 0.16 + nx * side * 0.08, y: tip.y + uy * 0.16 + ny * side * 0.08 };
-        g.moveTo(base.x, base.y)
-          .lineTo(end.x, end.y)
-          .stroke({ width: 0.03 + o, color: 0x2a241c, cap: 'round' });
-        g.moveTo(base.x, base.y).lineTo(end.x, end.y).stroke({ width: 0.03, color: D.bone, cap: 'round' });
-      }
-      // The soul crystal, glowing (additive) and pulsing.
-      const c = { x: tip.x + ux * 0.1, y: tip.y + uy * 0.1 };
-      const pulse = 0.75 + 0.25 * Math.sin(this.clockS * 4);
-      this.fire.circle(c.x, c.y, 0.2).fill({ color: D.soul, alpha: 0.28 * pulse });
-      g.poly([c.x, c.y - 0.08, c.x + 0.05, c.y, c.x, c.y + 0.08, c.x - 0.05, c.y]).fill(D.soul);
-      g.poly([c.x, c.y - 0.05, c.x + 0.025, c.y, c.x, c.y + 0.04, c.x - 0.02, c.y]).fill(D.soulCore);
+      this.drawStaff(g, s, o);
       return;
     }
     // Bone blade: a pale, tapering blade with a knobbed hilt.

@@ -120,28 +120,63 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.5,
   },
-  // Necro (owner, 12/11/2026). Soul Drain: the staff drawn back as souls gather, then thrust out.
+  // Necro (owner, 12/11/2026). The staff is in his rear (left) hand; the lead hand is free for
+  // spellwork. Soul Drain: the free hand draws souls in as the staff tilts back, then both point.
   soulDrain: {
-    windup: { lean: deg(10), head: deg(4), armFront: limb(30, 120), armBack: limb(10, 110) },
-    release: { lean: deg(-14), head: deg(12), armFront: limb(95, 6), armBack: limb(70, 50) },
+    windup: { lean: deg(4), head: deg(2), armFront: limb(60, 40), armBack: limb(20, 60) },
+    release: { lean: deg(-8), head: deg(6), armFront: limb(95, 6), armBack: limb(70, 30) },
     settle: 0.5,
   },
-  // Death Eruption: the staff raised high, then driven into the floor; the ground answers.
+  // Death Eruption: the staff lifted, then driven down; the ground answers where he points.
   deathEruption: {
-    windup: { lean: deg(8), head: deg(-10), armFront: limb(165, 30), armBack: limb(150, 45) },
-    release: { lean: deg(-30), head: deg(24), armFront: limb(40, 10), armBack: limb(35, 40), ...CROUCH },
+    windup: { lean: deg(4), head: deg(-6), armBack: limb(150, 20), armFront: limb(90, 10) },
+    release: { lean: deg(-14), head: deg(14), armBack: limb(50, 20), armFront: limb(100, 10) },
     settle: 0.4,
   },
-  // Undead Army: both arms spread low, palms down, then swept up as the dead rise.
+  // Undead Army (owner, 12/11/2026: "raise his free arm upward while levitating slightly off the
+  // ground"): upright and still, the free arm rising overhead, the staff held out at his side, and
+  // he lifts off the floor, toes hanging, as the dead claw up. Controlled, never flailing.
   undeadArmy: {
-    windup: { lean: deg(-18), head: deg(16), armFront: limb(30, 20), armBack: limb(-25, 20), ...CROUCH },
-    release: { lean: deg(10), head: deg(-16), armFront: limb(140, 20), armBack: limb(-140, 20) },
-    settle: 0.4,
+    windup: {
+      lean: deg(2),
+      head: deg(-6),
+      armFront: limb(120, 20),
+      armBack: limb(35, 40),
+      legFront: limb(6, -12),
+      legBack: limb(-4, -16),
+      liftM: 0.12,
+    },
+    release: {
+      lean: deg(4),
+      head: deg(-14),
+      armFront: limb(172, 6),
+      armBack: limb(40, 30),
+      legFront: limb(6, -14),
+      legBack: limb(-4, -18),
+      liftM: 0.26,
+    },
+    settle: 0.35,
   },
-  // Death's Dominion: hunched, gathering darkness, then rising with the staff held high.
+  // Death's Dominion: the same levitation, higher, the staff raised overhead with the free arm.
   deathsDominion: {
-    windup: { lean: deg(-34), head: deg(30), armFront: limb(40, 120), armBack: limb(20, 130), ...CROUCH },
-    release: { lean: deg(14), head: deg(-24), armFront: limb(170, 10), armBack: limb(120, 60) },
+    windup: {
+      lean: deg(4),
+      head: deg(-4),
+      armFront: limb(110, 30),
+      armBack: limb(100, 30),
+      legFront: limb(6, -14),
+      legBack: limb(-4, -18),
+      liftM: 0.18,
+    },
+    release: {
+      lean: deg(6),
+      head: deg(-16),
+      armFront: limb(165, 8),
+      armBack: limb(160, 12),
+      legFront: limb(6, -14),
+      legBack: limb(-4, -18),
+      liftM: 0.34,
+    },
     settle: 0.5,
   },
   // Eruption (owner, 11/11/2026): squat deep and gather fire, spring up wrapped in flame (AIR),
