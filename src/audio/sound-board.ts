@@ -213,13 +213,13 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.7, gain: 0.12, type: 'highpass', freq: 4500, attack: 0.12, delay: 0.18 } },
     { crackle: { dur: 0.9, gain: 0.3, count: 18 } },
   ],
-  // Fire Beam (owner, 11/11/2026). The 2 s charge: flames gathering round the body, a long swell
+  // Fire Beam (owner, 11/11/2026). The 1 s charge: flames gathering round the body, a long swell
   // of roaring air over a rising hum, crackling hotter as it builds.
   'beam-charge': [
-    { noise: { dur: 2, gain: 0.32, type: 'bandpass', freq: 220, freqEnd: 1300, q: 0.9, attack: 1.6, flutter: 14 } },
-    { tone: { wave: 'sine', f0: 50, f1: 110, dur: 2, gain: 0.24, attack: 1.4 } },
-    { tone: { wave: 'triangle', f0: 260, f1: 760, dur: 2, gain: 0.05, attack: 1.7 } },
-    { crackle: { dur: 2, gain: 0.14, count: 22 } },
+    { noise: { dur: 1, gain: 0.32, type: 'bandpass', freq: 220, freqEnd: 1300, q: 0.9, attack: 0.8, flutter: 14 } },
+    { tone: { wave: 'sine', f0: 50, f1: 110, dur: 1, gain: 0.24, attack: 0.7 } },
+    { tone: { wave: 'triangle', f0: 260, f1: 760, dur: 1, gain: 0.05, attack: 0.85 } },
+    { crackle: { dur: 1, gain: 0.14, count: 12 } },
   ],
   // The beam: a sustained, concentrated roar of flame for its 1.4 s, gritty and fluttering.
   'beam-roar': [

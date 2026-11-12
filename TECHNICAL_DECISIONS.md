@@ -374,7 +374,7 @@ Playbook §2/§10: start with standard subagents. Agent Teams are experimental a
 - **Fire KO:** `FighterEntity.koByFire` (set by fire hits) and `Combatant.koByBurn` select the ember-ash dissolve, charring and flames.
 - **Body style:** Effects Profile `body: 'solid' | 'flame'`, validated; `StickmanView` draws the flame body.
 - **Alternatives:** an animated sprite sheet per ability (rejected: no art pipeline yet, and procedural effects stay consistent with the vector style); per-ability effect classes (rejected: duplicated logic, against the data-driven rule).
-- **Trade-off:** the 2 s beam charge and the 0.4 s Fireball charge make both easier to interrupt. That is intended (the wind-up is the counterplay).
+- **Trade-off:** the 1 s beam charge (2 s until the owner shortened it, 12/11/2026) and the 0.4 s Fireball charge make both easier to interrupt. That is intended (the wind-up is the counterplay).
 
 ## Unresolved technical questions
 - Performance budgets (OQ-10).

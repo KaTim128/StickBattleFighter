@@ -26,10 +26,10 @@ describe('Inferno kit data (REQ-ABL-2)', () => {
     expect(INFERNO_KIT.ult.interruptible).toBe(false);
   });
 
-  it('telegraphed areas warn before they land (REQ-ABL-6); the beam charges for 2 s first (owner)', () => {
+  it('telegraphed areas warn before they land (REQ-ABL-6); the beam charges for 1 s first (owner, 12/11/2026)', () => {
     const a3 = INFERNO_KIT.a3;
     expect(a3.delivery.type).toBe('beam');
-    expect(a3.castS).toBe(2);
+    expect(a3.castS).toBe(1);
     const ult = INFERNO_KIT.ult.delivery;
     expect(ult.type === 'leap' && ult.airS >= 0.5).toBe(true);
   });

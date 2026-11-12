@@ -1,6 +1,7 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
 import { MusicPlayer } from '../audio/music';
+import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
 import { BUILT_IN_LIBRARY, withEntries } from '../characters/library';
@@ -189,6 +190,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const arenaMusic = scene instanceof FightArenaScene && !automated ? scene.arena.music : undefined;
   const musicId = params.get('music') ?? arenaMusic;
   music.play(musicId ? (MUSIC_TRACKS[musicId] ?? null) : null);
+  // The game falls silent the moment its tab is hidden, and plays on when you come back (owner).
+  pauseAudioWhenHidden(document, () => sound.context, window);
   onFirstInput(window, () => {
     sound.unlock();
     if (sound.context && sound.musicBus) music.attach(sound.context, sound.musicBus);

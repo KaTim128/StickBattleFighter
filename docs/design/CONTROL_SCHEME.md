@@ -66,7 +66,7 @@ Reserved, not bindable: Esc (settings), M (mute), T (dummy attacks), P and ` (de
 ## 4a. Live now (11/11/2026)
 - **Button 1** works: left click on desktop, the **MELEE** button on touch. Ground: four-hit combo, three punches then a kick (press once per strike); in the air: flying kick. **Hold** Button 1 (≥ 0.18 s) to block; raise it just before a hit to parry.
 - **Dodge:** right click (desktop; toward the held W/A/S/D direction, backwards with none), the DODGE button or a joystick flick (touch). A quick low dash, not a roll (Inferno: flame). **Sprint:** hold Shift.
-- **Abilities:** Q / E / R = Fireball, Flame Dash, Fire Beam (2 s charge, then a continuous beam); F = Eruption (jumping ground slam) when the meter is full.
+- **Abilities:** Q / E / R = Fireball, Flame Dash, Fire Beam (1 s charge, then a continuous beam); F = Eruption (jumping ground slam) when the meter is full.
 - **Aiming Eruption (owner, 11/11/2026):** press F to aim: Inferno crouches to spring and a landing ring appears inside the maximum-range ring; **hover the mouse** over the spot (WASD also nudges it) and **left click** to jump (F again works too). Touch: hold ULT, drag to place the ring, release to jump (a plain tap jumps at the locked target). Getting hit while aiming cancels it (the meter is kept). Touch: A1, A2, A3 and ULT around MELEE (five combat buttons); JUMP moved above the arc. Desktop shows an ability bar with cooldowns, stamina costs and the meter; touch draws them on the buttons.
 - **Practice helpers:** T makes the dummy attack you (toggle); `?scene=training-yard` opens the open yard; `?slowmo=0.25` plays in slow motion to study animations.
 - Touch buttons never select or highlight their label when held (REQ-CTL-16).

@@ -100,7 +100,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
-  it('Fire Beam (owner, 11/11/2026): a 2 s charge with no damage, then a continuous beam that hits again and again, burns and pushes', async () => {
+  it('Fire Beam (owner, 11/11/2026): a 1 s charge with no damage, then a continuous beam that hits again and again, burns and pushes', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 17.4, y: 13 });
     intents.pressAbility('a3');
     run(STEP);

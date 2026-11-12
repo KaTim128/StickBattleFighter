@@ -77,7 +77,7 @@ export const INFERNO_KIT: AbilityKit = {
     sfx: { cast: 'fire-charge', release: 'fire-rush', impact: 'fire-burst-small' },
   },
   // A3: Fire Beam (owner, 11/11/2026, replacing the old ring-of-fire Eruption). Inferno gathers
-  // flames around his body and hands for 2 s (interruptible), then pours a concentrated beam of
+  // flames around his body and hands for 1 s (owner, 12/11/2026: was 2 s; interruptible), then pours a concentrated beam of
   // fire straight at the target for 1.4 s: medium reach (6.5 m, stopped by walls), hitting every
   // 0.15 s with a push and a burn. Damage falls off with distance: 15 per tick within 1.5 m
   // (about 135 for the whole beam), easing to 45% (about 60) at the far end.
@@ -88,7 +88,7 @@ export const INFERNO_KIT: AbilityKit = {
     slot: 'a3',
     staminaCost: 35,
     cooldownS: 8,
-    castS: 2,
+    castS: 1,
     recoveryS: 1.75,
     aimRangeM: 7,
     moveFactor: 0,

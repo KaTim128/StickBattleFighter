@@ -376,6 +376,13 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - **Performance:** in the headless software renderer, a Fire Beam in the office went from 7 to 6 fps. Software rendering is far slower than a GPU, so check on a real device (OQ-10).
 - **Screenshots:** `docs/screenshots/doorway-single-pane.png`, `fire-shapes.png`, `death-by-fire-burn-away.png`.
 
+### 12/11/2026: Silent in the background; 1 s Fire Beam charge (owner)
+- **Background audio:** when the game's tab is hidden (or the page is left), `pauseAudioWhenHidden` (`src/audio/pause-when-hidden.ts`) suspends the shared audio context at once, so music and effects stop. It resumes only what it paused when the tab is shown again, and the music carries on from the same spot.
+- **Fire Beam:** the charge is now 1 s (was 2 s), and its charge sound is shortened to match.
+- **Evidence:**
+  - lint clean; typecheck 0; `npm test` 291/291, including two new tests for the background pause;
+  - in Chromium the audio context went from running to suspended when hidden, and back to running when shown.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
