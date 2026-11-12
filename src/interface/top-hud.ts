@@ -67,6 +67,18 @@ class Side {
     this.status = this.root.querySelector('.th-status')!;
   }
 
+  private hasImage = false;
+
+  /** The fighter's own rendered face. */
+  setPortrait(url: string): void {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = '';
+    this.portrait.dataset.style = 'image';
+    this.portrait.replaceChildren(img);
+    this.hasImage = true;
+  }
+
   update(f: HudFighter): void {
     const hp = Math.max(0, Math.min(1, f.hp / f.maxHp));
     // The red "lost health" shadow catches up a moment after a hit, so the damage reads.
@@ -79,7 +91,7 @@ class Side {
     if (key === this.shown) return;
     this.shown = key;
     this.name.textContent = f.name;
-    this.portrait.dataset.style = f.portrait;
+    if (!this.hasImage) this.portrait.dataset.style = f.portrait;
     this.portrait.style.setProperty('--fighter', f.colour);
     this.status.replaceChildren(
       ...f.status.map((s) => {
@@ -112,6 +124,12 @@ export class TopHud {
     centre.append(this.timer, this.action);
     this.root.append(this.left.root, centre, this.right.root);
     parent.appendChild(this.root);
+  }
+
+  /** Rendered faces for the two fighters. */
+  setPortraits(left: string, right: string): void {
+    this.left.setPortrait(left);
+    this.right.setPortrait(right);
   }
 
   update(s: TopHudState): void {

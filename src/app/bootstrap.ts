@@ -5,6 +5,7 @@ import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
 import { BUILT_IN_LIBRARY, DEFAULT_CAST, withEntries } from '../characters/library';
+import { resolveCharacter } from '../characters/resolve';
 import type { CharacterLibrary } from '../characters/schema';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
@@ -29,6 +30,7 @@ import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
+import { renderPortrait } from '../rendering/portraits';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
 import type { ArenaScene } from './scenes/arena-scene';
@@ -413,6 +415,22 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     fullscreen: () => (document.fullscreenElement ? exitFullscreen() : enterFullscreen()),
   });
   if (scene instanceof FightArenaScene && !automated && !params.has('play')) menu.setOpen(true);
+  // Portraits are the fighters themselves, drawn by the game's own renderer (owner, 12/11/2026).
+  void (async () => {
+    try {
+      // The fight's own portraits first (seen at once), then the menu's.
+      if (scene instanceof FightArenaScene) {
+        topHud.setPortraits(
+          await renderPortrait(app, scene.playerFighter.def),
+          await renderPortrait(app, scene.dummyFighter.def),
+        );
+      }
+      for (const f of menuFighters())
+        menu.setPortrait(f.id, await renderPortrait(app, resolveCharacter(f.id, BUILT_IN_LIBRARY)));
+    } catch (error) {
+      console.warn('[portraits] could not render fighter portraits', error);
+    }
+  })();
   if (touchDevice) {
     // After choosing on the menu the page reloads, which leaves fullscreen: the first tap restores it.
     const once = (): void => {

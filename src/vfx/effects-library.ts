@@ -17,6 +17,8 @@ export interface EffectDef {
   /** Fire particles around the fists and feet while attacking. */
   readonly limbFlames?: boolean;
   /** Embers drifting off the body all the time. */
+  /** Dust colours kicked up at each footfall (heavy fighters). */
+  readonly stepDust?: readonly number[];
   readonly bodyEmbers?: boolean;
 }
 
@@ -66,6 +68,8 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },
   'fire-aura': { bodyEmbers: true },
+  // A heavyweight's footfalls kick up a puff of dust (Rampage).
+  'dust-steps': { stepDust: [0xb8aa94, 0x9a8c78, 0xd8ccb8] },
 };
 
 export function isEffect(id: string): boolean {

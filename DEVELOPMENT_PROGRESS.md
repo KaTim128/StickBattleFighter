@@ -422,6 +422,18 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
   - screenshots `docs/screenshots/rampage-abilities.png`, `main-menu.png`, `mobile-landscape-hud.png` (emulated 800×360 landscape phone).
 - **Limitations:** fullscreen cannot be tested headless, so check it on your phone. The menu reloads the page to switch fighter.
 
+### 12/11/2026: Real fighter portraits; Rampage's look raised to Inferno's level; CI lint fix (owner)
+- **Portraits** (`src/rendering/portraits.ts`): each fighter is drawn by the game's own renderer, framed on its head, and used in the menu cards and the top HUD (the CSS icons were only placeholders).
+- **Rampage's look:**
+  - shaded, muscular limbs;
+  - bronze bracers, knee guards, pauldron and chest strap;
+  - red fist wraps and sash;
+  - a sculpted rhino head with an ivory horn and a glowing amber eye;
+  - a warmer hide, and dust puffs at his footsteps (effect `dust-steps`).
+- **Ability bar:** wider slots, so long ability names wrap instead of being cut.
+- **CI:** the CI lint failed on a duplicate `height` in `index.html`; it is now an `@supports` rule. Run `npm run lint` (the whole repository) before pushing, not just `src` and `tests`.
+- **Evidence:** `npm run lint` clean (1 info, in an old mockup); typecheck 0; `npm test` 304/304; `npm run e2e` 33 passed; `docs/screenshots/portraits-and-rampage-look.png`.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:

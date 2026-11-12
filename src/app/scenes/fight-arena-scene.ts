@@ -1978,7 +1978,19 @@ export class FightArenaScene implements ArenaScene {
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
     f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, flashColour, dodge);
     this.limbEffects(f, x, y);
-    for (let n = f.animator.takeFootfalls(); n > 0; n--) this.characterSound(f, 'footstep', 0.5);
+    const stepDust = f.def.effects.aura ? EFFECTS[f.def.effects.aura]?.stepDust : undefined;
+    for (let n = f.animator.takeFootfalls(); n > 0; n--) {
+      this.characterSound(f, 'footstep', 0.5);
+      // Heavy feet kick up dust (an Effects Profile aura).
+      if (stepDust && !f.airborne)
+        this.frameDust.push({
+          points: [{ x, y, z: 0.05 }],
+          colour: stepDust[0]!,
+          colours: stepDust,
+          onlyColours: true,
+          count: 10,
+        });
+    }
     const at = iso(x, y);
     f.view.root.position.set(at.x, at.y);
     const vel = f.body?.linvel();

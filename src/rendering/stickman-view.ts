@@ -27,7 +27,15 @@ export interface DodgeLook {
 }
 
 /** Armoured body colours (Rampage, owner 12/11/2026). */
-const ARMOUR = { rage: 0xd8281a } as const;
+const ARMOUR = {
+  rage: 0xd8281a,
+  bronze: 0xa8743a,
+  bronzeLit: 0xe2b46a,
+  cloth: 0xa3241c,
+  horn: 0xe9dcc0,
+  hornShade: 0xb8a684,
+  eye: 0xffb23a,
+} as const;
 
 /** Living-flame body colours (Inferno, owner 11/11/2026). */
 const FLAME = { glow: 0xff5a14, ember: 0x6a1404, deep: 0xd8320c, core: 0xffd56a } as const;
@@ -201,7 +209,7 @@ export class StickmanView {
       if (!fiery) {
         stroke(pts, outline, w + o * 2);
         stroke(pts, colour, w);
-        if (armoured) this.armourDetail(g, pts, w, colour, outline, i === 2);
+        if (armoured) this.armourDetail(g, pts, w, colour, outline, i);
         return;
       }
       const edge = toward(FLAME.ember, flashColour, flash * 0.85);
@@ -374,9 +382,11 @@ export class StickmanView {
   }
 
   /**
-   * Armoured hide (Rampage, owner 12/11/2026: "thick armour-like skin", muscular): darker plates
-   * over the forearms and shins with a light top edge, bulging muscle where the upper arms and thighs
-   * meet the body, and on the torso a broad chest plate with heavy shoulder pads.
+   * Armoured hide (Rampage, owner 12/11/2026: muscular, "thick armour-like skin", the same quality
+   * as Inferno): each limb is shaded (a lit top edge, a shadowed underside) and tapers with muscle;
+   * bronze gear over the hide (bracers, knee guards, a shoulder pauldron, a chest strap) and red
+   * cloth (fist wraps, a waist sash) for his identity. `part`: 0 rear arm, 1 rear leg, 2 torso,
+   * 3 lead leg, 4 lead arm.
    */
   private armourDetail(
     g: Graphics,
@@ -384,57 +394,102 @@ export class StickmanView {
     w: number,
     colour: number,
     outline: number,
-    torso: boolean,
+    part: number,
   ): void {
-    const plate = toward(colour, 0x000000, 0.28);
-    const shine = toward(colour, 0xffffff, 0.35);
-    if (torso) {
-      const [pelvis, chest] = pts;
-      if (!pelvis || !chest) return;
-      // A broad chest plate along the spine, and round shoulder pads at the top.
-      g.moveTo(pelvis.x, pelvis.y)
-        .lineTo(chest.x, chest.y)
-        .stroke({ width: w * 2.1, color: outline, cap: 'round' })
-        .moveTo(pelvis.x, pelvis.y)
-        .lineTo(chest.x, chest.y)
-        .stroke({ width: w * 1.75, color: plate, cap: 'round' });
-      for (const k of [0.35, 0.65]) {
-        const x = pelvis.x + (chest.x - pelvis.x) * k;
-        const y = pelvis.y + (chest.y - pelvis.y) * k;
-        g.moveTo(x - w * 0.7, y)
-          .lineTo(x + w * 0.7, y)
-          .stroke({ width: w * 0.12, color: shine, alpha: 0.5 });
-      }
-      g.circle(chest.x, chest.y, w * 1.05)
-        .fill(plate)
-        .stroke({ width: w * 0.3, color: outline });
-      g.circle(chest.x - w * 0.25, chest.y - w * 0.3, w * 0.35).fill({ color: shine, alpha: 0.5 });
+    const lit = toward(colour, 0xffffff, 0.32);
+    const shade = toward(colour, 0x000000, 0.3);
+    const seg = (p: Point, q: Point, width: number, c: number, alpha = 1, k0 = 0, k1 = 1, off = 0) => {
+      const dx = q.x - p.x;
+      const dy = q.y - p.y;
+      const l = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / l) * off;
+      const ny = (dx / l) * off;
+      g.moveTo(p.x + dx * k0 + nx, p.y + dy * k0 + ny)
+        .lineTo(p.x + dx * k1 + nx, p.y + dy * k1 + ny)
+        .stroke({ width, color: c, alpha, cap: 'round' });
+    };
+    if (part === 2) {
+      const [pelvis, chest, neck] = pts;
+      if (!pelvis || !chest || !neck) return;
+      // A broad, deep chest tapering to the waist: a wedge of hide with a lit edge.
+      seg(pelvis, chest, w * 2.2, outline, 1, 0.15, 1);
+      seg(pelvis, chest, w * 1.9, colour, 1, 0.15, 1);
+      seg(pelvis, chest, w * 0.5, lit, 0.55, 0.3, 0.95, -w * 0.55);
+      seg(pelvis, chest, w * 0.45, shade, 0.5, 0.2, 0.95, w * 0.6);
+      // Thick neck.
+      seg(chest, neck, w * 1.5, outline);
+      seg(chest, neck, w * 1.25, colour);
+      // Bronze chest strap across the torso, with rivets.
+      const mx = (pelvis.x + chest.x) / 2;
+      const my = (pelvis.y + chest.y) / 2;
+      g.moveTo(chest.x - w * 0.9, chest.y + w * 0.2)
+        .lineTo(mx + w * 0.9, my + w * 0.4)
+        .stroke({ width: w * 0.42, color: outline, cap: 'round' })
+        .moveTo(chest.x - w * 0.9, chest.y + w * 0.2)
+        .lineTo(mx + w * 0.9, my + w * 0.4)
+        .stroke({ width: w * 0.28, color: ARMOUR.bronze, cap: 'round' });
+      // Red waist sash with a hanging tail.
+      g.roundRect(pelvis.x - w * 1.0, pelvis.y - w * 0.95, w * 2.0, w * 0.6, w * 0.2)
+        .fill(ARMOUR.cloth)
+        .stroke({ width: w * 0.12, color: outline });
+      g.moveTo(pelvis.x - w * 0.8, pelvis.y - w * 0.4)
+        .quadraticCurveTo(pelvis.x - w * 1.3, pelvis.y + w * 0.4, pelvis.x - w * 1.1, pelvis.y + w * 0.9)
+        .stroke({ width: w * 0.35, color: ARMOUR.cloth, cap: 'round' });
+      // Bronze pauldron on the lead shoulder, with rivets and a lit rim.
+      g.moveTo(chest.x - w * 1.15, chest.y + w * 0.35)
+        .arc(chest.x, chest.y + w * 0.1, w * 1.15, Math.PI, 0)
+        .closePath()
+        .fill(ARMOUR.bronze)
+        .stroke({ width: w * 0.16, color: outline });
+      g.arc(chest.x, chest.y + w * 0.1, w * 0.95, Math.PI * 1.1, Math.PI * 1.7).stroke({
+        width: w * 0.16,
+        color: ARMOUR.bronzeLit,
+        alpha: 0.8,
+      });
+      for (const k of [-0.6, 0, 0.6]) g.circle(chest.x + w * k, chest.y - w * 0.45, w * 0.1).fill(ARMOUR.bronzeLit);
       return;
     }
     const [root, mid, end] = pts;
     if (!root || !mid || !end) return;
-    // Muscle: a bulge on the upper segment.
-    g.moveTo(root.x + (mid.x - root.x) * 0.25, root.y + (mid.y - root.y) * 0.25)
-      .lineTo(root.x + (mid.x - root.x) * 0.7, root.y + (mid.y - root.y) * 0.7)
-      .stroke({ width: w * 1.45, color: colour, cap: 'round' });
-    // A plate over the lower segment (forearm or shin) with a bright top edge.
-    const a = { x: mid.x + (end.x - mid.x) * 0.2, y: mid.y + (end.y - mid.y) * 0.2 };
-    const b = { x: mid.x + (end.x - mid.x) * 0.85, y: mid.y + (end.y - mid.y) * 0.85 };
-    g.moveTo(a.x, a.y)
-      .lineTo(b.x, b.y)
-      .stroke({ width: w * 1.3, color: outline, cap: 'round' });
-    g.moveTo(a.x, a.y)
-      .lineTo(b.x, b.y)
-      .stroke({ width: w * 1.05, color: plate, cap: 'round' });
-    g.moveTo(a.x, a.y - w * 0.25)
-      .lineTo(b.x, b.y - w * 0.25)
-      .stroke({ width: w * 0.16, color: shine, alpha: 0.6 });
+    const arm = part === 0 || part === 4;
+    // Muscle: thick upper segment (bicep or thigh) tapering to the joint, lit on top and shaded below.
+    seg(root, mid, w * 1.55, outline, 1, 0.08, 0.78);
+    seg(root, mid, w * 1.3, colour, 1, 0.08, 0.78);
+    seg(root, mid, w * 0.35, lit, 0.6, 0.15, 0.7, -w * 0.38);
+    seg(root, mid, w * 0.35, shade, 0.55, 0.15, 0.7, w * 0.4);
+    // Lower segment lit edge.
+    seg(mid, end, w * 0.28, lit, 0.5, 0.1, 0.8, -w * 0.3);
+    if (arm) {
+      // Bronze bracer near the wrist, and a big fist wrapped in red cloth.
+      seg(mid, end, w * 1.35, outline, 1, 0.42, 0.78);
+      seg(mid, end, w * 1.15, ARMOUR.bronze, 1, 0.44, 0.76);
+      seg(mid, end, w * 0.22, ARMOUR.bronzeLit, 0.9, 0.46, 0.74, -w * 0.35);
+      g.circle(end.x, end.y, w * 0.82)
+        .fill(ARMOUR.cloth)
+        .stroke({ width: w * 0.16, color: outline });
+      g.moveTo(end.x - w * 0.5, end.y - w * 0.25)
+        .lineTo(end.x + w * 0.5, end.y - w * 0.05)
+        .stroke({
+          width: w * 0.12,
+          color: toward(ARMOUR.cloth, 0x000000, 0.35),
+        });
+    } else {
+      // Bronze knee guard over the joint, and a heavy foot.
+      g.circle(mid.x, mid.y, w * 0.78)
+        .fill(ARMOUR.bronze)
+        .stroke({ width: w * 0.16, color: outline });
+      g.circle(mid.x - w * 0.2, mid.y - w * 0.25, w * 0.25).fill({ color: ARMOUR.bronzeLit, alpha: 0.85 });
+      g.ellipse(end.x + w * 0.35, end.y, w * 0.85, w * 0.45)
+        .fill(shade)
+        .stroke({ width: w * 0.14, color: outline });
+    }
   }
 
   /**
-   * A rhino's head (Rampage): a big heavy skull pushed forward, a great curved horn rising from the
-   * snout with a smaller one behind it, a small ear, a heavy brow over a narrow eye that glows red in
-   * Rampage Mode. Drawn in the figure's frame (+x = forward).
+   * A rhino's head (Rampage), sculpted to the same standard as Inferno's flame head: a heavy skull
+   * pushed forward on a long snout, a great ivory horn (lit and shaded) with a second horn behind
+   * it, a thick brow ridge over a small glowing amber eye (red-hot in Rampage Mode), a flared
+   * nostril, a cupped ear and deep skin folds. Drawn in the figure's frame (+x = forward).
    */
   private rhinoHead(
     g: Graphics,
@@ -447,48 +502,74 @@ export class StickmanView {
     const hx = s.head.x;
     const hy = s.head.y;
     const skin = this.rage > 0 ? toward(colour, ARMOUR.rage, this.rage * 0.3) : colour;
-    const horn = 0xe8dcc0;
-    // Ear behind.
-    g.ellipse(hx - r * 0.55, hy - r * 0.85, r * 0.22, r * 0.38)
+    const lit = toward(skin, 0xffffff, 0.3);
+    const shade = toward(skin, 0x000000, 0.32);
+    // Ear (cupped, with a darker inside).
+    g.ellipse(hx - r * 0.62, hy - r * 0.78, r * 0.24, r * 0.4)
       .fill(skin)
       .stroke({ width: o, color: outline });
-    // Skull and long snout.
-    g.ellipse(hx, hy, r * 1.08, r * 0.95)
+    g.ellipse(hx - r * 0.6, hy - r * 0.74, r * 0.12, r * 0.26).fill(shade);
+    // Skull and snout as one heavy shape.
+    g.moveTo(hx - r * 0.95, hy + r * 0.2)
+      .bezierCurveTo(hx - r * 1.05, hy - r * 0.9, hx + r * 0.2, hy - r * 1.15, hx + r * 0.7, hy - r * 0.55)
+      .bezierCurveTo(hx + r * 1.1, hy - r * 0.35, hx + r * 1.55, hy - r * 0.15, hx + r * 1.5, hy + r * 0.3)
+      .bezierCurveTo(hx + r * 1.45, hy + r * 0.72, hx + r * 0.6, hy + r * 0.85, hx - r * 0.1, hy + r * 0.8)
+      .bezierCurveTo(hx - r * 0.6, hy + r * 0.78, hx - r * 0.9, hy + r * 0.55, hx - r * 0.95, hy + r * 0.2)
+      .closePath()
       .fill(skin)
       .stroke({ width: o * 1.4, color: outline });
-    g.roundRect(hx + r * 0.2, hy - r * 0.25, r * 1.15, r * 0.95, r * 0.4)
-      .fill(skin)
-      .stroke({ width: o * 1.4, color: outline });
-    // The great horn: a curved cone from the end of the snout, and a small one behind it.
-    g.moveTo(hx + r * 0.95, hy - r * 0.2)
-      .quadraticCurveTo(hx + r * 1.55, hy - r * 0.6, hx + r * 1.35, hy - r * 1.55)
-      .quadraticCurveTo(hx + r * 1.2, hy - r * 0.7, hx + r * 0.55, hy - r * 0.25)
-      .closePath()
-      .fill(horn)
-      .stroke({ width: o, color: outline });
-    g.moveTo(hx + r * 0.45, hy - r * 0.35)
-      .quadraticCurveTo(hx + r * 0.7, hy - r * 0.75, hx + r * 0.6, hy - r * 1.05)
-      .quadraticCurveTo(hx + r * 0.45, hy - r * 0.7, hx + r * 0.2, hy - r * 0.45)
-      .closePath()
-      .fill(horn)
-      .stroke({ width: o * 0.8, color: outline });
-    // Heavy brow and a narrow eye (red-hot in Rampage Mode), and a nostril.
-    g.moveTo(hx - r * 0.05, hy - r * 0.42)
-      .lineTo(hx + r * 0.5, hy - r * 0.3)
-      .stroke({ width: o * 1.6, color: outline, cap: 'round' });
-    const eye = this.rage > 0 ? toward(0xfff1c0, 0xff2a1a, this.rage) : 0xfff1c0;
-    if (this.rage > 0)
-      g.circle(hx + r * 0.25, hy - r * 0.15, r * 0.3).fill({ color: 0xff3a1a, alpha: 0.35 * this.rage });
-    g.ellipse(hx + r * 0.25, hy - r * 0.15, r * 0.14, r * 0.08)
-      .fill(eye)
-      .stroke({ width: o * 0.6, color: outline });
-    g.circle(hx + r * 1.1, hy + r * 0.25, r * 0.07).fill(outline);
-    // Wrinkled, armour-thick hide: a few creases on the neck.
-    for (const k of [0, 1]) {
-      g.moveTo(hx - r * 0.7, hy + r * (0.25 + k * 0.25))
-        .quadraticCurveTo(hx - r * 0.45, hy + r * (0.45 + k * 0.25), hx - r * 0.15, hy + r * (0.35 + k * 0.25))
-        .stroke({ width: o * 0.7, color: toward(skin, 0x000000, 0.35), alpha: 0.7 });
+    // Lit crown and shaded jaw.
+    g.moveTo(hx - r * 0.6, hy - r * 0.6)
+      .quadraticCurveTo(hx + r * 0.1, hy - r * 1.0, hx + r * 0.6, hy - r * 0.5)
+      .stroke({ width: o * 1.3, color: lit, alpha: 0.75, cap: 'round' });
+    g.moveTo(hx - r * 0.2, hy + r * 0.62)
+      .quadraticCurveTo(hx + r * 0.6, hy + r * 0.72, hx + r * 1.25, hy + r * 0.5)
+      .stroke({ width: o * 1.6, color: shade, alpha: 0.7, cap: 'round' });
+    // Skin folds where the head meets the neck.
+    for (const k of [0, 1, 2]) {
+      g.moveTo(hx - r * (0.85 - k * 0.12), hy + r * (0.05 + k * 0.22))
+        .quadraticCurveTo(
+          hx - r * (0.55 - k * 0.1),
+          hy + r * (0.28 + k * 0.22),
+          hx - r * (0.3 - k * 0.1),
+          hy + r * (0.15 + k * 0.22),
+        )
+        .stroke({ width: o * 0.8, color: shade, alpha: 0.8 });
     }
+    // The great horn: ivory, curving up and forward from the snout, lit on its front edge.
+    const tipX = hx + r * 1.62;
+    const tipY = hy - r * 1.75;
+    g.moveTo(hx + r * 1.32, hy - r * 0.18)
+      .quadraticCurveTo(hx + r * 1.85, hy - r * 0.75, tipX, tipY)
+      .quadraticCurveTo(hx + r * 1.25, hy - r * 0.95, hx + r * 0.78, hy - r * 0.35)
+      .closePath()
+      .fill(ARMOUR.horn)
+      .stroke({ width: o * 1.1, color: outline });
+    g.moveTo(hx + r * 1.4, hy - r * 0.3)
+      .quadraticCurveTo(hx + r * 1.72, hy - r * 0.8, tipX - r * 0.05, tipY + r * 0.2)
+      .stroke({ width: o * 0.9, color: 0xfffaf0, alpha: 0.9, cap: 'round' });
+    g.moveTo(hx + r * 0.95, hy - r * 0.32)
+      .quadraticCurveTo(hx + r * 1.2, hy - r * 0.75, hx + r * 1.38, hy - r * 1.05)
+      .stroke({ width: o * 0.9, color: ARMOUR.hornShade, alpha: 0.8, cap: 'round' });
+    // The second, smaller horn behind it.
+    g.moveTo(hx + r * 0.62, hy - r * 0.55)
+      .quadraticCurveTo(hx + r * 0.85, hy - r * 0.95, hx + r * 0.75, hy - r * 1.18)
+      .quadraticCurveTo(hx + r * 0.55, hy - r * 0.85, hx + r * 0.32, hy - r * 0.62)
+      .closePath()
+      .fill(ARMOUR.horn)
+      .stroke({ width: o * 0.9, color: outline });
+    // Heavy brow ridge, the glowing eye under it, and a flared nostril.
+    const rage = this.rage;
+    const eye = toward(ARMOUR.eye, 0xff2a1a, rage);
+    g.circle(hx + r * 0.3, hy - r * 0.12, r * 0.3).fill({ color: eye, alpha: 0.22 + 0.3 * rage });
+    g.ellipse(hx + r * 0.3, hy - r * 0.12, r * 0.15, r * 0.1)
+      .fill(eye)
+      .stroke({ width: o * 0.7, color: outline });
+    g.circle(hx + r * 0.34, hy - r * 0.13, r * 0.045).fill(outline);
+    g.moveTo(hx - r * 0.05, hy - r * 0.38)
+      .quadraticCurveTo(hx + r * 0.3, hy - r * 0.48, hx + r * 0.62, hy - r * 0.28)
+      .stroke({ width: o * 2, color: outline, cap: 'round' });
+    g.ellipse(hx + r * 1.28, hy + r * 0.22, r * 0.1, r * 0.07).fill(outline);
   }
 
   /** Charred streaks: short dark flecks drifting along a limb, so the fire has darker detail. */

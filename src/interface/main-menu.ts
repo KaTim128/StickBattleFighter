@@ -94,6 +94,12 @@ export class MainMenu {
     this.refresh();
   }
 
+  /** Show a fighter's rendered portrait on its card (the fighter's own face, not an icon). */
+  setPortrait(fighterId: string, url: string): void {
+    const face = this.root.querySelector<HTMLElement>(`[data-fighter="${fighterId}"] .mm-portrait`);
+    if (face) setPortraitImage(face, url);
+  }
+
   get isOpen(): boolean {
     return this.open;
   }
@@ -133,4 +139,13 @@ export function enterFullscreen(): void {
 
 export function exitFullscreen(): void {
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+}
+
+/** Replace a portrait frame's placeholder with the rendered image. */
+export function setPortraitImage(frame: HTMLElement, url: string): void {
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = '';
+  frame.dataset.style = 'image';
+  frame.replaceChildren(img);
 }

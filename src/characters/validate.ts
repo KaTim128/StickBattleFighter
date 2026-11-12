@@ -1,7 +1,7 @@
 import { ABILITY_KITS } from '../abilities/kits';
 import { CLIPS } from '../animation/clips';
 import { hasSound } from '../audio/sound-board';
-import { isEffect } from '../vfx/effects-library';
+import { EFFECTS, isEffect } from '../vfx/effects-library';
 import { animationChain, expandTemplate, moveRequirements, resolveAnimation, STRIKE_STATES } from './resolve';
 import {
   ANIMATION_STATES,
@@ -279,7 +279,9 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
     if (fx.head !== undefined && !(HEAD_STYLES as readonly string[]).includes(fx.head)) {
       errors.push(`${e}.head: unknown head style "${fx.head}" (use ${HEAD_STYLES.join(' or ')}).`);
     }
-    if ((fx.limbTrail || fx.aura) && !cap('usesElementalEffects')) {
+    // Footstep dust is not elemental, so only elemental auras (embers) need the capability.
+    const elementalAura = fx.aura ? !EFFECTS[fx.aura]?.stepDust : false;
+    if ((fx.limbTrail || elementalAura) && !cap('usesElementalEffects')) {
       warnings.push(
         `${e}: elemental trail/aura effects are set but usesElementalEffects is off, so they will not show.`,
       );

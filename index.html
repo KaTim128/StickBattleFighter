@@ -6,7 +6,9 @@
     <meta name="theme-color" content="#11151c" />
     <title>Stickman Arena</title>
     <style>
-      html, body { margin: 0; height: 100%; height: 100dvh; background: #11151c; overflow: hidden; }
+      html, body { margin: 0; height: 100%; background: #11151c; overflow: hidden; }
+      /* Phones: the visible height, so the game fills the screen past the browser's bars. */
+      @supports (height: 100dvh) { html, body { height: 100dvh; } }
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; width: 100%; height: 100%; touch-action: none; }
       #status {
@@ -73,7 +75,7 @@
       }
       .ability-bar[hidden], body.touch-mode .ability-bar { display: none; }
       .ability-slot {
-        position: relative; width: 64px; height: 54px; border-radius: 8px; overflow: hidden;
+        position: relative; width: 84px; height: 58px; border-radius: 8px; overflow: hidden;
         border: 2px solid rgba(255, 140, 60, 0.7); display: flex; flex-direction: column;
         align-items: center; justify-content: center; gap: 2px;
         background: linear-gradient(to top, rgba(200, 70, 20, 0.75) var(--fill, 100%), rgba(20, 22, 28, 0.8) 0);
@@ -83,7 +85,7 @@
         background: linear-gradient(to top, rgba(255, 170, 30, 0.85) var(--fill, 0%), rgba(20, 22, 28, 0.8) 0);
       }
       .ab-key { position: absolute; left: 4px; top: 2px; font-weight: 800; color: #ffd8b0; }
-      .ab-name { margin-top: 8px; font-weight: 700; white-space: nowrap; }
+      .ab-name { margin-top: 10px; font-weight: 700; font-size: 11px; line-height: 1.05; text-align: center; padding: 0 3px; }
       .ab-cost { font-size: 10px; opacity: 0.85; }
       .clash-hud {
         position: fixed; left: 50%; top: 46px; transform: translateX(-50%); pointer-events: none;
@@ -285,6 +287,8 @@
         content: ''; position: absolute; right: -6px; top: -12px; border-left: 6px solid transparent; border-right: 6px solid transparent;
         border-bottom: 16px solid #e8dcc0; transform: rotate(18deg);
       }
+      .th-portrait[data-style='image'] { background: radial-gradient(circle at 50% 40%, #3a3f4c, #14171e); }
+      .th-portrait[data-style='image'] img { width: 100%; height: 100%; object-fit: contain; display: block; }
       .settings-actions { display: flex; gap: 8px; margin-top: 14px; }
       .settings-actions button {
         flex: 1; padding: 9px 10px; border-radius: 8px; border: 2px solid rgba(232, 237, 245, 0.25); background: #262e3c;
