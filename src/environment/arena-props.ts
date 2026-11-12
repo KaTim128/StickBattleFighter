@@ -82,13 +82,17 @@ const ROLL_SETTLE_RADPS = 7;
  * The face a tumbling box comes to rest on: the nearest quarter turn (upright, either side, upside
  * down), so it keeps the orientation its momentum gave it rather than snapping upright.
  */
-export function restingRoll(roll: number): number {
-  const q = Math.PI / 2;
-  // Normalise into (−π, π], then to the nearest quarter turn.
-  let r = roll % (2 * Math.PI);
+/** An angle wrapped into (−π, π]. */
+export function wrapAngle(a: number): number {
+  let r = a % (2 * Math.PI);
   if (r > Math.PI) r -= 2 * Math.PI;
   if (r <= -Math.PI) r += 2 * Math.PI;
-  const k = Math.round(r / q);
+  return r;
+}
+
+export function restingRoll(roll: number): number {
+  const q = Math.PI / 2;
+  const k = Math.round(wrapAngle(roll) / q);
   return k * q === -Math.PI ? Math.PI : k * q;
 }
 
@@ -527,8 +531,12 @@ export class ArenaProps {
 
   /** It hit the floor: fragile things shatter if it came down hard; anything thrown stops flying. */
   private land(prop: ArenaProp, fallMps: number): void {
-    // Landing ends the free tumble: from here it settles onto its nearest face (see update).
-    if (prop.rollVel !== 0) prop.rollVel = Math.sign(prop.rollVel) * 1e-3;
+    // Landing ends the free tumble: from here it settles onto its nearest face (see update). Whole
+    // turns made in the air are dropped, so it tips the short way onto that face.
+    if (prop.rollVel !== 0) {
+      prop.roll = wrapAngle(prop.roll);
+      prop.rollVel = Math.sign(prop.rollVel) * 1e-3;
+    }
     const body = prop.body;
     const v = body ? body.linvel() : { x: 0, y: 0 };
     const along = Math.hypot(v.x, v.y);
