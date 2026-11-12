@@ -1,7 +1,13 @@
 import { expect, type Page, test } from '@playwright/test';
 
 interface Hook {
-  player: { carrying: string | null; utility: 'jump' | 'pickup' | 'throw'; state: string; dodgeReady: number };
+  player: {
+    carrying: string | null;
+    lifting: boolean;
+    utility: 'jump' | 'pickup' | 'throw';
+    state: string;
+    dodgeReady: number;
+  };
   dummy: { hp: number };
 }
 type DebugWindow = Window & { __stickmanDebug?: Hook };
@@ -24,6 +30,8 @@ test('Phase 7: G picks up the chair, G throws it over the table and it hits the 
   await expect.poll(async () => (await hook(page)).player.utility, { timeout: 5000 }).toBe('pickup');
   await page.keyboard.press('KeyG');
   await expect.poll(async () => (await hook(page)).player.carrying, { timeout: 5000 }).toBe('office-chair');
+  // Heavier objects take a moment to heave up (owner, 12/11/2026); a press while lifting does nothing.
+  await expect.poll(async () => (await hook(page)).player.lifting, { timeout: 5000 }).toBe(false);
   await page.screenshot({ path: testInfo.outputPath('carry.png') });
   await page.keyboard.press('KeyG');
   await expect.poll(async () => (await hook(page)).player.carrying, { timeout: 5000 }).toBeNull();
