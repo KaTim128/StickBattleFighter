@@ -1642,9 +1642,9 @@ export class FightArenaScene implements ArenaScene {
         f.burnTotalS = Math.max(f.burnTotalS, c.burnLeftS);
         const left = f.burnTotalS > 0 ? c.burnLeftS / f.burnTotalS : 1;
         const h = f.hop.heightM;
-        burning.push({ x: f.x, y: f.y, heightM: h + 0.7 + 0.9 * left, baseM: h });
+        burning.push({ x: f.x, y: f.y, heightM: h + 0.6 + 0.7 * left, baseM: h, widthM: 0.5 });
         const o = screenSideToWorld(0.18 * f.facing);
-        burning.push({ x: f.x + o.x, y: f.y + o.y, heightM: h + 0.9 + 0.7 * left, baseM: h + 0.6 });
+        burning.push({ x: f.x + o.x, y: f.y + o.y, heightM: h + 1.0 + 0.6 * left, baseM: h + 0.6, widthM: 0.42 });
         if (this.fxRng() < 0.35) {
           this.frameFlames.push({
             points: [besideOnScreen(f.x, f.y, (this.fxRng() - 0.5) * 0.4, h + 0.3 + this.fxRng() * 1.2)],
@@ -1682,7 +1682,8 @@ export class FightArenaScene implements ArenaScene {
           besideOnScreen(f.x, f.y, (this.fxRng() - 0.5) * 0.3, f.abilityLift + z),
         );
         this.frameFlames.push({ points: pts, strength: 1 });
-        burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.7, baseM: f.abilityLift });
+        burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.1, baseM: f.abilityLift, widthM: 0.75 });
+        burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.8, baseM: f.abilityLift + 0.8, widthM: 0.55 });
       }
     }
     for (const p of this.props?.props ?? []) {
@@ -1904,6 +1905,7 @@ export class FightArenaScene implements ArenaScene {
     const c = f.combatant;
     if (!c.isKo) {
       view.root.alpha = 1;
+      view.burnAway = 0;
       return;
     }
     if (!f.def.capabilities.canDisintegrate) {
@@ -1911,30 +1913,46 @@ export class FightArenaScene implements ArenaScene {
       return;
     }
     const k = Math.min(1, Math.max(0, (c.koAge - KO_DISSOLVE_FROM_S) / KO_DISSOLVE_S));
+    // Points along the (tilted) body from the feet to the head, as floor position plus height.
+    const rot = -f.facing * f.tilt;
+    const along = (d: number) => besideOnScreen(x, y, d * Math.sin(rot), Math.max(0, heightM + d * Math.cos(rot)));
+    const byFire = f.koByFire || c.koByBurn;
+    if (byFire) {
+      // Death by fire (owner, 11/11/2026), its own ending in place of the usual dust fade: a
+      // burning edge moves up the charred body from the feet to the head; behind it the body is
+      // gone, on it flames lick and only embers, ash and smoke come away. No fade, no grey dust.
+      view.root.alpha = 1;
+      view.burnAway = k;
+      if (k <= 0 || k >= 1) return;
+      if (!f.dustSounded) {
+        f.dustSounded = true;
+        this.characterSound(f, 'disintegration');
+      }
+      const front = along(HEAD_TOP_M * k);
+      this.frameBurning.push({ x: front.x, y: front.y, heightM: front.z + 0.45, baseM: Math.max(0, front.z - 0.1) });
+      if (this.fxRng() < 0.7) this.frameSmoke.push({ ...front, z: front.z + 0.2, count: 1 });
+      const ash = EFFECTS[FIRE_DEATH_EFFECT];
+      this.frameDust.push({
+        points: [front, along(HEAD_TOP_M * Math.max(0, k - 0.06))],
+        colour: CHARCOAL,
+        colours: ash?.dust,
+        onlyColours: true,
+        embers: ash?.embers ? Math.round((ash.embers * frameDtS) / 0.8) : 0,
+        count: Math.round(200 * frameDtS),
+      });
+      return;
+    }
     view.root.alpha = 1 - k * k * (3 - 2 * k);
     if (k <= 0 || k >= 1) return;
     if (!f.dustSounded) {
       f.dustSounded = true;
       this.characterSound(f, 'disintegration');
     }
-    // Points along the (tilted) body from the feet to the head, as floor position plus height.
-    const rot = -f.facing * f.tilt;
-    const points: { x: number; y: number; z: number }[] = [];
-    for (let i = 0; i <= 6; i++) {
-      const d = (HEAD_TOP_M * i) / 6;
-      points.push(besideOnScreen(x, y, d * Math.sin(rot), Math.max(0, heightM + d * Math.cos(rot))));
-    }
+    const points = Array.from({ length: 7 }, (_, i) => along((HEAD_TOP_M * i) / 6));
     // Most dust leaves early, thinning out as the last of the body fades.
     const count = Math.round(260 * frameDtS * (1.2 - k));
-    // Death by fire (owner, 11/11/2026): the charred body burns away into ash and embers, flames
-    // licking over it as it goes and smoke rising, whatever the fighter's own dust look.
-    const byFire = f.koByFire || c.koByBurn;
-    if (byFire) {
-      if (k < 0.75) this.frameBurning.push({ x, y, heightM: heightM + 0.9 * (1 - k) + 0.3 });
-      if (this.fxRng() < 0.6) this.frameSmoke.push({ x, y, z: heightM + 0.3 + this.fxRng() * 0.8, count: 1 });
-    }
     // The look of the dust comes from the fighter's Effects Profile (grey dust, or embers and ash).
-    const fx = EFFECTS[byFire ? FIRE_DEATH_EFFECT : f.def.effects.disintegration];
+    const fx = EFFECTS[f.def.effects.disintegration];
     this.frameDust.push({
       points,
       colour: f.def.look.limb,

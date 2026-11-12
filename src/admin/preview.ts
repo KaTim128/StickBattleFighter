@@ -6,6 +6,7 @@ import type { Pose } from '../animation/skeleton';
 import { STRIKE_STATES } from '../characters/resolve';
 import type { AnimationState } from '../characters/schema';
 import type { FighterDef } from '../data/fighters/fighter-def';
+import { installMetreScaleCurves } from '../rendering/metre-scale-curves';
 import { StickmanView } from '../rendering/stickman-view';
 
 /** Default phase lengths for previewing a strike state no move uses. */
@@ -33,6 +34,7 @@ export class CharacterPreview {
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
   async init(): Promise<void> {
+    installMetreScaleCurves();
     await this.app.init({
       canvas: this.canvas,
       width: this.canvas.clientWidth || 360,

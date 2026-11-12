@@ -40,6 +40,12 @@ export class StickmanView {
   private readonly fireCore = new Graphics();
   /** Speed lines behind a quick dodge. */
   private readonly trail = new Graphics();
+  /**
+   * 0..1 how much of the body has burned away (death by fire): everything from the feet up to
+   * this fraction of the figure's height is gone. 0 = whole.
+   */
+  burnAway = 0;
+  private readonly burnMask = new Graphics();
   /** 0..1 how fast the fighter is moving: the flames stream back. */
   motion = 0;
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
@@ -52,7 +58,7 @@ export class StickmanView {
   ) {
     this.root.label = 'stickman';
     this.fire.blendMode = 'add';
-    this.figure.addChild(this.body, this.fire, this.fireCore);
+    this.figure.addChild(this.body, this.fire, this.fireCore, this.burnMask);
     this.root.addChild(this.shadow, this.trail, this.figure);
   }
 
@@ -131,6 +137,26 @@ export class StickmanView {
     const flame = dodge.flame ?? 0;
     this.body.alpha = 1 - flame;
 
+    // Burning away (death by fire): keep only the part of the figure above the burning edge.
+    if (this.burnAway > 0) {
+      const top = -(
+        this.bones.spine +
+        this.bones.neck +
+        this.bones.thigh +
+        this.bones.shin +
+        this.bones.headRadius * 2 +
+        0.3
+      );
+      const edge = top * this.burnAway;
+      this.burnMask
+        .clear()
+        .rect(-3, top - 0.5, 6, edge - (top - 0.5))
+        .fill(0xffffff);
+      this.figure.mask = this.burnMask;
+    } else if (this.figure.mask) {
+      this.figure.mask = null;
+      this.burnMask.clear();
+    }
     const g = this.body.clear();
     this.fire.clear();
     this.fireCore.clear();
@@ -318,9 +344,11 @@ export class StickmanView {
         const hw = w * 0.85 * scale * k;
         const tipX = p.x + (back * 0.6 + Math.sin(t * 13 + i) * 0.25) * h;
         const tipY = p.y - h * k * 1.2;
+        // A teardrop: rounded base, bulging sides, a swaying tip.
         f.moveTo(p.x - hw, p.y)
-          .quadraticCurveTo(p.x - hw * 0.7, p.y - h * k * 0.6, tipX, tipY)
-          .quadraticCurveTo(p.x + hw * 0.7, p.y - h * k * 0.6, p.x + hw, p.y)
+          .bezierCurveTo(p.x - hw * 1.3, p.y - h * k * 0.35, p.x - hw * 0.3, p.y - h * k * 0.7, tipX, tipY)
+          .bezierCurveTo(p.x + hw * 0.35, p.y - h * k * 0.65, p.x + hw * 1.3, p.y - h * k * 0.3, p.x + hw, p.y)
+          .quadraticCurveTo(p.x, p.y + hw * 0.6, p.x - hw, p.y)
           .closePath()
           .fill({ color: colour, alpha: a });
       }

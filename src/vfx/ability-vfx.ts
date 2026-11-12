@@ -18,6 +18,8 @@ export interface BurningThing {
   readonly heightM: number;
   /** Height the flames start from (a burning object in the air); default the floor. */
   readonly baseM?: number;
+  /** How wide the fire is, metres (default 0.35: a burning prop). */
+  readonly widthM?: number;
 }
 
 /** A blow landing (melee or ability): sparks fly along the blow and a burst ring pops. */
@@ -48,6 +50,8 @@ export interface DustSource {
   readonly colour: number;
   /** Dust colours to pick from (an Effects Profile's disintegration look); default: own colour and ash. */
   readonly colours?: readonly number[];
+  /** Use only `colours` (no own colour or pale dust): ash from a body burned away. */
+  readonly onlyColours?: boolean;
   /** Fire embers to release too (ember-and-ash disintegration). */
   readonly embers?: number;
   /** Particles to release this frame. */
@@ -615,7 +619,7 @@ export class AbilityVfx {
         live: true,
         kind: 'dust',
         colour:
-          d.colours && d.colours.length > 0 && this.rand() < 0.6
+          d.colours && d.colours.length > 0 && (d.onlyColours || this.rand() < 0.6)
             ? d.colours[Math.floor(this.rand() * d.colours.length)]!
             : this.rand() < 0.65
               ? d.colour
@@ -741,7 +745,7 @@ export class AbilityVfx {
     const P = iso;
 
     for (const s of this.scorches) {
-      const a = 0.45 * (1 - s.ageS / SCORCH_LIFE_S);
+      const a = 0.32 * (1 - s.ageS / SCORCH_LIFE_S);
       f.circle(s.x, s.y, s.r).fill({ color: 0x15100c, alpha: a });
     }
 
@@ -934,7 +938,7 @@ export class AbilityVfx {
     for (const b of input.burning) {
       const z0 = b.baseM ?? 0;
       const base = P(b.x, b.y, z0);
-      this.flame(g, base.x, base.y, 0.35, b.heightM - z0, t + b.x * 3);
+      this.flame(g, base.x, base.y, b.widthM ?? 0.35, b.heightM - z0, t + b.x * 3);
     }
 
     for (const p of this.particles) {
@@ -951,14 +955,23 @@ export class AbilityVfx {
         g.circle(c.x, c.y, p.size * (1 - k * 0.5)).fill({ color: p.colour, alpha: 0.85 * (1 - k) });
       } else if (p.kind === 'smoke') {
         if (p.ageS < 0) continue;
-        g.circle(c.x, c.y, p.size * (1 + k * 1.6)).fill({ color: p.colour, alpha: 0.32 * (1 - k) });
+        // Thin, soft smoke that swells a little and fades.
+        g.circle(c.x, c.y, p.size * (0.8 + k * 1.1)).fill({
+          color: p.colour,
+          alpha: 0.18 * (1 - k) * Math.min(1, k * 6),
+        });
       } else if (p.kind === 'gather') {
-        // Brightening as it nears the hand.
-        const color = k < 0.4 ? p.pal.hot : k < 0.75 ? p.pal.bright : p.pal.core;
-        g.circle(c.x, c.y, p.size * (0.6 + k * 0.6)).fill({ color, alpha: 0.35 + 0.6 * k });
+        // Brightening as it nears the hand: a small hot spark with a soft glow.
+        const r = p.size * (0.45 + k * 0.45);
+        g.circle(c.x, c.y, r * 2).fill({ color: p.pal.hot, alpha: 0.18 * (0.4 + k) });
+        g.circle(c.x, c.y, r).fill({ color: k < 0.5 ? p.pal.bright : p.pal.core, alpha: 0.5 + 0.5 * k });
       } else {
-        const color = k < 0.3 ? p.pal.core : k < 0.6 ? p.pal.bright : p.pal.hot;
-        g.circle(c.x, c.y, p.size * (1 - k * 0.6)).fill({ color, alpha: 1 - k });
+        // An ember (owner: "look more like fire"): a small spark with a soft glow, cooling from
+        // yellow-white through orange to deep red as it rises and dies.
+        const r = p.size * 0.6 * (1 - k * 0.55);
+        const color = k < 0.15 ? p.pal.core : k < 0.45 ? p.pal.bright : k < 0.75 ? p.pal.hot : p.pal.deep;
+        g.circle(c.x, c.y, r * 2.2).fill({ color: p.pal.hot, alpha: 0.16 * (1 - k) });
+        g.circle(c.x, c.y, r).fill({ color, alpha: 1 - k * 0.8 });
       }
     }
   }
@@ -1034,7 +1047,12 @@ export class AbilityVfx {
     this.core(g, c.x, c.y, radius * (1.05 + 0.08 * Math.sin(t * 40)), pal, t, look.flight?.shimmer ?? false);
   }
 
-  /** Three flickering flame tongues standing on (x, y), up to `heightM` tall. */
+  /**
+   * Three flickering flame tongues standing on (x, y), up to `heightM` tall (owner, 11/11/2026:
+   * "look more like fire"): each a teardrop with a rounded base, sides that bulge and curl, and a
+   * tip that sways, built from four layers (deep red, orange, amber, a yellow-white heart), with a
+   * soft glow at the base.
+   */
   private flame(
     g: Graphics,
     x: number,
@@ -1044,16 +1062,32 @@ export class AbilityVfx {
     phase: number,
     pal: Palette = FIRE,
   ): void {
+    if (heightM <= 0.01 || width <= 0.005) return;
+    g.ellipse(x, y - heightM * 0.15, width * 0.9, width * 0.45).fill({ color: pal.hot, alpha: 0.18 });
+    const layers = [
+      { colour: pal.deep, k: 1, h: 1, alpha: 0.6 },
+      { colour: pal.hot, k: 0.78, h: 0.86, alpha: 0.75 },
+      { colour: pal.bright, k: 0.55, h: 0.66, alpha: 0.85 },
+      { colour: pal.core, k: 0.3, h: 0.42, alpha: 0.9 },
+    ];
     for (let i = 0; i < 3; i++) {
-      const off = (i - 1) * width * 0.45;
-      const h = heightM * (0.6 + 0.4 * Math.abs(Math.sin(phase * 9 + i * 2.1)));
-      const w = width * 0.32;
-      const top = y - h;
-      g.moveTo(x + off - w, y)
-        .quadraticCurveTo(x + off - w * 0.6, y - h * 0.5, x + off + Math.sin(phase * 13 + i) * w * 0.4, top)
-        .quadraticCurveTo(x + off + w * 0.6, y - h * 0.5, x + off + w, y)
-        .closePath()
-        .fill({ color: i === 1 ? pal.bright : pal.hot, alpha: 0.85 });
+      const off = (i - 1) * width * 0.42;
+      const tall = heightM * (i === 1 ? 1 : 0.72) * (0.75 + 0.25 * Math.abs(Math.sin(phase * 9 + i * 2.1)));
+      const sway = Math.sin(phase * 7 + i * 1.7) * width * 0.35;
+      for (const L of layers) {
+        const w = width * 0.36 * L.k;
+        const h = tall * L.h;
+        const bx = x + off;
+        const tipX = bx + sway * (0.6 + L.h * 0.4);
+        const tipY = y - h;
+        const curl = Math.sin(phase * 11 + i) * w * 0.4;
+        g.moveTo(bx - w, y)
+          .bezierCurveTo(bx - w * 1.35, y - h * 0.32, bx - w * 0.35 + curl, y - h * 0.62, tipX, tipY)
+          .bezierCurveTo(bx + w * 0.4 + curl, y - h * 0.58, bx + w * 1.35, y - h * 0.3, bx + w, y)
+          .quadraticCurveTo(bx, y + w * 0.55, bx - w, y)
+          .closePath()
+          .fill({ color: L.colour, alpha: L.alpha });
+      }
     }
   }
 

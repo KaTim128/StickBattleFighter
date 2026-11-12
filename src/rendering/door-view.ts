@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { fromBoxFrame } from '../core/oriented-rect';
 import type { DoorSpec } from '../data/arenas/arena-layout';
-import { drawPrism, type PrismLook } from './prism';
+import { drawPrism } from './prism';
 import { iso } from './projection';
 
 export interface DoorPiece {
@@ -55,17 +55,15 @@ export class DoorView {
     const h = heightM * 0.92;
     this.buildFloor();
 
-    // The shut leaf, in short blocks along the doorway (works for a turned door too).
+    // The shut leaf: one seamless glass pane (owner, 11/11/2026: "a singular door, not 3
+    // rectangles"). It is still cut into short pieces along the doorway so it depth-sorts with
+    // fighters on either side, but each piece draws only its share of the pane's outer faces and
+    // edges, so no joins show.
     const chunks = Math.max(1, Math.round(along / 0.5));
     for (let i = 0; i < chunks; i++) {
       const ya = spec.y0 + (along * i) / chunks;
       const yb = spec.y0 + (along * (i + 1)) / chunks;
-      const block = this.block(spec.x0, ya, spec.x1, yb, h, {
-        front: WOOD_FRONT,
-        top: WOOD_TOP,
-        edge: WOOD_EDGE,
-        alpha: GLASS_ALPHA,
-      });
+      const block = this.paneBlock(spec.x0, ya, spec.x1, yb, h, i === 0, i === chunks - 1);
       block.node.label = `door-${spec.id}`;
       if (i === Math.floor(chunks / 2)) {
         block.node.addChild(
@@ -108,25 +106,76 @@ export class DoorView {
     }
   }
 
-  /** A block on part of the doorway, given in the door's unturned frame. */
-  private block(
+  /**
+   * One piece of the glass pane, in the door's unturned frame: the long faces and the top are
+   * filled without outlines; edges are stroked only along the pane's outside (its long top and
+   * bottom edges, and the vertical edges at the pane's two ends).
+   */
+  private paneBlock(
     x0: number,
     y0: number,
     x1: number,
     y1: number,
     heightM: number,
-    look: PrismLook,
+    first: boolean,
+    last: boolean,
   ): { node: Container; footOffset: number } {
     const s = this.spec;
     const centre = fromBoxFrame(s, (x0 + x1) / 2, (y0 + y1) / 2);
+    // Corners in order: (x0,y0) (x1,y0) (x1,y1) (x0,y1); edges 0 and 2 are the pane's ends, 1 and 3 its long sides.
     const rel = [
       fromBoxFrame(s, x0, y0),
       fromBoxFrame(s, x1, y0),
       fromBoxFrame(s, x1, y1),
       fromBoxFrame(s, x0, y1),
     ].map((p) => iso(p.x - centre.x, p.y - centre.y));
+    const g = new Graphics();
+    let area = 0;
+    for (let i = 0; i < 4; i++) {
+      const p = rel[i]!;
+      const q = rel[(i + 1) % 4]!;
+      area += p.x * q.y - q.x * p.y;
+    }
+    const outward = area > 0 ? 1 : -1;
+    const fill = { color: GLASS_FRONT, alpha: GLASS_ALPHA };
+    const line = { width: 0.025, color: GLASS_EDGE, alpha: 0.7 };
+    for (let i = 0; i < 4; i++) {
+      const p = rel[i]!;
+      const q = rel[(i + 1) % 4]!;
+      if (-(q.x - p.x) * outward <= 1e-6) continue; // faces away from the camera
+      const end = i === 0 || i === 2;
+      const outerEnd = (i === 0 && first) || (i === 2 && last);
+      if (end && !outerEnd) continue; // a join inside the pane: not drawn
+      g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM]).fill(fill);
+      if (end) {
+        g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM]).stroke(line);
+      } else {
+        g.moveTo(p.x, p.y).lineTo(q.x, q.y).stroke(line);
+        g.moveTo(p.x, p.y - heightM)
+          .lineTo(q.x, q.y - heightM)
+          .stroke(line);
+        if (first)
+          g.moveTo(i === 1 ? p.x : q.x, i === 1 ? p.y : q.y)
+            .lineTo(i === 1 ? p.x : q.x, (i === 1 ? p.y : q.y) - heightM)
+            .stroke(line);
+        if (last)
+          g.moveTo(i === 1 ? q.x : p.x, i === 1 ? q.y : p.y)
+            .lineTo(i === 1 ? q.x : p.x, (i === 1 ? q.y : p.y) - heightM)
+            .stroke(line);
+      }
+    }
+    // The top of the pane: filled, outlined only along its long sides (and its outer ends).
+    const top = rel.map((p) => ({ x: p.x, y: p.y - heightM }));
+    g.poly(top.flatMap((p) => [p.x, p.y])).fill({ color: GLASS_TOP, alpha: GLASS_ALPHA });
+    for (let i = 0; i < 4; i++) {
+      const end = i === 0 || i === 2;
+      if (end && !((i === 0 && first) || (i === 2 && last))) continue;
+      const p = top[i]!;
+      const q = top[(i + 1) % 4]!;
+      g.moveTo(p.x, p.y).lineTo(q.x, q.y).stroke(line);
+    }
     const node = new Container();
-    node.addChild(drawPrism(new Graphics(), rel, heightM, look));
+    node.addChild(g);
     const at = iso(centre.x, centre.y);
     node.position.set(at.x, at.y);
     return { node, footOffset: Math.max(...rel.map((p) => p.y)) };

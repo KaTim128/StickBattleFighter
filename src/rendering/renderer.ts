@@ -1,4 +1,5 @@
 import { Application } from 'pixi.js';
+import { installMetreScaleCurves } from './metre-scale-curves';
 
 /** Upper bound on device pixel ratio: sharper than this costs mobile GPUs a lot for little gain. */
 export const MAX_PIXEL_RATIO = 2;
@@ -13,6 +14,7 @@ export function clampPixelRatio(devicePixelRatio: number): number {
  * rendering from its own fixed-step loop, so Pixi's ticker is not started.
  */
 export async function createRenderSurface(container: HTMLElement, background: number): Promise<Application> {
+  installMetreScaleCurves();
   const app = new Application();
   await app.init({
     preference: 'webgl',

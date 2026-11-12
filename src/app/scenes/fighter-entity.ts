@@ -192,7 +192,10 @@ export class FighterEntity {
     this.dustSounded = false;
     this.koByFire = false;
     this.smokeS = 0;
-    if (this.view) this.view.root.alpha = 1;
+    if (this.view) {
+      this.view.root.alpha = 1;
+      this.view.burnAway = 0;
+    }
     this.placeAt(this.spawn);
   }
 

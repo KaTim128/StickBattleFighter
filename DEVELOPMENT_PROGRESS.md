@@ -359,6 +359,23 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
   - stills of every stage: `docs/screenshots/inferno-fx-sheet-1.png` and `inferno-fx-sheet-2.png`.
 - **Limitation:** the reference image of Inferno did not come through, so the look was designed from his in-game appearance.
 
+### 12/11/2026: Single-pane door, fire that looks like fire, burn-away death (owner)
+- **Door:** the glass leaf is still three pieces for depth sorting, but each piece now draws only its share of the pane's outer faces and edges, so it reads as one door.
+- **Fire:** the root cause was Pixi cutting curves and circles by their size in drawing units, and the world is drawn in metres:
+  - 5 cm embers had 4 corners (diamonds);
+  - flame tongues were subdivided only to within 0.5 m, so they came out as triangles and boxes.
+- **Fire fix:**
+  - `src/rendering/metre-scale-curves.ts` sets curve smoothness to about 1 cm and cuts circles, ellipses and rounded corners as if they were 60× larger;
+  - flame tongues are now layered teardrops;
+  - embers are small glowing sparks that cool from white to red;
+  - smoke is thinner, and body fires are wider and shorter.
+- **Death by fire:** its own ending instead of the usual dust fade. A burning edge moves up the charred body (a mask on the figure), with flames on the edge and only embers, ash and smoke. There is no transparency fade and no grey dust.
+- **Evidence:**
+  - lint clean; typecheck 0; `npm test` 289/289; `npm run e2e` 30 passed;
+  - one dodge test failed once while the full suite ran in parallel, then passed 18 of 18 when repeated.
+- **Performance:** in the headless software renderer, a Fire Beam in the office went from 7 to 6 fps. Software rendering is far slower than a GPU, so check on a real device (OQ-10).
+- **Screenshots:** `docs/screenshots/doorway-single-pane.png`, `fire-shapes.png`, `death-by-fire-burn-away.png`.
+
 ## Decisions requiring owner attention
 
 Full list in spec §21. Still open:
