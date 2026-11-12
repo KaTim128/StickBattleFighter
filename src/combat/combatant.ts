@@ -294,6 +294,25 @@ export class Combatant {
     return { outcome: crit ? 'crit' : 'hit', damage, knockbackScale: kbKeep, attackerStunS: 0 };
   }
 
+  /**
+   * A hard landing (owner, 12/11/2026: fall damage by height and weight): the damage, then a short
+   * recovery crouch. Ignores guard and dodge (nobody blocks the floor). Can KO.
+   */
+  takeFall(damage: number, recoverS: number): void {
+    if (this.isKo || damage <= 0) return;
+    this.hp = Math.max(0, this.hp - damage);
+    this.guardUp = false;
+    if (this.hp === 0) {
+      this.downS = 0;
+      this.koAgeS = 0;
+      this.stunS = 0;
+      this.knockdownS = 0;
+      this.getUpS = 0;
+      return;
+    }
+    this.stunS = Math.max(this.stunS, recoverS);
+  }
+
   /** Fall at once, as at a KO (a summoned minion whose time is up crumbles). */
   expire(): void {
     if (this.hp === 0) return;

@@ -41,10 +41,16 @@ export interface PropKind {
   readonly throwable: boolean;
   /** Flat floor decoration (rugs): drawn under everything, never blocks. */
   readonly decal?: boolean;
+  /**
+   * Has a firm, flat top a fighter can jump onto, or grab and climb when it is too high
+   * (owner, 12/11/2026). Chairs, plants, bins and thin panels are not climbable.
+   */
+  readonly climbable?: boolean;
 }
 
 export const PROP_KINDS = {
   pillar: {
+    climbable: true,
     label: 'Pillar',
     w: 0.9,
     d: 0.64,
@@ -57,6 +63,7 @@ export const PROP_KINDS = {
     throwable: false,
   },
   desk: {
+    climbable: true,
     label: 'Desk',
     w: 1.6,
     d: 0.8,
@@ -69,6 +76,7 @@ export const PROP_KINDS = {
     throwable: false,
   },
   'meeting-table': {
+    climbable: true,
     label: 'Meeting table',
     w: 4,
     d: 1.6,
@@ -141,6 +149,7 @@ export const PROP_KINDS = {
     throwable: true,
   },
   cabinet: {
+    climbable: true,
     label: 'Filing cabinet',
     w: 0.9,
     d: 0.6,
@@ -153,6 +162,7 @@ export const PROP_KINDS = {
     throwable: false,
   },
   'drawer-unit': {
+    climbable: true,
     label: 'Steel drawer pedestal',
     w: 0.4,
     d: 0.55,
@@ -213,6 +223,7 @@ export const PROP_KINDS = {
     throwable: true,
   },
   printer: {
+    climbable: true,
     label: 'Printer',
     w: 0.8,
     d: 0.6,
@@ -237,6 +248,7 @@ export const PROP_KINDS = {
     throwable: false,
   },
   'executive-desk': {
+    climbable: true,
     label: 'Executive desk',
     w: 2.4,
     d: 1.1,
@@ -273,6 +285,7 @@ export const PROP_KINDS = {
     throwable: true,
   },
   bookshelf: {
+    climbable: true,
     label: 'Bookshelf',
     w: 2,
     d: 0.45,
@@ -300,6 +313,7 @@ export const PROP_KINDS = {
   // ---- Office fill-in (owner, 11/11/2026: "shelves, coffee machine, printer, a calling room, a food
   // shelf, file cabinets… fill in the empty spaces"). All original greybox designs.
   'kitchen-counter': {
+    climbable: true,
     label: 'Kitchen counter',
     w: 2.4,
     d: 0.6,
@@ -336,6 +350,7 @@ export const PROP_KINDS = {
     throwable: true,
   },
   'snack-shelf': {
+    climbable: true,
     label: 'Snack shelf',
     w: 1.2,
     d: 0.45,
@@ -348,6 +363,7 @@ export const PROP_KINDS = {
     throwable: false,
   },
   'vending-machine': {
+    climbable: true,
     label: 'Vending machine',
     w: 0.9,
     d: 0.75,
@@ -360,6 +376,7 @@ export const PROP_KINDS = {
     throwable: false,
   },
   'phone-booth': {
+    climbable: true,
     label: 'Phone booth',
     w: 1.1,
     d: 1.0,
@@ -433,6 +450,7 @@ export const PROP_KINDS = {
     throwable: true,
   },
   sofa: {
+    climbable: true,
     label: 'Sofa',
     w: 2,
     d: 0.85,

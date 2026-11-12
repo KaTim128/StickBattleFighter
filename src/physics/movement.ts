@@ -44,23 +44,29 @@ export interface HopState {
   /** Height above the floor in metres (drawn as a lifted figure over a ground shadow). */
   heightM: number;
   verticalSpeedMps: number;
+  /**
+   * What the feet stand on, metres above the floor (owner, 12/11/2026: fighters can stand on
+   * furniture). 0 or absent = the floor. Stepping off a higher surface starts a fall.
+   */
+  floorM?: number;
 }
 
 export function isAirborne(hop: HopState): boolean {
-  return hop.heightM > 0 || hop.verticalSpeedMps > 0;
+  return hop.heightM > (hop.floorM ?? 0) + 1e-4 || hop.verticalSpeedMps > 0;
 }
 
-/** One fixed step of the jump hop. A jump only starts from the floor. */
+/** One fixed step of the jump hop. A jump only starts from something to stand on. */
 export function stepHop(hop: HopState, jumpPressed: boolean, tuning: HopTuning, stepS: number): HopState {
   let { heightM, verticalSpeedMps } = hop;
+  const floorM = hop.floorM ?? 0;
   if (jumpPressed && !isAirborne(hop)) verticalSpeedMps = tuning.jumpSpeedMps;
-  if (heightM > 0 || verticalSpeedMps > 0) {
+  if (heightM > floorM || verticalSpeedMps > 0) {
     verticalSpeedMps -= tuning.hopGravityMps2 * stepS;
     heightM += verticalSpeedMps * stepS;
-    if (heightM <= 0) {
-      heightM = 0;
+    if (heightM <= floorM) {
+      heightM = floorM;
       verticalSpeedMps = 0;
     }
-  }
-  return { heightM, verticalSpeedMps };
+  } else heightM = floorM;
+  return floorM > 0 ? { heightM, verticalSpeedMps, floorM } : { heightM, verticalSpeedMps };
 }

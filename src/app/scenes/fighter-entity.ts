@@ -35,6 +35,20 @@ export class FighterEntity {
   driveVelocity: { x: number; y: number } | null = null;
   /** Height off the floor during a leap, metres. */
   abilityLift = 0;
+  /**
+   * Hanging from a ledge and pulling up (owner, 12/11/2026): the surface, the 0..1 progress, the
+   * height it hangs from, and the way it faces the edge.
+   */
+  climb: {
+    surface: import('../../physics/climbing').ClimbSurface;
+    progress: number;
+    hangM: number;
+    dir: { x: number; y: number };
+  } | null = null;
+  /** Highest point of the current fall (for fall damage on landing). */
+  fallPeakM = 0;
+  /** Its body currently passes over furniture (in the air or standing on top of a piece). */
+  overFurniture = false;
   /** Seconds since this fighter last fought (attacked, cast, blocked, dodged or was hit): presentation only. */
   calmS = 0;
   /** Health last frame, to notice being hit. */
@@ -218,6 +232,8 @@ export class FighterEntity {
     this.abilityLift = 0;
     this.hop = { heightM: 0, verticalSpeedMps: 0 };
     this.prevHop = 0;
+    this.climb = null;
+    this.fallPeakM = 0;
   }
 
   /** Back on its feet at full health where it started (KO respawn). */

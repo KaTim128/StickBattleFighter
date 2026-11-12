@@ -183,6 +183,15 @@ export class PhysicsWorld {
   }
 
   /** Wake a planted prop (it becomes dynamic) or plant it again (fixed). */
+  /**
+   * A fighter up in the air or standing on furniture (owner, 12/11/2026) no longer bumps into
+   * furniture: the scene keeps it out of anything taller than its feet itself.
+   */
+  setOverFurniture(body: RapierModule.RigidBody, over: boolean): void {
+    const filter = GROUP.WORLD | GROUP.FIGHTER | (over ? 0 : GROUP.FURNITURE);
+    for (let i = 0; i < body.numColliders(); i++) body.collider(i).setCollisionGroups(groups(GROUP.FIGHTER, filter));
+  }
+
   setPropAwake(body: RapierModule.RigidBody, awake: boolean): void {
     const RAPIER = rapier();
     body.setBodyType(awake ? RAPIER.RigidBodyType.Dynamic : RAPIER.RigidBodyType.Fixed, true);

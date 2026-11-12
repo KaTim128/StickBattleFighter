@@ -4,6 +4,7 @@ import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../.
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
+import { climbPose } from '../../animation/greybox-motion';
 import {
   blockPose,
   carryPose,
@@ -65,6 +66,7 @@ import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
 import { SceneAbilities } from './scene-abilities';
 import { type ClashBanner, type ClashHudState, SceneClash } from './scene-clash';
+import { SceneClimbing } from './scene-climbing';
 import { SceneSummons } from './scene-summons';
 
 /** Live player state for the debug overlay and browser tests. */
@@ -229,6 +231,8 @@ export class FightArenaScene implements ArenaScene {
   doors: BreakableDoor[] = [];
   /** Furniture that moves or breaks when hit (owner, 11/11/2026). */
   props: ArenaProps | null = null;
+  /** Standing on furniture, ledge grabs and fall damage (owner, 12/11/2026). */
+  private climbing: SceneClimbing | null = null;
   private debrisView: DebrisView | null = null;
   private fireLight: Graphics | null = null;
   /** Breakable interior wall sections (owner, 11/11/2026). */
@@ -549,6 +553,21 @@ export class FightArenaScene implements ArenaScene {
     this.physics = physics;
     addArenaColliders(physics, arena, false); // props get their own bodies: they move and break
     this.props = new ArenaProps(arena, physics);
+    this.climbing = new SceneClimbing(this.props, physics, {
+      onFallDamage: (f, damage, dropM) => {
+        f.combatant.takeFall(damage, SceneClimbing.recoveryFor(dropM));
+        f.caster?.onDamage(0, damage);
+        this.events.push({ kind: 'hit', target: f.name, x: f.x, y: f.y - headTop(f), amount: damage });
+        this.characterSound(f, 'land', 1);
+        this.queueSound('wall-thud', Math.min(1.3, 0.5 + dropM * 0.25));
+        this.shake.addTrauma(Math.min(0.5, dropM * 0.12));
+      },
+      onClimb: (f, event) => {
+        if (event === 'grab') this.queueSound('block', 0.5);
+        else if (event === 'pull') this.characterSound(f, 'jump', 0.35);
+        else if (event === 'top') this.characterSound(f, 'land', 0.5);
+      },
+    });
     this.doors = (arena.doors ?? []).map((spec) => new BreakableDoor(spec, physics));
     this.walls = new BreakableWalls(arena.interiorWalls ?? [], physics);
     this.abilities = new SceneAbilities(
@@ -629,6 +648,7 @@ export class FightArenaScene implements ArenaScene {
       if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS && !f.summon) f.respawn();
     }
 
+    this.climbing?.refresh();
     // A Punch Clash takes over both fighters while it runs.
     if (!this.clashes.step(stepS, this.simTimeS)) {
       this.controlPlayer(this.playerFighter, stepS);
@@ -660,10 +680,12 @@ export class FightArenaScene implements ArenaScene {
       f.prevHop = f.hop.heightM;
     }
     const flying = this.fighters.map((f) => (f.knockFlightS > 0 && f.body ? { f, v: f.body.linvel() } : null));
+    for (const f of this.fighters) this.climbing?.beforePhysics(f);
     this.physics.step(stepS);
     for (const f of this.fighters) {
       const p = f.body?.translation();
       if (p) Object.assign(f.curr, { x: p.x, y: p.y });
+      this.climbing?.afterPhysics(f);
     }
     for (const fl of flying) if (fl) this.wallImpact(fl.f, fl.v);
   }
@@ -1286,6 +1308,13 @@ export class FightArenaScene implements ArenaScene {
     const body = f.body;
     if (!body) return;
     const c = f.combatant;
+    // Hanging from a ledge (owner, 12/11/2026): Jump presses pull up; nothing else moves the body.
+    if (this.climbing?.step(f, stepS, moveIn, jump)) {
+      body.setLinvel({ x: 0, y: 0 }, true);
+      return;
+    }
+    // What the feet stand on: the floor or the top of a piece of furniture.
+    if (this.climbing) f.hop.floorM = this.climbing.floorFor(f);
     const air = f.airborne;
     if (!c.canAct) f.combo.interrupt();
     this.abilities?.stepCaster(f, stepS);
@@ -1350,6 +1379,7 @@ export class FightArenaScene implements ArenaScene {
       this.characterSound(f, 'jump', 0.7);
     }
     f.hop = stepHop(f.hop, jump, tuning, stepS);
+    this.climbing?.land(f, air);
     if (air && !f.airborne) {
       f.combo.landed();
       f.airJumpReady = false;
@@ -2180,15 +2210,18 @@ export class FightArenaScene implements ArenaScene {
     f.calmHp = c.hp;
     const charging = f.driveVelocity !== null && f.caster?.cast?.def.delivery.type === 'dash';
     let pose = f.animator.update(frameDtS, {
-      speedMps: down || c.state === 'stunned' || c.state === 'gettingUp' ? 0 : Math.hypot(v.x, v.y),
+      speedMps: down || c.state === 'stunned' || c.state === 'gettingUp' || f.climb ? 0 : Math.hypot(v.x, v.y),
       maxSpeedMps: f.def.movement.maxSpeedMps,
-      heightM,
+      // Jump height over what the feet stand on: standing on a desk is not being in the air.
+      heightM: f.climb ? 0 : Math.max(0, heightM - (f.hop.floorM ?? 0)),
       peakHeightM: this.peakHop(f),
       verticalSpeedMps: f.hop.verticalSpeedMps,
       // Walk unless sprinting (Shift) or driven by a charge (owner, 12/11/2026).
       sprinting: f.sprinting || charging,
       relaxed: f.calmS >= RELAX_AFTER_S,
     });
+    // Hanging and pulling up a ledge (owner, 12/11/2026).
+    if (f.climb) pose = climbPose(f.climb.progress, this.simTimeS);
     const attack = f.combo.attack;
     if (attack) pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
     if (f.scriptedAttack) {

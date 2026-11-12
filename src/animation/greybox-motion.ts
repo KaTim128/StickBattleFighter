@@ -1,4 +1,4 @@
-import { armIk, type BoneLengths, legIk, type Pose } from './skeleton';
+import { armIk, type BoneLengths, blendPose, legIk, type Pose } from './skeleton';
 
 /**
  * GREYBOX idle, walk and airborne motion for the Phase 2 test stickman.
@@ -572,4 +572,49 @@ export function landingPose(bones: BoneLengths): Pose {
     },
     bones,
   );
+}
+
+/**
+ * CLIMBING (owner, 12/11/2026: "proper grabbing, pulling and climbing animations"), by climb
+ * progress 0..1. 0: hanging from the edge, both arms straight up gripping the top, legs dangling
+ * loose. Mid-way: elbows bent hard, chin to the edge, knees drawn up to scrabble at the side. 1: the
+ * mantle: chest over the edge, both hands pressing down on the top, the lead knee up onto it.
+ */
+const CLIMB_HANG: Pose = {
+  lean: deg(-8),
+  head: deg(-4),
+  // Reaching up and forward onto the ledge, so the arms read clear of the head.
+  armFront: { root: deg(146), bend: deg(8) },
+  armBack: { root: deg(136), bend: deg(14) },
+  legFront: { root: deg(12), bend: deg(-24) },
+  legBack: { root: deg(-6), bend: deg(-14) },
+};
+const CLIMB_PULL: Pose = {
+  lean: deg(-10),
+  head: deg(4),
+  armFront: { root: deg(150), bend: deg(115) },
+  armBack: { root: deg(144), bend: deg(120) },
+  legFront: { root: deg(55), bend: deg(-95) },
+  legBack: { root: deg(10), bend: deg(-60) },
+};
+const CLIMB_MANTLE: Pose = {
+  lean: deg(-38),
+  head: deg(26),
+  armFront: { root: deg(28), bend: deg(30) },
+  armBack: { root: deg(36), bend: deg(26) },
+  legFront: { root: deg(95), bend: deg(-120) },
+  legBack: { root: deg(-10), bend: deg(-30) },
+};
+
+export function climbPose(progress: number, timeS = 0): Pose {
+  const p = Math.min(1, Math.max(0, progress));
+  // A little sway while hanging, which fades as the pull takes over.
+  const sway = Math.sin(timeS * TAU * 0.7) * deg(4) * (1 - p);
+  const base =
+    p < 0.6 ? blendPose(CLIMB_HANG, CLIMB_PULL, p / 0.6) : blendPose(CLIMB_PULL, CLIMB_MANTLE, (p - 0.6) / 0.4);
+  return {
+    ...base,
+    legFront: { root: base.legFront.root + sway, bend: base.legFront.bend },
+    legBack: { root: base.legBack.root + sway * 0.6, bend: base.legBack.bend },
+  };
 }
