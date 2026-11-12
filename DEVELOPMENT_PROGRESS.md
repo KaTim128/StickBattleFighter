@@ -487,6 +487,10 @@ The frame posts were placed 0.16 m beyond the doorway (inside the wall ends), dr
 - **Evidence:** `npm test` 316/316; e2e 39 passed; lint clean (1 info, in an old mockup); browser screenshots of the idle and walk.
 - **Known limitation:** real-device checks (swipe steering, heavyweight gait on a phone) are still manual.
 
+### 12/11/2026: Rampage Buffer resized to just a bit taller than Inferno (owner request)
+- `rig.scale` is now 1.1 (was 1.6), with a body radius of 0.38 m (was 0.55; Inferno's is 0.32). His reach is 0.1 m over his original moves (was +0.35), and Rampage Charge's hit radius is 0.85 m.
+- **Evidence:** `npm test` 316/316; a phone-landscape screenshot of him next to Inferno.
+
 ## Decisions requiring owner attention
 
 

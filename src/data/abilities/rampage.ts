@@ -70,7 +70,7 @@ export const RAMPAGE_KIT: AbilityKit = {
       impact: 'knuckle-heavy',
       wallDamage: 3000,
     },
-    delivery: { type: 'dash', distanceM: 11, speedMps: 15, hitRadiusM: 1, collision: { radiusM: 2.2 } },
+    delivery: { type: 'dash', distanceM: 11, speedMps: 15, hitRadiusM: 0.85, collision: { radiusM: 2.2 } },
     vfx: 'rampage-charge',
     sfx: { cast: 'charge-stomp', release: 'charge-rush', impact: 'charge-impact' },
     look: {

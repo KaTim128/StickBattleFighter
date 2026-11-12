@@ -48,7 +48,7 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     const i = await setup('inferno', { x: 5, y: 5 });
     const rd = r.scene.playerFighter.def;
     const id = i.scene.playerFighter.def;
-    expect(rd.sizeScale).toBe(1.6); // owner 12/11/2026: "a little smaller" than 2x
+    expect(rd.sizeScale).toBe(1.1); // owner 12/11/2026: "just a bit taller than inferno", not boss-sized
     expect(rd.look.pants).toBeDefined(); // owner 12/11/2026: not fully naked
     expect(id.sizeScale ?? 1).toBe(1);
     expect(rd.body.footRadiusM).toBeGreaterThan(id.body.footRadiusM);
