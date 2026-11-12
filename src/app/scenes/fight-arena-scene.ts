@@ -2064,6 +2064,20 @@ export class FightArenaScene implements ArenaScene {
       // Furniture keeps its upright drawing when it slides (a spin would tilt the whole picture);
       // small loose items still tumble.
       node.rotation = prop.kind.solid ? 0 : pose.angle * 0.3;
+      // Tumbling (owner, 12/11/2026): the drawing rolls over about the bottom edge on the side it
+      // falls to, so a piece on its side lies on the floor and an upside-down one sits on its top.
+      let tumbleLift = 0;
+      if (Math.abs(prop.roll) > 1e-3) {
+        const { w, d, h } = prop.size;
+        const side = Math.sign(prop.roll);
+        const edge = side * (w / 2 + d / 2) * ISO_C * 0.6;
+        node.rotation += prop.roll;
+        node.pivot.x = edge;
+        node.position.x = at.x + edge;
+        const over = Math.abs(prop.roll) - Math.PI / 2; // past lying on its side: lift it clear of the floor
+        tumbleLift = over > 0 ? Math.sin(over) * h : 0;
+        node.position.y = at.y - tumbleLift;
+      } else node.pivot.x = 0;
       this.occlusion?.setExempt(node, prop.held !== null || prop.flight !== null);
       const lift = prop.held?.heightM ?? prop.looseFall?.heightM ?? null;
       if (lift === null && this.grounded.has(prop.index)) node.pivot.y = 0; // replanted furniture

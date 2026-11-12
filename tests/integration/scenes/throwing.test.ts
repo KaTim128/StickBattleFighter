@@ -94,6 +94,39 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
     scenes.clear();
   });
 
+  it('a thrown chair tumbles with its momentum and comes to rest on a face, not snapped upright (owner, 12/11/2026)', async () => {
+    const { scene, scenes, run, tap, pickUp } = await setup();
+    run(0.1);
+    pickUp();
+    tap(); // throw
+    const prop = scene.props!.props.find((p) => p.kind.label && p.placement.kind === 'office-chair')!;
+    expect(Math.abs(prop.rollVel)).toBeGreaterThan(1); // spinning end over end
+    run(0.25);
+    expect(Math.abs(prop.roll)).toBeGreaterThan(0.3); // rolled over in the air
+    run(3);
+    expect(prop.awake).toBe(false); // at rest and planted again
+    const q = prop.roll / (Math.PI / 2);
+    expect(Math.abs(q - Math.round(q))).toBeLessThan(1e-6); // lying on a face
+    const rest = prop.roll;
+    run(2);
+    expect(prop.roll).toBe(rest); // kept: no scripted upright reset
+    scenes.clear();
+  });
+
+  it('a chair put down (not thrown) stays upright', async () => {
+    const { scene, scenes, run, runUntil, pickUp, intents } = await setup();
+    run(0.1);
+    pickUp();
+    intents.interactPress();
+    run(1.2); // hold: put it down
+    intents.interactRelease();
+    runUntil(() => scene.player.carrying === null, 2);
+    run(2);
+    const prop = scene.props!.props.find((p) => p.placement.kind === 'office-chair')!;
+    expect(prop.roll).toBe(0);
+    scenes.clear();
+  });
+
   it('a short press throws it at the target: it flies, hits and hurts the dummy, then lands and is furniture again', async () => {
     const { scene, scenes, run, runUntil, tap, pickUp, chair } = await setup();
     run(0.1);

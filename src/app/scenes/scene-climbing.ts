@@ -41,9 +41,11 @@ export class SceneClimbing {
     for (const p of this.props?.props ?? []) {
       if (!p.body || p.broken || p.held || !p.kind.solid) continue;
       const r = p.rect;
-      const s = { x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, topM: p.size.h };
+      // A piece lying on its side is only as tall as its shortest side, and offers no top to climb.
+      const topM = p.toppled ? Math.min(p.size.w, p.size.d, p.size.h) : p.size.h;
+      const s = { x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, topM };
       this.solids.push(s);
-      if (p.kind.climbable) this.tops.push(s);
+      if (p.kind.climbable && !p.toppled) this.tops.push(s);
     }
   }
 

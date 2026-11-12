@@ -75,6 +75,23 @@ export interface PropState {
   readonly burning: boolean;
 }
 
+/** How fast a landed piece tips onto the face it rests on, radians per second. */
+const ROLL_SETTLE_RADPS = 7;
+
+/**
+ * The face a tumbling box comes to rest on: the nearest quarter turn (upright, either side, upside
+ * down), so it keeps the orientation its momentum gave it rather than snapping upright.
+ */
+export function restingRoll(roll: number): number {
+  const q = Math.PI / 2;
+  // Normalise into (−π, π], then to the nearest quarter turn.
+  let r = roll % (2 * Math.PI);
+  if (r > Math.PI) r -= 2 * Math.PI;
+  if (r <= -Math.PI) r += 2 * Math.PI;
+  const k = Math.round(r / q);
+  return k * q === -Math.PI ? Math.PI : k * q;
+}
+
 /** Push per unit of blow strength (N·s). A heavy finisher (720) sends a 12 kg chair off at ~3 m/s. */
 const IMPULSE_PER_STRENGTH = 0.05;
 /** A knocked-back body only damages the same prop again after this long (sliding along it is one blow). */
@@ -166,6 +183,18 @@ export class ArenaProp {
   flight: { by: number; hit: Set<number>; power: number; fire: boolean } | null = null;
   /** Currently flying above furniture height (passes over desks and chairs). */
   flyingHigh = false;
+  /**
+   * Tumble (owner, 12/11/2026: thrown furniture "should naturally rotate, tumble and fall based on
+   * their momentum ... not automatically land perfectly upright"): how far it has rolled over about
+   * a horizontal axis, radians (0 upright, ±π/2 on its side, π upside down; the sign is the screen
+   * side it rolls towards), and how fast it is rolling. Kept once it comes to rest.
+   */
+  roll = 0;
+  rollVel = 0;
+  /** Lying on its side or upside down (it no longer offers its top to stand on). */
+  get toppled(): boolean {
+    return Math.abs(this.roll) > 0.2;
+  }
   private settleS = 0;
   private lastHitS = -Infinity;
 
@@ -316,7 +345,16 @@ export class ArenaProps {
         if (f.heightM > 0 || f.vz > 0) {
           f.vz -= 18 * stepS;
           f.heightM = Math.max(0, f.heightM + f.vz * stepS);
+          prop.roll += prop.rollVel * stepS; // tumbling through the air
           if (f.heightM === 0 && f.vz < 0) this.land(prop, -f.vz);
+        } else if (prop.rollVel !== 0) {
+          // On the floor: it tips over onto whichever face it was closest to and lies there.
+          const rest = restingRoll(prop.roll);
+          const step = Math.sign(rest - prop.roll) * ROLL_SETTLE_RADPS * stepS;
+          if (Math.abs(rest - prop.roll) <= Math.abs(step)) {
+            prop.roll = rest;
+            prop.rollVel = 0;
+          } else prop.roll += step;
         }
         // A thrown object stops being dangerous once it has slowed down on the floor.
         if (f.heightM === 0 && prop.flight && prop.body) {
@@ -420,6 +458,14 @@ export class ArenaProps {
     });
     // Thrown things travel far: less floor drag while airborne (restored once it lands).
     if (thrown) prop.body.setLinearDamping(0.15);
+    // It tumbles end over end with the throw's momentum: faster for a hard throw, slower for a tall
+    // or heavy piece; it rolls toward the side of the screen it is thrown to. Put down: no tumble.
+    if (thrown) {
+      const speed = Math.hypot(velocity.x, velocity.y) + Math.max(0, upMps);
+      const screenSide = Math.sign(velocity.x - velocity.y) || (prop.index % 2 ? 1 : -1);
+      const inertia = Math.max(0.6, prop.size.h) * (1 + prop.kind.massKg / 120);
+      prop.rollVel = screenSide * Math.min(16, (speed * 1.5) / inertia);
+    } else prop.rollVel = 0;
     prop.looseFall = { heightM, vz: upMps };
     prop.flyingHigh = false; // set on the next update from the height
     prop.flight =
@@ -481,6 +527,8 @@ export class ArenaProps {
 
   /** It hit the floor: fragile things shatter if it came down hard; anything thrown stops flying. */
   private land(prop: ArenaProp, fallMps: number): void {
+    // Landing ends the free tumble: from here it settles onto its nearest face (see update).
+    if (prop.rollVel !== 0) prop.rollVel = Math.sign(prop.rollVel) * 1e-3;
     const body = prop.body;
     const v = body ? body.linvel() : { x: 0, y: 0 };
     const along = Math.hypot(v.x, v.y);
@@ -509,11 +557,15 @@ export class ArenaProps {
     const at = prop.pose;
     if (prop.body) this.physics.removeBody(prop.body);
     const { w, d } = prop.size;
+    // It stays exactly where and how it came to rest: no upright reset (owner, 12/11/2026).
     prop.body = this.physics.addPropBody({
       position: { x: at.x, y: at.y },
       halfExtents: { x: w / 2, y: d / 2 },
       massKg: prop.kind.massKg,
+      angleRad: at.angle,
     });
+    prop.roll = restingRoll(prop.roll);
+    prop.rollVel = 0;
     prop.looseFall = null;
     prop.awake = false;
   }

@@ -152,11 +152,12 @@ export class PhysicsWorld {
    * into it does not shove it; a blow wakes it with `setPropAwake` so it slides,
    * spins and collides by its mass, and it is planted again once it settles.
    */
-  addPropBody(spec: { position: Vec2; halfExtents: Vec2; massKg: number }): RapierModule.RigidBody {
+  addPropBody(spec: { position: Vec2; halfExtents: Vec2; massKg: number; angleRad?: number }): RapierModule.RigidBody {
     const RAPIER = rapier();
     const body = this.world.createRigidBody(
       RAPIER.RigidBodyDesc.fixed()
         .setTranslation(spec.position.x, spec.position.y)
+        .setRotation(spec.angleRad ?? 0)
         .setLinearDamping(4.5) // floor friction stand-in: shoved furniture slides a short way
         .setAngularDamping(5)
         .setCcdEnabled(true),
