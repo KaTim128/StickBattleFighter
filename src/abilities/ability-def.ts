@@ -198,6 +198,18 @@ export interface BeamDelivery {
    * Absent or 0 = it fires straight ahead.
    */
   readonly turnRadPerS?: number;
+  /**
+   * Damage build-up (owner, 12/11/2026): after `afterS` of unbroken contact with a fighter, each
+   * tick on them is multiplied by `startFactor`, growing by `perS` each further second up to
+   * `maxFactor`. Losing contact for a single tick resets it.
+   */
+  readonly ramp?: { readonly afterS: number; readonly startFactor: number; readonly perS: number; readonly maxFactor: number };
+}
+
+/** The damage factor a beam's build-up gives after `contactS` of unbroken contact. */
+export function beamRampFactor(ramp: BeamDelivery['ramp'], contactS: number): number {
+  if (!ramp || contactS < ramp.afterS) return 1;
+  return Math.min(ramp.maxFactor, ramp.startFactor + (contactS - ramp.afterS) * ramp.perS);
 }
 
 /** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */

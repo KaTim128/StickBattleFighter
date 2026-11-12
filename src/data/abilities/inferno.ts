@@ -93,7 +93,7 @@ export const INFERNO_KIT: AbilityKit = {
     name: 'Fire Beam',
     label: 'BEAM',
     description:
-      'After a 1-second charge, a roaring beam of fire pours from his hands. It hits again and again, hurts more up close and burns.',
+      'After a 1-second charge, a roaring beam of fire pours from his hands. It hits again and again, hurts more up close, burns, and hits harder the longer it stays on the same target.',
     icon: 'fire-beam',
     slot: 'a3',
     staminaCost: 35,
@@ -112,7 +112,17 @@ export const INFERNO_KIT: AbilityKit = {
       ignites: true,
       falloff: { fullWithinM: 1.5, minFactor: 0.45 },
     },
-    delivery: { type: 'beam', rangeM: 6.5, widthM: 0.6, durationS: 1.4, tickS: 0.15, turnRadPerS: 3.5 },
+    // Owner, 12/11/2026: holding the beam on someone builds the damage up: after 0.6 s of unbroken
+    // contact each tick hits 40% harder, rising 60% a second more, capped at double.
+    delivery: {
+      type: 'beam',
+      rangeM: 6.5,
+      widthM: 0.6,
+      durationS: 1.4,
+      tickS: 0.15,
+      turnRadPerS: 3.5,
+      ramp: { afterS: 0.6, startFactor: 1.4, perS: 0.6, maxFactor: 2 },
+    },
     vfx: 'fire-beam',
     sfx: { cast: 'beam-charge', release: 'beam-roar', impact: 'beam-sear' },
     look: {

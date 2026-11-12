@@ -107,3 +107,50 @@ describe('beam delivery', () => {
     expect(hits).toHaveLength(0);
   });
 });
+
+describe('Fire Beam damage build-up (owner, 12/11/2026)', () => {
+  it('no build-up before 0.6 s of contact, a clear jump at 0.6 s, growing after, capped', async () => {
+    const { beamRampFactor } = await import('../../../src/abilities/ability-def');
+    const ramp = { afterS: 0.6, startFactor: 1.4, perS: 0.6, maxFactor: 2 };
+    expect(beamRampFactor(ramp, 0)).toBe(1);
+    expect(beamRampFactor(ramp, 0.59)).toBe(1);
+    expect(beamRampFactor(ramp, 0.6)).toBeCloseTo(1.4);
+    expect(beamRampFactor(ramp, 1.1)).toBeGreaterThan(beamRampFactor(ramp, 0.8));
+    expect(beamRampFactor(ramp, 9)).toBe(2);
+  });
+
+  it('in the beam: later ticks on the same fighter hit harder; breaking contact resets it', () => {
+    const w = new AbilityWorld();
+    const hits: number[] = [];
+    let inBeam = true;
+    const h: AbilityHost = {
+      fighters: () => [
+        { id: 'me', x: 0, y: 0, radiusM: 0.3, hittable: true },
+        { id: 'them', x: 3, y: inBeam ? 0 : 3, radiusM: 0.3, hittable: true },
+      ],
+      hitFighter: (_c, _t, p) => {
+        hits.push(p.damage);
+        return true;
+      },
+      hitEnvironment: () => {},
+      blocked: () => null,
+      position: () => ({ x: 0, y: 0 }),
+      drive: () => {},
+      burnFighter: () => {},
+      buff: () => {},
+      emit: () => {},
+    };
+    w.release('me', INFERNO_KIT.a3, { x: 5, y: 0 }, h);
+    for (let i = 0; i < 60; i++) w.update(1 / 60, h); // 1 s of beam
+    expect(hits.length).toBeGreaterThan(5);
+    expect(hits[hits.length - 1]!).toBeGreaterThan(hits[0]! * 1.3); // built up
+    // Out of the beam for a while, then back in: the build-up starts again.
+    inBeam = false;
+    for (let i = 0; i < 12; i++) w.update(1 / 60, h);
+    const before = hits.length;
+    inBeam = true;
+    for (let i = 0; i < 12; i++) w.update(1 / 60, h);
+    expect(hits.length).toBeGreaterThan(before);
+    expect(hits[hits.length - 1]!).toBe(hits[0]!);
+  });
+});

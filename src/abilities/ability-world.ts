@@ -1,5 +1,6 @@
 import {
   type AbilityDef,
+  beamRampFactor,
   type AbilityPayload,
   type BuffEffect,
   type Burn,
@@ -122,6 +123,8 @@ export interface Beam {
   touching: string[];
   /** It has hit someone already (the first contact plays the impact sound). */
   landed: boolean;
+  /** Seconds of unbroken contact per fighter (the damage build-up); dropped when contact breaks. */
+  contact: Map<string, number>;
 }
 
 export interface FireZone {
@@ -394,6 +397,7 @@ export class AbilityWorld {
           to: at,
           touching: [],
           landed: false,
+          contact: new Map(),
         };
         this.aimBeam(beam, host);
         this.beams.push(beam);
@@ -647,24 +651,24 @@ export class AbilityWorld {
       b.sinceTickS += dtS;
       if (b.sinceTickS < d.tickS) continue;
       b.sinceTickS -= d.tickS;
-      // A tick: everyone in the beam is hit, harder the closer they stand (distance falloff).
+      // A tick: everyone in the beam is hit, harder the closer they stand (distance falloff), and
+      // harder the longer the beam has held them (the build-up, reset the moment contact breaks).
       const caster = host.position(b.casterId);
+      const was = b.touching;
       b.touching = [];
       for (const f of host.fighters()) {
         if (this.friendly(f, b.casterId, host) || !f.hittable) continue;
         if (segmentDistance(b.from, b.to, f) > d.widthM / 2 + f.radiusM) continue;
         const dist = Math.hypot(f.x - caster.x, f.y - caster.y);
-        if (
-          !this.hit(
-            host,
-            b.casterId,
-            f.id,
-            payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M),
-            b.dir,
-            b.def.look?.hitFlash,
-          )
-        )
+        const contactS = was.includes(f.id) ? (b.contact.get(f.id) ?? 0) + d.tickS : 0;
+        const at = payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M);
+        const k = beamRampFactor(d.ramp, contactS);
+        const payload = k === 1 ? at : { ...at, damage: Math.round(at.damage * k) };
+        if (!this.hit(host, b.casterId, f.id, payload, b.dir, b.def.look?.hitFlash)) {
+          b.contact.delete(f.id);
           continue;
+        }
+        b.contact.set(f.id, contactS);
         b.touching.push(f.id);
         host.emit({
           kind: 'impact',
@@ -678,6 +682,7 @@ export class AbilityWorld {
         });
         b.landed = true;
       }
+      for (const id of [...b.contact.keys()]) if (!b.touching.includes(id)) b.contact.delete(id);
       // The end of the beam scorches whatever stopped it (sets furniture alight, chips doors and walls).
       host.hitEnvironment(b.casterId, b.to, 0.3, b.def.payload, b.dir, true);
     }

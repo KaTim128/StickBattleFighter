@@ -47,6 +47,11 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
     out.push({ label: 'Damage', value: `${p.damage} per hit, up to ${ticks} hits` });
   } else if (p.damage > 0) out.push({ label: 'Damage', value: p.falloff ? `up to ${p.damage}` : `${p.damage}` });
   if (p.falloff) out.push({ label: 'Up close', value: 'hits hardest; weaker at range' });
+  if (d.type === 'beam' && d.ramp)
+    out.push({
+      label: 'Build-up',
+      value: `after ${s1(d.ramp.afterS)} s of contact ×${s1(d.ramp.startFactor)}, rising to ×${s1(d.ramp.maxFactor)}`,
+    });
   if (p.burn) out.push({ label: 'Burn', value: `${p.burn.dps}/s for ${s1(p.burn.durationS)} s` });
   if (p.stunS) out.push({ label: 'Stun', value: `${s1(p.stunS)} s` });
   if (p.blindS) out.push({ label: 'Blind', value: `${s1(p.blindS)} s` });
