@@ -93,6 +93,8 @@ export interface PlayerState {
   carrying: string | null;
   /** Still heaving the carried object up (heavier takes longer). */
   lifting: boolean;
+  /** The player's beam is pouring: the touch joystick aims it instead of moving. */
+  beamAiming: boolean;
   /** What the contextual utility button does now: jump, pick up or throw. */
   utility: 'jump' | 'pickup' | 'throw';
   /** 1 = a dodge is ready, falling to 0 just after one (weight-based cooldown). */
@@ -425,6 +427,7 @@ export class FightArenaScene implements ArenaScene {
       burning: f.combatant.burning,
       carrying: f.carrying?.placement.kind ?? null,
       lifting: f.liftS > 0,
+      beamAiming: this.abilities?.world.beams.some((b) => b.casterId === f.name) ?? false,
       utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
       dodgeReady: 1 - f.combatant.dodgeCooldownLeftS / f.combatant.dodgeCooldownTotalS,
     };
@@ -947,6 +950,10 @@ export class FightArenaScene implements ArenaScene {
       if (fresh) this.beamPointerMoves = this.intents.pointerMoves;
       const swipe = this.intents.swipe;
       if (swipe) return swipe;
+      // Touch (owner, 12/11/2026): while the beam pours, the movement joystick aims it (the caster
+      // is rooted, so the stick has nothing else to do); it moves the fighter again afterwards.
+      const stick = this.intents.moveFrom('touch');
+      if (stick && Math.hypot(stick.x, stick.y) > 0.2) return stick;
       if (this.intents.pointerMoves === this.beamPointerMoves) return null;
       const p = this.pointerOnFloor();
       return p ? { x: p.x - f.x, y: p.y - f.y } : null;

@@ -123,6 +123,25 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     scenes.clear();
   });
 
+  it('Fire Beam on touch (owner, 12/11/2026): while it pours the joystick aims it, not moves; afterwards it moves again', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 15, y: 13 });
+    intents.pressAbility('a3');
+    runUntil(() => scene.abilities!.world.beams.length > 0, 2);
+    expect(scene.player.beamAiming).toBe(true);
+    const start = { x: scene.player.x, y: scene.player.y };
+    intents.setMove('touch', { x: 0, y: 1 }); // stick held "down" (world +y)
+    run(0.6);
+    const beam = scene.abilities!.world.beams[0]!;
+    expect(beam.dir.y).toBeGreaterThan(0.9); // the beam swung to where the stick points
+    expect(Math.hypot(scene.player.x - start.x, scene.player.y - start.y)).toBeLessThan(0.05); // he did not walk
+    runUntil(() => scene.player.ability === null, 4);
+    expect(scene.player.beamAiming).toBe(false);
+    run(0.6); // movement is back
+    expect(scene.player.y - start.y).toBeGreaterThan(0.5);
+    intents.setMove('touch', { x: 0, y: 0 });
+    scenes.clear();
+  });
+
   it('Fire Beam: closer hurts more (distance falloff), and it does not reach past its medium range', async () => {
     const dealt = async (x: number) => {
       const { intents, scene, scenes, run } = await setup({ x, y: 13 });

@@ -42,6 +42,11 @@ export class PlayerIntents {
     else this.sources.set(source, clampToUnit(v));
   }
 
+  /** One device's movement (world direction), or null when it is idle. */
+  moveFrom(source: string): Vec2 | null {
+    return this.sources.get(source) ?? null;
+  }
+
   /** Combined movement from all devices, never longer than 1. */
   get move(): Vec2 {
     let x = 0;

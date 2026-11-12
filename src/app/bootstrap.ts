@@ -20,7 +20,7 @@ import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onTog
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
 import { SettingsState } from '../input/settings-store';
-import { attachTouchControls, showDodgeReady, showUtilityAction } from '../input/touch-controls';
+import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
@@ -319,6 +319,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         debug.player = scene.player;
         showUtilityAction(document.body, debug.player.utility);
         showDodgeReady(document.body, debug.player.dodgeReady);
+        showStickAiming(document.body, debug.player.beamAiming);
         debug.camera = scene.cameraState ? { ...scene.cameraState } : null;
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;

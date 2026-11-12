@@ -275,6 +275,16 @@ export type UtilityAction = 'jump' | 'pickup' | 'throw';
 
 const UTILITY_LABELS: Readonly<Record<UtilityAction, string>> = { jump: 'JUMP', pickup: 'GRAB', throw: 'THROW' };
 
+/**
+ * While a beam pours (owner, 12/11/2026) the joystick aims instead of moving: it turns orange and
+ * reads AIM, and goes back to normal the moment the beam ends (cheap: only on change).
+ */
+export function showStickAiming(root: ParentNode, aiming: boolean): void {
+  const stick = root.querySelector<HTMLElement>('.joystick');
+  if (!stick || stick.classList.contains('aiming') === aiming) return;
+  stick.classList.toggle('aiming', aiming);
+}
+
 /** Relabel the utility button (cheap: touches the DOM only when the action changes). */
 export function showUtilityAction(root: ParentNode, action: UtilityAction): void {
   const util = root.querySelector<HTMLButtonElement>('.util-button');
