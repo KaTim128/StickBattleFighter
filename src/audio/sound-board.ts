@@ -551,18 +551,30 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { crackle: { dur: 0.35, gain: 0.35, count: 14 } },
     { noise: { dur: 0.3, gain: 0.3, type: 'lowpass', freq: 900, freqEnd: 300, delay: 0.04 } },
   ],
-  // Steel: a ringing clang of inharmonic partials.
+  // Heavy steel (owner, 12/11/2026: filing cabinets sounded like pots and pans; "a realistic
+  // metallic impact ... resonance, vibration and weight"). Not a bright ping: the dull, heavy BOOM
+  // of a big sheet-steel body. A deep thump of mass, a gritty contact crunch, a low inharmonic
+  // resonance (two near partials beat against each other, so the panel visibly hums and shudders),
+  // a fluttering sheet-metal shimmer, and the drawers rattling in their runners as it settles.
   'hit-metal': [
-    { tone: { wave: 'triangle', f0: 620, f1: 600, dur: 0.35, gain: 0.25 } },
-    { tone: { wave: 'sine', f0: 1530, f1: 1500, dur: 0.25, gain: 0.12 } },
-    { noise: { dur: 0.03, gain: 0.3, type: 'highpass', freq: 3000 } },
+    { tone: { wave: 'sine', f0: 78, f1: 42, dur: 0.24, gain: 0.85, drive: 0.25 } },
+    { noise: { dur: 0.08, gain: 0.55, type: 'lowpass', freq: 2400, freqEnd: 500, attack: 0.002, drive: 0.3 } },
+    { tone: { wave: 'triangle', f0: 182, f1: 176, dur: 0.75, gain: 0.2 } },
+    { tone: { wave: 'triangle', f0: 187, f1: 181, dur: 0.7, gain: 0.16 } },
+    { tone: { wave: 'sine', f0: 433, f1: 425, dur: 0.5, gain: 0.07 } },
+    { tone: { wave: 'sine', f0: 897, f1: 884, dur: 0.28, gain: 0.03 } },
+    { noise: { dur: 0.55, gain: 0.08, type: 'bandpass', freq: 1150, q: 6, attack: 0.01, flutter: 17 } },
+    { crackle: { dur: 0.3, gain: 0.12, count: 6 } },
   ],
+  // A steel cabinet wrecked: a bigger, longer boom, buckling panels, a crunch and drawers clattering out.
   'break-metal': [
-    { tone: { wave: 'triangle', f0: 410, f1: 380, dur: 0.8, gain: 0.35 } },
-    { tone: { wave: 'sine', f0: 1130, f1: 1080, dur: 0.6, gain: 0.18 } },
-    { tone: { wave: 'sine', f0: 1870, f1: 1820, dur: 0.45, gain: 0.1 } },
-    { noise: { dur: 0.12, gain: 0.5, type: 'bandpass', freq: 2500, q: 0.8 } },
-    { tone: { wave: 'sine', f0: 120, f1: 50, dur: 0.3, gain: 0.5 } },
+    { tone: { wave: 'sine', f0: 70, f1: 30, dur: 0.45, gain: 1, drive: 0.35 } },
+    { noise: { dur: 0.16, gain: 0.7, type: 'lowpass', freq: 2600, freqEnd: 350, attack: 0.002, drive: 0.4 } },
+    { tone: { wave: 'triangle', f0: 158, f1: 140, dur: 1.1, gain: 0.24 } },
+    { tone: { wave: 'triangle', f0: 163, f1: 146, dur: 1, gain: 0.18 } },
+    { tone: { wave: 'sine', f0: 377, f1: 350, dur: 0.7, gain: 0.08 } },
+    { noise: { dur: 0.9, gain: 0.12, type: 'bandpass', freq: 950, freqEnd: 700, q: 5, attack: 0.02, flutter: 13 } },
+    { crackle: { dur: 0.7, gain: 0.3, count: 16 } },
   ],
   // Glass and screens: a bright shatter and a tinkle of falling shards.
   'break-glass': [

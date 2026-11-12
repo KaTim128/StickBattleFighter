@@ -106,6 +106,13 @@ export interface DashDelivery {
    * radius (2 m or more also shakes the screen). Absent = the dash passes through.
    */
   readonly collision?: { readonly radiusM: number };
+  /**
+   * Keeps charging in a straight line until something stops it (owner, 12/11/2026: "continue
+   * travelling in a straight line until he hits a wall"): `distanceM` is then only a safety
+   * limit. Furniture and breakable wall sections in the way are smashed and the charge runs on;
+   * a solid wall (or the first enemy, with `collision`) stops it.
+   */
+  readonly untilBlocked?: boolean;
 }
 
 /** A ring around the caster: telegraphed on the floor first (REQ-ABL-6), then it erupts. */

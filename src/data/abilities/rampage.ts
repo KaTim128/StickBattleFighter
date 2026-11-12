@@ -56,7 +56,7 @@ export const RAMPAGE_KIT: AbilityKit = {
     name: 'Rampage Charge',
     label: 'CHARGE',
     description:
-      'Leans in, then charges in a straight line, smashing through breakable walls and furniture and stopping dead in the first enemy he hits.',
+      'Leans in, then charges in a straight line until a wall stops him, smashing through furniture and breakable walls on the way and stopping dead in the first enemy he hits.',
     icon: 'rampage-charge',
     slot: 'a2',
     staminaCost: 35,
@@ -74,7 +74,16 @@ export const RAMPAGE_KIT: AbilityKit = {
       impact: 'knuckle-heavy',
       wallDamage: 3000,
     },
-    delivery: { type: 'dash', distanceM: 11, speedMps: 15, hitRadiusM: 0.85, collision: { radiusM: 2.2 } },
+    // Owner, 12/11/2026: he runs on in a straight line until he hits a wall (or an enemy); 40 m is
+    // only a safety limit, longer than any arena.
+    delivery: {
+      type: 'dash',
+      distanceM: 40,
+      speedMps: 15,
+      hitRadiusM: 0.85,
+      collision: { radiusM: 2.2 },
+      untilBlocked: true,
+    },
     vfx: 'rampage-charge',
     sfx: { cast: 'charge-stomp', release: 'charge-rush', impact: 'charge-impact' },
     look: {

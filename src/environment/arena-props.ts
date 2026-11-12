@@ -59,6 +59,8 @@ export interface PropEvent {
   readonly sizeM: number;
   /** Which kind of prop (special breaks, e.g. an extinguisher bursts into foam). */
   readonly prop?: string;
+  /** How hard the blow was, 0..1 (a jab ~0.15, a charge 1): louder, heavier sounds for harder hits. */
+  readonly force?: number;
 }
 
 export interface PropState {
@@ -554,6 +556,7 @@ export class ArenaProps {
         ...evAt(),
         dir: hit.direction,
         sizeM: Math.max(prop.size.w, prop.size.d, prop.size.h),
+        force: Math.min(1, hit.strength / 2000),
       });
     }
     // An item on a desk that survives the blow is knocked off it.

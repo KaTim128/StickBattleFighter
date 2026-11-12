@@ -66,7 +66,8 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
   else if (d.type === 'leap') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
   else if (d.type === 'beam') out.push({ label: 'Range', value: `${s1(d.rangeM)} m` });
   else if (d.type === 'projectile') out.push({ label: 'Range', value: `${s1(d.maxRangeM)} m` });
-  else if (d.type === 'dash') out.push({ label: 'Distance', value: `${s1(d.distanceM)} m` });
+  else if (d.type === 'dash')
+    out.push({ label: 'Distance', value: d.untilBlocked ? 'until a wall stops him' : `${s1(d.distanceM)} m` });
   else if (d.type === 'nova') out.push({ label: 'Area', value: `${s1(d.radiusM)} m radius` });
   if (a.slot === 'ult') out.push({ label: 'Charge', value: 'fills as you deal and take damage' });
   else {

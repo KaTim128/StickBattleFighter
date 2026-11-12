@@ -97,7 +97,7 @@ export class SceneAbilities implements AbilityHost {
   stepCaster(f: FighterEntity, stepS: number): void {
     const caster = f.caster;
     if (!caster) return;
-    const ev = caster.update(stepS);
+    const ev = caster.update(stepS, this.world.driving(f.name));
     if (ev.released) {
       const def = ev.released;
       if (def.delivery.type === 'leap') f.combatant.grantInvulnerability(def.delivery.airS + 0.1); // airborne: untouchable

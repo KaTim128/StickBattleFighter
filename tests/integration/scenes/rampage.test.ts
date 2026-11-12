@@ -158,6 +158,24 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     scenes.clear();
   });
 
+  it('Rampage Charge from a distance runs straight on, far past its old 11 m, until the wall stops it (owner, 12/11/2026)', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 3, y: 4 });
+    scene.respawnDummy({ x: 6, y: 20 }); // off to the side, out of the charge's line
+    intents.setMove('t', { x: 1, y: 0 });
+    run(0.1);
+    intents.setMove('t', { x: 0, y: 0 });
+    const y0 = scene.player.y;
+    intents.pressAbility('a2');
+    run(0.1); // the press starts the cast on the next step
+    expect(scene.player.ability).toBe('rampageCharge');
+    runUntil(() => scene.player.ability === null, 5);
+    expect(scene.player.x - 3).toBeGreaterThan(14); // kept going, no premature stop
+    expect(Math.abs(scene.player.y - y0)).toBeLessThan(0.5); // a straight line
+    const burst = scene.abilities!.recentFx.find((e) => e.kind === 'impact' && e.ability === 'rampageCharge');
+    expect(burst).toBeDefined(); // ended in a collision with the wall
+    scenes.clear();
+  });
+
   it('Rampage Charge slams into a solid wall and stops there with a collision burst', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 3, y: 13 });
     scene.respawnDummy({ x: 28, y: 18 }); // out of the charge's aim range, so it goes the way he faces

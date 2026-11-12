@@ -1940,7 +1940,12 @@ export class FightArenaScene implements ArenaScene {
         this.frameDust.push({ points: pts, colour: 0xf4f6f8, colours: [0xffffff, 0xe6ecf2, 0xd9e2ea], count: 160 });
       }
       const sound = PROP_SOUNDS[e.material]?.[e.kind];
-      if (sound) this.queueSound(sound, e.kind === 'break' ? Math.min(1.4, 0.8 + e.sizeM * 0.3) : 0.7);
+      // A hit is as loud as it was hard (owner, 12/11/2026: "matches the intensity of the collision").
+      if (sound)
+        this.queueSound(
+          sound,
+          e.kind === 'break' ? Math.min(1.4, 0.8 + e.sizeM * 0.3) : 0.45 + 0.75 * (e.force ?? 0.33),
+        );
       const len = Math.hypot(e.dir.x, e.dir.y) || 1;
       const dir = { x: e.dir.x / len || 1, y: e.dir.y / len };
       const big = e.kind === 'break';

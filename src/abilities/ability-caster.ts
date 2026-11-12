@@ -135,7 +135,11 @@ export class AbilityCaster {
     this.active = null;
   }
 
-  update(dtS: number): CastEvents {
+  /**
+   * @param driven the delivery is still carrying the caster (a charge that runs until a wall): the
+   * recovery waits half-way, so the fighter cannot act mid-charge and still gets its full settle.
+   */
+  update(dtS: number, driven = false): CastEvents {
     for (const s of ABILITY_SLOTS) this.cooldowns.set(s, Math.max(0, this.cooldown(s) - dtS));
     // Passive charge only between ultimates' casts.
     if (!(this.active && this.active.def.slot === 'ult')) {
@@ -150,6 +154,7 @@ export class AbilityCaster {
       c.phase = 'recovery';
       c.t -= c.def.castS;
     }
+    if (c.phase === 'recovery' && driven) c.t = Math.min(c.t, c.def.recoveryS * 0.5);
     if (c.phase === 'recovery' && c.t >= c.def.recoveryS) {
       events.ended = c.def;
       this.active = null;

@@ -162,7 +162,12 @@ interface DashAction {
   sinceTrailM: number;
   lastX: number;
   lastY: number;
+  /** How long the charge has been held up by something it is smashing (it stops if it never gives). */
+  stuckS: number;
 }
+
+/** A charge held up this long by something that will not give stops against it. */
+const CHARGE_STUCK_S = 0.12;
 
 interface LeapAction {
   readonly kind: 'leap';
@@ -287,6 +292,7 @@ export class AbilityWorld {
           sinceTrailM: TRAIL_SPACING_M,
           lastX: at.x,
           lastY: at.y,
+          stuckS: 0,
         });
         break;
       case 'nova': {
@@ -807,10 +813,20 @@ export class AbilityWorld {
         if (d.collision) return true; // a body charge stops dead in the target
       }
     }
-    // Slammed into something solid (barely moved last step although driven at full speed).
-    if (d.collision && a.ageS > 0.1 && movedM < d.speedMps * dtS * 0.3) {
+    // Held up (barely moved last step although driven at full speed): smash what is in front. A
+    // charge that runs until blocked keeps going if it gives (furniture, a breakable section); it
+    // stops once something has held it for a moment (a solid wall).
+    const held = d.collision && a.ageS > 0.1 && movedM < d.speedMps * dtS * 0.3;
+    a.stuckS = held ? a.stuckS + dtS : 0;
+    if (held && d.untilBlocked && a.stuckS < CHARGE_STUCK_S) {
       const front = { x: at.x + a.dir.x * 0.6, y: at.y + a.dir.y * 0.6 };
       host.hitEnvironment(a.casterId, front, d.hitRadiusM, a.def.payload, a.dir, false);
+      host.drive(a.casterId, { x: a.dir.x * d.speedMps, y: a.dir.y * d.speedMps }, 0);
+      return false;
+    }
+    if (held && d.collision) {
+      const front = { x: at.x + a.dir.x * 0.6, y: at.y + a.dir.y * 0.6 };
+      if (!d.untilBlocked) host.hitEnvironment(a.casterId, front, d.hitRadiusM, a.def.payload, a.dir, false);
       host.emit({
         kind: 'impact',
         ability: a.def.id,
