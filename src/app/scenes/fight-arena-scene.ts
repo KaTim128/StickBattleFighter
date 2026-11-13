@@ -170,8 +170,6 @@ const SETTLE_DECEL = 14;
  * shoves a chair, jab then hook breaks it, a table takes two combos), so melee hits objects this
  * much harder than its fighter damage.
  */
-/** A fighter this high above what it stands on (jumping, leaping, launched) raises the arena walls into view. */
-const WALL_RISE_FROM_M = 0.45;
 export const MELEE_OBJECT_DAMAGE_SCALE = 1.7;
 const KNOCK_PROP_DAMAGE = 0.1;
 const HITSTOP_HEAVY_S = 0.09;
@@ -276,8 +274,6 @@ export class FightArenaScene implements ArenaScene {
   private vfx: AbilityVfx | null = null;
   /** Fades walls and tall props that stand in front of a fighter (owner, 11/11/2026). */
   occlusion: OcclusionFader | null = null;
-  /** How far the taller outer walls are raised into view (0..1, eased). */
-  wallRise = 0;
   /** Desk items that fell to the floor and now depth-sort as floor objects. */
   private readonly grounded = new Set<number>();
   /** Practice option: the dummy jabs back when you are close (REQ-MOD-5). */
@@ -2018,16 +2014,6 @@ export class FightArenaScene implements ArenaScene {
       f.view ? [{ node: f.view.root, depth: () => f.view?.root.zIndex ?? 0 }] : [],
     );
     this.occlusion?.update(viewers, frameDtS);
-    // Taller arena walls rise into view while a fighter is up in the air (owner, 13/11/2026).
-    const up = this.fighters.some(
-      (f) =>
-        !f.combatant.isKo &&
-        (f.hop.heightM - (f.hop.floorM ?? 0) > WALL_RISE_FROM_M ||
-          f.abilityLift > WALL_RISE_FROM_M ||
-          f.knockFlightS > 0.1),
-    );
-    this.wallRise += ((up ? 1 : 0) - this.wallRise) * smoothing(up ? 10 : 2.5, frameDtS);
-    this.view.setWallRise(this.wallRise);
 
     // Frame the player and the dummy (aiming at torsos), then apply impact shake.
     const { width, height } = this.viewport();

@@ -250,16 +250,4 @@ describe('furniture climbing', () => {
     expect(lowest).toBeGreaterThan(1.95); // never dipped into the gap
     t.scenes.clear();
   });
-
-  it('the taller arena walls rise into view while a fighter is in the air, and sink back on the ground (owner, 13/11/2026)', async () => {
-    const t = await setup('inferno', { x: 8, y: 8 });
-    t.run(0.5);
-    expect(t.scene.wallRise).toBeLessThan(0.02); // hidden at ground level
-    t.intents.pressJump();
-    t.runUntil(() => t.scene.wallRise > 0.3, 1);
-    expect(t.scene.wallRise).toBeGreaterThan(0.3);
-    t.run(3);
-    expect(t.scene.wallRise).toBeLessThan(0.05);
-    t.scenes.clear();
-  });
 });

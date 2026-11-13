@@ -351,7 +351,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Tap strings light then a moderate finisher; whole string under 20% HP (`tests/unit/characters/damage-balance.test.ts`).
 - [x] Each heavy below the fighter's damaging abilities and still knocks down (`tests/integration/scenes/fourth-abilities.test.ts`).
 - [x] Furniture keeps its feel under melee (`tests/integration/scenes/props.test.ts`).
-- [x] Walls rise while airborne and sink back on the ground (`tests/integration/scenes/climbing.test.ts`); fight stays visible (browser).
+- [x] Taller walls always shown; the front glass never hides the fight (browser screenshot of the office).
 - [ ] Owner playtest: fight length and feel with the new damage; wall rise look on a phone.
 
 ## 14. Regression (every milestone)

@@ -507,8 +507,8 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Decision.**
 - *Redesign:* the `?redesign` preview gate is removed; `PremiumModel` skins (by body style) and premium portraits are the only look for every fighter with a skin. No second, competing look is kept (integration rule); the old look is in git history (before this change).
 - *Damage:* taps, heavies and air attacks are cut in each moveset's data (light opening hits, a moderate finisher, every melee blow below the fighter's damaging abilities). Objects keep their tuned feel through `MELEE_OBJECT_DAMAGE_SCALE` (1.7) on melee's damage to props and walls, so durabilities did not change.
-- *Walls:* `ArenaView.setWallRise(0..1)` draws the outer walls' extra height (to 4.5 m) as a presentation layer; the scene eases it in while a fighter is more than 0.45 m above what it stands on, leaping or launched. The front walls rise as faint glass with a solid rail. Colliders and arena bounds are untouched.
+- *Walls:* the outer walls' extra height (to 4.5 m) is a static presentation layer in `buildArenaView`: solid back walls, front walls as faint glass with a faint top edge. Colliders and arena bounds are untouched. (A first version raised them only while a fighter was airborne; the owner asked for them always visible, SUP-28.)
 **Alternatives.** Keeping `?classic` as a fallback (rejected: two looks to maintain); retuning every prop's durability (rejected: more data churn, same result); fully opaque tall front walls (rejected: they hide the fight in the 2.5D view).
-**Trade-offs.** The back walls' raised tops sit above the usual camera framing, so the rise reads mostly through the front walls and when the camera is near the back walls.
+**Trade-offs.** The back walls' raised tops sit mostly above the usual camera framing; the front glass is kept faint so it never hides the fight.
 **Status.** ACCEPTED.
 

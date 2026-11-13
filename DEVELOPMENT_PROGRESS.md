@@ -26,10 +26,11 @@ Check this table before assigning work. No two active assignments may share a pa
 ### 13/11/2026 (latest+2): Redesign default, damage balance, rising walls (owner)
 - **Redesign default (REQ-VIS-10, TD-060):** the preview gate is gone; Titan, Necro, Shroud and the dummy use their redesign and premium portraits everywhere.
 - **Damage (REQ-CMB-31):** for example Inferno's punches are now 22/24/26 with a 55 kick finisher (was 35/40/45/137), and his heavy is 50 (was 131); Titan's string is 34/41/90 (power included) and his heavy 84 where his abilities are 120 to 190. Melee hits furniture and walls through `MELEE_OBJECT_DAMAGE_SCALE` so they break as before.
-- **Walls (REQ-PHY-14):** the outer walls rise to 4.5 m while a fighter is in the air; the front walls rise as faint glass with a rail.
+- **Walls (REQ-PHY-14, SUP-28):** the outer walls stand 4.5 m tall, always shown (owner changed it from airborne-only the same day); the front walls are faint glass with a faint top edge.
 - **Changed tests:** exact old damage numbers in the props, combat, Rampage, character and phase 5 e2e tests now follow the new data or assert the new rule.
 - **Checks:** tsc clean; lint clean; vitest 52 files, 398 tests passed; build OK; e2e 42 passed, 28 skipped (one phase 5 e2e test needed the new combo damage, then passed).
-- **Known issues:** the raised back-wall tops are mostly above the usual camera framing, so the rise reads mainly through the front walls.
+- **Also:** Shroud's knife points up diagonally; his mask tips down slightly.
+- **Known issues:** the raised back-wall tops are mostly above the usual camera framing.
 - **Next task:** AI opponents use abilities, heavy attacks and climbing; then Tournament mode.
 
 ### 13/11/2026 (latest+1): Titan rename deployed; Grapple Slam hit/miss; traversal, falls and landings (owner)

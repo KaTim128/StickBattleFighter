@@ -24,11 +24,6 @@ export interface ArenaView {
   readonly walls: readonly (readonly Container[])[];
   /** Interior wall sections and door sections that can stand in front of a fighter (wall transparency). */
   readonly occluders: Container[];
-  /**
-   * Raise the outer walls' upper part into view, 0 (hidden: the walls as they always were) to 1
-   * (full height). Presentation only: collisions and the arena bounds never change.
-   */
-  setWallRise(k: number): void;
   destroy(): void;
 }
 
@@ -44,15 +39,15 @@ const WALL_CHUNK_M = 0.5;
 const BACK_WALL_M = 2.4;
 const FRONT_LEDGE_M = 0.3;
 /**
- * The outer walls' full height (owner, 13/11/2026: taller walls for a more enclosed arena, seen only
- * when a fighter is up in the air). At ground level the extra height stays out of view; it rises
- * smoothly as a fighter jumps, climbs or is launched. The front walls rise as faint glass with a
- * solid top rail, so the room stays readable and a fighter behind them is never hidden.
+ * The outer walls' full height (owner, 13/11/2026: taller walls for a more enclosed arena, always
+ * shown). The back walls stand solid; the front walls are faint glass with a faint top rail, so the
+ * room stays readable and a fighter behind them is never hidden.
  */
 const TALL_WALL_M = 4.5;
 const FRONT_RISE_ALPHA = 0.12;
 /** The front walls' solid top band (a rail that marks the enclosure without hiding the room). */
 const FRONT_RAIL_M = 0.14;
+const FRONT_RAIL_ALPHA = 0.3;
 /** A light skirting board along the foot of interior walls. */
 const SKIRTING = 0xd8d2c2;
 const SKIRTING_M = 0.07;
@@ -206,28 +201,19 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   isoBlock(front, -t, h, w + t, h + t, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
   isoBlock(front, w, -t, w + t, h, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
 
-  // The rising upper walls: back walls extend upwards behind the room; the front walls rise over it.
+  // The upper walls: the back walls extend upwards behind the room; the front walls rise over it.
   const backRise = new Graphics();
   world.addChildAt(backRise, world.getChildIndex(walls) + 1);
   const frontRise = new Graphics();
-  let shownRise = -1;
-  const drawRise = (k: number): void => {
-    backRise.clear();
-    frontRise.clear();
-    if (k <= 0.001) return;
-    const backTop = BACK_WALL_M + (TALL_WALL_M - BACK_WALL_M) * k;
-    const wallLook = { colour: look.wall, top: look.wallEdge, edge: 0.4, alpha: k };
-    isoBlock(backRise, -t, -t, w + t, 0, BACK_WALL_M, backTop, wallLook);
-    isoBlock(backRise, -t, 0, 0, h + t, BACK_WALL_M, backTop, wallLook);
-    const frontTop = FRONT_LEDGE_M + (TALL_WALL_M - FRONT_LEDGE_M) * k;
-    const glass = { colour: look.wall, top: look.wallEdge, edge: 0.6, alpha: FRONT_RISE_ALPHA * k };
-    isoBlock(frontRise, -t, h, w + t, h + t, FRONT_LEDGE_M, frontTop, glass);
-    isoBlock(frontRise, w, -t, w + t, h, FRONT_LEDGE_M, frontTop, glass);
-    const rail = { colour: look.wall, top: look.wallEdge, edge: 0.5, alpha: Math.min(1, k * 1.4) };
-    const railFrom = Math.max(FRONT_LEDGE_M, frontTop - FRONT_RAIL_M);
-    isoBlock(frontRise, -t, h, w + t, h + t, railFrom, frontTop, rail);
-    isoBlock(frontRise, w, -t, w + t, h, railFrom, frontTop, rail);
-  };
+  const wallLook = { colour: look.wall, top: look.wallEdge, edge: 0.4 };
+  isoBlock(backRise, -t, -t, w + t, 0, BACK_WALL_M, TALL_WALL_M, wallLook);
+  isoBlock(backRise, -t, 0, 0, h + t, BACK_WALL_M, TALL_WALL_M, wallLook);
+  const glass = { colour: look.wall, top: look.wallEdge, edge: 0.6, alpha: FRONT_RISE_ALPHA };
+  isoBlock(frontRise, -t, h, w + t, h + t, FRONT_LEDGE_M, TALL_WALL_M, glass);
+  isoBlock(frontRise, w, -t, w + t, h, FRONT_LEDGE_M, TALL_WALL_M, glass);
+  const rail = { colour: look.wall, top: look.wallEdge, edge: 0.5, alpha: FRONT_RAIL_ALPHA };
+  isoBlock(frontRise, -t, h, w + t, h + t, TALL_WALL_M - FRONT_RAIL_M, TALL_WALL_M, rail);
+  isoBlock(frontRise, w, -t, w + t, h, TALL_WALL_M - FRONT_RAIL_M, TALL_WALL_M, rail);
 
   const actors = new YSortLayer();
   world.addChild(actors.container);
@@ -273,12 +259,6 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     propCount: arena.props.length,
     props,
     occluders,
-    setWallRise(k: number) {
-      const q = Math.round(Math.min(1, Math.max(0, k)) * 50) / 50; // redraw only on visible change
-      if (q === shownRise) return;
-      shownRise = q;
-      drawRise(q);
-    },
     destroy() {
       for (const d of doors.values()) d.destroy();
       actors.destroy();
