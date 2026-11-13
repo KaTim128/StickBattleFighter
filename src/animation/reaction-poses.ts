@@ -179,3 +179,111 @@ export function getUpFrame(base: Pose, progress: number): DownFrame {
   }
   return { pose: blendPose(risePose(base), base, ease((p - 0.75) / 0.25)), tiltRad: 0, liftM: 0 };
 }
+
+/**
+ * Falling from a height (owner, 13/11/2026: a physical fall, never a frozen pose): arms thrown up
+ * and out for balance, the legs reaching down for the floor, the head looking down at it.
+ */
+export function fallPose(base: Pose): Pose {
+  return {
+    ...base,
+    lean: deg(-6),
+    head: deg(18),
+    armFront: limb(128, 40),
+    armBack: limb(150, 30),
+    legFront: limb(26, -38),
+    legBack: limb(-14, -22),
+  };
+}
+
+/** Landing squat: knees and hips folded to soak up the drop, arms forward for balance. */
+export function landSquatPose(base: Pose): Pose {
+  return {
+    ...base,
+    lean: deg(-24),
+    head: deg(18),
+    armFront: limb(70, 40),
+    armBack: limb(42, 55),
+    legFront: limb(64, -118),
+    legBack: limb(-6, -104),
+  };
+}
+
+/** Flat on the front: chest down, arms bent with the hands by the shoulders, legs straight back. */
+function pronePose(base: Pose): Pose {
+  return {
+    ...base,
+    lean: deg(-4),
+    head: deg(-20),
+    armFront: limb(150, -120),
+    armBack: limb(160, -110),
+    legFront: limb(6, -10),
+    legBack: limb(-8, -6),
+  };
+}
+
+/** Pushing up off the floor: arms straight under the chest, knees drawing in. */
+function pushUpPose(base: Pose): Pose {
+  return {
+    ...base,
+    lean: deg(-8),
+    head: deg(-10),
+    armFront: limb(92, 4),
+    armBack: limb(84, 8),
+    legFront: limb(70, -120),
+    legBack: limb(10, -60),
+  };
+}
+
+/** How long a big-fall collapse takes from touching down to lying flat. */
+const COLLAPSE_S = 0.3;
+
+/**
+ * A big-fall collapse (owner, 13/11/2026): the knees buckle on impact, then the body pitches over
+ * flat (onto the back, or face down when landing on the move), hits with a small bounce and lies.
+ */
+export function collapseFrame(base: Pose, downTimeS: number, faceDown: boolean): DownFrame {
+  const sign = faceDown ? -1 : 1;
+  const lying = faceDown ? pronePose(base) : lyingPose(base);
+  const squat = landSquatPose(base);
+  if (downTimeS < 0.1) {
+    const t = ease(downTimeS / 0.1);
+    return { pose: blendPose(base, squat, t), tiltRad: sign * deg(10) * t, liftM: 0 };
+  }
+  if (downTimeS < COLLAPSE_S) {
+    const t = (downTimeS - 0.1) / (COLLAPSE_S - 0.1);
+    return {
+      pose: blendPose(squat, lying, ease(t * 1.3)),
+      tiltRad: sign * (deg(10) + (LYING_TILT - deg(10)) * t * t), // gravity: faster as it goes over
+      liftM: 0,
+    };
+  }
+  const since = downTimeS - COLLAPSE_S;
+  const bounce = since < 0.25 ? deg(8) * Math.sin((since / 0.25) * Math.PI) * (1 - since / 0.25) : 0;
+  return { pose: lying, tiltRad: sign * (LYING_TILT - bounce), liftM: 0 };
+}
+
+/**
+ * Getting up from face down (progress 0..1): push up on straight arms, draw the knees under,
+ * then rise into the stance.
+ */
+export function pushUpFrame(base: Pose, progress: number): DownFrame {
+  const p = Math.min(1, Math.max(0, progress));
+  if (p < 0.4) {
+    const t = ease(p / 0.4);
+    return {
+      pose: blendPose(pronePose(base), pushUpPose(base), t),
+      tiltRad: -LYING_TILT + (LYING_TILT - deg(50)) * t,
+      liftM: 0,
+    };
+  }
+  if (p < 0.75) {
+    const t = ease((p - 0.4) / 0.35);
+    return {
+      pose: blendPose(pushUpPose(base), landSquatPose(base), t),
+      tiltRad: -deg(50) * (1 - t),
+      liftM: 0,
+    };
+  }
+  return { pose: blendPose(landSquatPose(base), base, ease((p - 0.75) / 0.25)), tiltRad: 0, liftM: 0 };
+}

@@ -6,9 +6,10 @@ import {
   canGrab,
   distanceTo,
   fallDamage,
-  floorUnder,
   jumpPeakM,
-  landingRecoveryS,
+  type LandingKind,
+  landingKind,
+  supportUnder,
 } from '../../physics/climbing';
 import type { PhysicsWorld } from '../../physics/physics-world';
 import type { FighterEntity } from './fighter-entity';
@@ -27,8 +28,8 @@ export class SceneClimbing {
     private readonly props: ArenaProps | null,
     private readonly physics: PhysicsWorld,
     private readonly hooks: {
-      /** A hard landing hurt the fighter. */
-      onFallDamage(f: FighterEntity, damage: number, dropM: number): void;
+      /** Every landing after a fall or jump, by the real drop (damage 0 below the safe height). */
+      onLand(f: FighterEntity, landing: { dropM: number; kind: LandingKind; damage: number }): void;
       /** A climb finished, or was knocked off. */
       onClimb(f: FighterEntity, event: 'grab' | 'pull' | 'top' | 'knocked'): void;
     },
@@ -53,9 +54,12 @@ export class SceneClimbing {
     return this.tops;
   }
 
-  /** What this fighter stands on (or would land on): the highest top under it not above its feet. */
+  /**
+   * What this fighter stands on (or would land on): the highest top under it not above its feet;
+   * walking on furniture, also a neighbouring top across a small gap or step (owner, 13/11/2026).
+   */
   floorFor(f: FighterEntity): number {
-    return floorUnder(this.tops, f.x, f.y, f.hop.heightM + 0.02);
+    return supportUnder(this.tops, f.x, f.y, f.hop.heightM, f.hop.floorM ?? 0, !f.airborne);
   }
 
   /**
@@ -173,8 +177,10 @@ export class SceneClimbing {
   afterPhysics(f: FighterEntity): void {
     if (!f.overFurniture || !f.body || f.climb) return;
     const r = f.def.body.footRadiusM;
+    // Walking on furniture, a neighbour up to a step higher is walked onto, not bumped into.
+    const step = !f.airborne && (f.hop.floorM ?? 0) > 0 ? CLIMBING.stepHeightM : 0.02;
     for (const s of this.solids) {
-      if (s.topM <= f.hop.heightM + 0.02) continue;
+      if (s.topM <= f.hop.heightM + step) continue;
       const now = distanceTo(s, f.curr.x, f.curr.y) < r;
       const before = distanceTo(s, f.prev.x, f.prev.y) < r;
       if (!now || before) continue;
@@ -192,16 +198,11 @@ export class SceneClimbing {
       return;
     }
     if (wasAirborne) {
-      const drop = f.fallPeakM - (f.hop.floorM ?? 0);
-      const damage = fallDamage(drop, f.def.body.massKg);
-      if (damage > 0) this.hooks.onFallDamage(f, damage, drop);
+      // The real drop: from the highest point of this fall to what the feet land on (once per fall).
+      const dropM = Math.max(0, f.fallPeakM - (f.hop.floorM ?? 0));
+      this.hooks.onLand(f, { dropM, kind: landingKind(dropM), damage: fallDamage(dropM, f.def.body.massKg) });
     }
     f.fallPeakM = f.hop.heightM;
-  }
-
-  /** Seconds a hard landing keeps a fighter recovering. */
-  static recoveryFor(dropM: number): number {
-    return landingRecoveryS(dropM);
   }
 }
 

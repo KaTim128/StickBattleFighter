@@ -52,6 +52,17 @@ export class FighterEntity {
   } | null = null;
   /** Highest point of the current fall (for fall damage on landing). */
   fallPeakM = 0;
+  /**
+   * Landing reactions (owner, 13/11/2026). `landDip`: a knee bend or squat after a landing, its depth
+   * (0..1) and seconds since touchdown (presentation). `landHoldS`: a firm squat holds the fighter
+   * still and blocks new actions this long (an attack already under way plays out). `collapse`: lying
+   * after a big fall, face down or on the back, until standing again.
+   */
+  landDip: { depth: number; ageS: number } | null = null;
+  landHoldS = 0;
+  collapse: { faceDown: boolean } | null = null;
+  /** How far the falling pose is blended in (presentation, eased). */
+  fallWeight = 0;
   /** Its body currently passes over furniture (in the air or standing on top of a piece). */
   overFurniture = false;
   /** Seconds since this fighter last fought (attacked, cast, blocked, dodged or was hit): presentation only. */
@@ -233,6 +244,10 @@ export class FighterEntity {
     this.prevHop = 0;
     this.climb = null;
     this.fallPeakM = 0;
+    this.landDip = null;
+    this.landHoldS = 0;
+    this.collapse = null;
+    this.fallWeight = 0;
   }
 
   /** Back on its feet at full health where it started (KO respawn). */

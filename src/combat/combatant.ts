@@ -321,10 +321,10 @@ export class Combatant {
   }
 
   /**
-   * A hard landing (owner, 12/11/2026: fall damage by height and weight): the damage, then a short
-   * recovery crouch. Ignores guard and dodge (nobody blocks the floor). Can KO.
+   * Fall damage (owner, 12/11/2026, by height and weight). Ignores guard and dodge (nobody blocks
+   * the floor). Can KO. The landing's reaction (squat or collapse) is decided by the drop, not here.
    */
-  takeFall(damage: number, recoverS: number): void {
+  takeFall(damage: number): void {
     if (this.isKo || damage <= 0) return;
     this.hp = Math.max(0, this.hp - damage);
     this.guardUp = false;
@@ -334,9 +334,21 @@ export class Combatant {
       this.stunS = 0;
       this.knockdownS = 0;
       this.getUpS = 0;
-      return;
     }
-    this.stunS = Math.max(this.stunS, recoverS);
+  }
+
+  /**
+   * A body-slam landing from a big fall (owner, 13/11/2026): flat on the floor for `lieS`, then the
+   * usual animated get-up; no acting until it finishes. Never dizzy (no stun).
+   */
+  collapse(lieS: number): void {
+    if (this.isKo) return;
+    this.guardUp = false;
+    this.stunS = 0;
+    this.dodgeS = 0;
+    this.downS = 0;
+    this.getUpS = 0;
+    this.knockdownS = Math.max(this.knockdownS, lieS);
   }
 
   /** Fall at once, as at a KO (a summoned minion whose time is up crumbles). */

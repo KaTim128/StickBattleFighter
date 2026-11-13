@@ -8,9 +8,13 @@ import { climbPose } from '../../animation/greybox-motion';
 import {
   blockPose,
   carryPose,
+  collapseFrame,
+  fallPose,
   flinchPose,
   getUpFrame,
   knockdownFrame,
+  landSquatPose,
+  pushUpFrame,
   quickDodgePose,
   shadeDodgePose,
   throwPose,
@@ -43,6 +47,7 @@ import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-do
 import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
 import type { HudFighter, TopHudState } from '../../interface/top-hud';
+import { collapseLieS, firmHoldS } from '../../physics/climbing';
 import { SPRINT, stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
@@ -453,7 +458,9 @@ export class FightArenaScene implements ArenaScene {
       at.y < this.arena.heightM - r,
     fighters: () => this.fighters,
     step: (f, stepS, move) => this.stepFighter(f, stepS, move, false),
-    attack: (f) => f.combo.press(GROUND),
+    attack: (f) => {
+      if (f.landHoldS === 0) f.combo.press(GROUND);
+    },
     risen: (f) => {
       this.frameDust.push({
         points: [0, 1, 2].map((k) => ({ x: f.x + (k - 1) * 0.15, y: f.y, z: 0.1 + k * 0.2 })),
@@ -609,13 +616,28 @@ export class FightArenaScene implements ArenaScene {
     addArenaColliders(physics, arena, false); // props get their own bodies: they move and break
     this.props = new ArenaProps(arena, physics);
     this.climbing = new SceneClimbing(this.props, physics, {
-      onFallDamage: (f, damage, dropM) => {
-        f.combatant.takeFall(damage, SceneClimbing.recoveryFor(dropM));
-        f.caster?.onDamage(0, damage);
-        this.events.push({ kind: 'hit', target: f.name, x: f.x, y: f.y - headTop(f), amount: damage });
-        this.characterSound(f, 'land', 1);
-        this.queueSound('wall-thud', Math.min(1.3, 0.5 + dropM * 0.25));
-        this.shake.addTrauma(Math.min(0.5, dropM * 0.12));
+      onLand: (f, { dropM, kind, damage }) => {
+        // Landing reactions by the real drop (owner, 13/11/2026): a knee bend, a firm squat that
+        // holds briefly, or a collapse flat on the floor and a get-up. Never dizzy.
+        f.landDip = { depth: kind === 'soft' ? Math.min(0.55, 0.15 + dropM * 0.35) : 1, ageS: 0 };
+        if (kind === 'firm') f.landHoldS = Math.max(f.landHoldS, firmHoldS(dropM));
+        if (damage > 0) {
+          f.combatant.takeFall(damage);
+          f.caster?.onDamage(0, damage);
+          this.events.push({ kind: 'hit', target: f.name, x: f.x, y: f.y - headTop(f), amount: damage });
+        }
+        if (kind === 'collapse' && !f.combatant.isKo) {
+          // Pitched forward when landing on the move the way it faces, else onto the back.
+          const v = f.body?.linvel() ?? { x: 0, y: 0 };
+          f.collapse = { faceDown: v.x * f.aim.x + v.y * f.aim.y > 0.8 };
+          f.combo.interrupt();
+          f.combatant.collapse(collapseLieS(dropM));
+        }
+        if (kind !== 'soft') {
+          this.characterSound(f, 'land', 1);
+          this.queueSound('wall-thud', Math.min(1.3, 0.4 + dropM * 0.25));
+          this.shake.addTrauma(Math.min(0.5, (dropM - 1) * 0.15));
+        }
       },
       onClimb: (f, event) => {
         if (event === 'grab') this.queueSound('block', 0.5);
@@ -821,7 +843,7 @@ export class FightArenaScene implements ArenaScene {
     }
     if (released && f.meleeTracking) {
       const wasGuarding = c.state === 'guarding' || f.meleeHoldS >= DEFENCE.blockHoldS;
-      if (!wasGuarding && c.canAct && !f.caster?.cast) {
+      if (!wasGuarding && c.canAct && !f.caster?.cast && f.landHoldS === 0) {
         // Which input: a firm push towards where you face is "forward" (kick strings on some movesets).
         const m = this.intents.move;
         this.softLock(f);
@@ -836,13 +858,21 @@ export class FightArenaScene implements ArenaScene {
     if (!this.intents.meleeHeld && c.state === 'guarding') c.setGuard(false);
 
     // Heavy Attack (owner, 12/11/2026): the fighter's own heavy blow, from the ground.
-    if (this.intents.consumeHeavy() && c.canAct && !f.caster?.cast && c.state !== 'guarding' && !air) {
+    if (
+      this.intents.consumeHeavy() &&
+      c.canAct &&
+      !f.caster?.cast &&
+      c.state !== 'guarding' &&
+      !air &&
+      f.landHoldS === 0
+    ) {
       this.softLock(f);
       f.combo.pressHeavy({ airborne: false, falling: false, forward: false });
     }
 
     // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
-    const slot = this.intents.consumeAbility();
+    const pressedSlot = this.intents.consumeAbility();
+    const slot = f.landHoldS > 0 ? null : pressedSlot; // a firm landing squat finishes first
     if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
     else if (slot && this.needsPointAim(f, slot)) this.beginPointAim(f, slot);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
@@ -855,7 +885,7 @@ export class FightArenaScene implements ArenaScene {
 
     // Dodge (right click / flick / DODGE): a quick invulnerable back-step, cancelling an attack (not
     // an ability already cast).
-    if (this.intents.consumeDodge() && !air && !f.caster?.cast && c.tryDodge()) {
+    if (this.intents.consumeDodge() && !air && !f.caster?.cast && f.landHoldS === 0 && c.tryDodge()) {
       f.combo.interrupt();
       this.startBackDodge(f);
     }
@@ -1419,6 +1449,7 @@ export class FightArenaScene implements ArenaScene {
       sees &&
       this.dummyAttacks &&
       c.state === 'free' &&
+      f.landHoldS === 0 &&
       !f.combo.attack &&
       f.attackCooldownS === 0 &&
       !p.combatant.isKo &&
@@ -1449,6 +1480,12 @@ export class FightArenaScene implements ArenaScene {
     if (this.climbing?.step(f, stepS, moveIn, jump)) {
       body.setLinvel({ x: 0, y: 0 }, true);
       return;
+    }
+    // A firm landing squat (owner, 13/11/2026): held in place briefly; an attack under way plays out.
+    if (f.landHoldS > 0) {
+      f.landHoldS = Math.max(0, f.landHoldS - stepS);
+      moveIn = { x: 0, y: 0 };
+      jump = false;
     }
     // What the feet stand on: the floor or the top of a piece of furniture.
     if (this.climbing) f.hop.floorM = this.climbing.floorFor(f);
@@ -2198,6 +2235,35 @@ export class FightArenaScene implements ArenaScene {
     this.debrisView?.sync(this.props.debris.pieces);
   }
 
+  /**
+   * Falling and landing (owner, 13/11/2026): a fall from a height (more than a normal jump's drop so
+   * far) blends into a physical falling pose; every landing dips into a squat as deep as the drop
+   * was long, held through a firm landing's hold, then rises back into the stance.
+   */
+  private fallAndLandPose(f: FighterEntity, pose: Pose, frameDtS: number): Pose {
+    let out = pose;
+    const plain = !f.combo.attack && !f.caster?.cast && !f.climb && f.combatant.canAct;
+    const fallen = f.fallPeakM - f.hop.heightM;
+    const falling = f.airborne && f.hop.verticalSpeedMps < 0 && plain;
+    const target = falling ? Math.min(1, Math.max(0, (fallen - 0.9) / 0.9)) : 0;
+    f.fallWeight += (target - f.fallWeight) * smoothing(falling ? 10 : 30, frameDtS);
+    if (f.fallWeight > 0.01) out = blendPose(out, fallPose(out), f.fallWeight);
+    const dip = f.landDip;
+    if (dip && f.combo.attack)
+      dip.ageS = 0; // an aerial attack plays out first, then the landing
+    else if (dip) {
+      dip.ageS += frameDtS;
+      const downS = 0.07;
+      const upS = 0.16 + dip.depth * 0.22;
+      const hold = f.landHoldS;
+      const w = dip.ageS < downS ? dip.ageS / downS : hold > 0 ? 1 : Math.max(0, 1 - (dip.ageS - downS) / upS);
+      if (hold > 0) dip.ageS = downS; // the rise starts when the hold ends
+      if (w <= 0 || f.collapse) f.landDip = null;
+      else out = blendPose(out, landSquatPose(out), dip.depth * w * w * (3 - 2 * w));
+    }
+    return out;
+  }
+
   /** Fire effects: projectiles, trails, telegraphs, bursts and flames on burning things; big blasts shake the camera. */
   private renderAbilityFx(frameDtS: number): void {
     if (!this.vfx || !this.abilities) return;
@@ -2403,6 +2469,7 @@ export class FightArenaScene implements ArenaScene {
       pose = strikePose(pose, sa.clip, Math.min(1, sa.t / attackDuration(sa.timing)), sa.timing);
     }
     pose = this.clashPose(f, pose);
+    pose = this.fallAndLandPose(f, pose, frameDtS);
     if (f === this.playerFighter && this.ultAimPoint) {
       // Jump preparation: a deep, springy crouch held (with a little bounce) while aiming.
       this.aimPrepT += frameDtS;
@@ -2448,10 +2515,17 @@ export class FightArenaScene implements ArenaScene {
     // Falling, lying and getting up are keyed animations (owner, 11/11/2026); tilt is smoothed so a KO from any pose blends in.
     let lift = 0;
     let tiltTarget = 0;
+    // A big-fall collapse has its own impact and get-up (face down: a push-up) (owner, 13/11/2026).
+    if (f.collapse && c.state !== 'knockdown' && c.state !== 'gettingUp') f.collapse = null;
+    const fc = f.collapse;
     const frame = down
-      ? knockdownFrame(pose, c.downTimeS)
+      ? fc
+        ? collapseFrame(pose, c.downTimeS, fc.faceDown)
+        : knockdownFrame(pose, c.downTimeS)
       : c.state === 'gettingUp'
-        ? getUpFrame(pose, c.getUpProgress)
+        ? fc?.faceDown
+          ? pushUpFrame(pose, c.getUpProgress)
+          : getUpFrame(pose, c.getUpProgress)
         : null;
     if (frame) {
       pose = frame.pose;

@@ -7,6 +7,11 @@
  * - A top too high to land on but within reach of the hands is GRABBED: the fighter hangs from
  *   the edge and pulls up with repeated presses of Jump. A hit while climbing knocks it off.
  * - Landing from high enough hurts: more for a longer drop and for a heavier body.
+ *
+ * Owner, 13/11/2026 (traversal, falling and recovery): walking along neighbouring tops steps over a
+ * small gap or a small height difference instead of dropping and hanging; every landing reacts to
+ * the real drop (a knee bend, a firm squat, or a collapse and get-up); walking off the tallest
+ * furniture is safe, while jumping from it and falling further hurts, once per fall.
  */
 
 /** A climbable top: its footprint (axis-aligned, metres) and height. */
@@ -30,8 +35,29 @@ export const CLIMBING = {
   slipPerS: 0.08,
   /** Hanging: the feet sit this far below the top (per metre of fighter scale). */
   hangDepthM: 1.8,
-  /** Drops shorter than this never hurt. */
-  safeDropM: 1.3,
+  /**
+   * Drops shorter than this never hurt: walking off the tallest climbable furniture (a 2.1 m locker,
+   * a 2 m bookshelf) is safe; jumping off one adds the jump's height and does hurt.
+   */
+  safeDropM: 2.2,
+  /**
+   * A drop this long or longer knocks the fighter flat (a collapse, then a get-up): every fall that
+   * hurts, so the damage and the body impact always go together.
+   */
+  collapseDropM: 2.2,
+  /** Below this a landing is only a knee bend; from here up to the collapse, a firm squat that holds briefly. */
+  firmDropM: 1.4,
+  /** The firm squat holds the fighter this long at the firm height, up to `firmHoldMaxS` just short of a collapse. */
+  firmHoldMinS: 0.12,
+  firmHoldMaxS: 0.32,
+  /** How long a collapsed fighter lies before getting up: base plus per metre over the collapse height. */
+  collapseLieS: 0.55,
+  collapseLiePerM: 0.25,
+  collapseLieMaxS: 1.2,
+  /** Walking on a top, the feet still find a neighbouring top this far out (spans a small gap). */
+  gapSupportM: 0.25,
+  /** ...and step onto (or down to) a neighbour no more than this much higher or lower without a jump. */
+  stepHeightM: 0.4,
   /** Damage per metre of drop beyond the safe height, for a 70 kg fighter. */
   damagePerM: 70,
   /** Weight scaling: heavier bodies land harder (mass / 70 kg, to this power). */
@@ -89,13 +115,59 @@ export function canGrab(
   return (move.x * tx + move.y * ty) / len > 0.5;
 }
 
+/**
+ * What carries a walking fighter, `heightM` up and standing on `floorM`: the highest top under the
+ * feet not above them; while on furniture, also a neighbouring top within `gapSupportM` and
+ * `stepHeightM` (a small gap or step, so it walks across instead of dropping into the gap).
+ */
+export function supportUnder(
+  surfaces: readonly ClimbSurface[],
+  x: number,
+  y: number,
+  heightM: number,
+  floorM: number,
+  grounded: boolean,
+): number {
+  const onFurniture = grounded && floorM > 0;
+  let best = 0;
+  for (const s of surfaces) {
+    const near = distanceTo(s, x, y);
+    if (near === 0) {
+      if (s.topM <= heightM + 0.02 && s.topM > best) best = s.topM;
+      continue;
+    }
+    if (!onFurniture || near > CLIMBING.gapSupportM) continue;
+    if (Math.abs(s.topM - floorM) > CLIMBING.stepHeightM) continue;
+    if (s.topM > best) best = s.topM;
+  }
+  return best;
+}
+
+/** How a fighter lands after a drop: a knee bend, a firm squat, or a collapse. */
+export type LandingKind = 'soft' | 'firm' | 'collapse';
+
+export function landingKind(dropM: number): LandingKind {
+  if (dropM >= CLIMBING.collapseDropM) return 'collapse';
+  return dropM >= CLIMBING.firmDropM ? 'firm' : 'soft';
+}
+
+/** Seconds a firm squat holds the fighter (0 for a knee bend). */
+export function firmHoldS(dropM: number): number {
+  if (landingKind(dropM) !== 'firm') return 0;
+  const k = (dropM - CLIMBING.firmDropM) / (CLIMBING.collapseDropM - CLIMBING.firmDropM);
+  return CLIMBING.firmHoldMinS + (CLIMBING.firmHoldMaxS - CLIMBING.firmHoldMinS) * k;
+}
+
+/** Seconds a collapsed fighter lies on the floor before getting up. */
+export function collapseLieS(dropM: number): number {
+  return Math.min(
+    CLIMBING.collapseLieMaxS,
+    CLIMBING.collapseLieS + Math.max(0, dropM - CLIMBING.collapseDropM) * CLIMBING.collapseLiePerM,
+  );
+}
+
 /** Damage for landing after a drop of `dropM`, by body mass. */
 export function fallDamage(dropM: number, massKg: number): number {
   if (dropM <= CLIMBING.safeDropM) return 0;
   return Math.round((dropM - CLIMBING.safeDropM) * CLIMBING.damagePerM * (massKg / 70) ** CLIMBING.massExponent);
-}
-
-/** How long a hard landing keeps the fighter down recovering, seconds. */
-export function landingRecoveryS(dropM: number): number {
-  return dropM <= CLIMBING.safeDropM ? 0 : Math.min(0.9, 0.25 + (dropM - CLIMBING.safeDropM) * 0.35);
 }

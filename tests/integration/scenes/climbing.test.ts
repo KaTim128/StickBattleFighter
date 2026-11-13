@@ -19,10 +19,10 @@ const ROOM: ArenaLayout = {
   ],
 };
 
-async function setup(player: string, at: { x: number; y: number }) {
+async function setup(player: string, at: { x: number; y: number }, props?: ArenaLayout['props']) {
   const intents = new PlayerIntents();
   const scene = new FightArenaScene(
-    { ...ROOM, playerStart: at, dummyStart: { x: 26, y: 17 } },
+    { ...ROOM, ...(props ? { props } : {}), playerStart: at, dummyStart: { x: 26, y: 17 } },
     new Container(),
     intents,
     () => ({ width: 1280, height: 720 }),
@@ -170,26 +170,84 @@ describe('furniture climbing', () => {
     expect(fallDamage(2.5, 60)).toBeLessThan(fallDamage(2.5, 70));
   });
 
-  it('a heavier fighter takes more damage from the same fall off a bookshelf', async () => {
-    const damageFor = async (id: string) => {
-      const { intents, scenes, runUntil, run, p, jumpRight, pull } = await setup(id, { x: 18.2, y: 3 });
-      jumpRight();
-      runUntil(() => p.climb !== null, 1.2);
-      intents.setMove('t', { x: 0, y: 0 });
-      for (let i = 0; i < 14 && p.climb; i++) pull();
-      run(0.3);
-      expect(p.hop.heightM).toBeCloseTo(2, 2);
+  /** Climb onto the bookshelf (2 m) from beside it; returns the fighter standing on its top. */
+  const onShelf = async (id: string) => {
+    const t = await setup(id, { x: 18.2, y: 3 });
+    t.jumpRight();
+    t.runUntil(() => t.p.climb !== null, 1.2);
+    t.intents.setMove('t', { x: 0, y: 0 });
+    for (let i = 0; i < 14 && t.p.climb; i++) t.pull();
+    t.run(0.3);
+    expect(t.p.hop.heightM).toBeCloseTo(2, 2);
+    return t;
+  };
+
+  it('walking off a bookshelf is safe: a firm squat, no damage, no collapse (owner, 13/11/2026)', async () => {
+    for (const id of ['inferno', 'rampage']) {
+      const { intents, scenes, runUntil, run, p } = await onShelf(id);
       const before = hp(p);
       intents.setMove('t', { x: 0, y: 1 }); // walk off the front edge
       runUntil(() => p.y > 3.6 && !p.airborne, 2);
       intents.setMove('t', { x: 0, y: 0 });
+      expect(hp(p)).toBe(before);
+      expect(p.combatant.state).not.toBe('knockdown');
+      expect(p.combatant.state).not.toBe('stunned'); // never dizzy
+      expect(p.landHoldS).toBeGreaterThan(0); // the firm squat holds briefly
+      run(0.5);
+      expect(p.combatant.canAct).toBe(true);
+      scenes.clear();
+    }
+  });
+
+  it('jumping off a bookshelf falls further: damage once by the real drop, a collapse, then a get-up', async () => {
+    const jumpOff = async (id: string) => {
+      const { intents, scenes, runUntil, run, p } = await onShelf(id);
+      const before = hp(p);
+      intents.setMove('t', { x: 0, y: 1 });
+      intents.pressJump();
+      runUntil(() => p.y > 3.6 && !p.airborne, 3);
+      intents.setMove('t', { x: 0, y: 0 });
       const lost = before - hp(p);
+      run(STEP * 2);
+      expect(p.combatant.state).toBe('knockdown'); // flat on the floor
+      expect(p.combatant.state).not.toBe('stunned');
+      runUntil(() => p.combatant.state === 'gettingUp', 2);
+      expect(p.combatant.state).toBe('gettingUp');
+      expect(p.combatant.canAct).toBe(false); // no acting until up
+      runUntil(() => p.combatant.canAct, 2);
+      expect(hp(p)).toBe(before - lost); // damaged once only
       scenes.clear();
       return lost;
     };
-    const light = await damageFor('inferno');
-    const heavy = await damageFor('rampage');
-    expect(light).toBeGreaterThan(0);
-    expect(heavy).toBeGreaterThan(light);
+    // Damage follows the real fall: Inferno jumps higher off the shelf (a 3.1 m drop) than Titan
+    // (2.4 m), so he lands harder; for the same drop a heavier body hurts more (unit test above).
+    const inferno = await jumpOff('inferno');
+    const titan = await jumpOff('rampage');
+    expect(inferno).toBeGreaterThan(titan);
+    expect(titan).toBeGreaterThan(0);
+  });
+
+  it('walks along neighbouring bookshelves across a small gap without dropping or hanging (owner, 13/11/2026)', async () => {
+    const t = await setup('inferno', { x: 18.2, y: 3 }, [
+      { kind: 'bookshelf', x: 20, y: 3 },
+      { kind: 'bookshelf', x: 22.25, y: 3 },
+    ]);
+    t.jumpRight();
+    t.runUntil(() => t.p.climb !== null, 1.2);
+    t.intents.setMove('t', { x: 0, y: 0 });
+    for (let i = 0; i < 14 && t.p.climb; i++) t.pull();
+    t.run(0.3);
+    expect(t.p.hop.heightM).toBeCloseTo(2, 2);
+    let lowest = 2;
+    t.intents.setMove('t', { x: 1, y: 0 });
+    t.runUntil(() => {
+      lowest = Math.min(lowest, t.p.hop.heightM);
+      return t.p.x > 22.5 || t.p.climb !== null;
+    }, 3);
+    t.intents.setMove('t', { x: 0, y: 0 });
+    expect(t.p.x).toBeGreaterThan(22.5); // made it onto the second shelf
+    expect(t.p.climb).toBeNull(); // never hung from its edge
+    expect(lowest).toBeGreaterThan(1.95); // never dipped into the gap
+    t.scenes.clear();
   });
 });

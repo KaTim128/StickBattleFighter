@@ -337,6 +337,15 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Battle music starts at FIGHT and keeps playing (`music.spec.ts`); loop points and format choice (`music.test.ts`)
 - [ ] Listen: music balance under combat sounds, loop seam, stinger timing with the voice (real device)
 
+## 13f. Grapple Slam, traversal, falls and landings (owner, 13/11/2026)
+- [x] Grapple Slam hit: arms overhead while hoisting, a fast drop into the slam pose, dust, screen shake, knockdown and knockback (`tests/integration/scenes/fourth-abilities.test.ts`, `tests/unit/animation/grab-poses.test.ts`, browser screenshots).
+- [x] Grapple Slam miss: hands close on air, stumble forward; no slam, no damage (same tests, browser screenshots).
+- [x] Walking along neighbouring bookshelves across a small gap stays on top, never hangs (`tests/integration/scenes/climbing.test.ts`, office browser run: height stayed 2 m).
+- [x] Gap too wide drops; a slightly taller neighbour is stepped onto; the floor never borrows support from nearby furniture (`tests/unit/physics/climbing-rules.test.ts`).
+- [x] Walking off a bookshelf: firm squat, no damage, no dizzy, acting again within 0.5 s.
+- [x] Jumping off a bookshelf: damage once by the real drop, collapse flat, get-up, no acting until up.
+- [ ] Owner playtest: the feel of the falling pose, the squat depth and the face-down push-up get-up on a phone.
+
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green
 - [ ] Previous milestones' acceptance tests re-run
