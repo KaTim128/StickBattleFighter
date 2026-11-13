@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { footprint, kindOf, PROP_KINDS, type PropPlacement } from '../data/objects/props';
 import { drawBookshelf } from './bookshelf-view';
-import { face, faceQuad, isoBlock, isoCylinder, isoShadow, shade } from './iso-draw';
+import { face, faceQuad, isoBlock, isoCylinder, isoShadow, shade, withMaterial } from './iso-draw';
 import { iso } from './projection';
 
 /**
@@ -79,14 +79,40 @@ export function buildPropView(p: PropPlacement): Container {
     return root;
   }
   if (z === 0) isoShadow(g, x0, y0, x1, y1, h);
+  // Every block of this prop is finished in its own material (premium style, owner 13/11/2026).
+  withMaterial(kind.material, () => drawKind(g, p, x0, y0, x1, y1, w, d, h, z));
+  const at = iso(p.x, p.y);
+  root.position.set(at.x, at.y);
+  return root;
+}
 
+function drawKind(
+  g: Graphics,
+  p: PropPlacement,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  w: number,
+  d: number,
+  h: number,
+  z: number,
+): void {
   switch (p.kind) {
     case 'pillar':
       isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0xd9d4cc });
       break;
     case 'desk': {
-      legs(g, w, d, h - 0.05, 0x4a4f57);
+      // Brushed-steel legs, a laminate top with a dark edge band and a desk mat.
+      withMaterial('metal', () => legs(g, w, d, h - 0.05, 0x5a606a));
       isoBlock(g, x0, y0, x1, y1, h - 0.05, h, { colour: 0xf2efe9, noAo: true });
+      faceQuad(g, face.left(y1), x0, h - 0.05, x1, h - 0.035).fill({ color: 0x3a3e45, alpha: 0.55 });
+      faceQuad(g, face.right(x1), y0, h - 0.05, y1, h - 0.035).fill({ color: 0x3a3e45, alpha: 0.45 });
+      if (w > 0.8 && d > 0.5)
+        faceQuad(g, face.top(h + 0.001), x0 + w * 0.25, y0 + d * 0.45, x1 - w * 0.2, y1 - 0.08).fill({
+          color: 0x2f3440,
+          alpha: 0.18,
+        });
       break;
     }
     case 'meeting-table':
@@ -123,10 +149,40 @@ export function buildPropView(p: PropPlacement): Container {
       isoBlock(g, -0.08, -0.05, 0.08, 0.05, z, z + 0.02, { colour: 0x3a3e45, noAo: true });
       isoBlock(g, -0.02, -0.02, 0.02, 0.02, z + 0.02, z + 0.14, { colour: 0x3a3e45, noAo: true });
       isoBlock(g, x0, -0.03, x1, 0.03, z + 0.12, z + h, { colour: 0x26292e, noAo: true });
-      faceQuad(g, face.left(0.03), x0 + 0.03, z + 0.15, x1 - 0.03, z + h - 0.03).fill(0x5fb0ea);
-      faceQuad(g, face.left(0.03), x0 + 0.05, z + h - 0.12, x0 + 0.2, z + h - 0.05).fill({
+      // A thin bezel round a lit screen: a deep blue desktop, two app windows and a glare.
+      const scr = face.left(0.03);
+      const sx0 = x0 + 0.02;
+      const sx1 = x1 - 0.02;
+      const sz0 = z + 0.14;
+      const sz1 = z + h - 0.02;
+      faceQuad(g, scr, sx0, sz0, sx1, sz1).fill(0x2f6fb3);
+      faceQuad(g, scr, sx0, sz0 + (sz1 - sz0) * 0.5, sx1, sz1).fill({ color: 0x5fb0ea, alpha: 0.55 });
+      faceQuad(g, scr, sx0 + 0.03, sz0 + 0.04, sx0 + (sx1 - sx0) * 0.55, sz1 - 0.05).fill({
+        color: 0xeef4fb,
+        alpha: 0.9,
+      });
+      faceQuad(g, scr, sx0 + 0.03, sz1 - 0.08, sx0 + (sx1 - sx0) * 0.55, sz1 - 0.05).fill(0x3b4a5c);
+      faceQuad(g, scr, sx0 + (sx1 - sx0) * 0.6, sz0 + 0.03, sx1 - 0.03, sz0 + (sz1 - sz0) * 0.6).fill({
+        color: 0x1b2633,
+        alpha: 0.85,
+      });
+      for (let i = 0; i < 3; i++) {
+        const lz = sz1 - 0.12 - i * 0.04;
+        faceQuad(g, scr, sx0 + 0.05, lz, sx0 + (sx1 - sx0) * (0.42 - i * 0.07), lz + 0.012).fill({
+          color: 0x9aa7b8,
+          alpha: 0.9,
+        });
+      }
+      g.poly(
+        [
+          scr(sx0 + 0.02, sz1 - 0.02),
+          scr(sx0 + 0.14, sz1 - 0.02),
+          scr(sx0 + 0.04, sz0 + 0.06),
+          scr(sx0 + 0.02, sz0 + 0.06),
+        ].flatMap((q) => [q.x, q.y]),
+      ).fill({
         color: 0xffffff,
-        alpha: 0.35,
+        alpha: 0.18,
       });
       break;
     }
@@ -147,9 +203,14 @@ export function buildPropView(p: PropPlacement): Container {
       for (let i = 0; i < 4; i++) {
         const v0 = 0.06 + (i * (h - 0.1)) / 4;
         const v1 = v0 + (h - 0.1) / 4 - 0.04;
+        // Each drawer front: a shadowed gap below, a lit top lip, a label slot and a recessed pull.
+        faceQuad(g, front, a0 + 0.05, v0 - 0.02, a1 - 0.05, v0).fill({ color: 0x000000, alpha: 0.28 });
         faceQuad(g, front, a0 + 0.05, v0, a1 - 0.05, v1).stroke({ width: 0.012, color: 0x55606e, alpha: 0.8 });
+        faceQuad(g, front, a0 + 0.05, v1 - 0.015, a1 - 0.05, v1).fill({ color: 0xffffff, alpha: 0.25 });
         const m = (a0 + a1) / 2;
         faceQuad(g, front, m - 0.08, v1 - 0.06, m + 0.08, v1 - 0.03).fill(0xe6eaef);
+        faceQuad(g, front, m - 0.1, v1 - 0.14, m + 0.1, v1 - 0.1).fill(0x3a414c);
+        faceQuad(g, front, m - 0.1, v1 - 0.105, m + 0.1, v1 - 0.095).fill({ color: 0xffffff, alpha: 0.45 });
       }
       break;
     }
@@ -204,8 +265,35 @@ export function buildPropView(p: PropPlacement): Container {
       break;
     }
     case 'cubicle-panel': {
+      // A fabric panel in an aluminium frame: a base rail, end posts and a top cap; the odd note
+      // pinned to the side we see.
       isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x9aa3b4 });
-      isoBlock(g, x0, y0, x1, y1, h - 0.04, h, { colour: 0xd6dbe2, noAo: true });
+      withMaterial('metal', () => {
+        isoBlock(g, x0, y0, x1, y1, h - 0.04, h, { colour: 0xd6dbe2, noAo: true });
+        isoBlock(g, x0, y0, x1, y1, 0, 0.06, { colour: 0x7b8392, noAo: true });
+        const along = w >= d;
+        const post = 0.04;
+        if (along) {
+          isoBlock(g, x0, y0, x0 + post, y1, 0, h, { colour: 0xc9ced6, noAo: true });
+          isoBlock(g, x1 - post, y0, x1, y1, 0, h, { colour: 0xc9ced6, noAo: true });
+        } else {
+          isoBlock(g, x0, y0, x1, y0 + post, 0, h, { colour: 0xc9ced6, noAo: true });
+          isoBlock(g, x0, y1 - post, x1, y1, 0, h, { colour: 0xc9ced6, noAo: true });
+        }
+      });
+      const seed = Math.sin(p.x * 12.9898 + p.y * 78.233) * 43758.5453;
+      const r = seed - Math.floor(seed);
+      if (r < 0.45) {
+        const along = w >= d;
+        const at = along ? face.left(y1) : face.right(x1);
+        const span0 = along ? x0 : y0;
+        const span1 = along ? x1 : y1;
+        const u = span0 + (span1 - span0) * (0.25 + r);
+        const colours = [0xfff3a0, 0xffd1e0, 0xc8f0ff];
+        faceQuad(g, at, u, h * 0.62, u + 0.12, h * 0.78).fill(colours[Math.floor(r * 30) % 3]!);
+        const pin = at(u + 0.06, h * 0.76);
+        g.circle(pin.x, pin.y, 0.012).fill(0xd8323a);
+      }
       break;
     }
     case 'executive-desk': {
@@ -375,9 +463,6 @@ export function buildPropView(p: PropPlacement): Container {
       throw new Error(`no drawing for prop kind ${String(k)}`);
     }
   }
-  const at = iso(p.x, p.y);
-  root.position.set(at.x, at.y);
-  return root;
 }
 
 /**

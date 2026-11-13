@@ -23,6 +23,12 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (later): Redesign rolled out to everything (owner request; Master Developer)
+- Fighters: shared premium painter `src/rendering/premium-model.ts` with a skin per body style (magma, muscle, robe, cloak, solid); premium portraits for all (`src/rendering/portraits.ts`).
+- Furniture: material-aware finish in `isoBlock` (`src/rendering/iso-draw.ts`, `withMaterial`) on every prop; detailed cubicle panels, desks, monitors and filing cabinets (`src/rendering/prop-view.ts`).
+- Tests: 378 unit/integration, 42 e2e pass; lint, typecheck and build clean. Screenshots: `docs/screenshots/prototype-redesign/` (roster, portraits-all, office-furniture).
+- Not yet: skeleton warriors keep their bone style; the interface (menus, HUD) and other arenas' unique pieces are unchanged.
+
 ### 13/11/2026: Visual-redesign prototypes, Inferno and the bookshelf (owner request; Master Developer)
 - Inferno's premium model (body style `magma`, `src/rendering/magma-model.ts`) on the shared rig; premium portrait (from the model, lit backdrop, frame) in the menu and the HUD; the bookshelf redesigned (`src/rendering/bookshelf-view.ts`). REQ-VIS-10, TD-059 (proposed).
 - Checked in the running game (screenshots in `docs/screenshots/prototype-redesign/`): idle both facings, jab, heavy, Fire Beam, Flame Detonation, block, flinch, knockdown, get-up, fire KO, climbing a bookshelf; no detached parts, no console errors.

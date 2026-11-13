@@ -21,6 +21,40 @@ export function shade(colour: number, k: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
+/**
+ * Surface material for blocks drawn inside `withMaterial` (owner, 13/11/2026: furniture in the
+ * approved premium style): wood shows grain, metal brushed streaks and a specular strip, plastic a
+ * soft sheen, fabric a fine weave, stone speckles. Glass, paper and plants stay plain.
+ */
+export type SurfaceMaterial =
+  | 'wood'
+  | 'metal'
+  | 'glass'
+  | 'plastic'
+  | 'plant'
+  | 'paper'
+  | 'fabric'
+  | 'stone'
+  | 'ceramic';
+let material: SurfaceMaterial | null = null;
+
+/** Draw `fn` with every block's surfaces finished as `m` (a prop's own material). */
+export function withMaterial<T>(m: SurfaceMaterial | null, fn: () => T): T {
+  const before = material;
+  material = m;
+  try {
+    return fn();
+  } finally {
+    material = before;
+  }
+}
+
+/** A stable pseudo-random number in [0, 1) for a position (grain and speckles that never flicker). */
+const hash = (a: number, b: number): number => {
+  const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+};
+
 export interface BlockLook {
   /** Base colour; faces are shaded from it unless given. */
   readonly colour: number;
@@ -59,11 +93,34 @@ export function isoBlock(
   const top = [pt(x0, y0, z1), pt(x1, y0, z1), pt(x1, y1, z1), pt(x0, y1, z1)];
   g.poly(flat(left)).fill({ color: shade(look.colour, LIGHT_LEFT), alpha: a });
   g.poly(flat(right)).fill({ color: shade(look.colour, LIGHT_RIGHT), alpha: a });
-  if (edgeA > 0) {
-    g.poly(flat(left)).stroke({ width: 0.018, color: EDGE, alpha: edgeA });
-    g.poly(flat(right)).stroke({ width: 0.018, color: EDGE, alpha: edgeA });
-  }
   const h = z1 - z0;
+  if (a > 0.6 && h > 0.06) {
+    // Premium finish: light falls off down each side, the lit top of each side catches a sheen.
+    for (const [face, dark, sheen] of [
+      [left, 0.1, 0.08],
+      [right, 0.08, 0.04],
+    ] as const) {
+      const [b0, b1, t1, t0] = face as [P, P, P, P];
+      const at = (k: number): [P, P] => [
+        { x: b0.x + (t0.x - b0.x) * k, y: b0.y + (t0.y - b0.y) * k },
+        { x: b1.x + (t1.x - b1.x) * k, y: b1.y + (t1.y - b1.y) * k },
+      ];
+      const [m0, m1] = at(0.4);
+      g.poly(flat([b0, b1, m1, m0])).fill({ color: 0x000000, alpha: dark * a });
+      const [u0, u1] = at(0.88);
+      g.poly(flat([u0, u1, t1, t0])).fill({ color: 0xffffff, alpha: sheen * a });
+    }
+    surface(g, x0, y0, x1, y1, z0, z1, a);
+  }
+  if (edgeA > 0) {
+    g.poly(flat(left)).stroke({ width: 0.022, color: EDGE, alpha: edgeA });
+    g.poly(flat(right)).stroke({ width: 0.022, color: EDGE, alpha: edgeA });
+  }
+  // The near vertical corner (where the two visible sides meet) catches the light.
+  if (h > 0.06)
+    g.moveTo(pt(x1, y1, z0).x, pt(x1, y1, z0).y)
+      .lineTo(pt(x1, y1, z1).x, pt(x1, y1, z1).y)
+      .stroke({ width: 0.014, color: 0xffffff, alpha: 0.28 * a });
   if (!look.noAo && h > 0.12 && z0 === 0) {
     // Ambient occlusion: the sides darken just above the floor.
     const ao = Math.min(0.22, h * 0.35);
@@ -88,6 +145,68 @@ export function isoBlock(
     .lineTo(t3.x, t3.y)
     .stroke({ width: 0.015, color: 0xffffff, alpha: 0.18 * a });
   return g;
+}
+
+/** Material detail on a block's two visible sides and top (inside `withMaterial`). */
+function surface(g: Graphics, x0: number, y0: number, x1: number, y1: number, z0: number, z1: number, a: number): void {
+  const m = material;
+  if (!m || m === 'glass' || m === 'plant' || m === 'paper') return;
+  const w = x1 - x0;
+  const d = y1 - y0;
+  const h = z1 - z0;
+  const line = (p: P, q: P, width: number, colour: number, alpha: number) =>
+    g
+      .moveTo(p.x, p.y)
+      .lineTo(q.x, q.y)
+      .stroke({ width, color: colour, alpha: alpha * a, cap: 'round' });
+  if (m === 'wood') {
+    // Grain running along each face, gently wavy, with the odd knot.
+    const rows = Math.max(2, Math.round(h / 0.09));
+    for (let i = 1; i < rows; i++) {
+      const z = z0 + (h * i) / rows + (hash(i, x0) - 0.5) * 0.03;
+      const wob = (hash(i, y0) - 0.5) * 0.025;
+      line(pt(x0 + 0.02, y1, z), pt((x0 + x1) / 2, y1, z + wob), 0.006, 0x3a2412, 0.22);
+      line(pt((x0 + x1) / 2, y1, z + wob), pt(x1 - 0.02, y1, z - wob * 0.5), 0.006, 0x3a2412, 0.22);
+      if (d > 0.12) line(pt(x1, y0 + 0.02, z), pt(x1, y1 - 0.02, z + wob), 0.005, 0x3a2412, 0.18);
+    }
+    if (w > 0.3 && d > 0.2)
+      for (let i = 1; i < 5; i++) {
+        const y = y0 + (d * i) / 5;
+        line(pt(x0 + 0.03, y, z1), pt(x1 - 0.03, y + (hash(i, z1) - 0.5) * 0.04, z1), 0.005, 0x3a2412, 0.16);
+      }
+  } else if (m === 'metal') {
+    // Brushed streaks down the sides and a specular strip near the lit edge.
+    const n = Math.max(3, Math.round(w / 0.06));
+    for (let i = 1; i < n; i++) {
+      const x = x0 + (w * i) / n;
+      line(pt(x, y1, z0 + 0.02), pt(x, y1, z1 - 0.02), 0.004, 0xffffff, 0.06 + 0.05 * hash(i, x0));
+    }
+    const sx = x0 + w * 0.18;
+    line(pt(sx, y1, z0 + h * 0.08), pt(sx, y1, z1 - h * 0.06), Math.min(0.03, w * 0.08), 0xffffff, 0.16);
+  } else if (m === 'plastic' || m === 'ceramic') {
+    // A soft glossy sheen across the upper part of the lit side.
+    const zs = z0 + h * 0.7;
+    line(pt(x0 + w * 0.12, y1, zs), pt(x1 - w * 0.25, y1, zs + h * 0.08), Math.min(0.05, h * 0.18), 0xffffff, 0.12);
+  } else if (m === 'fabric') {
+    // A fine weave: faint crossing threads.
+    const n = Math.max(3, Math.round(w / 0.05));
+    for (let i = 1; i < n; i++) {
+      const x = x0 + (w * i) / n;
+      line(pt(x, y1, z0 + 0.02), pt(x, y1, z1 - 0.02), 0.003, 0x000000, 0.07);
+    }
+    const r = Math.max(3, Math.round(h / 0.05));
+    for (let i = 1; i < r; i++) {
+      const z = z0 + (h * i) / r;
+      line(pt(x0 + 0.02, y1, z), pt(x1 - 0.02, y1, z), 0.003, 0xffffff, 0.05);
+    }
+  } else if (m === 'stone') {
+    for (let i = 0; i < 14; i++) {
+      const u = hash(i, x0 + y0);
+      const v = hash(i + 7, z1);
+      const p = pt(x0 + w * u, y1, z0 + h * v);
+      g.circle(p.x, p.y, 0.008).fill({ color: i % 2 ? 0xffffff : 0x000000, alpha: 0.12 * a });
+    }
+  }
 }
 
 /** A soft drop shadow for a footprint: light from the top-left, so it falls down and to the right. */
