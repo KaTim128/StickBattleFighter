@@ -849,7 +849,10 @@ export class StickmanView {
     const fy = hand.y - elbow.y;
     const fl = Math.hypot(fx, fy) || 1;
     const k = Math.min(1, Math.max(0, this.heldSwing));
-    let ux = (fx / fl) * k;
+    // Redesign proposal (owner, 13/11/2026): held in his left hand at a natural slight diagonal,
+    // the top leaning forward, not bolt upright.
+    const tilt = this.proposal ? 0.24 : 0;
+    let ux = tilt * (1 - k) + (fx / fl) * k;
     let uy = -(1 - k) + (fy / fl) * k;
     const ul = Math.hypot(ux, uy) || 1;
     ux /= ul;
@@ -861,6 +864,19 @@ export class StickmanView {
     const top = { x: butt.x + ux * LENGTH, y: butt.y + uy * LENGTH };
     if (this.proposal) {
       this.goldenStaff(g, butt, top, ux, uy, LENGTH, o);
+      // The left hand closes round the shaft: a gloved fist drawn over it, knuckles across.
+      const nx = -uy;
+      const ny = ux;
+      const r = 0.05;
+      g.ellipse(hand.x, hand.y, r * 1.25 + o, r + o).fill(0x14081c);
+      g.ellipse(hand.x, hand.y, r * 1.25, r).fill(0x2f1550);
+      g.ellipse(hand.x - r * 0.3, hand.y - r * 0.35, r * 0.6, r * 0.4).fill({ color: 0x8a58cc, alpha: 0.6 });
+      for (const d of [-0.025, 0, 0.025]) {
+        g.moveTo(hand.x + ux * d + nx * r * 0.9, hand.y + uy * d + ny * r * 0.9)
+          .lineTo(hand.x + ux * d + nx * r * 0.4, hand.y + uy * d + ny * r * 0.4)
+          .stroke({ width: 0.008, color: 0x14081c, alpha: 0.8, cap: 'round' });
+      }
+      this.fire.circle(hand.x, hand.y, r * 1.8).fill({ color: 0x9a4dff, alpha: 0.12 });
       return;
     }
     const edge = 0x6f6656;

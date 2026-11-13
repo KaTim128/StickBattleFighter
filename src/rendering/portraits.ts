@@ -39,7 +39,7 @@ function heroPose(def: FighterDef): Pose {
   // beside the mask, the mannequin keeps a textbook guard; Inferno keeps his approved fists-up pose.
   const poses: Record<string, Pick<Pose, 'armFront' | 'armBack'> & { lean?: number }> = {
     muscle: { armFront: { root: rad(-5), bend: rad(75) }, armBack: { root: rad(-45), bend: rad(65) }, lean: rad(8) },
-    robe: { armFront: { root: rad(95), bend: rad(35) }, armBack: { root: rad(64), bend: rad(10) } },
+    robe: { armFront: { root: rad(95), bend: rad(35) }, armBack: { root: rad(28), bend: rad(62) } },
     cloak: { armFront: { root: rad(112), bend: rad(62) }, armBack: { root: rad(-30), bend: rad(60) }, lean: rad(-8) },
     solid: { armFront: { root: rad(55), bend: rad(110) }, armBack: { root: rad(30), bend: rad(120) } },
   };

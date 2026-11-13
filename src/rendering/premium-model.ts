@@ -1075,14 +1075,23 @@ export class PremiumModel {
       return;
     }
     // The brawler: an ear, a ridge of short-cropped scalp, a steel stud at the brow.
-    oval(g, { x: h.x - r * 0.15, y: h.y + r * 0.12 }, 0.3, 1, r * 0.24 + w * 0.12, r * 0.18 + w * 0.12, this.c(this.P.outline));
+    oval(
+      g,
+      { x: h.x - r * 0.15, y: h.y + r * 0.12 },
+      0.3,
+      1,
+      r * 0.24 + w * 0.12,
+      r * 0.18 + w * 0.12,
+      this.c(this.P.outline),
+    );
     oval(g, { x: h.x - r * 0.15, y: h.y + r * 0.12 }, 0.3, 1, r * 0.24, r * 0.18, this.c(this.P.skinShade));
     g.arc(h.x, h.y - r * 0.05, r * 0.92, Math.PI * 1.12, Math.PI * 1.75).stroke({
       width: r * 0.18,
       color: this.c(toward(this.P.skinShade, 0x000000, 0.35)),
       alpha: 0.75,
     });
-    if (this.P.seam !== null) fire.circle(h.x + r * 0.55, h.y - r * 0.42, r * 0.07).fill({ color: this.P.seam, alpha: 0.9 });
+    if (this.P.seam !== null)
+      fire.circle(h.x + r * 0.55, h.y - r * 0.42, r * 0.07).fill({ color: this.P.seam, alpha: 0.9 });
   }
 
   /**
@@ -1169,11 +1178,43 @@ export class PremiumModel {
     oval(g, mc, 0.22, 1, r * 0.66, r * 0.4, this.c(bone));
     oval(g, { x: mc.x - r * 0.15, y: mc.y + r * 0.05 }, 0.22, 1, r * 0.58, r * 0.18, this.c(0xbdb8ac), 0.65);
     oval(g, { x: mc.x + r * 0.05, y: mc.y - r * 0.3 }, 0.22, 1, r * 0.22, r * 0.14, 0xffffff, 0.6);
-    for (const [dx, k] of [
-      [0.06, 1],
-      [0.3, 0.75],
+    // Sharp, narrow, slanted eye slits (owner, 13/11/2026): blade-shaped, each inner corner (by the
+    // nose) dipped low under a heavy angled brow for a focused, menacing glare, with a crimson glint.
+    // The far eye is foreshortened and mirrored so the two form a scowling V.
+    for (const [dx, k, dir] of [
+      [-0.04, 1, 1],
+      [0.42, 0.62, -1],
     ] as const) {
-      oval(g, { x: mc.x + dx * r - r * 0.06, y: mc.y - r * 0.12 }, 0.55, 1, r * 0.17 * k, r * 0.1 * k, this.c(0x0d0d10));
+      const cx = mc.x + dx * r;
+      const cy = mc.y - r * 0.1;
+      const half = r * 0.21 * k;
+      const inner = cx + dir * half; // the end nearest the nose
+      const outer = cx - dir * half;
+      // Heavy brow shadow slashing down toward the nose.
+      g.poly([
+        outer - dir * half * 0.15,
+        cy - r * 0.2 * k,
+        inner + dir * half * 0.1,
+        cy - r * 0.02 * k,
+        inner,
+        cy + r * 0.03 * k,
+        outer,
+        cy - r * 0.1 * k,
+      ]).fill({ color: this.c(0x4a463f), alpha: 0.75 });
+      // The slit: a thin blade, sharp at both ends, its inner corner lower than the outer.
+      g.poly([
+        outer,
+        cy - r * 0.09 * k,
+        cx,
+        cy - r * 0.035 * k,
+        inner,
+        cy + r * 0.07 * k,
+        cx - dir * half * 0.1,
+        cy + r * 0.045 * k,
+      ]).fill(this.c(0x050506));
+      const glint = { x: cx + dir * half * 0.2, y: cy + r * 0.015 * k };
+      fire.circle(glint.x, glint.y, r * 0.09 * k).fill({ color: this.P.seam ?? 0xe5242e, alpha: 0.25 });
+      fire.circle(glint.x, glint.y, r * 0.028 * k).fill({ color: 0xff4048, alpha: 0.95 });
     }
     g.circle(mc.x + r * 0.27, mc.y + r * 0.14, r * 0.025).fill(0x2a2a30);
     g.circle(mc.x + r * 0.32, mc.y + r * 0.13, r * 0.022).fill(0x2a2a30);
@@ -1191,7 +1232,16 @@ export class PremiumModel {
     oval(g, h, 0.2, 1, r * 1.12 + w * 0.22, r * 0.92 + w * 0.22, this.c(this.P.outline));
     oval(g, h, 0.2, 1, r * 1.12, r * 0.92, this.c(this.P.skin));
     oval(g, { x: h.x - this.lx * r * 0.3, y: h.y + r * 0.25 }, 0.2, 1, r * 0.9, r * 0.6, this.c(this.P.skinShade), 0.6);
-    oval(g, { x: h.x + this.lx * r * 0.35, y: h.y - r * 0.35 }, 0.2, 1, r * 0.4, r * 0.28, this.c(this.P.skinLit), 0.85);
+    oval(
+      g,
+      { x: h.x + this.lx * r * 0.35, y: h.y - r * 0.35 },
+      0.2,
+      1,
+      r * 0.4,
+      r * 0.28,
+      this.c(this.P.skinLit),
+      0.85,
+    );
     g.moveTo(h.x - r * 0.75, h.y - r * 0.6)
       .quadraticCurveTo(h.x, h.y - r * 0.1, h.x + r * 0.85, h.y + r * 0.45)
       .stroke({ width: r * 0.05, color: this.c(this.P.skinShade), alpha: 0.9, cap: 'round' });
