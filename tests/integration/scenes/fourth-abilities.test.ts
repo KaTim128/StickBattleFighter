@@ -250,7 +250,14 @@ describe('heavy attacks', () => {
       expect(attack, id).not.toBeNull();
       names.add(attack!);
       runUntil(() => scene.dummy.hp < 1000, 1.5);
-      expect(1000 - scene.dummy.hp, id).toBeGreaterThan(80);
+      // A solid blow, but less than any of the fighter's damaging special abilities (owner,
+      // 13/11/2026 balance; utility abilities under 50 damage, such as curses and chains, aside).
+      const caster = scene.playerFighter.caster!;
+      const abilityHits = (['a1', 'a2', 'a3', 'a4'] as const)
+        .map((slot) => caster.def(slot).payload.damage)
+        .filter((dmg) => dmg >= 50);
+      expect(1000 - scene.dummy.hp, id).toBeGreaterThan(45);
+      expect(1000 - scene.dummy.hp, id).toBeLessThan(Math.min(...abilityHits));
       runUntil(() => scene.dummy.state === 'knockdown', 0.5);
       expect(scene.dummy.state, id).toBe('knockdown');
       scenes.clear();

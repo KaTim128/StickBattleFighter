@@ -88,7 +88,10 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     expect(seen).toHaveLength(3); // the string ends after three
     expect(['knockdown', 'gettingUp']).toContain(scene.dummy.state); // the finisher floored it
     expect(scene.player.hits).toBe(3);
-    expect(1000 - scene.dummy.hp).toBeGreaterThan(300); // far heavier than Inferno's punches
+    // Heavier than Inferno's whole punch string (22 + 24 + 26 + 55), yet a full combo stays well short of
+    // an ability-heavy exchange (owner, 13/11/2026 balance).
+    expect(1000 - scene.dummy.hp).toBeGreaterThan(140);
+    expect(1000 - scene.dummy.hp).toBeLessThan(220);
     scenes.clear();
   });
 

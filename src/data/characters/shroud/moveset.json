@@ -21,7 +21,7 @@
         "reachM": 1.0,
         "radiusM": 0.45
       },
-      "damage": 34,
+      "damage": 20,
       "strength": 260,
       "knockbackMps": 1.4,
       "lungeMps": 0.9,
@@ -49,7 +49,7 @@
         "reachM": 1.05,
         "radiusM": 0.5
       },
-      "damage": 40,
+      "damage": 22,
       "strength": 320,
       "knockbackMps": 1.8,
       "lungeMps": 1.0,
@@ -77,7 +77,7 @@
         "reachM": 1.3,
         "radiusM": 0.45
       },
-      "damage": 82,
+      "damage": 52,
       "strength": 900,
       "knockbackMps": 6,
       "lungeMps": 2.2,
@@ -102,7 +102,7 @@
         "reachM": 0.95,
         "radiusM": 0.55
       },
-      "damage": 70,
+      "damage": 40,
       "strength": 800,
       "knockbackMps": 4.5,
       "lungeMps": 0,
@@ -127,7 +127,7 @@
         "reachM": 1.2,
         "radiusM": 0.45
       },
-      "damage": 95,
+      "damage": 50,
       "strength": 800,
       "knockbackMps": 5,
       "lungeMps": 2.4,

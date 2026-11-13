@@ -152,7 +152,7 @@ describe('Phase 5 combat in the arena', () => {
   it('at zero health the dummy faints, then dissolves into dust and fades away before getting up again', async () => {
     const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
     lineUp();
-    scene.dummyFighter.combatant.hp = 30;
+    scene.dummyFighter.combatant.hp = 15; // one jab (20) is enough
     intents.pressMelee();
     runUntil(() => scene.dummy.state === 'ko', 1);
     expect(scene.dummy.state).toBe('ko');
@@ -174,10 +174,10 @@ describe('Phase 5 combat in the arena', () => {
 
   it('KO at 0 health, then the dummy gets back up at full health where it started', async () => {
     const { intents, scene, scenes, run, runUntil, lineUp } = await setup();
-    // Start the dummy at 200 health so one full combo (240+ damage) is enough; retry if a hit misses.
+    // Start the dummy at 110 health so one full combo (128 damage, owner 13/11/2026 balance) is enough; retry if a hit misses.
     for (let round = 0; round < 3 && scene.dummy.state !== 'ko'; round++) {
       scene.respawnDummy({ x: 19, y: 13 });
-      scene.dummyFighter.combatant.hp = 200;
+      scene.dummyFighter.combatant.hp = 110;
       lineUp();
       intents.pressMelee();
       runUntil(() => scene.player.attack === 'jab', 1);

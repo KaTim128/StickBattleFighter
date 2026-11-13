@@ -29,7 +29,7 @@ describe('1. Base Stickman with the shared default profiles', () => {
     expect(d.moves.cross!.next).toEqual({ tap: 'hook' });
     expect(d.moves.hook!.next).toEqual({ tap: 'heavy' });
     expect(d.moves.heavy!.category).toBe('kick'); // owner: three punches then a kick
-    expect(d.moves.jab!.damage).toBe(30);
+    expect(d.moves.jab!.damage).toBe(20);
     expect(d.animation.source.Jab).toBe('default'); // from the shared default profile
     expect(d.animation.source.Idle).toBe('style'); // boxing style profile
     expect(d.abilities).toBeNull();
@@ -74,7 +74,7 @@ describe('2. Inferno: fire element, taekwondo style, its own profiles', () => {
     expect(d.moves.roundhouse!.damage).toBeCloseTo(raw.damage * 1.25, 6);
     expect(d.moves.roundhouse!.windupS).toBeCloseTo(raw.startupS / 1.15, 6);
     expect(d.moves.roundhouse!.knockbackSpeedMps).toBeCloseTo(raw.knockbackMps * 1.15, 6);
-    expect(d.moves.jab!.damage).toBe(35); // punches ×1.0
+    expect(d.moves.jab!.damage).toBe(22); // punches ×1.0
     expect(d.movement.maxSpeedMps).toBeCloseTo(5 * 1.05, 6);
     expect(d.movement.jumpSpeedMps).toBeCloseTo(6.5 * 1.1, 6);
   });

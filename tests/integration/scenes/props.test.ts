@@ -1,6 +1,6 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
+import { FightArenaScene, MELEE_OBJECT_DAMAGE_SCALE } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
 import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
@@ -10,6 +10,9 @@ import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
 
 const STEP = 1 / 60;
+/** What the base stickman's blows do to objects (owner, 13/11/2026: fighter damage cut, objects unchanged in feel). */
+const JAB = 20 * MELEE_OBJECT_DAMAGE_SCALE;
+const FULL_COMBO = (20 + 22 + 26 + 60) * MELEE_OBJECT_DAMAGE_SCALE;
 
 /** A small room: the player at (5, 5) facing right, with one test prop set in front; the dummy far away. */
 function room(props: PropPlacement[]): ArenaLayout {
@@ -78,7 +81,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
     combo(1);
     const after = prop('office-chair');
     expect(after.broken).toBe(false);
-    expect(after.hp).toBe(60 - 30); // the jab (30)
+    expect(after.hp).toBeCloseTo(60 - JAB, 6); // the jab
     expect(after.x).toBeGreaterThan(before.x + 0.05); // pushed away from the player
     run(3);
     expect(prop('office-chair').awake).toBe(false); // settled and planted again
@@ -105,7 +108,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
       { kind: 'desk', x: 6.6, y: 5 },
       { kind: 'keyboard', x: 7.0, y: 5.1, elevationM: 0.75, sortY: 5.4 }, // out of the fists' reach
     ]);
-    combo(4); // 240 damage
+    combo(4); // one full combo
     expect(prop('desk').broken).toBe(false);
     scene.drainSounds();
     approach();
@@ -165,10 +168,10 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
   it('a steel drawer pedestal is hard to break (metal takes 45% of each blow), rings when hit and breaks with sparks (owner)', async () => {
     const { intents, scene, scenes, run, runUntil, prop, combo } = await setup([{ kind: 'drawer-unit', x: 6.0, y: 5 }]);
     scene.drainSounds();
-    combo(4); // 240 of damage, of which steel takes 45%
+    combo(4); // a full combo, of which steel takes 45%
     const d = prop('drawer-unit');
     expect(d.broken).toBe(false);
-    expect(d.hp).toBeCloseTo(260 - 240 * MATERIAL_TOUGHNESS.metal, 6);
+    expect(d.hp).toBeCloseTo(260 - FULL_COMBO * MATERIAL_TOUGHNESS.metal, 6);
     expect(scene.drainSounds()).toContain('hit-metal');
     // It takes more full 1-2-3 combos than wood would (a 260-point wooden prop goes in two).
     let more = 0;
@@ -200,7 +203,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
     combo(4);
     const c = prop('cabinet');
     expect(c.broken).toBe(false);
-    expect(c.hp).toBeCloseTo(450 - 240 * MATERIAL_TOUGHNESS.metal, 6);
+    expect(c.hp).toBeCloseTo(450 - FULL_COMBO * MATERIAL_TOUGHNESS.metal, 6);
     expect(c.x).toBeGreaterThan(x0 + 0.05);
     scenes.clear();
   });

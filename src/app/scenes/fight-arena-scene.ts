@@ -164,6 +164,13 @@ const HEAVY_KNOCKBACK_MPS = 6;
 /** Sliding to a stop after a light knockback or while stunned. */
 const SETTLE_DECEL = 14;
 /** Durability a knocked-back body takes off a prop it crashes into, per unit of mass × speed. */
+/**
+ * Melee against furniture and walls (owner, 13/11/2026 damage balance): fighter damage from taps and
+ * heavies was cut to roughly 0.6x so fights last longer, but objects keep their old feel (a jab
+ * shoves a chair, jab then hook breaks it, a table takes two combos), so melee hits objects this
+ * much harder than its fighter damage.
+ */
+export const MELEE_OBJECT_DAMAGE_SCALE = 1.7;
 const KNOCK_PROP_DAMAGE = 0.1;
 const HITSTOP_HEAVY_S = 0.09;
 /** The final blow freezes longer: a cinematic beat before the faint. */
@@ -1915,7 +1922,8 @@ export class FightArenaScene implements ArenaScene {
     // Damage builds up on the one section the blow lands on (wall-break power: Inferno's flaming fists
     // crack stone far faster, owner 12/11/2026).
     const wallHit = this.walls?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
-      damage: a.damage * attacker.def.stats.power * (attacker.def.objects.wallBreakPower ?? 1),
+      damage:
+        a.damage * MELEE_OBJECT_DAMAGE_SCALE * attacker.def.stats.power * (attacker.def.objects.wallBreakPower ?? 1),
       direction: { x: dir.x, y: dir.y },
       at: { x: capsule.bx, y: capsule.by },
       fire: attacker.def.capabilities.usesFireEffects === true,
@@ -1925,7 +1933,7 @@ export class FightArenaScene implements ArenaScene {
     // Furniture: moves or breaks depending on its durability.
     const props = this.props?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
       blow: a.blow === 'kick' ? 'kick' : 'strike',
-      damage: a.damage * attacker.def.stats.power,
+      damage: a.damage * MELEE_OBJECT_DAMAGE_SCALE * attacker.def.stats.power,
       strength: a.strength,
       direction: { x: dir.x, y: dir.y },
     });

@@ -19,7 +19,7 @@
         "reachM": 0.9,
         "radiusM": 0.45
       },
-      "damage": 28,
+      "damage": 18,
       "strength": 250,
       "knockbackMps": 1.5,
       "lungeMps": 0.5,
@@ -47,7 +47,7 @@
         "reachM": 0.95,
         "radiusM": 0.5
       },
-      "damage": 36,
+      "damage": 24,
       "strength": 320,
       "knockbackMps": 2.2,
       "lungeMps": 0.6,
