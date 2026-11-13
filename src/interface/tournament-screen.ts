@@ -155,6 +155,24 @@ export class TournamentScreen {
       }
       grid.appendChild(col);
     });
+    // The last step: the champion (owner, 13/11/2026: "... Top 2, then champion").
+    const last = el('div', 'tn-round tn-round-champion');
+    if (state.champion) last.classList.add('current');
+    last.appendChild(el('h3', 'tn-round-name', 'Champion'));
+    const box = el('div', 'tn-match');
+    const row = el('div', 'tn-entry');
+    const champ = entrant(state, state.champion);
+    if (champ) {
+      row.append(this.face(champ.fighter), el('span', 'tn-name', champ.name));
+      row.classList.add('winner');
+      if (champ.isPlayer) row.classList.add('player');
+    } else {
+      row.classList.add('empty');
+      row.textContent = '—';
+    }
+    box.appendChild(row);
+    last.appendChild(box);
+    grid.appendChild(last);
     return grid;
   }
 

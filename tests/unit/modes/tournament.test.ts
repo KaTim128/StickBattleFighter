@@ -47,11 +47,12 @@ function playOut(t: TournamentState, rand: () => number, playerWins: (stage: num
 
 describe('tournament bracket (owner, 13/11/2026)', () => {
   it('names the stages by the fighters left', () => {
-    expect(stageName(16)).toBe('Round of 16');
-    expect(stageName(8)).toBe('Quarter Finals');
-    expect(stageName(4)).toBe('Semi Finals');
-    expect(stageName(2)).toBe('Final');
-    expect(stageName(32)).toBe('Round of 32');
+    // Owner, 13/11/2026: Top 16, Top 8, Top 4, Top 2, then the champion.
+    expect(stageName(16)).toBe('Top 16');
+    expect(stageName(8)).toBe('Top 8');
+    expect(stageName(4)).toBe('Top 4');
+    expect(stageName(2)).toBe('Top 2');
+    expect(stageName(32)).toBe('Top 32');
   });
 
   for (const size of [4, 8, 16]) {
@@ -101,7 +102,7 @@ describe('tournament bracket (owner, 13/11/2026)', () => {
   it('records where the player went out', () => {
     const t = createTournament(8, PLAYER, POOL, seeded(3));
     playOut(t, seeded(4), (stage) => stage < 1); // wins the quarter final, loses the semi
-    expect(playerPlacement(t)).toBe('Out in the Semi Finals');
+    expect(playerPlacement(t)).toBe('Out in the Top 4');
     expect(t.champion).not.toBe('p');
     const f = createTournament(4, PLAYER, POOL, seeded(5));
     playOut(f, seeded(6), (stage) => stage < 1);
@@ -154,7 +155,7 @@ describe('tournament bracket (owner, 13/11/2026)', () => {
     playOut(t, seeded(18), () => true);
     expect(t.champion).toBe('p');
     const big = createTournament(32, PLAYER, POOL, seeded(19));
-    expect(stageName(big.rounds[0]!.length * 2)).toBe('Round of 32');
+    expect(stageName(big.rounds[0]!.length * 2)).toBe('Top 32');
     expect(entrant(big, 'p')!.isPlayer).toBe(true);
   });
 });
@@ -203,6 +204,6 @@ describe('tournament flow between stages', () => {
     settleStage(t);
     expect(t.champion).not.toBeNull();
     expect(t.champion).not.toBe('p');
-    expect(playerPlacement(t)).toBe('Out in the Quarter Finals');
+    expect(playerPlacement(t)).toBe('Out in the Top 8');
   });
 });

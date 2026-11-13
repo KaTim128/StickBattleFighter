@@ -62,6 +62,16 @@ export const DEFENCE = {
   /** Cooldown after a dodge = base + per-kilogram × body weight (see dodgeCooldownFor). */
   dodgeCooldownBaseS: 0.15,
   dodgeCooldownPerKgS: 0.0055,
+  /**
+   * Dodge fatigue (owner, 13/11/2026: "the dodge should not be used as an exploit ... by spamming"):
+   * a dodge started within this long of the previous one becoming ready again is part of a chain;
+   * every extra link costs more stamina, waits longer and is invulnerable for less (none from the
+   * fourth on). Resting this long with the dodge ready resets the chain.
+   */
+  dodgeChainWindowS: 1.2,
+  dodgeChainCostStep: 0.5,
+  dodgeChainCooldownStep: 0.6,
+  dodgeChainInvuln: [1, 0.55, 0.2, 0] as readonly number[],
   lightStunS: 0.22,
   /** Time on the floor after a heavy hit (the fall plus lying still). */
   heavyKnockdownS: 1.1,
@@ -121,6 +131,11 @@ export class Combatant {
   private darkSightM = Number.POSITIVE_INFINITY;
   private dodgeS = 0;
   private dodgeCooldownS = 0;
+  /** Dodges in the current chain (0 when rested) and time since the last one. */
+  private dodgeChain = 0;
+  private lastDodgeCooldownS = 1;
+  /** Seconds the dodge has been ready (off cooldown) since the last one. */
+  private sinceDodgeReadyS = Number.POSITIVE_INFINITY;
   private sinceStaminaUseS = 0;
   private koAgeS = -1;
   private burnS = 0;
@@ -186,14 +201,40 @@ export class Combatant {
 
   /** Start a dodge if allowed; returns true if it started. */
   tryDodge(): boolean {
-    if (!this.canAct || this.dodgeCooldownS > 0 || this.stamina < DEFENCE.dodgeCost) return false;
+    const chain = this.dodgeChainLength;
+    const cost = this.dodgeCostFor(chain);
+    if (!this.canAct || this.dodgeCooldownS > 0 || this.stamina < cost) return false;
     this.guardUp = false;
-    this.stamina -= DEFENCE.dodgeCost;
+    this.stamina -= cost;
     this.sinceStaminaUseS = 0;
     this.dodgeS = DEFENCE.dodgeDurationS;
-    this.invulnS = Math.max(this.invulnS, DEFENCE.dodgeInvulnS);
-    this.dodgeCooldownS = this.dodgeCooldownTotalS;
+    const k = DEFENCE.dodgeChainInvuln[Math.min(chain, DEFENCE.dodgeChainInvuln.length - 1)]!;
+    if (k > 0) this.invulnS = Math.max(this.invulnS, DEFENCE.dodgeInvulnS * k);
+    this.dodgeCooldownS = this.dodgeCooldownTotalS * (1 + DEFENCE.dodgeChainCooldownStep * chain);
+    this.lastDodgeCooldownS = this.dodgeCooldownS;
+    this.dodgeChain = chain + 1;
+    this.sinceDodgeReadyS = 0;
     return true;
+  }
+
+  /** Stamina for a dodge that is link `chain` (0 = the first) of a chain. */
+  private dodgeCostFor(chain: number): number {
+    return DEFENCE.dodgeCost * (1 + DEFENCE.dodgeChainCostStep * chain);
+  }
+
+  /** Hits pass through right now (a dodge's protection, getting up, a respawn). */
+  get invulnerable(): boolean {
+    return this.invulnS > 0;
+  }
+
+  /** 0..1 how far through the current dodge cooldown (1 = ready; HUD). */
+  get dodgeReadiness(): number {
+    return this.dodgeCooldownS <= 0 ? 1 : 1 - this.dodgeCooldownS / this.lastDodgeCooldownS;
+  }
+
+  /** How many dodges in a row so far (0 once rested; tests and the HUD). */
+  get dodgeChainLength(): number {
+    return this.sinceDodgeReadyS < DEFENCE.dodgeChainWindowS ? this.dodgeChain : 0;
   }
 
   /** Full cooldown after starting a dodge (its own duration plus the weight-based wait). */
@@ -448,6 +489,7 @@ export class Combatant {
     }
     this.invulnS = Math.max(0, this.invulnS - dtS);
     this.dodgeS = Math.max(0, this.dodgeS - dtS);
+    if (this.dodgeCooldownS <= 0) this.sinceDodgeReadyS += dtS;
     this.dodgeCooldownS = Math.max(0, this.dodgeCooldownS - dtS);
 
     // Stamina regenerates after a pause, but not while holding the guard.

@@ -23,7 +23,7 @@ async function knockOutOpponent(page: Page): Promise<void> {
 }
 
 /** Tournament mode (owner, 13/11/2026): from the menu to the champion screen. */
-test('tournament: 4 fighters, semi final, skip the other battle, win the final, champion screen', async ({
+test('tournament: 4 fighters, Top 4, skip the other battle, win the Top 2, champion screen', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'one run is enough');
@@ -47,20 +47,20 @@ test('tournament: 4 fighters, semi final, skip the other battle, win the final, 
   await Promise.all([page.waitForURL(/mode=tournament/), menu.locator('.mm-play').click()]);
   const screen = page.locator('.tournament');
   await expect(screen).toBeVisible({ timeout: 60_000 });
-  await expect(screen.locator('.tn-stage')).toHaveText(/Semi Finals/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/Top 4/i);
   await expect(screen.locator('.tn-entry.player')).toHaveCount(1);
-  await expect(screen.locator('.tn-match')).toHaveCount(3); // 2 semi finals + the final
+  await expect(screen.locator('.tn-match')).toHaveCount(4); // Top 4 (two), Top 2 and the Champion slot
   // Semi final: fight and win.
   await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
-  await expect(page.locator('.tn-banner')).toHaveText(/Semi Finals/i);
+  await expect(page.locator('.tn-banner')).toHaveText(/Top 4/i);
   await knockOutOpponent(page);
   await expect(screen).toBeVisible({ timeout: 60_000 });
   // The other semi final: skip it with the one Skip button under the draw; the final follows.
-  await expect(screen.locator('.tn-latest')).toHaveText(/Semi Finals: addmen1280 \(Inferno\) beat/);
+  await expect(screen.locator('.tn-latest')).toHaveText(/Top 4: addmen1280 \(Inferno\) beat/);
   await expect(screen.locator('.tn-match.watchable')).toHaveCount(1);
   await expect(screen.locator('.tn-skip-all')).toHaveCount(1);
   await screen.locator('.tn-skip-all').click();
-  await expect(screen.locator('.tn-stage')).toHaveText(/Final/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/^Top 2$/i);
   await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
   await knockOutOpponent(page);
   await expect(screen).toBeVisible({ timeout: 60_000 });
@@ -111,7 +111,7 @@ test('tournament: any number of AI battles can be watched (no limit), each one t
   page.on('pageerror', (e) => errors.push(e.message));
   await startAndWinFirst(page, 16);
   const screen = page.locator('.tournament');
-  await expect(screen.locator('.tn-stage')).toHaveText(/Round of 16/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/Top 16/i);
   await expect(screen.locator('.tn-match.watchable')).toHaveCount(7);
   // Watch four battles (more than the old limit of three), leaving each from Settings.
   for (let left = 7; left > 3; left--) {
@@ -120,12 +120,12 @@ test('tournament: any number of AI battles can be watched (no limit), each one t
     await expect(page.locator('.tn-skip-battle')).toHaveCount(0); // no per-battle buttons
     await expect(page.locator('.ability-bar')).toBeHidden(); // spectating: no combat controls
     await leaveFight(page);
-    await expect(screen.locator('.tn-latest')).toHaveText(/Round of 16: .* beat .*left early/, { timeout: 60_000 });
+    await expect(screen.locator('.tn-latest')).toHaveText(/Top 16: .* beat .*left early/, { timeout: 60_000 });
     await expect(screen.locator('.tn-match.watchable')).toHaveCount(left - 1);
-    await expect(screen.locator('.tn-stage')).toHaveText(/Round of 16/i); // still this stage
+    await expect(screen.locator('.tn-stage')).toHaveText(/Top 16/i); // still this stage
   }
   await screen.locator('.tn-skip-all').click();
-  await expect(screen.locator('.tn-stage')).toHaveText(/Quarter Finals/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/Top 8/i);
   await expect(screen.locator('.tn-fight')).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -138,7 +138,7 @@ test('tournament: leaving your own fight settles it and the bracket moves on', a
   await startAndWinFirst(page, 4);
   const screen = page.locator('.tournament');
   await screen.locator('.tn-skip-all').click();
-  await expect(screen.locator('.tn-stage')).toHaveText(/^Final$/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/^Top 2$/i);
   await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
   await page.waitForFunction(
     () => Boolean((window as unknown as { __stickmanDebug?: { sceneRef?: unknown } }).__stickmanDebug?.sceneRef),
@@ -148,7 +148,7 @@ test('tournament: leaving your own fight settles it and the bracket moves on', a
   // Both at full health: the side that stayed wins when you leave.
   await leaveFight(page);
   await expect(screen.locator('.tn-title')).toHaveText('TOURNAMENT CHAMPION', { timeout: 60_000 });
-  await expect(screen.locator('.tn-latest')).toHaveText(/Final: .* beat addmen1280 \(Inferno\).*left early/);
+  await expect(screen.locator('.tn-latest')).toHaveText(/Top 2: .* beat addmen1280 \(Inferno\).*left early/);
   await expect(screen.locator('.tn-placement')).toHaveText(/Runner-up/);
   expect(errors).toEqual([]);
 });

@@ -77,6 +77,11 @@ export class StickmanView {
   decay = 0;
   /** 0..1 in the dark (Hunting Frenzy): black shadow pools over the eyes. */
   dark = 0;
+  /**
+   * How far the body is turned towards the camera, 0 (profile, in the arena) to 1 (sin of the turn
+   * angle). The select screen turns every fighter about 35-40° (owner, 13/11/2026).
+   */
+  turn = 0;
   /** 0..1 how far a held staff follows the swinging arm (a staff strike) instead of standing upright. */
   heldSwing = 0;
   /** Stunned: stars circle the head (PRS-6). */
@@ -140,7 +145,7 @@ export class StickmanView {
     flashColour = 0xffffff,
     dodge: DodgeLook = {},
   ): void {
-    const s = solveSkeleton(pose, this.bones);
+    const s = this.turn > 0 ? turnSkeleton(solveSkeleton(pose, this.bones), this.bones, this.turn) : solveSkeleton(pose, this.bones);
     this.last = { s, facing, heightM, rot: -facing * tiltRad };
     const { limbWidthM: w, outlineWidthM: o } = this.look;
     const limb = toward(this.look.limb, flashColour, flash);
@@ -339,6 +344,7 @@ export class StickmanView {
         motion: this.motion,
         tint: this.rage > 0 && muscled ? { colour: BRUTE.rage, k: this.rage * 0.3 } : undefined,
         drawHead,
+        bodyWidthK: 1 + 0.6 * this.turn,
       });
     } else {
       for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);
@@ -1773,3 +1779,28 @@ function skullShape(
     for (const ex of [0.15, 0.55]) g.ellipse(x + r * ex, y - r * 0.05, r * 0.2, r * 0.24).fill(c);
   }
 }
+
+/**
+ * A body turned towards the camera (select screen, owner 13/11/2026): seen a little from the front,
+ * the shoulders and hips spread apart across the screen, the near side (front arm and leg) back and
+ * the far side forward, each limb moving whole with its shoulder or hip. `k` is the sine of the
+ * turn. The arena keeps the profile (k = 0).
+ */
+export function turnSkeleton(
+  s: ReturnType<typeof solveSkeleton>,
+  bones: { readonly spine: number },
+  k: number,
+): ReturnType<typeof solveSkeleton> {
+  const shoulder = bones.spine * 0.3 * k;
+  const hip = bones.spine * 0.18 * k;
+  const shift = (limb: readonly { x: number; y: number }[], dx: number) =>
+    limb.map((p) => ({ x: p.x + dx, y: p.y })) as [Point, Point, Point];
+  return {
+    ...s,
+    armFront: shift(s.armFront, -shoulder),
+    armBack: shift(s.armBack, shoulder),
+    legFront: shift(s.legFront, -hip),
+    legBack: shift(s.legBack, hip),
+  };
+}
+

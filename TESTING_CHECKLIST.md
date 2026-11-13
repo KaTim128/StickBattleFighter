@@ -399,4 +399,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] One click sound per interface press, none on combat buttons (debug counter, e2e)
 - [x] Music rules: menus → menu music; fight → battle music; battle over → menu music (unit `musicFor`)
 - [ ] Listen on a real phone: menu music loop seam, ducking on fighter select, fade back after a tournament fight (manual)
+- [x] Dodge with a projectile incoming sidesteps to the nearer side; no shot → back-step (unit `dodge.test.ts`)
+- [x] Dodge spam: chained dodges cost more, wait longer, lose invulnerability; rest resets (unit)
+- [x] Tournament stages Top 16 / Top 8 / Top 4 / Top 2, then a Champion slot (unit + e2e)
+- [x] Select stances turned 30-45°, Titan ≥ 1.2× larger with hands on his hips, elbows out (unit, screenshots)
 

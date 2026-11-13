@@ -242,6 +242,11 @@ export interface PremiumDrawState {
   readonly tint?: { readonly colour: number; readonly k: number };
   /** Draws the fighter's own head style (skins with `head: 'own'`), after the body, before the near arm. */
   readonly drawHead?: () => void;
+  /**
+   * The body turned towards the camera (select screen, owner 13/11/2026): the torso and garment
+   * are drawn this much wider, as the chest is seen more from the front. 1 = profile.
+   */
+  readonly bodyWidthK?: number;
 }
 
 const toward = (colour: number, target: number, k: number): number => {
@@ -735,7 +740,7 @@ export class PremiumModel {
    * trimmed hem, or a cloak whose hem hangs in ragged tatters. Folds run down from the waist.
    */
   private garment(g: Graphics, s: Skel): void {
-    const w = this.st.w;
+    const w = this.st.w * (this.st.bodyWidthK ?? 1);
     const gm = this.skin.garment!;
     const [cloth, clothLit, clothShade] = gm.cloth ?? [this.P.skin, this.P.skinLit, this.P.skinShade];
     const waist = s.pelvis;
@@ -881,7 +886,7 @@ export class PremiumModel {
    * abdominals, a belt, a bone ribcage plate and a molten core.
    */
   private torso(g: Graphics, fire: Graphics, s: Skel): void {
-    const w = this.st.w;
+    const w = this.st.w * (this.st.bodyWidthK ?? 1);
     const m = this.skin.muscle;
     const base = s.pelvis;
     const top = s.chest;

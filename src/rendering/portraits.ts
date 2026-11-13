@@ -225,8 +225,8 @@ export async function renderPortrait(app: Application, def: FighterDef): Promise
   return (await renderPortraits(app, [def]))[0]!;
 }
 
-/** The select stance's quarter turn: the body seen a little from the front, so a touch narrower. */
-const TURN_FORESHORTEN = 0.9;
+/** The select screen's window, metres: tall enough for the giant and a planted staff, feet on a floor line. */
+const SELECT_WINDOW = { heightM: 2.75, widthM: 2.1, floorM: 0.14 } as const;
 
 /** A fighter's idle animation as a strip of frames (the title screen and fighter select). */
 export interface IdleStrip {
@@ -276,23 +276,21 @@ export async function renderIdleStrips(
       spanS = Math.max(0.4, t1 - t0);
       poseAt = (k) => idlePose(t0 + spanS * k, def.bones, style);
     }
-    // Every fighter at the same scale (a bigger rig is drawn bigger, like in the arena) and facing
-    // the same diagonal: towards the screen's left, a little turned (foreshortened) for depth.
-    const bodyK = def.bones.spine / 0.5;
-    const top =
-      Math.min(...[0, 0.5, 1].map((k) => solveSkeleton(poseAt(k), def.bones).head.y)) -
-      (def.effects.held === 'staff' ? 0.9 : 0.5) * bodyK; // a planted staff stands above the head
-    const heightM = -top + 0.1;
-    const widthM = 1.7 * bodyK;
-    const px = cellH / heightM;
-    const cellW = Math.round(widthM * px);
+    // Every fighter in the same window at the same scale (so sizes compare), the giant larger by
+    // its stance's `scale`, all facing the same diagonal: towards the screen's left, turned towards
+    // the camera by the stance's `turn` (owner, 13/11/2026).
+    const k = stance?.scale ?? 1;
+    const px = (cellH / SELECT_WINDOW.heightM) * k;
+    const cellW = Math.round((SELECT_WINDOW.widthM * cellH) / SELECT_WINDOW.heightM);
+    const floorY = cellH - SELECT_WINDOW.floorM * (cellH / SELECT_WINDOW.heightM);
     const pitch = cellW * 2; // a gap so a staff or knife never reaches into the next frame
     const sheet = new Container();
     for (let i = 0; i < frames; i++) {
       const view = makeView(def);
+      view.turn = stance?.turn ?? 0;
       view.draw(poseAt(i / (frames - 1)), -1, 0);
-      view.root.scale.set(px * TURN_FORESHORTEN, px);
-      view.root.position.set(i * pitch + cellW / 2, -top * px);
+      view.root.scale.set(px);
+      view.root.position.set(i * pitch + cellW / 2, floorY);
       sheet.addChild(view.root);
     }
     try {

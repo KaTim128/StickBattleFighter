@@ -14,9 +14,14 @@ export function stancePose(s: SelectStance, bones: BoneLengths, breath: number):
   const lean = rad(s.lean + s.breath.lean * breath);
   const pelvisM = (s.pelvis + s.breath.pelvis * breath) * leg;
   // Hands are aimed in world space; the rig hangs arms from the torso, so take the lean back out.
-  const hand = (h: { x: number; y: number }) => {
-    const ik = armIk(h.x * arm, (h.y - s.breath.hands * breath) * arm, bones.upperArm, bones.foreArm);
-    return { root: ik.root - lean, bend: ik.bend };
+  const hand = (h: { x: number; y: number; elbowOut?: boolean }) => {
+    const hx = h.x * arm;
+    const hy = (h.y - s.breath.hands * breath) * arm;
+    const ik = armIk(hx, hy, bones.upperArm, bones.foreArm);
+    if (!h.elbowOut) return { root: ik.root - lean, bend: ik.bend };
+    // The other elbow solution: mirror the upper arm about the shoulder-to-hand line.
+    const toHand = Math.atan2(hx, hy);
+    return { root: 2 * toHand - ik.root - lean, bend: -ik.bend };
   };
   return {
     lean,

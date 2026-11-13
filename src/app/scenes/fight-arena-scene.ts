@@ -38,6 +38,7 @@ import {
   hitCapsule,
 } from '../../combat/attacks';
 import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
+import { dodgeDirection, type IncomingShot } from '../../combat/dodge-direction';
 import type { CombatEvent } from '../../combat/events';
 import { brainDesignFor } from '../../data/ai/brains';
 import { type Difficulty, difficultyFor } from '../../data/ai/difficulty';
@@ -649,7 +650,7 @@ export class FightArenaScene implements ArenaScene {
       decayS: f.combatant.decayLeftS,
       beamAiming: this.abilities?.world.beams.some((b) => b.casterId === f.name) ?? false,
       utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
-      dodgeReady: 1 - f.combatant.dodgeCooldownLeftS / f.combatant.dodgeCooldownTotalS,
+      dodgeReady: f.combatant.dodgeReadiness,
     };
   }
 
@@ -1002,11 +1003,29 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /**
-   * Dodges always go straight back from where the fighter faces, whatever the movement keys or
-   * stick say (owner, 12/11/2026, REQ-CTL-20), and the facing does not change during the dodge.
+   * Dodges go straight back from where the fighter faces, whatever the movement keys or stick say
+   * (owner, 12/11/2026, REQ-CTL-20), and the facing does not change during the dodge; but with a
+   * projectile or thrown object flying at the fighter, the dodge sidesteps out of its path to the
+   * nearer side (owner, 13/11/2026; `dodgeDirection`).
    */
   private startBackDodge(f: FighterEntity): void {
-    Object.assign(f.dodgeDir, { x: -f.aim.x, y: -f.aim.y });
+    const shots: IncomingShot[] = [];
+    for (const p of this.abilities?.world.projectiles ?? []) {
+      const d = p.def.delivery;
+      if (p.casterId === f.name || d.type !== 'projectile') continue;
+      shots.push({ x: p.x, y: p.y, dirX: p.dir.x, dirY: p.dir.y, radiusM: d.radiusM });
+    }
+    const me = this.fighters.indexOf(f);
+    for (const prop of this.props?.flying ?? []) {
+      const v = prop.body?.linvel();
+      if (!v || !prop.flight || prop.flight.by === me) continue;
+      const speed = Math.hypot(v.x, v.y);
+      if (speed < THROWING.hitMinSpeedMps) continue;
+      const at = prop.body!.translation();
+      shots.push({ x: at.x, y: at.y, dirX: v.x / speed, dirY: v.y / speed, radiusM: 0.5 });
+    }
+    const dir = dodgeDirection({ x: f.x, y: f.y, radiusM: f.def.body.footRadiusM + 0.2 }, f.aim, shots);
+    Object.assign(f.dodgeDir, { x: dir.x, y: dir.y });
   }
 
   /** Notice when the player starts a new attack or ability, for the top HUD's action name. */

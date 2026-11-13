@@ -3,7 +3,7 @@
  * up works: the bracket rounds up to the next power of two and fills the gaps with byes, so a
  * bigger cap needs no rebuild). The player's fighter plus AI fighters are drawn at random into
  * pairs; each match's winner goes through, the loser is out for good. Stages are named by how many
- * fighters are left (Round of 16, Quarter Finals, Semi Finals, Final).
+ * fighters are left (Top 16, Top 8, Top 4, Top 2; then the champion).
  *
  * Pure rules and state: no engine, no storage, no randomness of its own (the caller passes `rand`),
  * so a tournament is reproducible and every rule is unit-tested.
@@ -43,12 +43,12 @@ export interface TournamentState {
   champion: string | null;
 }
 
-/** The stage name for a round that starts with `fighters` fighters. */
+/**
+ * The stage name for a round that starts with `fighters` fighters (owner, 13/11/2026: "Top 16,
+ * then Top 8, then Top 4, then Top 2, then champion"; any bigger field is Top 32 and so on).
+ */
 export function stageName(fighters: number): string {
-  if (fighters <= 2) return 'Final';
-  if (fighters === 4) return 'Semi Finals';
-  if (fighters === 8) return 'Quarter Finals';
-  return `Round of ${fighters}`;
+  return `Top ${Math.max(2, fighters)}`;
 }
 
 /** Shuffle a copy (Fisher–Yates) with the caller's random source. */

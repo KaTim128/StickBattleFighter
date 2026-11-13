@@ -186,7 +186,7 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
   return screen;
 }
 
-/** "Semi Finals: Titan beat Shroud" for the match just finished (`?last=<id>`, `&early` if left). */
+/** "Top 4: Titan beat Shroud" for the match just finished (`?last=<id>`, `&early` if left). */
 function latestResult(saved: SavedTournament, params: URLSearchParams): string | null {
   const id = params.get('last');
   const m = id ? findMatch(saved.state, id) : undefined;

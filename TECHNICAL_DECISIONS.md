@@ -556,3 +556,8 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** Painted plates cannot un-highlight (Story Mode is lit in the art); hovering another plate adds a glow. The rig is a 2D side-view rig, so the "2.5D" stance is suggested by pose, a slight foreshortening, rim light and floor shadow, not a true three-quarter turn; true turned art would need new character artwork.
 **Status.** ACCEPTED.
 
+### TD-067: Dodge direction from incoming shots; dodge fatigue in the combatant; select turn as a skeleton offset — ACCEPTED (owner request 13/11/2026)
+**Decision.** `dodgeDirection` (pure, `src/combat/dodge-direction.ts`) picks the sidestep from the nearest shot whose path would hit the fighter within 9 m (ability projectiles and thrown objects), else the back-step. Dodge fatigue lives in `Combatant.tryDodge` so the player and the AI share it. For the select screen, `StickmanView.turn` spreads the limbs' roots apart (`turnSkeleton`) and widens the premium torso and garment (`bodyWidthK`); the arena never uses it.
+**Trade-offs.** The quarter turn is suggested on the side-view rig (heads and faces stay in profile); a true three-quarter look would need new turned art per fighter.
+**Status.** ACCEPTED.
+
