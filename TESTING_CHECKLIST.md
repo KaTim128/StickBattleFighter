@@ -346,6 +346,14 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Jumping off a bookshelf: damage once by the real drop, collapse flat, get-up, no acting until up.
 - [ ] Owner playtest: the feel of the falling pose, the squat depth and the face-down push-up get-up on a phone.
 
+## 13g. Redesign default, damage balance, rising walls (owner, 13/11/2026)
+- [x] Every fighter shows its redesign without a page option (browser screenshots of Inferno, Titan, Necro, Shroud).
+- [x] Tap strings light then a moderate finisher; whole string under 20% HP (`tests/unit/characters/damage-balance.test.ts`).
+- [x] Each heavy below the fighter's damaging abilities and still knocks down (`tests/integration/scenes/fourth-abilities.test.ts`).
+- [x] Furniture keeps its feel under melee (`tests/integration/scenes/props.test.ts`).
+- [x] Walls rise while airborne and sink back on the ground (`tests/integration/scenes/climbing.test.ts`); fight stays visible (browser).
+- [ ] Owner playtest: fight length and feel with the new damage; wall rise look on a phone.
+
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green
 - [ ] Previous milestones' acceptance tests re-run

@@ -3,7 +3,6 @@ import { idlePose } from '../animation/greybox-motion';
 import type { Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { FighterDef } from '../data/fighters/fighter-def';
-import { redesignPreview } from './premium-model';
 import { StickmanView } from './stickman-view';
 
 /**
@@ -34,7 +33,7 @@ const rad = (d: number): number => (d * Math.PI) / 180;
 function heroPose(def: FighterDef): Pose {
   const base = idlePose(0.2, def.bones);
   const body = def.effects.body ?? '';
-  // Each fighter strikes its own pose (redesign proposal): the brawler squares up with fists low and
+  // Each fighter strikes its own pose (redesign, owner 13/11/2026): the brawler squares up with fists low and
   // ready, the mage holds the staff aside and raises a casting hand, the stalker lifts the knife
   // beside the mask, the mannequin keeps a textbook guard; Inferno keeps his approved fists-up pose.
   const poses: Record<string, Pick<Pose, 'armFront' | 'armBack'> & { lean?: number }> = {
@@ -43,7 +42,7 @@ function heroPose(def: FighterDef): Pose {
     cloak: { armFront: { root: rad(112), bend: rad(62) }, armBack: { root: rad(-30), bend: rad(60) }, lean: rad(-8) },
     solid: { armFront: { root: rad(55), bend: rad(110) }, armBack: { root: rad(30), bend: rad(120) } },
   };
-  const own = redesignPreview() ? poses[body] : undefined;
+  const own = poses[body];
   return {
     ...base,
     lean: own?.lean ?? rad(4),
@@ -121,7 +120,7 @@ export async function renderPortraits(app: Application, defs: readonly FighterDe
 /**
  * Premium portraits (owner, 13/11/2026: the visual-redesign prototype): the in-game model lit
  * against an atmospheric backdrop in the fighter's element, with a rim of light, a vignette and a
- * frame. Keyed by body style while only the redesigned fighters have one (Inferno: `magma`).
+ * frame. Keyed by body style: every redesigned fighter has one (Inferno: `magma`).
  */
 interface PremiumLook {
   readonly deep: string;
@@ -138,11 +137,9 @@ const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   solid: { deep: '#0b0d12', mid: '#2b3240', glow: '#ffb000', spark: '#fff0b0', frame: '#ffc83a' },
 };
 
-/** The premium look for a body style: Inferno's always; the others only in the redesign preview. */
+/** The premium portrait look for a body style (every redesigned fighter, owner 13/11/2026). */
 function lookFor(body: string | undefined): PremiumLook | undefined {
-  if (!body) return undefined;
-  if (body === 'magma') return PREMIUM.magma;
-  return redesignPreview() ? PREMIUM[body] : undefined;
+  return body ? PREMIUM[body] : undefined;
 }
 
 /** '#rrggbb' at an alpha, as a CSS colour. */

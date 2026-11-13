@@ -3,7 +3,7 @@ import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
 import { MagmaModel } from './magma-model';
-import { PREMIUM_SKINS, PremiumModel, redesignPreview } from './premium-model';
+import { PREMIUM_SKINS, PremiumModel } from './premium-model';
 
 export interface StickmanLook {
   readonly limb: number;
@@ -82,8 +82,8 @@ export class StickmanView {
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
   /** Inferno's premium model (body style `magma`), drawn on the same rig. */
   private readonly magma: MagmaModel | null;
-  /** The redesign proposal for the other fighters (preview only, `?redesign`, awaiting approval). */
-  private readonly proposal: PremiumModel | null;
+  /** The premium redesign for fighters with a skin (owner, 13/11/2026: replaces the old look). */
+  private readonly premium: PremiumModel | null;
 
   constructor(
     private readonly bones: BoneLengths,
@@ -97,8 +97,9 @@ export class StickmanView {
   ) {
     this.root.label = 'stickman';
     this.magma = bodyStyle === 'magma' ? new MagmaModel() : null;
-    const skin = redesignPreview() ? PREMIUM_SKINS[bodyStyle] : undefined;
-    this.proposal = skin ? new PremiumModel(skin) : null;
+    // The premium look for every fighter with a skin (owner, 13/11/2026: the redesign replaces the old look).
+    const skin = PREMIUM_SKINS[bodyStyle];
+    this.premium = skin ? new PremiumModel(skin) : null;
     this.fire.blendMode = 'add';
     this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
     const scaled = new Container();
@@ -315,8 +316,8 @@ export class StickmanView {
         motion: this.motion,
       });
       if (flame > 0.01) drawHead();
-    } else if (this.proposal) {
-      this.proposal.draw(g, this.fire, s, {
+    } else if (this.premium) {
+      this.premium.draw(g, this.fire, s, {
         facing,
         t,
         flash,
@@ -849,9 +850,9 @@ export class StickmanView {
     const fy = hand.y - elbow.y;
     const fl = Math.hypot(fx, fy) || 1;
     const k = Math.min(1, Math.max(0, this.heldSwing));
-    // Redesign proposal (owner, 13/11/2026): held in his left hand at a natural slight diagonal,
+    // Redesign (owner, 13/11/2026): held in his left hand at a natural slight diagonal,
     // the top leaning forward, not bolt upright.
-    const tilt = this.proposal ? 0.24 : 0;
+    const tilt = this.premium ? 0.24 : 0;
     let ux = tilt * (1 - k) + (fx / fl) * k;
     let uy = -(1 - k) + (fy / fl) * k;
     const ul = Math.hypot(ux, uy) || 1;
@@ -859,15 +860,15 @@ export class StickmanView {
     uy /= ul;
     const LENGTH = 1.95;
     // Upright: the butt rests on the floor (y = 0) when the hand is low enough; otherwise it rises.
-    // Redesign proposal (owner, 13/11/2026): the staff slides down through his grip until its foot
+    // Redesign (owner, 13/11/2026): the staff slides down through his grip until its foot
     // hangs just clear of the floor (about 5 cm), never planted on it.
-    const rest = this.proposal
+    const rest = this.premium
       ? Math.max(0, -hand.y - 0.05) / Math.max(0.2, Math.abs(uy))
       : Math.min(Math.max(0, -hand.y), 0.78);
     const below = rest * (1 - k) + 0.45 * k;
     const butt = { x: hand.x - ux * below, y: hand.y - uy * below };
     const top = { x: butt.x + ux * LENGTH, y: butt.y + uy * LENGTH };
-    if (this.proposal) {
+    if (this.premium) {
       this.cursedStaff(g, butt, top, ux, uy, LENGTH, o);
       // The left hand closes round the shaft: a gloved fist drawn over it, knuckles across.
       const nx = -uy;
@@ -941,7 +942,7 @@ export class StickmanView {
   }
 
   /**
-   * Redesign proposal, Mage of Death (owner, 13/11/2026): a gnarled blackwood staff carved with
+   * Redesign, Mage of Death (owner, 13/11/2026): a gnarled blackwood staff carved with
    * cursed violet runes, bound in dark cloth at the grip, its head a horned skull on a collar of
    * black iron thorns. At rest it stays dark; while staff magic is used the runes, the sockets and
    * a sickly-green and violet aura flare up.
@@ -1139,8 +1140,8 @@ export class StickmanView {
     if (m < 0.03) return;
     const D = StickmanView.DEATH;
     // Mage of Death proposal: darker cursed violet with sickly-green motes, never pale or bright.
-    const soul = this.proposal ? 0x5a1f9a : D.soul;
-    const core = this.proposal ? 0x9dee6e : D.soulCore;
+    const soul = this.premium ? 0x5a1f9a : D.soul;
+    const core = this.premium ? 0x9dee6e : D.soulCore;
     const f = this.fire;
     const r = this.bones.headRadius;
     f.ellipse(s.head.x + r * 0.42, s.head.y, r * 0.65, r * 0.85).fill({ color: soul, alpha: 0.35 * m });
@@ -1159,7 +1160,7 @@ export class StickmanView {
       const y = cy + Math.sin(a * 1.3 + i) * 0.45;
       f.circle(x, y, 0.03 + 0.015 * Math.sin(t * 3 + i)).fill({
         color: i % 2 ? core : soul,
-        alpha: (this.proposal ? 0.55 : 0.7) * m,
+        alpha: (this.premium ? 0.55 : 0.7) * m,
       });
     }
   }

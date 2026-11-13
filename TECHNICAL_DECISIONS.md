@@ -501,3 +501,14 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Alternatives.** Hand-painted sprite sheets (rejected for now: every animation would need painting, and it changes the asset pipeline and the rendering approach, which needs owner approval); a 3D renderer (rejected: architecture change).
 **Trade-offs.** More draw calls per redesigned fighter (still well within budget for a few fighters); quality is limited to what vector drawing can do, so it reads as polished cel-painted art rather than airbrushed illustration.
 **Status.** ACCEPTED: the owner approved the Inferno and bookshelf prototypes ("I prefer this styling a lot more"), asking for slimmer boots (done). This style is the standard for the rest of the redesign.
+
+### TD-060: Redesign made the default, melee-to-object damage scale, rising outer walls — ACCEPTED (owner requests 13/11/2026)
+**Context.** The owner approved the redesign for every fighter and asked to replace the old look, to cut melee damage below abilities, and for taller arena walls seen only when a fighter is in the air.
+**Decision.**
+- *Redesign:* the `?redesign` preview gate is removed; `PremiumModel` skins (by body style) and premium portraits are the only look for every fighter with a skin. No second, competing look is kept (integration rule); the old look is in git history (before this change).
+- *Damage:* taps, heavies and air attacks are cut in each moveset's data (light opening hits, a moderate finisher, every melee blow below the fighter's damaging abilities). Objects keep their tuned feel through `MELEE_OBJECT_DAMAGE_SCALE` (1.7) on melee's damage to props and walls, so durabilities did not change.
+- *Walls:* `ArenaView.setWallRise(0..1)` draws the outer walls' extra height (to 4.5 m) as a presentation layer; the scene eases it in while a fighter is more than 0.45 m above what it stands on, leaping or launched. The front walls rise as faint glass with a solid rail. Colliders and arena bounds are untouched.
+**Alternatives.** Keeping `?classic` as a fallback (rejected: two looks to maintain); retuning every prop's durability (rejected: more data churn, same result); fully opaque tall front walls (rejected: they hide the fight in the 2.5D view).
+**Trade-offs.** The back walls' raised tops sit above the usual camera framing, so the rise reads mostly through the front walls and when the camera is near the back walls.
+**Status.** ACCEPTED.
+

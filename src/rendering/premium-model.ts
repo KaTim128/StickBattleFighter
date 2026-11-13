@@ -87,18 +87,9 @@ export const MAGMA: PremiumPalette = {
   glow: 0xff6a1a,
 };
 
-let preview = false;
-/** Turn the redesign proposal on (the `?redesign` page option). Off by default: the game is unchanged. */
-export function setRedesignPreview(on: boolean): void {
-  preview = on;
-}
-export function redesignPreview(): boolean {
-  return preview;
-}
-
 /**
- * Redesign proposal (owner, 13/11/2026: "recreate the look" of Inferno for the others; preview
- * only, behind `?redesign`, until approved). Every fighter gets Inferno's full treatment (the
+ * The fighter redesign (owner, 13/11/2026: "recreate the look" of Inferno for the others; approved
+ * and made the default the same day). Every fighter gets Inferno's full treatment (the
  * painted three-tone body, the armour set with glowing seams, element core, veins and glowing
  * hands), themed to the fighter. Keyed by body style (no character names in shared code).
  */

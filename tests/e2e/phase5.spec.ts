@@ -27,7 +27,7 @@ test('combat: combo damage with floating numbers; hold J to block; T toggles dum
   await page.waitForTimeout(300);
 
   await comboToHeavy(page, async () => (await hook(page)).player.attack);
-  await expect.poll(async () => (await hook(page)).dummy.hp, { timeout: 3000 }).toBeLessThanOrEqual(760);
+  await expect.poll(async () => (await hook(page)).dummy.hp, { timeout: 3000 }).toBeLessThanOrEqual(880); // a full combo, about 128 damage (owner, 13/11/2026 balance)
   await expect(page.locator('.combat-text').first()).toBeAttached(); // floating numbers appeared
   await page.screenshot({ path: testInfo.outputPath('combo-damage.png') });
 
