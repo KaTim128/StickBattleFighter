@@ -72,7 +72,9 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   const modes = front.locator('[data-screen="modes"]');
   await expect(modes).toBeVisible();
   await expect(modes.locator('.fe-mode')).toHaveCount(2);
-  await expect(modes.locator('[data-gm="3v3"]')).not.toHaveClass(/locked/); // 3 vs 3 is playable (owner, 13/11/2026)
+  await expect(modes.locator('[data-gm="3v3"]')).not.toHaveClass(/locked/); // Tag Team is playable (owner, 13/11/2026)
+  await expect(modes.locator('[data-gm="3v3"]')).toContainText('Tag Team'); // renamed from 3 vs 3 (owner)
+  await expect(modes).not.toContainText(/3 vs 3/i);
   await expect(modes).not.toContainText(/ladder/i);
   await modes.locator('[data-gm="tournament"]').click();
 

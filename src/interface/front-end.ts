@@ -344,7 +344,7 @@ export class FrontEnd {
       false,
       () => this.openSelect('tournament'),
     );
-    card('3v3', '3 vs 3', 'Pick three from a pool of five and tag-team against an AI team.', false, () => {
+    card('3v3', 'Tag Team', 'Pick three from a pool of five and tag-team against an AI team.', false, () => {
       this.pool = draftPool(
         this.o.fighters.map((f) => f.id),
         Math.random,
@@ -367,7 +367,7 @@ export class FrontEnd {
   private picks: number[] = [];
 
   private buildTeam(sec: HTMLElement): void {
-    sec.append(el('h2', 'fe-h fe-screen-title', '3 VS 3 · PICK YOUR TEAM'));
+    sec.append(el('h2', 'fe-h fe-screen-title', 'TAG TEAM · PICK YOUR TEAM'));
     sec.append(
       el(
         'p',

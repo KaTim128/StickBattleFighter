@@ -441,3 +441,4 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Fighter-select strips (30 frames) render for every fighter (not blank)
 - [x] Names with symbols and emojis accepted and shown (fighter select, tournament draw); an emoji counts as one; too long refused (`player-name.test.ts`, `front-end.spec.ts`)
 - [x] Typing W A S D, Q E R F and Space into the name screen and the Settings name box writes them as text (`front-end.spec.ts`)
+- [x] Game Modes shows Tag Team (no '3 vs 3'); team-pick title and Tag key label renamed (`front-end.spec.ts`)

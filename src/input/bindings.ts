@@ -80,7 +80,7 @@ export const BIND_ACTIONS: readonly { action: BindAction; label: string; group: 
   { action: 'heavyAttack', label: 'Heavy attack', group: 'Combat' },
   { action: 'ultimate', label: 'Ultimate (again: launch)', group: 'Combat' },
   { action: 'grab', label: 'Grab (again: throw)', group: 'Combat' },
-  { action: 'tag', label: 'Tag teammate (3 vs 3)', group: 'Combat' },
+  { action: 'tag', label: 'Tag teammate (Tag Team)', group: 'Combat' },
   { action: 'beamLeft', label: 'Rotate beam left', group: 'Fire Beam controls' },
   { action: 'beamRight', label: 'Rotate beam right', group: 'Fire Beam controls' },
 ];
