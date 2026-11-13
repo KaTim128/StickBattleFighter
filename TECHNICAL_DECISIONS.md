@@ -530,3 +530,10 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** Each match reloads the page (a few seconds on slow phones); the tournament lives in one browser; only 4 fighter types exist, so bigger fields repeat fighters (numbered).
 **Status.** ACCEPTED.
 
+### TD-063: Per-fighter brain designs as data, one interpreting brain; difficulty as intelligence — ACCEPTED (owner request 13/11/2026)
+**Context.** The owner asked that every fighter have its own AI brain built around its personality and kit, that difficulty raise intelligence rather than damage, and that every fighter use its whole kit at every level (Necro on Easy only used his ultimate: the old brain always closed to punching range, where his ranged spells never fitted).
+**Decision.** Each fighter gets its own AI profile and a `BrainDesign` in `src/data/ai/brains.ts` (range, movement style, defence, retreat, hit-and-run, a tactic per ability, combo chains). `FighterBrain` interprets any design; difficulty (`src/data/ai/difficulty.ts`, now with Expert) sets reaction, mistakes, combos, punishing, defending, aim lead, cooldown planning and adaptation. Abilities and basic attacks rotate (weights grow with time since last use; a basic attack unused for 12 s is due; a planner never holds an ability for more than 20 s), so the whole kit appears at every level.
+**Alternatives.** A hand-written brain class per fighter (rejected: duplicated engine logic and fighter branches in shared code); behaviour trees (rejected: heavier for these needs).
+**Trade-offs.** Personality is expressed through parameters, so very unusual fighters may need new design fields; tests use seeded 45 s fights and assert the kit is used, not exact tactics.
+**Status.** ACCEPTED.
+

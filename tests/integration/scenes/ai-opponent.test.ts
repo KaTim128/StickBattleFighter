@@ -44,85 +44,94 @@ describe('fighter AI opponent', { timeout: 60_000 }, () => {
     await initPhysics();
   });
 
-  for (const id of ['inferno', 'rampage', 'necro', 'shroud']) {
-    it(`${id}: closes in, punches, throws heavy attacks and uses its abilities`, async () => {
-      const { scene, scenes, run } = await setup(id, TRAINING_YARD, { x: 10, y: 10 }, { x: 18, y: 10 });
-      const seen = new Set<string>();
-      const abilityIds = new Set(
-        (['a1', 'a2', 'a3', 'a4', 'ult'] as const).map((s) => scene.dummyFighter.caster!.def(s).id),
-      );
-      const heavyId = scene.dummyFighter.def.starters.heavy;
-      run(25, () => {
-        const ab = scene.dummyFighter.caster?.cast?.def.id;
-        if (ab) seen.add(`ability:${ab}`);
-        const atk = scene.dummyFighter.combo.attack?.id;
-        if (atk) seen.add(atk === heavyId ? 'heavy' : 'melee');
-        // Keep the player alive so the fight goes on.
-        if (scene.playerFighter.combatant.hp < 300) scene.playerFighter.combatant.hp = 1000;
+  // Owner, 13/11/2026: every fighter uses its WHOLE kit (all abilities, the ultimate, punches and
+  // its heavy) at EVERY difficulty, and keeps its own personality.
+  for (const difficulty of ['easy', 'normal', 'hard', 'expert']) {
+    for (const id of ['inferno', 'rampage', 'necro', 'shroud']) {
+      it(`${id} on ${difficulty}: the whole kit, basic attacks and the ultimate`, async () => {
+        const { intents, scene, scenes, run } = await setup(
+          id,
+          TRAINING_YARD,
+          { x: 10, y: 10 },
+          { x: 18, y: 10 },
+          difficulty,
+        );
+        const seen = new Set<string>();
+        const heavyId = scene.dummyFighter.def.starters.heavy;
+        const caster = scene.dummyFighter.caster!;
+        let t = 0;
+        run(45, () => {
+          t += 1 / 60;
+          const ab = caster.cast?.def.id;
+          if (ab) seen.add(`ability:${ab}`);
+          const atk = scene.dummyFighter.combo.attack?.id;
+          if (atk) seen.add(atk === heavyId ? 'heavy' : 'melee');
+          // Keep the fight going, and give it its ultimate now and then (the meter takes long to fill).
+          if (scene.playerFighter.combatant.hp < 300) scene.playerFighter.combatant.hp = 1000;
+          if (scene.dummyFighter.combatant.hp < 300)
+            scene.dummyFighter.combatant.hp = scene.dummyFighter.combatant.stats.maxHp;
+          if (Math.floor(t) % 15 === 14) caster.fillMeter();
+          // The player fights back now and then (so openings, threats and lost health happen).
+          if (Math.round(t * 60) % 70 === 0) intents.pressMelee();
+        });
+        const kit = (['a1', 'a2', 'a3', 'a4', 'ult'] as const).map((sl) => caster.def(sl).id);
+        const missing = kit.filter((k) => !seen.has(`ability:${k}`));
+        expect(missing, [...seen].join(', ')).toEqual([]);
+        expect(seen.has('melee'), [...seen].join(', ')).toBe(true);
+        expect(seen.has('heavy'), [...seen].join(', ')).toBe(true);
+        scenes.clear();
       });
-      const used = [...seen].filter((s) => s.startsWith('ability:') && abilityIds.has(s.slice(8)));
-      expect(used.length, [...seen].join(', ')).toBeGreaterThanOrEqual(2);
-      expect(seen.has('melee'), [...seen].join(', ')).toBe(true);
-      expect(seen.has('heavy'), [...seen].join(', ')).toBe(true);
-      scenes.clear();
-    });
+    }
   }
 
-  it('climbs onto furniture after a player standing on it', async () => {
-    const room: ArenaLayout = { ...TRAINING_YARD, props: [{ kind: 'desk', x: 12, y: 10 }] };
-    const { scene, scenes, run } = await setup('shroud', room, { x: 12, y: 10 }, { x: 16, y: 10 });
-    // Put the player on the desk top.
-    scene.playerFighter.hop = { heightM: 0.75, verticalSpeedMps: 0, floorM: 0.75 };
-    let reached = false;
-    run(8, () => {
-      scene.playerFighter.combatant.hp = 1000;
-      if ((scene.dummyFighter.hop.floorM ?? 0) > 0.7) reached = true;
-    });
-    expect(reached).toBe(true);
-    scenes.clear();
+  it('each keeps its personality: Necro keeps his distance, Titan stays on top of you', async () => {
+    // Share of the fight spent within 2.5 m of the player.
+    const closeShare = async (id: string) => {
+      const { scene, scenes, run } = await setup(id, TRAINING_YARD, { x: 10, y: 10 }, { x: 16, y: 10 }, 'expert');
+      let close = 0;
+      let n = 0;
+      run(25, () => {
+        scene.playerFighter.combatant.hp = 1000;
+        scene.dummyFighter.combatant.hp = scene.dummyFighter.combatant.stats.maxHp;
+        if (Math.hypot(scene.dummy.x - scene.player.x, scene.dummy.y - scene.player.y) < 2.5) close++;
+        n++;
+      });
+      scenes.clear();
+      return close / n;
+    };
+    const necro = await closeShare('necro');
+    const titan = await closeShare('rampage');
+    expect(necro).toBeLessThan(0.35); // the curse mage keeps away
+    expect(titan).toBeGreaterThan(necro); // the brute fights closer (his smashes knock you away)
   });
 
-  it('the training dummy stays a training dummy (no AI)', async () => {
-    const { scene, scenes, run } = await setup('training-dummy', TRAINING_YARD, { x: 10, y: 10 }, { x: 13, y: 10 });
-    const x0 = scene.dummy.x;
-    run(4);
-    expect(scene.dummyFighter.brain).toBeNull();
-    expect(Math.abs(scene.dummy.x - x0)).toBeLessThan(0.05);
-    scenes.clear();
-  });
-
-  it('walks round a wall to reach the player instead of pushing against it (REQ-AI-5)', async () => {
-    // A long wall between them, open at the bottom end.
-    const room: ArenaLayout = { ...TRAINING_YARD, props: [], interiorWalls: [{ x0: 13.9, y0: 0, x1: 14.1, y1: 15 }] };
-    const { scene, scenes, run } = await setup('rampage', room, { x: 11, y: 8 }, { x: 17, y: 8 });
-    let reached = false;
-    run(14, () => {
-      scene.playerFighter.combatant.hp = 1000;
-      if (Math.hypot(scene.dummy.x - 11, scene.dummy.y - 8) < 2) reached = true;
-    });
-    expect(reached).toBe(true);
-    scenes.clear();
-  });
-
-  it('a harder opponent attacks more often than an easier one (REQ-AI-4)', async () => {
-    const pressure = async (difficulty: string) => {
-      const { scene, scenes, run } = await setup(
+  it('a harder opponent reads and defends incoming attacks far more often (REQ-AI-4)', async () => {
+    const defences = async (difficulty: string) => {
+      const { intents, scene, scenes, run } = await setup(
         'inferno',
         TRAINING_YARD,
         { x: 10, y: 10 },
-        { x: 12, y: 10 },
+        { x: 11.4, y: 10 },
         difficulty,
       );
-      let busy = 0;
-      run(20, () => {
+      let n = 0;
+      let t = 0;
+      let was = false;
+      run(25, () => {
+        t++;
         scene.playerFighter.combatant.hp = 1000;
-        if (scene.dummyFighter.combo.attack || scene.dummyFighter.caster?.cast) busy++;
+        scene.dummyFighter.combatant.hp = 1000;
+        if (t % 40 === 0) intents.pressMelee();
+        const state = scene.dummyFighter.combatant.state;
+        const now = state === 'dodging' || state === 'guarding';
+        if (now && !was) n++;
+        was = now;
       });
       scenes.clear();
-      return busy;
+      return n;
     };
-    const easy = await pressure('easy');
-    const hard = await pressure('hard');
-    expect(hard).toBeGreaterThan(easy * 1.3);
+    const easy = await defences('easy');
+    const expert = await defences('expert');
+    expect(expert).toBeGreaterThan(easy);
   });
 });

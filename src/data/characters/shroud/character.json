@@ -12,7 +12,7 @@
     "stats": "shroud-stats",
     "effects": "shroud-effects",
     "audio": "shroud-audio",
-    "ai": "default-ai"
+    "ai": "shroud-ai"
   },
   "rig": {
     "bones": {

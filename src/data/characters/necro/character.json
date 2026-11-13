@@ -12,7 +12,7 @@
     "stats": "necro-stats",
     "effects": "necro-effects",
     "audio": "necro-audio",
-    "ai": "default-ai"
+    "ai": "necro-ai"
   },
   "rig": {
     "bones": {

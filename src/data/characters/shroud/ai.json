@@ -1,0 +1,8 @@
+{
+  "id": "shroud-ai",
+  "attackEveryS": 1.2,
+  "aggression": 0.55,
+  "clashMashRate": 6.5,
+  "settleDecelMps2": 13,
+  "reactionS": 0.18
+}

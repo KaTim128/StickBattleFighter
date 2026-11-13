@@ -12,7 +12,7 @@
     "stats": "inferno-stats",
     "effects": "fire-effects",
     "audio": "inferno-audio",
-    "ai": "default-ai"
+    "ai": "inferno-ai"
   },
   "rig": {
     "bones": {

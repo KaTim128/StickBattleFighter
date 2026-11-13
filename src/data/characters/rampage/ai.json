@@ -1,0 +1,8 @@
+{
+  "id": "rampage-ai",
+  "attackEveryS": 1.1,
+  "aggression": 0.85,
+  "clashMashRate": 8,
+  "settleDecelMps2": 16,
+  "reactionS": 0.3
+}

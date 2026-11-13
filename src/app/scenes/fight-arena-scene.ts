@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
 import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../../abilities/ability-def';
-import { abilityBand, FighterBrain } from '../../ai/fighter-brain';
+import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
@@ -39,6 +39,7 @@ import {
 } from '../../combat/attacks';
 import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
 import type { CombatEvent } from '../../combat/events';
+import { brainDesignFor } from '../../data/ai/brains';
 import { type Difficulty, difficultyFor } from '../../data/ai/difficulty';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
@@ -1597,10 +1598,10 @@ export class FightArenaScene implements ArenaScene {
       ? AI_SLOTS.map((slot) => ({
           slot,
           ready: caster.check(slot, ctx) === null && (slot === 'ult' || c.stamina >= caster.def(slot).staminaCost),
-          band: abilityBand(caster.def(slot)),
         }))
       : [];
     const pc = p.combatant.state;
+    const pv = p.body?.linvel() ?? { x: 0, y: 0 };
     const out = brain.think({
       timeS: this.simTimeS,
       self: {
@@ -1611,19 +1612,39 @@ export class FightArenaScene implements ArenaScene {
         canAct: c.canAct && f.landHoldS === 0,
         busy: f.combo.attack !== null || (caster?.cast ?? null) !== null,
         hanging: f.climb !== null,
+        hpFrac: c.hp / c.stats.maxHp,
       },
       target: sees
-        ? { x: p.x, y: p.y, floorM: p.hop.floorM ?? 0, down: pc === 'knockdown' || pc === 'gettingUp' }
+        ? {
+            x: p.x,
+            y: p.y,
+            vx: pv.x,
+            vy: pv.y,
+            floorM: p.hop.floorM ?? 0,
+            hpFrac: p.combatant.hp / p.combatant.stats.maxHp,
+            down: pc === 'knockdown' || pc === 'gettingUp',
+            // Openings: stunned, blinded, or stuck in a landing squat.
+            helpless: pc === 'stunned' || p.combatant.blinded || p.landHoldS > 0,
+            attacking: p.combo.attack !== null || (p.caster?.cast ?? null) !== null,
+            cursed: p.combatant.decayLeftS > 0,
+          }
         : null,
       meleeReachM: AI_MELEE_REACH_M * (f.def.sizeScale ?? 1),
       canClimb: f.def.capabilities.canJump,
       abilities,
       profile: f.def.ai,
+      design: brainDesignFor(f.def.ai.id),
       difficulty: this.difficulty,
       route: f.aiRoute,
       random: () => this.rng(),
     });
     if (sees && c.canAct && !f.combo.attack && !caster?.cast) f.faceToward(p.x - f.x, p.y - f.y);
+    // Defending as its personality does: a dodge back, or the guard up for a moment.
+    if (out.dodge && !f.airborne && !caster?.cast && c.tryDodge()) {
+      f.combo.interrupt();
+      this.startBackDodge(f);
+    }
+    c.setGuard(out.guard && f.def.capabilities.canBlock && !f.combo.attack && !caster?.cast);
     if (out.ability && this.abilities) this.abilities.tryCast(f, out.ability.slot, out.ability.at);
     else if (out.heavy) f.combo.pressHeavy(GROUND);
     else if (out.melee) f.combo.press(GROUND);

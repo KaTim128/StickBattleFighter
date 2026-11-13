@@ -2,18 +2,21 @@ import baseAnimation from '../data/characters/base-stickman/animation-profile.js
 import baseCharacter from '../data/characters/base-stickman/character.json';
 import baseMoveset from '../data/characters/base-stickman/moveset.json';
 import baseStats from '../data/characters/base-stickman/stats.json';
+import infernoAi from '../data/characters/inferno/ai.json';
 import infernoAnimation from '../data/characters/inferno/animation-profile.json';
 import infernoAudio from '../data/characters/inferno/audio.json';
 import infernoCharacter from '../data/characters/inferno/character.json';
 import infernoEffects from '../data/characters/inferno/effects.json';
 import infernoMoveset from '../data/characters/inferno/moveset.json';
 import infernoStats from '../data/characters/inferno/stats.json';
+import necroAi from '../data/characters/necro/ai.json';
 import necroAnimation from '../data/characters/necro/animation-profile.json';
 import necroAudio from '../data/characters/necro/audio.json';
 import necroCharacter from '../data/characters/necro/character.json';
 import necroEffects from '../data/characters/necro/effects.json';
 import necroMoveset from '../data/characters/necro/moveset.json';
 import necroStats from '../data/characters/necro/stats.json';
+import rampageAi from '../data/characters/rampage/ai.json';
 import rampageAnimation from '../data/characters/rampage/animation-profile.json';
 import rampageAudio from '../data/characters/rampage/audio.json';
 import rampageCharacter from '../data/characters/rampage/character.json';
@@ -26,6 +29,7 @@ import boxingAnimation from '../data/characters/shared/animation-style-boxing.js
 import taekwondoAnimation from '../data/characters/shared/animation-style-taekwondo.json';
 import defaultAudio from '../data/characters/shared/audio-default.json';
 import defaultEffects from '../data/characters/shared/effects-default.json';
+import shroudAi from '../data/characters/shroud/ai.json';
 import shroudAnimation from '../data/characters/shroud/animation-profile.json';
 import shroudAudio from '../data/characters/shroud/audio.json';
 import shroudCharacter from '../data/characters/shroud/character.json';
@@ -106,7 +110,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     skeletonEffects,
   ]),
   audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio, necroAudio, shroudAudio]),
-  ai: byId<AiProfile>([defaultAi, dummyAi, skeletonAi]),
+  ai: byId<AiProfile>([defaultAi, dummyAi, skeletonAi, infernoAi, rampageAi, necroAi, shroudAi]),
 };
 
 /** Who fights by default (the player's fighter and the Practice opponent). */

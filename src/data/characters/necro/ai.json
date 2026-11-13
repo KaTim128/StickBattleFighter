@@ -1,0 +1,8 @@
+{
+  "id": "necro-ai",
+  "attackEveryS": 2,
+  "aggression": 0.35,
+  "clashMashRate": 5.5,
+  "settleDecelMps2": 14,
+  "reactionS": 0.25
+}

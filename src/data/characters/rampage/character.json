@@ -12,7 +12,7 @@
     "stats": "rampage-stats",
     "effects": "rampage-effects",
     "audio": "rampage-audio",
-    "ai": "default-ai"
+    "ai": "rampage-ai"
   },
   "rig": {
     "bones": {

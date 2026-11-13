@@ -29,7 +29,7 @@ describe('fighter overrides', () => {
   it("a fighter's AI changes never leak into the shared AI profile", () => {
     const { library } = withOverrides(BUILT_IN_LIBRARY, { necro: { ai: { aggression: 0.9 } } });
     expect(resolveCharacter('necro', library).ai.aggression).toBe(0.9);
-    expect(resolveCharacter('shroud', library).ai.aggression).toBe(BUILT_IN_LIBRARY.ai['default-ai']!.aggression);
+    expect(resolveCharacter('shroud', library).ai.aggression).toBe(BUILT_IN_LIBRARY.ai['shroud-ai']!.aggression);
   });
 
   it('invalid changes are refused and the built-in fighter is used', () => {
