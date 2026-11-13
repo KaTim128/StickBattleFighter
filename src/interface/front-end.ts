@@ -21,14 +21,6 @@ import { TOURNAMENT_SIZES } from './main-menu';
  *   arena, size and difficulty, then FIGHT.
  * - Quit: browsers only let a page close a window it opened, so Quit tries, then shows a goodbye.
  */
-/** Where each menu plate is in the title art (% of the picture, 1672 × 941). */
-const TITLE_PLATES = {
-  story: { x: 2.4, y: 44.4, w: 27, h: 8.6 },
-  modes: { x: 3.3, y: 53.6, w: 23.4, h: 7.6 },
-  settings: { x: 3, y: 61.6, w: 21.8, h: 7.4 },
-  quit: { x: 2.7, y: 69.2, w: 21.2, h: 7.4 },
-  admin: { x: 2.4, y: 77.4, w: 21.2, h: 7 },
-} as const;
 
 export type FrontScreen = 'title' | 'name' | 'modes' | 'select' | 'quit';
 
@@ -197,10 +189,9 @@ export class FrontEnd {
   }
 
   private buildTitle(sec: HTMLElement): void {
-    // The owner's title art (13/11/2026: "use this as the image of the main menu"): the picture is
-    // the menu. Its logo and menu plates are part of the art, so each plate gets an invisible
-    // button laid exactly over it (positions in % of the picture), lit up when pointed at. The
-    // picture always covers the screen, centred, so the plates stay on it on any screen shape.
+    // The owner's title art (13/11/2026) as the backdrop, its painted menu removed; the menu is
+    // the game's own buttons, all in the style of the Admin Panel plate (owner, 13/11/2026), in a
+    // column under the logo.
     const art = el('div', 'fe-art');
     art.style.backgroundImage = `url(${titleArt})`;
     const embers = el('div', 'fe-embers');
@@ -211,47 +202,35 @@ export class FrontEnd {
       e.style.animationDuration = `${5 + (i % 5)}s`;
       embers.append(e);
     }
+    const nav = el('nav', 'fe-nav');
+    art.append(nav);
     const items: HTMLButtonElement[] = [];
     const highlight = (b: HTMLButtonElement) => {
       for (const it of items) it.classList.toggle('active', it === b);
     };
-    const item = (
-      id: string,
-      label: string,
-      at: { x: number; y: number; w: number; h: number },
-      onClick: () => void,
-    ): HTMLButtonElement => {
-      const b = button(`fe-item fe-hot fe-item-${id}`, '', onClick);
+    const item = (id: string, label: string, onClick: () => void): HTMLButtonElement => {
+      const b = button(`fe-item fe-plate fe-item-${id}`, '', onClick);
       b.dataset.nav = id;
-      b.style.left = `${at.x}%`;
-      b.style.top = `${at.y}%`;
-      b.style.width = `${at.w}%`;
-      b.style.height = `${at.h}%`;
       b.append(el('span', 'fe-item-label', label));
       b.addEventListener('pointerenter', () => highlight(b));
       b.addEventListener('focus', () => highlight(b));
-      art.append(b);
+      nav.append(b);
       items.push(b);
       return b;
     };
-    const story = item('story', 'Story Mode', TITLE_PLATES.story, () =>
-      this.say('Story Mode is locked. It arrives in a later update.'),
-    );
+    const story = item('story', 'Story Mode', () => this.say('Story Mode is locked. It arrives in a later update.'));
     story.classList.add('locked');
     story.setAttribute('aria-disabled', 'true');
     story.append(el('span', 'fe-lock', 'LOCKED'));
-    item('modes', 'Game Modes', TITLE_PLATES.modes, () => {
+    const modes = item('modes', 'Game Modes', () => {
       if (!this.needName('modes')) this.show('modes');
     });
-    item('settings', 'Settings', TITLE_PLATES.settings, () => this.o.openSettings());
-    item('quit', 'Quit Game', TITLE_PLATES.quit, () => this.quit());
-    // The Admin Panel is not in the art: a matching plate under it, for the admin name only.
-    if (this.o.isAdmin()) {
-      const admin = item('admin', 'Admin Panel', TITLE_PLATES.admin, () => this.o.openAdmin());
-      admin.classList.add('fe-drawn');
-    }
+    item('settings', 'Settings', () => this.o.openSettings());
+    item('quit', 'Quit Game', () => this.quit());
+    if (this.o.isAdmin()) item('admin', 'Admin Panel', () => this.o.openAdmin());
+    highlight(modes);
     // Up and down move between the plates; Enter picks one.
-    art.addEventListener('keydown', (e) => {
+    nav.addEventListener('keydown', (e) => {
       const at = items.indexOf(document.activeElement as HTMLButtonElement);
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
       e.preventDefault();

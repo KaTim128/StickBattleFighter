@@ -3,6 +3,7 @@ import { asAdmin, openAdminPanel } from './front';
 
 /** Main menu and Leave game (owner, 12/11/2026). Test browsers skip the menu, so this one pretends to be a person. */
 test('admin panel: pick Titan and the training yard, play, then leave the game back to the title', async ({ page }) => {
+  test.setTimeout(60_000); // two whole game pages (the menu, then the fight), like the other page-change tests
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));

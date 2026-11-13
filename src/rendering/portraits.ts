@@ -288,6 +288,7 @@ export async function renderIdleStrips(
     for (let i = 0; i < frames; i++) {
       const view = makeView(def);
       view.turn = stance?.turn ?? 0;
+      view.shoulderSpread = stance?.shoulderSpread ?? 1;
       view.draw(poseAt(i / (frames - 1)), -1, 0);
       view.root.scale.set(px);
       view.root.position.set(i * pitch + cellW / 2, floorY);

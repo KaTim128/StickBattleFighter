@@ -23,6 +23,14 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+8): menu buttons, fit and fullscreen, Titan stance, dodge, stages (owner)
+- **Title:** the owner's art with its painted plates inpainted away; the menu is real buttons styled like the Admin Panel plate.
+- **Fit and fullscreen:** viewport locks zoom (and iOS pinch is cancelled, `src/input/no-zoom.ts`); `keepFullscreen` asks on every tap until granted; manifest + icons for home-screen full screen; iPhone hint once a session. Tournament draw scaled to fit one screen (`TournamentScreen.fit`). Checked on Pixel 7 (landscape and upright) and a 667×375 phone: title, modes, select, settings, Top-16 draw all fit without scrolling.
+- **Titan select pose:** near hand behind the hip, far hand on the front of the hip, shoulders kept on the profile line (`shoulderSpread: 0.6`) so the armour reads cleanly.
+- **Dodge (REQ-CMB-30):** projectile-aware sidestep and dodge fatigue. **Stages:** Top 16/8/4/2, then Champion.
+- **Perf:** select stances drawn only when fighter select first opens (it made Leave → title slow on slow machines and timed out a test under load).
+- **Next task:** owner review on a phone; 3 vs 3 (REQ-MOD-2); premium ability icons (#51).
+
 ### 13/11/2026 (latest+7): front end, player name, admin/user screens, fighter select and stances, menu music (owner)
 - **Title screen** is the owner's supplied art (`assets/ui/title-menu.webp`), cover-fit, with invisible buttons over its painted plates: Story Mode (locked), Game Modes, Settings, Quit Game; Admin Panel plate only for `addmen1280`. Quit tries `window.close()`, then shows a goodbye screen (browsers refuse to close a tab the page did not open).
 - **Name registration** before Game Modes/Story (1-10 characters, validated, saved), changeable in Settings → Profile; shown as "Name · Fighter" in the HUD and "Name (Fighter)" in the tournament draw.

@@ -2,11 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Stickman Arena" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
     <meta name="theme-color" content="#11151c" />
     <title>Stickman Arena</title>
     <style>
-      html, body { margin: 0; height: 100%; background: #11151c; overflow: hidden; }
+      html, body { margin: 0; height: 100%; background: #11151c; overflow: hidden; touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+      .home-screen-hint { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); transform: translateX(-50%); z-index: 99; padding: 6px 12px; border-radius: 8px; background: rgba(8, 10, 14, 0.9); border: 1px solid #ff8a3d; color: #f2f5fa; font: 700 12px system-ui, sans-serif; white-space: nowrap; pointer-events: none; transition: opacity 0.6s; }
+      .home-screen-hint.gone { opacity: 0; }
       /* Phones: the visible height, so the game fills the screen past the browser's bars. */
       @supports (height: 100dvh) { html, body { height: 100dvh; } }
       #app { position: fixed; inset: 0; }
@@ -521,16 +529,21 @@
       .fc-actions .fc-save { background: #ff8a3d; border-color: transparent; color: #1b120a; }
       /* Tournament (owner, 13/11/2026). */
       .tournament {
-        position: fixed; inset: 0; z-index: 55; overflow: auto; padding: 18px 16px 24px; box-sizing: border-box;
+        position: fixed; inset: 0; z-index: 55; overflow: hidden; padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); box-sizing: border-box;
         background: radial-gradient(ellipse at 50% 0%, #2a1a10 0%, #0d0f14 60%); color: #f2f5fa; font: 14px system-ui, sans-serif;
-        display: flex; flex-direction: column; align-items: center; gap: 14px;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
       }
+      /* One landscape screen, no scrolling (owner, 13/11/2026): the bracket is scaled to the space
+         between the header and the actions (TournamentScreen.fit). */
+
       .tournament[hidden] { display: none; }
-      .tn-head { flex: none; text-align: center; }
+      .tn-head { flex: none; display: flex; align-items: baseline; gap: 14px; justify-content: center; text-align: center; padding-right: 48px; }
       .tn-champion, .tn-actions { flex: none; }
-      .tn-title { margin: 0; font: 900 30px system-ui, sans-serif; letter-spacing: 0.14em; color: #ffb347; text-shadow: 0 2px 0 #3a1a06, 0 0 18px rgba(255, 140, 40, 0.45); }
+      .tn-title { margin: 0; font: 900 clamp(18px, calc(3.4 * var(--vw, 1vw)), 30px) system-ui, sans-serif; letter-spacing: 0.14em; color: #ffb347; text-shadow: 0 2px 0 #3a1a06, 0 0 18px rgba(255, 140, 40, 0.45); }
       .tn-stage { margin-top: 2px; font: 700 15px system-ui, sans-serif; letter-spacing: 0.08em; opacity: 0.85; text-transform: uppercase; }
       .tn-bracket { flex: none; display: flex; gap: 14px; align-items: stretch; max-width: 100%; overflow-x: auto; padding-bottom: 6px; }
+      .tn-fit { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      .tn-fit .tn-bracket { overflow: visible; max-width: none; transform-origin: center center; }
       .tn-round { flex: none; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; min-width: 150px; padding: 6px; border-radius: 10px; }
       .tn-round.current { background: rgba(255, 138, 61, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 138, 61, 0.35); }
       .tn-round-name { margin: 0 0 2px; font: 800 11px system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; text-align: center; opacity: 0.7; }
@@ -543,7 +556,7 @@
       .tn-entry.empty { opacity: 0.35; font-style: italic; }
       .tn-face { width: 22px; height: 22px; flex: none; border-radius: 5px; overflow: hidden; background: #262c38; }
       .tn-face img { width: 100%; height: 100%; display: block; }
-      .tn-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+      .tn-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 12px; }
       .tn-note { margin: 0; opacity: 0.9; text-align: center; }
       .tn-fight { padding: 12px 52px; border-radius: 12px; border: 0; background: #ff8a3d; color: #1b120a; font: 900 18px system-ui, sans-serif; letter-spacing: 0.14em; cursor: pointer; }
       .tn-match.watchable { cursor: pointer; border-color: rgba(255, 138, 61, 0.7); }
@@ -655,13 +668,17 @@
         width: max(calc(100 * var(--vw, 1vw)), calc(100 * var(--vh, 1vh) * 1672 / 941));
         background-size: 100% 100%; background-repeat: no-repeat;
       }
-      .fe-hot { position: absolute; z-index: 2; padding: 0; border: 0; background: transparent; cursor: pointer; clip-path: polygon(3% 0, 100% 0, 97% 100%, 0 100%); transition: background 0.15s, box-shadow 0.15s; }
-      .fe-hot .fe-item-label, .fe-hot .fe-lock { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-      .fe-hot.active:not(.fe-item-story) { background: linear-gradient(90deg, rgba(255, 40, 40, 0.42), rgba(255, 40, 40, 0.12) 70%, transparent); mix-blend-mode: screen; }
-      .fe-hot:focus-visible { outline: 2px solid #ff4a4a; outline-offset: -2px; }
-      .fe-hot.fe-drawn { background: linear-gradient(90deg, rgba(30, 22, 38, 0.95), rgba(20, 14, 26, 0.7) 75%, transparent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
-      .fe-hot.fe-drawn .fe-item-label { position: static; width: auto; height: auto; clip-path: none; display: block; padding-left: 12%; font: italic 800 clamp(13px, calc(1.9 * var(--vw, 1vw)), 26px) system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: #ffb347; text-shadow: 0 2px 0 #000; line-height: 1; margin-top: 3%; }
-      .fe-hot.fe-drawn.active { background: linear-gradient(90deg, rgba(150, 10, 24, 0.95), rgba(90, 6, 16, 0.8) 70%, transparent); }
+      /* The menu: the game's own plates, in the Admin Panel plate's style (owner, 13/11/2026). */
+      .fe-nav { position: absolute; left: 2.6%; top: 44%; z-index: 2; display: flex; flex-direction: column; gap: clamp(4px, 1.1%, 10px); width: 25%; }
+      .fe-plate { position: relative; display: flex; align-items: center; gap: 10px; padding: clamp(5px, calc(0.9 * var(--vh, 1vh)), 11px) 8% clamp(5px, calc(0.9 * var(--vh, 1vh)), 11px) 13%; border: 0; cursor: pointer; text-align: left; color: #ffb347; background: linear-gradient(90deg, rgba(30, 22, 38, 0.95), rgba(20, 14, 26, 0.72) 75%, transparent); clip-path: polygon(3% 0, 100% 0, 97% 100%, 0 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); transition: background 0.15s, transform 0.15s, color 0.15s; }
+      .fe-plate .fe-item-label { font: italic 800 clamp(13px, calc(1.9 * var(--vw, 1vw)), 26px) system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; text-shadow: 0 2px 0 #000; line-height: 1.1; }
+      .fe-plate.active { transform: translateX(8px); color: #fff4e0; background: linear-gradient(90deg, rgba(160, 12, 26, 0.95), rgba(95, 6, 16, 0.82) 70%, transparent); }
+      .fe-plate.active::before { content: ''; position: absolute; left: 4%; top: 50%; width: 0.7em; height: 0.8em; margin-top: -0.4em; background: #ff3b30; clip-path: polygon(0 0, 100% 50%, 0 100%); font-size: clamp(13px, calc(1.9 * var(--vw, 1vw)), 26px); }
+      .fe-plate:focus-visible { outline: 2px solid #ff4a4a; outline-offset: -2px; }
+      .fe-plate.locked { color: #a9a3b2; }
+      .fe-plate.locked.active { color: #d8d2df; }
+      .fe-plate .fe-lock { margin-left: auto; white-space: nowrap; padding: 0; background: none; font: italic 800 clamp(9px, calc(1 * var(--vw, 1vw)), 12px) system-ui, sans-serif; letter-spacing: 0.08em; color: #a9a3b2; }
+      .fe-plate .fe-lock::before { content: '🔒 '; }
       .fe-title .fe-player { position: absolute; right: calc(66px + env(safe-area-inset-right)); top: 16px; z-index: 6; padding: 5px 10px; border-radius: 8px; background: rgba(10, 6, 16, 0.75); font: 700 12px system-ui, sans-serif; letter-spacing: 0.08em; }
       .fe-player-label, .fe-who .fe-player-label { margin-right: 8px; padding: 2px 6px; border-radius: 4px; background: #ff8a3d; color: #1b0f05; font: 900 10px system-ui, sans-serif; letter-spacing: 0.14em; }
       .fe-embers { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
@@ -733,6 +750,12 @@
       .fe-fight { padding: 9px 40px; font-size: 16px; letter-spacing: 0.16em; }
       .mm-back { order: -1; }
       html.short .fe-screen { padding-top: 8px; padding-bottom: 8px; }
+      html.short .tn-fight { padding: 7px 34px; font-size: 15px; }
+      html.short .tn-skip-all { padding: 7px 30px; font-size: 14px; }
+      html.short .tn-note, html.short .tn-latest { font-size: 12px; }
+      html.short .tn-latest { padding: 3px 10px; }
+      html.short .tn-leave { padding: 4px 10px; font-size: 11px; }
+      html.short .tn-stage { font-size: 12px; }
       html.short .fe-select { gap: 5px 12px; }
       html.short .fe-h { font-size: 17px; }
       html.short .fe-sel-name { font-size: 20px; }

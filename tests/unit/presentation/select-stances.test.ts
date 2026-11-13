@@ -70,7 +70,7 @@ describe('select stances', () => {
       expect(Math.abs(hand.y - waistY), 'hand at the waist').toBeLessThan(0.15);
       expect(Math.abs(hand.x - sk.pelvis.x), 'hand at the hip').toBeLessThan(0.2);
     }
-    // Elbows thrown out to both sides of the body.
-    expect(Math.sign(sk.armFront[1]!.x - sk.chest.x)).not.toBe(Math.sign(sk.armBack[1]!.x - sk.chest.x));
+    // The near arm sweeps back to the hip, clear of the chest (his armour stays readable).
+    expect(sk.armFront[1]!.x).toBeLessThan(sk.chest.x);
   });
 });

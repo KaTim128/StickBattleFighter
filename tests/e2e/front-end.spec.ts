@@ -89,6 +89,13 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   const screen = page.locator('.tournament');
   await expect(screen).toBeVisible({ timeout: 60_000 });
   await expect(screen.locator('.tn-entry.player')).toContainText('Katim (Titan)');
+  // One landscape screen: the draw never scrolls, and the page cannot be zoomed (owner, 13/11/2026).
+  const fits = await screen.evaluate(
+    (el) => el.scrollHeight <= el.clientHeight + 1 && el.scrollWidth <= el.clientWidth + 1,
+  );
+  expect(fits).toBe(true);
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /user-scalable=no/);
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 

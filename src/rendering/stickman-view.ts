@@ -82,6 +82,8 @@ export class StickmanView {
    * angle). The select screen turns every fighter about 35-40° (owner, 13/11/2026).
    */
   turn = 0;
+  /** How much the shoulders spread with the turn (0 keeps the arms on the profile shoulder line). */
+  shoulderSpread = 1;
   /** 0..1 how far a held staff follows the swinging arm (a staff strike) instead of standing upright. */
   heldSwing = 0;
   /** Stunned: stars circle the head (PRS-6). */
@@ -147,7 +149,7 @@ export class StickmanView {
   ): void {
     const s =
       this.turn > 0
-        ? turnSkeleton(solveSkeleton(pose, this.bones), this.bones, this.turn)
+        ? turnSkeleton(solveSkeleton(pose, this.bones), this.bones, this.turn, this.shoulderSpread)
         : solveSkeleton(pose, this.bones);
     this.last = { s, facing, heightM, rot: -facing * tiltRad };
     const { limbWidthM: w, outlineWidthM: o } = this.look;
@@ -1793,8 +1795,9 @@ export function turnSkeleton(
   s: ReturnType<typeof solveSkeleton>,
   bones: { readonly spine: number },
   k: number,
+  shoulderSpread = 1,
 ): ReturnType<typeof solveSkeleton> {
-  const shoulder = bones.spine * 0.3 * k;
+  const shoulder = bones.spine * 0.3 * k * shoulderSpread;
   const hip = bones.spine * 0.18 * k;
   const shift = (limb: readonly { x: number; y: number }[], dx: number) =>
     limb.map((p) => ({ x: p.x + dx, y: p.y })) as [Point, Point, Point];

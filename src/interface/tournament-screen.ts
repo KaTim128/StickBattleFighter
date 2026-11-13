@@ -40,6 +40,7 @@ export class TournamentScreen {
     this.root.setAttribute('role', 'dialog');
     this.root.setAttribute('aria-label', 'Tournament');
     parent.appendChild(this.root);
+    window.addEventListener('resize', () => this.fit());
   }
 
   /** Portrait images by fighter id (drawn by the game once the page is idle). */
@@ -76,7 +77,12 @@ export class TournamentScreen {
     head.append(title, stage);
     this.root.appendChild(head);
     if (state.champion) this.root.appendChild(this.championCard(state, history));
-    this.root.appendChild(this.bracket(state));
+    // The whole draw on one landscape screen: scaled to the space left (owner, 13/11/2026).
+    const fit = el('div', 'tn-fit');
+    const bracket = this.bracket(state);
+    fit.appendChild(bracket);
+    this.root.appendChild(fit);
+    this.fitBox = { fit, bracket };
     const actions = el('div', 'tn-actions');
     if (this.latest) actions.appendChild(el('p', 'tn-latest', this.latest));
     const out = !stillIn(state).has(me.id);
@@ -101,6 +107,21 @@ export class TournamentScreen {
       button('tn-leave', state.champion ? 'Back to menu' : 'Leave tournament', () => this.actions.leave()),
     );
     this.root.appendChild(actions);
+    this.fit();
+  }
+
+  private fitBox: { fit: HTMLElement; bracket: HTMLElement } | null = null;
+
+  /** Scale the bracket down (never up) so it fits the space between the header and the actions. */
+  fit(): void {
+    const box = this.fitBox;
+    if (!box || this.root.hidden) return;
+    box.bracket.style.transform = '';
+    const w = box.bracket.offsetWidth;
+    const h = box.bracket.offsetHeight;
+    const k = Math.min(1, box.fit.clientWidth / Math.max(1, w), box.fit.clientHeight / Math.max(1, h));
+    box.bracket.style.transform = k < 1 ? `scale(${k})` : '';
+    box.bracket.dataset.scale = k.toFixed(3);
   }
 
   private face(fighter: string): HTMLElement {

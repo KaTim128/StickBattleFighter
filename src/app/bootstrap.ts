@@ -27,6 +27,7 @@ import { codeLabel } from '../input/bindings';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
+import { preventPageZoom } from '../input/no-zoom';
 import { SettingsState } from '../input/settings-store';
 import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
@@ -37,8 +38,15 @@ import { CombatText } from '../interface/combat-text';
 import { FightIntro } from '../interface/fight-intro';
 import { fighterSheet } from '../interface/fighter-sheet';
 import { FrontEnd } from '../interface/front-end';
-import { keepLandscape } from '../interface/landscape';
-import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter, type MenuOpponent } from '../interface/main-menu';
+import { keepLandscape, showHomeScreenHint } from '../interface/landscape';
+import {
+  enterFullscreen,
+  keepFullscreen,
+  MainMenu,
+  type MenuFighter,
+  type MenuOpponent,
+  toggleFullscreen,
+} from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { VisionVeil } from '../interface/vision-veil';
@@ -219,6 +227,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // Phones and tablets always play in landscape (owner, 13/11/2026), laid out before anything draws.
   const touchDevice = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   keepLandscape(touchDevice);
+  if (touchDevice) preventPageZoom();
 
   // Renderer and physics download in parallel; physics is a separate .wasm (TD-023).
   const [app] = await Promise.all([createRenderSurface(container, GREYBOX_COLOURS.background), initPhysics()]);
@@ -674,7 +683,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     (open) => setPaused('settings', open),
     {
       leave: () => leave(),
-      fullscreen: () => (document.fullscreenElement ? exitFullscreen() : enterFullscreen()),
+      fullscreen: () => toggleFullscreen(),
     },
     () => {
       // Escape while aiming cancels the aim (owner, 12/11/2026) rather than opening the settings.
@@ -708,11 +717,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       return r;
     },
     isAdmin: () => isAdminName(playerName),
-    onScreen: (screen) => menuMusic.setDuck(screen === 'select' ? 0.4 : 1),
-    onOpenChange: (open) => {
-      setPaused('front', open);
-      if (open) void drawStances();
+    onScreen: (screen) => {
+      menuMusic.setDuck(screen === 'select' ? 0.4 : 1);
+      // The stances are only on fighter select: drawn the first time it opens.
+      if (screen === 'select') void drawStances();
     },
+    onOpenChange: (open) => setPaused('front', open),
     openSettings: () => settingsPanel.setOpen(true),
     openAdmin: () => {
       if (!isAdminName(playerName)) return;
@@ -801,13 +811,13 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       });
       tournamentScreen?.setPortraits(new Map(fighters.map((f, i) => [f.id, urls[i]!])));
       if (scene instanceof FightArenaScene) topHud.setPortraits(urls[fighters.length]!, urls[fighters.length + 1]!);
-      if (front.isOpen) await drawStances();
+      if (front.isOpen && front.current === 'select') await drawStances();
     } catch (error) {
       console.warn('[portraits] could not render fighter portraits', error);
     }
   };
-  // The fighters in their select stances (owner, 13/11/2026), for the title and fighter select:
-  // drawn the first time the front end shows, never during a fight.
+  // The fighters in their select stances (owner, 13/11/2026) for fighter select: drawn the first
+  // time it opens, never during a fight or on the title screen.
   let stancesDrawn = false;
   drawStances = async (): Promise<void> => {
     if (stancesDrawn) return;
@@ -829,15 +839,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   if (typeof requestIdleCallback === 'function') requestIdleCallback(() => void drawPortraits(), { timeout: 1500 });
   else setTimeout(() => void drawPortraits(), 300);
   if (touchDevice) {
-    // After choosing on the menu the page reloads, which leaves fullscreen: the first tap restores it.
-    // The first tap anywhere (the menu included) goes full screen and locks landscape where the
-    // browser allows it (owner, 13/11/2026). Browsers only allow it from a tap; until then, and on
-    // browsers with no lock (iPhone Safari), the page is turned to landscape (keepLandscape).
-    const once = (): void => {
-      window.removeEventListener('pointerdown', once);
-      enterFullscreen();
-    };
-    window.addEventListener('pointerdown', once);
+    // Each page change leaves fullscreen (every fight is its own page): every tap asks for it again
+    // until it is back, and locks landscape where the browser allows (owner, 13/11/2026).
+    keepFullscreen();
+    showHomeScreenHint();
   }
   settings.onChange(() => {
     applyAudio();

@@ -29,3 +29,33 @@ export function keepLandscape(touchDevice: boolean): void {
   window.addEventListener('resize', update);
   window.visualViewport?.addEventListener('resize', update);
 }
+
+const HINT_KEY = 'stickman-arena.home-screen-hint';
+
+/**
+ * iPhone Safari cannot give a web page the whole screen; added to the home screen, the game opens
+ * full screen (the web app manifest). Once a session, such a phone gets a short line saying how.
+ */
+export function showHomeScreenHint(): void {
+  const el = document.documentElement as Partial<Pick<HTMLElement, 'requestFullscreen'>> & {
+    webkitRequestFullscreen?: () => void;
+  };
+  const nav = navigator as Navigator & { standalone?: boolean };
+  const installed =
+    nav.standalone === true ||
+    matchMedia('(display-mode: fullscreen)').matches ||
+    matchMedia('(display-mode: standalone)').matches;
+  if (installed || el.requestFullscreen || el.webkitRequestFullscreen) return;
+  try {
+    if (sessionStorage.getItem(HINT_KEY)) return;
+    sessionStorage.setItem(HINT_KEY, '1');
+  } catch {
+    /* no storage: it may show again, which is fine */
+  }
+  const hint = document.createElement('div');
+  hint.className = 'home-screen-hint';
+  hint.textContent = 'For full screen: tap Share, then Add to Home Screen';
+  document.body.appendChild(hint);
+  window.setTimeout(() => hint.classList.add('gone'), 6000);
+  window.setTimeout(() => hint.remove(), 6800);
+}

@@ -30,6 +30,12 @@ export interface SelectStance {
   readonly turn: number;
   /** Drawn size on the select screen (1 = as in the arena; the giant is larger). */
   readonly scale: number;
+  /**
+   * How much the shoulders spread with the turn (default 1). Heavy shoulder armour is built around
+   * the profile shoulder line, so an armoured brute keeps its arms there (0) while its hips, legs
+   * and chest turn.
+   */
+  readonly shoulderSpread?: number;
   /** How far a breath moves it: lean (deg), pelvis (fraction of leg), hands (fraction of arm, up). */
   readonly breath: { readonly lean: number; readonly pelvis: number; readonly hands: number };
 }
@@ -62,9 +68,10 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     rearFoot: -0.4,
     lean: 2,
     head: -4,
-    front: { x: -0.08, y: 0.72 },
-    back: { x: 0.06, y: 0.72, elbowOut: true },
-    turn: 0.6,
+    front: { x: -0.14, y: 0.66 },
+    back: { x: 0.18, y: 0.66 },
+    turn: 0.5,
+    shoulderSpread: 0.6,
     scale: 1.3,
     breath: { lean: 1.5, pelvis: 0.01, hands: 0.02 },
   },
