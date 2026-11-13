@@ -2203,8 +2203,11 @@ export class FightArenaScene implements ArenaScene {
     if (!this.vfx || !this.abilities) return;
     const fx = this.abilities.drainFx();
     for (const e of fx) {
-      if (e.kind !== 'impact' || (e.radiusM ?? 0) < 2) continue;
-      this.shake.addTrauma((e.radiusM ?? 0) >= 2.8 ? 0.85 : 0.5); // the Eruption slam hits hardest
+      if (e.kind !== 'impact') continue;
+      // A look can ask for its own shake (Grapple Slam); otherwise only wide blasts shake.
+      const own = e.look?.impact?.shake;
+      if (own === undefined && (e.radiusM ?? 0) < 2) continue;
+      this.shake.addTrauma(own ?? ((e.radiusM ?? 0) >= 2.8 ? 0.85 : 0.5)); // the Eruption slam hits hardest
       if (
         e.ability === this.playerFighter.caster?.def('ult').id ||
         e.ability === this.dummyFighter.caster?.def('ult').id
@@ -2420,6 +2423,7 @@ export class FightArenaScene implements ArenaScene {
         f.caster.phaseProgress,
         f.abilityLift > 0.05,
         f.driveVelocity !== null,
+        this.abilities?.world.grabOutcome(f.name),
       );
     }
 

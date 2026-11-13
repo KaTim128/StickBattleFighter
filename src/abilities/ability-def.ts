@@ -323,6 +323,8 @@ export interface MagicLook {
     readonly groundFire?: boolean;
     /** Smoke or dust colour (default dark smoke). */
     readonly smokeColour?: number;
+    /** Camera shake (trauma 0..1) on contact; default: only wide blasts (radius 2 m or more) shake. */
+    readonly shake?: number;
   };
   /** The target's body flashes this colour on contact (white for the Fireball). */
   readonly hitFlash?: number;

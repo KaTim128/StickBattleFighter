@@ -131,7 +131,9 @@ export const RAMPAGE_KIT: AbilityKit = {
   },
   // A4 (R): Grapple Slam (owner, 12/11/2026). He lunges a hand out (0.3 s), seizes the enemy in
   // front, hoists them overhead (0.5 s) and drives them into the floor: heavy damage, a knockdown and
-  // a dust blast that shakes the furniture round the impact. Nobody in reach: he grasps at air.
+  // a dust blast that shakes the furniture round the impact, the camera and the target's footing
+  // (owner, 13/11/2026: a hard slam with screen shake and knockback). Nobody in reach: his hands snap
+  // shut on air and he stumbles forward off balance: no slam, no damage.
   a4: {
     id: 'grappleSlam',
     name: 'Grapple Slam',
@@ -143,11 +145,11 @@ export const RAMPAGE_KIT: AbilityKit = {
     staminaCost: 35,
     cooldownS: 8,
     castS: 0.3,
-    recoveryS: 0.85,
+    recoveryS: 1.05,
     aimRangeM: 2.5,
     moveFactor: 0.3,
     interruptible: true,
-    payload: { damage: 150, knockbackMps: 2, heavy: true, strength: 900, impact: 'knuckle-heavy' },
+    payload: { damage: 150, knockbackMps: 6, heavy: true, strength: 900, impact: 'knuckle-heavy' },
     delivery: { type: 'grab', reachM: 1.2, radiusM: 0.5, liftS: 0.5, liftM: 1.1, slamRadiusM: 1.4 },
     vfx: 'grapple-slam',
     sfx: { cast: 'rampage-grunt', release: 'heavy-whoosh', impact: 'crushing-impact' },
@@ -162,6 +164,7 @@ export const RAMPAGE_KIT: AbilityKit = {
         smoke: 12,
         groundFire: false,
         smokeColour: 0x8a7a66,
+        shake: 0.75,
       },
       hitFlash: 0xffffff,
     },

@@ -28,7 +28,22 @@ interface CastShape {
   after?: Partial<Pose>;
   /** The wind-up trembles with building power: lean wobble amplitude (radians), growing with progress. */
   tremble?: number;
+  /**
+   * A grab (owner, 13/11/2026: hit and miss animate differently): `slam` drives the held target
+   * into the floor once it lands; `miss` replaces the release when the hands close on air.
+   */
+  slam?: Partial<Pose>;
+  miss?: Partial<Pose>;
 }
+
+/** How a grab cast is going (see AbilityWorld.grabOutcome). */
+export type GrabPhase =
+  | { readonly state: 'miss' }
+  | { readonly state: 'hold' }
+  | { readonly state: 'slam'; readonly sinceS: number };
+
+/** The slam snaps down this fast (seconds), is held, and the last part of the recovery eases out. */
+const SLAM_DROP_S = 0.09;
 
 const CROUCH: Partial<Pose> = { legFront: limb(50, -95), legBack: limb(-20, -70) };
 
@@ -241,7 +256,26 @@ const SHAPES: Record<string, CastShape> = {
       legFront: limb(26, -34),
       legBack: limb(-16, -20),
     },
-    settle: 0.45,
+    // The hit: whole body driven down and forward, both fists following the body into the floor.
+    slam: {
+      lean: deg(-52),
+      head: deg(34),
+      armFront: limb(58, 12),
+      armBack: limb(48, 18),
+      legFront: limb(62, -105),
+      legBack: limb(-28, -80),
+    },
+    // The miss: hands clap shut on empty air at full stretch, the weight tips forward over the lead
+    // foot and he catches himself with a stumbling step before squaring up again.
+    miss: {
+      lean: deg(-40),
+      head: deg(28),
+      armFront: limb(84, 72),
+      armBack: limb(62, 96),
+      legFront: limb(58, -46),
+      legBack: limb(-34, -12),
+    },
+    settle: 0.4,
   },
 
   // Eruption (owner, 11/11/2026): squat deep and gather fire, spring up wrapped in flame (AIR),
@@ -280,6 +314,7 @@ export function abilityPose(
   progress: number,
   airborne: boolean,
   driving = false,
+  grab?: GrabPhase,
 ): Pose {
   const shape = SHAPES[abilityId];
   if (!shape) return base;
@@ -291,6 +326,7 @@ export function abilityPose(
     return { ...pose, lean: pose.lean + Math.sin(progress * 70) * shape.tremble * progress };
   }
   if (shape.air && airborne) return { ...base, ...shape.air };
+  if (grab && (shape.slam || shape.miss)) return grabPose(base, shape, windup, progress, grab);
   if (shape.run && driving) return { ...base, ...shape.run };
   const release = { ...base, ...(shape.run && shape.after ? shape.after : shape.release) };
   // Snap into the release quickly, hold it, then ease back to the stance.
@@ -298,6 +334,28 @@ export function abilityPose(
   if (progress < 0.12) return blendPose(windup, release, ease(progress / 0.12));
   if (progress < settleFrom) return release;
   return blendPose(release, base, ease((progress - settleFrom) / shape.settle));
+}
+
+/**
+ * A grab's recovery: on a miss the miss pose (snapped in, held, eased out); while hoisting the
+ * release (arms overhead); once the target lands, a fast drop into the slam pose, held, then eased
+ * back to the stance over the shape's settle.
+ */
+function grabPose(base: Pose, shape: CastShape, windup: Pose, progress: number, grab: GrabPhase): Pose {
+  const settleFrom = 1 - shape.settle;
+  const out = (pose: Pose): Pose =>
+    progress < settleFrom ? pose : blendPose(pose, base, ease((progress - settleFrom) / shape.settle));
+  if (grab.state === 'miss' && shape.miss) {
+    const miss = { ...base, ...shape.miss };
+    if (progress < 0.15) return blendPose(windup, miss, ease(progress / 0.15));
+    return out(miss);
+  }
+  const hoist = { ...base, ...shape.release };
+  if (grab.state === 'slam' && shape.slam) {
+    const slam = { ...base, ...shape.slam };
+    return out(blendPose(hoist, slam, ease(grab.sinceS / SLAM_DROP_S)));
+  }
+  return progress < 0.12 ? blendPose(windup, hoist, ease(progress / 0.12)) : hoist;
 }
 
 /** Abilities with an animation (tests check every kit ability has one). */

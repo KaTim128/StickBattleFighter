@@ -70,25 +70,42 @@ describe('fourth abilities (R)', () => {
     scenes.clear();
   });
 
-  it('Braxon Grapple Slam: seizes the enemy in front, hoists it overhead, then slams it down', async () => {
+  it('Titan Grapple Slam: seizes the enemy in front, hoists it overhead, then slams it down', async () => {
     const { intents, scene, scenes, runUntil } = await setup('rampage', { x: 14, y: 13 }, { x: 15.1, y: 13 });
     intents.pressAbility('a4');
     runUntil(() => scene.dummyFighter.abilityLift > 0.6, 1.5);
     expect(scene.dummyFighter.abilityLift).toBeGreaterThan(0.6); // held up overhead
     expect(scene.dummy.state).toBe('stunned'); // helpless while held
     expect(scene.dummy.hp).toBe(1000); // not hurt until the slam
+    const outcome = () => scene.abilities!.world.grabOutcome(scene.playerFighter.name);
+    expect(outcome()?.state).toBe('hold'); // arms overhead while hoisting
     runUntil(() => scene.dummy.hp < 1000, 1.5);
     expect(1000 - scene.dummy.hp).toBeGreaterThan(140);
     expect(scene.dummyFighter.abilityLift).toBe(0); // back on the floor
+    expect(outcome()?.state).toBe('slam'); // the caster drops into the slam (owner, 13/11/2026)
     runUntil(() => scene.dummy.state === 'knockdown', 0.5);
     expect(scene.dummy.state).toBe('knockdown');
     scenes.clear();
   });
 
-  it('Grapple Slam with nobody in reach grasps at the air', async () => {
-    const { intents, scene, scenes, run } = await setup('rampage', { x: 14, y: 13 }, { x: 19, y: 13 });
+  it('Grapple Slam knocks the slammed enemy back from him', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 14, y: 13 }, { x: 15.1, y: 13 });
     intents.pressAbility('a4');
-    run(2);
+    runUntil(() => scene.dummy.hp < 1000, 2);
+    const at = Math.hypot(scene.dummy.x - scene.player.x, scene.dummy.y - scene.player.y);
+    run(0.6);
+    expect(Math.hypot(scene.dummy.x - scene.player.x, scene.dummy.y - scene.player.y)).toBeGreaterThan(at + 0.4);
+    scenes.clear();
+  });
+
+  it('Grapple Slam with nobody in reach grasps at the air: a miss, never a slam', async () => {
+    const { intents, scene, scenes, run } = await setup('rampage', { x: 14, y: 13 }, { x: 19, y: 13 });
+    const outcome = () => scene.abilities!.world.grabOutcome(scene.playerFighter.name);
+    intents.pressAbility('a4');
+    run(0.5);
+    expect(outcome()?.state).toBe('miss');
+    run(1.5);
+    expect(outcome()?.state).toBe('miss');
     expect(scene.dummy.hp).toBe(1000);
     expect(scene.dummyFighter.abilityLift).toBe(0);
     scenes.clear();

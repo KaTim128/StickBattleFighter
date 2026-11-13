@@ -202,6 +202,12 @@ interface GrabAction {
 
 type Action = DashAction | LeapAction | PullAction | GrabAction;
 
+/** How a grab turned out, for the caster's animation. */
+export type GrabOutcome =
+  | { readonly state: 'miss' }
+  | { readonly state: 'hold' }
+  | { readonly state: 'slam'; sinceS: number };
+
 /** A pull never lasts longer than this (it gives up if something holds the target back). */
 const PULL_MAX_S = 1.2;
 
@@ -228,6 +234,8 @@ export class AbilityWorld {
   readonly zones: FireZone[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
+  /** Grab outcomes by caster, kept until its next release (see grabOutcome). */
+  private readonly grabOutcomes = new Map<string, GrabOutcome>();
 
   /** Leap height of a caster this step (render lift), or 0. */
   liftOf(casterId: string): number {
@@ -249,6 +257,15 @@ export class AbilityWorld {
     for (const a of this.actions) if (a.kind === 'pull') visit(a.casterId, a.targetId);
   }
 
+  /**
+   * How a caster's grab is going, for its animation (owner, 13/11/2026: hit and miss look
+   * different): 'miss' (nobody was in reach), 'hold' (hoisting), or 'slam' with the seconds since
+   * the target hit the floor. Undefined when the caster has no grab under way.
+   */
+  grabOutcome(casterId: string): GrabOutcome | undefined {
+    return this.grabOutcomes.get(casterId);
+  }
+
   /** How high a grabbed fighter is hoisted this step (render lift), or 0. */
   heldLiftOf(targetId: string): number {
     const a = this.actions.find((x) => x.kind === 'grab' && x.targetId === targetId) as GrabAction | undefined;
@@ -262,6 +279,7 @@ export class AbilityWorld {
    * target point (or a point straight ahead when nothing is in range).
    */
   release(casterId: string, def: AbilityDef, aim: Vec2, host: AbilityHost): void {
+    this.grabOutcomes.delete(casterId);
     const at = host.position(casterId);
     const dir = norm({ x: aim.x - at.x, y: aim.y - at.y });
     host.emit({
@@ -459,6 +477,7 @@ export class AbilityWorld {
           }
         }
         if (!best) {
+          this.grabOutcomes.set(casterId, { state: 'miss' });
           host.emit({
             kind: 'fizzle',
             ability: def.id,
@@ -470,6 +489,7 @@ export class AbilityWorld {
           });
           break;
         }
+        this.grabOutcomes.set(casterId, { state: 'hold' });
         host.hold?.(best.id, d.liftS + 0.5);
         this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0 });
         break;
@@ -542,6 +562,7 @@ export class AbilityWorld {
   }
 
   update(dtS: number, host: AbilityHost): void {
+    for (const g of this.grabOutcomes.values()) if (g.state === 'slam') g.sinceS += dtS;
     this.updateProjectiles(dtS, host);
     this.updateBeams(dtS, host);
     this.updateActions(dtS, host);
@@ -826,6 +847,7 @@ export class AbilityWorld {
     );
     if (a.ageS < d.liftS) return false;
     // The slam: down in front, with the full payload and a dust blast.
+    this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
     host.drive(a.targetId, null, 0);
     const land = {
       x: caster.x + a.dir.x * (caster.radiusM + target.radiusM + 0.2),
