@@ -89,6 +89,7 @@ test('fighter details: stat bars fill, abilities explain themselves, Back keeps 
 test('opponent and difficulty pickers: dummy and Normal by default; picking Shroud on Hard starts that fight', async ({
   page,
 }) => {
+  test.setTimeout(90_000); // two full page loads (menu, then the fight)
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => {

@@ -431,8 +431,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Quit: no Thanks screen; a tab it cannot close leaves for the referrer or an empty page (`front-end.spec.ts`, `quit-game.test.ts`)
 - [x] Grapple Slam on a fighter mid-charge: the charge stops, nothing new can start while held (`fourth-abilities.test.ts`, fails without the fix)
 - [x] Rampage Mode: 10% bigger while it lasts, back after; shockwave about 10 damage and a push once, nothing beyond 2.2 m (`rampage.test.ts`)
-- [x] Titan's new body and Shroud's hood and mask checked in Chromium (game and fighter select); title art checked
+- [x] Titan's new body (no eyes) and Shroud's hood and mask checked in Chromium (game and fighter select); title art checked
 - [x] LOCKED tag on Story Mode no longer clipped
 - [ ] Owner check on a phone: fullscreen kept through Practice, Open Zone, Tournament, Tutorial; Quit behaviour on Android
-- [x] Inferno: dark face, glowing slanted eyes, no mouth; flames move on fighter select (strip frames differ); checked in Chromium
+- [x] No eyes or mouths on Inferno, Titan, Necro, skeleton warriors, the dummy; Shroud keeps his mask; flames move on fighter select (strip frames differ); checked in Chromium
 - [x] Shroud on fighter select: mask inside the hood; robe has no crossing lines; trim follows the torn hem; checked in Chromium

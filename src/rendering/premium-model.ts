@@ -71,8 +71,6 @@ export interface PremiumSkin {
   readonly head: 'crest' | 'brute' | 'cowl' | 'mask' | 'egg' | 'own';
   /** A light panel down the chest (owner, 13/11/2026, Titan: grey body, white chest). */
   readonly chestPanel?: number;
-  /** Glowing eyes on a sculpted brute head. */
-  readonly eyes?: number;
 }
 
 /** Fire (the approved Inferno look). */
@@ -100,7 +98,7 @@ export const MAGMA: PremiumPalette = {
 export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
   // Titan (owner, 13/11/2026, after his reference image): a muscular grey-and-white brawler. A
   // V-shaped body with broad shoulders, trapezius sloping up to a thick neck, bare deltoids, a white
-  // chest panel, white eyes; no armour plates or glowing core.
+  // chest panel; no eyes or mouth (owner, 13/11/2026: only Shroud has a face), no armour plates or glowing core.
   muscle: {
     palette: {
       outline: 0x101216,
@@ -130,7 +128,6 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     fire: { core: false, veins: false, fists: false },
     head: 'brute',
     chestPanel: 0xe8eaef,
-    eyes: 0xffffff,
   },
   // Death mage: ash-violet skin, violet-black armour with glowing violet seams, a soul core, violet
   // veins and glowing hands; a robe falling from the sash; a hood with two glowing eyes.
@@ -1122,7 +1119,7 @@ export class PremiumModel {
       this.c(this.P.skinLit),
       0.7,
     );
-    // The face (no eyes: owner, 12/11/2026): a heavy brow casting a shadow band, a strong nose
+    // The face (no eyes or mouth: owner, 12/11/2026 and 13/11/2026): a heavy brow casting a shadow band, a strong nose
     // ridge, a lit cheekbone and a square jaw line, all in his ember skin.
     const fx = h.x + r * 0.55;
     oval(g, { x: fx, y: h.y + r * 0.02 }, 0.2, 1, r * 0.42, r * 0.3, this.c(this.P.skinShade), 0.55); // brow shadow
@@ -1140,9 +1137,6 @@ export class PremiumModel {
     g.moveTo(h.x + r * 0.1, h.y + r * 0.62)
       .quadraticCurveTo(h.x + r * 0.7, h.y + r * 0.86, h.x + r * 0.98, h.y + r * 0.56)
       .stroke({ width: r * 0.08, color: this.c(this.P.skinShade), alpha: 0.9, cap: 'round' }); // jaw line
-    g.moveTo(h.x + r * 0.72, h.y + r * 0.5)
-      .lineTo(h.x + r * 0.98, h.y + r * 0.46)
-      .stroke({ width: r * 0.06, color: this.c(this.P.outline), alpha: 0.9, cap: 'round' }); // set mouth
 
     if (style === 'crest') {
       this.crest(fire, h, r);
@@ -1166,36 +1160,6 @@ export class PremiumModel {
     });
     if (this.P.seam !== null)
       fire.circle(h.x + r * 0.55, h.y - r * 0.42, r * 0.07).fill({ color: this.P.seam, alpha: 0.9 });
-    if (this.skin.eyes !== undefined) {
-      // Two narrow, angry glowing eyes under the brow (his reference: white slits in a dark face).
-      for (const [ex, k] of [
-        [0.72, 1],
-        [0.32, 0.8],
-      ] as const) {
-        const c = { x: h.x + r * ex, y: h.y - r * 0.12 };
-        g.poly([
-          c.x - r * 0.17 * k,
-          c.y - r * 0.07,
-          c.x + r * 0.17 * k,
-          c.y - r * 0.12,
-          c.x + r * 0.13 * k,
-          c.y + r * 0.06,
-          c.x - r * 0.15 * k,
-          c.y + r * 0.05,
-        ]).fill(this.c(0x0b0c10));
-        g.poly([
-          c.x - r * 0.12 * k,
-          c.y - r * 0.04,
-          c.x + r * 0.13 * k,
-          c.y - r * 0.08,
-          c.x + r * 0.1 * k,
-          c.y + r * 0.03,
-          c.x - r * 0.1 * k,
-          c.y + r * 0.03,
-        ]).fill(this.skin.eyes);
-        fire.circle(c.x, c.y - r * 0.02, r * 0.16 * k).fill({ color: this.skin.eyes, alpha: 0.25 });
-      }
-    }
   }
 
   /**

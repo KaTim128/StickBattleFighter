@@ -882,7 +882,7 @@ export class StickmanView {
 
   /** A skeleton's skull: one clean cranium-and-jaw silhouette, cel shaded (no eyes, owner 12/11/2026). */
   private skullHead(g: Graphics, s: ReturnType<typeof solveSkeleton>, colour: number, edge: number, o: number): void {
-    skullShape(g, s.head.x, s.head.y, this.bones.headRadius, colour, edge, o, null);
+    skullShape(g, s.head.x, s.head.y, this.bones.headRadius, colour, edge, o, null, false);
   }
 
   /**
@@ -1784,6 +1784,8 @@ function skullShape(
   edge: number,
   o: number,
   sockets: number | null,
+  /** A mouth line across the jaw (the staff's skull); a skeleton warrior has none (owner, 13/11/2026). */
+  mouth = true,
 ): void {
   const jaw = { x: x + r * 0.2, y: y + r * 0.55, w: r * 1.1, h: r * 0.62 };
   // Edge first, around the merged shape, then the fill.
@@ -1795,9 +1797,10 @@ function skullShape(
   g.ellipse(x - r * 0.25, y + r * 0.35, r * 0.6, r * 0.35).fill({ color: toward(bone, 0x000000, 0.25), alpha: 0.4 });
   g.ellipse(x - r * 0.2, y - r * 0.45, r * 0.5, r * 0.25).fill({ color: 0xffffff, alpha: 0.45 });
   // One clean mouth line across the jaw.
-  g.moveTo(jaw.x - jaw.w * 0.3, jaw.y + jaw.h * 0.05)
-    .lineTo(jaw.x + jaw.w * 0.4, jaw.y + jaw.h * 0.05)
-    .stroke({ width: o * 0.8, color: edge, cap: 'round' });
+  if (mouth)
+    g.moveTo(jaw.x - jaw.w * 0.3, jaw.y + jaw.h * 0.05)
+      .lineTo(jaw.x + jaw.w * 0.4, jaw.y + jaw.h * 0.05)
+      .stroke({ width: o * 0.8, color: edge, cap: 'round' });
   if (sockets !== null) {
     const glow = Math.min(1, Math.max(0, sockets));
     const c = toward(0x1a0826, 0xc89cff, glow);
