@@ -189,13 +189,13 @@ export const SHROUD_KIT: AbilityKit = {
     delivery: {
       type: 'buff',
       durationS: 8,
-      speedFactor: 1.25,
+      speedFactor: 1.30,
       damageTakenFactor: 1,
-      attackSpeedFactor: 1.4,
+      attackSpeedFactor: 1.1,
       // Owner, 12/11/2026: the knife buff is 10% (was 35%); the lights go out on the opponent.
-      meleeDamageFactor: 1.1,
+      meleeDamageFactor: 1,
       meleeBleed: { dps: 8, durationS: 3 },
-      darkensFoes: { visibleM: 1.6 },
+      darkensFoes: { visibleM: 1.5 },
     },
     vfx: 'hunting-frenzy',
     // The snap now comes with a light bulb bursting overhead (owner, 12/11/2026).
