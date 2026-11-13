@@ -378,6 +378,7 @@ export class PremiumModel {
       this.torso(g, fire, s);
       this.leg(g, fire, s.legFront, false);
     }
+    if (this.skin.muscle > 1.2) this.upperBack(g, s);
     const hs = this.skin.head;
     if (hs === 'crest' || hs === 'brute') this.head(g, fire, s, hs);
     else if (hs === 'cowl' || hs === 'mask') this.hooded(g, fire, s, hs);
@@ -818,6 +819,45 @@ export class PremiumModel {
         alpha: 0.7,
       });
     }
+  }
+
+  /**
+   * A brute's upper back (owner, 13/11/2026, Titan): a mound of trapezius and upper-back muscle
+   * rising from the rear shoulder to the back of the skull, so the space behind the head is filled
+   * with muscle that flows into the shoulders and neck. Drawn over the torso's armour, under the head.
+   */
+  private upperBack(g: Graphics, s: Skel): void {
+    const w = this.st.w;
+    const r = this.st.headRadius;
+    const back = -this.st.facing; // screen x toward his back
+    const u = frame(s.pelvis, s.chest);
+    const sh = { x: s.chest.x + back * w * 1.2, y: s.chest.y - u.uy * w * 0.05 };
+    const skull = { x: s.head.x + back * r * 0.55, y: s.head.y + r * 0.35 };
+    const peak = {
+      x: (sh.x + skull.x) / 2 + back * w * 0.55,
+      y: Math.min(sh.y, skull.y) + (skull.y - sh.y) * 0.1 - w * 0.25,
+    };
+    const inner = { x: s.neck.x - back * w * 0.1, y: s.chest.y + w * 0.15 };
+    const shape = (grow: number): void => {
+      g.moveTo(inner.x, inner.y)
+        .lineTo(sh.x + back * grow, sh.y + grow * 0.3)
+        .quadraticCurveTo(peak.x + back * grow, peak.y - grow, skull.x - back * grow * 0.2, skull.y - grow)
+        .lineTo(s.neck.x, s.neck.y)
+        .closePath();
+    };
+    shape(w * 0.32);
+    g.fill(this.c(this.P.outline));
+    shape(0);
+    g.fill(this.c(this.P.skin));
+    // Definition: shadow under the mound, a lit ridge along the top, the groove into the shoulder.
+    const mid = { x: (sh.x + skull.x) / 2 + back * w * 0.15, y: (sh.y + skull.y) / 2 + w * 0.05 };
+    oval(g, { x: mid.x, y: mid.y + w * 0.25 }, 1, 0, w * 0.7, w * 0.35, this.c(this.P.skinShade), 0.6);
+    g.moveTo(sh.x - back * w * 0.1, sh.y - w * 0.15)
+      .quadraticCurveTo(peak.x - back * w * 0.1, peak.y + w * 0.15, skull.x - back * w * 0.15, skull.y)
+      .stroke({ width: w * 0.16, color: this.c(this.P.skinLit), alpha: 0.65, cap: 'round' });
+    g.moveTo(sh.x - back * w * 0.35, sh.y + w * 0.25)
+      .quadraticCurveTo(mid.x, mid.y + w * 0.15, s.neck.x, s.neck.y + w * 0.1)
+      .stroke({ width: w * 0.07, color: this.c(this.P.skinShade), alpha: 0.8, cap: 'round' });
   }
 
   /** The neck, for skins whose head the view draws (its own head style sits on top). */

@@ -9,7 +9,7 @@ test('main menu: pick Rampage and the Colosseum, play, then leave the game back 
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   const menu = page.locator('.main-menu');
   await expect(menu).toBeVisible();
-  await expect(menu.locator('[data-fighter]')).toHaveCount(4); // Inferno, Braxon, Necro and Shroud (summons are never in the menu)
+  await expect(menu.locator('[data-fighter]')).toHaveCount(4); // Inferno, Titan, Necro and Shroud (summons are never in the menu)
   await menu.locator('[data-fighter="rampage"]').click();
   await menu.locator('.mm-d-select').click(); // a card opens the details; Select picks the fighter
   await expect(menu.locator('[data-fighter="rampage"]')).toHaveClass(/selected/);
@@ -17,7 +17,7 @@ test('main menu: pick Rampage and the Colosseum, play, then leave the game back 
   await Promise.all([page.waitForURL(/character=rampage/), menu.locator('.mm-play').click()]);
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.locator('.main-menu')).toBeHidden(); // straight into the fight
-  await expect(page.locator('.th-left .th-name')).toHaveText('Braxon'); // owner 12/11/2026: renamed from Rampage Buffer
+  await expect(page.locator('.th-left .th-name')).toHaveText('Titan'); // owner 13/11/2026: renamed from Braxon (formerly Rampage Buffer)
   await page.locator('.settings-button').click();
   await page.locator('.settings-leave').click();
   await expect(page.locator('.main-menu')).toBeVisible();
