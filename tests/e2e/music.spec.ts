@@ -6,6 +6,8 @@ test('battle music (owner, 12/11/2026): silent through the 3, 2, 1 countdown, th
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'one audio check is enough');
+  // The countdown follows the owner's clip (about 3.2 s of game time); headless runs slower than real time.
+  test.setTimeout(90_000);
   const problems: string[] = [];
   page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`));
   page.on('console', (msg) => {
@@ -17,7 +19,7 @@ test('battle music (owner, 12/11/2026): silent through the 3, 2, 1 countdown, th
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await page.mouse.click(640, 400); // audio starts on the first input
   const playing = () => page.evaluate(() => (window as DebugWindow).__stickmanDebug!.musicPlaying);
-  await expect.poll(playing, { timeout: 20_000 }).toBe(true);
+  await expect.poll(playing, { timeout: 60_000 }).toBe(true);
   await page.waitForTimeout(1500);
   expect(await playing()).toBe(true); // and keeps going
   expect(problems).toEqual([]);
