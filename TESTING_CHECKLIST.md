@@ -369,7 +369,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Full tournament in the browser: menu, bracket, fight, skip, final, champion; watch an AI battle and skip it (`tests/e2e/tournament.spec.ts`).
 - [x] Bracket entries never clipped (16-fighter bracket and champion screen screenshots).
 - [x] Fighters square up about 3 m apart, facing each other, through READY... FIGHT! (`tests/integration/scenes/fight-start.test.ts`, office screenshot).
-- [ ] Owner playtest: tournament pacing on a phone, AI difficulty feel.
+- [x] Landscape menu fits a Pixel 7 in landscape without scrolling; portrait shows the turn-your-phone screen; details show the new lore (screenshots).
+- [ ] Owner playtest: tournament pacing on a phone, AI difficulty feel; full-screen and landscape lock on the owner's phone (browser support varies, iPhone Safari cannot lock).
 
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green

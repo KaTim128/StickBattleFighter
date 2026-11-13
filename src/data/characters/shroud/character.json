@@ -2,7 +2,7 @@
   "id": "shroud",
   "template": "base-stickman",
   "displayName": "Shroud",
-  "description": "An original masked slasher: a long, pale porcelain mask in a black hood, a tattered robe and a knife. Hunched and silent, he stalks rather than fights, throws blades, lunges through his prey, appears behind them and, in a Hunting Frenzy, cuts faster, deeper and bloodier.",
+  "description": "Shroud is a rumour told in empty buildings after dark. No one has seen the face behind the porcelain mask, and those who stare at it too long stop talking about it. He drifts through the city's shadows, a hunched figure with a long knife, and the lights flicker when he is near. Whether he hunts for sport, for payment or for something older, nobody knows. In the arena he simply waits for the lights to go out.",
   "characterType": "fighter",
   "element": "shadow",
   "combatStyle": "knife",

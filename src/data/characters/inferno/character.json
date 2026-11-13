@@ -2,7 +2,7 @@
   "id": "inferno",
   "template": "base-stickman",
   "displayName": "Inferno",
-  "description": "Fire elemental and taekwondo fighter: fast hands, burning kicks, a falling meteor kick, and a flame uppercut to end a Punch Clash. Defeat leaves only embers and ash.",
+  "description": "Kade Varro was a foundry welder until the night the city's great smelter split open and he walked out of the blaze unburnt. The fire never left him: it sleeps under his skin like banked coals and flares with every strike. An old taekwondo master taught him that a fighter who loses his temper loses his footing, so he learned to kick with control. Inferno fights in the arena to prove the flame belongs to him, not the other way round.",
   "characterType": "fighter",
   "element": "fire",
   "combatStyle": "taekwondo",

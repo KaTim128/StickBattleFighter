@@ -2,7 +2,7 @@
   "id": "necro",
   "template": "base-stickman",
   "displayName": "Necro",
-  "description": "A hooded death mage: dark robes over skeletal armour, a staff topped with a soul crystal. He drains life and blinds, traps foes in bone-spiked ground, slips through walls in violet smoke and raises an army of skeleton warriors around his enemy.",
+  "description": "Once a scholar of the Ashen Library, Necro read the forbidden pages on the night the library burned, and did not die with it. He walked out of the smoke carrying a staff crowned with a skull and the names of every soul lost in the fire. He speaks rarely and always quietly. Necro enters the arena to gather strength from the fallen, believing the grave is only another doorway, and that he alone holds its key.",
   "characterType": "fighter",
   "element": "shadow",
   "combatStyle": "staff",

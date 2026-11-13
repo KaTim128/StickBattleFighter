@@ -95,9 +95,8 @@ export class MainMenu {
       face.appendChild(document.createElement('span'));
       const name = document.createElement('strong');
       name.textContent = f.name;
-      const blurb = document.createElement('small');
-      blurb.textContent = f.blurb;
-      card.append(face, name, blurb);
+      // Cards show the portrait and name only (owner, 13/11/2026); the story is in the details.
+      card.append(face, name);
       // A card opens the fighter's details (owner, 12/11/2026); Select there picks the fighter.
       card.addEventListener('click', () => this.openDetails(f));
       fighterRow.appendChild(card);
@@ -199,10 +198,15 @@ export class MainMenu {
     this.details.hidden = true;
     this.details.setAttribute('role', 'dialog');
     this.details.setAttribute('aria-label', 'Fighter details');
-    this.root.append(
-      title,
-      fighterLabel,
-      fighterRow,
+    // Landscape layout (owner, 13/11/2026): fighters on the left, the match settings on the right,
+    // Play along the bottom, all on one screen.
+    title.className = 'mm-title';
+    const left = document.createElement('div');
+    left.className = 'mm-col mm-col-left';
+    left.append(fighterLabel, fighterRow);
+    const right = document.createElement('div');
+    right.className = 'mm-col mm-col-right';
+    right.append(
       arenaLabel,
       arenaRow,
       modeLabel,
@@ -213,9 +217,11 @@ export class MainMenu {
       sizeRow,
       difficultyLabel,
       difficultyRow,
-      play,
-      this.details,
     );
+    const bottom = document.createElement('div');
+    bottom.className = 'mm-bottom';
+    bottom.append(play);
+    this.root.append(title, left, right, bottom, this.details);
     parent.appendChild(this.root);
     window.addEventListener(
       'keydown',

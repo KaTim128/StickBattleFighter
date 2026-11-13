@@ -602,3 +602,4 @@ Browser verification uses the documented dev command and browser automation: tes
 | 13/11/2026 | Owner: thrown furniture breaks on landing (SUP-29); fighter AI opponents and the menu's opponent picker (REQ-AI-7). | Master Developer |
 | 13/11/2026 | Owner: AI path-finding and difficulty levels (REQ-AI-7); Tournament mode (REQ-MOD-8). | Master Developer |
 | 13/11/2026 | Owner: before every fight (READY... FIGHT!) the fighters stand about 3 m apart on clear floor, facing each other (REQ-UI intro, `FIGHT_START_GAP_M`). | Master Developer |
+| 13/11/2026 | Owner: landscape only on phones and tablets (first tap goes full screen and locks landscape; held upright the game pauses behind a turn-your-phone screen); main menu in a two-column landscape layout that fits one phone screen (fighters left, match settings right, Play below), cards without descriptions; lore-based fighter histories in the details. Mobile e2e now runs on a landscape phone. | Master Developer |

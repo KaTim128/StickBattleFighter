@@ -2,7 +2,7 @@
   "id": "rampage",
   "template": "base-stickman",
   "displayName": "Titan",
-  "description": "A living force of raw power: a towering grey brawler, all muscle, with a chest like a barrel, massive shoulders and fists like boulders. Slow to turn, impossible to stop: he smashes the floor, charges through walls, crushes with a single overhead blow and flies into a rampage.",
+  "description": "Nobody remembers Titan small. He grew up hauling steel girders in the shipyards, where the foremen bet on how many he could carry before noon. When the yards closed he took his strength to the underground fight pits and never once lost a bout by falling down. He is slow to anger and slower to stop. Titan fights for the dock workers who cheered his name, and for the brothers he left behind when the cranes fell silent.",
   "characterType": "fighter",
   "element": "earth",
   "combatStyle": "brawling",

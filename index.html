@@ -417,26 +417,43 @@
         mask: radial-gradient(circle at 50% 50%, transparent 0 22%, #000 60%);
       }
       @keyframes ult-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+      /* Landscape only on phones and tablets (owner, 13/11/2026): held upright, the game asks to be turned. */
+      .rotate-hint {
+        display: none; position: fixed; inset: 0; z-index: 200; flex-direction: column; align-items: center; justify-content: center;
+        gap: 16px; padding: 24px; box-sizing: border-box; background: radial-gradient(circle at 50% 35%, #2a2018 0%, #0d0f14 70%);
+        color: #f2f5fa; font: 800 20px system-ui, sans-serif; text-align: center; letter-spacing: 0.04em;
+      }
+      .rotate-hint small { font: 500 14px system-ui, sans-serif; opacity: 0.75; letter-spacing: 0; }
+      .rotate-phone { width: 46px; height: 80px; border: 4px solid #ff8a3d; border-radius: 10px; animation: rotate-phone 2.2s ease-in-out infinite; }
+      @keyframes rotate-phone { 0%, 25% { transform: rotate(0deg); } 55%, 100% { transform: rotate(-90deg); } }
+      @media (orientation: portrait) and (pointer: coarse) { .rotate-hint { display: flex; } }
       /* Main menu (owner, 12/11/2026): fighter and arena, then Play. */
       .main-menu {
-        position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 10px; padding: 16px; box-sizing: border-box; overflow-y: auto;
+        position: fixed; inset: 0; z-index: 50; display: grid; box-sizing: border-box; overflow-y: auto;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto auto; align-content: center;
+        grid-template-areas: 'title title' 'left right' 'bottom bottom';
+        gap: 14px 28px; padding: 12px max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
         background: radial-gradient(circle at 50% 30%, #2a2018 0%, #11151c 70%); color: #f2f5fa;
         font: 14px/1.4 system-ui, sans-serif; -webkit-user-select: none; user-select: none;
       }
       .main-menu[hidden] { display: none; }
+      .mm-title { grid-area: title; justify-self: center; }
+      .mm-col { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+      .mm-col-left { grid-area: left; justify-self: end; }
+      .mm-col-right { grid-area: right; justify-self: start; padding-left: 28px; border-left: 1px solid rgba(232, 237, 245, 0.14); }
+      .mm-bottom { grid-area: bottom; display: flex; gap: 12px; justify-content: center; align-items: center; }
       .main-menu h1 { margin: 0 0 4px; font-size: clamp(22px, 5vw, 40px); letter-spacing: 0.14em; color: #ffb27a; text-shadow: 0 3px 0 #000; }
       .main-menu h2 { margin: 6px 0 0; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.75; }
-      .mm-fighters { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+      .mm-fighters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
       .mm-card {
-        width: min(42vw, 230px); display: flex; flex-direction: column; align-items: center; gap: 4px;
+        width: min(20vw, 170px); display: flex; flex-direction: column; align-items: center; gap: 4px;
         padding: 10px; border-radius: 12px; border: 2px solid rgba(232, 237, 245, 0.25); background: rgba(20, 24, 32, 0.85);
         color: inherit; font: inherit; cursor: pointer; text-align: center;
       }
       .mm-card strong { font-size: 16px; }
       .mm-card small { opacity: 0.7; font-size: 11px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
       .mm-card.selected, .mm-arena.selected { border-color: #ff8a3d; box-shadow: 0 0 0 2px rgba(255, 138, 61, 0.4); }
-      .mm-portrait { width: 56px; height: 56px; }
+      .mm-portrait { width: 64px; height: 64px; }
       .mm-arenas { display: flex; gap: 8px; }
       .mm-opponents { flex-wrap: wrap; justify-content: center; }
       .main-menu .mm-arenas[hidden], .main-menu h2[hidden] { display: none; }
@@ -569,11 +586,17 @@
         .util-button { right: calc(18px + env(safe-area-inset-right)); bottom: 96px; width: 52px; height: 52px; }
         .dodge-button { right: calc(18px + env(safe-area-inset-right)); bottom: 156px; width: 52px; height: 52px; }
         .util-button, .dodge-button { font-size: 10px; letter-spacing: -0.2px; }
-        .main-menu { justify-content: flex-start; gap: 6px; padding: 10px; }
-        .mm-card { width: min(40vw, 200px); padding: 6px; }
-        .mm-card small { -webkit-line-clamp: 2; }
-        .mm-portrait { width: 40px; height: 40px; }
-        .mm-play { padding: 8px 40px; }
+        .main-menu { gap: 4px 20px; padding-top: 6px; padding-bottom: 6px; }
+        .main-menu h1 { font-size: 20px; margin: 0; }
+        .main-menu h2 { margin-top: 2px; font-size: 10px; }
+        .mm-col { gap: 3px; }
+        .mm-fighters { gap: 6px; }
+        .mm-card { width: min(19vw, 140px); padding: 4px 6px; gap: 2px; }
+        .mm-card strong { font-size: 13px; }
+        .mm-portrait { width: 44px; height: 44px; }
+        .mm-arena { padding: 4px 10px; font-size: 12px; }
+        .mm-arenas { gap: 5px; }
+        .mm-play { margin-top: 0; padding: 7px 44px; font-size: 16px; }
         .mm-details { padding: 8px; }
         .mm-d-card { padding: 10px 12px; gap: 6px; }
         .mm-d-head .mm-portrait { width: 44px; height: 44px; }
@@ -583,6 +606,7 @@
     </style>
   </head>
   <body>
+    <div class="rotate-hint" role="alert"><div class="rotate-phone"></div>Turn your phone sideways to play<small>Stickman Arena plays in landscape. Tap once turned to go full screen.</small></div>
     <div id="app"></div>
     <div id="status" data-state="loading">Loading…</div>
     <div id="debug" hidden></div>

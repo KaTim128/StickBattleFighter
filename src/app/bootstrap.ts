@@ -620,11 +620,18 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   else setTimeout(() => void drawPortraits(), 300);
   if (touchDevice) {
     // After choosing on the menu the page reloads, which leaves fullscreen: the first tap restores it.
+    // The first tap anywhere (the menu included) goes full screen and locks landscape (owner,
+    // 13/11/2026: "auto full screen ... dont allow portrait view"). Browsers only allow it from a tap.
     const once = (): void => {
       window.removeEventListener('pointerdown', once);
-      if (!menu.isOpen) enterFullscreen();
+      enterFullscreen();
     };
     window.addEventListener('pointerdown', once);
+    // Held upright, the game shows "turn your phone" and waits.
+    const portrait = matchMedia('(orientation: portrait)');
+    const onTurn = (): void => setPaused('portrait', portrait.matches);
+    portrait.addEventListener('change', onTurn);
+    onTurn();
   }
   settings.onChange(() => {
     applyAudio();
