@@ -159,7 +159,9 @@ function cubicle(cx: number, x0: number, s: 1 | -1, index: number): PropPlacemen
     { kind: 'drawer-unit', x: cx + 0.72, y: MID_Y + s * 0.335 },
     // Leaves room to step in beside it; faces its desk (owner, 11/11/2026).
     { kind: 'office-chair', x: deskX - 0.25, y: MID_Y + s * 1.35, facing: s > 0 ? 'n' : 's' },
-    onDesk('computer', deskX, deskY - s * 0.15, deskFront, 1),
+    // The screen faces whoever sits at the desk: toward the camera for south-opening cubicles, away
+    // from it (we see the monitor's back) for north-opening ones (owner, 13/11/2026).
+    { ...onDesk('computer', deskX, deskY - s * 0.15, deskFront, 1), facing: s > 0 ? 's' : 'n' },
     onDesk('keyboard', deskX, deskY + s * 0.18, deskFront, 2),
     onDesk('mouse', deskX + 0.38, deskY + s * 0.18, deskFront, 3),
     // Side walls run from the back panel to the open side.

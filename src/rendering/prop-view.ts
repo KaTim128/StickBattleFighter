@@ -149,6 +149,22 @@ function drawKind(
       isoBlock(g, -0.08, -0.05, 0.08, 0.05, z, z + 0.02, { colour: 0x3a3e45, noAo: true });
       isoBlock(g, -0.02, -0.02, 0.02, 0.02, z + 0.02, z + 0.14, { colour: 0x3a3e45, noAo: true });
       isoBlock(g, x0, -0.03, x1, 0.03, z + 0.12, z + h, { colour: 0x26292e, noAo: true });
+      if (p.facing === 'n') {
+        // Screen facing away: the monitor's back, a raised housing with vents, a cable down the stand.
+        const back = face.left(0.03);
+        isoBlock(g, x0 + 0.08, 0.03, x1 - 0.08, 0.07, z + 0.18, z + h - 0.06, { colour: 0x2e3238, noAo: true });
+        for (let i = 0; i < 4; i++) {
+          const vz = z + h - 0.12 - i * 0.025;
+          faceQuad(g, face.left(0.07), x0 + 0.12, vz, x1 - 0.12, vz + 0.008).fill({ color: 0x15171b, alpha: 0.9 });
+        }
+        faceQuad(g, back, x0 + 0.02, z + h - 0.03, x1 - 0.02, z + h - 0.015).fill({ color: 0xffffff, alpha: 0.12 });
+        const c0 = iso(0.01, 0.07, z + 0.18);
+        const c1 = iso(0.03, 0.06, z + 0.01);
+        g.moveTo(c0.x, c0.y)
+          .quadraticCurveTo(c0.x + 0.04, (c0.y + c1.y) / 2, c1.x, c1.y)
+          .stroke({ width: 0.012, color: 0x111316 });
+        break;
+      }
       // A thin bezel round a lit screen: a deep blue desktop, two app windows and a glare.
       const scr = face.left(0.03);
       const sx0 = x0 + 0.02;
