@@ -104,15 +104,15 @@ async function startAndWinFirst(page: Page, size: number): Promise<void> {
 
 /**
  * Settings → Leave in the middle of a tournament fight: the fight is settled and recorded, and
- * Leave goes straight to the main menu (owner, 13/11/2026); Game Modes → Resume shows the draw.
+ * Leave goes straight to the main menu (owner, 13/11/2026). Then the draw is opened to check it.
  */
 async function leaveFight(page: Page): Promise<void> {
   await page.locator('.settings-button').click();
   await Promise.all([page.waitForURL(/home/), page.locator('.settings-leave').click()]);
   const front = page.locator('.front-end');
   await expect(front.locator('[data-screen="title"]')).toBeVisible({ timeout: 60_000 });
-  await front.locator('[data-nav="modes"]').click();
-  await Promise.all([page.waitForURL(/mode=tournament/), front.locator('.fe-resume').click()]);
+  await page.goto('/?mode=tournament&mute&play'); // the draw (Resume, or the finished result)
+  await expect(page.locator('.tournament')).toBeVisible({ timeout: 60_000 });
 }
 
 test('tournament: any number of AI battles can be watched (no limit), each one tapped in the draw', async ({

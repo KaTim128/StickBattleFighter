@@ -140,8 +140,15 @@ export class StickmanView {
     this.scaled.scale.set(this.baseSize * k);
   }
 
+  /**
+   * A fixed moment for the render-only effects (flames, glows), for figures drawn frame by frame
+   * ahead of time, such as the fighter-select strips; null follows the real clock.
+   */
+  clockOverrideS: number | null = null;
+
   /** Seconds since this view was made (render-only animation clock for the flame head). */
   private get clockS(): number {
+    if (this.clockOverrideS !== null) return this.clockOverrideS;
     return typeof performance === 'undefined' ? 0 : (performance.now() - this.t0) / 1000;
   }
 

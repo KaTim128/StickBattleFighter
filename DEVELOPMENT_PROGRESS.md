@@ -31,6 +31,7 @@ Check this table before assigning work. No two active assignments may share a pa
 - Countdown 3, 2, 1, FIGHT with the owner's clip (`assets/audio/sfx-countdown-fight.*`), none in the Tutorial; announcer and stinger removed (REQ-AUD-12).
 - Fullscreen shell (`src/app/shell.ts`, TD-070); Leave → main menu everywhere (`goToTitle`, `?home`); Quit without a goodbye screen (`src/interface/quit-game.ts`) (REQ-UI-36).
 - Checks: `npx vitest run` 486 pass; typecheck and lint clean; e2e (see below); browser screenshots of Titan, Shroud and the title art.
+- Then (owner): Inferno's face (dark, glowing slanted eyes, no mouth) in `magma-model.ts`; fighter-select strips drawn with a moving clock (`StickmanView.clockOverrideS`); Shroud's mask set inside the hood; robe edge lights on their own sides and trim along the torn hem (REQ-VIS-13).
 - Next task: owner phone check of fullscreen across modes; premium ability icons (#51).
 
 ### 13/11/2026 (latest+11): Shroud's Bloodfade and three-stab Stalker Lunge; Rampage Mode cooldown cut (owner)

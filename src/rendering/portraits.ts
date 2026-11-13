@@ -246,6 +246,9 @@ export interface IdleStrip {
  * the lowest to the highest point of the head, measured from the rig); played back and forth it
  * loops with no jump. One GPU read-back per fighter.
  */
+/** Seconds of flame motion between two frames of a fighter-select strip. */
+const SELECT_FIRE_STEP_S = 0.09;
+
 export async function renderIdleStrips(
   app: Application,
   defs: readonly FighterDef[],
@@ -289,6 +292,9 @@ export async function renderIdleStrips(
       const view = makeView(def);
       view.turn = stance?.turn ?? 0;
       view.shoulderSpread = stance?.shoulderSpread ?? 1;
+      // Each frame its own moment, so flames and glows move on the select screen (owner,
+      // 13/11/2026: "ensure the fire animation is shown in the selection screen").
+      view.clockOverrideS = i * SELECT_FIRE_STEP_S;
       view.draw(poseAt(i / (frames - 1)), -1, 0);
       view.root.scale.set(px);
       view.root.position.set(i * pitch + cellW / 2, floorY);

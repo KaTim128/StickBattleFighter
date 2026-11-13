@@ -781,10 +781,12 @@ export class PremiumModel {
       color: this.c(clothShade),
       alpha: 0.75,
     });
-    g.moveTo(waist.x + (lightRight ? -1 : 1) * w * 0.9, top)
+    // Each edge light runs down its own side of the skirt (owner, 13/11/2026: no lines crossing the
+    // robe, which read as overlapping pieces of cloth).
+    g.moveTo(waist.x + (lightRight ? 1 : -1) * w * 0.9, top)
       .lineTo(litX, hem - w * 0.25)
       .stroke({ width: w * 0.18, color: this.c(clothLit), alpha: 0.55, cap: 'round' });
-    g.moveTo(waist.x + (lightRight ? 1 : -1) * w * 0.9, top)
+    g.moveTo(waist.x + (lightRight ? -1 : 1) * w * 0.9, top)
       .lineTo(shadeX, hem - w * 0.2)
       .stroke({ width: w * 0.1, color: this.c(this.P.rim), alpha: 0.35, cap: 'round' });
     // Folds.
@@ -795,12 +797,14 @@ export class PremiumModel {
         .quadraticCurveTo((x0 + x1) / 2 + w * 0.15, (top + hem) / 2, x1, hem - w * 0.1)
         .stroke({ width: w * 0.1, color: this.c(clothShade), alpha: 0.85, cap: 'round' });
     }
-    // A trimmed hem on a robe.
-    if (gm.trim !== undefined)
-      g.moveTo(left, hem - w * 0.1)
-        .lineTo((left + right) / 2 + w * 0.3, hem + w * 0.18)
-        .lineTo(right, hem - w * 0.2)
-        .stroke({ width: w * 0.18, color: this.c(gm.trim), alpha: 0.9, cap: 'round', join: 'round' });
+    // A trimmed hem: along the hem itself (a tattered hem's trim follows its points, so it never
+    // runs straight across the cloth above them).
+    if (gm.trim !== undefined) {
+      const edge = shape(0).slice(4);
+      g.moveTo(edge[0]!, edge[1]!);
+      for (let i = 2; i < edge.length; i += 2) g.lineTo(edge[i]!, edge[i + 1]!);
+      g.stroke({ width: w * 0.14, color: this.c(gm.trim), alpha: 0.85, cap: 'round', join: 'round' });
+    }
   }
 
   /** Three overlapping bone plates over the near shoulder. */
@@ -1139,6 +1143,7 @@ export class PremiumModel {
     g.moveTo(h.x + r * 0.72, h.y + r * 0.5)
       .lineTo(h.x + r * 0.98, h.y + r * 0.46)
       .stroke({ width: r * 0.06, color: this.c(this.P.outline), alpha: 0.9, cap: 'round' }); // set mouth
+
     if (style === 'crest') {
       this.crest(fire, h, r);
       return;
@@ -1269,15 +1274,17 @@ export class PremiumModel {
    * lit crown to a dark rim, with a highlight on the brow and cheek. Tipped down a little.
    */
   private maskInHood(g: Graphics, h: Point, r: number, w: number): void {
-    const oc = { x: h.x + 0.5 * r, y: h.y + 0.14 * r };
+    // Owner, 13/11/2026 (later): the mask sits inside the hood, never past its front edge, so the
+    // opening is set back from the hood's front (about 0.95 r) and the mask fills it within the lip.
+    const oc = { x: h.x + 0.36 * r, y: h.y + 0.14 * r };
     // The opening: outline, the hood's lit lip round it, then the dark recess.
-    oval(g, oc, MASK_TILT, 1, r * 0.86 + w * 0.12, r * 0.64 + w * 0.12, this.c(this.P.outline));
-    oval(g, oc, MASK_TILT, 1, r * 0.86, r * 0.64, this.c(this.P.armourLit));
-    oval(g, { x: oc.x + r * 0.02, y: oc.y + r * 0.02 }, MASK_TILT, 1, r * 0.78, r * 0.57, this.c(0x050407));
-    // The mask: big enough to fill the opening, set slightly forward of it.
-    const mc = { x: oc.x + r * 0.06, y: oc.y + r * 0.06 };
-    const mw = r * 0.74;
-    const mh = r * 0.53;
+    oval(g, oc, MASK_TILT, 1, r * 0.76 + w * 0.1, r * 0.54 + w * 0.1, this.c(this.P.outline));
+    oval(g, oc, MASK_TILT, 1, r * 0.76, r * 0.54, this.c(this.P.armourLit));
+    oval(g, { x: oc.x + r * 0.02, y: oc.y + r * 0.02 }, MASK_TILT, 1, r * 0.69, r * 0.48, this.c(0x050407));
+    // The mask fills the opening, just inside the lip.
+    const mc = { x: oc.x + r * 0.04, y: oc.y + r * 0.04 };
+    const mw = r * 0.64;
+    const mh = r * 0.45;
     const bone = 0xeeeae1;
     oval(g, mc, MASK_TILT, 1, mw + w * 0.1, mh + w * 0.1, this.c(0x111114));
     // Curved surface: a dark rim, then lighter layers stepping toward the lit upper front.

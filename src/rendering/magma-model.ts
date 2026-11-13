@@ -599,28 +599,46 @@ export class MagmaModel {
       this.c(MAGMA.skinLit),
       0.7,
     );
-    // The face (no eyes: owner, 12/11/2026): a heavy brow casting a shadow band, a strong nose
-    // ridge, a lit cheekbone and a square jaw line, all in his ember skin.
-    const fx = h.x + r * 0.55;
-    oval(g, { x: fx, y: h.y + r * 0.02 }, 0.2, 1, r * 0.42, r * 0.3, this.c(MAGMA.skinShade), 0.55); // brow shadow
+    // The face (owner, 13/11/2026, replacing "no eyes" of 12/11/2026): as in the title art, a dark
+    // ember face under a heavy brow with two angular, slanted eyes of white-hot fire; no nose, jaw
+    // line or mouth.
     g.moveTo(h.x + r * 0.05, h.y - r * 0.3)
       .quadraticCurveTo(h.x + r * 0.7, h.y - r * 0.42, h.x + r * 1.02, h.y - r * 0.12)
       .stroke({ width: r * 0.2, color: this.c(MAGMA.outline), cap: 'round' }); // brow ridge
     g.moveTo(h.x + r * 0.1, h.y - r * 0.38)
       .quadraticCurveTo(h.x + r * 0.62, h.y - r * 0.5, h.x + r * 0.9, h.y - r * 0.3)
       .stroke({ width: r * 0.1, color: this.c(MAGMA.skinLit), alpha: 0.8, cap: 'round' }); // lit brow
-    g.moveTo(h.x + r * 0.98, h.y - r * 0.1)
-      .lineTo(h.x + r * 1.12, h.y + r * 0.22)
-      .lineTo(h.x + r * 0.96, h.y + r * 0.3)
-      .stroke({ width: r * 0.1, color: this.c(MAGMA.outline), cap: 'round', join: 'round' }); // nose
-    oval(g, { x: h.x + r * 0.55, y: h.y + r * 0.3 }, 1, 0.3, r * 0.22, r * 0.12, this.c(MAGMA.skinLit), 0.75); // cheekbone
-    g.moveTo(h.x + r * 0.1, h.y + r * 0.62)
-      .quadraticCurveTo(h.x + r * 0.7, h.y + r * 0.86, h.x + r * 0.98, h.y + r * 0.56)
-      .stroke({ width: r * 0.08, color: this.c(MAGMA.skinShade), alpha: 0.9, cap: 'round' }); // jaw line
-    g.moveTo(h.x + r * 0.72, h.y + r * 0.5)
-      .lineTo(h.x + r * 0.98, h.y + r * 0.46)
-      .stroke({ width: r * 0.06, color: this.c(MAGMA.outline), alpha: 0.9, cap: 'round' }); // set mouth
+    this.emberEyes(g, fire, h, r);
     this.crest(fire, h, r);
+  }
+
+  /** Inferno's eyes: a dark ember mask of face and two angry, angular eyes of white-hot fire. */
+  private emberEyes(g: Graphics, fire: Graphics, h: Point, r: number): void {
+    // The dark face: the front of the head in shadow, so the eyes burn out of it.
+    oval(g, { x: h.x + r * 0.42, y: h.y + r * 0.16 }, 0.2, 1, r * 0.78, r * 0.66, this.c(0x1c0703), 0.85);
+    for (const [ex, k, dir] of [
+      [0.74, 1, 1],
+      [0.2, 0.8, -1],
+    ] as const) {
+      // A big angular slanted eye: high at the outer corner, cut low toward the nose (an angry glare).
+      const cx = h.x + r * ex;
+      const cy = h.y + r * 0.02;
+      const hw = r * 0.27 * k;
+      const eye = [
+        cx - dir * hw,
+        cy - r * 0.17 * k,
+        cx + dir * hw,
+        cy - r * 0.03 * k,
+        cx + dir * hw * 0.85,
+        cy + r * 0.11 * k,
+        cx - dir * hw * 0.95,
+        cy + r * 0.06 * k,
+      ];
+      g.poly(eye).fill(this.c(0xffd23a));
+      fire.poly(eye).fill({ color: 0xffb52a, alpha: 0.9 });
+      fire.circle(cx, cy, r * 0.3 * k).fill({ color: 0xff9a1a, alpha: 0.28 });
+      fire.circle(cx, cy - r * 0.01, r * 0.07 * k).fill({ color: 0xfff6d0, alpha: 0.95 });
+    }
   }
 
   /** A crest of flame for hair: tongues swept back and up from the crown, streaming with speed. */

@@ -434,3 +434,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Titan's new body and Shroud's hood and mask checked in Chromium (game and fighter select); title art checked
 - [x] LOCKED tag on Story Mode no longer clipped
 - [ ] Owner check on a phone: fullscreen kept through Practice, Open Zone, Tournament, Tutorial; Quit behaviour on Android
+- [x] Inferno: dark face, glowing slanted eyes, no mouth; flames move on fighter select (strip frames differ); checked in Chromium
+- [x] Shroud on fighter select: mask inside the hood; robe has no crossing lines; trim follows the torn hem; checked in Chromium
