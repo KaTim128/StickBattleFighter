@@ -863,20 +863,20 @@ export class StickmanView {
     const butt = { x: hand.x - ux * below, y: hand.y - uy * below };
     const top = { x: butt.x + ux * LENGTH, y: butt.y + uy * LENGTH };
     if (this.proposal) {
-      this.goldenStaff(g, butt, top, ux, uy, LENGTH, o);
+      this.cursedStaff(g, butt, top, ux, uy, LENGTH, o);
       // The left hand closes round the shaft: a gloved fist drawn over it, knuckles across.
       const nx = -uy;
       const ny = ux;
       const r = 0.05;
-      g.ellipse(hand.x, hand.y, r * 1.25 + o, r + o).fill(0x14081c);
-      g.ellipse(hand.x, hand.y, r * 1.25, r).fill(0x2f1550);
-      g.ellipse(hand.x - r * 0.3, hand.y - r * 0.35, r * 0.6, r * 0.4).fill({ color: 0x8a58cc, alpha: 0.6 });
+      g.ellipse(hand.x, hand.y, r * 1.25 + o, r + o).fill(0x050308);
+      g.ellipse(hand.x, hand.y, r * 1.25, r).fill(0x1d1426);
+      g.ellipse(hand.x - r * 0.3, hand.y - r * 0.35, r * 0.6, r * 0.4).fill({ color: 0x3a2a4f, alpha: 0.7 });
       for (const d of [-0.025, 0, 0.025]) {
         g.moveTo(hand.x + ux * d + nx * r * 0.9, hand.y + uy * d + ny * r * 0.9)
           .lineTo(hand.x + ux * d + nx * r * 0.4, hand.y + uy * d + ny * r * 0.4)
-          .stroke({ width: 0.008, color: 0x14081c, alpha: 0.8, cap: 'round' });
+          .stroke({ width: 0.008, color: 0x050308, alpha: 0.8, cap: 'round' });
       }
-      this.fire.circle(hand.x, hand.y, r * 1.8).fill({ color: 0x9a4dff, alpha: 0.12 });
+      this.fire.circle(hand.x, hand.y, r * 1.8).fill({ color: 0x5a1f9a, alpha: 0.1 });
       return;
     }
     const edge = 0x6f6656;
@@ -936,61 +936,151 @@ export class StickmanView {
   }
 
   /**
-   * Redesign proposal (owner's reference, 13/11/2026): a twisted golden staff crowned by a glowing
-   * violet orb held in a gold ring; the orb flares while he casts.
+   * Redesign proposal, Mage of Death (owner, 13/11/2026): a gnarled blackwood staff carved with
+   * cursed violet runes, bound in dark cloth at the grip, its head a horned skull on a collar of
+   * black iron thorns. At rest it stays dark; while staff magic is used the runes, the sockets and
+   * a sickly-green and violet aura flare up.
    */
-  private goldenStaff(g: Graphics, butt: Point, top: Point, ux: number, uy: number, LENGTH: number, o: number): void {
-    const gold = 0xd8a93c;
-    const goldLit = 0xffe08a;
-    const goldDark = 0x7a5414;
-    const edge = 0x3a2608;
-    const shaft = [butt, top];
-    const widths = [0.04, 0.05];
+  private cursedStaff(g: Graphics, butt: Point, top: Point, ux: number, uy: number, LENGTH: number, o: number): void {
+    const wood = 0x221829;
+    const woodLit = 0x43324f;
+    const edge = 0x040206;
+    const violet = 0x7b3fc4;
+    const green = 0x9dee6e;
+    const m = this.magic;
+    const pulse = 0.8 + 0.2 * Math.sin(this.clockS * 5);
+    const nx = -uy;
+    const ny = ux;
+    const at = (k: number, side = 0): Point => ({
+      x: butt.x + ux * LENGTH * k + nx * side,
+      y: butt.y + uy * LENGTH * k + ny * side,
+    });
+    // The shaft, slightly crooked: a gentle S through two knots.
+    const shaft = [butt, at(0.35, 0.012), at(0.7, -0.012), top];
+    const widths = [0.035, 0.045, 0.042, 0.05];
     taper(
       g,
       shaft,
       widths.map((x) => x + o * 2),
       edge,
     );
-    taper(g, shaft, widths, gold);
-    celShade(g, shaft, widths, gold, false);
-    const nx = -uy;
-    const ny = ux;
-    for (let k = 0; k < 1; k += 0.07) {
-      const a = { x: butt.x + ux * LENGTH * k, y: butt.y + uy * LENGTH * k };
-      const b = { x: a.x + ux * LENGTH * 0.045, y: a.y + uy * LENGTH * 0.045 };
-      g.moveTo(a.x + nx * 0.024, a.y + ny * 0.024)
-        .lineTo(b.x - nx * 0.024, b.y - ny * 0.024)
-        .stroke({ width: 0.014, color: goldDark, cap: 'round' });
-      g.moveTo(a.x + nx * 0.01 + ux * 0.02, a.y + ny * 0.01 + uy * 0.02)
-        .lineTo(b.x - nx * 0.006, b.y - ny * 0.006)
-        .stroke({ width: 0.006, color: goldLit, alpha: 0.8, cap: 'round' });
+    taper(g, shaft, widths, wood);
+    celShade(g, shaft, widths, wood, false);
+    // Knots in the wood.
+    for (const k of [0.35, 0.7]) {
+      const c = at(k, k < 0.5 ? 0.012 : -0.012);
+      g.circle(c.x + nx * 0.02, c.y + ny * 0.02, 0.022 + o).fill(edge);
+      g.circle(c.x + nx * 0.02, c.y + ny * 0.02, 0.022).fill(wood);
+      g.circle(c.x + nx * 0.015, c.y + ny * 0.015, 0.009).fill({ color: woodLit, alpha: 0.8 });
     }
-    const orb = { x: top.x + ux * 0.13, y: top.y + uy * 0.13 };
-    const ringR = 0.11;
-    g.circle(orb.x, orb.y, ringR + 0.02).stroke({ width: 0.028 + o, color: edge });
-    g.circle(orb.x, orb.y, ringR + 0.02).stroke({ width: 0.026, color: gold });
-    // Start the highlight at the arc's own first point, so no line joins it to the shaft.
-    g.moveTo(orb.x + Math.cos(Math.PI * 1.1) * (ringR + 0.02), orb.y + Math.sin(Math.PI * 1.1) * (ringR + 0.02))
-      .arc(orb.x, orb.y, ringR + 0.02, Math.PI * 1.1, Math.PI * 1.6)
-      .stroke({ width: 0.01, color: goldLit });
+    // Cursed runes carved down the upper shaft: dim violet notches that glow green with magic.
+    for (let i = 0; i < 6; i++) {
+      const k = 0.48 + i * 0.075;
+      const c = at(k);
+      const w = i % 2 ? 0.014 : -0.014;
+      g.moveTo(c.x - nx * w - ux * 0.015, c.y - ny * w - uy * 0.015)
+        .lineTo(c.x + nx * w + ux * 0.015, c.y + ny * w + uy * 0.015)
+        .stroke({ width: 0.009, color: violet, alpha: 0.55, cap: 'round' });
+      if (m > 0.05) {
+        this.fire.circle(c.x, c.y, 0.028).fill({ color: green, alpha: 0.35 * m * pulse });
+      }
+    }
+    // Dark cloth bindings round the grip, with a trailing tie.
+    for (const k of [0.36, 0.5]) {
+      const c = at(k);
+      const h = 0.03;
+      g.poly([
+        c.x + nx * 0.04 - ux * h,
+        c.y + ny * 0.04 - uy * h,
+        c.x + nx * 0.04 + ux * h,
+        c.y + ny * 0.04 + uy * h,
+        c.x - nx * 0.04 + ux * h,
+        c.y - ny * 0.04 + uy * h,
+        c.x - nx * 0.04 - ux * h,
+        c.y - ny * 0.04 - uy * h,
+      ]).fill(0x2e1a42);
+    }
+    // A collar of black iron thorns curling up round the skull.
+    const head = { x: top.x + ux * 0.12, y: top.y + uy * 0.12 };
+    for (const side of [-1, -0.5, 0.5, 1]) {
+      const p0 = { x: top.x + nx * side * 0.025, y: top.y + ny * side * 0.025 };
+      const p1 = { x: top.x + ux * 0.07 + nx * side * 0.1, y: top.y + uy * 0.07 + ny * side * 0.1 };
+      const p2 = {
+        x: top.x + ux * (0.16 + 0.05 * Math.abs(side)) + nx * side * 0.12,
+        y: top.y + uy * (0.16 + 0.05 * Math.abs(side)) + ny * side * 0.12,
+      };
+      const thorn = [p0, p1, p2];
+      const tw = [0.026, 0.018, 0.004];
+      taper(
+        g,
+        thorn,
+        tw.map((x) => x + o * 2),
+        edge,
+      );
+      taper(g, thorn, tw, 0x2a2430);
+    }
+    // The aura behind the skull: barely there at rest, a sickly-green and violet flare in magic.
+    this.fire.circle(head.x, head.y, 0.24).fill({ color: violet, alpha: 0.06 + 0.2 * m * pulse });
+    if (m > 0.05) {
+      this.fire.circle(head.x, head.y, 0.32).fill({ color: green, alpha: 0.16 * m * pulse });
+      this.fire.circle(head.x, head.y, 0.19).fill({ color: green, alpha: 0.3 * m * pulse });
+      // Cursed wisps curling up off the skull.
+      for (let i = 0; i < 4; i++) {
+        const ph = (this.clockS * 0.8 + i / 4) % 1;
+        const wx = head.x + Math.sin(ph * 6 + i * 2) * 0.06;
+        const wy = head.y - 0.12 - ph * 0.35;
+        this.fire
+          .circle(wx, wy, 0.025 * (1 - ph) + 0.008)
+          .fill({ color: i % 2 ? green : violet, alpha: 0.7 * m * (1 - ph) });
+      }
+    }
+    // The skull, front on so it reads at a glance: aged bone, a crack down the brow, deep angular
+    // sockets slanting to a scowl, a nose cavity and a row of teeth.
+    const r = 0.12;
+    const bone = 0xcfc6b0;
+    const boneShade = 0x8f8572;
+    const cy = head.y - r * 0.1;
+    g.circle(head.x, cy, r + o).fill(edge);
+    g.roundRect(head.x - r * 0.62 - o, cy + r * 0.35 - o, r * 1.24 + o * 2, r * 0.75 + o * 2, r * 0.25).fill(edge);
+    g.circle(head.x, cy, r).fill(bone);
+    g.roundRect(head.x - r * 0.62, cy + r * 0.35, r * 1.24, r * 0.75, r * 0.22).fill(bone);
+    g.ellipse(head.x + r * 0.35, cy + r * 0.2, r * 0.45, r * 0.7).fill({ color: boneShade, alpha: 0.45 });
+    g.ellipse(head.x - r * 0.3, cy - r * 0.5, r * 0.4, r * 0.22).fill({ color: 0xffffff, alpha: 0.35 });
+    g.moveTo(head.x - r * 0.15, cy - r)
+      .lineTo(head.x + r * 0.05, cy - r * 0.6)
+      .lineTo(head.x - r * 0.05, cy - r * 0.35)
+      .stroke({ width: o * 0.7, color: edge, cap: 'round' });
+    const glow = m > 0.05;
     for (const side of [-1, 1]) {
-      g.moveTo(top.x, top.y)
-        .quadraticCurveTo(
-          top.x + nx * side * 0.08,
-          top.y + ny * side * 0.08,
-          top.x + ux * 0.05 + nx * side * 0.1,
-          top.y + uy * 0.05 + ny * side * 0.1,
-        )
-        .stroke({ width: 0.02, color: gold, cap: 'round' });
+      const sx = head.x + side * r * 0.4;
+      const sy = cy + r * 0.12;
+      // Inner corner (by the nose) lower than the outer: a menacing slant.
+      const sock = [
+        sx + side * r * 0.32,
+        sy - r * 0.2,
+        sx - side * r * 0.22,
+        sy - r * 0.02,
+        sx - side * r * 0.12,
+        sy + r * 0.28,
+        sx + side * r * 0.28,
+        sy + r * 0.2,
+      ];
+      g.poly(sock).fill(0x07050a);
+      if (glow) {
+        this.fire.circle(sx, sy + r * 0.05, r * 0.5).fill({ color: green, alpha: 0.35 * m * pulse });
+        this.fire.circle(sx, sy + r * 0.05, r * 0.12).fill({ color: green, alpha: 0.95 * m });
+        this.fire.circle(sx, sy + r * 0.05, r * 0.05).fill({ color: 0xf0ffe0, alpha: 0.9 * m });
+      }
     }
-    const m = this.magic;
-    const pulse = 0.75 + 0.25 * Math.sin(this.clockS * 4);
-    g.circle(orb.x, orb.y, 0.07).fill(0x2a0d3d);
-    this.fire.circle(orb.x, orb.y, 0.3 + 0.15 * m).fill({ color: 0x9a4dff, alpha: (0.14 + 0.2 * m) * pulse });
-    this.fire.circle(orb.x, orb.y, 0.07).fill({ color: 0xb98cff, alpha: 0.9 });
-    this.fire.circle(orb.x - 0.015, orb.y - 0.02, 0.035).fill({ color: 0xffffff, alpha: 0.85 });
-    if (m > 0.05) this.fire.circle(orb.x, orb.y, ringR * 1.6).stroke({ width: 0.012, color: 0xd8b8ff, alpha: 0.6 * m });
+    g.poly([head.x - r * 0.1, cy + r * 0.48, head.x + r * 0.1, cy + r * 0.48, head.x, cy + r * 0.65]).fill(0x07050a);
+    g.moveTo(head.x - r * 0.45, cy + r * 0.85)
+      .lineTo(head.x + r * 0.45, cy + r * 0.85)
+      .stroke({ width: o * 0.7, color: edge, cap: 'round' });
+    for (const tx of [-0.3, -0.1, 0.1, 0.3]) {
+      g.moveTo(head.x + tx * r, cy + r * 0.72)
+        .lineTo(head.x + tx * r, cy + r * 1.0)
+        .stroke({ width: o * 0.5, color: edge });
+    }
   }
 
   /**
@@ -1032,15 +1122,18 @@ export class StickmanView {
     const m = this.magic;
     if (m < 0.03) return;
     const D = StickmanView.DEATH;
+    // Mage of Death proposal: darker cursed violet with sickly-green motes, never pale or bright.
+    const soul = this.proposal ? 0x5a1f9a : D.soul;
+    const core = this.proposal ? 0x9dee6e : D.soulCore;
     const f = this.fire;
     const r = this.bones.headRadius;
-    f.ellipse(s.head.x + r * 0.42, s.head.y, r * 0.65, r * 0.85).fill({ color: D.soul, alpha: 0.35 * m });
+    f.ellipse(s.head.x + r * 0.42, s.head.y, r * 0.65, r * 0.85).fill({ color: soul, alpha: 0.35 * m });
     for (const pts of [s.armBack, s.legBack, [s.pelvis, s.chest, s.neck], s.legFront, s.armFront]) {
       const [first, ...rest] = pts;
       if (!first) continue;
       f.moveTo(first.x, first.y);
       for (const p of rest) f.lineTo(p.x, p.y);
-      f.stroke({ width: 0.3, color: D.soul, alpha: 0.07 * m, cap: 'round', join: 'round' });
+      f.stroke({ width: 0.3, color: soul, alpha: 0.07 * m, cap: 'round', join: 'round' });
     }
     const t = this.clockS;
     const cy = (s.chest.y + s.pelvis.y) / 2;
@@ -1048,7 +1141,10 @@ export class StickmanView {
       const a = t * 0.9 + (i * Math.PI * 2) / 7;
       const x = Math.cos(a) * 0.42;
       const y = cy + Math.sin(a * 1.3 + i) * 0.45;
-      f.circle(x, y, 0.03 + 0.015 * Math.sin(t * 3 + i)).fill({ color: i % 2 ? D.soulCore : D.soul, alpha: 0.7 * m });
+      f.circle(x, y, 0.03 + 0.015 * Math.sin(t * 3 + i)).fill({
+        color: i % 2 ? core : soul,
+        alpha: (this.proposal ? 0.55 : 0.7) * m,
+      });
     }
   }
 

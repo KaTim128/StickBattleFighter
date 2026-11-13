@@ -137,19 +137,21 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
   // Death mage: ash-violet skin, violet-black armour with glowing violet seams, a soul core, violet
   // veins and glowing hands; a robe falling from the sash; a hood with two glowing eyes.
   robe: {
+    // Mage of Death (owner, 13/11/2026): deep black and dark purple, cursed-violet seams with a thin
+    // sickly-green core, kept dark and sinister rather than bright.
     palette: {
-      outline: 0x14081c,
-      skin: 0x55298a,
-      skinLit: 0x8a58cc,
-      skinShade: 0x2f1550,
-      skinBack: 0x42206a,
-      rim: 0xe0c8ff,
-      armour: 0x2b1d3c,
-      armourLit: 0x57457c,
-      armourEdge: 0x0a0610,
-      seam: 0xc77dff,
-      lava: 0xf0dcff,
-      glow: 0x9a4dff,
+      outline: 0x050308,
+      skin: 0x1d1426,
+      skinLit: 0x3a2a4f,
+      skinShade: 0x0c0812,
+      skinBack: 0x150e1c,
+      rim: 0x8c62c0,
+      armour: 0x16101d,
+      armourLit: 0x352845,
+      armourEdge: 0x050308,
+      seam: 0x7b3fc4,
+      lava: 0xa9e07c,
+      glow: 0x5a1f9a,
     },
     bulk: 1.35,
     muscle: 0,
@@ -163,7 +165,7 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
       belt: true,
     },
     fire: { core: true, veins: true, fists: true },
-    garment: { hem: 'robe', trim: 0xc9a2ff, cloth: [0x4e2580, 0x7d4cc0, 0x2c1248] },
+    garment: { hem: 'robe', trim: 0x6a34a8, cloth: [0x1f1229, 0x3b2350, 0x0d0712] },
     head: 'cowl',
   },
   // Masked stalker: a black bodysuit with a crimson rim light, black leather armour with crimson

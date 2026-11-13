@@ -133,7 +133,7 @@ interface PremiumLook {
 const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   magma: { deep: '#120403', mid: '#5a1306', glow: '#ff6a1a', spark: '#ffc24a', frame: '#ffb347' },
   muscle: { deep: '#05080d', mid: '#16263c', glow: '#3aa8ff', spark: '#cfeaff', frame: '#7fd4ff' },
-  robe: { deep: '#07030c', mid: '#2a0f45', glow: '#9a4dff', spark: '#e2ccff', frame: '#c77dff' },
+  robe: { deep: '#030205', mid: '#180a24', glow: '#4f1d85', spark: '#a8e08a', frame: '#7b3fc4' },
   cloak: { deep: '#040304', mid: '#2a0608', glow: '#c0141e', spark: '#ff8a8a', frame: '#e5242e' },
   solid: { deep: '#0b0d12', mid: '#2b3240', glow: '#ffb000', spark: '#fff0b0', frame: '#ffc83a' },
 };
