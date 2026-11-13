@@ -93,7 +93,8 @@ describe('3 vs 3 tag team', () => {
 
   it('an AI-vs-AI 3 vs 3 plays out to a result, with fighters swapping in', async () => {
     const { scene, scenes, results, run } = await setup(true);
-    run(300, () => results.length > 0);
+    // The match ends by knockouts, or at the 300 s time limit at the latest: run a little past it.
+    run(420, () => results.length > 0);
     expect(results).toHaveLength(1);
     expect(scene.tags).toBeGreaterThan(0);
     const hud = scene.teamHud!;

@@ -46,7 +46,7 @@ export class SceneSummons {
   constructor(private readonly host: SummonHost) {}
 
   /**
-   * Raise `spec.count` minions around `owner`, or at random spots near its nearest enemy
+   * Raise `spec.count` minions around `owner`, or in a fan in front of its nearest enemy
    * (`near: 'enemy'`). Returns how many appeared (some spots may be blocked).
    */
   spawn(owner: FighterEntity, spec: SummonSpec): number {
@@ -55,7 +55,7 @@ export class SceneSummons {
     const enemy = spec.near === 'enemy' ? this.nearestEnemy(owner, Number.POSITIVE_INFINITY) : null;
     let raised = 0;
     for (let i = 0; i < spec.count; i++) {
-      const spot = enemy ? this.spotAround(enemy, radius) : this.spotNear(owner, radius, i, spec.count);
+      const spot = enemy ? this.spotInFront(enemy, radius, i, spec.count) : this.spotNear(owner, radius, i, spec.count);
       if (!spot) continue;
       // Keep within the cap: the summoner's oldest minion crumbles to make room.
       const mine = this.list.filter((m) => m.summon?.owner === owner && !m.combatant.isKo);
@@ -63,7 +63,9 @@ export class SceneSummons {
       const f = new FighterEntity(`${owner.name}-summon-${++this.made}`, def, spot, false);
       f.team = owner.team;
       f.summon = { owner, leftS: spec.lifeS, persistent: spec.persistent === true };
-      f.faceToward(owner.aim.x, owner.aim.y);
+      // Raised by an enemy: they face it; otherwise they face where the summoner looks.
+      if (enemy) f.faceToward(enemy.x - spot.x, enemy.y - spot.y);
+      else f.faceToward(owner.aim.x, owner.aim.y);
       this.host.attach(f);
       this.list.push(f);
       this.host.risen(f);
@@ -91,15 +93,23 @@ export class SceneSummons {
     return null;
   }
 
-  /** A random free spot 1.4–3.2 m from `centre`, in sight of it (not through a wall), inside the map. */
-  private spotAround(centre: FighterEntity, radius: number): Vec2 | null {
+  /**
+   * A free spot in front of `centre`, the way it faces (owner, 13/11/2026: "spawn further away from
+   * the opponent, in front of it instead of surrounding it"): the minions stand in a fan 2.6–3.6 m
+   * ahead of it, in sight of it (not through a wall), inside the map; if the front is blocked the
+   * fan widens toward its sides, never behind it.
+   */
+  private spotInFront(centre: FighterEntity, radius: number, i: number, n: number): Vec2 | null {
+    const base = Math.atan2(centre.aim.y, centre.aim.x);
+    const slot = i - (n - 1) / 2; // -1.5 .. 1.5 for four
     for (let attempt = 0; attempt < 14; attempt++) {
-      const a = this.host.random() * Math.PI * 2;
-      const want = 1.4 + this.host.random() * 1.8;
+      const spread = 0.38 * slot + (attempt === 0 ? 0 : (this.host.random() - 0.5) * (0.5 + attempt * 0.12));
+      const a = base + Math.max(-1.45, Math.min(1.45, spread));
+      const want = 2.6 + this.host.random() * 1.0;
       const end = { x: centre.x + Math.cos(a) * want, y: centre.y + Math.sin(a) * want };
       const block = this.host.blocked({ x: centre.x, y: centre.y }, end);
       const d = block === null ? want : want * block - radius - 0.1;
-      if (d < radius + 0.6) continue;
+      if (d < 1.8) continue;
       const at = { x: centre.x + Math.cos(a) * d, y: centre.y + Math.sin(a) * d };
       const crowded = this.host
         .fighters()

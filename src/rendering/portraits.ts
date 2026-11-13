@@ -246,15 +246,12 @@ export interface IdleStrip {
  * the lowest to the highest point of the head, measured from the rig); played back and forth it
  * loops with no jump. One GPU read-back per fighter.
  */
-/** Seconds of flame motion between two frames of a fighter-select strip. */
-const SELECT_FIRE_STEP_S = 0.09;
-
 export async function renderIdleStrips(
   app: Application,
   defs: readonly FighterDef[],
   /** The fighter's select stance, if it has one (owner, 13/11/2026); otherwise its idle is used. */
   stanceFor: (def: FighterDef) => SelectStance | undefined = () => undefined,
-  frames = 10,
+  frames = 30,
   cellH = 300,
 ): Promise<IdleStrip[]> {
   const out: IdleStrip[] = [];
@@ -263,9 +260,9 @@ export async function renderIdleStrips(
     let poseAt: (k: number) => Pose;
     let spanS: number;
     if (stance) {
-      // One breath in, played back and forth.
+      // One full breath, in and out (played forward on a loop).
       poseAt = (k) => stancePose(stance, def.bones, k);
-      spanS = 1.7;
+      spanS = 3.4;
     } else {
       const clip = def.animation.clips.Idle[0];
       const style = idleStyleFor(clip?.kind === 'procedural' ? clip.id : undefined);
@@ -276,8 +273,9 @@ export async function renderIdleStrips(
       for (let t = 0; t < 3; t += step) if (headY(t) > headY(t0)) t0 = t;
       let t1 = t0 + step;
       while (t1 < t0 + 3 && headY(t1 + step) <= headY(t1)) t1 += step;
-      spanS = Math.max(0.4, t1 - t0);
-      poseAt = (k) => idlePose(t0 + spanS * k, def.bones, style);
+      const half = Math.max(0.4, t1 - t0);
+      spanS = half * 2;
+      poseAt = (k) => idlePose(t0 + half * k, def.bones, style);
     }
     // Every fighter in the same window at the same scale (so sizes compare), the giant larger by
     // its stance's `scale`, all facing the same diagonal: towards the screen's left, turned towards
@@ -292,10 +290,11 @@ export async function renderIdleStrips(
       const view = makeView(def);
       view.turn = stance?.turn ?? 0;
       view.shoulderSpread = stance?.shoulderSpread ?? 1;
-      // Each frame its own moment, so flames and glows move on the select screen (owner,
-      // 13/11/2026: "ensure the fire animation is shown in the selection screen").
-      view.clockOverrideS = i * SELECT_FIRE_STEP_S;
-      view.draw(poseAt(i / (frames - 1)), -1, 0);
+      // The strip plays forward on a loop (owner, 13/11/2026: "the flame animated like fire"): the
+      // body breathes in and out over the loop (it ends where it starts), while each frame is its
+      // own moment at real speed, so the flames and glows keep burning forward, never in reverse.
+      view.clockOverrideS = (i * spanS) / frames;
+      view.draw(poseAt(0.5 - 0.5 * Math.cos((2 * Math.PI * i) / frames)), -1, 0);
       view.root.scale.set(px);
       view.root.position.set(i * pitch + cellW / 2, floorY);
       sheet.addChild(view.root);

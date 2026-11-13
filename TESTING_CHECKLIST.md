@@ -434,5 +434,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Titan's new body (no eyes) and Shroud's hood and mask checked in Chromium (game and fighter select); title art checked
 - [x] LOCKED tag on Story Mode no longer clipped
 - [ ] Owner check on a phone: fullscreen kept through Practice, Open Zone, Tournament, Tutorial; Quit behaviour on Android
-- [x] No eyes or mouths on Inferno, Titan, Necro, skeleton warriors, the dummy; Shroud keeps his mask; flames move on fighter select (strip frames differ); checked in Chromium
+- [x] Undead Army: four skeletons in front of the enemy (the side it faces), 1.8–3.7 m off, facing it (`necro.test.ts`)
+- [x] No eyes or mouths on Inferno, Titan, Necro, the dummy (skeleton warriors unchanged); Shroud keeps his mask; flames move on fighter select (strip frames differ); checked in Chromium
 - [x] Shroud on fighter select: mask inside the hood; robe has no crossing lines; trim follows the torn hem; checked in Chromium

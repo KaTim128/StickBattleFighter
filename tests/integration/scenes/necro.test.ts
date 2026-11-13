@@ -155,14 +155,20 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scenes.clear();
   });
 
-  it('Ultimate Undead Army: four skeletons rise near the enemy and last 10 s (owner, SUP-24) unless destroyed first', async () => {
+  it('Ultimate Undead Army: four skeletons rise in front of the enemy, a little way off, and last 10 s (owner, SUP-24) unless destroyed first', async () => {
     const { scene, scenes, run, runUntil, cast } = await setup({ x: 8, y: 13 }, { x: 18, y: 13 });
+    scene.dummyFighter.faceToward(-1, 0); // the enemy looks toward Necro
     scene.playerFighter.caster!.fillMeter();
     cast('ult');
     runUntil(() => scene.summonStates.length > 0, 3);
     expect(scene.summonStates).toHaveLength(4);
     for (const s of scene.summonStates) {
-      expect(Math.hypot(s.x - 18, s.y - 13)).toBeLessThan(3.6); // around the enemy, not Necro
+      // In front of it (owner, 13/11/2026): on the side it faces, never behind or round it...
+      expect(s.x).toBeLessThan(18 - 1);
+      // ...and further off than before (1.4-3.2 m): 1.8-3.7 m away.
+      const d = Math.hypot(s.x - 18, s.y - 13);
+      expect(d).toBeGreaterThan(1.8);
+      expect(d).toBeLessThan(3.7);
       expect(s.team).toBe('player');
       expect(scene.physics!.isFree({ x: s.x, y: s.y }, 0.2)).toBe(true);
     }

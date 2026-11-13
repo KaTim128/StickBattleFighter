@@ -146,7 +146,7 @@ export interface SummonSpec {
   /** Seconds before they crumble; null = they stay until killed (owner, 12/11/2026). */
   readonly lifeS: number | null;
   readonly maxAlive: number;
-  /** Where they rise: around the caster (default) or at random spots near the nearest enemy. */
+  /** Where they rise: around the caster (default) or in a fan in front of the nearest enemy, 2.6–3.6 m off. */
   readonly near?: 'caster' | 'enemy';
   /** They stay even if the summoner falls. */
   readonly persistent?: boolean;

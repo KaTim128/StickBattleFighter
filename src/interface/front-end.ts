@@ -671,7 +671,8 @@ function playStrip(m: HTMLElement, s: StanceStrip): void {
   m.style.backgroundImage = `url(${s.url})`;
   m.style.backgroundSize = `${s.frames * 100}% 100%`;
   m.style.aspectRatio = `${s.cellW} / ${s.cellH}`;
-  m.style.animation = `fe-frames ${s.spanS}s steps(${s.frames}, jump-none) infinite alternate`;
+  // Forward on a loop: the strip's last frame leads back into its first (see renderIdleStrips).
+  m.style.animation = `fe-frames ${s.spanS}s steps(${s.frames}, jump-none) infinite`;
   m.classList.add('ready');
 }
 

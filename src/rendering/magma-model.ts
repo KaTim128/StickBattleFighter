@@ -1,5 +1,6 @@
 import type { Graphics } from 'pixi.js';
 import type { Point, solveSkeleton } from '../animation/skeleton';
+import { shadedBall } from './shaded-ball';
 
 /**
  * Inferno's premium model (owner, 13/11/2026: the visual-redesign prototype, after the owner's
@@ -561,62 +562,30 @@ export class MagmaModel {
     }
   }
 
-  /** The head: a strong jaw and brow under a crest of flame; a dark ember face with no eyes. */
+  /** The head (owner, 13/11/2026): a round, shaded ball of ember skin under a crest of flame; no face. */
   private head(g: Graphics, fire: Graphics, s: Skel): void {
     const r = this.st.headRadius;
     const w = this.st.w;
     const h = s.head;
-    const u = frame(s.neck, h); // up along the neck
     // Neck.
     capsule(g, s.neck, h, w * 0.42 + w * 0.3, w * 0.4 + w * 0.3, this.c(MAGMA.outline));
     capsule(g, s.neck, h, w * 0.42, w * 0.4, this.c(MAGMA.skin));
-    // Skull and jaw: a round cranium with a squarer jaw toward his front and down.
-    const jaw = { x: h.x + r * 0.28 - u.ux * r * 0.45, y: h.y - u.uy * r * 0.45 + r * 0.05 };
-    const skull = (grow: number, colour: number) => {
-      g.circle(h.x, h.y - r * 0.05, r + grow).fill(colour);
-      oval(g, jaw, 1, 0, r * 0.72 + grow, r * 0.55 + grow, colour);
-    };
-    skull(w * 0.32, this.c(MAGMA.outline));
-    skull(0, this.c(MAGMA.skin));
-    // Shadow on the far side, light on the near, rim of fire on the back of the head.
-    oval(
+    shadedBall(
       g,
-      { x: h.x - this.lx * r * 0.35, y: h.y - this.ly * r * 0.3 },
-      1,
-      0,
-      r * 0.85,
-      r * 0.75,
-      this.c(MAGMA.skinShade),
-      0.6,
+      h.x,
+      h.y - r * 0.05,
+      r,
+      w * 0.32,
+      {
+        outline: this.c(MAGMA.outline),
+        shade: this.c(MAGMA.skinShade),
+        base: this.c(MAGMA.skin),
+        lit: this.c(MAGMA.skinLit),
+        rim: this.c(MAGMA.rim),
+      },
+      this.lx,
+      this.ly,
     );
-    oval(
-      g,
-      { x: h.x + this.lx * r * 0.35, y: h.y + this.ly * r * 0.35 },
-      1,
-      0,
-      r * 0.5,
-      r * 0.42,
-      this.c(MAGMA.skinLit),
-      0.7,
-    );
-    // The face (no eyes or mouth: owner, 12/11/2026 and 13/11/2026): a heavy brow casting a shadow
-    // band, a strong nose ridge, a lit cheekbone and a square jaw line, all in his ember skin.
-    const fx = h.x + r * 0.55;
-    oval(g, { x: fx, y: h.y + r * 0.02 }, 0.2, 1, r * 0.42, r * 0.3, this.c(MAGMA.skinShade), 0.55); // brow shadow
-    g.moveTo(h.x + r * 0.05, h.y - r * 0.3)
-      .quadraticCurveTo(h.x + r * 0.7, h.y - r * 0.42, h.x + r * 1.02, h.y - r * 0.12)
-      .stroke({ width: r * 0.2, color: this.c(MAGMA.outline), cap: 'round' }); // brow ridge
-    g.moveTo(h.x + r * 0.1, h.y - r * 0.38)
-      .quadraticCurveTo(h.x + r * 0.62, h.y - r * 0.5, h.x + r * 0.9, h.y - r * 0.3)
-      .stroke({ width: r * 0.1, color: this.c(MAGMA.skinLit), alpha: 0.8, cap: 'round' }); // lit brow
-    g.moveTo(h.x + r * 0.98, h.y - r * 0.1)
-      .lineTo(h.x + r * 1.12, h.y + r * 0.22)
-      .lineTo(h.x + r * 0.96, h.y + r * 0.3)
-      .stroke({ width: r * 0.1, color: this.c(MAGMA.outline), cap: 'round', join: 'round' }); // nose
-    oval(g, { x: h.x + r * 0.55, y: h.y + r * 0.3 }, 1, 0.3, r * 0.22, r * 0.12, this.c(MAGMA.skinLit), 0.75); // cheekbone
-    g.moveTo(h.x + r * 0.1, h.y + r * 0.62)
-      .quadraticCurveTo(h.x + r * 0.7, h.y + r * 0.86, h.x + r * 0.98, h.y + r * 0.56)
-      .stroke({ width: r * 0.08, color: this.c(MAGMA.skinShade), alpha: 0.9, cap: 'round' }); // jaw line
     this.crest(fire, h, r);
   }
 
