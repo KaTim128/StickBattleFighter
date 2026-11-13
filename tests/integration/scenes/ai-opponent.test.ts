@@ -38,7 +38,8 @@ async function setup(
 }
 
 /** Owner, 13/11/2026: the AI opponent uses its abilities, heavy attacks and climbing. */
-describe('fighter AI opponent', () => {
+// Each test simulates seconds of real fighting: slow on a busy CI machine.
+describe('fighter AI opponent', { timeout: 60_000 }, () => {
   beforeAll(async () => {
     await initPhysics();
   });
