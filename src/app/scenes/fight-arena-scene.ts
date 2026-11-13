@@ -384,6 +384,8 @@ export class FightArenaScene implements ArenaScene {
       player: this.playerFighter,
       opponent: this.dummyFighter,
       opponentMashRate: opponent.def.ai.clashMashRate * opponent.def.multipliers.clashPower,
+      playerAiMashRate: () =>
+        this.match?.spectate ? player.def.ai.clashMashRate * player.def.multipliers.clashPower : null,
       random: () => this.rng(),
       takeMashPresses: () => {
         // During a clash Button 1 is the mash button; other buttons do nothing.
@@ -1676,14 +1678,17 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /**
-   * Settle a match early (a watched battle skipped): whoever has more health left wins. Reported
-   * through `onMatchEnd` at once.
+   * Settle a match early (the fight is left from Settings, owner 13/11/2026): whoever has more of
+   * their health left wins; on a tie, `onTie` does (the side that stayed, when the player leaves
+   * their own fight). Reported through `onMatchEnd` at once.
    */
-  endMatchNow(): void {
+  endMatchNow(onTie: 'player' | 'opponent' = 'player'): void {
     if (!this.match || this.matchEndSent) return;
     const p = this.playerFighter.combatant;
     const o = this.dummyFighter.combatant;
-    const winner = p.hp / p.stats.maxHp >= o.hp / o.stats.maxHp ? 'player' : 'opponent';
+    const ps = p.hp / p.stats.maxHp;
+    const os = o.hp / o.stats.maxHp;
+    const winner = ps > os ? 'player' : ps < os ? 'opponent' : onTie;
     this.matchResult ??= { winner, atS: this.simTimeS, by: 'time' };
     this.matchEndSent = true;
     this.onMatchEnd?.(this.matchResult.winner);

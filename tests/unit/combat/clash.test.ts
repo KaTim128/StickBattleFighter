@@ -60,6 +60,14 @@ describe('Punch Clash rules', () => {
     expect(c.result?.winner).toBe('a');
   });
 
+  it('when the AI plays both sides (a watched battle), side A mashes too (owner, 13/11/2026)', () => {
+    const c = new PunchClash(6.5, seededRandom(3), 6.5);
+    run(c, CLASH.introS + CLASH.mashS + 0.1); // nobody presses anything
+    expect(c.phase).toBe('done');
+    expect(c.powerA).toBeGreaterThan(15);
+    expect(c.powerB).toBeGreaterThan(15);
+  });
+
   it('speeds up the exchange through the clash and spikes in the final stretch', () => {
     const c = new PunchClash(6.5, seededRandom(2));
     run(c, CLASH.introS);

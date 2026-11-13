@@ -11,7 +11,6 @@ import {
   stageComplete,
   stageName,
   stillIn,
-  TOURNAMENT,
   type TournamentState,
 } from '../../../src/modes/tournament/tournament';
 
@@ -129,13 +128,22 @@ describe('tournament bracket (owner, 13/11/2026)', () => {
     expect(t.stage).toBe(1);
   });
 
-  it('watching uses up to 3 watches per stage, then resets', () => {
-    const t = createTournament(16, PLAYER, POOL, seeded(13));
+  it('every AI battle in a stage can be watched (no watch limit, owner 13/11/2026)', async () => {
+    const { settleStage } = await import('../../../src/modes/tournament/tournament-flow');
+    const rand = seeded(13);
+    const t = createTournament(16, PLAYER, POOL, rand);
+    recordResult(t, playerMatch(t)!.id, 'p', 'played');
     const ai = openAiMatches(t);
-    expect(t.watchesLeft).toBe(TOURNAMENT.watchesPerStage);
-    recordResult(t, ai[0]!.id, ai[0]!.a!, 'watched');
-    recordResult(t, ai[1]!.id, ai[1]!.b!, 'simulated'); // a skipped battle costs no watch
-    expect(t.watchesLeft).toBe(2);
+    expect(ai).toHaveLength(7);
+    for (const m of ai.slice(0, 6)) {
+      recordResult(t, m.id, m.a!, 'watched');
+      settleStage(t);
+      expect(t.stage).toBe(0); // still waiting: the last battle can be watched too
+    }
+    recordResult(t, ai[6]!.id, ai[6]!.b!, 'watched');
+    settleStage(t);
+    expect(t.stage).toBe(1);
+    expect(t.rounds[0]!.filter((m) => m.how === 'watched')).toHaveLength(7);
   });
 
   it('odd sizes get byes and still finish (room to grow past 16)', () => {
@@ -152,27 +160,28 @@ describe('tournament bracket (owner, 13/11/2026)', () => {
 });
 
 describe('tournament flow between stages', () => {
-  it('waits for the player, then for watch or skip choices, then moves on by itself when no watches are left', async () => {
+  it('waits for the player, then for watch or skip choices, then moves on', async () => {
     const { settleStage, skipBattles, recordFor } = await import('../../../src/modes/tournament/tournament-flow');
     const rand = seeded(21);
     const t = createTournament(16, PLAYER, POOL, rand);
-    settleStage(t, equal, rand);
+    settleStage(t);
     expect(t.stage).toBe(0); // the player's match first
     recordResult(t, playerMatch(t)!.id, 'p', 'played');
-    settleStage(t, equal, rand);
-    expect(t.stage).toBe(0); // 7 AI battles wait: watch up to 3, or skip
+    settleStage(t);
+    expect(t.stage).toBe(0); // 7 AI battles wait: watch any, or skip the rest
     const open = openAiMatches(t);
     for (const m of open.slice(0, 3)) recordResult(t, m.id, m.a!, 'watched');
-    settleStage(t, equal, rand); // no watches left: the rest are settled and the next stage starts
+    settleStage(t);
+    expect(t.stage).toBe(0); // 4 still open
+    skipBattles(t, equal, rand); // Skip: the rest are settled and the next stage starts
     expect(t.stage).toBe(1);
-    expect(t.watchesLeft).toBe(3);
     recordResult(t, playerMatch(t)!.id, 'p', 'played');
     skipBattles(t, equal, rand);
     expect(t.stage).toBe(2);
     recordResult(t, playerMatch(t)!.id, 'p', 'played');
     skipBattles(t, equal, rand);
     recordResult(t, playerMatch(t)!.id, 'p', 'played');
-    settleStage(t, equal, rand);
+    settleStage(t);
     expect(t.champion).toBe('p');
     const rec = recordFor(t, new Date(2026, 10, 13))!;
     expect(rec).toEqual({
@@ -191,7 +200,7 @@ describe('tournament flow between stages', () => {
     const pm = playerMatch(t)!;
     recordResult(t, pm.id, pm.a === 'p' ? pm.b! : pm.a!, 'played');
     for (let i = 0; i < 5 && !t.champion; i++) skipBattles(t, equal, rand);
-    settleStage(t, equal, rand);
+    settleStage(t);
     expect(t.champion).not.toBeNull();
     expect(t.champion).not.toBe('p');
     expect(playerPlacement(t)).toBe('Out in the Quarter Finals');

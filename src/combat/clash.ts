@@ -74,15 +74,19 @@ export class PunchClash {
   t = 0;
   private exchangeAcc = 0;
   private aiAcc = 0;
+  private aiAccA = 0;
   result: ClashResult | null = null;
 
   /**
    * @param opponentRate presses per second the opponent manages (from its data)
    * @param random seeded 0..1 source for the opponent's rhythm
+   * @param aiRateA presses per second for side A when the AI plays it too (a watched battle);
+   *   null when the player mashes side A
    */
   constructor(
     private readonly opponentRate: number,
     private readonly random: () => number,
+    private readonly aiRateA: number | null = null,
   ) {}
 
   /** Seconds of mashing left (the HUD timer). */
@@ -124,6 +128,15 @@ export class PunchClash {
     while (this.aiAcc >= 1) {
       this.aiAcc -= 1;
       this.powerB++;
+    }
+    // Side A mashes the same way when the AI plays it (owner, 13/11/2026: in a watched battle
+    // both fighters fight back in a clash).
+    if (this.aiRateA !== null) {
+      this.aiAccA += this.aiRateA * (0.75 + this.random() * 0.5) * (this.final ? 1.15 : 1) * dtS;
+      while (this.aiAccA >= 1) {
+        this.aiAccA -= 1;
+        this.powerA++;
+      }
     }
     // The exchange speeds up through the clash and spikes in the final stretch.
     const k = Math.min(1, (this.t - CLASH.introS) / CLASH.mashS);

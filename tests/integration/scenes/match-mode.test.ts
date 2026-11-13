@@ -47,6 +47,17 @@ describe('match mode', () => {
     scenes.clear();
   }, 60_000); // a whole simulated battle: slow on a busy machine
 
+  it('in a watched battle both fighters fight back in a Punch Clash (owner, 13/11/2026)', async () => {
+    const { scene, scenes, runUntil } = await setup(true);
+    runUntil(() => false, 4); // past the intro
+    scene.startClash();
+    runUntil(() => scene.clashes.lastResult !== null, 10);
+    const r = scene.clashes.lastResult!;
+    expect(r.powerA).toBeGreaterThan(10); // the left fighter mashed, with no player input
+    expect(r.powerB).toBeGreaterThan(10);
+    scenes.clear();
+  });
+
   it('a KO ends the match: the loser does not get back up', async () => {
     const { scene, scenes, results, runUntil } = await setup(false);
     runUntil(() => false, 4); // past the intro

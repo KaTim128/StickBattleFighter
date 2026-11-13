@@ -14,7 +14,7 @@
       #status {
         position: fixed; left: 12px; top: 84px; padding: 6px 10px; border-radius: 6px;
         font: 12px/1.4 system-ui, sans-serif; color: #e8edf5; background: rgba(0, 0, 0, 0.45);
-        pointer-events: none; max-width: min(44vw, 520px); box-sizing: border-box;
+        pointer-events: none; max-width: min(calc(44 * var(--vw, 1vw)), 520px); box-sizing: border-box;
       }
       #status[data-state='error'] { background: rgba(160, 20, 20, 0.85); }
       .touch-controls { position: fixed; inset: 0; pointer-events: none; z-index: 7; } /* above the blind and dark veils */
@@ -67,7 +67,7 @@
       body.aiming .joystick .joystick-knob { background: rgba(255, 150, 60, 0.9); }
       /* Targeting (owner, 12/11/2026): clear instructions while picking a target; ✕ cancels on touch. */
       .aim-hint {
-        position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 6; max-width: min(92vw, 640px);
+        position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 6; max-width: min(calc(92 * var(--vw, 1vw)), 640px);
         padding: 8px 16px; border-radius: 10px; border: 2px solid rgba(255, 170, 90, 0.85); background: rgba(16, 18, 26, 0.88);
         color: #fff1e0; font: 700 14px/1.35 system-ui, sans-serif; text-align: center; pointer-events: none;
       }
@@ -160,7 +160,7 @@
       .clash-power { min-width: 34px; text-align: center; font-size: 22px; }
       .clash-a { color: #ff9a4d; } .clash-b { color: #d6dbe4; }
       .clash-bar {
-        position: relative; width: min(46vw, 420px); height: 18px; border-radius: 9px; overflow: hidden;
+        position: relative; width: min(calc(46 * var(--vw, 1vw)), 420px); height: 18px; border-radius: 9px; overflow: hidden;
         background: #c8ced8; border: 2px solid rgba(0, 0, 0, 0.6);
         box-shadow: 0 0 calc(var(--intensity, 0) * 18px) rgba(255, 140, 40, 0.9);
       }
@@ -208,19 +208,19 @@
       }
       /* Settings (owner, 11/11/2026): gear button, audio sliders, rebindable controls. */
       .settings-button {
-        position: fixed; right: calc(12px + env(safe-area-inset-right)); top: 12px; z-index: 30;
+        position: fixed; right: calc(12px + env(safe-area-inset-right)); top: 12px; z-index: 90; /* above every screen (owner, 13/11/2026) */
         width: 40px; height: 40px; border-radius: 10px; border: 2px solid rgba(232, 237, 245, 0.55);
         background: rgba(20, 24, 32, 0.75); color: #e8edf5; font: 22px/1 system-ui, sans-serif; cursor: pointer;
       }
       .settings-button.active, .settings-button:hover { background: rgba(60, 70, 92, 0.9); }
       .settings-panel {
-        position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+        position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center;
         background: rgba(5, 8, 12, 0.6); font: 14px/1.4 system-ui, sans-serif; color: #e8edf5;
         -webkit-user-select: none; user-select: none;
       }
       .settings-panel[hidden], .settings-panel [hidden] { display: none; }
       .settings-card {
-        width: min(92vw, 480px); max-height: 88vh; overflow-y: auto; padding: 16px 18px 18px;
+        width: min(calc(92 * var(--vw, 1vw)), 480px); max-height: calc(88 * var(--vh, 1vh)); overflow-y: auto; padding: 16px 18px 18px;
         border-radius: 14px; background: #1b212c; border: 2px solid rgba(232, 237, 245, 0.18);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
       }
@@ -254,7 +254,7 @@
       /* Top HUD (PRS-10): both fighters at a glance, the match clock and the last action. */
       .top-hud {
         position: fixed; left: 50%; top: 10px; transform: translateX(-50%); z-index: 20;
-        width: min(calc(100vw - 132px), 860px); display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px;
+        width: min(calc(calc(100 * var(--vw, 1vw)) - 132px), 860px); display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px;
         pointer-events: none; font: 700 12px system-ui, sans-serif; color: #f2f5fa; text-shadow: 0 1px 0 #000;
       }
       .th-side { --accent: #ffb27a; --slant: -18deg; display: flex; gap: 10px; align-items: flex-start; }
@@ -322,13 +322,11 @@
       @media (pointer: coarse) {
         #status:not([data-state='error']) { display: none; }
       }
-      @media (max-width: 640px) {
-        .top-hud { gap: 6px; }
-        .th-portrait { width: 32px; height: 32px; }
-        .th-centre { min-width: 70px; }
-        .th-timer { font-size: 15px; }
-        .th-name { font-size: 11px; }
-      }
+      html.narrow .top-hud { gap: 6px; }
+      html.narrow .th-portrait { width: 32px; height: 32px; }
+      html.narrow .th-centre { min-width: 70px; }
+      html.narrow .th-timer { font-size: 15px; }
+      html.narrow .th-name { font-size: 11px; }
       /* READY... FIGHT! (owner, 12/11/2026): cinematic fight-game lettering before every fight. */
       .fight-intro { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
       .fight-intro[hidden] { display: none; }
@@ -340,7 +338,7 @@
       .fi-lead-in .fi-vignette, .fi-ready .fi-vignette, .fi-fight .fi-vignette { opacity: 1; }
       .fi-word {
         position: absolute; left: 50%; top: 50%; opacity: 0; white-space: nowrap;
-        font: italic 900 clamp(64px, 13vw, 190px) / 1 Impact, 'Arial Black', system-ui, sans-serif; letter-spacing: 0.02em;
+        font: italic 900 clamp(64px, calc(13 * var(--vw, 1vw)), 190px) / 1 Impact, 'Arial Black', system-ui, sans-serif; letter-spacing: 0.02em;
         transform: translate(-50%, -50%) skewX(-10deg);
       }
       /* A dark extruded slab behind the face gives the letters depth. */
@@ -418,15 +416,15 @@
       }
       @keyframes ult-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
       /* Landscape only on phones and tablets (owner, 13/11/2026): held upright, the game asks to be turned. */
-      .rotate-hint {
-        display: none; position: fixed; inset: 0; z-index: 200; flex-direction: column; align-items: center; justify-content: center;
-        gap: 16px; padding: 24px; box-sizing: border-box; background: radial-gradient(circle at 50% 35%, #2a2018 0%, #0d0f14 70%);
-        color: #f2f5fa; font: 800 20px system-ui, sans-serif; text-align: center; letter-spacing: 0.04em;
+      /* A phone held upright plays in landscape at once (owner, 13/11/2026): the page is laid out
+         sideways and turned a quarter turn (src/interface/landscape.ts). The transform also makes
+         the body the frame for every fixed overlay. */
+      html.force-landscape, html.force-landscape body { overflow: hidden; }
+      html.force-landscape body {
+        position: fixed; top: 0; left: 0; margin: 0;
+        width: calc(100 * var(--vw)); height: calc(100 * var(--vh));
+        transform-origin: 0 0; transform: translateX(var(--screen-w)) rotate(90deg);
       }
-      .rotate-hint small { font: 500 14px system-ui, sans-serif; opacity: 0.75; letter-spacing: 0; }
-      .rotate-phone { width: 46px; height: 80px; border: 4px solid #ff8a3d; border-radius: 10px; animation: rotate-phone 2.2s ease-in-out infinite; }
-      @keyframes rotate-phone { 0%, 25% { transform: rotate(0deg); } 55%, 100% { transform: rotate(-90deg); } }
-      @media (orientation: portrait) and (pointer: coarse) { .rotate-hint { display: flex; } }
       /* Main menu (owner, 12/11/2026): fighter and arena, then Play. */
       .main-menu {
         position: fixed; inset: 0; z-index: 50; display: grid; box-sizing: border-box; overflow-y: auto;
@@ -442,11 +440,11 @@
       .mm-col-left { grid-area: left; justify-self: end; }
       .mm-col-right { grid-area: right; justify-self: start; padding-left: 28px; border-left: 1px solid rgba(232, 237, 245, 0.14); }
       .mm-bottom { grid-area: bottom; display: flex; gap: 12px; justify-content: center; align-items: center; }
-      .main-menu h1 { margin: 0 0 4px; font-size: clamp(22px, 5vw, 40px); letter-spacing: 0.14em; color: #ffb27a; text-shadow: 0 3px 0 #000; }
+      .main-menu h1 { margin: 0 0 4px; font-size: clamp(22px, calc(5 * var(--vw, 1vw)), 40px); letter-spacing: 0.14em; color: #ffb27a; text-shadow: 0 3px 0 #000; }
       .main-menu h2 { margin: 6px 0 0; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.75; }
       .mm-fighters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
       .mm-card {
-        width: min(20vw, 170px); display: flex; flex-direction: column; align-items: center; gap: 4px;
+        width: min(calc(20 * var(--vw, 1vw)), 170px); display: flex; flex-direction: column; align-items: center; gap: 4px;
         padding: 10px; border-radius: 12px; border: 2px solid rgba(232, 237, 245, 0.25); background: rgba(20, 24, 32, 0.85);
         color: inherit; font: inherit; cursor: pointer; text-align: center;
       }
@@ -507,7 +505,7 @@
       .fc-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
       .fc-tabs button { padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(232, 237, 245, 0.25); background: transparent; color: inherit; font: 700 12px system-ui, sans-serif; cursor: pointer; }
       .fc-tabs button.active { background: var(--fighter, #ff8a3d); border-color: transparent; color: #12151b; }
-      .fc-body { max-height: min(52vh, 420px); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+      .fc-body { max-height: min(calc(52 * var(--vh, 1vh)), 420px); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
       .fc-group { border: 1px solid rgba(232, 237, 245, 0.14); border-radius: 8px; padding: 4px 8px; background: rgba(255, 255, 255, 0.02); }
       .fc-group summary { cursor: pointer; font: 800 12px system-ui, sans-serif; letter-spacing: 0.04em; padding: 4px 0; }
       .fc-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 14px; padding: 4px 0 6px; }
@@ -548,19 +546,21 @@
       .tn-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
       .tn-note { margin: 0; opacity: 0.9; text-align: center; }
       .tn-fight { padding: 12px 52px; border-radius: 12px; border: 0; background: #ff8a3d; color: #1b120a; font: 900 18px system-ui, sans-serif; letter-spacing: 0.14em; cursor: pointer; }
-      .tn-watch-list { display: flex; flex-direction: column; gap: 6px; }
-      .tn-watch { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: rgba(20, 24, 32, 0.9); border: 1px solid rgba(232, 237, 245, 0.15); }
-      .tn-watch-names { min-width: 190px; font-weight: 700; }
-      .tn-watch button, .tn-skip-all, .tn-leave { padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(232, 237, 245, 0.35); background: transparent; color: inherit; font: 700 13px system-ui, sans-serif; cursor: pointer; }
-      .tn-watch .tn-watch-btn { background: #ff8a3d; color: #1b120a; border-color: transparent; }
+      .tn-match.watchable { cursor: pointer; border-color: rgba(255, 138, 61, 0.7); }
+      .tn-match.watchable:hover, .tn-match.watchable:focus-visible { outline: none; box-shadow: 0 0 0 2px #ff8a3d, 0 0 14px rgba(255, 138, 61, 0.4); }
+      .tn-watch-tag { padding: 2px 6px; text-align: center; font: 800 10px system-ui, sans-serif; letter-spacing: 0.14em; color: #1b120a; background: #ff8a3d; }
+      .tn-latest { margin: 0; padding: 6px 14px; border-radius: 10px; background: rgba(120, 220, 120, 0.12); border: 1px solid rgba(120, 220, 120, 0.35); font-weight: 700; text-align: center; }
+      .tn-skip-all { padding: 10px 44px; border-radius: 12px; border: 0; background: #ff8a3d; color: #1b120a; font: 900 16px system-ui, sans-serif; letter-spacing: 0.14em; cursor: pointer; }
+      .tn-leave { padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(232, 237, 245, 0.35); background: transparent; color: inherit; font: 700 13px system-ui, sans-serif; cursor: pointer; }
       .tn-champion { display: flex; align-items: center; gap: 18px; padding: 14px 22px; border-radius: 16px; background: linear-gradient(135deg, rgba(255, 179, 71, 0.22), rgba(20, 24, 32, 0.9)); border: 2px solid #ffb347; box-shadow: 0 0 30px rgba(255, 160, 50, 0.35); }
       .tn-champion .tn-face { width: 110px; height: 110px; border-radius: 14px; }
       .tn-champion-title { font: 900 14px system-ui, sans-serif; letter-spacing: 0.3em; color: #ffb347; }
       .tn-champion-name { font: 900 30px system-ui, sans-serif; }
       .tn-placement, .tn-record { opacity: 0.85; }
       .tn-banner { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 4px 14px; border-radius: 999px; background: rgba(13, 15, 20, 0.8); color: #ffcf9e; font: 800 12px system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; pointer-events: none; }
-      .tn-skip-battle { position: fixed; bottom: 18px; right: 18px; z-index: 25; padding: 10px 18px; border-radius: 10px; border: 0; background: #ff8a3d; color: #1b120a; font: 800 14px system-ui, sans-serif; cursor: pointer; }
-      body.spectating .ability-bar, body.spectating .touch-controls { display: none; }
+      /* Combat controls only in an active fight (owner, 13/11/2026; set by bootstrap). */
+      body:not(.fighting) .ability-bar, body:not(.fighting) .touch-controls { display: none; }
+      body.spectating .clash-prompt { visibility: hidden; } /* nothing to mash while watching */
       .mm-play {
         margin-top: 8px; padding: 12px 48px; border-radius: 12px; border: 0; background: #ff8a3d; color: #1b120a;
         font: 800 18px system-ui, sans-serif; letter-spacing: 0.12em; cursor: pointer;
@@ -586,50 +586,47 @@
       .settings-actions button[hidden] { display: none; }
       /* Phones held sideways (owner, 12/11/2026: fit the whole screen): a compact HUD and a tighter
          touch cluster so nothing overlaps on a short landscape screen. */
-      @media (max-height: 480px) {
-        .top-hud { top: 4px; width: min(calc(100vw - 120px), 640px); gap: 6px; font-size: 10px; }
-        .th-portrait { width: 30px; height: 30px; }
-        .th-portrait span { transform: scale(0.75); }
-        .th-name { font-size: 10px; }
-        .th-bar { height: 7px; border-width: 1px; }
-        .th-st { height: 4px; }
-        .th-status { min-height: 0; }
-        .th-centre { min-width: 56px; }
-        .th-timer { font-size: 13px; padding: 1px 6px; }
-        .th-action { font-size: 10px; }
-        .settings-button { top: 4px; width: 34px; height: 34px; font-size: 18px; }
-        .melee-button { right: calc(92px + env(safe-area-inset-right)); bottom: 16px; width: 66px; height: 66px; }
-        .ability-button { width: 48px; height: 48px; font-size: 11px; }
-        .ability-button[data-slot='a1'] { right: calc(170px + env(safe-area-inset-right)); bottom: 12px; }
-        .ability-button[data-slot='a2'] { right: calc(164px + env(safe-area-inset-right)); bottom: 74px; }
-        .ability-button[data-slot='a3'] { right: calc(110px + env(safe-area-inset-right)); bottom: 100px; }
-        .ability-button[data-slot='a4'] { right: calc(112px + env(safe-area-inset-right)); bottom: 152px; }
-        .heavy-button { right: calc(226px + env(safe-area-inset-right)); bottom: 12px; width: 48px; height: 48px; font-size: 10px; }
-        .ability-button.ult { right: calc(18px + env(safe-area-inset-right)); bottom: 20px; width: 58px; height: 58px; }
-        .util-button { right: calc(18px + env(safe-area-inset-right)); bottom: 96px; width: 52px; height: 52px; }
-        .dodge-button { right: calc(18px + env(safe-area-inset-right)); bottom: 156px; width: 52px; height: 52px; }
-        .util-button, .dodge-button { font-size: 10px; letter-spacing: -0.2px; }
-        .main-menu { gap: 4px 20px; padding-top: 6px; padding-bottom: 6px; }
-        .main-menu h1 { font-size: 20px; margin: 0; }
-        .main-menu h2 { margin-top: 2px; font-size: 10px; }
-        .mm-col { gap: 3px; }
-        .mm-fighters { gap: 6px; }
-        .mm-card { width: min(19vw, 140px); padding: 4px 6px; gap: 2px; }
-        .mm-card strong { font-size: 13px; }
-        .mm-portrait { width: 44px; height: 44px; }
-        .mm-arena { padding: 4px 10px; font-size: 12px; }
-        .mm-arenas { gap: 5px; }
-        .mm-play { margin-top: 0; padding: 7px 44px; font-size: 16px; }
-        .mm-details { padding: 8px; }
-        .mm-d-card { padding: 10px 12px; gap: 6px; }
-        .mm-d-head .mm-portrait { width: 44px; height: 44px; }
-        .mm-d-head h2 { font-size: 18px; }
-        .mm-d-actions { bottom: -10px; margin: 0 -12px -10px; padding: 8px 12px 10px; }
-      }
+      html.short .top-hud { top: 4px; width: min(calc(calc(100 * var(--vw, 1vw)) - 120px), 640px); gap: 6px; font-size: 10px; }
+      html.short .th-portrait { width: 30px; height: 30px; }
+      html.short .th-portrait span { transform: scale(0.75); }
+      html.short .th-name { font-size: 10px; }
+      html.short .th-bar { height: 7px; border-width: 1px; }
+      html.short .th-st { height: 4px; }
+      html.short .th-status { min-height: 0; }
+      html.short .th-centre { min-width: 56px; }
+      html.short .th-timer { font-size: 13px; padding: 1px 6px; }
+      html.short .th-action { font-size: 10px; }
+      html.short .settings-button { top: 4px; width: 34px; height: 34px; font-size: 18px; }
+      html.short .melee-button { right: calc(92px + env(safe-area-inset-right)); bottom: 16px; width: 66px; height: 66px; }
+      html.short .ability-button { width: 48px; height: 48px; font-size: 11px; }
+      html.short .ability-button[data-slot='a1'] { right: calc(170px + env(safe-area-inset-right)); bottom: 12px; }
+      html.short .ability-button[data-slot='a2'] { right: calc(164px + env(safe-area-inset-right)); bottom: 74px; }
+      html.short .ability-button[data-slot='a3'] { right: calc(110px + env(safe-area-inset-right)); bottom: 100px; }
+      html.short .ability-button[data-slot='a4'] { right: calc(112px + env(safe-area-inset-right)); bottom: 152px; }
+      html.short .heavy-button { right: calc(226px + env(safe-area-inset-right)); bottom: 12px; width: 48px; height: 48px; font-size: 10px; }
+      html.short .ability-button.ult { right: calc(18px + env(safe-area-inset-right)); bottom: 20px; width: 58px; height: 58px; }
+      html.short .util-button { right: calc(18px + env(safe-area-inset-right)); bottom: 96px; width: 52px; height: 52px; }
+      html.short .dodge-button { right: calc(18px + env(safe-area-inset-right)); bottom: 156px; width: 52px; height: 52px; }
+      html.short .util-button, html.short .dodge-button { font-size: 10px; letter-spacing: -0.2px; }
+      html.short .main-menu { gap: 4px 20px; padding-top: 6px; padding-bottom: 6px; }
+      html.short .main-menu h1 { font-size: 20px; margin: 0; }
+      html.short .main-menu h2 { margin-top: 2px; font-size: 10px; }
+      html.short .mm-col { gap: 3px; }
+      html.short .mm-fighters { gap: 6px; }
+      html.short .mm-card { width: min(calc(19 * var(--vw, 1vw)), 140px); padding: 4px 6px; gap: 2px; }
+      html.short .mm-card strong { font-size: 13px; }
+      html.short .mm-portrait { width: 44px; height: 44px; }
+      html.short .mm-arena { padding: 4px 10px; font-size: 12px; }
+      html.short .mm-arenas { gap: 5px; }
+      html.short .mm-play { margin-top: 0; padding: 7px 44px; font-size: 16px; }
+      html.short .mm-details { padding: 8px; }
+      html.short .mm-d-card { padding: 10px 12px; gap: 6px; }
+      html.short .mm-d-head .mm-portrait { width: 44px; height: 44px; }
+      html.short .mm-d-head h2 { font-size: 18px; }
+      html.short .mm-d-actions { bottom: -10px; margin: 0 -12px -10px; padding: 8px 12px 10px; }
     </style>
   </head>
   <body>
-    <div class="rotate-hint" role="alert"><div class="rotate-phone"></div>Turn your phone sideways to play<small>Stickman Arena plays in landscape. Tap once turned to go full screen.</small></div>
     <div id="app"></div>
     <div id="status" data-state="loading">Loading…</div>
     <div id="debug" hidden></div>

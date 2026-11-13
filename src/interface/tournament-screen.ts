@@ -13,14 +13,14 @@ import type { TournamentRecord } from '../modes/tournament/tournament-flow';
 /**
  * The tournament screen (owner, 13/11/2026): the whole bracket with every fighter's portrait, the
  * current stage, winners and eliminated fighters, upcoming pairings and the player's place
- * (highlighted); then what to do next: fight your match, watch up to 3 AI battles (or skip them
- * one by one, or all at once); and the champion's screen at the end. It updates after every match.
+ * (highlighted); then what to do next: fight your match, or tap any AI battle in the draw to watch
+ * it (no limit), with one Skip button under the draw that settles the rest of the stage; and the
+ * champion's screen at the end. It updates after every match.
  * Original design; interface owner (src/interface).
  */
 export interface TournamentActions {
   fight(): void;
   watch(matchId: string): void;
-  skip(matchId: string): void;
   skipAll(): void;
   leave(): void;
 }
@@ -52,6 +52,13 @@ export class TournamentScreen {
     this.root.hidden = true;
   }
 
+  /** The latest result (shown above the actions), e.g. a fight the player left early. */
+  private latest: string | null = null;
+
+  setLatest(text: string | null): void {
+    this.latest = text;
+  }
+
   show(state: TournamentState, history: readonly TournamentRecord[]): void {
     this.last = { state, history };
     this.root.hidden = false;
@@ -71,6 +78,7 @@ export class TournamentScreen {
     if (state.champion) this.root.appendChild(this.championCard(state, history));
     this.root.appendChild(this.bracket(state));
     const actions = el('div', 'tn-actions');
+    if (this.latest) actions.appendChild(el('p', 'tn-latest', this.latest));
     const out = !stillIn(state).has(me.id);
     if (!state.champion) {
       const mine = playerMatch(state);
@@ -83,25 +91,9 @@ export class TournamentScreen {
         if (out) actions.appendChild(el('p', 'tn-note', `You are out (${playerPlacement(state)}). Follow the rest:`));
         if (open.length > 0) {
           actions.appendChild(
-            el(
-              'p',
-              'tn-note',
-              `Watch battles: ${state.watchesLeft} of 3 left this stage. Skip any you do not want to see.`,
-            ),
+            el('p', 'tn-note', 'Tap any battle in the draw to watch it, or skip the rest of this stage.'),
           );
-          const list = el('div', 'tn-watch-list');
-          for (const m of open) {
-            const row = el('div', 'tn-watch');
-            row.dataset.match = m.id;
-            row.appendChild(
-              el('span', 'tn-watch-names', `${entrant(state, m.a)!.name} vs ${entrant(state, m.b)!.name}`),
-            );
-            row.appendChild(button('tn-watch-btn', 'Watch', () => this.actions.watch(m.id)));
-            row.appendChild(button('tn-skip-btn', 'Skip', () => this.actions.skip(m.id)));
-            list.appendChild(row);
-          }
-          actions.appendChild(list);
-          actions.appendChild(button('tn-skip-all', 'Skip Battles', () => this.actions.skipAll()));
+          actions.appendChild(button('tn-skip-all', 'Skip', () => this.actions.skipAll()));
         }
       }
     }
@@ -132,6 +124,8 @@ export class TournamentScreen {
       for (const m of round) {
         const box = el('div', 'tn-match');
         box.dataset.match = m.id;
+        // An AI battle still to be decided: tap it to watch (owner, 13/11/2026: watch any battle).
+        const watchable = r === state.stage && !state.champion && !m.winner && m.a && m.b && m.a !== 'p' && m.b !== 'p';
         for (const id of [m.a, m.b]) {
           const e = entrant(state, id);
           const row = el('div', 'tn-entry');
@@ -145,6 +139,17 @@ export class TournamentScreen {
             else if (m.winner) row.classList.add('loser');
           }
           box.appendChild(row);
+        }
+        if (watchable) {
+          box.classList.add('watchable');
+          box.setAttribute('role', 'button');
+          box.tabIndex = 0;
+          box.setAttribute('aria-label', `Watch ${entrant(state, m.a)!.name} vs ${entrant(state, m.b)!.name}`);
+          box.appendChild(el('div', 'tn-watch-tag', '▶ WATCH'));
+          box.addEventListener('click', () => this.actions.watch(m.id));
+          box.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') this.actions.watch(m.id);
+          });
         }
         col.appendChild(box);
       }

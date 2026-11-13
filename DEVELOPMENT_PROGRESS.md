@@ -23,6 +23,17 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+6): landscape, settings, controls, tournament watching, clash fix (owner)
+- **Per-fighter AI brains (REQ-AI-8, TD-063)**, committed 64b7cf2: unique brain per fighter; Easy/Normal/Hard/Expert scale intelligence only; whole kit at every level.
+- **Always landscape (REQ-UI-31, TD-064):** an upright phone gets the page laid out in landscape and turned (`src/interface/landscape.ts`); touches mapped back (`src/input/screen-space.ts`); rotate screen and portrait pause removed. The first tap still asks for fullscreen and a landscape lock. CSS now uses `--vw`/`--vh` and `html.short`/`html.narrow` in place of viewport units and size media queries.
+- **Settings button** above every screen (z-index 90, panel 95). **Combat controls** only with `body.fighting` (set in bootstrap: a fight scene with no menu or tournament screen up, and not spectating).
+- **Tournament:** no watch limit (`watchesLeft` removed); open AI battles are tapped in the draw to watch; one Skip under the draw; per-battle rows and the in-fight Skip battle button removed. Settings → Leave in a tournament fight calls `endMatchNow(onTie)`, records the result, and the draw shows "Stage: A beat B (fight left early ...)".
+- **Punch Clash fix (owner bug report):** in a watched battle the left fighter never mashed (side A only took player taps). `PunchClash` now takes an AI rate for side A when the AI plays it; the mash prompt is hidden while spectating.
+- **Files:** `src/modes/tournament/{tournament,tournament-flow}.ts`, `src/app/tournament-page.ts`, `src/interface/tournament-screen.ts`, `src/app/bootstrap.ts`, `src/interface/landscape.ts`, `src/input/screen-space.ts`, `src/input/touch-controls.ts`, `src/combat/clash.ts`, `src/app/scenes/{scene-clash,fight-arena-scene}.ts`, `index.html`; tests `tests/unit/modes/tournament.test.ts`, `tests/unit/combat/clash.test.ts`, `tests/integration/scenes/match-mode.test.ts`, `tests/e2e/{tournament,landscape}.spec.ts`.
+- **Checks:** tsc and lint clean; vitest 59 files, 446 tests passed; build OK; tournament e2e 3/3; landscape e2e 2/2 (3 runs). In the full parallel e2e run, `controls.spec.ts:61` and `phase6.spec.ts:94` failed under load and both passed on a single-worker rerun.
+- **Known limits:** fullscreen always needs one tap (a browser rule); the browser's address bar stays upright until then. Not checked on a real phone yet.
+- **Next task:** main menu redesign (task 69): music, click sound, title screen, name registration, admin/user split, Game Modes (Tournament, 3 vs 3), fighter select.
+
 ### 13/11/2026 (latest+4): AI path-finding and difficulty; Tournament mode (owner)
 - **AI:** `NavGrid` A* round walls and furniture; Easy/Normal/Hard on the menu (REQ-AI-7).
 - **Tournament (REQ-MOD-8, TD-062):** menu Game mode (Practice/Tournament) and size (4/8/16); bracket screen with portraits, stages, winners, eliminated and the player highlighted; your match; Watch (up to 3 per stage, with Skip battle) or Skip per battle or Skip Battles; champion screen with placement and record; resume from the menu. Bracket entries no longer clip (owner screenshot).

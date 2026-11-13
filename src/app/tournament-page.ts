@@ -9,7 +9,6 @@ import {
   findMatch,
   playerMatch,
   recordResult,
-  simulateMatch,
   stageName,
 } from '../modes/tournament/tournament';
 import { recordFor, settleStage, skipBattles } from '../modes/tournament/tournament-flow';
@@ -41,6 +40,8 @@ export interface TournamentPageContext {
   readonly muted: boolean;
   setPaused(key: string, paused: boolean): void;
   openMenu(): void;
+  /** What Settings → Leave does on this page (a tournament fight is settled rather than abandoned). */
+  setLeave(leave: () => void): void;
 }
 
 /** Start a new tournament from the menu's choices and go to its bracket. */
@@ -56,7 +57,7 @@ export function startTournament(
     pool,
     Math.random,
   );
-  settleStage(state, strength, Math.random); // a player with a bye goes straight to the battles
+  settleStage(state); // a player with a bye goes straight to the battles
   saveTournament({ state, arena: choice.arena, difficulty: choice.difficulty });
   goToBracket(choice.arena, muted);
 }
@@ -67,9 +68,13 @@ export function tournamentInProgress(): SavedTournament | null {
   return saved && !saved.state.champion ? saved : null;
 }
 
-export function goToBracket(arena: string, muted: boolean): void {
+export function goToBracket(arena: string, muted: boolean, latest?: { match: string; early: boolean }): void {
   const next = new URLSearchParams();
   next.set('mode', 'tournament');
+  if (latest) {
+    next.set('last', latest.match);
+    if (latest.early) next.set('early', '');
+  }
   if (arena !== 'office') next.set('scene', arena);
   if (muted) next.set('mute', '');
   next.set('play', '');
@@ -98,7 +103,7 @@ function goToMatch(saved: SavedTournament, matchId: string, watch: boolean, mute
 
 /** After a result: settle what can be settled, record a finished tournament, save. */
 function commit(saved: SavedTournament): void {
-  settleStage(saved.state, strength, Math.random);
+  settleStage(saved.state);
   if (saved.state.champion) {
     const rec = recordFor(saved.state, new Date());
     if (rec) addToHistory(rec);
@@ -127,33 +132,29 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
     banner.textContent = `${watch ? 'Watching · ' : ''}Tournament · ${stageName(fightersInRound(saved.state, saved.state.stage))}`;
     document.body.appendChild(banner);
     const scene = ctx.scene;
-    if (watch) {
-      document.body.classList.add('spectating');
-      const skip = document.createElement('button');
-      skip.type = 'button';
-      skip.className = 'tn-skip-battle';
-      skip.textContent = 'Skip battle';
-      skip.addEventListener('click', () => scene.endMatchNow());
-      document.body.appendChild(skip);
-    }
+    if (watch) document.body.classList.add('spectating');
     const mine = m.a === 'p' || m.b === 'p';
     const left = mine ? 'p' : m.a!;
     const right = mine ? (m.a === 'p' ? m.b! : m.a!) : m.b!;
+    // Leaving the fight (Settings → Leave) settles it on the health left, so the bracket always
+    // moves on correctly (owner, 13/11/2026). On a tie the side that stayed wins your own match;
+    // a watched battle is a coin toss weighted like any unwatched battle.
+    let leftEarly = false;
+    ctx.setLeave(() => {
+      leftEarly = true;
+      const sl = strength(entrant(saved.state, left)!.fighter);
+      const sr = strength(entrant(saved.state, right)!.fighter);
+      scene.endMatchNow(mine ? 'opponent' : Math.random() < sl / (sl + sr) ? 'player' : 'opponent');
+    });
     scene.onMatchEnd = (winner) => {
       const fresh = loadTournament() ?? saved;
       const by = winner === 'player' ? left : right;
       const fm = findMatch(fresh.state, matchId);
       if (fm && !fm.winner) {
-        // A watched battle cut short with Skip battle does not use up a watch.
-        recordResult(
-          fresh.state,
-          matchId,
-          by,
-          mine ? 'played' : scene.matchResult?.by === 'ko' ? 'watched' : 'simulated',
-        );
+        recordResult(fresh.state, matchId, by, mine ? 'played' : 'watched');
         commit(fresh);
       }
-      goToBracket(fresh.arena, ctx.muted);
+      goToBracket(fresh.arena, ctx.muted, { match: matchId, early: leftEarly });
     };
     return null;
   }
@@ -165,14 +166,10 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
       if (pm) goToMatch(saved, pm.id, false, ctx.muted);
     },
     watch: (id) => goToMatch(saved, id, true, ctx.muted),
-    skip: (id) => {
-      simulateMatch(saved.state, id, strength, Math.random);
-      commit(saved);
-      screen.show(saved.state, tournamentHistory());
-    },
     skipAll: () => {
       skipBattles(saved.state, strength, Math.random);
       commit(saved);
+      screen.setLatest(null);
       screen.show(saved.state, tournamentHistory());
     },
     leave: () => {
@@ -182,6 +179,19 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
       ctx.openMenu();
     },
   });
+  screen.setLatest(latestResult(saved, ctx.params));
   screen.show(saved.state, tournamentHistory());
   return screen;
+}
+
+/** "Semi Finals: Titan beat Shroud" for the match just finished (`?last=<id>`, `&early` if left). */
+function latestResult(saved: SavedTournament, params: URLSearchParams): string | null {
+  const id = params.get('last');
+  const m = id ? findMatch(saved.state, id) : undefined;
+  if (!m?.winner || !m.a || !m.b) return null;
+  const won = entrant(saved.state, m.winner)!;
+  const lost = entrant(saved.state, m.winner === m.a ? m.b : m.a)!;
+  const stage = stageName(fightersInRound(saved.state, m.round));
+  const how = params.has('early') ? ' (fight left early: decided on health left)' : '';
+  return `${stage}: ${won.name} beat ${lost.name}${how}`;
 }

@@ -377,3 +377,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Previous milestones' acceptance tests re-run
 - [ ] QA specialist read-only review recorded with pass/fail
 - [ ] `DEVELOPMENT_PROGRESS.md` updated with evidence, branch and commit hash
+
+## Landscape, settings, controls, tournament watching (13/11/2026; REQ-UI-31, REQ-MOD-8)
+- [x] Upright phone (Pixel 7): game laid out in landscape, no rotate screen, joystick drag follows the turned screen (e2e `landscape.spec.ts`, screenshot)
+- [x] Combat controls hidden on the menu after touching and scrolling; Settings button visible (e2e)
+- [x] No combat controls on the tournament draw or in watched battles; shown in the player's fight (e2e)
+- [x] Watch 4+ AI battles in one stage; one Skip under the draw moves on (unit + e2e)
+- [x] Leaving a watched battle or your own fight settles it, shows the result, bracket moves on (e2e)
+- [x] Punch Clash in a watched battle: both fighters mash (unit + integration; failed before the fix)
+- [ ] Real device: Android Chrome and iPhone Safari held upright and sideways (manual)
+

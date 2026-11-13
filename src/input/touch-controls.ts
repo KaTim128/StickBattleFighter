@@ -1,4 +1,5 @@
 import type { PlayerIntents, Vec2 } from './intents';
+import { layoutWidth, toLayout } from './screen-space';
 
 /** Stick deflection from a finger offset (px): dead zone in the middle, length ≤ 1 at the rim. */
 export function joystickVector(dx: number, dy: number, radiusPx: number, deadZone = 0.15): Vec2 {
@@ -139,16 +140,17 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   const onDown = (e: PointerEvent): void => {
     showForTouch(e);
     if (e.pointerType !== 'touch' || e.target instanceof HTMLButtonElement) return;
-    if (e.clientX > window.innerWidth * 0.4) {
+    const at = toLayout(e.clientX, e.clientY);
+    if (at.x > layoutWidth() * 0.4) {
       if (swipePointer === null && !(e.target as Element | null)?.closest?.('.settings-panel, .main-menu')) {
         swipePointer = e.pointerId;
-        swipe.start(e.clientX, e.clientY);
+        swipe.start(at.x, at.y);
       }
       return;
     }
     if (stickPointer !== null) return;
     stickPointer = e.pointerId;
-    origin = { x: e.clientX, y: e.clientY };
+    origin = at;
     stick.style.left = `${origin.x}px`;
     stick.style.top = `${origin.y}px`;
     stick.hidden = false;
@@ -157,14 +159,15 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     flick.sample(0, e.timeStamp);
   };
   const onMove = (e: PointerEvent): void => {
+    const at = toLayout(e.clientX, e.clientY);
     if (e.pointerId === swipePointer) {
-      const v = swipe.move(e.clientX, e.clientY);
+      const v = swipe.move(at.x, at.y);
       if (v) intents.setSwipeFromScreen(v);
       return;
     }
     if (e.pointerId !== stickPointer) return;
-    const dx = e.clientX - origin.x;
-    const dy = e.clientY - origin.y;
+    const dx = at.x - origin.x;
+    const dy = at.y - origin.y;
     const v = joystickVector(dx, dy, RADIUS_PX);
     const k = Math.min(1, Math.hypot(dx, dy) / RADIUS_PX) / (Math.hypot(dx, dy) || 1);
     knob.style.transform = `translate(calc(-50% + ${dx * k * RADIUS_PX}px), calc(-50% + ${dy * k * RADIUS_PX}px))`;

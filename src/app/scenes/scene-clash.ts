@@ -10,6 +10,8 @@ export interface ClashHost {
   readonly opponent: FighterEntity;
   /** The opponent's mashing speed, presses per second (from its data). */
   readonly opponentMashRate: number;
+  /** The player side's mashing speed when the AI plays it (a watched battle), else null. */
+  readonly playerAiMashRate: () => number | null;
   random(): number;
   /** Mash presses the player made this step (Button 1 taps). */
   takeMashPresses(): number;
@@ -112,7 +114,7 @@ export class SceneClash {
   /** Start a clash now (also the Practice/test entry point). */
   start(): void {
     const { player: a, opponent: b } = this.host;
-    this.clash = new PunchClash(this.host.opponentMashRate, () => this.host.random());
+    this.clash = new PunchClash(this.host.opponentMashRate, () => this.host.random(), this.host.playerAiMashRate());
     this.beats = 0;
     this.beat = null;
     this.banner = null;

@@ -537,3 +537,10 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** Personality is expressed through parameters, so very unusual fighters may need new design fields; tests use seeded 45 s fights and assert the kit is used, not exact tactics.
 **Status.** ACCEPTED.
 
+### TD-064: Upright phones get a turned landscape layout; layout sizes published as CSS variables — ACCEPTED (owner request 13/11/2026)
+**Context.** The owner wants landscape fullscreen at launch without asking players to rotate. Browsers only grant fullscreen and orientation lock after a tap, and iPhone Safari has no orientation lock at all.
+**Decision.** On touch devices held upright, `src/interface/landscape.ts` lays the page out at landscape size and turns the body a quarter turn (`html.force-landscape`); the transform makes the body the frame for every fixed overlay and the renderer sizes to its container as before. Touch positions are mapped back into the layout by `src/input/screen-space.ts` (input stays the only code reading pointer positions). Because `vw`/`vh` and size media queries would describe the upright screen, the stylesheet uses `--vw`/`--vh` and the `short`/`narrow` classes instead. The first tap still requests fullscreen plus a landscape lock; once the screen is really landscape the turn is dropped.
+**Alternatives.** Keep the turn-your-phone screen (rejected by the owner); rotate only the canvas (rejected: every HTML overlay would also need turning).
+**Trade-offs.** New CSS must use `--vw`/`--vh` and the size classes, not raw viewport units or size media queries; the browser's own UI (address bar) stays upright until fullscreen.
+**Status.** ACCEPTED.
+

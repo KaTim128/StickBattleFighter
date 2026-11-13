@@ -8,18 +8,16 @@ import {
 } from './tournament';
 
 /**
- * How a tournament moves between stages (owner, 13/11/2026). After every result: once the player
- * has fought their match (or is out), the AI battles left wait for the player to watch (up to 3
- * per stage) or skip them; when no watches are left, or the player skips the rest, they are
- * settled without being shown. Then the next stage starts. The tournament never moves on while the
- * player's own match, or a battle they may still choose to watch, is open.
+ * How a tournament moves between stages (owner, 13/11/2026; no watch limit since 13/11/2026). After
+ * every result: once the player has fought their match (or is out), the AI battles left wait for
+ * the player, who may watch any of them (as many as they like); Skip settles the rest without
+ * showing them. Then the next stage starts. The tournament never moves on while the player's own
+ * match, or a battle they may still choose to watch, is open.
  */
-export function settleStage(state: TournamentState, strength: (fighter: string) => number, rand: () => number): void {
+export function settleStage(state: TournamentState): void {
   for (let guard = 0; guard < 64 && !state.champion; guard++) {
     if (playerMatch(state)) return; // the player fights first
-    const open = openAiMatches(state);
-    if (open.length > 0 && state.watchesLeft > 0) return; // watch or skip
-    for (const m of open) simulateMatch(state, m.id, strength, rand);
+    if (openAiMatches(state).length > 0) return; // watch any of them, or skip the rest
     if (!advance(state)) return;
   }
 }
@@ -27,7 +25,7 @@ export function settleStage(state: TournamentState, strength: (fighter: string) 
 /** Skip Battles: settle every AI battle left in this stage without watching, then move on. */
 export function skipBattles(state: TournamentState, strength: (fighter: string) => number, rand: () => number): void {
   for (const m of openAiMatches(state)) simulateMatch(state, m.id, strength, rand);
-  settleStage(state, strength, rand);
+  settleStage(state);
 }
 
 /** A finished tournament as the player's record (local history until server progression exists). */

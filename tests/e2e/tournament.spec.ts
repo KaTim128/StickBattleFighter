@@ -52,9 +52,11 @@ test('tournament: 4 fighters, semi final, skip the other battle, win the final, 
   await expect(page.locator('.tn-banner')).toHaveText(/Semi Finals/i);
   await knockOutOpponent(page);
   await expect(screen).toBeVisible({ timeout: 60_000 });
-  // The other semi final: skip it; the final follows.
-  await expect(screen.locator('.tn-watch')).toHaveCount(1);
-  await screen.locator('.tn-skip-btn').click();
+  // The other semi final: skip it with the one Skip button under the draw; the final follows.
+  await expect(screen.locator('.tn-latest')).toHaveText(/Semi Finals: .*\(You\) beat/);
+  await expect(screen.locator('.tn-match.watchable')).toHaveCount(1);
+  await expect(screen.locator('.tn-skip-all')).toHaveCount(1);
+  await screen.locator('.tn-skip-all').click();
   await expect(screen.locator('.tn-stage')).toHaveText(/Final/i);
   await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
   await knockOutOpponent(page);
@@ -67,11 +69,8 @@ test('tournament: 4 fighters, semi final, skip the other battle, win the final, 
   expect(errors).toEqual([]);
 });
 
-test('tournament: watching an AI battle plays it as a real fight, with Skip battle', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop-chromium', 'one run is enough');
-  test.setTimeout(240_000);
-  const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(e.message));
+/** Start a tournament of `size` from the menu and win the player's first match. */
+async function startAndWinFirst(page: Page, size: number): Promise<void> {
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
@@ -81,21 +80,70 @@ test('tournament: watching an AI battle plays it as a real fight, with Skip batt
   });
   const menu = page.locator('.main-menu');
   await menu.locator('[data-mode="tournament"]').click();
-  await menu.locator('[data-size="8"]').click();
+  await menu.locator(`[data-size="${size}"]`).click();
   await Promise.all([page.waitForURL(/mode=tournament/), menu.locator('.mm-play').click()]);
   const screen = page.locator('.tournament');
-  await expect(screen.locator('.tn-stage')).toHaveText(/Quarter Finals/i, { timeout: 60_000 });
-  await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
-  await knockOutOpponent(page);
-  await expect(screen.locator('.tn-watch')).toHaveCount(3, { timeout: 60_000 });
-  await expect(screen.locator('.tn-note').first()).toHaveText(/3 of 3/);
-  await Promise.all([page.waitForURL(/watch/), screen.locator('.tn-watch-btn').first().click()]);
-  await expect(page.locator('.tn-banner')).toHaveText(/Watching/i);
-  await expect(page.locator('.tn-skip-battle')).toBeVisible();
-  await page.waitForTimeout(1500);
-  await page.locator('.tn-skip-battle').click();
   await expect(screen).toBeVisible({ timeout: 60_000 });
-  await expect(screen.locator('.tn-watch')).toHaveCount(2);
-  await expect(screen.locator('.tn-note').first()).toHaveText(/3 of 3/); // a skipped battle uses no watch
+  await expect(page.locator('.ability-bar')).toBeHidden(); // no combat controls on the draw
+  await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
+  await expect(page.locator('.ability-bar')).toBeVisible(); // a fight: the controls are back
+  await knockOutOpponent(page);
+  await expect(screen).toBeVisible({ timeout: 60_000 });
+}
+
+/** Settings → Leave in the middle of a tournament fight. */
+async function leaveFight(page: Page): Promise<void> {
+  await page.locator('.settings-button').click();
+  await Promise.all([page.waitForURL(/last=/), page.locator('.settings-leave').click()]);
+}
+
+test('tournament: any number of AI battles can be watched (no limit), each one tapped in the draw', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'one run is enough');
+  test.setTimeout(300_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await startAndWinFirst(page, 16);
+  const screen = page.locator('.tournament');
+  await expect(screen.locator('.tn-stage')).toHaveText(/Round of 16/i);
+  await expect(screen.locator('.tn-match.watchable')).toHaveCount(7);
+  // Watch four battles (more than the old limit of three), leaving each from Settings.
+  for (let left = 7; left > 3; left--) {
+    await Promise.all([page.waitForURL(/watch/), screen.locator('.tn-match.watchable').first().click()]);
+    await expect(page.locator('.tn-banner')).toHaveText(/Watching/i);
+    await expect(page.locator('.tn-skip-battle')).toHaveCount(0); // no per-battle buttons
+    await expect(page.locator('.ability-bar')).toBeHidden(); // spectating: no combat controls
+    await leaveFight(page);
+    await expect(screen.locator('.tn-latest')).toHaveText(/Round of 16: .* beat .*left early/, { timeout: 60_000 });
+    await expect(screen.locator('.tn-match.watchable')).toHaveCount(left - 1);
+    await expect(screen.locator('.tn-stage')).toHaveText(/Round of 16/i); // still this stage
+  }
+  await screen.locator('.tn-skip-all').click();
+  await expect(screen.locator('.tn-stage')).toHaveText(/Quarter Finals/i);
+  await expect(screen.locator('.tn-fight')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('tournament: leaving your own fight settles it and the bracket moves on', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'one run is enough');
+  test.setTimeout(240_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await startAndWinFirst(page, 4);
+  const screen = page.locator('.tournament');
+  await screen.locator('.tn-skip-all').click();
+  await expect(screen.locator('.tn-stage')).toHaveText(/^Final$/i);
+  await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
+  await page.waitForFunction(
+    () => Boolean((window as unknown as { __stickmanDebug?: { sceneRef?: unknown } }).__stickmanDebug?.sceneRef),
+    null,
+    { timeout: 60_000 },
+  );
+  // Both at full health: the side that stayed wins when you leave.
+  await leaveFight(page);
+  await expect(screen.locator('.tn-title')).toHaveText('TOURNAMENT CHAMPION', { timeout: 60_000 });
+  await expect(screen.locator('.tn-latest')).toHaveText(/Final: .* beat .*\(You\).*left early/);
+  await expect(screen.locator('.tn-placement')).toHaveText(/Runner-up/);
   expect(errors).toEqual([]);
 });

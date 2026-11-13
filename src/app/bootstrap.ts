@@ -34,6 +34,7 @@ import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { FightIntro } from '../interface/fight-intro';
 import { fighterSheet } from '../interface/fighter-sheet';
+import { keepLandscape } from '../interface/landscape';
 import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter, type MenuOpponent } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
@@ -208,6 +209,9 @@ function testHooksOn(): boolean {
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   status.textContent = 'Loading…';
+  // Phones and tablets always play in landscape (owner, 13/11/2026), laid out before anything draws.
+  const touchDevice = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  keepLandscape(touchDevice);
 
   // Renderer and physics download in parallel; physics is a separate .wasm (TD-023).
   const [app] = await Promise.all([createRenderSurface(container, GREYBOX_COLOURS.background), initPhysics()]);
@@ -510,6 +514,16 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   };
   loop.start();
 
+  // Combat controls only during a fight (owner, 13/11/2026): never on the menu, fighter pages,
+  // the tournament draw or a watched battle, however the page is scrolled. The stylesheet hides
+  // them unless the body has `fighting`.
+  const showCombatControls = (): void => {
+    const screenUp = ['menu', 'tournament'].some((k) => pausedBy.has(k));
+    document.body.classList.toggle(
+      'fighting',
+      scene instanceof FightArenaScene && !screenUp && !document.body.classList.contains('spectating'),
+    );
+  };
   // The settings screen pauses the fight while open (the game ignores input, nothing moves).
   let timeScaleBeforeSettings = loop.timeScale;
   const setPaused = (reason: string, on: boolean): void => {
@@ -517,6 +531,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     if (on) pausedBy.add(reason);
     else pausedBy.delete(reason);
     const now = pausedBy.size > 0;
+    showCombatControls();
     if (was === now) return;
     desktop.releaseAll();
     intents.clear();
@@ -525,8 +540,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       loop.timeScale = 0;
     } else loop.timeScale = timeScaleBeforeSettings;
   };
-  // Phones and tablets fill the whole screen (owner, 12/11/2026): fullscreen on the first tap.
-  const touchDevice = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   // The main menu (owner: Settings has a button to leave the game): fighter and arena, then Play.
   const cast = castFromParams(params);
   const currentChoice = {
@@ -587,12 +600,14 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       void drawPortraits();
     }),
   );
+  // Settings → Leave: back to the menu, unless this page sets its own (a tournament fight is settled).
+  let leave = (): void => menu.setOpen(true);
   new SettingsPanel(
     document.body,
     settings,
     (open) => setPaused('settings', open),
     {
-      leave: () => menu.setOpen(true),
+      leave: () => leave(),
       fullscreen: () => (document.fullscreenElement ? exitFullscreen() : enterFullscreen()),
     },
     () => {
@@ -615,7 +630,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     muted: params.has('mute'),
     setPaused,
     openMenu: () => menu.setOpen(true),
+    setLeave: (fn) => {
+      leave = fn;
+    },
   });
+  showCombatControls();
   // READY... FIGHT! before every fight (owner, 12/11/2026). The menu's Play starts a new fight page,
   // which gets its own intro; automated browsers skip it unless asked (`?intro`).
   if (
@@ -647,18 +666,14 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   else setTimeout(() => void drawPortraits(), 300);
   if (touchDevice) {
     // After choosing on the menu the page reloads, which leaves fullscreen: the first tap restores it.
-    // The first tap anywhere (the menu included) goes full screen and locks landscape (owner,
-    // 13/11/2026: "auto full screen ... dont allow portrait view"). Browsers only allow it from a tap.
+    // The first tap anywhere (the menu included) goes full screen and locks landscape where the
+    // browser allows it (owner, 13/11/2026). Browsers only allow it from a tap; until then, and on
+    // browsers with no lock (iPhone Safari), the page is turned to landscape (keepLandscape).
     const once = (): void => {
       window.removeEventListener('pointerdown', once);
       enterFullscreen();
     };
     window.addEventListener('pointerdown', once);
-    // Held upright, the game shows "turn your phone" and waits.
-    const portrait = matchMedia('(orientation: portrait)');
-    const onTurn = (): void => setPaused('portrait', portrait.matches);
-    portrait.addEventListener('change', onTurn);
-    onTurn();
   }
   settings.onChange(() => {
     applyAudio();

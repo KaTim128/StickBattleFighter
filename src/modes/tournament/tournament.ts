@@ -12,8 +12,6 @@ export const TOURNAMENT = {
   minEntrants: 4,
   /** The current cap; the bracket itself supports any size (owner: "expand beyond 16 in the future"). */
   maxEntrants: 16,
-  /** AI battles the player may watch per stage before it moves on. */
-  watchesPerStage: 3,
 } as const;
 
 export interface Entrant {
@@ -42,8 +40,6 @@ export interface TournamentState {
   readonly rounds: Match[][];
   /** The round being played (index into `rounds`). */
   stage: number;
-  /** AI battles the player can still watch in this stage. */
-  watchesLeft: number;
   champion: string | null;
 }
 
@@ -121,7 +117,6 @@ export function createTournament(
     entrants,
     rounds,
     stage: 0,
-    watchesLeft: TOURNAMENT.watchesPerStage,
     champion: null,
   };
   // A fighter without an opponent goes straight through.
@@ -187,7 +182,6 @@ export function recordResult(state: TournamentState, matchId: string, winner: st
   if (m.round !== state.stage) throw new Error(`match ${matchId} is not in the current stage`);
   if (winner !== m.a && winner !== m.b) throw new Error(`${winner} is not in match ${matchId}`);
   settle(state, m, winner, how);
-  if (how === 'watched') state.watchesLeft = Math.max(0, state.watchesLeft - 1);
 }
 
 /**
@@ -214,11 +208,10 @@ export function stageComplete(state: TournamentState): boolean {
   return (state.rounds[state.stage] ?? []).every((m) => m.winner !== null);
 }
 
-/** Move on to the next stage once this one is complete (the watch allowance starts again). */
+/** Move on to the next stage once this one is complete. */
 export function advance(state: TournamentState): boolean {
   if (!stageComplete(state) || state.champion) return false;
   state.stage++;
-  state.watchesLeft = TOURNAMENT.watchesPerStage;
   return true;
 }
 
