@@ -40,6 +40,7 @@ import { initPhysics } from '../physics/physics-world';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
 import { renderPortraits } from '../rendering/portraits';
+import { setRedesignPreview } from '../rendering/premium-model';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
 import type { ArenaScene } from './scenes/arena-scene';
@@ -169,6 +170,8 @@ function menuFighters(): MenuFighter[] {
 
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
   const params = new URLSearchParams(window.location.search);
+  // The redesign proposal for the other fighters (owner review only, until approved).
+  setRedesignPreview(params.has('redesign'));
   status.textContent = 'Loading…';
 
   // Renderer and physics download in parallel; physics is a separate .wasm (TD-023).

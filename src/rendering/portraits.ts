@@ -3,6 +3,7 @@ import { idlePose } from '../animation/greybox-motion';
 import type { Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { FighterDef } from '../data/fighters/fighter-def';
+import { redesignPreview } from './premium-model';
 import { StickmanView } from './stickman-view';
 
 /**
@@ -32,12 +33,23 @@ const rad = (d: number): number => (d * Math.PI) / 180;
  */
 function heroPose(def: FighterDef): Pose {
   const base = idlePose(0.2, def.bones);
+  const body = def.effects.body ?? '';
+  // Each fighter strikes its own pose (redesign proposal): the brawler squares up with fists low and
+  // ready, the mage holds the staff aside and raises a casting hand, the stalker lifts the knife
+  // beside the mask, the mannequin keeps a textbook guard; Inferno keeps his approved fists-up pose.
+  const poses: Record<string, Pick<Pose, 'armFront' | 'armBack'> & { lean?: number }> = {
+    muscle: { armFront: { root: rad(-5), bend: rad(75) }, armBack: { root: rad(-45), bend: rad(65) }, lean: rad(8) },
+    robe: { armFront: { root: rad(95), bend: rad(35) }, armBack: { root: rad(64), bend: rad(10) } },
+    cloak: { armFront: { root: rad(112), bend: rad(62) }, armBack: { root: rad(-30), bend: rad(60) }, lean: rad(-8) },
+    solid: { armFront: { root: rad(55), bend: rad(110) }, armBack: { root: rad(30), bend: rad(120) } },
+  };
+  const own = redesignPreview() ? poses[body] : undefined;
   return {
     ...base,
-    lean: rad(4),
+    lean: own?.lean ?? rad(4),
     head: rad(-6),
-    armFront: { root: rad(38), bend: rad(95) },
-    armBack: { root: rad(-25), bend: rad(110) },
+    armFront: own?.armFront ?? { root: rad(38), bend: rad(95) },
+    armBack: own?.armBack ?? { root: rad(-25), bend: rad(110) },
   };
 }
 
@@ -52,7 +64,8 @@ function placeFighter(def: FighterDef): Slot {
     1,
     def.effects.held ?? null,
   );
-  const premium = PREMIUM[def.effects.body ?? ''] !== undefined;
+  const premium = lookFor(def.effects.body) !== undefined;
+  const bodyK = def.bones.spine / 0.5; // bigger rigs get a bigger window
   // Premium portraits: a relaxed, open stance so the face and chest are not hidden by the guard,
   // framed wider so the head, its crest and the shoulders all fit (head in the upper third).
   const pose = premium ? heroPose(def) : idlePose(0.2, def.bones);
@@ -60,7 +73,7 @@ function placeFighter(def: FighterDef): Slot {
   // Centre on this fighter's own head (heights and stances differ), with the shoulders below it.
   const head = solveSkeleton(pose, def.bones).head;
   return premium
-    ? { view, cx: head.x + 0.02, cy: head.y + 0.24, frameM: 1.25 }
+    ? { view, cx: head.x + 0.02, cy: head.y + 0.24 * bodyK, frameM: 1.25 * bodyK }
     : { view, cx: head.x + 0.08, cy: head.y + 0.2, frameM: FRAME_M };
 }
 
@@ -72,20 +85,21 @@ function placeFighter(def: FighterDef): Slot {
 export async function renderPortraits(app: Application, defs: readonly FighterDef[]): Promise<string[]> {
   if (defs.length === 0) return [];
   const cell = Math.round(FRAME_M * PX_PER_M);
+  const pitch = cell * 3; // gaps between windows keep a neighbour's staff or arm out of a portrait
   const sheet = new Container();
   const slots = defs.map((def, i) => {
     const slot = placeFighter(def);
     const px = (PX_PER_M * FRAME_M) / slot.frameM; // pixels per metre for this window
     slot.view.root.scale.set(px);
     // Put this fighter's window at (i * cell, 0) in the sheet.
-    slot.view.root.position.set(i * cell - (slot.cx - slot.frameM / 2) * px, -(slot.cy - slot.frameM / 2) * px);
+    slot.view.root.position.set(i * pitch - (slot.cx - slot.frameM / 2) * px, -(slot.cy - slot.frameM / 2) * px);
     sheet.addChild(slot.view.root);
     return slot;
   });
   try {
     const canvas = app.renderer.extract.canvas({
       target: sheet,
-      frame: new Rectangle(0, 0, cell * defs.length, cell),
+      frame: new Rectangle(0, 0, pitch * defs.length, cell),
       resolution: 1,
     }) as HTMLCanvasElement;
     return slots.map((_, i) => {
@@ -93,9 +107,9 @@ export async function renderPortraits(app: Application, defs: readonly FighterDe
       out.width = cell;
       out.height = cell;
       const ctx = out.getContext('2d');
-      const premium = PREMIUM[defs[i]!.effects.body ?? ''];
+      const premium = lookFor(defs[i]!.effects.body);
       if (ctx && premium) premiumBackdrop(ctx, cell, premium);
-      ctx?.drawImage(canvas, i * cell, 0, cell, cell, 0, 0, cell, cell);
+      ctx?.drawImage(canvas, i * pitch, 0, cell, cell, 0, 0, cell, cell);
       if (ctx && premium) premiumFinish(ctx, cell, premium);
       return out.toDataURL('image/png');
     });
@@ -118,7 +132,24 @@ interface PremiumLook {
 }
 const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   magma: { deep: '#120403', mid: '#5a1306', glow: '#ff6a1a', spark: '#ffc24a', frame: '#ffb347' },
+  muscle: { deep: '#05080d', mid: '#16263c', glow: '#3aa8ff', spark: '#cfeaff', frame: '#7fd4ff' },
+  robe: { deep: '#07030c', mid: '#2a0f45', glow: '#9a4dff', spark: '#e2ccff', frame: '#c77dff' },
+  cloak: { deep: '#040304', mid: '#2a0608', glow: '#c0141e', spark: '#ff8a8a', frame: '#e5242e' },
+  solid: { deep: '#0b0d12', mid: '#2b3240', glow: '#ffb000', spark: '#fff0b0', frame: '#ffc83a' },
 };
+
+/** The premium look for a body style: Inferno's always; the others only in the redesign preview. */
+function lookFor(body: string | undefined): PremiumLook | undefined {
+  if (!body) return undefined;
+  if (body === 'magma') return PREMIUM.magma;
+  return redesignPreview() ? PREMIUM[body] : undefined;
+}
+
+/** '#rrggbb' at an alpha, as a CSS colour. */
+function rgba(hex: string, alpha: number): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
 
 /** Behind the fighter: a dark arena glowing with fire from below and behind, smoke and embers. */
 function premiumBackdrop(ctx: CanvasRenderingContext2D, size: number, look: PremiumLook): void {
@@ -131,9 +162,9 @@ function premiumBackdrop(ctx: CanvasRenderingContext2D, size: number, look: Prem
   // A burst of light behind the head and shoulders.
   const halo = ctx.createRadialGradient(size * 0.5, size * 0.3, size * 0.12, size * 0.5, size * 0.35, size * 0.7);
   halo.addColorStop(0, 'rgba(20, 4, 2, 0.55)');
-  halo.addColorStop(0.45, 'rgba(255, 106, 26, 0.12)');
-  halo.addColorStop(0.8, 'rgba(255, 140, 40, 0.38)');
-  halo.addColorStop(1, 'rgba(255, 106, 26, 0.15)');
+  halo.addColorStop(0.45, rgba(look.glow, 0.12));
+  halo.addColorStop(0.8, rgba(look.glow, 0.38));
+  halo.addColorStop(1, rgba(look.glow, 0.15));
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, size, size);
   // Light rays fanning up from behind him.
@@ -141,7 +172,7 @@ function premiumBackdrop(ctx: CanvasRenderingContext2D, size: number, look: Prem
   ctx.translate(size * 0.5, size * 0.55);
   for (let i = 0; i < 9; i++) {
     ctx.rotate((Math.PI * 2) / 9);
-    ctx.fillStyle = 'rgba(255, 170, 70, 0.05)';
+    ctx.fillStyle = rgba(look.spark, 0.05);
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(-size * 0.06, -size);
@@ -171,8 +202,8 @@ function premiumFinish(ctx: CanvasRenderingContext2D, size: number, look: Premiu
   ctx.fillStyle = v;
   ctx.fillRect(0, 0, size, size);
   const under = ctx.createLinearGradient(0, size * 0.7, 0, size);
-  under.addColorStop(0, 'rgba(255, 120, 30, 0)');
-  under.addColorStop(1, 'rgba(255, 120, 30, 0.35)');
+  under.addColorStop(0, rgba(look.glow, 0));
+  under.addColorStop(1, rgba(look.glow, 0.35));
   ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = under;
   ctx.fillRect(0, size * 0.7, size, size * 0.3);

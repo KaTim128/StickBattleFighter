@@ -3,6 +3,7 @@ import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
 import { MagmaModel } from './magma-model';
+import { PREMIUM_SKINS, PremiumModel, redesignPreview } from './premium-model';
 
 export interface StickmanLook {
   readonly limb: number;
@@ -81,6 +82,8 @@ export class StickmanView {
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
   /** Inferno's premium model (body style `magma`), drawn on the same rig. */
   private readonly magma: MagmaModel | null;
+  /** The redesign proposal for the other fighters (preview only, `?redesign`, awaiting approval). */
+  private readonly proposal: PremiumModel | null;
 
   constructor(
     private readonly bones: BoneLengths,
@@ -94,6 +97,8 @@ export class StickmanView {
   ) {
     this.root.label = 'stickman';
     this.magma = bodyStyle === 'magma' ? new MagmaModel() : null;
+    const skin = redesignPreview() ? PREMIUM_SKINS[bodyStyle] : undefined;
+    this.proposal = skin ? new PremiumModel(skin) : null;
     this.fire.blendMode = 'add';
     this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
     const scaled = new Container();
@@ -310,6 +315,18 @@ export class StickmanView {
         motion: this.motion,
       });
       if (flame > 0.01) drawHead();
+    } else if (this.proposal) {
+      this.proposal.draw(g, this.fire, s, {
+        facing,
+        t,
+        flash,
+        flashColour,
+        w,
+        headRadius: this.bones.headRadius,
+        motion: this.motion,
+        tint: this.rage > 0 && muscled ? { colour: BRUTE.rage, k: this.rage * 0.3 } : undefined,
+        drawHead,
+      });
     } else {
       for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);
       if (flame <= 0.01) drawHead();
@@ -842,6 +859,10 @@ export class StickmanView {
     const below = Math.min(Math.max(0, -hand.y), 0.78) * (1 - k) + 0.45 * k;
     const butt = { x: hand.x - ux * below, y: hand.y - uy * below };
     const top = { x: butt.x + ux * LENGTH, y: butt.y + uy * LENGTH };
+    if (this.proposal) {
+      this.goldenStaff(g, butt, top, ux, uy, LENGTH, o);
+      return;
+    }
     const edge = 0x6f6656;
     // The shaft: one smooth bone, slim at the foot and thicker under the skull, cel shaded.
     const shaft = [butt, top];
@@ -896,6 +917,64 @@ export class StickmanView {
         this.fire.circle(head.x + ex, head.y - 0.008, 0.045).fill({ color: D.soul, alpha: 0.55 * m });
       }
     }
+  }
+
+  /**
+   * Redesign proposal (owner's reference, 13/11/2026): a twisted golden staff crowned by a glowing
+   * violet orb held in a gold ring; the orb flares while he casts.
+   */
+  private goldenStaff(g: Graphics, butt: Point, top: Point, ux: number, uy: number, LENGTH: number, o: number): void {
+    const gold = 0xd8a93c;
+    const goldLit = 0xffe08a;
+    const goldDark = 0x7a5414;
+    const edge = 0x3a2608;
+    const shaft = [butt, top];
+    const widths = [0.04, 0.05];
+    taper(
+      g,
+      shaft,
+      widths.map((x) => x + o * 2),
+      edge,
+    );
+    taper(g, shaft, widths, gold);
+    celShade(g, shaft, widths, gold, false);
+    const nx = -uy;
+    const ny = ux;
+    for (let k = 0; k < 1; k += 0.07) {
+      const a = { x: butt.x + ux * LENGTH * k, y: butt.y + uy * LENGTH * k };
+      const b = { x: a.x + ux * LENGTH * 0.045, y: a.y + uy * LENGTH * 0.045 };
+      g.moveTo(a.x + nx * 0.024, a.y + ny * 0.024)
+        .lineTo(b.x - nx * 0.024, b.y - ny * 0.024)
+        .stroke({ width: 0.014, color: goldDark, cap: 'round' });
+      g.moveTo(a.x + nx * 0.01 + ux * 0.02, a.y + ny * 0.01 + uy * 0.02)
+        .lineTo(b.x - nx * 0.006, b.y - ny * 0.006)
+        .stroke({ width: 0.006, color: goldLit, alpha: 0.8, cap: 'round' });
+    }
+    const orb = { x: top.x + ux * 0.13, y: top.y + uy * 0.13 };
+    const ringR = 0.11;
+    g.circle(orb.x, orb.y, ringR + 0.02).stroke({ width: 0.028 + o, color: edge });
+    g.circle(orb.x, orb.y, ringR + 0.02).stroke({ width: 0.026, color: gold });
+    // Start the highlight at the arc's own first point, so no line joins it to the shaft.
+    g.moveTo(orb.x + Math.cos(Math.PI * 1.1) * (ringR + 0.02), orb.y + Math.sin(Math.PI * 1.1) * (ringR + 0.02))
+      .arc(orb.x, orb.y, ringR + 0.02, Math.PI * 1.1, Math.PI * 1.6)
+      .stroke({ width: 0.01, color: goldLit });
+    for (const side of [-1, 1]) {
+      g.moveTo(top.x, top.y)
+        .quadraticCurveTo(
+          top.x + nx * side * 0.08,
+          top.y + ny * side * 0.08,
+          top.x + ux * 0.05 + nx * side * 0.1,
+          top.y + uy * 0.05 + ny * side * 0.1,
+        )
+        .stroke({ width: 0.02, color: gold, cap: 'round' });
+    }
+    const m = this.magic;
+    const pulse = 0.75 + 0.25 * Math.sin(this.clockS * 4);
+    g.circle(orb.x, orb.y, 0.07).fill(0x2a0d3d);
+    this.fire.circle(orb.x, orb.y, 0.3 + 0.15 * m).fill({ color: 0x9a4dff, alpha: (0.14 + 0.2 * m) * pulse });
+    this.fire.circle(orb.x, orb.y, 0.07).fill({ color: 0xb98cff, alpha: 0.9 });
+    this.fire.circle(orb.x - 0.015, orb.y - 0.02, 0.035).fill({ color: 0xffffff, alpha: 0.85 });
+    if (m > 0.05) this.fire.circle(orb.x, orb.y, ringR * 1.6).stroke({ width: 0.012, color: 0xd8b8ff, alpha: 0.6 * m });
   }
 
   /**
