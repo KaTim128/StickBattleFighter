@@ -1161,13 +1161,15 @@ export class PremiumModel {
       const pulse = 0.85 + 0.15 * Math.sin(this.st.t * 2.2);
       fire.circle(oc.x + r * 0.05, oc.y, r * 0.5).fill({ color: eyeC, alpha: 0.14 * pulse });
       for (const [dx, k] of [
-        [0.02, 1],
-        [0.32, 0.8],
+        [0.0, 1],
+        [0.36, 0.78],
       ] as const) {
-        const e = { x: oc.x + dx * r - r * 0.1, y: oc.y - r * 0.08 };
-        oval(fire, e, 1, -0.15, r * 0.13 * k, r * 0.06 * k, eyeC, 0.95 * pulse);
-        oval(fire, e, 1, -0.15, r * 0.06 * k, r * 0.03 * k, 0xffffff, 0.95);
-        fire.circle(e.x, e.y, r * 0.22 * k).fill({ color: eyeC, alpha: 0.18 * pulse });
+        const e = { x: oc.x + dx * r - r * 0.1, y: oc.y - r * 0.06 };
+        // Owner, 13/11/2026: Necro should clearly have eyes: dark sockets with bright glowing eyes.
+        oval(g, e, 1, -0.2, r * 0.2 * k, r * 0.11 * k, this.c(0x0a0410));
+        fire.circle(e.x, e.y, r * 0.3 * k).fill({ color: eyeC, alpha: 0.22 * pulse });
+        oval(fire, e, 1, -0.2, r * 0.17 * k, r * 0.08 * k, eyeC, 0.95 * pulse);
+        oval(fire, e, 1, -0.2, r * 0.08 * k, r * 0.04 * k, 0xffffff, 0.95);
       }
       return;
     }
@@ -1178,43 +1180,36 @@ export class PremiumModel {
     oval(g, mc, 0.22, 1, r * 0.66, r * 0.4, this.c(bone));
     oval(g, { x: mc.x - r * 0.15, y: mc.y + r * 0.05 }, 0.22, 1, r * 0.58, r * 0.18, this.c(0xbdb8ac), 0.65);
     oval(g, { x: mc.x + r * 0.05, y: mc.y - r * 0.3 }, 0.22, 1, r * 0.22, r * 0.14, 0xffffff, 0.6);
-    // Sharp, narrow, slanted eye slits (owner, 13/11/2026): blade-shaped, each inner corner (by the
-    // nose) dipped low under a heavy angled brow for a focused, menacing glare, with a crimson glint.
-    // The far eye is foreshortened and mirrored so the two form a scowling V.
+    // Eye openings after the owner's reference (13/11/2026): large, dark, hollow almond holes cut
+    // through the mask, each pointed and dipped low at the inner corner by the nose, so the blank
+    // face stares down with a menacing scowl. The far one is foreshortened and mirrored.
     for (const [dx, k, dir] of [
-      [-0.04, 1, 1],
-      [0.42, 0.62, -1],
+      [-0.05, 1, 1],
+      [0.4, 0.78, -1],
     ] as const) {
       const cx = mc.x + dx * r;
-      const cy = mc.y - r * 0.1;
-      const half = r * 0.21 * k;
-      const inner = cx + dir * half; // the end nearest the nose
+      const cy = mc.y - r * 0.08;
+      const half = r * 0.22 * k;
+      const inner = cx + dir * half;
       const outer = cx - dir * half;
-      // Heavy brow shadow slashing down toward the nose.
-      g.poly([
-        outer - dir * half * 0.15,
-        cy - r * 0.2 * k,
-        inner + dir * half * 0.1,
-        cy - r * 0.02 * k,
-        inner,
-        cy + r * 0.03 * k,
+      const hole = [
         outer,
         cy - r * 0.1 * k,
-      ]).fill({ color: this.c(0x4a463f), alpha: 0.75 });
-      // The slit: a thin blade, sharp at both ends, its inner corner lower than the outer.
-      g.poly([
-        outer,
-        cy - r * 0.09 * k,
-        cx,
-        cy - r * 0.035 * k,
+        cx - dir * half * 0.2,
+        cy - r * 0.12 * k,
         inner,
-        cy + r * 0.07 * k,
-        cx - dir * half * 0.1,
-        cy + r * 0.045 * k,
-      ]).fill(this.c(0x050506));
-      const glint = { x: cx + dir * half * 0.2, y: cy + r * 0.015 * k };
-      fire.circle(glint.x, glint.y, r * 0.09 * k).fill({ color: this.P.seam ?? 0xe5242e, alpha: 0.25 });
-      fire.circle(glint.x, glint.y, r * 0.028 * k).fill({ color: 0xff4048, alpha: 0.95 });
+        cy + r * 0.06 * k,
+        cx,
+        cy + r * 0.1 * k,
+        outer + dir * half * 0.15,
+        cy + r * 0.04 * k,
+      ];
+      // A soft shadow round the hole gives the cut depth, then the hollow itself.
+      g.poly(hole.map((v, i) => (i % 2 ? cy + (v - cy) * 1.35 : cx + (v - cx) * 1.15))).fill({
+        color: this.c(0x8e897e),
+        alpha: 0.55,
+      });
+      g.poly(hole).fill(this.c(0x050506));
     }
     g.circle(mc.x + r * 0.27, mc.y + r * 0.14, r * 0.025).fill(0x2a2a30);
     g.circle(mc.x + r * 0.32, mc.y + r * 0.13, r * 0.022).fill(0x2a2a30);
