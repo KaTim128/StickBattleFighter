@@ -833,7 +833,9 @@ export class PremiumModel {
   private upperBack(g: Graphics, s: Skel, silhouette: boolean): void {
     const w = this.st.w;
     const r = this.st.headRadius;
-    const back = -this.st.facing; // screen x toward his back
+    // His back is always -x in the model's own frame: the container mirrors the whole figure when
+    // he faces left, so flipping here as well would put the muscle on his chest.
+    const back = -1;
     const u = frame(s.pelvis, s.chest);
     const sh = { x: s.chest.x + back * w * 1.2, y: s.chest.y - u.uy * w * 0.05 };
     const skull = { x: s.head.x + back * r * 0.55, y: s.head.y + r * 0.35 };
