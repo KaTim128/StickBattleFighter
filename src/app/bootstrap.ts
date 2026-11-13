@@ -38,14 +38,7 @@ import { FightIntro } from '../interface/fight-intro';
 import { fighterSheet } from '../interface/fighter-sheet';
 import { FrontEnd } from '../interface/front-end';
 import { keepLandscape, showHomeScreenHint } from '../interface/landscape';
-import {
-  enterFullscreen,
-  keepFullscreen,
-  MainMenu,
-  type MenuFighter,
-  type MenuOpponent,
-  toggleFullscreen,
-} from '../interface/main-menu';
+import { enterFullscreen, keepFullscreen, MainMenu, type MenuFighter, type MenuOpponent } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TeamHud } from '../interface/team-hud';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
@@ -323,6 +316,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // Automated browsers (tests, CI: navigator.webdriver) skip the ambience unless asked for: headless
   // software audio rendering starves the page on small CI machines.
   const automated = typeof navigator !== 'undefined' && navigator.webdriver === true;
+  // Fullscreen from the first input on every device (owner, 13/11/2026); automated browsers stay
+  // windowed unless a test asks (`?fullscreen`), so their screenshots keep the page's own size.
+  const fullscreenWanted = !automated || params.has('fullscreen');
+  const goFullscreen = (): void => {
+    if (fullscreenWanted) enterFullscreen();
+  };
   const arenaAmbience = scene instanceof FightArenaScene && !automated ? scene.arena.ambience : undefined;
   const ambienceId = params.get('ambience') ?? arenaAmbience;
   music.play(ambienceId ? (AMBIENCES[ambienceId] ?? null) : null);
@@ -639,7 +638,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     Object.values(DIFFICULTIES).map((d) => ({ id: d.id, name: d.label })),
     currentChoice,
     (choice) => {
-      if (touchDevice) enterFullscreen();
+      goFullscreen();
       if (choice.mode === 'tournament') {
         const pool = menuFighters().map((f) => ({ fighter: f.id, name: f.name }));
         startTournament(choice, pool, params.has('mute'), playerName);
@@ -689,7 +688,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const portraitById = new Map<string, string>();
   /** 3 vs 3: a new fight with this team against a fresh random AI team. */
   const goToTeamFight = (team: readonly string[], arena: string, difficulty: string): void => {
-    if (touchDevice) enterFullscreen();
+    goFullscreen();
     const roster = menuFighters().map((f) => f.id);
     const foes = aiTeam(roster, Math.random);
     const next = new URLSearchParams();
@@ -715,7 +714,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     (open) => setPaused('settings', open),
     {
       leave: () => leave(),
-      fullscreen: () => toggleFullscreen(),
+      fullscreen: () => goFullscreen(),
     },
     () => {
       // Escape while aiming cancels the aim (owner, 12/11/2026) rather than opening the settings.
@@ -763,7 +762,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
     opponents: menuOpponents(),
     startPractice: (setup) => {
-      if (touchDevice) enterFullscreen();
+      goFullscreen();
       const next = new URLSearchParams();
       next.set('character', setup.fighter);
       if (setup.arena !== 'office') next.set('scene', setup.arena);
@@ -775,7 +774,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       window.location.search = next.toString();
     },
     startTutorial: (fighter) => {
-      if (touchDevice) enterFullscreen();
+      goFullscreen();
       const next = new URLSearchParams();
       next.set('character', fighter);
       next.set('scene', 'training-yard');
@@ -787,7 +786,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
     startTeam: (setup) => goToTeamFight(setup.team, setup.arena, setup.difficulty),
     startTournament: (setup) => {
-      if (touchDevice) enterFullscreen();
+      goFullscreen();
       const pool = menuFighters().map((f) => ({ fighter: f.id, name: f.name }));
       startTournament(setup, pool, params.has('mute'), playerName);
     },
@@ -1018,12 +1017,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   };
   if (typeof requestIdleCallback === 'function') requestIdleCallback(() => void drawPortraits(), { timeout: 1500 });
   else setTimeout(() => void drawPortraits(), 300);
-  if (touchDevice) {
-    // Each page change leaves fullscreen (every fight is its own page): every tap asks for it again
-    // until it is back, and locks landscape where the browser allows (owner, 13/11/2026).
-    keepFullscreen();
-    showHomeScreenHint();
-  }
+  // Fullscreen from the very first tap, click or key, on the title screen and everywhere after
+  // (owner, 13/11/2026); asked again on any input if it was ever lost.
+  if (fullscreenWanted) keepFullscreen();
+  if (touchDevice) showHomeScreenHint();
   settings.onChange(() => {
     applyAudio();
     status.textContent = readyStatus();

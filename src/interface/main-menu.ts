@@ -406,16 +406,14 @@ export class MainMenu {
 }
 
 /**
- * Fill the whole screen on phones and tablets (owner, 12/11/2026 and 13/11/2026: "auto full
- * screen", studied from the Froggy arcade's approach): fullscreen without the browser's bars,
- * locked to landscape where the browser allows. Browsers grant it only from a tap and drop it on
- * every page change (each fight is its own page), so `keepFullscreen` asks again on every tap until
- * it is granted. A player who turns it off in Settings keeps it off for the session. Browsers that
- * refuse (iPhone Safari) keep the page as it is: there the game can be added to the home screen,
- * where it opens full screen (the web app manifest).
+ * The whole game in fullscreen, on every device (owner, 13/11/2026: "fullscreen throughout the
+ * entire game, from the main menu; only Quit Game leaves it"): without the browser's bars, locked
+ * to landscape where the browser allows. Browsers grant fullscreen only from a tap, click or key
+ * press, so `keepFullscreen` asks on the very first one (on the title screen) and again on any
+ * later one if it was lost (Escape on a desktop always leaves it: the browser's own rule). Browsers
+ * that refuse (iPhone Safari) keep the page as it is: there the game can be added to the home
+ * screen, where it opens full screen (the web app manifest).
  */
-const FULLSCREEN_OFF_KEY = 'stickman-arena.fullscreen-off';
-
 /**
  * The document that holds fullscreen: the outer shell when the game runs inside it (owner,
  * 13/11/2026: fullscreen must survive every mode change; each fight is its own page, and a page
@@ -460,33 +458,16 @@ export function isFullscreen(): boolean {
   return screenDoc().fullscreenElement !== null;
 }
 
-/** The Settings fullscreen button: switching it off keeps it off for this session. */
-export function toggleFullscreen(): void {
-  if (isFullscreen()) {
-    sessionStore()?.setItem(FULLSCREEN_OFF_KEY, '1');
-    exitFullscreen();
-  } else {
-    sessionStore()?.removeItem(FULLSCREEN_OFF_KEY);
-    enterFullscreen();
-  }
-}
-
-/** On a touch device: ask for the whole screen on every tap until it is granted. */
+/** On any device: ask for the whole screen on every tap, click or key press until it is granted. */
 export function keepFullscreen(): void {
-  const ask = (): void => {
-    if (isFullscreen() || sessionStore()?.getItem(FULLSCREEN_OFF_KEY)) return;
+  const ask = (e: Event): void => {
+    if (isFullscreen()) return;
+    if (e instanceof KeyboardEvent && e.key === 'Escape') return; // the browser's way out
     enterFullscreen();
   };
   window.addEventListener('pointerup', ask, { passive: true });
   window.addEventListener('touchend', ask, { passive: true });
-}
-
-function sessionStore(): Storage | null {
-  try {
-    return window.sessionStorage;
-  } catch {
-    return null;
-  }
+  window.addEventListener('keydown', ask, { passive: true });
 }
 
 /** Replace a portrait frame's placeholder with the rendered image. */

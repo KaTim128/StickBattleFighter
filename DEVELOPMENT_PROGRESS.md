@@ -23,6 +23,10 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+14): fullscreen throughout, Tag Team (owner)
+- `keepFullscreen` on every device (not only touch): the first tap, click or key on the title screen enters fullscreen; any later input re-enters if lost; the Settings button only enters; the session "off" switch is gone (only Quit Game leaves it). Automated browsers stay windowed unless `?fullscreen` (REQ-UI-39). 3 vs 3 shown as Tag Team (REQ-UI-38).
+- Checks: 486 unit/integration pass; typecheck and lint clean; e2e `shell.spec.ts` (first click → fullscreen, canvas fills the window), `front-end.spec.ts`, `landscape.spec.ts` pass.
+
 ### 13/11/2026 (latest+13): open player names, typing never triggers controls (owner)
 - `validatePlayerName` accepts any characters (control characters removed), 10 visible characters (`nameLength`, grapheme clusters); inputs lose `maxlength` (it counted emojis as 2+). `src/input/typing.ts` `isTypingTarget`: the game keyboard ignores keys typed in text fields (it used to cancel their default, so bound letters and Space never reached the box) and releases held keys when typing starts; debug hotkeys use the same check (REQ-UI-37).
 - Tests: `player-name.test.ts` (symbols, emojis, length, control characters), `front-end.spec.ts` (typing game keys into both name fields; a symbol-and-emoji name shown on fighter select and in the draw).
