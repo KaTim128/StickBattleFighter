@@ -859,7 +859,12 @@ export class StickmanView {
     uy /= ul;
     const LENGTH = 1.95;
     // Upright: the butt rests on the floor (y = 0) when the hand is low enough; otherwise it rises.
-    const below = Math.min(Math.max(0, -hand.y), 0.78) * (1 - k) + 0.45 * k;
+    // Redesign proposal (owner, 13/11/2026): the staff slides down through his grip until its foot
+    // hangs just clear of the floor (about 5 cm), never planted on it.
+    const rest = this.proposal
+      ? Math.max(0, -hand.y - 0.05) / Math.max(0.2, Math.abs(uy))
+      : Math.min(Math.max(0, -hand.y), 0.78);
+    const below = rest * (1 - k) + 0.45 * k;
     const butt = { x: hand.x - ux * below, y: hand.y - uy * below };
     const top = { x: butt.x + ux * LENGTH, y: butt.y + uy * LENGTH };
     if (this.proposal) {
@@ -1034,51 +1039,62 @@ export class StickmanView {
           .fill({ color: i % 2 ? green : violet, alpha: 0.7 * m * (1 - ph) });
       }
     }
-    // The skull, front on so it reads at a glance: aged bone, a crack down the brow, deep angular
-    // sockets slanting to a scowl, a nose cavity and a row of teeth.
+    // The skull, turned three-quarters toward where he faces (owner, 13/11/2026): the cranium's
+    // back in shadow, the face to the front with a near socket and a smaller far one, both slanting
+    // down to the nose in a scowl, a cracked brow, and the jaw and teeth set forward.
     const r = 0.12;
     const bone = 0xcfc6b0;
     const boneShade = 0x8f8572;
     const cy = head.y - r * 0.1;
+    const jaw = { x: head.x + r * 0.32, y: cy + r * 0.72, w: r * 0.95, h: r * 0.62 };
     g.circle(head.x, cy, r + o).fill(edge);
-    g.roundRect(head.x - r * 0.62 - o, cy + r * 0.35 - o, r * 1.24 + o * 2, r * 0.75 + o * 2, r * 0.25).fill(edge);
+    g.roundRect(jaw.x - jaw.w / 2 - o, jaw.y - jaw.h / 2 - o, jaw.w + o * 2, jaw.h + o * 2, r * 0.25).fill(edge);
     g.circle(head.x, cy, r).fill(bone);
-    g.roundRect(head.x - r * 0.62, cy + r * 0.35, r * 1.24, r * 0.75, r * 0.22).fill(bone);
-    g.ellipse(head.x + r * 0.35, cy + r * 0.2, r * 0.45, r * 0.7).fill({ color: boneShade, alpha: 0.45 });
-    g.ellipse(head.x - r * 0.3, cy - r * 0.5, r * 0.4, r * 0.22).fill({ color: 0xffffff, alpha: 0.35 });
-    g.moveTo(head.x - r * 0.15, cy - r)
-      .lineTo(head.x + r * 0.05, cy - r * 0.6)
-      .lineTo(head.x - r * 0.05, cy - r * 0.35)
+    g.roundRect(jaw.x - jaw.w / 2, jaw.y - jaw.h / 2, jaw.w, jaw.h, r * 0.22).fill(bone);
+    // The side and back of the cranium turned away, in shadow, with the cheekbone's edge.
+    g.ellipse(head.x - r * 0.42, cy + r * 0.12, r * 0.5, r * 0.78).fill({ color: boneShade, alpha: 0.55 });
+    g.moveTo(head.x - r * 0.05, cy + r * 0.25)
+      .quadraticCurveTo(head.x + r * 0.05, cy + r * 0.55, head.x + r * 0.0, cy + r * 0.75)
+      .stroke({ width: o * 0.6, color: edge, alpha: 0.7, cap: 'round' });
+    g.ellipse(head.x + r * 0.1, cy - r * 0.55, r * 0.4, r * 0.2).fill({ color: 0xffffff, alpha: 0.35 });
+    g.moveTo(head.x + r * 0.05, cy - r)
+      .lineTo(head.x + r * 0.25, cy - r * 0.62)
+      .lineTo(head.x + r * 0.15, cy - r * 0.38)
       .stroke({ width: o * 0.7, color: edge, cap: 'round' });
     const glow = m > 0.05;
-    for (const side of [-1, 1]) {
-      const sx = head.x + side * r * 0.4;
+    const nose = head.x + r * 0.62;
+    // [centre x, scale, which way the nose is]: the near socket full size, the far one foreshortened.
+    for (const [sx, k2, dir] of [
+      [head.x + r * 0.28, 1, 1],
+      [head.x + r * 0.84, 0.55, -1],
+    ] as const) {
       const sy = cy + r * 0.12;
-      // Inner corner (by the nose) lower than the outer: a menacing slant.
       const sock = [
-        sx + side * r * 0.32,
+        sx - dir * r * 0.3 * k2,
         sy - r * 0.2,
-        sx - side * r * 0.22,
+        sx + dir * r * 0.22 * k2,
         sy - r * 0.02,
-        sx - side * r * 0.12,
-        sy + r * 0.28,
-        sx + side * r * 0.28,
-        sy + r * 0.2,
+        sx + dir * r * 0.12 * k2,
+        sy + r * 0.26,
+        sx - dir * r * 0.26 * k2,
+        sy + r * 0.18,
       ];
       g.poly(sock).fill(0x07050a);
       if (glow) {
-        this.fire.circle(sx, sy + r * 0.05, r * 0.5).fill({ color: green, alpha: 0.35 * m * pulse });
-        this.fire.circle(sx, sy + r * 0.05, r * 0.12).fill({ color: green, alpha: 0.95 * m });
-        this.fire.circle(sx, sy + r * 0.05, r * 0.05).fill({ color: 0xf0ffe0, alpha: 0.9 * m });
+        this.fire.circle(sx, sy + r * 0.05, r * 0.5 * k2).fill({ color: green, alpha: 0.35 * m * pulse });
+        this.fire.circle(sx, sy + r * 0.05, r * 0.12 * k2).fill({ color: green, alpha: 0.95 * m });
+        this.fire.circle(sx, sy + r * 0.05, r * 0.05 * k2).fill({ color: 0xf0ffe0, alpha: 0.9 * m });
       }
     }
-    g.poly([head.x - r * 0.1, cy + r * 0.48, head.x + r * 0.1, cy + r * 0.48, head.x, cy + r * 0.65]).fill(0x07050a);
-    g.moveTo(head.x - r * 0.45, cy + r * 0.85)
-      .lineTo(head.x + r * 0.45, cy + r * 0.85)
+    g.poly([nose - r * 0.06, cy + r * 0.46, nose + r * 0.08, cy + r * 0.48, nose + r * 0.02, cy + r * 0.64]).fill(
+      0x07050a,
+    );
+    g.moveTo(jaw.x - jaw.w * 0.35, jaw.y + r * 0.05)
+      .lineTo(jaw.x + jaw.w * 0.48, jaw.y + r * 0.05)
       .stroke({ width: o * 0.7, color: edge, cap: 'round' });
-    for (const tx of [-0.3, -0.1, 0.1, 0.3]) {
-      g.moveTo(head.x + tx * r, cy + r * 0.72)
-        .lineTo(head.x + tx * r, cy + r * 1.0)
+    for (const tx of [-0.18, 0.0, 0.16, 0.3, 0.42]) {
+      g.moveTo(jaw.x + tx * r * 1.2, jaw.y - r * 0.1)
+        .lineTo(jaw.x + tx * r * 1.2, jaw.y + r * 0.2)
         .stroke({ width: o * 0.5, color: edge });
     }
   }
