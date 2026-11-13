@@ -1,6 +1,7 @@
 import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
 import { abilityIcon } from './ability-icons';
 import { accentColour } from './accent-colour';
+import { type FighterConfigHost, renderConfigPanel } from './fighter-config';
 import type { FighterSheet } from './fighter-sheet';
 
 /**
@@ -57,6 +58,18 @@ export class MainMenu {
   private readonly opponentBlock: HTMLElement[] = [];
   private readonly sizeBlock: HTMLElement[] = [];
   private resumeButton: HTMLButtonElement | null = null;
+  /** Admin fighter settings (owner, 13/11/2026); null hides the settings buttons. */
+  private configHost: FighterConfigHost | null = null;
+
+  setConfigHost(host: FighterConfigHost | null): void {
+    this.configHost = host;
+  }
+
+  /** Show a fighter's (possibly edited) name on its card. */
+  setFighterName(id: string, name: string): void {
+    const el = this.root.querySelector<HTMLElement>(`[data-fighter="${id}"] strong`);
+    if (el) el.textContent = name;
+  }
   private open = false;
 
   constructor(
@@ -263,6 +276,27 @@ export class MainMenu {
     if (face) head.append(face);
     head.append(words);
     card.append(head);
+    // Admin fighter settings: edit this fighter here, without leaving its page (owner, 13/11/2026).
+    const host = this.configHost;
+    const content: HTMLElement[] = [];
+    const openConfig = (tab: 'appearance' | 'moves'): void => {
+      if (!host) return;
+      for (const el of content) el.hidden = true;
+      const panel = renderConfigPanel(host, f.id, tab, (saved) => {
+        panel.remove();
+        if (saved) this.openDetails({ ...f, name: this.cardName(f.id) ?? f.name });
+        else for (const el of content) el.hidden = false;
+      });
+      head.after(panel);
+    };
+    if (host) {
+      const gear = document.createElement('button');
+      gear.type = 'button';
+      gear.className = 'mm-d-config';
+      gear.textContent = '⚙ Fighter settings';
+      gear.addEventListener('click', () => openConfig('appearance'));
+      head.append(gear);
+    }
 
     if (sheet) {
       const stats = document.createElement('div');
@@ -290,7 +324,16 @@ export class MainMenu {
       const abilities = document.createElement('div');
       abilities.className = 'mm-d-abilities';
       const heading = document.createElement('h3');
+      heading.className = 'mm-d-ab-heading';
       heading.textContent = 'Abilities';
+      if (host) {
+        const moveConfig = document.createElement('button');
+        moveConfig.type = 'button';
+        moveConfig.className = 'mm-d-moveconfig';
+        moveConfig.textContent = 'Move Config';
+        moveConfig.addEventListener('click', () => openConfig('moves'));
+        heading.append(moveConfig);
+      }
       for (const a of sheet.abilities) {
         const item = document.createElement('div');
         item.className = 'mm-d-ab';
@@ -341,6 +384,7 @@ export class MainMenu {
         abilities.append(item);
       }
       card.append(stats, heading, abilities);
+      content.push(stats, heading, abilities);
       // Fill each bar from empty to its value, smoothly and one after another.
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
@@ -408,6 +452,10 @@ export class MainMenu {
     b.addEventListener('click', onResume);
     this.root.querySelector('.mm-play')?.after(b);
     this.resumeButton = b;
+  }
+
+  private cardName(id: string): string | undefined {
+    return this.root.querySelector<HTMLElement>(`[data-fighter="${id}"] strong`)?.textContent ?? undefined;
   }
 
   private refresh(): void {

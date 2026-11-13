@@ -498,6 +498,29 @@
         padding: 8px 16px; border-radius: 10px; border: 2px solid rgba(232, 237, 245, 0.25); background: rgba(20, 24, 32, 0.85);
         color: inherit; font: 700 14px system-ui, sans-serif; cursor: pointer;
       }
+      /* Admin fighter settings on a fighter's page (owner, 13/11/2026). */
+      .mm-d-card [hidden] { display: none; }
+      .mm-d-config { margin-left: auto; align-self: flex-start; flex: none; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(232, 237, 245, 0.35); background: rgba(255, 255, 255, 0.04); color: inherit; font: 700 12px system-ui, sans-serif; cursor: pointer; }
+      .mm-d-ab-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .mm-d-moveconfig { padding: 5px 12px; border-radius: 8px; border: 0; background: #ff8a3d; color: #1b120a; font: 800 12px system-ui, sans-serif; letter-spacing: 0.04em; cursor: pointer; box-shadow: 0 0 0 2px rgba(255, 138, 61, 0.3); }
+      .fc-panel { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+      .fc-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+      .fc-tabs button { padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(232, 237, 245, 0.25); background: transparent; color: inherit; font: 700 12px system-ui, sans-serif; cursor: pointer; }
+      .fc-tabs button.active { background: var(--fighter, #ff8a3d); border-color: transparent; color: #12151b; }
+      .fc-body { max-height: min(52vh, 420px); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+      .fc-group { border: 1px solid rgba(232, 237, 245, 0.14); border-radius: 8px; padding: 4px 8px; background: rgba(255, 255, 255, 0.02); }
+      .fc-group summary { cursor: pointer; font: 800 12px system-ui, sans-serif; letter-spacing: 0.04em; padding: 4px 0; }
+      .fc-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 14px; padding: 4px 0 6px; }
+      .fc-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+      .fc-field.changed span { color: #ffcf9e; font-weight: 700; }
+      .fc-field input[type='number'], .fc-field input[type='text'] { width: 96px; padding: 3px 6px; border-radius: 6px; border: 1px solid rgba(232, 237, 245, 0.25); background: #0f131a; color: inherit; font: 12px system-ui, sans-serif; }
+      .fc-field input[type='text'] { width: 130px; }
+      .fc-field input[type='color'] { width: 44px; height: 24px; padding: 0; border: 0; background: none; }
+      .fc-message { min-height: 0; font-size: 12px; }
+      .fc-message.error { color: #ff8a8a; }
+      .fc-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+      .fc-actions button { padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(232, 237, 245, 0.35); background: transparent; color: inherit; font: 700 13px system-ui, sans-serif; cursor: pointer; }
+      .fc-actions .fc-save { background: #ff8a3d; border-color: transparent; color: #1b120a; }
       /* Tournament (owner, 13/11/2026). */
       .tournament {
         position: fixed; inset: 0; z-index: 55; overflow: auto; padding: 18px 16px 24px; box-sizing: border-box;

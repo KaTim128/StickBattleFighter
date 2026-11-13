@@ -91,6 +91,7 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
   hex('rig.colourBack', def.rig?.colourBack);
   hex('rig.outline', def.rig?.outline);
   if (def.rig?.pants !== undefined) hex('rig.pants', def.rig.pants);
+  if (def.rig?.glow !== undefined) hex('rig.glow', def.rig.glow);
 
   // ---- capabilities
   for (const [k, v] of Object.entries(def.capabilities ?? {})) {

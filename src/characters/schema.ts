@@ -380,6 +380,8 @@ export interface CharacterDefinition {
     readonly scale?: number;
     /** Pants colour for muscle bodies (owner, 12/11/2026: "should at least have pants on"). */
     readonly pants?: string;
+    /** Glow colour of a redesigned fighter's armour seams, core and veins (admin fighter settings). */
+    readonly glow?: string;
   };
   readonly capabilities: Partial<Capabilities>;
   readonly unlock: UnlockProfile;

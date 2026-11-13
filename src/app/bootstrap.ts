@@ -8,6 +8,7 @@ import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
 import { BUILT_IN_LIBRARY, DEFAULT_CAST, withEntries } from '../characters/library';
 import { loadCharacter } from '../characters/load';
+import { withOverrides } from '../characters/overrides';
 import { resolveCharacter } from '../characters/resolve';
 import type { CharacterLibrary } from '../characters/schema';
 import { FpsMeter } from '../core/fps-meter';
@@ -43,6 +44,7 @@ import { createTextureLoader } from '../rendering/pixi-assets';
 import { renderPortraits } from '../rendering/portraits';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
+import { fighterSettingsHost } from './fighter-settings';
 import type { ArenaScene } from './scenes/arena-scene';
 import { EngineCheckScene } from './scenes/engine-check-scene';
 import {
@@ -131,6 +133,21 @@ function withStarts(arena: ArenaLayout, playerAt: string | null, dummyAt: string
 }
 
 /**
+ * The fighters as the admin has set them up (owner, 13/11/2026: fighter settings from the menu):
+ * the built-in library with this browser's validated overrides applied. Read once per page.
+ */
+let tuned: CharacterLibrary | null = null;
+function tunedLibrary(): CharacterLibrary {
+  if (!tuned) {
+    const { library, rejected } = withOverrides(BUILT_IN_LIBRARY);
+    for (const [id, errors] of Object.entries(rejected))
+      console.warn(`[fighter settings] changes to "${id}" are invalid and were not used:\n- ${errors.join('\n- ')}`);
+    tuned = library;
+  }
+  return tuned;
+}
+
+/**
  * `?character=<id>` picks the player's fighter (TD-039); `?opponent=<id>` the
  * opponent. `?character=draft` plays the admin editor's unsaved draft from this
  * browser's local storage (local testing only: nothing is published).
@@ -138,7 +155,7 @@ function withStarts(arena: ArenaLayout, playerAt: string | null, dummyAt: string
 function castFromParams(params: URLSearchParams): { player?: string; opponent?: string; library?: CharacterLibrary } {
   const player = params.get('character') ?? undefined;
   const opponent = params.get('opponent') ?? undefined;
-  if (player !== 'draft') return { player, opponent };
+  if (player !== 'draft') return { player, opponent, library: tunedLibrary() };
   const draft = readDraft();
   if (!draft) return { opponent };
   return { player: draft.characterId, opponent, library: withEntries(BUILT_IN_LIBRARY, draft.entries) };
@@ -155,10 +172,10 @@ const MENU_ARENAS = [
 
 /** Playable fighters for the main menu: every built-in fighter made from a template. */
 function menuFighters(): MenuFighter[] {
-  return Object.values(BUILT_IN_LIBRARY.characters)
+  return Object.values(tunedLibrary().characters)
     .filter((c) => c.template !== undefined && c.capabilities.isPlayable && c.characterType === 'fighter')
     .map((c) => {
-      const head = BUILT_IN_LIBRARY.effects[c.profiles.effects]?.head;
+      const head = tunedLibrary().effects[c.profiles.effects]?.head;
       return {
         id: c.id,
         name: c.displayName,
@@ -171,7 +188,7 @@ function menuFighters(): MenuFighter[] {
 
 /** Opponents for the menu (owner, 13/11/2026): the training dummy first (the default), then every playable fighter. */
 function menuOpponents(): MenuOpponent[] {
-  const dummy = BUILT_IN_LIBRARY.characters[DEFAULT_CAST.opponent];
+  const dummy = tunedLibrary().characters[DEFAULT_CAST.opponent];
   return [
     { id: DEFAULT_CAST.opponent, name: dummy?.displayName ?? 'Training Dummy' },
     ...menuFighters().map((f) => ({ id: f.id, name: f.name })),
@@ -556,9 +573,19 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     (open) => setPaused('menu', open),
     (id) => {
       // The details screen: ratings and abilities for this device, with the player's own keys.
-      const def = loadCharacter(id).def;
+      const def = loadCharacter(id, tunedLibrary()).def;
       return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings);
     },
+  );
+  // Admin fighter settings on each fighter's page (owner, 13/11/2026): edits apply at once to the
+  // menu and to the next fight on this device.
+  menu.setConfigHost(
+    fighterSettingsHost((id) => {
+      tuned = null;
+      const name = tunedLibrary().characters[id]?.displayName;
+      if (name) menu.setFighterName(id, name);
+      void drawPortraits();
+    }),
   );
   new SettingsPanel(
     document.body,
@@ -604,7 +631,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const drawPortraits = async (): Promise<void> => {
     try {
       const fighters = menuFighters();
-      const defs = fighters.map((f) => resolveCharacter(f.id, BUILT_IN_LIBRARY));
+      const defs = fighters.map((f) => resolveCharacter(f.id, tunedLibrary()));
       if (scene instanceof FightArenaScene) defs.push(scene.playerFighter.def, scene.dummyFighter.def);
       const urls = await renderPortraits(app, defs);
       fighters.forEach((f, i) => {

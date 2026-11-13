@@ -3,6 +3,7 @@ import { CLIPS, type Clip } from '../animation/clips';
 import { RUN_FROM_MPS } from '../animation/greybox-motion';
 import type { AttackDef } from '../combat/attacks';
 import type { FighterDef } from '../data/fighters/fighter-def';
+import { kitWithOverrides } from './overrides';
 import {
   ANIMATION_STATES,
   type AnimationState,
@@ -257,6 +258,7 @@ export function resolveCharacter(id: string, lib: CharacterLibrary): FighterDef 
       limbWidthM: def.rig.limbWidthM,
       outlineWidthM: def.rig.outlineWidthM,
       ...(def.rig.pants ? { pants: colour(def.rig.pants) } : {}),
+      ...(def.rig.glow ? { glow: colour(def.rig.glow) } : {}),
     },
     stats: {
       maxHp: stats.maxHp,
@@ -282,7 +284,9 @@ export function resolveCharacter(id: string, lib: CharacterLibrary): FighterDef 
     effects: lib.effects[def.profiles.effects]!,
     audio: lib.audio[def.profiles.audio]!,
     ai: lib.ai[def.profiles.ai]!,
-    abilities: def.abilityKit ? (ABILITY_KITS[def.abilityKit] ?? null) : null,
+    // Admin Move Config changes (saved in this browser) apply on top of the kit (owner, 13/11/2026).
+    abilities:
+      def.abilityKit && ABILITY_KITS[def.abilityKit] ? kitWithOverrides(id, ABILITY_KITS[def.abilityKit]!) : null,
     warnings,
   };
 }

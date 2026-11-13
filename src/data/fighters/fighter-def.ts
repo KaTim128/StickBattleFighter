@@ -39,6 +39,8 @@ export interface FighterDef {
     readonly limbWidthM: number;
     readonly outlineWidthM: number;
     readonly pants?: number;
+    /** Seam and core glow of a redesigned fighter (admin fighter settings). */
+    readonly glow?: number;
   };
   readonly stats: CombatStats;
   readonly multipliers: StatsProfile['multipliers'];

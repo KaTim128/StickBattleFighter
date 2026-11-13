@@ -13,6 +13,8 @@ export interface StickmanLook {
   readonly outlineWidthM: number;
   /** Pants over the hips and legs (muscle bodies); absent = bare legs. */
   readonly pants?: number;
+  /** Seam, core and vein glow of a redesigned fighter (admin fighter settings); absent = its skin's own. */
+  readonly glow?: number;
 }
 
 /**
@@ -102,7 +104,14 @@ export class StickmanView {
     this.magma = bodyStyle === 'magma' ? new MagmaModel() : null;
     // The premium look for every fighter with a skin (owner, 13/11/2026: the redesign replaces the old look).
     const skin = PREMIUM_SKINS[bodyStyle];
-    this.premium = skin ? new PremiumModel(skin) : null;
+    const glow = look.glow;
+    this.premium = skin
+      ? new PremiumModel(
+          glow === undefined
+            ? skin
+            : { ...skin, palette: { ...skin.palette, seam: glow, glow, lava: toward(glow, 0xffffff, 0.55) } },
+        )
+      : null;
     this.fire.blendMode = 'add';
     this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
     const scaled = new Container();
