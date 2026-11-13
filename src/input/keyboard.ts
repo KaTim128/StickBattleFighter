@@ -73,6 +73,9 @@ export class DesktopInput {
         case 'grab':
           i.interactPress();
           break;
+        case 'tag':
+          i.pressTag();
+          break;
         case 'ability1':
           i.pressAbility('a1');
           break;

@@ -64,7 +64,7 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   const modes = front.locator('[data-screen="modes"]');
   await expect(modes).toBeVisible();
   await expect(modes.locator('.fe-mode')).toHaveCount(2);
-  await expect(modes.locator('[data-gm="3v3"]')).toHaveClass(/locked/);
+  await expect(modes.locator('[data-gm="3v3"]')).not.toHaveClass(/locked/); // 3 vs 3 is playable (owner, 13/11/2026)
   await expect(modes).not.toContainText(/ladder/i);
   await modes.locator('[data-gm="tournament"]').click();
 
@@ -184,5 +184,54 @@ test('Practice: the tutorial teaches step by step; the Open Zone tries any fight
   await page.locator('.settings-button').click();
   await page.locator('.settings-leave').click();
   await expect(front.locator('[data-screen="practice"]')).toBeVisible(); // back to Practice
+  expect(errors).toEqual([]);
+});
+
+test('3 vs 3: pick three from the pool of five, fight, tag in a teammate, leave back to Game Modes', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(150_000);
+  const errors = await launch(page);
+  await page.evaluate(() => {
+    localStorage.setItem('stickman-arena.player-name.v1', 'Katim');
+    localStorage.setItem('stickman-arena.test-hooks', '1');
+  });
+  await page.reload();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  const front = page.locator('.front-end');
+  await front.locator('[data-nav="modes"]').click();
+  await front.locator('[data-gm="3v3"]').click();
+  const team = front.locator('[data-screen="team"]');
+  await expect(team.locator('[data-pool]')).toHaveCount(5); // a random pool of five
+  const fight = team.locator('.fe-team-fight');
+  await expect(fight).toBeDisabled();
+  for (const i of [0, 1, 2]) await team.locator(`[data-pool="${i}"]`).click();
+  await expect(team.locator('.fe-pick')).toHaveText(['1', '2', '3']);
+  await Promise.all([page.waitForURL(/mode=3v3/), fight.click()]);
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  await page.waitForFunction(
+    () => {
+      const s = (window as unknown as { __stickmanDebug?: { sceneRef?: { intro: unknown } } }).__stickmanDebug
+        ?.sceneRef;
+      return s && !s.intro;
+    },
+    null,
+    { timeout: 60_000 },
+  );
+  await expect(page.locator('.team-hud .team-member')).toHaveCount(6);
+  type Dbg = Window & { __stickmanDebug: { team?: { player: { active: boolean }[] } } };
+  const second = () => page.evaluate(() => (window as Dbg).__stickmanDebug.team?.player[1]?.active ?? false);
+  // Tag: the key on desktop, the TAG button on a phone (a free moment is needed, so try a few times).
+  for (let i = 0; i < 15 && !(await second()); i++) {
+    if (testInfo.project.name.includes('mobile')) {
+      await page.touchscreen.tap(120, 300); // the first touch shows the touch controls
+      await page.locator('.tag-button').tap();
+    } else await page.keyboard.press('KeyH');
+    await page.waitForTimeout(400);
+  }
+  expect(await second()).toBe(true);
+  await page.locator('.settings-button').click();
+  await page.locator('.settings-leave').click();
+  await expect(front.locator('[data-screen="modes"]')).toBeVisible();
   expect(errors).toEqual([]);
 });

@@ -399,7 +399,7 @@ No numeric values were supplied (OQ-05).
 | ID | Mode | Required behaviour | Source |
 |---|---|---|---|
 | REQ-MOD-1 | **1v1** | One fighter against one opponent. Match entry and victory rewards are configurable. | [PB §14.6] |
-| REQ-MOD-2 | **3v3** | Select three fighters from a **randomly presented pool of five**. | [PB §14.6, §12 Phase 13] |
+| REQ-MOD-2 | **3v3** | Select three fighters from a **randomly presented pool of five**. **Tag team (owner, 13/11/2026; OQ-07 resolved):** the player picks three, in order, from a pool of five (with only four fighters, all four plus one repeat); the AI gets a random team of three. One fighter per side is in the arena; **Tag** (desktop H, touch TAG; 4 s cooldown; not mid-air, mid-attack or in a Punch Clash) swaps in the next standing teammate at the same spot, protected for 0.6 s; resting fighters recover 2% of their health a second; a knocked-out fighter is replaced by the next teammate after 2 s; the AI tags out when below 30% health with a teammate above 60%. A team loses when all three are down; at 300 s the team with more of its total health left wins. Team strips under the health bars show all three per side; a Victory/Defeat card offers a rematch. | [PB §14.6, §12 Phase 13] |
 | REQ-MOD-3 | **Ladder Run** | Progress through increasingly difficult opponents. | [PB §14.6] |
 | REQ-MOD-4 | **Story Mode** | Different opponents, arenas, challenges and bosses. | [PB §14.6] |
 | REQ-MOD-5 | **Practice Zone** | Select fighters, restore health, configure dummies, enable or disable dummy attacks, respawn dummies (automatic dummy reset), restart battles. | [PB §14.6, §12 Phase 10] |
@@ -506,7 +506,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | OQ-04 | ~~Ultimate rule~~ **RESOLVED 11/11/2026:** charge meter (owner). Fill rates provisional (TD-032). | REQ-ABL-3 | Phase 6 |
 | OQ-05 | Base **stat values** and ranges for the 13 stats; stamina pool, regeneration rate and ability costs. | Balance needs a baseline. | Phase 5–6, Phase 9 |
 | OQ-06 | **Match rules:** round count, timer, draw conditions, win conditions, ring-out or fall-off? | REQ-MOD-7 | Phase 13 |
-| OQ-07 | **3v3 rules** (simultaneous team fight or tag/relay?), ladder length, Story Mode content and bosses. | REQ-MOD-2 to 4 | Phase 13 |
+| OQ-07 | **3v3 rules** (simultaneous team fight or tag/relay?): **resolved 13/11/2026, tag team (REQ-MOD-2)**. Still open: ladder length, Story Mode content and bosses. | REQ-MOD-2 to 4 | Phase 13 |
 | OQ-08 | **Economy numbers:** starting tokens, fighter prices, entry costs, rewards per mode, achievement list. | REQ-ECO-* | Phase 13–14 |
 | OQ-09 | Does "purchases" mean real-money purchases? If yes: payment provider, MYR pricing, legal requirements. | Security and legal scope. | Phase 14 |
 | OQ-10 | **Performance targets:** target FPS (desktop and mobile), minimum supported devices and browsers, load-time and bundle budgets. | REQ-PRF-* | Phase 1 onward |
@@ -553,6 +553,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | SUP-30 | REQ-MOD-8: watch up to 3 AI battles per stage; per-battle Watch/Skip rows and Skip Battles; a Skip battle button in a watched fight; held upright, phones paused behind a turn-your-phone screen (REQ-UI). | Watch any battle by tapping it in the draw; one Skip under the draw; leaving a fight settles it; upright phones play in a turned landscape layout (REQ-UI-31). | 13/11/2026 |
 | SUP-31 | REQ-CTL-19 / REQ-MOD-8: the main menu (fighter cards, arena, Practice or Tournament, opponent, difficulty, Play) opens first for everyone; Leave game returns to it. | The title screen opens first (REQ-UI-32); the old main menu is the Admin Panel, for the admin name only (REQ-UI-34); players reach tournaments through Game Modes and fighter select (REQ-UI-33); Leave game returns to the title screen. | 13/11/2026 |
 | SUP-32 | REQ-MOD-8: stages named Round of 16, Quarter Finals, Semi Finals, Final. REQ-CTL-20: the dodge is always the back-step. REQ-UI-33: select stances in side profile at a common height. | Top 16, Top 8, Top 4, Top 2, then Champion. The dodge sidesteps out of an incoming projectile's path (REQ-CMB-30). Select stances turned 30-45° towards the camera, Titan larger with hands on his hips (REQ-UI-33). | 13/11/2026 |
+| SUP-33 | REQ-UI-32: 3 vs 3 shown on Game Modes as coming soon. OQ-07: 3v3 rules open. | 3 vs 3 is playable as a tag team (REQ-MOD-2). | 13/11/2026 |
 | SUP-23 | REQ-CTL-21 defaults: K ultimate. | K Heavy Attack, I ultimate; J/L also sweep a pouring Fire Beam (settings v3). | 12/11/2026 |
 | SUP-12 | REQ-CMB-12: three-strike 1-2-3 combo (jab, hook, heavy finisher). | REQ-CMB-26: three punches then a kick. | 11/11/2026 |
 
@@ -621,3 +622,4 @@ Browser verification uses the documented dev command and browser automation: tes
 | 13/11/2026 | Owner: projectile-aware dodge and dodge fatigue (REQ-CMB-30); tournament stages Top 16/8/4/2 then Champion; select stances turned 30-45° towards the camera, Titan larger with hands on hips (SUP-32). | Master Developer |
 | 13/11/2026 | Owner: title menu as the game's own plates (Admin Panel style) over the art with its painted plates removed; every screen fits one landscape screen (tournament draw scaled to fit); no page zoom; fullscreen asked on every tap until granted, web app manifest for home-screen full screen (Froggy's approach studied, not copied); Titan's select pose cleaned up. | Master Developer |
 | 13/11/2026 | Owner: Practice with Tutorial and Open Zone (REQ-UI-35); close, exciting watched AI battles (REQ-AI-9); title art anchored to the top so Titan's head shows in fullscreen, Necro's face dark, Shroud's mask curved; new app icon; Titan's select pose restored to the owner's preferred version. | Master Developer |
+| 13/11/2026 | Owner: 3 vs 3 tag team built (REQ-MOD-2, OQ-07 resolved, SUP-33). | Master Developer |

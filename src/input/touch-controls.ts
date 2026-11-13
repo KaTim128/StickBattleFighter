@@ -109,6 +109,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     <div class="joystick" hidden><div class="joystick-knob"></div></div>
     <button class="util-button" type="button" aria-label="Jump">JUMP</button>
     <button class="dodge-button" type="button" aria-label="Dodge">DODGE</button>
+    <button class="tag-button" type="button" aria-label="Tag teammate">TAG</button>
     <button class="melee-button" type="button" aria-label="Melee">MELEE</button>
     <button class="heavy-button" type="button" aria-label="Heavy attack">HEAVY</button>
     <button class="ability-button" data-slot="a1" type="button" aria-label="Ability 1">A1</button>
@@ -231,6 +232,13 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
   window.addEventListener('pointercancel', onUp);
   util.addEventListener('pointerdown', onUtil);
   dodge.addEventListener('pointerdown', onDodge);
+  // 3 vs 3 (owner, 13/11/2026): swap in the next teammate (the button only shows in team fights).
+  const tag = layer.querySelector<HTMLButtonElement>('.tag-button')!;
+  const onTag = (e: PointerEvent): void => {
+    e.preventDefault();
+    intents.pressTag();
+  };
+  tag.addEventListener('pointerdown', onTag);
   util.addEventListener('pointerup', onUtilUp);
   util.addEventListener('pointercancel', onUtilUp);
   melee.addEventListener('pointerdown', onMelee);
@@ -253,6 +261,7 @@ export function attachTouchControls(root: HTMLElement, intents: PlayerIntents): 
     window.removeEventListener('pointercancel', onUp);
     util.removeEventListener('pointerdown', onUtil);
     dodge.removeEventListener('pointerdown', onDodge);
+    tag.removeEventListener('pointerdown', onTag);
     util.removeEventListener('pointerup', onUtilUp);
     util.removeEventListener('pointercancel', onUtilUp);
     layer.remove();

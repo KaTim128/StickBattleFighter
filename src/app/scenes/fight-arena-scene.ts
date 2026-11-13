@@ -80,6 +80,7 @@ import { SceneAbilities } from './scene-abilities';
 import { type ClashBanner, type ClashHudState, SceneClash } from './scene-clash';
 import { SceneClimbing } from './scene-climbing';
 import { SceneSummons } from './scene-summons';
+import { SceneTeams, type TeamHudState } from './scene-teams';
 
 /** Live player state for the debug overlay and browser tests. */
 export interface PlayerState {
@@ -232,6 +233,8 @@ const FIGHT_START_GAP_M = 3;
 const MATCH_TIME_LIMIT_S = 150;
 /** Seconds between the deciding KO and the result (the fall and dust play out). */
 const MATCH_END_PAUSE_S = 2.5;
+/** A 3 vs 3 fight has three fighters a side: a longer clock. */
+const TEAM_TIME_LIMIT_S = 300;
 /** Ability slots the fighter AI may use, in order. */
 const AI_SLOTS = ['a1', 'a2', 'a3', 'a4', 'ult'] as const;
 /** How close the AI must be to its target for a punch to land (body radii plus reach), metres. */
@@ -311,8 +314,11 @@ export class FightArenaScene implements ArenaScene {
   private readonly grounded = new Set<number>();
   /** Practice option: the dummy jabs back when you are close (REQ-MOD-5). */
   dummyAttacks = false;
-  readonly playerFighter: FighterEntity;
-  readonly dummyFighter: FighterEntity;
+  /** The fighter each side has in the arena (in 3 vs 3 it changes with every tag). */
+  playerFighter: FighterEntity;
+  dummyFighter: FighterEntity;
+  /** 3 vs 3: both teams, their benches and tags (null in a one-on-one fight). */
+  readonly teams: SceneTeams | null = null;
   private readonly events: CombatEvent[] = [];
   /** Contacts this frame, for sparks and bursts (presentation). */
   private readonly impacts: ImpactBurst[] = [];
@@ -370,6 +376,11 @@ export class FightArenaScene implements ArenaScene {
       difficulty?: string;
       /** A match that ends (Tournament): no respawns, a time limit; `spectate` has the AI play both sides. */
       match?: { spectate: boolean };
+      /**
+       * 3 vs 3, tag team (owner, 13/11/2026): each side's three fighters, the first starting. Needs
+       * `match` (the fight ends when one team is down).
+       */
+      teams?: { player: readonly string[]; opponent: readonly string[] };
     } = {},
   ) {
     this.name = arena.id;
@@ -382,12 +393,37 @@ export class FightArenaScene implements ArenaScene {
     this.playerFighter = new FighterEntity('player', player.def, arena.playerStart, true);
     this.dummyFighter = new FighterEntity('dummy', opponent.def, arena.dummyStart, false);
     this.dummyFighter.team = 'opponent';
+    if (cast.teams && this.match) {
+      // The rest of each team waits on the bench (out of the arena) until tagged in.
+      const bench = (ids: readonly string[], name: string, start: { x: number; y: number }, isPlayer: boolean) =>
+        ids.slice(1).map((id) => {
+          const e = new FighterEntity(name, loadCharacter(id, cast.library).def, start, isPlayer);
+          if (!isPlayer) e.team = 'opponent';
+          return e;
+        });
+      this.teams = new SceneTeams(
+        [this.playerFighter, ...bench(cast.teams.player, 'player', arena.playerStart, true)],
+        [this.dummyFighter, ...bench(cast.teams.opponent, 'dummy', arena.dummyStart, false)],
+        (side, incoming) => this.swapIn(side, incoming),
+      );
+    }
+    const scene = this;
     this.clashes = new SceneClash({
-      player: this.playerFighter,
-      opponent: this.dummyFighter,
-      opponentMashRate: opponent.def.ai.clashMashRate * opponent.def.multipliers.clashPower,
-      playerAiMashRate: () =>
-        this.match?.spectate ? player.def.ai.clashMashRate * player.def.multipliers.clashPower : null,
+      // Live: in 3 vs 3 the fighters in the arena change with each tag.
+      get player() {
+        return scene.playerFighter;
+      },
+      get opponent() {
+        return scene.dummyFighter;
+      },
+      get opponentMashRate() {
+        const d = scene.dummyFighter.def;
+        return d.ai.clashMashRate * d.multipliers.clashPower;
+      },
+      playerAiMashRate: () => {
+        const d = this.playerFighter.def;
+        return this.match?.spectate ? d.ai.clashMashRate * d.multipliers.clashPower : null;
+      },
       random: () => this.rng(),
       takeMashPresses: () => {
         // During a clash Button 1 is the mash button; other buttons do nothing.
@@ -398,6 +434,7 @@ export class FightArenaScene implements ArenaScene {
         this.intents.consumeDodge();
         this.intents.consumeJump();
         this.intents.consumeAimCancel();
+        this.intents.consumeTag();
         return pressed ? 1 : 0;
       },
       finisher: (winner, loser, f) =>
@@ -503,6 +540,7 @@ export class FightArenaScene implements ArenaScene {
     i.consumeJump();
     i.consumeAimCancel();
     i.consumeHeavy();
+    i.consumeTag();
     this.playerFighter.meleeTracking = false;
     this.playerFighter.sprinting = false;
   }
@@ -831,6 +869,7 @@ export class FightArenaScene implements ArenaScene {
       if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS && !f.summon && !this.match) f.respawn();
     }
 
+    if (this.teams && !this.intro && !this.matchResult) this.teams.step(stepS);
     if (this.match) this.decideMatch();
     this.climbing?.refresh();
     if (this.intro) {
@@ -887,6 +926,8 @@ export class FightArenaScene implements ArenaScene {
 
   /** Movement, jump, Button 1 (tap = attack, hold = block) and dodge for the player. */
   private controlPlayer(f: FighterEntity, stepS: number): void {
+    // 3 vs 3: Tag swaps in the next teammate (the incoming fighter takes over from here).
+    if (this.intents.consumeTag() && this.teams?.tryTag('player', this.canTag(f))) return;
     const c = f.combatant;
     const air = f.airborne;
     const jumpFromUtility = this.stepInteract(f, stepS);
@@ -1591,6 +1632,12 @@ export class FightArenaScene implements ArenaScene {
    * through the same paths as the player's.
    */
   private controlAi(f: FighterEntity, stepS: number, target: FighterEntity = this.playerFighter): void {
+    // 3 vs 3: a hurt AI fighter tags out to a fresher teammate now and then.
+    if (this.teams) {
+      const side = f === this.playerFighter ? 'player' : 'opponent';
+      const to = this.teams.aiTagChoice(side);
+      if (to !== null && this.rng() < stepS * 1.2 && this.teams.tryTag(side, this.canTag(f), to)) return;
+    }
     const p = target;
     const c = f.combatant;
     if (!f.brain) f.brain = new FighterBrain();
@@ -1677,6 +1724,53 @@ export class FightArenaScene implements ArenaScene {
     this.stepFighter(f, stepS, out.move, out.jump);
   }
 
+  /** Can this fighter tag out now? On the ground, free, not mid-attack, not in a Punch Clash. */
+  private canTag(f: FighterEntity): boolean {
+    const c = f.combatant;
+    return (
+      !this.intro &&
+      !this.matchResult &&
+      c.canAct &&
+      !f.airborne &&
+      !f.carrying &&
+      f.combo.attack === null &&
+      !f.caster?.cast &&
+      this.clashes.clash === null
+    );
+  }
+
+  /**
+   * 3 vs 3 tag (owner, 13/11/2026): the outgoing fighter leaves the arena (its body, view and bars
+   * go), the incoming one takes its place, facing the enemy, protected for a moment.
+   */
+  private swapIn(side: 'player' | 'opponent', incoming: FighterEntity): void {
+    const out = side === 'player' ? this.playerFighter : this.dummyFighter;
+    if (out === incoming || !this.physics || !this.view || !this.overlay) return;
+    const at = { x: out.x, y: out.y };
+    this.abilities?.interrupt(out, true);
+    out.combo.interrupt();
+    if (out.carrying) this.dropCarried(out, 0);
+    if (out.view) this.view.actors.remove(out.view.root);
+    if (out.body) this.physics.removeBody(out.body);
+    out.detach();
+    incoming.attach(this.physics, this.view.actors, this.overlay);
+    incoming.placeAt(at);
+    if (side === 'player') this.playerFighter = incoming;
+    else this.dummyFighter = incoming;
+    const foe = side === 'player' ? this.dummyFighter : this.playerFighter;
+    incoming.faceToward(foe.x - incoming.x, foe.y - incoming.y);
+    this.characterSound(incoming, 'jump', 0.7);
+    this.tags++;
+  }
+
+  /** Tags made so far (tests and the HUD's swap flash). */
+  tags = 0;
+
+  /** 3 vs 3: both teams for the HUD (null in a one-on-one fight). */
+  get teamHud(): TeamHudState | null {
+    return this.teams?.hud ?? null;
+  }
+
   /**
    * Tournament matches end (owner, 13/11/2026): the first KO decides it; at the time limit the
    * fighter with more health left (as a share of its maximum) wins. The result is reported once,
@@ -1685,7 +1779,18 @@ export class FightArenaScene implements ArenaScene {
   private decideMatch(): void {
     const p = this.playerFighter.combatant;
     const o = this.dummyFighter.combatant;
-    if (!this.matchResult) {
+    const t = this.teams;
+    if (!this.matchResult && t) {
+      // 3 vs 3: a KO only ends it when the whole team is down; on time, the healthier team wins.
+      const pDown = t.beaten('player');
+      const oDown = t.beaten('opponent');
+      if (pDown || oDown) {
+        this.matchResult = { winner: oDown && !pDown ? 'player' : 'opponent', atS: this.simTimeS, by: 'ko' };
+      } else if (!this.intro && this.simTimeS >= TEAM_TIME_LIMIT_S) {
+        const lead = t.health('player') >= t.health('opponent');
+        this.matchResult = { winner: lead ? 'player' : 'opponent', atS: this.simTimeS, by: 'time' };
+      }
+    } else if (!this.matchResult) {
       if (p.isKo || o.isKo) {
         this.matchResult = { winner: o.isKo && !p.isKo ? 'player' : 'opponent', atS: this.simTimeS, by: 'ko' };
       } else if (!this.intro && this.simTimeS >= MATCH_TIME_LIMIT_S) {
@@ -1709,8 +1814,9 @@ export class FightArenaScene implements ArenaScene {
     if (!this.match || this.matchEndSent) return;
     const p = this.playerFighter.combatant;
     const o = this.dummyFighter.combatant;
-    const ps = p.hp / p.stats.maxHp;
-    const os = o.hp / o.stats.maxHp;
+    // 3 vs 3: the whole team's health counts.
+    const ps = this.teams ? this.teams.health('player') : p.hp / p.stats.maxHp;
+    const os = this.teams ? this.teams.health('opponent') : o.hp / o.stats.maxHp;
     const winner = ps > os ? 'player' : ps < os ? 'opponent' : onTie;
     this.matchResult ??= { winner, atS: this.simTimeS, by: 'time' };
     this.matchEndSent = true;

@@ -48,9 +48,11 @@ import {
   toggleFullscreen,
 } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
+import { TeamHud } from '../interface/team-hud';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { TutorialOverlay } from '../interface/tutorial-overlay';
 import { VisionVeil } from '../interface/vision-veil';
+import { aiTeam } from '../modes/team/team-battle';
 import { initPhysics } from '../physics/physics-world';
 import { loadPlayerName, savePlayerName } from '../progression/player-name';
 import { DebugOverlay } from '../rendering/debug-overlay';
@@ -98,6 +100,8 @@ export interface EngineDebugInfo {
   ambience: string | null;
   /** The battle music is playing (owner, 12/11/2026). */
   musicPlaying: boolean;
+  /** 3 vs 3: both teams as the HUD shows them. */
+  team?: unknown;
   /** The tutorial step on screen (`done` at the end), when the tutorial runs. */
   tutorial?: string;
   /** Interface button clicks that played the click sound (owner, 13/11/2026). */
@@ -233,6 +237,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   keepLandscape(touchDevice);
   if (touchDevice) preventPageZoom();
 
+  // 3 vs 3 (owner, 13/11/2026): `?mode=3v3&team=a,b,c&foes=x,y,z` plays a tag-team fight.
+  const teamIds = (key: string) => (params.get(key) ?? '').split(',').filter(Boolean).slice(0, 3);
+  const teamFight =
+    params.get('mode') === '3v3' && teamIds('team').length === 3 && teamIds('foes').length === 3
+      ? { player: teamIds('team'), opponent: teamIds('foes') }
+      : null;
   // Renderer and physics download in parallel; physics is a separate .wasm (TD-023).
   const [app] = await Promise.all([createRenderSurface(container, GREYBOX_COLOURS.background), initPhysics()]);
   const viewport = () => ({ width: app.screen.width, height: app.screen.height });
@@ -290,9 +300,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
             difficulty: params.get('difficulty') ?? undefined,
             // A tournament match ends; `watch` is an AI battle the player watches (owner, 13/11/2026).
             match:
-              params.get('mode') === 'tournament' && params.has('match')
+              (params.get('mode') === 'tournament' && params.has('match')) || teamFight
                 ? { spectate: params.has('watch') }
                 : undefined,
+            // 3 vs 3 (owner, 13/11/2026): both teams of three, tag team.
+            teams: teamFight ?? undefined,
           },
         );
   if (!(await scenes.switchTo(() => scene))) throw new Error(`${scene.name} scene failed to load`);
@@ -537,6 +549,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         combatText.show(events, (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
         tutorialFrame?.();
+        teamFrame?.();
         const hud = scene.topHud;
         topHud.update(
           playerName && !scene.match?.spectate
@@ -679,6 +692,26 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // Settings → Leave: back to the menu, unless this page sets its own (a tournament fight is settled).
   let drawStances = async (): Promise<void> => {};
   let tutorialFrame: (() => void) | null = null;
+  let teamFrame: (() => void) | null = null;
+  let onPortraits: ((urls: ReadonlyMap<string, string>) => void) | null = null;
+  const portraitById = new Map<string, string>();
+  /** 3 vs 3: a new fight with this team against a fresh random AI team. */
+  const goToTeamFight = (team: readonly string[], arena: string, difficulty: string): void => {
+    if (touchDevice) enterFullscreen();
+    const roster = menuFighters().map((f) => f.id);
+    const foes = aiTeam(roster, Math.random);
+    const next = new URLSearchParams();
+    next.set('mode', '3v3');
+    next.set('team', team.join(','));
+    next.set('foes', foes.join(','));
+    next.set('character', team[0]!);
+    next.set('opponent', foes[0]!);
+    if (arena !== 'office') next.set('scene', arena);
+    next.set('difficulty', difficulty);
+    if (params.has('mute')) next.set('mute', '');
+    next.set('play', '');
+    window.location.search = next.toString();
+  };
   let leave = (): void => {
     menu.setOpen(false);
     // A practice fight (Open Zone or the tutorial) goes back to Practice, to try another fighter.
@@ -760,6 +793,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       next.set('play', '');
       window.location.search = next.toString();
     },
+    startTeam: (setup) => goToTeamFight(setup.team, setup.arena, setup.difficulty),
     startTournament: (setup) => {
       if (touchDevice) enterFullscreen();
       const pool = menuFighters().map((f) => ({ fighter: f.id, name: f.name }));
@@ -797,6 +831,61 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
     true,
   );
+  // 3 vs 3 (owner, 13/11/2026): team strips, portraits that follow the tags, the result.
+  if (teamFight && scene instanceof FightArenaScene) {
+    document.body.classList.add('team-mode');
+    const teamHud = new TeamHud(document.body, () => codeLabel(settings.bindings.tag));
+    let activeIds = '';
+    teamFrame = () => {
+      const t = scene.teamHud;
+      if (!t) return;
+      teamHud.update(t);
+      const ids = `${t.player.find((m) => m.active)?.id}|${t.opponent.find((m) => m.active)?.id}`;
+      if (ids !== activeIds && portraitById.size > 0) {
+        activeIds = ids;
+        const [a, b] = ids.split('|');
+        const l = portraitById.get(a ?? '');
+        const r = portraitById.get(b ?? '');
+        if (l && r) topHud.setPortraits(l, r);
+      }
+      debug.team = t;
+    };
+    onPortraits = (urls) => teamHud.setPortraits(urls);
+    leave = () => front.setOpen(true, 'modes');
+    scene.onMatchEnd = (winner) => {
+      const card = document.createElement('div');
+      card.className = `team-result ${winner === 'player' ? 'victory' : 'defeat'}`;
+      const h = document.createElement('h1');
+      h.className = 'team-title';
+      h.textContent = winner === 'player' ? 'VICTORY' : 'DEFEAT';
+      const p = document.createElement('p');
+      p.textContent =
+        winner === 'player'
+          ? 'Your team knocked out all three!'
+          : 'Your team was beaten. Pick a new team and try again.';
+      const row = document.createElement('div');
+      row.className = 'fe-row';
+      const again = document.createElement('button');
+      again.type = 'button';
+      again.className = 'fe-go team-rematch';
+      again.textContent = 'Rematch';
+      again.addEventListener('click', () =>
+        goToTeamFight(teamFight.player, sceneName, params.get('difficulty') ?? DEFAULT_DIFFICULTY),
+      );
+      const back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'fe-back team-menu';
+      back.textContent = 'Game Modes';
+      back.addEventListener('click', () => {
+        card.remove();
+        front.setOpen(true, 'modes');
+      });
+      row.append(again, back);
+      card.append(h, p, row);
+      document.body.appendChild(card);
+      setPaused('result', true);
+    };
+  }
   // The tutorial (owner, 13/11/2026): guided steps in the training yard (src/tutorial).
   if (params.has('tutorial') && scene instanceof FightArenaScene) {
     const run = new TutorialRun();
@@ -904,7 +993,9 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       fighters.forEach((f, i) => {
         menu.setPortrait(f.id, urls[i]!);
         front.setPortrait(f.id, urls[i]!);
+        portraitById.set(f.id, urls[i]!);
       });
+      onPortraits?.(portraitById);
       tournamentScreen?.setPortraits(new Map(fighters.map((f, i) => [f.id, urls[i]!])));
       if (scene instanceof FightArenaScene) topHud.setPortraits(urls[fighters.length]!, urls[fighters.length + 1]!);
       if (front.isOpen && front.current === 'select') await drawStances();

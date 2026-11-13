@@ -206,6 +206,19 @@ export class PlayerIntents {
     return queued;
   }
 
+  // ---- Tag (3 vs 3, owner 13/11/2026): swap in the next teammate.
+  private tagQueued = false;
+
+  pressTag(): void {
+    this.tagQueued = true;
+  }
+
+  consumeTag(): boolean {
+    const queued = this.tagQueued;
+    this.tagQueued = false;
+    return queued;
+  }
+
   // ---- Pick up / throw (REQ-CTL-13, TD-016): one contextual button. Desktop G or U is a pure
   // interact key; the touch utility button also jumps when there is nothing to pick up or throw.
   // Press = pick up or (on release) throw; hold while carrying = put down. Edges are queued.

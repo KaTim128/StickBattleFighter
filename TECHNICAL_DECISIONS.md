@@ -561,3 +561,10 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** The quarter turn is suggested on the side-view rig (heads and faces stay in profile); a true three-quarter look would need new turned art per fighter.
 **Status.** ACCEPTED.
 
+### TD-068: 3 vs 3 as tag team inside one fight scene — ACCEPTED (owner decision 13/11/2026)
+**Context.** OQ-07 left the 3v3 rules open; the owner chose tag team. Tags happen mid-fight, so a page per bout (as in Tournament) would be too slow.
+**Decision.** Pure rules in `src/modes/team/team-battle.ts` (pool of five, AI team, next standing teammate, bench recovery, AI tag choice, team health). `SceneTeams` (`src/app/scenes/scene-teams.ts`) holds each side's three fighter entities; the scene's `playerFighter` / `dummyFighter` become the side's active fighter and `swapIn` moves fighters in and out of the arena (body, view and bars), the way summons already come and go. The Punch Clash reads the active fighters through getters. Tag is a rebindable action (`tag`, default H) and a touch TAG button shown only in team fights; it is not one of the five combat actions (INV-9), like Jump or Grab.
+**Alternatives.** Relay between pages (rejected by the owner's choice of tag); six fighters at once (rejected: the engine is built for one fighter per side).
+**Trade-offs.** Bench fighters keep their state frozen (cooldowns do not tick while resting); a swap clears the outgoing fighter's attack and cast.
+**Status.** ACCEPTED.
+

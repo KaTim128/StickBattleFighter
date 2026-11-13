@@ -1,5 +1,6 @@
 import titleArt from '../../assets/ui/title-menu.webp?url';
 import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
+import { draftPool } from '../modes/team/team-battle';
 import type { NameCheck } from '../progression/player-name';
 import { PLAYER_NAME_MAX } from '../progression/player-name';
 import { abilityIcon } from './ability-icons';
@@ -22,7 +23,7 @@ import { TOURNAMENT_SIZES } from './main-menu';
  * - Quit: browsers only let a page close a window it opened, so Quit tries, then shows a goodbye.
  */
 
-export type FrontScreen = 'title' | 'name' | 'modes' | 'practice' | 'select' | 'quit';
+export type FrontScreen = 'title' | 'name' | 'modes' | 'practice' | 'select' | 'team' | 'quit';
 
 export interface FighterPresentation {
   readonly title: string;
@@ -36,6 +37,13 @@ export interface StanceStrip {
   readonly cellW: number;
   readonly cellH: number;
   readonly spanS: number;
+}
+
+/** 3 vs 3 (owner, 13/11/2026): the player's three, in order; the AI's team is drawn at random. */
+export interface TeamSetup {
+  readonly team: readonly string[];
+  readonly arena: string;
+  readonly difficulty: string;
 }
 
 /** Open Zone (owner, 13/11/2026): try any fighter against the dummy or an AI fighter. */
@@ -72,6 +80,7 @@ export interface FrontEndOptions {
   openAdmin(): void;
   startTournament(setup: TournamentSetup): void;
   startPractice(setup: PracticeSetup): void;
+  startTeam(setup: TeamSetup): void;
   startTutorial(fighter: string): void;
 }
 
@@ -100,7 +109,7 @@ export class FrontEnd {
     this.root.hidden = true;
     this.root.setAttribute('role', 'dialog');
     this.root.setAttribute('aria-label', 'Stickman Arena');
-    for (const s of ['title', 'name', 'modes', 'practice', 'select', 'quit'] as const) {
+    for (const s of ['title', 'name', 'modes', 'practice', 'select', 'team', 'quit'] as const) {
       const sec = el('section', `fe-screen fe-${s}`);
       sec.dataset.screen = s;
       sec.hidden = true;
@@ -173,6 +182,7 @@ export class FrontEnd {
     else if (screen === 'name') this.buildName(sec);
     else if (screen === 'modes') this.buildModes(sec);
     else if (screen === 'practice') this.buildPractice(sec);
+    else if (screen === 'team') this.buildTeam(sec);
     else if (screen === 'select') this.buildSelect(sec);
     else this.buildQuit(sec);
     this.root.dataset.screen = screen;
@@ -191,6 +201,7 @@ export class FrontEnd {
 
   private back(): void {
     if (this.screen === 'select') this.show(this.selectFor === 'practice' ? 'practice' : 'modes');
+    else if (this.screen === 'team') this.show('modes');
     else this.show('title');
   }
 
@@ -334,9 +345,14 @@ export class FrontEnd {
       false,
       () => this.openSelect('tournament'),
     );
-    card('3v3', '3 vs 3', 'Pick a team of three fighters and battle another team.', true, () =>
-      this.say('3 vs 3 is coming in a later update.'),
-    );
+    card('3v3', '3 vs 3', 'Pick three from a pool of five and tag-team against an AI team.', false, () => {
+      this.pool = draftPool(
+        this.o.fighters.map((f) => f.id),
+        Math.random,
+      );
+      this.picks = [];
+      this.show('team');
+    });
     sec.append(list);
     const row = el('div', 'fe-row');
     row.append(button('fe-back', 'Back', () => this.show('title')));
@@ -345,6 +361,119 @@ export class FrontEnd {
       row.append(button('fe-go fe-resume', 'Resume tournament', go));
     }
     sec.append(row);
+  }
+
+  /** 3 vs 3: the pool of five on offer, and the player's picks (pool indices, in order). */
+  private pool: string[] = [];
+  private picks: number[] = [];
+
+  private buildTeam(sec: HTMLElement): void {
+    sec.append(el('h2', 'fe-h fe-screen-title', '3 VS 3 · PICK YOUR TEAM'));
+    sec.append(
+      el(
+        'p',
+        'fe-team-hint',
+        'Pick three fighters, in the order they fight. In the fight, Tag swaps in your next teammate; resting fighters slowly recover. Knock out all three of theirs to win.',
+      ),
+    );
+    const pool = el('div', 'fe-team-pool');
+    this.pool.forEach((id, i) => {
+      const f = this.o.fighters.find((x) => x.id === id);
+      const tile = button('fe-tile', '', () => {
+        const at = this.picks.indexOf(i);
+        if (at >= 0) this.picks.splice(at, 1);
+        else if (this.picks.length < 3) this.picks.push(i);
+        this.show('team');
+      });
+      tile.dataset.pool = String(i);
+      tile.classList.add('fe-team-tile');
+      tile.dataset.fighter = id;
+      if (f) tile.style.setProperty('--tile', accentColour(f.colour));
+      const order = this.picks.indexOf(i);
+      if (order >= 0) {
+        tile.classList.add('selected');
+        tile.append(el('span', 'fe-pick', String(order + 1)));
+      }
+      const img = document.createElement('img');
+      img.className = 'fe-tile-face';
+      img.alt = '';
+      img.dataset.face = id;
+      const url = this.portraits.get(id);
+      if (url) img.src = url;
+      tile.append(img, el('span', 'fe-tile-name', this.names.get(id) ?? f?.name ?? id));
+      pool.append(tile);
+    });
+    const row = el('div', 'fe-team-row');
+    row.append(el('span', '', 'YOUR TEAM'));
+    for (let k = 0; k < 3; k++) {
+      const slot = el('span', 'fe-team-slot');
+      const id = this.picks[k] !== undefined ? this.pool[this.picks[k]!] : undefined;
+      if (id) {
+        const img = document.createElement('img');
+        img.className = 'fe-team-face';
+        img.alt = this.names.get(id) ?? id;
+        const url = this.portraits.get(id);
+        if (url) img.src = url;
+        slot.append(img);
+      }
+      row.append(slot);
+    }
+    row.append(el('span', '', 'vs a random AI team'));
+    const bar = el('div', 'fe-sel-bar');
+    const chips = (
+      label: string,
+      key: string,
+      items: readonly { id: string; name: string }[],
+      get: () => string,
+      set: (v: string) => void,
+    ) => {
+      const g = el('div', 'fe-chips');
+      g.append(el('span', 'fe-chips-label', label));
+      for (const it of items) {
+        const b = button('fe-chip', it.name, () => {
+          set(it.id);
+          for (const c of g.querySelectorAll('.fe-chip')) c.classList.toggle('selected', c === b);
+        });
+        b.dataset[key] = it.id;
+        if (it.id === get()) b.classList.add('selected');
+        g.append(b);
+      }
+      bar.append(g);
+    };
+    chips(
+      'Arena',
+      'arena',
+      this.o.arenas,
+      () => this.choice.arena,
+      (v) => {
+        this.choice.arena = v;
+      },
+    );
+    chips(
+      'AI',
+      'difficulty',
+      this.o.difficulties,
+      () => this.choice.difficulty,
+      (v) => {
+        this.choice.difficulty = v;
+      },
+    );
+    const actions = el('div', 'fe-sel-actions');
+    const fight = button('fe-go fe-fight fe-team-fight', 'FIGHT', () => {
+      if (this.picks.length < 3) return;
+      this.o.startTeam({
+        team: this.picks.map((i) => this.pool[i]!),
+        arena: this.choice.arena,
+        difficulty: this.choice.difficulty,
+      });
+    });
+    fight.disabled = this.picks.length < 3;
+    actions.append(
+      button('fe-back', 'Back', () => this.show('modes')),
+      fight,
+    );
+    bar.append(actions);
+    sec.append(pool, row, bar);
   }
 
   private buildPractice(sec: HTMLElement): void {

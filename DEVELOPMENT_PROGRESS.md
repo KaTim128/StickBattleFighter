@@ -23,6 +23,11 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+10): 3 vs 3 tag team (owner)
+- Owner chose tag team (OQ-07) and a pool of four plus one repeat. Rules `src/modes/team/team-battle.ts`; scene `src/app/scenes/scene-teams.ts` + `FightArenaScene` (`teams` option, `swapIn`, `canTag`, team-aware `decideMatch` / `endMatchNow`); input `tag` (H) and touch TAG; UI: Game Modes → team select (`front-end.ts`), team strips (`src/interface/team-hud.ts`), Victory/Defeat card with Rematch. Page `?mode=3v3&team=…&foes=…`.
+- Tests: unit (rules, bindings table gains Tag), integration (tag, bench, KO replacement, AI-vs-AI 3 vs 3), e2e (desktop + mobile).
+- Next task: premium ability icons (#51); owner review on a phone.
+
 ### 13/11/2026 (latest+9): Practice (Tutorial, Open Zone), close watched battles, icon, art fixes (owner)
 - **Practice:** title item under Game Modes → Tutorial (`src/tutorial/tutorial.ts` step machine, `src/interface/tutorial-overlay.ts`, wired in bootstrap with `?tutorial`) or Open Zone (fighter select in practice mode: opponent chips, ENTER; `?practice` pages leave back to Practice).
 - **Watched battles (REQ-AI-9):** `src/ai/showmanship.ts`: both at least Hard; the leader eases off by decisions only. Measured over six matchups: winner's health left 22% on average (46% without), fights 27-50 s.

@@ -23,7 +23,8 @@ export type BindAction =
   | 'ultimate'
   | 'beamLeft'
   | 'beamRight'
-  | 'grab';
+  | 'grab'
+  | 'tag';
 
 export type Bindings = Readonly<Record<BindAction, string>>;
 
@@ -58,6 +59,8 @@ export const DEFAULT_BINDINGS: Bindings = {
   beamLeft: 'KeyJ',
   beamRight: 'KeyL',
   grab: 'KeyG',
+  // 3 vs 3 (owner, 13/11/2026): swap in the next teammate.
+  tag: 'KeyH',
 };
 
 /** Settings-screen order and names. */
@@ -77,6 +80,7 @@ export const BIND_ACTIONS: readonly { action: BindAction; label: string; group: 
   { action: 'heavyAttack', label: 'Heavy attack', group: 'Combat' },
   { action: 'ultimate', label: 'Ultimate (again: launch)', group: 'Combat' },
   { action: 'grab', label: 'Grab (again: throw)', group: 'Combat' },
+  { action: 'tag', label: 'Tag teammate (3 vs 3)', group: 'Combat' },
   { action: 'beamLeft', label: 'Rotate beam left', group: 'Fire Beam controls' },
   { action: 'beamRight', label: 'Rotate beam right', group: 'Fire Beam controls' },
 ];

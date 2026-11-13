@@ -42,6 +42,7 @@ describe('default controls (owner, 11/11/2026; REQ-CTL-15)', () => {
       beamLeft: 'KeyJ',
       beamRight: 'KeyL',
       grab: 'KeyG',
+      tag: 'KeyH', // 3 vs 3 tag (owner, 13/11/2026)
     });
     expect(BIND_ACTIONS.map((a) => a.action).sort()).toEqual(Object.keys(DEFAULT_BINDINGS).sort());
   });

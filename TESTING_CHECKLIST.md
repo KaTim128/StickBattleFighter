@@ -413,3 +413,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Title: Titan's head visible on a 2400×1080 fullscreen phone shape (screenshot)
 - [ ] Home-screen icon on a real Android and iPhone (manual)
 
+## 3 vs 3 tag team (13/11/2026; REQ-MOD-2)
+- [x] Pool of five (all four + one repeat), AI team of three, next standing teammate, bench recovery, AI tag choice, wipe and team health (unit)
+- [x] Player tag swaps at the same spot; cooldown blocks a second tag; bench recovers; KO brings the next in; match ends only when a team is down; AI-vs-AI 3 vs 3 plays out with tags (integration)
+- [x] Pick three in order (FIGHT disabled until then), fight, tag with H / TAG, leave to Game Modes (e2e desktop + mobile)
+- [ ] Play a full 3 vs 3 on a real phone (manual)
+
