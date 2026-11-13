@@ -239,4 +239,33 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     expect(scene.playerFighter.combatant.damageTakenScale).toBe(1);
     scenes.clear();
   });
+
+  it('Rampage Mode (owner, 13/11/2026): his other abilities come back 25% sooner while it lasts, then normal again', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 5, y: 5 });
+    const caster = scene.playerFighter.caster!;
+    // An ability already cooling down when the rage starts is cut by 25% too.
+    intents.pressAbility('a1');
+    runUntil(() => caster.cooldown('a1') > 0, 1);
+    runUntil(() => caster.cast === null, 3);
+    caster.fillMeter();
+    intents.pressAbility('ult');
+    runUntil(() => caster.cast !== null, 1);
+    const before = caster.cooldown('a1');
+    runUntil(() => scene.playerFighter.buff !== null, 2);
+    expect(scene.playerFighter.buff).not.toBeNull();
+    expect(caster.cooldown('a1')).toBeLessThan(before * 0.8); // 25% off what was left (plus a few frames)
+    // One cast during the rage: a 25% shorter cooldown.
+    runUntil(() => caster.cast === null, 3);
+    intents.pressAbility('a2');
+    runUntil(() => caster.cooldown('a2') > 0, 1);
+    expect(caster.cooldown('a2')).toBeCloseTo(K.a2.cooldownS * 0.75, 1);
+    // After the rage, full cooldowns again.
+    run(9);
+    expect(scene.playerFighter.buff).toBeNull();
+    runUntil(() => caster.cooldown('a2') === 0, 10);
+    intents.pressAbility('a2');
+    runUntil(() => caster.cooldown('a2') > 0, 1);
+    expect(caster.cooldown('a2')).toBeCloseTo(K.a2.cooldownS, 1);
+    scenes.clear();
+  });
 });

@@ -480,15 +480,28 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   'shade-rush': [
     { noise: { dur: 0.35, gain: 0.5, type: 'bandpass', freq: 300, freqEnd: 1200, q: 0.8, attack: 0.04, flutter: 18 } },
   ],
-  // Shadow Escape (owner, 12/11/2026): a sudden swallowed gulp as he sinks into his shadow, and
-  // a cold, breathy exhale where he slips out.
-  'shadow-sink': [
-    { noise: { dur: 0.22, gain: 0.5, type: 'bandpass', freq: 1400, freqEnd: 250, q: 2, attack: 0.01 } },
-    { tone: { wave: 'sine', f0: 220, f1: 55, dur: 0.22, gain: 0.3 } },
+  // Bloodfade (owner, 13/11/2026): a sharp, bright metallic pierce, then the wet give of the wound.
+  'blade-pierce': [
+    { noise: { dur: 0.04, gain: 0.6, type: 'highpass', freq: 5200, attack: 0.002 } },
+    { tone: { wave: 'triangle', f0: 3400, f1: 2900, dur: 0.07, gain: 0.05 } },
+    { tone: { wave: 'sine', f0: 170, f1: 55, dur: 0.16, gain: 0.75, delay: 0.015 } },
+    { noise: { dur: 0.2, gain: 0.3, type: 'lowpass', freq: 1100, freqEnd: 260, attack: 0.01, delay: 0.03 } },
   ],
-  'shadow-rise': [
-    { noise: { dur: 0.4, gain: 0.3, type: 'bandpass', freq: 300, freqEnd: 1100, q: 2.5, attack: 0.08 } },
-    { tone: { wave: 'sine', f0: 50, f1: 70, dur: 0.25, gain: 0.35 } },
+  // Stalker Lunge (owner, 13/11/2026): three quick stabs, each its own pitch and bite.
+  'blade-stab-1': [
+    { noise: { dur: 0.035, gain: 0.5, type: 'bandpass', freq: 4200, q: 1.8 } },
+    { tone: { wave: 'sine', f0: 150, f1: 70, dur: 0.1, gain: 0.55 } },
+    { noise: { dur: 0.12, gain: 0.2, type: 'lowpass', freq: 900, freqEnd: 300, delay: 0.015 } },
+  ],
+  'blade-stab-2': [
+    { noise: { dur: 0.035, gain: 0.5, type: 'bandpass', freq: 3500, q: 1.8 } },
+    { tone: { wave: 'sine', f0: 130, f1: 60, dur: 0.1, gain: 0.6 } },
+    { noise: { dur: 0.12, gain: 0.22, type: 'lowpass', freq: 800, freqEnd: 260, delay: 0.015 } },
+  ],
+  'blade-stab-3': [
+    { noise: { dur: 0.05, gain: 0.6, type: 'bandpass', freq: 4800, q: 1.5 } },
+    { tone: { wave: 'sine', f0: 120, f1: 45, dur: 0.16, gain: 0.75 } },
+    { noise: { dur: 0.18, gain: 0.28, type: 'lowpass', freq: 1000, freqEnd: 220, attack: 0.01, delay: 0.02 } },
   ],
   // Shadow gathering round him: a breathy, hollow inhale.
   'shade-gather': [{ noise: { dur: 0.3, gain: 0.3, type: 'bandpass', freq: 600, freqEnd: 1500, q: 2.5, attack: 0.2 } }],

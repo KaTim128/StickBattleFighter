@@ -23,6 +23,12 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+11): Shroud's Bloodfade and three-stab Stalker Lunge; Rampage Mode cooldown cut (owner)
+- New shared `assault` delivery (TD-069): approach, timed stabs (each a real hit), optional retreat; `assaultPose` gives three distinct stab motions and a backward spring; directional blood spray on every stab; per-stab sounds `blade-pierce`, `blade-stab-1/2/3`; new Bloodfade icon. Shroud a1 Bloodfade (70 + bleed 10/s × 3 s, flinch, spring back 5 m), a2 Stalker Lunge (3 × 26 + bleed 9/s × 3 s refreshed, never stacked). AI uses Bloodfade as a burst (0–5 m). Rampage Mode `cooldownFactor` 0.75 (REQ-ABL-22, SUP-34).
+- Files: `src/abilities/{ability-def,ability-caster,ability-world}.ts`, `src/animation/ability-poses.ts`, `src/app/scenes/{fight-arena-scene,scene-abilities}.ts`, `src/audio/sound-board.ts`, `src/vfx/ability-vfx.ts`, `src/interface/ability-icons.ts`, `src/data/abilities/{shroud,rampage}.ts`, `src/data/ai/brains.ts`; tests `shroud.test.ts`, `rampage.test.ts`, `ability-caster.test.ts`.
+- Checks: `npx vitest run` 481 pass (66 files); `npm run typecheck` and `npm run lint` clean; production build checked in Chromium (stab sounds in order, blood spray, Bloodfade spring back, no console errors).
+- Next task: premium ability icons (#51); owner playtest of Shroud's feel.
+
 ### 13/11/2026 (latest+10): 3 vs 3 tag team (owner)
 - Owner chose tag team (OQ-07) and a pool of four plus one repeat. Rules `src/modes/team/team-battle.ts`; scene `src/app/scenes/scene-teams.ts` + `FightArenaScene` (`teams` option, `swapIn`, `canTag`, team-aware `decideMatch` / `endMatchNow`); input `tag` (H) and touch TAG; UI: Game Modes → team select (`front-end.ts`), team strips (`src/interface/team-hud.ts`), Victory/Defeat card with Rematch. Page `?mode=3v3&team=…&foes=…`.
 - Tests: unit (rules, bindings table gains Tag), integration (tag, bench, KO replacement, AI-vs-AI 3 vs 3), e2e (desktop + mobile).

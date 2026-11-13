@@ -200,17 +200,17 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     `<circle cx="32" cy="18" r="9" fill="url(#sl)" filter="url(#gl)"/><g filter="url(#ds)"><path d="M8 42 L28 22" stroke="#2a241c" stroke-width="6" stroke-linecap="round"/><path d="M8 42 L28 22" stroke="url(#bn)" stroke-width="3.6" stroke-linecap="round"/></g><circle cx="30" cy="16" r="3.4" fill="#fff" opacity=".85"/>`,
   ),
   // ---------------- Shroud (blood and shadow) ----------------
-  // Shadow Escape: the masked figure sinking away backward into a black pool, smoke trailing.
-  'shadow-escape': icon(
+  // Bloodfade: a knife driven in with a burst of blood, the mask springing away behind a back arrow.
+  bloodfade: icon(
     'shade',
-    swirl('#c9cfdc', 0.3),
-    `<ellipse cx="22" cy="40" rx="17" ry="4.6" fill="#000" opacity=".9"/><path d="M40 16 C34 20 34 28 38 34" stroke="#c9cfdc" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".55" filter="url(#gl)"/><g opacity=".92">${MASKED(18, 24, 0.95)}</g><path d="M6 40 C12 32 30 32 38 40 Z" fill="#000"/><path d="M40 22 L46 24 L40 26" stroke="#c9cfdc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>`,
+    rays(36, 26, 12, '#ffd0c8', 0.16),
+    `<circle cx="38" cy="28" r="7" fill="#a30d16" opacity=".85" filter="url(#gl)"/><circle cx="44" cy="22" r="2.4" fill="#e5242e"/><circle cx="46" cy="32" r="1.8" fill="#e5242e"/><circle cx="40" cy="38" r="1.6" fill="#a30d16"/><g opacity=".9">${MASKED(16, 24, 0.9)}</g><path d="M14 42 L6 42 M6 42 L10 38 M6 42 L10 46" stroke="#c9cfdc" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/><g transform="translate(26 30) rotate(-8) scale(.5)" filter="url(#ds)">${KNIFE}</g>`,
   ),
-  // Stalker Lunge: the masked figure darting forward, a red slash behind the knife.
+  // Stalker Lunge: the masked figure darting forward, three red stab marks ahead of the knife.
   'stalker-lunge': icon(
     'shade',
     rays(34, 22, 12, '#ffd0c8', 0.14),
-    `<path d="M6 40 C14 30 28 24 44 24" stroke="#ec2a34" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".9"/>${MASKED(20, 22, 1)}<g transform="translate(28 30) rotate(-12) scale(.5)" filter="url(#ds)">${KNIFE}</g>`,
+    `<path d="M6 40 C14 30 28 24 44 24" stroke="#ec2a34" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".9"/>${MASKED(20, 22, 1)}<g transform="translate(28 30) rotate(-12) scale(.5)" filter="url(#ds)">${KNIFE}</g><g fill="#e5242e"><circle cx="48" cy="18" r="2"/><circle cx="52" cy="24" r="2"/><circle cx="48" cy="30" r="2"/></g>`,
   ),
   // Behind You: the mask rising out of shadow, a knife raised.
   'behind-you': icon(

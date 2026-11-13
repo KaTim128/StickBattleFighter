@@ -170,7 +170,7 @@ export interface TeleportDelivery {
   readonly behindTargetM?: number;
   /**
    * Not aimed: the caster blinks this far away from the nearest enemy to make distance, turning
-   * aside from walls in the way (Shroud's Shadow Escape, owner 12/11/2026).
+   * aside from walls in the way (first used by Shroud's former Shadow Escape, 12/11/2026).
    */
   readonly retreatM?: number;
 }
@@ -227,6 +227,26 @@ export function beamRampFactor(ramp: BeamDelivery['ramp'], contactS: number): nu
   return Math.min(ramp.maxFactor, ramp.startFactor + (contactS - ramp.afterS) * ramp.perS);
 }
 
+/**
+ * A knife assault (Shroud, owner 13/11/2026): he rushes at the nearest enemy within the ability's
+ * range, stopping at knife's reach, then stabs `stabs` times, `stabIntervalS` apart: each stab is
+ * a real hit with the payload (direct damage, bleeding, a flinch), with its own knife motion and
+ * blood. With `retreat`, he then springs straight back, away from the enemy (Bloodfade).
+ */
+export interface AssaultDelivery {
+  readonly type: 'assault';
+  readonly approachSpeedMps: number;
+  /** The rush gives up after this long (nobody reached): the stabs still come, at the air. */
+  readonly maxApproachS: number;
+  readonly reachM: number;
+  readonly radiusM: number;
+  readonly stabs: number;
+  readonly stabIntervalS: number;
+  readonly retreat?: { readonly distanceM: number; readonly speedMps: number };
+  /** A sound per stab (cycled), so each reads as its own blow; defaults to the impact sound. */
+  readonly stabSfx?: readonly string[];
+}
+
 /** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */
 export interface StrikeDelivery {
   readonly type: 'strike';
@@ -255,6 +275,11 @@ export interface BuffDelivery {
   readonly meleeDamageFactor?: number;
   /** Melee hits make the target bleed while it lasts. */
   readonly meleeBleed?: Burn;
+  /**
+   * Shorter cooldowns for the caster's other abilities (Rampage Mode, owner 13/11/2026: 0.75 =
+   * 25% shorter): cooldowns already running are cut at once, and new ones start shorter while it lasts.
+   */
+  readonly cooldownFactor?: number;
   /**
    * Lights out (Hunting Frenzy, owner 12/11/2026): as it begins, every enemy's sight shrinks to
    * `visibleM` round itself for the buff's whole duration (everything further is almost black).
@@ -290,7 +315,8 @@ export type Delivery =
   | BuffDelivery
   | SummonDelivery
   | TeleportDelivery
-  | GrabDelivery;
+  | GrabDelivery
+  | AssaultDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,

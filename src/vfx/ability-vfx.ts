@@ -381,6 +381,7 @@ export class AbilityVfx {
       }
       if (this.spikes.length > 60) this.spikes.splice(0, this.spikes.length - 60);
     }
+    if (fx.kind === 'impact' && fx.stab && fx.look) this.bloodSpray(fx, fx.look.palette);
     if (fx.kind === 'impact' && fx.look?.impact) {
       this.magicImpact(fx, fx.look);
       return;
@@ -395,21 +396,9 @@ export class AbilityVfx {
       for (let i = 0; i < 3; i++) this.emitAt(fx.x, fx.y, 0.3 + i * 0.5, 8, 1.1, 0.6, 0.1, DECAY_FLAKES);
       return;
     }
-    if (fx.kind === 'release' && fx.vfx === 'shadow-escape' && fx.look) {
-      // Shadow Escape out (owner, 12/11/2026): he sinks into his own shadow. A pool of black spreads
-      // under him and snaps shut while dark smoke boils up and drains down into it.
-      for (let i = 0; i < 3; i++) this.emitAt(fx.x, fx.y, 1.1 - i * 0.4, 10, 0.8, 0.5, 0.14, fx.look.palette);
-      this.rings.push({ colour: fx.look.palette.deep, x: fx.x, y: fx.y, z: 0, r0: 0.2, r1: 1.0, ageS: 0, lifeS: 0.18 });
-      this.rings.push({
-        colour: fx.look.palette.bright,
-        x: fx.x,
-        y: fx.y,
-        z: 0,
-        r0: 1.0,
-        r1: 0.05,
-        ageS: 0,
-        lifeS: 0.4,
-      });
+    if (fx.kind === 'release' && fx.vfx?.endsWith('-whiff') && fx.look) {
+      // A knife stab that met nothing: a thin dark swish where the blade went, no blood.
+      this.emitAt(fx.x, fx.y, 1.0, 4, 0.8, 0.18, 0.06, fx.look.palette);
       return;
     }
     if (fx.kind === 'release' && fx.vfx === 'teleport' && fx.look) {
@@ -789,6 +778,37 @@ export class AbilityVfx {
         ageS: 0,
         lifeS: 0.9 + this.rand() * 0.8,
         size: 0.03 + this.rand() * 0.045,
+      });
+    }
+  }
+
+  /**
+   * A knife going in (owner, 13/11/2026: visible blood on every stab): a fan of blood drops thrown
+   * out the far side along the stab, falling and spattering. Each stab of a combo sprays at its own
+   * angle so the three read as separate wounds.
+   */
+  private bloodSpray(fx: AbilityFx, pal: Palette): void {
+    const dir = Math.atan2(fx.dirY ?? 0, fx.dirX ?? 1);
+    const skew = [0, 0.45, -0.45][((fx.stab ?? 1) - 1) % 3]!;
+    for (let n = 0; n < 16; n++) {
+      const p = this.free();
+      if (!p) return;
+      const a = dir + skew + (this.rand() - 0.5) * 0.9;
+      const sp = 2.5 + this.rand() * 4.5;
+      Object.assign(p, {
+        live: true,
+        kind: 'spark',
+        colour: this.rand() < 0.6 ? pal.hot : pal.deep,
+        x: fx.x,
+        y: fx.y,
+        z: 1.0 + this.rand() * 0.3,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        vz: 0.5 + this.rand() * 2.5,
+        ageS: 0,
+        lifeS: 0.3 + this.rand() * 0.35,
+        size: 0.05 + this.rand() * 0.05,
+        pal,
       });
     }
   }

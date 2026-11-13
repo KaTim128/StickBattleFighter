@@ -46,6 +46,11 @@ export interface AbilityFx {
   readonly radiusM?: number;
   /** The ability's look (Magic Attack VFX Standard), so effects match the element. */
   readonly look?: MagicLook;
+  /** Which stab of a knife assault this is (1, 2, 3), for its own blood spray and sound. */
+  readonly stab?: number;
+  /** The direction of the blow (blood sprays along it). */
+  readonly dirX?: number;
+  readonly dirY?: number;
 }
 
 export interface AbilityHost {
@@ -200,7 +205,21 @@ interface GrabAction {
   ageS: number;
 }
 
-type Action = DashAction | LeapAction | PullAction | GrabAction;
+/** A knife assault under way: rushing in, stabbing, springing back (Shroud). */
+interface AssaultAction {
+  readonly kind: 'assault';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly targetId: string | null;
+  dir: Vec2;
+  phase: 'approach' | 'stab' | 'retreat';
+  /** Seconds in the current phase. */
+  t: number;
+  /** Stabs made so far. */
+  stabs: number;
+}
+
+type Action = DashAction | LeapAction | PullAction | GrabAction | AssaultAction;
 
 /** How a grab turned out, for the caster's animation. */
 export type GrabOutcome =
@@ -249,7 +268,22 @@ export class AbilityWorld {
 
   /** Is this caster mid-dash or mid-leap (its body is driven by the world)? */
   driving(casterId: string): boolean {
-    return this.actions.some((a) => (a.kind === 'dash' || a.kind === 'leap') && a.casterId === casterId);
+    return this.actions.some(
+      (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault') && a.casterId === casterId,
+    );
+  }
+
+  /**
+   * A knife assault's state for the caster's animation: which stab (0, 1, 2) and how far through
+   * it (0..1), or the retreat; null when none is under way.
+   */
+  assaultOf(casterId: string): { phase: 'approach' | 'stab' | 'retreat'; stab: number; t: number } | null {
+    const a = this.actions.find((x) => x.kind === 'assault' && x.casterId === casterId) as AssaultAction | undefined;
+    const d = a?.def.delivery;
+    if (!a || d?.type !== 'assault') return null;
+    if (a.phase === 'stab')
+      return { phase: 'stab', stab: Math.max(0, a.stabs - 1), t: Math.min(1, a.t / d.stabIntervalS) };
+    return { phase: a.phase, stab: 0, t: a.t };
   }
 
   /** Who is dragging whom right now (Grave Chains), for the chain drawn between them. */
@@ -358,7 +392,7 @@ export class AbilityWorld {
         let to: Vec2;
         let face: Vec2 | null = null;
         if (d.retreatM !== undefined) {
-          // Away from the nearest enemy (Shroud's Shadow Escape): straight away if the way is clear,
+          // Away from the nearest enemy (a retreating blink): straight away if the way is clear,
           // otherwise turned aside from the wall, whichever spot ends furthest from the enemy.
           const foe = this.nearestEnemy(casterId, at, Number.POSITIVE_INFINITY, host);
           const away = foe ? norm({ x: at.x - foe.x, y: at.y - foe.y }) : { x: -dir.x, y: -dir.y };
@@ -424,6 +458,21 @@ export class AbilityWorld {
         };
         this.aimBeam(beam, host);
         this.beams.push(beam);
+        break;
+      }
+      case 'assault': {
+        // Rush at the nearest enemy in range (or straight ahead), then stab, then maybe spring back.
+        const foe = this.nearestEnemy(casterId, at, Math.max(def.aimRangeM, d.reachM), host);
+        this.actions.push({
+          kind: 'assault',
+          casterId,
+          def,
+          targetId: foe?.id ?? null,
+          dir: foe ? norm({ x: foe.x - at.x, y: foe.y - at.y }) : dir,
+          phase: 'approach',
+          t: 0,
+          stabs: 0,
+        });
         break;
       }
       case 'strike': {
@@ -800,7 +849,9 @@ export class AbilityWorld {
             ? this.stepLeap(a, dtS, host)
             : a.kind === 'pull'
               ? this.stepPull(a, dtS, host)
-              : this.stepGrab(a, dtS, host);
+              : a.kind === 'assault'
+                ? this.stepAssault(a, dtS, host)
+                : this.stepGrab(a, dtS, host);
       if (finished) {
         // The action may have been removed meanwhile (a new pull on the same target).
         const at = this.actions.indexOf(a);
@@ -946,6 +997,82 @@ export class AbilityWorld {
     if (a.remainingS <= 0) return true;
     host.drive(a.casterId, { x: a.dir.x * d.speedMps, y: a.dir.y * d.speedMps }, 0);
     return false;
+  }
+
+  private stepAssault(a: AssaultAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'assault') return true;
+    a.t += dtS;
+    const at = host.position(a.casterId);
+    const foe = a.targetId ? host.fighters().find((f) => f.id === a.targetId) : undefined;
+    if (foe && a.phase !== 'retreat') a.dir = norm({ x: foe.x - at.x, y: foe.y - at.y });
+    if (a.phase === 'approach') {
+      const gap = foe ? Math.hypot(foe.x - at.x, foe.y - at.y) - foe.radiusM : 0;
+      if ((foe && gap <= d.reachM * 0.8) || a.t >= d.maxApproachS || !foe?.hittable) {
+        a.phase = 'stab';
+        a.t = d.stabIntervalS; // the first stab lands at once
+      } else {
+        host.drive(a.casterId, { x: a.dir.x * d.approachSpeedMps, y: a.dir.y * d.approachSpeedMps }, 0);
+        return false;
+      }
+    }
+    if (a.phase === 'stab') {
+      host.drive(a.casterId, { x: 0, y: 0 }, 0); // planted while he stabs
+      if (a.t >= d.stabIntervalS && a.stabs < d.stabs) {
+        a.t = 0;
+        a.stabs++;
+        this.stab(a, at, host);
+      } else if (a.stabs >= d.stabs && a.t >= d.stabIntervalS * 0.6) {
+        if (!d.retreat) return true;
+        a.phase = 'retreat';
+        a.t = 0;
+        a.dir = { x: -a.dir.x, y: -a.dir.y };
+      }
+      return false;
+    }
+    // Retreat: straight back, away from the enemy.
+    const r = d.retreat!;
+    if (a.t >= r.distanceM / r.speedMps) return true;
+    host.drive(a.casterId, { x: a.dir.x * r.speedMps, y: a.dir.y * r.speedMps }, 0);
+    return false;
+  }
+
+  /** One stab of a knife assault: everyone in reach straight ahead is hit (once per stab). */
+  private stab(a: AssaultAction, at: Vec2, host: AbilityHost): void {
+    const d = a.def.delivery;
+    if (d.type !== 'assault') return;
+    const reach = { x: at.x + a.dir.x * d.reachM, y: at.y + a.dir.y * d.reachM };
+    let landed = false;
+    for (const f of host.fighters()) {
+      if (this.friendly(f, a.casterId, host) || !f.hittable) continue;
+      if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
+      if (this.hit(host, a.casterId, f.id, a.def.payload, a.dir, a.def.look?.hitFlash)) {
+        landed = true;
+        host.emit({
+          kind: 'impact',
+          ability: a.def.id,
+          look: a.def.look,
+          vfx: a.def.vfx,
+          sfx: d.stabSfx?.[(a.stabs - 1) % d.stabSfx.length] ?? a.def.sfx.impact,
+          x: f.x,
+          y: f.y,
+          radiusM: 0.6,
+          stab: a.stabs,
+          dirX: a.dir.x,
+          dirY: a.dir.y,
+        });
+      }
+    }
+    if (!landed)
+      host.emit({
+        kind: 'release',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: `${a.def.vfx}-whiff`,
+        sfx: a.def.sfx.release,
+        x: reach.x,
+        y: reach.y,
+      });
   }
 
   private stepLeap(a: LeapAction, dtS: number, host: AbilityHost): boolean {

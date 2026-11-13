@@ -138,7 +138,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   // Shroud: an evasive assassin. Stalks just out of reach, appears behind his prey or lunges
   // through it, rips in with the flurry and slips away before the counter; vanishes when cornered.
   'shroud-ai': {
-    style: 'Evasive assassin: stalks out of reach, ambushes from behind, stabs and slips away.',
+    style: 'Evasive assassin: stalks out of reach, ambushes from behind, stabs and springs away bleeding his prey.',
     preferredRangeM: [2.5, 4.5],
     movement: 'stalk',
     meleeBias: 0.7,
@@ -150,7 +150,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       a3: { role: 'ambush', minM: 2.5, maxM: 9, weight: 1.4 },
       a2: { role: 'gapClose', minM: 2, maxM: 6, weight: 1.1 },
       a4: { role: 'burst', minM: 0, maxM: 1.8, weight: 1.3 },
-      a1: { role: 'escape', minM: 0, maxM: 2, weight: 1, when: { targetAttacking: true } },
+      a1: { role: 'burst', minM: 0, maxM: 5, weight: 1.2 },
       ult: { role: 'buff', minM: 0, maxM: 5, weight: 1.1 },
     },
     combos: [

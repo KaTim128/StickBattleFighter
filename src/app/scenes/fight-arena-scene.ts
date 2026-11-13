@@ -4,7 +4,7 @@ import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../.
 import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
 import { showmanship } from '../../ai/showmanship';
-import { abilityPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -858,6 +858,7 @@ export class FightArenaScene implements ArenaScene {
         if (f.buff.leftS <= 0 || f.combatant.isKo) {
           f.buff = null;
           f.combatant.damageTakenScale = 1;
+          if (f.caster) f.caster.cooldownScale = 1;
         }
       }
       f.recoilS = Math.max(0, f.recoilS - stepS);
@@ -1389,7 +1390,7 @@ export class FightArenaScene implements ArenaScene {
     this.pointAim = { slot, spot: this.clampToReach(f, slot, this.insideMap(start)) };
   }
 
-  /** A teleport the player aims (not one that picks its own spot, like "Behind You" or "Shadow Escape"). */
+  /** A teleport the player aims (not one that picks its own spot, like "Behind You"). */
   private needsPointAim(f: FighterEntity, slot: AbilitySlot): boolean {
     const d = f.caster?.def(slot).delivery;
     return d?.type === 'teleport' && d.behindTargetM === undefined && d.retreatM === undefined;
@@ -2852,6 +2853,8 @@ export class FightArenaScene implements ArenaScene {
         f.driveVelocity !== null,
         this.abilities?.world.grabOutcome(f.name),
       );
+      const assault = this.abilities?.world.assaultOf(f.name);
+      if (assault) pose = assaultPose(pose, assault);
     }
 
     // Carrying overhead: arms up (blended); a throw whips them forward for a moment.

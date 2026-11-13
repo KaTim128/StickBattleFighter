@@ -1,8 +1,9 @@
 import type { AbilityKit } from '../../abilities/ability-def';
 
 /**
- * Shroud's kit (owner, 12/11/2026): an original masked slasher who hunts with a knife. Cuts bleed;
- * he slips away into shadow, lunges through his prey, appears behind them and, in his ultimate,
+ * Shroud's kit (owner, 12/11/2026; Bloodfade and the three-stab Stalker Lunge 13/11/2026): an
+ * original masked slasher who hunts with a knife. Cuts bleed; he stabs and springs away, lunges in
+ * with three quick stabs, appears behind them and, in his ultimate,
  * Hunting Frenzy, puts the lights out on them and cuts faster and bloodier. Values are PROVISIONAL (OQ-05) and balanced by the
  * fighter ratings test (REQ-ABL-16).
  */
@@ -13,64 +14,96 @@ const SHADE = { deep: 0x07070a, hot: 0x1c1c25, bright: 0x3b3b4a, core: 0x9a9aae 
 export const SHROUD_KIT: AbilityKit = {
   comboIcon: 'knife-slash',
   heavyIcon: 'gutting-stab',
-  // A1 (Q): Shadow Escape (owner, 12/11/2026, SUP-25, replacing Thrown Blade). Strictly a flight,
-  // never an attack: he flinches into a crouch, sinks into his own shadow and slips out 7 m away
-  // from the opponent (turned aside from walls), back to the wall and facing it. No damage.
+  // A1 (Q): Bloodfade (owner, 13/11/2026, replacing Shadow Escape): a hit and run. He darts at
+  // the opponent, drives the knife in once (direct damage, then bleeding, and a clear flinch) and
+  // springs straight back out of reach.
   a1: {
-    id: 'shadowEscape',
-    name: 'Shadow Escape',
-    label: 'ESCAPE',
+    id: 'bloodfade',
+    name: 'Bloodfade',
+    label: 'BLOODFADE',
     description:
-      'He sinks into his own shadow and slips out well away from the opponent: a way out of trouble, never an attack.',
-    icon: 'shadow-escape',
+      'Darts in, drives the knife deep for a bloody stab that keeps bleeding, then springs straight back out of reach.',
+    icon: 'bloodfade',
     slot: 'a1',
-    staminaCost: 25,
+    staminaCost: 28,
     cooldownS: 9,
-    castS: 0.12,
-    recoveryS: 0.2,
-    aimRangeM: 0,
+    castS: 0.1,
+    recoveryS: 0.8,
+    aimRangeM: 5.5,
     moveFactor: 0,
-    interruptible: false,
-    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'teleport', maxRangeM: 7, retreatM: 7 },
-    vfx: 'shadow-escape',
-    sfx: { cast: 'shade-gather', release: 'shadow-sink', impact: 'shadow-rise' },
+    interruptible: true,
+    payload: {
+      damage: 70,
+      knockbackMps: 2.5,
+      heavy: false,
+      strength: 500,
+      impact: 'knuckle-heavy',
+      stunS: 0.35,
+      bleed: { dps: 10, durationS: 3 },
+    },
+    delivery: {
+      type: 'assault',
+      approachSpeedMps: 16,
+      maxApproachS: 0.36,
+      reachM: 1.1,
+      radiusM: 0.6,
+      stabs: 1,
+      stabIntervalS: 0.16,
+      retreat: { distanceM: 5, speedMps: 16 },
+      stabSfx: ['blade-pierce'],
+    },
+    vfx: 'bloodfade',
+    sfx: { cast: 'knife-draw', release: 'shade-rush', impact: 'knife-stab' },
     look: {
-      palette: SHADE,
-      impact: { flashM: 0.4, sparks: 6, motes: 26, ringM: 1, smoke: 12, groundFire: false, smokeColour: 0x0a0a10 },
+      palette: BLOOD,
+      flight: { trailPerS: 120, sparksPerS: 0, shimmer: false },
+      impact: { flashM: 0.6, sparks: 18, motes: 14, ringM: 0.6, groundFire: false, smokeColour: 0x5a0408 },
+      hitFlash: 0xff5a5a,
     },
   },
-  // A2 (E): Stalker Lunge. He coils low, then darts through his prey in a black blur, slashing
-  // everyone in the way (it passes through them) and leaving them bleeding.
+  // A2 (E): Stalker Lunge (owner, 13/11/2026: a rapid three-stab combo). He lunges at his prey and
+  // stabs three times in quick succession: each stab a real hit with its own knife motion, blood and
+  // flinch; each keeps the bleeding going (it is refreshed, never stacked).
   a2: {
     id: 'stalkerLunge',
     name: 'Stalker Lunge',
     label: 'LUNGE',
-    description: 'Darts forward in a black blur, slashing through everyone in the way; the cuts bleed.',
+    description:
+      'Lunges at the opponent and stabs three times in quick succession; every stab draws blood and keeps the wound bleeding.',
     icon: 'stalker-lunge',
     slot: 'a2',
-    staminaCost: 28,
-    cooldownS: 5.5,
-    castS: 0.18,
-    recoveryS: 0.35,
-    aimRangeM: 6,
+    staminaCost: 30,
+    cooldownS: 6,
+    castS: 0.16,
+    recoveryS: 0.45,
+    aimRangeM: 6.5,
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 65,
-      knockbackMps: 3,
+      damage: 26,
+      knockbackMps: 0.8,
       heavy: false,
-      strength: 400,
+      strength: 300,
       impact: 'knuckle-light',
-      bleed: { dps: 12, durationS: 3 },
+      stunS: 0.22,
+      bleed: { dps: 9, durationS: 3 },
     },
-    delivery: { type: 'dash', distanceM: 5, speedMps: 17, hitRadiusM: 0.6 },
+    delivery: {
+      type: 'assault',
+      approachSpeedMps: 17,
+      maxApproachS: 0.42,
+      reachM: 1.1,
+      radiusM: 0.6,
+      stabs: 3,
+      stabIntervalS: 0.14,
+      stabSfx: ['blade-stab-1', 'blade-stab-2', 'blade-stab-3'],
+    },
     vfx: 'stalker-lunge',
-    sfx: { cast: 'knife-draw', release: 'shade-rush', impact: 'knife-slash-hit' },
+    sfx: { cast: 'knife-draw', release: 'shade-rush', impact: 'knife-stab' },
     look: {
-      palette: SHADE,
+      palette: BLOOD,
       flight: { trailPerS: 140, sparksPerS: 0, shimmer: false },
-      impact: { flashM: 0.6, sparks: 16, motes: 12, ringM: 0.7, groundFire: false, smokeColour: 0x7a0a10 },
+      impact: { flashM: 0.45, sparks: 12, motes: 10, ringM: 0.5, groundFire: false, smokeColour: 0x7a0a10 },
       hitFlash: 0xff5a5a,
     },
   },

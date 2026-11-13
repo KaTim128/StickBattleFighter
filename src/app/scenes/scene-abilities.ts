@@ -300,6 +300,11 @@ export class SceneAbilities implements AbilityHost {
     if (!f) return;
     f.buff = buff ? { ...buff, leftS: buff.durationS } : null;
     f.combatant.damageTakenScale = buff ? buff.damageTakenFactor : 1;
+    // Rampage Mode: the other abilities come back 25% sooner while it lasts.
+    if (f.caster) {
+      f.caster.cooldownScale = buff?.cooldownFactor ?? 1;
+      if (buff?.cooldownFactor) f.caster.scaleCooldowns(buff.cooldownFactor);
+    }
     // Hunting Frenzy puts the lights out on every enemy for as long as it lasts.
     if (buff?.darkensFoes)
       for (const o of this.fightersOf())

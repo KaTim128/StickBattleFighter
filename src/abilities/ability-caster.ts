@@ -54,6 +54,8 @@ export interface AbilityHudState {
 
 export class AbilityCaster {
   private readonly cooldowns = new Map<AbilitySlot, number>();
+  /** New cooldowns of the non-ultimate abilities are multiplied by this (a buff; 1 normally). */
+  cooldownScale = 1;
   private meterValue = 0;
   private active: ActiveCast | null = null;
 
@@ -104,7 +106,7 @@ export class AbilityCaster {
   start(slot: AbilitySlot): AbilityDef {
     const def = this.kit[slot];
     this.active = { def, phase: 'windup', t: 0 };
-    this.cooldowns.set(slot, def.cooldownS);
+    this.cooldowns.set(slot, def.cooldownS * (slot === 'ult' ? 1 : this.cooldownScale));
     if (slot === 'ult') this.meterValue = 0;
     return def;
   }
@@ -116,6 +118,11 @@ export class AbilityCaster {
     if (!force && (c.phase !== 'windup' || !c.def.interruptible)) return false;
     this.active = null;
     return true;
+  }
+
+  /** Cut the cooldowns already running on the non-ultimate abilities (a buff starting). */
+  scaleCooldowns(factor: number): void {
+    for (const s of ABILITY_SLOTS) if (s !== 'ult') this.cooldowns.set(s, this.cooldown(s) * factor);
   }
 
   /** Damage dealt or taken fills the ultimate meter. */
@@ -131,6 +138,7 @@ export class AbilityCaster {
 
   reset(): void {
     for (const s of ABILITY_SLOTS) this.cooldowns.set(s, 0);
+    this.cooldownScale = 1;
     this.meterValue = 0;
     this.active = null;
   }

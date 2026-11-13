@@ -179,15 +179,17 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.35,
   },
-  // Shroud (owner, 12/11/2026): every cast stays hunched. Shadow Escape: a flinch away, knife arm
-  // pulled in to guard the face, sinking into a low crouch as the shadow takes him; he rises out of
-  // it still low and wary, the knife held close, then straightens into his stalk.
-  shadowEscape: {
-    windup: { lean: deg(-50), head: deg(-10), armFront: limb(-40, 150), armBack: limb(-60, 120), ...CROUCH },
-    release: { lean: deg(-38), head: deg(-4), armFront: limb(20, 130), armBack: limb(-30, 60), ...CROUCH },
-    settle: 0.6,
+  // Shroud (owner, 12/11/2026): every cast stays hunched. Bloodfade (13/11/2026): coiled low with the
+  // knife drawn back, then the stab and the spring away (assaultPose drives the stab and retreat).
+  bloodfade: {
+    windup: { lean: deg(-46), head: deg(-6), armFront: limb(-40, 120), armBack: limb(-20, 50), ...CROUCH },
+    // Landed from the spring: low, wary, knife still pointed at the enemy.
+    release: { lean: deg(-38), head: deg(-4), armFront: limb(64, 34), armBack: limb(-60, 50), ...CROUCH },
+    run: { lean: deg(-54), armFront: limb(40, 80), armBack: limb(-50, 30) },
+    settle: 0.35,
   },
-  // Stalker Lunge: coiled low like a spring, knife back; then flat out, knife arm thrust ahead.
+  // Stalker Lunge: coiled low like a spring, knife back; then flat out at his prey, knife arm
+  // cocked to strike (the three stabs themselves come from assaultPose).
   stalkerLunge: {
     windup: { lean: deg(-40), armFront: limb(-30, 110), armBack: limb(-20, 40), ...CROUCH },
     release: {
@@ -197,7 +199,7 @@ const SHAPES: Record<string, CastShape> = {
       legFront: limb(60, -40),
       legBack: limb(-50, -10),
     },
-    run: { lean: deg(-52), armFront: limb(94, 4), armBack: limb(-60, 20) },
+    run: { lean: deg(-52), armFront: limb(30, 100), armBack: limb(-60, 20) },
     settle: 0.35,
   },
   // Behind You: he folds in on himself as the shadow takes him, then rises behind his prey,
@@ -356,6 +358,56 @@ function grabPose(base: Pose, shape: CastShape, windup: Pose, progress: number, 
     return out(blendPose(hoist, slam, ease(grab.sinceS / SLAM_DROP_S)));
   }
   return progress < 0.12 ? blendPose(windup, hoist, ease(progress / 0.12)) : hoist;
+}
+
+/** A knife assault under way (AbilityWorld.assaultOf). */
+export interface AssaultState {
+  readonly phase: 'approach' | 'stab' | 'retreat';
+  readonly stab: number;
+  readonly t: number;
+}
+
+/**
+ * Three distinct stabs (owner, 13/11/2026), cycled by stab index: a straight thrust from the hip,
+ * a rising gut stab under the guard, and an overhand downward plunge. Each pulls back (cock),
+ * drives in (strike) and holds a beat.
+ */
+const STABS: readonly { cock: Partial<Pose>; strike: Partial<Pose> }[] = [
+  {
+    cock: { lean: deg(-40), armFront: limb(-20, 120), armBack: limb(30, 60) },
+    strike: { lean: deg(-56), armFront: limb(92, 4), armBack: limb(-50, 30), legFront: limb(55, -40) },
+  },
+  {
+    cock: { lean: deg(-48), armFront: limb(-50, 70), armBack: limb(-30, 40) },
+    strike: { lean: deg(-42), head: deg(6), armFront: limb(118, -20), armBack: limb(-70, 20), legBack: limb(-50, -10) },
+  },
+  {
+    cock: { lean: deg(-30), head: deg(-8), armFront: limb(160, 40), armBack: limb(20, 40) },
+    strike: { lean: deg(-62), armFront: limb(62, 10), armBack: limb(-40, 60), ...CROUCH },
+  },
+];
+
+/** The springing retreat: low and wary, knife held out toward the enemy he is leaving. */
+const RETREAT: Partial<Pose> = {
+  lean: deg(-34),
+  head: deg(-4),
+  armFront: limb(70, 30),
+  armBack: limb(-60, 50),
+  legFront: limb(30, -60),
+  legBack: limb(-40, -50),
+};
+
+/** Overlays a knife assault on the cast pose: each stab its own motion, then the backward spring. */
+export function assaultPose(base: Pose, a: AssaultState): Pose {
+  if (a.phase === 'retreat') return blendPose(base, { ...base, ...RETREAT }, ease(a.t / 0.08));
+  if (a.phase !== 'stab') return base;
+  const s = STABS[a.stab % STABS.length]!;
+  const cock = { ...base, ...s.cock };
+  const strike = { ...base, ...s.strike };
+  // Snap in within the first 35% of the interval, hold the strike, then pull back toward the next cock.
+  if (a.t < 0.35) return blendPose(cock, strike, ease(a.t / 0.35));
+  if (a.t < 0.75) return strike;
+  return blendPose(strike, cock, ease((a.t - 0.75) / 0.25) * 0.6);
 }
 
 /** Abilities with an animation (tests check every kit ability has one). */

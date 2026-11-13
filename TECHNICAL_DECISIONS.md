@@ -568,3 +568,9 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** Bench fighters keep their state frozen (cooldowns do not tick while resting); a swap clears the outgoing fighter's attack and cast.
 **Status.** ACCEPTED.
 
+### TD-069: Knife assault delivery and buff cooldown cut — ACCEPTED (owner request 13/11/2026)
+**Context.** Bloodfade (stab then retreat) and the three-stab Stalker Lunge need an approach, several separately timed hits and an optional spring back. A dash hits once on contact and passes through; chaining three separate abilities would break the five-action layout (INV-9). Rampage Mode must also shorten Titan's other cooldowns.
+**Decision.** A new data-driven `assault` delivery in the shared ability world (`AssaultDelivery`: approach speed and time, reach, radius, stab count and interval, optional retreat, per-stab sounds). Each stab is a full hit through the normal combat rules, so bleeding uses the existing non-stacking `Combatant.bleed`. Impacts carry the stab index and direction for presentation; `AbilityWorld.assaultOf` exposes the phase for `assaultPose`, which overlays three distinct stab motions and a retreat pose. Buffs gain `cooldownFactor`; `AbilityCaster.cooldownScale` applies it to new non-ultimate cooldowns and `scaleCooldowns` cuts the running ones, reset when the buff ends.
+**Alternatives.** A multi-hit dash (no planted stabs, no retreat); scripted per-fighter code (rejected: no character branches in shared engines).
+**Trade-offs.** The retreat steers by physics only, so a wall shortens it. The retreating blink (`retreatM` teleport) remains in the framework, unused for now.
+**Status.** ACCEPTED.

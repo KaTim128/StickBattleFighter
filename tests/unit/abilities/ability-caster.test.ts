@@ -36,6 +36,25 @@ describe('Inferno kit data (REQ-ABL-2)', () => {
 });
 
 describe('AbilityCaster', () => {
+  it('a cooldown cut (Rampage Mode, owner 13/11/2026) shortens running and new non-ultimate cooldowns only, and resets', () => {
+    const c = new AbilityCaster(INFERNO_KIT);
+    c.start('a1');
+    run(c, 5);
+    const left = c.cooldown('a1');
+    c.cooldownScale = 0.75;
+    c.scaleCooldowns(0.75);
+    expect(c.cooldown('a1')).toBeCloseTo(left * 0.75, 6);
+    run(c, 5);
+    c.start('a2');
+    expect(c.cooldown('a2')).toBeCloseTo(INFERNO_KIT.a2.cooldownS * 0.75, 6);
+    run(c, 5);
+    c.fillMeter();
+    c.start('ult');
+    expect(c.cooldown('ult')).toBe(INFERNO_KIT.ult.cooldownS); // the ultimate is never cut
+    c.reset();
+    expect(c.cooldownScale).toBe(1);
+  });
+
   it('runs wind-up → release → recovery → end, firing the release event once', () => {
     const c = new AbilityCaster(INFERNO_KIT);
     expect(c.check('a1', READY)).toBeNull();
