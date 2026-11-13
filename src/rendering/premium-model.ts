@@ -1156,21 +1156,8 @@ export class PremiumModel {
     const oc = { x: h.x + 0.5 * r, y: h.y + 0.1 * r };
     oval(g, oc, 0.3, 1, r * 0.68, r * 0.46, this.c(this.P.outline));
     oval(g, oc, 0.3, 1, r * 0.6, r * 0.38, this.c(0x060408));
+    // Owner, 13/11/2026: Necro has no eyes; the hood holds only darkness.
     if (style === 'cowl') {
-      const eyeC = this.P.seam ?? 0xc77dff;
-      const pulse = 0.85 + 0.15 * Math.sin(this.st.t * 2.2);
-      fire.circle(oc.x + r * 0.05, oc.y, r * 0.5).fill({ color: eyeC, alpha: 0.14 * pulse });
-      for (const [dx, k] of [
-        [0.0, 1],
-        [0.36, 0.78],
-      ] as const) {
-        const e = { x: oc.x + dx * r - r * 0.1, y: oc.y - r * 0.06 };
-        // Owner, 13/11/2026: Necro should clearly have eyes: dark sockets with bright glowing eyes.
-        oval(g, e, 1, -0.2, r * 0.2 * k, r * 0.11 * k, this.c(0x0a0410));
-        fire.circle(e.x, e.y, r * 0.3 * k).fill({ color: eyeC, alpha: 0.22 * pulse });
-        oval(fire, e, 1, -0.2, r * 0.17 * k, r * 0.08 * k, eyeC, 0.95 * pulse);
-        oval(fire, e, 1, -0.2, r * 0.08 * k, r * 0.04 * k, 0xffffff, 0.95);
-      }
       return;
     }
     // The white mask: shaded far side, a lit brow, dark eye hollows, nostrils and a thin mouth.
