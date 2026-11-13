@@ -223,6 +223,10 @@ const NAV_CLEARANCE_M = 0.3;
 const NAV_REFRESH_S = 2;
 /** How often an AI re-plans its route to the target. */
 const AI_ROUTE_EVERY_S = 0.4;
+/** A tournament match is decided at this time if nobody is knocked out (seconds of play). */
+const MATCH_TIME_LIMIT_S = 150;
+/** Seconds between the deciding KO and the result (the fall and dust play out). */
+const MATCH_END_PAUSE_S = 2.5;
 /** Ability slots the fighter AI may use, in order. */
 const AI_SLOTS = ['a1', 'a2', 'a3', 'a4', 'ult'] as const;
 /** How close the AI must be to its target for a punch to land (body radii plus reach), metres. */
@@ -287,6 +291,13 @@ export class FightArenaScene implements ArenaScene {
   private vfx: AbilityVfx | null = null;
   /** Fades walls and tall props that stand in front of a fighter (owner, 11/11/2026). */
   occlusion: OcclusionFader | null = null;
+  /** A match that ends (Tournament mode), or null for open practice. */
+  readonly match: { readonly spectate: boolean } | null;
+  /** The match's result once decided: who won and when (simulation time). */
+  matchResult: { winner: 'player' | 'opponent'; atS: number; by: 'ko' | 'time' } | null = null;
+  /** Called once, a moment after the match is decided (so the KO plays out). */
+  onMatchEnd: ((winner: 'player' | 'opponent') => void) | null = null;
+  private matchEndSent = false;
   /** How the AI opponents play (owner, 13/11/2026; REQ-AI-4). */
   readonly difficulty: Difficulty;
   private nav: NavGrid | null = null;
@@ -347,9 +358,17 @@ export class FightArenaScene implements ArenaScene {
     /** Show the whole arena at once (layout review, `?overview`), instead of the follow camera. */
     private readonly overview = false,
     /** Which characters fight (Character Definition ids, TD-039) and where their data comes from. */
-    cast: { player?: string; opponent?: string; library?: CharacterLibrary; difficulty?: string } = {},
+    cast: {
+      player?: string;
+      opponent?: string;
+      library?: CharacterLibrary;
+      difficulty?: string;
+      /** A match that ends (Tournament): no respawns, a time limit; `spectate` has the AI play both sides. */
+      match?: { spectate: boolean };
+    } = {},
   ) {
     this.name = arena.id;
+    this.match = cast.match ?? null;
     this.difficulty = difficultyFor(cast.difficulty);
     this.library = cast.library;
     const player = loadCharacter(cast.player ?? DEFAULT_CAST.player, cast.library);
@@ -760,9 +779,11 @@ export class FightArenaScene implements ArenaScene {
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
       // Fighters get back up; summoned minions crumble away instead (SceneSummons).
-      if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS && !f.summon) f.respawn();
+      // (In a tournament match nobody gets back up: a KO ends the match.)
+      if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS && !f.summon && !this.match) f.respawn();
     }
 
+    if (this.match) this.decideMatch();
     this.climbing?.refresh();
     if (this.intro) {
       // READY... FIGHT! (owner, 12/11/2026): both fighters stand still and nothing can be done
@@ -772,7 +793,9 @@ export class FightArenaScene implements ArenaScene {
       for (const f of this.fighters) this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
       if (this.intro.t >= FIGHT_INTRO.combatAtS) this.intro = null;
     } else if (!this.clashes.step(stepS, this.simTimeS)) {
-      this.controlPlayer(this.playerFighter, stepS);
+      // Watching an AI battle (Tournament spectator mode): the AI plays both sides.
+      if (this.match?.spectate) this.controlAi(this.playerFighter, stepS, this.dummyFighter);
+      else this.controlPlayer(this.playerFighter, stepS);
       this.trackLastAction();
       // A fighter opponent (one with an ability kit) is played by the fighter AI; the training
       // dummy keeps its own behaviour (owner, 13/11/2026).
@@ -1501,8 +1524,8 @@ export class FightArenaScene implements ArenaScene {
    * climbs onto furniture after the player. Decisions come from `FighterBrain`; the actions go
    * through the same paths as the player's.
    */
-  private controlAi(f: FighterEntity, stepS: number): void {
-    const p = this.playerFighter;
+  private controlAi(f: FighterEntity, stepS: number, target: FighterEntity = this.playerFighter): void {
+    const p = target;
     const c = f.combatant;
     if (!f.brain) f.brain = new FighterBrain();
     const brain = f.brain;
@@ -1563,6 +1586,43 @@ export class FightArenaScene implements ArenaScene {
     else if (out.melee) f.combo.press(GROUND);
     f.sprinting = out.sprint;
     this.stepFighter(f, stepS, out.move, out.jump);
+  }
+
+  /**
+   * Tournament matches end (owner, 13/11/2026): the first KO decides it; at the time limit the
+   * fighter with more health left (as a share of its maximum) wins. The result is reported once,
+   * after a short pause so the KO plays out.
+   */
+  private decideMatch(): void {
+    const p = this.playerFighter.combatant;
+    const o = this.dummyFighter.combatant;
+    if (!this.matchResult) {
+      if (p.isKo || o.isKo) {
+        this.matchResult = { winner: o.isKo && !p.isKo ? 'player' : 'opponent', atS: this.simTimeS, by: 'ko' };
+      } else if (!this.intro && this.simTimeS >= MATCH_TIME_LIMIT_S) {
+        const lead = p.hp / p.stats.maxHp >= o.hp / o.stats.maxHp;
+        this.matchResult = { winner: lead ? 'player' : 'opponent', atS: this.simTimeS, by: 'time' };
+      }
+    }
+    const r = this.matchResult;
+    if (r && !this.matchEndSent && this.simTimeS - r.atS >= MATCH_END_PAUSE_S) {
+      this.matchEndSent = true;
+      this.onMatchEnd?.(r.winner);
+    }
+  }
+
+  /**
+   * Settle a match early (a watched battle skipped): whoever has more health left wins. Reported
+   * through `onMatchEnd` at once.
+   */
+  endMatchNow(): void {
+    if (!this.match || this.matchEndSent) return;
+    const p = this.playerFighter.combatant;
+    const o = this.dummyFighter.combatant;
+    const winner = p.hp / p.stats.maxHp >= o.hp / o.stats.maxHp ? 'player' : 'opponent';
+    this.matchResult ??= { winner, atS: this.simTimeS, by: 'time' };
+    this.matchEndSent = true;
+    this.onMatchEnd?.(this.matchResult.winner);
   }
 
   /** Shared per-fighter step: attacks, movement by state, jump, landing. */

@@ -53,6 +53,7 @@ import {
   type PlayerState,
 } from './scenes/fight-arena-scene';
 import type { ClashHudState } from './scenes/scene-clash';
+import { goToBracket, setupTournamentPage, startTournament, tournamentInProgress } from './tournament-page';
 
 /** Read-only hook used by the browser tests (tests/e2e). Exposes no gameplay control. */
 export interface EngineDebugInfo {
@@ -177,6 +178,16 @@ function menuOpponents(): MenuOpponent[] {
   ];
 }
 
+/** Browser tests set this storage flag to reach the live scene in a production build. */
+const TEST_HOOKS_KEY = 'stickman-arena.test-hooks';
+function testHooksOn(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(TEST_HOOKS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   status.textContent = 'Loading…';
@@ -231,7 +242,15 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           intents,
           viewport,
           params.has('overview'),
-          { ...castFromParams(params), difficulty: params.get('difficulty') ?? undefined },
+          {
+            ...castFromParams(params),
+            difficulty: params.get('difficulty') ?? undefined,
+            // A tournament match ends; `watch` is an AI battle the player watches (owner, 13/11/2026).
+            match:
+              params.get('mode') === 'tournament' && params.has('match')
+                ? { spectate: params.has('watch') }
+                : undefined,
+          },
         );
   if (!(await scenes.switchTo(() => scene))) throw new Error(`${scene.name} scene failed to load`);
   // Fight arenas are drawn in the 2.5D view: keys and the joystick move along the screen (TD-045).
@@ -342,7 +361,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
   };
   if (scene instanceof FightArenaScene) debug.screenOf = (x, y, z = 0) => scene.worldToScreen(x, y, z);
-  if (import.meta.env.DEV) debug.sceneRef = scene;
+  // The live scene for tools: in development, or when a browser test asks for it (a flag in this
+  // browser's storage that survives page changes). Nothing valuable is decided in the client, so
+  // this gives no advantage that counts (security rules).
+  if (import.meta.env.DEV || testHooksOn()) debug.sceneRef = scene;
   window.__stickmanDebug = debug;
 
   let physicsSteps = 0;
@@ -495,6 +517,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     arena: sceneName,
     opponent: cast.opponent ?? DEFAULT_CAST.opponent,
     difficulty: difficultyFor(params.get('difficulty')).id,
+    mode: (params.get('mode') === 'tournament' ? 'tournament' : 'practice') as 'practice' | 'tournament',
+    size: tournamentInProgress()?.state.entrants.length ?? 8,
   };
   const menu = new MainMenu(
     document.body,
@@ -505,7 +529,13 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     currentChoice,
     (choice) => {
       if (touchDevice) enterFullscreen();
+      if (choice.mode === 'tournament') {
+        const pool = menuFighters().map((f) => ({ fighter: f.id, name: f.name }));
+        startTournament(choice, pool, params.has('mute'));
+        return;
+      }
       if (
+        params.get('mode') !== 'tournament' &&
         choice.fighter === currentChoice.fighter &&
         choice.arena === currentChoice.arena &&
         choice.opponent === currentChoice.opponent &&
@@ -547,9 +577,27 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   );
   const menuFirst = scene instanceof FightArenaScene && !automated && !params.has('play');
   if (menuFirst) menu.setOpen(true);
+  // Tournament mode (owner, 13/11/2026): a saved tournament can be resumed from the menu; its
+  // bracket and match pages are set up here.
+  const resumable = tournamentInProgress();
+  if (resumable) menu.setResume('Resume tournament', () => goToBracket(resumable.arena, params.has('mute')));
+  const bracketPage = params.get('mode') === 'tournament' && !params.has('match');
+  const tournamentScreen = setupTournamentPage({
+    params,
+    scene: scene instanceof FightArenaScene ? scene : null,
+    muted: params.has('mute'),
+    setPaused,
+    openMenu: () => menu.setOpen(true),
+  });
   // READY... FIGHT! before every fight (owner, 12/11/2026). The menu's Play starts a new fight page,
   // which gets its own intro; automated browsers skip it unless asked (`?intro`).
-  if (scene instanceof FightArenaScene && !menuFirst && (!automated || params.has('intro')) && !params.has('nointro'))
+  if (
+    scene instanceof FightArenaScene &&
+    !menuFirst &&
+    !bracketPage &&
+    (!automated || params.has('intro')) &&
+    !params.has('nointro')
+  )
     scene.startIntro();
   // Portraits are the fighters themselves, drawn by the game's own renderer (owner, 12/11/2026).
   // All in one GPU read-back, once the page is idle, so the first moments of a fight never stall.
@@ -562,6 +610,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       fighters.forEach((f, i) => {
         menu.setPortrait(f.id, urls[i]!);
       });
+      tournamentScreen?.setPortraits(new Map(fighters.map((f, i) => [f.id, urls[i]!])));
       if (scene instanceof FightArenaScene) topHud.setPortraits(urls[fighters.length]!, urls[fighters.length + 1]!);
     } catch (error) {
       console.warn('[portraits] could not render fighter portraits', error);

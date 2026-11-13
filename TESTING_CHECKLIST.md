@@ -361,6 +361,15 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Menu opponent picker: dummy by default; picking Shroud starts a fight against Shroud (`tests/e2e/menu.spec.ts`).
 - [ ] Owner playtest: AI difficulty and feel on a phone; AI getting stuck behind furniture (no path-finding yet).
 
+## 13i. AI path-finding, difficulty, Tournament (owner, 13/11/2026)
+- [x] A* routes round a wall, never through it; sealed walls give no route (`tests/unit/ai/nav-grid.test.ts`).
+- [x] The AI walks round a wall to the player; Hard attacks more than Easy (`tests/integration/scenes/ai-opponent.test.ts`).
+- [x] Bracket rules: sizes 4/8/16, random draw, byes, results final, eliminated never return, stage advance, placements, flow and record (`tests/unit/modes/tournament.test.ts`).
+- [x] Match mode: AI battles end once, KO ends a match with no respawn, Skip battle settles on health (`tests/integration/scenes/match-mode.test.ts`).
+- [x] Full tournament in the browser: menu, bracket, fight, skip, final, champion; watch an AI battle and skip it (`tests/e2e/tournament.spec.ts`).
+- [x] Bracket entries never clipped (16-fighter bracket and champion screen screenshots).
+- [ ] Owner playtest: tournament pacing on a phone, AI difficulty feel.
+
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green
 - [ ] Previous milestones' acceptance tests re-run

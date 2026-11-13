@@ -29,7 +29,14 @@ export interface MenuChoice {
   readonly opponent: string;
   /** How hard an AI opponent plays (REQ-AI-4). */
   readonly difficulty: string;
+  /** Game mode (owner, 13/11/2026): practice against one opponent, or a knockout tournament. */
+  readonly mode: 'practice' | 'tournament';
+  /** Tournament size (fighters). */
+  readonly size: number;
 }
+
+/** Tournament sizes offered (the bracket supports more; owner: up to 16 for now). */
+export const TOURNAMENT_SIZES = [4, 8, 16] as const;
 
 /** An opponent the menu offers: the training dummy or a playable fighter run by the AI. */
 export interface MenuOpponent {
@@ -39,7 +46,17 @@ export interface MenuOpponent {
 
 export class MainMenu {
   readonly root: HTMLDivElement;
-  private choice: { fighter: string; arena: string; opponent: string; difficulty: string };
+  private choice: {
+    fighter: string;
+    arena: string;
+    opponent: string;
+    difficulty: string;
+    mode: 'practice' | 'tournament';
+    size: number;
+  };
+  private readonly opponentBlock: HTMLElement[] = [];
+  private readonly sizeBlock: HTMLElement[] = [];
+  private resumeButton: HTMLButtonElement | null = null;
   private open = false;
 
   constructor(
@@ -118,6 +135,44 @@ export class MainMenu {
       });
       opponentRow.appendChild(b);
     }
+    // Game modes (owner, 13/11/2026: "Add a new Tournament option to the existing Game Modes list").
+    const modeLabel = document.createElement('h2');
+    modeLabel.textContent = 'Game mode';
+    const modeRow = document.createElement('div');
+    modeRow.className = 'mm-arenas mm-opponents';
+    for (const [id, name] of [
+      ['practice', 'Practice'],
+      ['tournament', 'Tournament'],
+    ] as const) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mm-arena';
+      b.dataset.mode = id;
+      b.textContent = name;
+      b.addEventListener('click', () => {
+        this.choice.mode = id;
+        this.refresh();
+      });
+      modeRow.appendChild(b);
+    }
+    const sizeLabel = document.createElement('h2');
+    sizeLabel.textContent = 'Tournament size';
+    const sizeRow = document.createElement('div');
+    sizeRow.className = 'mm-arenas mm-opponents';
+    for (const n of TOURNAMENT_SIZES) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mm-arena';
+      b.dataset.size = String(n);
+      b.textContent = `${n} fighters`;
+      b.addEventListener('click', () => {
+        this.choice.size = n;
+        this.refresh();
+      });
+      sizeRow.appendChild(b);
+    }
+    this.opponentBlock.push(opponentLabel, opponentRow);
+    this.sizeBlock.push(sizeLabel, sizeRow);
     const difficultyLabel = document.createElement('h2');
     difficultyLabel.textContent = 'AI difficulty';
     const difficultyRow = document.createElement('div');
@@ -150,8 +205,12 @@ export class MainMenu {
       fighterRow,
       arenaLabel,
       arenaRow,
+      modeLabel,
+      modeRow,
       opponentLabel,
       opponentRow,
+      sizeLabel,
+      sizeRow,
       difficultyLabel,
       difficultyRow,
       play,
@@ -331,6 +390,20 @@ export class MainMenu {
     this.onOpenChange(open);
   }
 
+  /** Offer to resume a tournament in progress (or remove the offer with null). */
+  setResume(label: string | null, onResume: () => void): void {
+    this.resumeButton?.remove();
+    this.resumeButton = null;
+    if (!label) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mm-arena mm-resume';
+    b.textContent = label;
+    b.addEventListener('click', onResume);
+    this.root.querySelector('.mm-play')?.after(b);
+    this.resumeButton = b;
+  }
+
   private refresh(): void {
     for (const c of this.root.querySelectorAll<HTMLElement>('[data-fighter]'))
       c.classList.toggle('selected', c.dataset.fighter === this.choice.fighter);
@@ -340,6 +413,13 @@ export class MainMenu {
       c.classList.toggle('selected', c.dataset.opponent === this.choice.opponent);
     for (const c of this.root.querySelectorAll<HTMLElement>('[data-difficulty]'))
       c.classList.toggle('selected', c.dataset.difficulty === this.choice.difficulty);
+    for (const c of this.root.querySelectorAll<HTMLElement>('[data-mode]'))
+      c.classList.toggle('selected', c.dataset.mode === this.choice.mode);
+    for (const c of this.root.querySelectorAll<HTMLElement>('[data-size]'))
+      c.classList.toggle('selected', c.dataset.size === String(this.choice.size));
+    // A tournament draws its own opponents; practice picks one.
+    for (const e of this.opponentBlock) e.hidden = this.choice.mode === 'tournament';
+    for (const e of this.sizeBlock) e.hidden = this.choice.mode !== 'tournament';
   }
 }
 

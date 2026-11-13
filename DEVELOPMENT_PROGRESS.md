@@ -23,6 +23,14 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+4): AI path-finding and difficulty; Tournament mode (owner)
+- **AI:** `NavGrid` A* round walls and furniture; Easy/Normal/Hard on the menu (REQ-AI-7).
+- **Tournament (REQ-MOD-8, TD-062):** menu Game mode (Practice/Tournament) and size (4/8/16); bracket screen with portraits, stages, winners, eliminated and the player highlighted; your match; Watch (up to 3 per stage, with Skip battle) or Skip per battle or Skip Battles; champion screen with placement and record; resume from the menu. Bracket entries no longer clip (owner screenshot).
+- **Files:** `src/ai/nav-grid.ts`, `src/data/ai/difficulty.ts`, `src/modes/tournament/*`, `src/app/tournament-page.ts`, `src/interface/tournament-screen.ts`, `src/interface/main-menu.ts`, `src/app/bootstrap.ts`, `src/app/scenes/fight-arena-scene.ts`, `index.html`; tests as listed in TESTING_CHECKLIST 13i.
+- **Checks:** tsc and lint clean; vitest 56 files, 425 tests passed; build OK; e2e (one worker) 46 passed, 30 skipped. A long simulated-battle test got a 60 s timeout (it exceeded the default 5 s on a busy machine; the logic passed every run).
+- **Known issues:** only 4 fighter types, so 8 and 16 fields repeat fighters (numbered); each match reloads the page; results are browser-local, not server progression.
+- **Next task:** owner playtest; premium ability icons; server-side progression and rewards when the backend phase starts.
+
 ### 13/11/2026 (latest+3): Thrown furniture breaks; fighter AI opponents; opponent picker (owner)
 - **Throws (SUP-29):** anything thrown breaks where it lands.
 - **AI (REQ-AI-7, TD-061):** `src/ai/fighter-brain.ts`; any fighter opponent chases, punches in strings, uses its heavy, abilities and ultimate by range, backs off a downed player, and climbs onto furniture after the player. The training dummy is unchanged.

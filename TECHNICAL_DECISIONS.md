@@ -519,3 +519,14 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** Tactics are simple (range bands, timers, aggression); no path-finding round furniture yet (REQ-AI-5), so an AI can get stuck behind a desk until the player moves.
 **Status.** ACCEPTED.
 
+### TD-062: Tournament as pure bracket rules, page-per-match flow with saved state; AI path-finding grid — ACCEPTED (owner request 13/11/2026)
+**Context.** The owner asked for a knockout Tournament mode (4 to 16 fighters, expandable, watch or skip AI battles, bracket and champion screens), plus AI path-finding and difficulty levels.
+**Decision.**
+- *Rules:* `src/modes/tournament/tournament.ts` is pure (no engine, storage or randomness of its own): bracket creation with byes for any size, result recording with validation (only the two fighters in an undecided current-stage match), rating-weighted simulation, stage names, placement. `tournament-flow.ts` holds the stage-to-stage rules; `tournament-store.ts` saves the tournament and history in localStorage (display only; nothing pays out client-side).
+- *Matches:* `FightArenaScene` gains a `match` option: no respawn, first KO wins, a 150 s limit decided on health share, `onMatchEnd` once, `endMatchNow` for Skip battle, and spectator mode where the AI also plays the player side. `src/app/tournament-page.ts` runs the bracket page (`?mode=tournament`) and match pages (`&match=<id>`, `&watch`), reusing the existing page-per-fight model.
+- *AI:* `src/ai/nav-grid.ts` (A* on a 0.5 m grid built from physics free-space queries, string-pulled) gives `FighterBrain` a waypoint when the straight line is blocked; `src/data/ai/difficulty.ts` scales its timing and boldness.
+- *Tests in production builds:* the live scene is exposed to browser tests through a storage flag (`stickman-arena.test-hooks`), since e2e runs against the production preview.
+**Alternatives.** One long-lived page with an in-app router (rejected: more state to tear down between fights; the page-per-fight model already works); simulating every AI match in real time off-screen (rejected: cost); navmesh polygons (rejected: overkill for these arenas).
+**Trade-offs.** Each match reloads the page (a few seconds on slow phones); the tournament lives in one browser; only 4 fighter types exist, so bigger fields repeat fighters (numbered).
+**Status.** ACCEPTED.
+
