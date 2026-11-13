@@ -32,7 +32,7 @@ import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { FightIntro } from '../interface/fight-intro';
 import { fighterSheet } from '../interface/fighter-sheet';
-import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter } from '../interface/main-menu';
+import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter, type MenuOpponent } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { VisionVeil } from '../interface/vision-veil';
@@ -165,6 +165,15 @@ function menuFighters(): MenuFighter[] {
         colour: c.rig.colour,
       };
     });
+}
+
+/** Opponents for the menu (owner, 13/11/2026): the training dummy first (the default), then every playable fighter. */
+function menuOpponents(): MenuOpponent[] {
+  const dummy = BUILT_IN_LIBRARY.characters[DEFAULT_CAST.opponent];
+  return [
+    { id: DEFAULT_CAST.opponent, name: dummy?.displayName ?? 'Training Dummy' },
+    ...menuFighters().map((f) => ({ id: f.id, name: f.name })),
+  ];
 }
 
 export async function bootstrap({ container, status, debugPanel }: BootstrapElements): Promise<void> {
@@ -479,21 +488,32 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // Phones and tablets fill the whole screen (owner, 12/11/2026): fullscreen on the first tap.
   const touchDevice = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   // The main menu (owner: Settings has a button to leave the game): fighter and arena, then Play.
-  const currentChoice = { fighter: castFromParams(params).player ?? DEFAULT_CAST.player, arena: sceneName };
+  const cast = castFromParams(params);
+  const currentChoice = {
+    fighter: cast.player ?? DEFAULT_CAST.player,
+    arena: sceneName,
+    opponent: cast.opponent ?? DEFAULT_CAST.opponent,
+  };
   const menu = new MainMenu(
     document.body,
     menuFighters(),
     MENU_ARENAS,
+    menuOpponents(),
     currentChoice,
     (choice) => {
       if (touchDevice) enterFullscreen();
-      if (choice.fighter === currentChoice.fighter && choice.arena === currentChoice.arena) {
+      if (
+        choice.fighter === currentChoice.fighter &&
+        choice.arena === currentChoice.arena &&
+        choice.opponent === currentChoice.opponent
+      ) {
         menu.setOpen(false);
         return;
       }
       const next = new URLSearchParams();
       next.set('character', choice.fighter);
       if (choice.arena !== 'office') next.set('scene', choice.arena);
+      if (choice.opponent !== DEFAULT_CAST.opponent) next.set('opponent', choice.opponent);
       if (params.has('mute')) next.set('mute', '');
       next.set('play', '');
       window.location.search = next.toString();

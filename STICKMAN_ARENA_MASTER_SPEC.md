@@ -383,6 +383,7 @@ No numeric values were supplied (OQ-05).
 | REQ-AI-4 | Distinct combat personalities and adjustable difficulty. | [PB §12 Phase 10] |
 | REQ-AI-5 | Navigation around office furniture; tactical variety. | [PB §12 Phase 10] |
 | REQ-AI-6 | Can fight, evade, reposition and use objects (exit condition). | [PB §12 Phase 10] |
+| REQ-AI-7 | **Fighter AI opponents (owner, 13/11/2026):** any playable fighter can be the opponent, played by the AI on the same combat rules as the player: it closes in, punches in strings, throws in heavy attacks, uses its abilities and ultimate when the distance suits each one (ranges come from each ability's delivery data), backs off a knocked-down player, and jumps or climbs onto furniture after a player standing on it. The training dummy stays the default opponent and keeps its own behaviour. **Opponent picker:** the main menu has an Opponent row (Training Dummy, then every playable fighter); the choice starts the fight (`?opponent=<id>`). Owner's word "admin": there is no sign-in yet, so the picker is open to whoever uses the menu; restricting it to admins needs the server-side roles of REQ-BE-4. |
 
 ## 13. Game modes
 
@@ -538,6 +539,7 @@ Browser verification uses the documented dev command and browser automation: tes
 | SUP-26 | REQ-PHY-13 first version: thrown pieces tumble with their momentum (fast end-over-end, plus a spin). | A steady arc with at most a quarter-turn pitch and no random spin. Owner: "Fix the issue where thrown furniture spins randomly or uncontrollably." | 12/11/2026 |
 | SUP-27 | REQ-PHY-12 first version: drops over 1.3 m hurt, with a short dizzy (stunned) recovery. | Safe up to 2.2 m (walking off any furniture), damage and a collapse plus get-up beyond it, by the real drop; never dizzy. Owner: "The height shown in the reference image should not cause damage when simply walking off a platform." | 13/11/2026 |
 | SUP-28 | REQ-PHY-14 first version: the taller walls rise into view only while a fighter is in the air. | Always shown at full height. Owner: "just make the wall height visible instead of making it visible and not visible again". | 13/11/2026 |
+| SUP-29 | REQ-PHY-8..10 landings: thrown glass and ceramic shattered on a hard landing; other thrown furniture landed whole and was planted again. | Anything thrown breaks where it lands (owner: "Once the furniture is thrown it should break"); pieces with no durability survive. | 13/11/2026 |
 | SUP-23 | REQ-CTL-21 defaults: K ultimate. | K Heavy Attack, I ultimate; J/L also sweep a pouring Fire Beam (settings v3). | 12/11/2026 |
 | SUP-12 | REQ-CMB-12: three-strike 1-2-3 combo (jab, hook, heavy finisher). | REQ-CMB-26: three punches then a kick. | 11/11/2026 |
 
@@ -596,3 +598,4 @@ Browser verification uses the documented dev command and browser automation: tes
 | 13/11/2026 | Owner: Grapple Slam hit and miss animations (REQ-ABL-17); traversal across small gaps, falling, height-based landings, get-up and new fall damage rule (REQ-PHY-12, SUP-27). | Master Developer |
 | 13/11/2026 | Owner: redesign made the default for all fighters (REQ-VIS-10, TD-060); damage balance (REQ-CMB-31); taller outer walls shown in the air (REQ-PHY-14). | Master Developer |
 | 13/11/2026 | Owner: taller walls always shown (REQ-PHY-14, SUP-28); Shroud's knife points up diagonally and his mask tips down slightly. | Master Developer |
+| 13/11/2026 | Owner: thrown furniture breaks on landing (SUP-29); fighter AI opponents and the menu's opponent picker (REQ-AI-7). | Master Developer |

@@ -162,6 +162,8 @@ export class FighterEntity {
   meleeTracking = false;
   /** AI attack timer (dummy only). */
   attackCooldownS = 0;
+  /** The fighter AI driving this fighter when it is an AI opponent (created on first use). */
+  brain: import('../../ai/fighter-brain').FighterBrain | null = null;
   /** Smoothed presentation values. */
   tilt = 0;
   reactWeight = 0;

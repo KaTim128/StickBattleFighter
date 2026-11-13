@@ -23,6 +23,14 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+3): Thrown furniture breaks; fighter AI opponents; opponent picker (owner)
+- **Throws (SUP-29):** anything thrown breaks where it lands.
+- **AI (REQ-AI-7, TD-061):** `src/ai/fighter-brain.ts`; any fighter opponent chases, punches in strings, uses its heavy, abilities and ultimate by range, backs off a downed player, and climbs onto furniture after the player. The training dummy is unchanged.
+- **Opponent picker:** main menu Opponent row (Training Dummy default, then each fighter) sets `?opponent=`. Not restricted to admins: there is no sign-in yet (REQ-BE-4).
+- **Checks:** tsc and lint clean; vitest 53 files, 403 tests passed; build OK; e2e 43 passed, 28 skipped, plus one Punch Clash timing failure under two workers that passed 3/3 on its own. Browser: menu shows the Opponent row; Play against Titan starts a fight where Titan closes in and attacks.
+- **Known issues:** no path-finding (an AI can get stuck behind a desk); difficulty is the profile's aggression only.
+- **Next task:** Tournament mode (owner's spec), then AI path-finding and difficulty levels.
+
 ### 13/11/2026 (latest+2): Redesign default, damage balance, rising walls (owner)
 - **Redesign default (REQ-VIS-10, TD-060):** the preview gate is gone; Titan, Necro, Shroud and the dummy use their redesign and premium portraits everywhere.
 - **Damage (REQ-CMB-31):** for example Inferno's punches are now 22/24/26 with a 55 kick finisher (was 35/40/45/137), and his heavy is 50 (was 131); Titan's string is 34/41/90 (power included) and his heavy 84 where his abilities are 120 to 190. Melee hits furniture and walls through `MELEE_OBJECT_DAMAGE_SCALE` so they break as before.

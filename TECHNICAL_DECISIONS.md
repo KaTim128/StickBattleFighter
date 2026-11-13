@@ -512,3 +512,10 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** The back walls' raised tops sit mostly above the usual camera framing; the front glass is kept faint so it never hides the fight.
 **Status.** ACCEPTED.
 
+### TD-061: Fighter AI as a pure brain in `src/ai/` driving the shared action paths — ACCEPTED (owner request 13/11/2026)
+**Context.** The owner asked for AI opponents that use abilities, heavy attacks and climbing, and to pick the opponent (the training dummy by default, or any fighter).
+**Decision.** `src/ai/fighter-brain.ts` holds `FighterBrain` (pure decisions from a `BrainView`: positions, what each foot stands on, whether it can act, ability readiness and distance bands, its AI profile) and `abilityBand` (each ability's useful range from its delivery data, no character names). The fight scene builds the view each step (`controlAi`) and turns the output into the player's own paths: `tryCast` with the target as the aim point, `pressHeavy`, `press`, and `stepFighter` movement and jumps (the climbing rules then land on or grab furniture). An opponent with an ability kit is run by the brain; the training dummy keeps `controlDummy`. The main menu adds an Opponent row that sets `?opponent=`.
+**Alternatives.** A behaviour-tree library (rejected: a dependency for a small state set); scripting each fighter's AI (rejected: fighter-specific branches in shared code).
+**Trade-offs.** Tactics are simple (range bands, timers, aggression); no path-finding round furniture yet (REQ-AI-5), so an AI can get stuck behind a desk until the player moves.
+**Status.** ACCEPTED.
+

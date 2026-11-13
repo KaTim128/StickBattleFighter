@@ -354,6 +354,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Taller walls always shown; the front glass never hides the fight (browser screenshot of the office).
 - [ ] Owner playtest: fight length and feel with the new damage; wall rise look on a phone.
 
+## 13h. Thrown furniture and AI opponents (owner, 13/11/2026)
+- [x] Thrown furniture breaks where it lands (`tests/integration/scenes/throwing.test.ts`).
+- [x] Each fighter as the AI uses melee, its heavy and at least two abilities in a 25 s fight (`tests/integration/scenes/ai-opponent.test.ts`).
+- [x] The AI climbs onto a desk after the player; the training dummy stays still (same file).
+- [x] Menu opponent picker: dummy by default; picking Shroud starts a fight against Shroud (`tests/e2e/menu.spec.ts`).
+- [ ] Owner playtest: AI difficulty and feel on a phone; AI getting stuck behind furniture (no path-finding yet).
+
 ## 14. Regression (every milestone)
 - [ ] Full automated suite green
 - [ ] Previous milestones' acceptance tests re-run

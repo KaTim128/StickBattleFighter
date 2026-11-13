@@ -25,17 +25,26 @@ export interface MenuArena {
 export interface MenuChoice {
   readonly fighter: string;
   readonly arena: string;
+  /** Who the player fights (owner, 13/11/2026): the training dummy by default, or an AI fighter. */
+  readonly opponent: string;
+}
+
+/** An opponent the menu offers: the training dummy or a playable fighter run by the AI. */
+export interface MenuOpponent {
+  readonly id: string;
+  readonly name: string;
 }
 
 export class MainMenu {
   readonly root: HTMLDivElement;
-  private choice: { fighter: string; arena: string };
+  private choice: { fighter: string; arena: string; opponent: string };
   private open = false;
 
   constructor(
     parent: HTMLElement,
     fighters: readonly MenuFighter[],
     arenas: readonly MenuArena[],
+    opponents: readonly MenuOpponent[],
     current: MenuChoice,
     private readonly onPlay: (choice: MenuChoice) => void,
     private readonly onOpenChange: (open: boolean) => void,
@@ -89,6 +98,23 @@ export class MainMenu {
       });
       arenaRow.appendChild(b);
     }
+    // Opponent (owner, 13/11/2026): the training dummy by default, or any fighter played by the AI.
+    const opponentLabel = document.createElement('h2');
+    opponentLabel.textContent = 'Opponent';
+    const opponentRow = document.createElement('div');
+    opponentRow.className = 'mm-arenas mm-opponents';
+    for (const o of opponents) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mm-arena mm-opponent';
+      b.dataset.opponent = o.id;
+      b.textContent = o.name;
+      b.addEventListener('click', () => {
+        this.choice.opponent = o.id;
+        this.refresh();
+      });
+      opponentRow.appendChild(b);
+    }
     const play = document.createElement('button');
     play.type = 'button';
     play.className = 'mm-play';
@@ -99,7 +125,17 @@ export class MainMenu {
     this.details.hidden = true;
     this.details.setAttribute('role', 'dialog');
     this.details.setAttribute('aria-label', 'Fighter details');
-    this.root.append(title, fighterLabel, fighterRow, arenaLabel, arenaRow, play, this.details);
+    this.root.append(
+      title,
+      fighterLabel,
+      fighterRow,
+      arenaLabel,
+      arenaRow,
+      opponentLabel,
+      opponentRow,
+      play,
+      this.details,
+    );
     parent.appendChild(this.root);
     window.addEventListener(
       'keydown',
@@ -279,6 +315,8 @@ export class MainMenu {
       c.classList.toggle('selected', c.dataset.fighter === this.choice.fighter);
     for (const c of this.root.querySelectorAll<HTMLElement>('[data-arena]'))
       c.classList.toggle('selected', c.dataset.arena === this.choice.arena);
+    for (const c of this.root.querySelectorAll<HTMLElement>('[data-opponent]'))
+      c.classList.toggle('selected', c.dataset.opponent === this.choice.opponent);
   }
 }
 

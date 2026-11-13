@@ -1,6 +1,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
 import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../../abilities/ability-def';
+import { abilityBand, FighterBrain } from '../../ai/fighter-brain';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
@@ -214,6 +215,10 @@ function burstFromProfile(x: number, y: number, dir: { x: number; y: number }, p
 }
 
 /** Phase shape for a Punch Clash exchange beat (the clip is scaled to fit the beat). */
+/** Ability slots the fighter AI may use, in order. */
+const AI_SLOTS = ['a1', 'a2', 'a3', 'a4', 'ult'] as const;
+/** How close the AI must be to its target for a punch to land (body radii plus reach), metres. */
+const AI_MELEE_REACH_M = 1.3;
 const GROUND = { airborne: false, falling: false, forward: false } as const;
 const CLASH_BEAT_TIMING = { windupS: 0.06, activeS: 0.07, recoveryS: 0.17 } as const;
 /** Sound for a prop being hit or breaking, by material (src/audio recipes). */
@@ -753,7 +758,10 @@ export class FightArenaScene implements ArenaScene {
     } else if (!this.clashes.step(stepS, this.simTimeS)) {
       this.controlPlayer(this.playerFighter, stepS);
       this.trackLastAction();
-      this.controlDummy(this.dummyFighter, stepS);
+      // A fighter opponent (one with an ability kit) is played by the fighter AI; the training
+      // dummy keeps its own behaviour (owner, 13/11/2026).
+      if (this.dummyFighter.caster) this.controlAi(this.dummyFighter, stepS);
+      else this.controlDummy(this.dummyFighter, stepS);
       this.summons.update(stepS);
       this.clashes.maybeStart(this.simTimeS);
     }
@@ -1469,6 +1477,56 @@ export class FightArenaScene implements ArenaScene {
       f.attackCooldownS = f.def.ai.attackEveryS;
     }
     this.stepFighter(f, stepS, { x: 0, y: 0 }, false, f.def.ai.settleDecelMps2);
+  }
+
+  /**
+   * A fighter opponent played by the AI (owner, 13/11/2026): it chases, punches in strings, throws
+   * in heavy attacks, uses its abilities and ultimate when the distance suits them, and jumps or
+   * climbs onto furniture after the player. Decisions come from `FighterBrain`; the actions go
+   * through the same paths as the player's.
+   */
+  private controlAi(f: FighterEntity, stepS: number): void {
+    const p = this.playerFighter;
+    const c = f.combatant;
+    if (!f.brain) f.brain = new FighterBrain();
+    const brain = f.brain;
+    const sees = !p.combatant.isKo && !c.blinded && Math.hypot(p.x - f.x, p.y - f.y) <= c.sightM;
+    const caster = f.caster;
+    const ctx = { canAct: c.canAct && !f.combo.attack, stamina: c.stamina, airborne: f.airborne };
+    const abilities = caster
+      ? AI_SLOTS.map((slot) => ({
+          slot,
+          ready: caster.check(slot, ctx) === null && (slot === 'ult' || c.stamina >= caster.def(slot).staminaCost),
+          band: abilityBand(caster.def(slot)),
+        }))
+      : [];
+    const pc = p.combatant.state;
+    const out = brain.think({
+      timeS: this.simTimeS,
+      self: {
+        x: f.x,
+        y: f.y,
+        floorM: f.hop.floorM ?? 0,
+        airborne: f.airborne,
+        canAct: c.canAct && f.landHoldS === 0,
+        busy: f.combo.attack !== null || (caster?.cast ?? null) !== null,
+        hanging: f.climb !== null,
+      },
+      target: sees
+        ? { x: p.x, y: p.y, floorM: p.hop.floorM ?? 0, down: pc === 'knockdown' || pc === 'gettingUp' }
+        : null,
+      meleeReachM: AI_MELEE_REACH_M * (f.def.sizeScale ?? 1),
+      canClimb: f.def.capabilities.canJump,
+      abilities,
+      profile: f.def.ai,
+      random: () => this.rng(),
+    });
+    if (sees && c.canAct && !f.combo.attack && !caster?.cast) f.faceToward(p.x - f.x, p.y - f.y);
+    if (out.ability && this.abilities) this.abilities.tryCast(f, out.ability.slot, out.ability.at);
+    else if (out.heavy) f.combo.pressHeavy(GROUND);
+    else if (out.melee) f.combo.press(GROUND);
+    f.sprinting = out.sprint;
+    this.stepFighter(f, stepS, out.move, out.jump);
   }
 
   /** Shared per-fighter step: attacks, movement by state, jump, landing. */

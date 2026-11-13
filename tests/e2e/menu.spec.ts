@@ -71,3 +71,23 @@ test('fighter details: stat bars fill, abilities explain themselves, Back keeps 
   await expect(menu.locator('.mm-card.selected')).toHaveAttribute('data-fighter', 'necro');
   expect(errors).toEqual([]);
 });
+
+/** Opponent picker (owner, 13/11/2026): the training dummy by default, or any fighter played by the AI. */
+test('opponent picker: the dummy is the default; picking Shroud starts a fight against the AI Shroud', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.goto('/?mute');
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
+  const menu = page.locator('.main-menu');
+  await expect(menu).toBeVisible();
+  await expect(menu.locator('[data-opponent="training-dummy"]')).toHaveClass(/selected/);
+  await menu.locator('[data-opponent="shroud"]').click();
+  await expect(menu.locator('[data-opponent="shroud"]')).toHaveClass(/selected/);
+  await Promise.all([page.waitForURL(/opponent=shroud/), menu.locator('.mm-play').click()]);
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
+  await expect(page.locator('.th-right .th-name')).toHaveText('Shroud');
+  expect(errors).toEqual([]);
+});
