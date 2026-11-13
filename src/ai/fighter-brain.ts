@@ -1,4 +1,5 @@
 import type { AbilityDef } from '../abilities/ability-def';
+import type { Difficulty } from '../data/ai/difficulty';
 
 /**
  * Fighter AI (owner, 13/11/2026: "the AI opponent doesn't use the new abilities, heavy attacks or
@@ -78,6 +79,13 @@ export interface BrainView {
   readonly canClimb: boolean;
   readonly abilities: readonly { readonly slot: BrainSlot; readonly ready: boolean; readonly band: AbilityBand }[];
   readonly profile: { readonly aggression: number; readonly attackEveryS: number; readonly reactionS: number };
+  /** How quickly and boldly it plays (REQ-AI-4). */
+  readonly difficulty: Difficulty;
+  /**
+   * The next waypoint toward the target when furniture or walls block the straight line (REQ-AI-5);
+   * null when the way is clear.
+   */
+  readonly route: Vec2 | null;
   random(): number;
 }
 
@@ -104,6 +112,8 @@ export class FighterBrain {
   private nextJumpS = 0;
   private strafe = 1;
   private nextStrafeS = 0;
+  private hesitateUntilS = 0;
+  private lastS = 0;
 
   think(v: BrainView): BrainOutput {
     const out: BrainOutput = {
@@ -124,7 +134,16 @@ export class FighterBrain {
       return out;
     }
     const t = v.target;
+    const dtS = Math.max(0, v.timeS - this.lastS);
+    this.lastS = v.timeS;
     if (!t || !s.canAct) return out;
+    const diff = v.difficulty;
+    // An easier opponent sometimes hesitates for a moment.
+    if (v.timeS < this.hesitateUntilS) return out;
+    if (diff.hesitatePerS > 0 && v.random() < diff.hesitatePerS * dtS) {
+      this.hesitateUntilS = v.timeS + 0.4 + v.random() * 0.5;
+      return out;
+    }
     const dx = t.x - s.x;
     const dy = t.y - s.y;
     const dist = Math.hypot(dx, dy) || 1e-6;
@@ -132,9 +151,17 @@ export class FighterBrain {
     const aggression = v.profile.aggression;
 
     // Chase onto furniture: run at it and jump (the climbing rules land on it or grab the edge).
+    // Furniture or walls in the way: follow the route round them.
+    let chase = toward;
+    if (v.route) {
+      const rx = v.route.x - s.x;
+      const ry = v.route.y - s.y;
+      const rl = Math.hypot(rx, ry) || 1;
+      chase = { x: rx / rl, y: ry / rl };
+    }
     const above = t.floorM - s.floorM > CLIMB_AFTER_M;
     if (above && v.canClimb) {
-      out.move = toward;
+      out.move = chase;
       if (dist < 2.2 && !s.airborne && v.timeS >= this.nextJumpS) {
         out.jump = true;
         this.nextJumpS = v.timeS + 1.1;
@@ -147,27 +174,29 @@ export class FighterBrain {
       const fits = v.abilities.filter((a) => a.ready && dist >= a.band.minM && dist <= a.band.maxM);
       const ult = fits.find((a) => a.slot === 'ult');
       const pick = ult ?? fits[Math.floor(v.random() * fits.length)];
-      if (pick && (ult || v.random() < 0.45 + aggression * 0.5)) {
+      if (pick && (ult || v.random() < Math.min(1, (0.45 + aggression * 0.5) * diff.boldness))) {
         out.ability = { slot: pick.slot, at: { x: t.x, y: t.y } };
-        this.nextAbilityS = v.timeS + 1.6 + v.random() * (2.4 - aggression * 1.2);
+        this.nextAbilityS = v.timeS + (1.6 + v.random() * (2.4 - aggression * 1.2)) * diff.tempo;
         return out;
       }
-      this.nextAbilityS = v.timeS + 0.5; // nothing fitted: look again shortly
+      this.nextAbilityS = v.timeS + 0.5 * diff.tempo; // nothing fitted: look again shortly
     }
 
     const inReach = dist <= v.meleeReachM;
     if (inReach && !s.busy && !t.down) {
-      if (v.timeS >= this.nextHeavyS && v.random() < 0.3 + aggression * 0.3) {
+      if (v.timeS >= this.nextHeavyS && v.random() < (0.3 + aggression * 0.3) * diff.boldness) {
         out.heavy = true;
-        this.nextHeavyS = v.timeS + 3 + v.random() * 2.5;
+        this.nextHeavyS = v.timeS + (3 + v.random() * 2.5) * diff.tempo;
         return out;
       }
       if (v.timeS >= this.nextMeleeS) {
-        if (this.burstLeft <= 0) this.burstLeft = 2 + Math.floor(v.random() * (2 + aggression * 2));
+        if (this.burstLeft <= 0)
+          this.burstLeft = Math.min(diff.maxString, 2 + Math.floor(v.random() * (2 + aggression * 2)));
         out.melee = true;
         this.burstLeft--;
         // Presses chain the combo; after the string, a pause before the next one.
-        this.nextMeleeS = v.timeS + (this.burstLeft > 0 ? 0.3 : v.profile.attackEveryS * (0.7 + v.random() * 0.6));
+        this.nextMeleeS =
+          v.timeS + (this.burstLeft > 0 ? 0.3 : v.profile.attackEveryS * (0.7 + v.random() * 0.6) * diff.tempo);
       }
     }
     if (s.busy) return out;
@@ -179,7 +208,7 @@ export class FighterBrain {
     }
     const side = { x: -toward.y * this.strafe, y: toward.x * this.strafe };
     if (dist > v.meleeReachM * 0.85) {
-      out.move = toward;
+      out.move = chase;
       out.sprint = dist > 5;
     } else if (dist < v.meleeReachM * 0.45)
       out.move = { x: -toward.x * 0.6 + side.x * 0.3, y: -toward.y * 0.6 + side.y * 0.3 };

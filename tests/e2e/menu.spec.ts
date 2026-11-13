@@ -73,7 +73,7 @@ test('fighter details: stat bars fill, abilities explain themselves, Back keeps 
 });
 
 /** Opponent picker (owner, 13/11/2026): the training dummy by default, or any fighter played by the AI. */
-test('opponent picker: the dummy is the default; picking Shroud starts a fight against the AI Shroud', async ({
+test('opponent and difficulty pickers: dummy and Normal by default; picking Shroud on Hard starts that fight', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -86,7 +86,9 @@ test('opponent picker: the dummy is the default; picking Shroud starts a fight a
   await expect(menu.locator('[data-opponent="training-dummy"]')).toHaveClass(/selected/);
   await menu.locator('[data-opponent="shroud"]').click();
   await expect(menu.locator('[data-opponent="shroud"]')).toHaveClass(/selected/);
-  await Promise.all([page.waitForURL(/opponent=shroud/), menu.locator('.mm-play').click()]);
+  await expect(menu.locator('[data-difficulty="normal"]')).toHaveClass(/selected/); // REQ-AI-4 default
+  await menu.locator('[data-difficulty="hard"]').click();
+  await Promise.all([page.waitForURL(/opponent=shroud.*difficulty=hard/), menu.locator('.mm-play').click()]);
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.locator('.th-right .th-name')).toHaveText('Shroud');
   expect(errors).toEqual([]);

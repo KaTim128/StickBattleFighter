@@ -13,6 +13,7 @@ import type { CharacterLibrary } from '../characters/schema';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
+import { DEFAULT_DIFFICULTY, DIFFICULTIES, difficultyFor } from '../data/ai/difficulty';
 import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
@@ -230,7 +231,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           intents,
           viewport,
           params.has('overview'),
-          castFromParams(params),
+          { ...castFromParams(params), difficulty: params.get('difficulty') ?? undefined },
         );
   if (!(await scenes.switchTo(() => scene))) throw new Error(`${scene.name} scene failed to load`);
   // Fight arenas are drawn in the 2.5D view: keys and the joystick move along the screen (TD-045).
@@ -493,19 +494,22 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     fighter: cast.player ?? DEFAULT_CAST.player,
     arena: sceneName,
     opponent: cast.opponent ?? DEFAULT_CAST.opponent,
+    difficulty: difficultyFor(params.get('difficulty')).id,
   };
   const menu = new MainMenu(
     document.body,
     menuFighters(),
     MENU_ARENAS,
     menuOpponents(),
+    Object.values(DIFFICULTIES).map((d) => ({ id: d.id, name: d.label })),
     currentChoice,
     (choice) => {
       if (touchDevice) enterFullscreen();
       if (
         choice.fighter === currentChoice.fighter &&
         choice.arena === currentChoice.arena &&
-        choice.opponent === currentChoice.opponent
+        choice.opponent === currentChoice.opponent &&
+        choice.difficulty === currentChoice.difficulty
       ) {
         menu.setOpen(false);
         return;
@@ -514,6 +518,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       next.set('character', choice.fighter);
       if (choice.arena !== 'office') next.set('scene', choice.arena);
       if (choice.opponent !== DEFAULT_CAST.opponent) next.set('opponent', choice.opponent);
+      if (choice.difficulty !== DEFAULT_DIFFICULTY) next.set('difficulty', choice.difficulty);
       if (params.has('mute')) next.set('mute', '');
       next.set('play', '');
       window.location.search = next.toString();

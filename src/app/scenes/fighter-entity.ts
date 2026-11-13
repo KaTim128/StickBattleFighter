@@ -164,6 +164,9 @@ export class FighterEntity {
   attackCooldownS = 0;
   /** The fighter AI driving this fighter when it is an AI opponent (created on first use). */
   brain: import('../../ai/fighter-brain').FighterBrain | null = null;
+  /** The AI's next waypoint round obstacles (null: the way is clear), and when it last planned. */
+  aiRoute: { x: number; y: number } | null = null;
+  aiRouteAgeS = Number.POSITIVE_INFINITY;
   /** Smoothed presentation values. */
   tilt = 0;
   reactWeight = 0;

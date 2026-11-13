@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
 import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../../abilities/ability-def';
 import { abilityBand, FighterBrain } from '../../ai/fighter-brain';
+import { NavGrid } from '../../ai/nav-grid';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
@@ -38,6 +39,7 @@ import {
 } from '../../combat/attacks';
 import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
 import type { CombatEvent } from '../../combat/events';
+import { type Difficulty, difficultyFor } from '../../data/ai/difficulty';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
 import { THROWING } from '../../data/combat/throwing';
@@ -215,6 +217,12 @@ function burstFromProfile(x: number, y: number, dir: { x: number; y: number }, p
 }
 
 /** Phase shape for a Punch Clash exchange beat (the clip is scaled to fit the beat). */
+/** The AI's walking map: cell size, clearance round walls and furniture, refresh period (REQ-AI-5). */
+const NAV_CELL_M = 0.5;
+const NAV_CLEARANCE_M = 0.3;
+const NAV_REFRESH_S = 2;
+/** How often an AI re-plans its route to the target. */
+const AI_ROUTE_EVERY_S = 0.4;
 /** Ability slots the fighter AI may use, in order. */
 const AI_SLOTS = ['a1', 'a2', 'a3', 'a4', 'ult'] as const;
 /** How close the AI must be to its target for a punch to land (body radii plus reach), metres. */
@@ -279,6 +287,10 @@ export class FightArenaScene implements ArenaScene {
   private vfx: AbilityVfx | null = null;
   /** Fades walls and tall props that stand in front of a fighter (owner, 11/11/2026). */
   occlusion: OcclusionFader | null = null;
+  /** How the AI opponents play (owner, 13/11/2026; REQ-AI-4). */
+  readonly difficulty: Difficulty;
+  private nav: NavGrid | null = null;
+  private navAgeS = 0;
   /** Desk items that fell to the floor and now depth-sort as floor objects. */
   private readonly grounded = new Set<number>();
   /** Practice option: the dummy jabs back when you are close (REQ-MOD-5). */
@@ -335,9 +347,10 @@ export class FightArenaScene implements ArenaScene {
     /** Show the whole arena at once (layout review, `?overview`), instead of the follow camera. */
     private readonly overview = false,
     /** Which characters fight (Character Definition ids, TD-039) and where their data comes from. */
-    cast: { player?: string; opponent?: string; library?: CharacterLibrary } = {},
+    cast: { player?: string; opponent?: string; library?: CharacterLibrary; difficulty?: string } = {},
   ) {
     this.name = arena.id;
+    this.difficulty = difficultyFor(cast.difficulty);
     this.library = cast.library;
     const player = loadCharacter(cast.player ?? DEFAULT_CAST.player, cast.library);
     const opponent = loadCharacter(cast.opponent ?? DEFAULT_CAST.opponent, cast.library);
@@ -627,6 +640,9 @@ export class FightArenaScene implements ArenaScene {
     this.physics = physics;
     addArenaColliders(physics, arena, false); // props get their own bodies: they move and break
     this.props = new ArenaProps(arena, physics);
+    // The AI's walking map round walls and furniture (REQ-AI-5), refreshed as furniture moves.
+    this.nav = new NavGrid(arena.widthM, arena.heightM, NAV_CELL_M);
+    this.nav.rebuild((at) => !physics.isFree(at, NAV_CLEARANCE_M));
     this.climbing = new SceneClimbing(this.props, physics, {
       onLand: (f, { dropM, kind, damage }) => {
         // Landing reactions by the real drop (owner, 13/11/2026): a knee bend, a firm squat that
@@ -1490,6 +1506,24 @@ export class FightArenaScene implements ArenaScene {
     const c = f.combatant;
     if (!f.brain) f.brain = new FighterBrain();
     const brain = f.brain;
+    // Keep the walking map fresh (furniture moves and breaks), and the route to the target.
+    this.navAgeS += stepS;
+    if (this.nav && this.physics && this.navAgeS >= NAV_REFRESH_S) {
+      this.navAgeS = 0;
+      const physics = this.physics;
+      this.nav.rebuild((at) => !physics.isFree(at, NAV_CLEARANCE_M));
+    }
+    f.aiRouteAgeS += stepS;
+    if (f.aiRouteAgeS >= AI_ROUTE_EVERY_S) {
+      f.aiRouteAgeS = 0;
+      const from = { x: f.x, y: f.y };
+      const to = { x: p.x, y: p.y };
+      const blocked = this.nav && !this.nav.clearLine(from, to);
+      const path = blocked ? this.nav!.path(from, to) : null;
+      f.aiRoute = path?.[0] ?? null;
+    }
+    if (f.aiRoute && Math.hypot(f.aiRoute.x - f.x, f.aiRoute.y - f.y) < NAV_CELL_M * 0.6)
+      f.aiRouteAgeS = AI_ROUTE_EVERY_S;
     const sees = !p.combatant.isKo && !c.blinded && Math.hypot(p.x - f.x, p.y - f.y) <= c.sightM;
     const caster = f.caster;
     const ctx = { canAct: c.canAct && !f.combo.attack, stamina: c.stamina, airborne: f.airborne };
@@ -1519,6 +1553,8 @@ export class FightArenaScene implements ArenaScene {
       canClimb: f.def.capabilities.canJump,
       abilities,
       profile: f.def.ai,
+      difficulty: this.difficulty,
+      route: f.aiRoute,
       random: () => this.rng(),
     });
     if (sees && c.canAct && !f.combo.attack && !caster?.cast) f.faceToward(p.x - f.x, p.y - f.y);

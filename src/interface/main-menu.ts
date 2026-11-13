@@ -27,6 +27,8 @@ export interface MenuChoice {
   readonly arena: string;
   /** Who the player fights (owner, 13/11/2026): the training dummy by default, or an AI fighter. */
   readonly opponent: string;
+  /** How hard an AI opponent plays (REQ-AI-4). */
+  readonly difficulty: string;
 }
 
 /** An opponent the menu offers: the training dummy or a playable fighter run by the AI. */
@@ -37,7 +39,7 @@ export interface MenuOpponent {
 
 export class MainMenu {
   readonly root: HTMLDivElement;
-  private choice: { fighter: string; arena: string; opponent: string };
+  private choice: { fighter: string; arena: string; opponent: string; difficulty: string };
   private open = false;
 
   constructor(
@@ -45,6 +47,7 @@ export class MainMenu {
     fighters: readonly MenuFighter[],
     arenas: readonly MenuArena[],
     opponents: readonly MenuOpponent[],
+    difficulties: readonly MenuOpponent[],
     current: MenuChoice,
     private readonly onPlay: (choice: MenuChoice) => void,
     private readonly onOpenChange: (open: boolean) => void,
@@ -115,6 +118,22 @@ export class MainMenu {
       });
       opponentRow.appendChild(b);
     }
+    const difficultyLabel = document.createElement('h2');
+    difficultyLabel.textContent = 'AI difficulty';
+    const difficultyRow = document.createElement('div');
+    difficultyRow.className = 'mm-arenas mm-opponents';
+    for (const d of difficulties) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mm-arena';
+      b.dataset.difficulty = d.id;
+      b.textContent = d.name;
+      b.addEventListener('click', () => {
+        this.choice.difficulty = d.id;
+        this.refresh();
+      });
+      difficultyRow.appendChild(b);
+    }
     const play = document.createElement('button');
     play.type = 'button';
     play.className = 'mm-play';
@@ -133,6 +152,8 @@ export class MainMenu {
       arenaRow,
       opponentLabel,
       opponentRow,
+      difficultyLabel,
+      difficultyRow,
       play,
       this.details,
     );
@@ -317,6 +338,8 @@ export class MainMenu {
       c.classList.toggle('selected', c.dataset.arena === this.choice.arena);
     for (const c of this.root.querySelectorAll<HTMLElement>('[data-opponent]'))
       c.classList.toggle('selected', c.dataset.opponent === this.choice.opponent);
+    for (const c of this.root.querySelectorAll<HTMLElement>('[data-difficulty]'))
+      c.classList.toggle('selected', c.dataset.difficulty === this.choice.difficulty);
   }
 }
 

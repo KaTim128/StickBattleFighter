@@ -14,6 +14,7 @@ async function setup(
   layout: ArenaLayout,
   at: { x: number; y: number },
   foe: { x: number; y: number },
+  difficulty?: string,
 ) {
   const intents = new PlayerIntents();
   const scene = new FightArenaScene(
@@ -22,7 +23,7 @@ async function setup(
     intents,
     () => ({ width: 1280, height: 720 }),
     false,
-    { player: 'inferno', opponent },
+    { player: 'inferno', opponent, difficulty },
   );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
@@ -87,5 +88,40 @@ describe('fighter AI opponent', () => {
     expect(scene.dummyFighter.brain).toBeNull();
     expect(Math.abs(scene.dummy.x - x0)).toBeLessThan(0.05);
     scenes.clear();
+  });
+
+  it('walks round a wall to reach the player instead of pushing against it (REQ-AI-5)', async () => {
+    // A long wall between them, open at the bottom end.
+    const room: ArenaLayout = { ...TRAINING_YARD, props: [], interiorWalls: [{ x0: 13.9, y0: 0, x1: 14.1, y1: 15 }] };
+    const { scene, scenes, run } = await setup('rampage', room, { x: 11, y: 8 }, { x: 17, y: 8 });
+    let reached = false;
+    run(14, () => {
+      scene.playerFighter.combatant.hp = 1000;
+      if (Math.hypot(scene.dummy.x - 11, scene.dummy.y - 8) < 2) reached = true;
+    });
+    expect(reached).toBe(true);
+    scenes.clear();
+  });
+
+  it('a harder opponent attacks more often than an easier one (REQ-AI-4)', async () => {
+    const pressure = async (difficulty: string) => {
+      const { scene, scenes, run } = await setup(
+        'inferno',
+        TRAINING_YARD,
+        { x: 10, y: 10 },
+        { x: 12, y: 10 },
+        difficulty,
+      );
+      let busy = 0;
+      run(20, () => {
+        scene.playerFighter.combatant.hp = 1000;
+        if (scene.dummyFighter.combo.attack || scene.dummyFighter.caster?.cast) busy++;
+      });
+      scenes.clear();
+      return busy;
+    };
+    const easy = await pressure('easy');
+    const hard = await pressure('hard');
+    expect(hard).toBeGreaterThan(easy * 1.3);
   });
 });
