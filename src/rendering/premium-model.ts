@@ -299,6 +299,9 @@ function sleeveQuad(g: Graphics, p: Point, q: Point, ra: number, rb: number, col
 }
 
 /** An oval centred at c, its long axis along (ux, uy), half-lengths a (along) and b (across). */
+/** The mask's lean (its oval axes): a little forward, so the face tips down. */
+const MASK_TILT = 0.34;
+
 function oval(g: Graphics, c: Point, ux: number, uy: number, a: number, b: number, colour: number, alpha = 1): void {
   const pts: number[] = [];
   for (let i = 0; i < 18; i++) {
@@ -1209,12 +1212,13 @@ export class PremiumModel {
       return;
     }
     // The white mask: shaded far side, a lit brow, dark eye hollows, nostrils and a thin mouth.
-    const mc = { x: h.x + 0.6 * r, y: h.y + 0.14 * r };
+    // Tipped down a little (owner, 13/11/2026): the face sits lower in the hood and leans forward.
+    const mc = { x: h.x + 0.57 * r, y: h.y + 0.22 * r };
     const bone = 0xf1eee6;
-    oval(g, mc, 0.22, 1, r * 0.66 + w * 0.12, r * 0.4 + w * 0.12, this.c(0x111114));
-    oval(g, mc, 0.22, 1, r * 0.66, r * 0.4, this.c(bone));
-    oval(g, { x: mc.x - r * 0.15, y: mc.y + r * 0.05 }, 0.22, 1, r * 0.58, r * 0.18, this.c(0xbdb8ac), 0.65);
-    oval(g, { x: mc.x + r * 0.05, y: mc.y - r * 0.3 }, 0.22, 1, r * 0.22, r * 0.14, 0xffffff, 0.6);
+    oval(g, mc, MASK_TILT, 1, r * 0.66 + w * 0.12, r * 0.4 + w * 0.12, this.c(0x111114));
+    oval(g, mc, MASK_TILT, 1, r * 0.66, r * 0.4, this.c(bone));
+    oval(g, { x: mc.x - r * 0.15, y: mc.y + r * 0.05 }, MASK_TILT, 1, r * 0.58, r * 0.18, this.c(0xbdb8ac), 0.65);
+    oval(g, { x: mc.x + r * 0.05, y: mc.y - r * 0.3 }, MASK_TILT, 1, r * 0.22, r * 0.14, 0xffffff, 0.6);
     // Eye openings after the owner's reference (13/11/2026): large, dark, hollow almond holes cut
     // through the mask, each pointed and dipped low at the inner corner by the nose, so the blank
     // face stares down with a menacing scowl. The far one is foreshortened and mirrored.
