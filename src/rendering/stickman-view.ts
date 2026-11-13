@@ -39,6 +39,9 @@ const BRUTE = {
 /** Living-flame body colours (Inferno, owner 11/11/2026). */
 const FLAME = { glow: 0xff5a14, ember: 0x6a1404, deep: 0xd8320c, core: 0xffd56a } as const;
 
+/** How far Shroud's knife is cocked up from the forearm (radians). */
+const KNIFE_TILT_RAD = (50 * Math.PI) / 180;
+
 export class StickmanView {
   private last: { s: ReturnType<typeof solveSkeleton>; facing: 1 | -1; heightM: number; rot: number } | null = null;
   readonly root = new Container();
@@ -793,11 +796,17 @@ export class StickmanView {
   }
 
   /**
-   * Shroud's knife (owner, 12/11/2026): a black-gripped hunting knife held point-forward along the
-   * forearm: a polished steel blade with a bright cutting edge, a dark spine shade, a small steel
+   * Shroud's knife (owner, 12/11/2026): a black-gripped hunting knife held point-up at a diagonal
+   * from the fist (owner, 13/11/2026): a polished steel blade with a bright cutting edge, a dark spine shade, a small steel
    * guard, and a red stain toward the tip.
    */
-  private drawKnife(g: Graphics, hand: Point, ux: number, uy: number, o: number): void {
+  private drawKnife(g: Graphics, hand: Point, fx: number, fy: number, o: number): void {
+    // Owner, 13/11/2026: the blade points up diagonally, not straight along the forearm: the wrist
+    // cocks it about 50 degrees upward (the figure faces +x; up is -y).
+    const c = Math.cos(KNIFE_TILT_RAD);
+    const sn = Math.sin(KNIFE_TILT_RAD);
+    const ux = fx * c + fy * sn;
+    const uy = -fx * sn + fy * c;
     const nx = -uy;
     const ny = ux;
     const at = (k: number, side: number) => ({ x: hand.x + ux * k + nx * side, y: hand.y + uy * k + ny * side });
