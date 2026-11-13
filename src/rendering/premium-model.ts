@@ -367,6 +367,9 @@ export class PremiumModel {
     this.st = { ...st, w: st.w * this.skin.bulk };
     this.lx = -0.55 * st.facing;
     this.ly = -0.83;
+    // A brute's upper back: its silhouette first, so its outline joins the body's outer edge.
+    const brute = this.skin.muscle > 1.2;
+    if (brute) this.upperBack(g, s, true);
     this.arm(g, fire, s.armBack, true);
     this.leg(g, fire, s.legBack, true);
     if (this.skin.garment) {
@@ -378,7 +381,7 @@ export class PremiumModel {
       this.torso(g, fire, s);
       this.leg(g, fire, s.legFront, false);
     }
-    if (this.skin.muscle > 1.2) this.upperBack(g, s);
+    if (brute) this.upperBack(g, s, false);
     const hs = this.skin.head;
     if (hs === 'crest' || hs === 'brute') this.head(g, fire, s, hs);
     else if (hs === 'cowl' || hs === 'mask') this.hooded(g, fire, s, hs);
@@ -824,9 +827,10 @@ export class PremiumModel {
   /**
    * A brute's upper back (owner, 13/11/2026, Titan): a mound of trapezius and upper-back muscle
    * rising from the rear shoulder to the back of the skull, so the space behind the head is filled
-   * with muscle that flows into the shoulders and neck. Drawn over the torso's armour, under the head.
+   * with muscle that flows into the shoulders and neck. Two passes: the silhouette behind the body,
+   * then seamless skin and muscle shading over the torso, under the head.
    */
-  private upperBack(g: Graphics, s: Skel): void {
+  private upperBack(g: Graphics, s: Skel, silhouette: boolean): void {
     const w = this.st.w;
     const r = this.st.headRadius;
     const back = -this.st.facing; // screen x toward his back
@@ -845,9 +849,18 @@ export class PremiumModel {
         .lineTo(s.neck.x, s.neck.y)
         .closePath();
     };
-    shape(w * 0.32);
-    g.fill(this.c(this.P.outline));
-    shape(0);
+    if (silhouette) {
+      // Behind everything: the outline and skin, so the torso, shoulder and neck overlap it and the
+      // outer edge runs as one line round the whole body.
+      shape(w * 0.32);
+      g.fill(this.c(this.P.outline));
+      shape(0);
+      g.fill(this.c(this.P.skin));
+      return;
+    }
+    // Over the torso: skin only, no outline, painting out the seams so the muscle runs unbroken
+    // from the neck over the shoulder into the back.
+    shape(-w * 0.04);
     g.fill(this.c(this.P.skin));
     // Definition: shadow under the mound, a lit ridge along the top, the groove into the shoulder.
     const mid = { x: (sh.x + skull.x) / 2 + back * w * 0.15, y: (sh.y + skull.y) / 2 + w * 0.05 };
