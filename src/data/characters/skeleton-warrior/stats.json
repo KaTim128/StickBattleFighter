@@ -1,6 +1,6 @@
 {
   "id": "skeleton-stats",
-  "maxHp": 160,
+  "maxHp": 67,
   "maxStamina": 100,
   "staminaRegenPerS": 30,
   "staminaRegenDelayS": 0.7,
@@ -15,7 +15,7 @@
     "footRadiusM": 0.28,
     "massKg": 40
   },
-  "power": 0.6,
+  "power": 0.5,
   "defence": 1,
   "critChance": 0,
   "critMultiplier": 1.5,
