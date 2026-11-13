@@ -26,7 +26,7 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   const title = front.locator('[data-screen="title"]');
   await expect(title).toBeVisible();
   // Only Story Mode, Game Modes, Settings and Quit Game; no Start, no Admin Panel for players.
-  await expect(title.locator('.fe-item')).toHaveText([/Story Mode/, 'Game Modes', 'Settings', 'Quit Game']);
+  await expect(title.locator('.fe-item')).toHaveText([/Story Mode/, 'Game Modes', 'Practice', 'Settings', 'Quit Game']);
   await expect(title.locator('.fe-item-story')).toHaveClass(/locked/);
   await expect(page.locator('.ability-bar')).toBeHidden();
   expect((await debug(page)).menuMusicPlaying).toBe(true); // menu music on the title screen
@@ -140,5 +140,49 @@ test('Settings from the title, change the name there; Quit says goodbye; the adm
   // Quit: a page cannot close a tab it did not open, so it says goodbye.
   await title.locator('[data-nav="quit"]').click();
   await expect(page.locator('.front-end [data-screen="quit"]')).toContainText('THANKS FOR PLAYING');
+  expect(errors).toEqual([]);
+});
+
+test('Practice: the tutorial teaches step by step; the Open Zone tries any fighter and Leave comes back', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(120_000);
+  const errors = await launch(page);
+  await page.evaluate(() => localStorage.setItem('stickman-arena.player-name.v1', 'Katim'));
+  await page.reload();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  const front = page.locator('.front-end');
+  await front.locator('[data-nav="practice"]').click();
+  const practice = front.locator('[data-screen="practice"]');
+  await expect(practice.locator('[data-practice]')).toHaveCount(2);
+  // The tutorial: step 1 is moving; walking finishes it.
+  await Promise.all([page.waitForURL(/tutorial/), practice.locator('[data-practice="tutorial"]').click()]);
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  const card = page.locator('.tutorial-card');
+  await expect(card.locator('.tut-count')).toHaveText('STEP 1 / 8');
+  await expect(card.locator('.tut-title')).toHaveText('Move');
+  if (testInfo.project.name.includes('mobile')) {
+    await expect(card.locator('.tut-text')).toContainText('joystick');
+  } else {
+    await expect(card.locator('.tut-text')).toContainText('WASD');
+    await page.waitForTimeout(3500); // READY... FIGHT!
+    await page.keyboard.down('KeyD');
+    await expect(card.locator('.tut-title')).toHaveText('Punch', { timeout: 30_000 });
+    await page.keyboard.up('KeyD');
+  }
+  await card.locator('.tut-skip').click();
+  await expect(card.locator('.tut-count')).toHaveText('COMPLETE');
+  // Open Zone from the finish card: pick a fighter and an AI opponent, then ENTER.
+  await card.locator('.tut-open').click();
+  const select = front.locator('[data-screen="select"]');
+  await expect(select.locator('.fe-h')).toHaveText('OPEN ZONE');
+  await select.locator('.fe-tile[data-fighter="shroud"]').click();
+  await select.locator('[data-opponent="necro"]').click();
+  await Promise.all([page.waitForURL(/opponent=necro/), select.locator('.fe-enter').click()]);
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  expect(page.url()).toContain('character=shroud');
+  await page.locator('.settings-button').click();
+  await page.locator('.settings-leave').click();
+  await expect(front.locator('[data-screen="practice"]')).toBeVisible(); // back to Practice
   expect(errors).toEqual([]);
 });

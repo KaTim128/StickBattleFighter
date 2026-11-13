@@ -404,3 +404,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Tournament stages Top 16 / Top 8 / Top 4 / Top 2, then a Champion slot (unit + e2e)
 - [x] Select stances turned 30-45°, Titan ≥ 1.2× larger with hands on his hips, elbows out (unit, screenshots)
 
+## Practice, tutorial, watched battles, icon (13/11/2026; REQ-UI-35, REQ-AI-9)
+- [x] Title has Practice under Game Modes; Practice offers Tutorial and Open Zone (e2e)
+- [x] Tutorial: every step finishes only when done, in order; device wording; skip (unit + e2e)
+- [x] Open Zone: pick fighter and AI opponent, ENTER, Leave returns to Practice (e2e)
+- [x] Watched battles close: winner's mean health left < 35% over four matchups, each > 20 s (integration)
+- [x] Showmanship changes only decisions, never damage/health/speed; level fights untouched (unit)
+- [x] Title: Titan's head visible on a 2400×1080 fullscreen phone shape (screenshot)
+- [ ] Home-screen icon on a real Android and iPhone (manual)
+

@@ -2,6 +2,7 @@ import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
+import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
@@ -57,6 +58,44 @@ describe('match mode', () => {
     expect(r.powerB).toBeGreaterThan(10);
     scenes.clear();
   });
+
+  it('watched AI battles are close: the winner finishes with little health left on average (owner, 13/11/2026)', async () => {
+    const left: number[] = [];
+    for (const [a, b] of [
+      ['inferno', 'rampage'],
+      ['necro', 'shroud'],
+      ['shroud', 'inferno'],
+      ['rampage', 'shroud'],
+    ] as const) {
+      const scene = new FightArenaScene(
+        OFFICE,
+        new Container(),
+        new PlayerIntents(),
+        () => ({ width: 1280, height: 720 }),
+        false,
+        { player: a, opponent: b, match: { spectate: true }, difficulty: 'normal' },
+      );
+      const scenes = new SceneManager();
+      await scenes.switchTo(() => scene);
+      let done = false;
+      scene.onMatchEnd = () => {
+        done = true;
+      };
+      let t = 0;
+      for (; t < 160 && !done; t += STEP) {
+        scenes.update(STEP);
+        scenes.render(1, STEP);
+      }
+      expect(done, `${a} v ${b} ends`).toBe(true);
+      expect(t, `${a} v ${b} is a real fight`).toBeGreaterThan(20);
+      const p = scene.playerFighter.combatant;
+      const o = scene.dummyFighter.combatant;
+      left.push(Math.max(p.hp / p.stats.maxHp, o.hp / o.stats.maxHp));
+      scenes.clear();
+    }
+    const mean = left.reduce((x, y) => x + y, 0) / left.length;
+    expect(mean).toBeLessThan(0.35);
+  }, 180_000);
 
   it('a KO ends the match: the loser does not get back up', async () => {
     const { scene, scenes, results, runUntil } = await setup(false);

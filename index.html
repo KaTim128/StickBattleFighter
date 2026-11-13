@@ -8,7 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Stickman Arena" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="icon-192.png" />
     <meta name="theme-color" content="#11151c" />
     <title>Stickman Arena</title>
     <style>
@@ -664,12 +665,14 @@
          and centred; invisible buttons sit over its painted plates and light up when pointed at. */
       .fe-title { padding: 0; overflow: hidden; background: #0a0610; }
       .fe-art {
-        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); aspect-ratio: 1672 / 941;
+        /* Anchored to the top (owner, 13/11/2026: Titan's head must show in fullscreen): a wide
+           screen trims only the floor at the bottom. */
+        position: absolute; left: 50%; top: 0; transform: translateX(-50%); aspect-ratio: 1672 / 941;
         width: max(calc(100 * var(--vw, 1vw)), calc(100 * var(--vh, 1vh) * 1672 / 941));
         background-size: 100% 100%; background-repeat: no-repeat;
       }
       /* The menu: the game's own plates, in the Admin Panel plate's style (owner, 13/11/2026). */
-      .fe-nav { position: absolute; left: 2.6%; top: 44%; z-index: 2; display: flex; flex-direction: column; gap: clamp(4px, 1.1%, 10px); width: 25%; }
+      .fe-nav { position: absolute; left: 2.6%; top: 37%; z-index: 2; display: flex; flex-direction: column; gap: clamp(4px, 1.1%, 10px); width: 25%; }
       .fe-plate { position: relative; display: flex; align-items: center; gap: 10px; padding: clamp(5px, calc(0.9 * var(--vh, 1vh)), 11px) 8% clamp(5px, calc(0.9 * var(--vh, 1vh)), 11px) 13%; border: 0; cursor: pointer; text-align: left; color: #ffb347; background: linear-gradient(90deg, rgba(30, 22, 38, 0.95), rgba(20, 14, 26, 0.72) 75%, transparent); clip-path: polygon(3% 0, 100% 0, 97% 100%, 0 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); transition: background 0.15s, transform 0.15s, color 0.15s; }
       .fe-plate .fe-item-label { font: italic 800 clamp(13px, calc(1.9 * var(--vw, 1vw)), 26px) system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; text-shadow: 0 2px 0 #000; line-height: 1.1; }
       .fe-plate.active { transform: translateX(8px); color: #fff4e0; background: linear-gradient(90deg, rgba(160, 12, 26, 0.95), rgba(95, 6, 16, 0.82) 70%, transparent); }
@@ -777,6 +780,26 @@
       html.short .fe-fight { padding: 6px 28px; }
       html.short .fe-mode { padding: 10px 16px; }
       html.short .fe-mode-name { font-size: 18px; }
+      /* Tutorial card (owner, 13/11/2026). */
+      .tutorial-card { position: fixed; left: 50%; top: 74px; transform: translateX(-50%); z-index: 30; width: min(92%, 440px); box-sizing: border-box; padding: 10px 14px 12px; border-radius: 14px; background: rgba(12, 10, 18, 0.9); border: 1px solid rgba(255, 179, 71, 0.55); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); color: #f2f5fa; font: 14px system-ui, sans-serif; text-align: center; }
+      .tutorial-card.step-done { border-color: #6be37a; }
+      .tutorial-card.done { border-color: #ffb347; }
+      .tut-head { display: flex; gap: 10px; justify-content: center; align-items: baseline; }
+      .tut-count { font: 800 11px system-ui, sans-serif; letter-spacing: 0.14em; color: #ffb347; }
+      .tut-title { font: italic 900 18px system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+      .tut-text { margin: 4px 0 8px; opacity: 0.92; }
+      .tut-track { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+      .tut-bar { height: 100%; width: 0; background: linear-gradient(90deg, #ff8a3d, #ffb347); transition: width 0.2s; }
+      .tutorial-card.step-done .tut-bar { background: #6be37a; }
+      .tut-actions { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+      .tut-actions button { padding: 6px 16px; border-radius: 8px; border: 1px solid rgba(232, 237, 245, 0.35); background: transparent; color: inherit; font: 700 12px system-ui, sans-serif; cursor: pointer; }
+      .tut-actions .tut-open { border: 0; background: #ff8a3d; color: #1b120a; }
+      html.short .tutorial-card { top: 52px; left: max(10px, env(safe-area-inset-left)); transform: none; width: min(44%, 320px); padding: 5px 9px 7px; text-align: left; }
+      html.short .tut-head { justify-content: flex-start; }
+      html.short .tut-actions { justify-content: flex-start; margin-top: 5px; }
+      html.short .tut-actions button { padding: 3px 10px; font-size: 11px; }
+      html.short .tut-title { font-size: 14px; }
+      html.short .tut-text { font-size: 12px; margin: 2px 0 5px; }
     </style>
   </head>
   <body>

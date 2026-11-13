@@ -49,6 +49,7 @@ import {
 } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
+import { TutorialOverlay } from '../interface/tutorial-overlay';
 import { VisionVeil } from '../interface/vision-veil';
 import { initPhysics } from '../physics/physics-world';
 import { loadPlayerName, savePlayerName } from '../progression/player-name';
@@ -57,6 +58,7 @@ import { createTextureLoader } from '../rendering/pixi-assets';
 import { renderIdleStrips, renderPortraits } from '../rendering/portraits';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
+import { TutorialRun } from '../tutorial/tutorial';
 import { fighterSettingsHost } from './fighter-settings';
 import type { ArenaScene } from './scenes/arena-scene';
 import { EngineCheckScene } from './scenes/engine-check-scene';
@@ -96,6 +98,8 @@ export interface EngineDebugInfo {
   ambience: string | null;
   /** The battle music is playing (owner, 12/11/2026). */
   musicPlaying: boolean;
+  /** The tutorial step on screen (`done` at the end), when the tutorial runs. */
+  tutorial?: string;
   /** Interface button clicks that played the click sound (owner, 13/11/2026). */
   uiClicks: number;
   menuMusicPlaying: boolean;
@@ -532,6 +536,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         }
         combatText.show(events, (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
+        tutorialFrame?.();
         const hud = scene.topHud;
         topHud.update(
           playerName && !scene.match?.spectate
@@ -673,9 +678,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   );
   // Settings → Leave: back to the menu, unless this page sets its own (a tournament fight is settled).
   let drawStances = async (): Promise<void> => {};
+  let tutorialFrame: (() => void) | null = null;
   let leave = (): void => {
     menu.setOpen(false);
-    front.setOpen(true, 'title');
+    // A practice fight (Open Zone or the tutorial) goes back to Practice, to try another fighter.
+    front.setOpen(true, params.has('practice') ? 'practice' : 'title');
   };
   const settingsPanel = new SettingsPanel(
     document.body,
@@ -729,6 +736,30 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       front.setOpen(false);
       menu.setOpen(true);
     },
+    opponents: menuOpponents(),
+    startPractice: (setup) => {
+      if (touchDevice) enterFullscreen();
+      const next = new URLSearchParams();
+      next.set('character', setup.fighter);
+      if (setup.arena !== 'office') next.set('scene', setup.arena);
+      next.set('opponent', setup.opponent);
+      next.set('difficulty', setup.difficulty);
+      next.set('practice', '');
+      if (params.has('mute')) next.set('mute', '');
+      next.set('play', '');
+      window.location.search = next.toString();
+    },
+    startTutorial: (fighter) => {
+      if (touchDevice) enterFullscreen();
+      const next = new URLSearchParams();
+      next.set('character', fighter);
+      next.set('scene', 'training-yard');
+      next.set('tutorial', '');
+      next.set('practice', '');
+      if (params.has('mute')) next.set('mute', '');
+      next.set('play', '');
+      window.location.search = next.toString();
+    },
     startTournament: (setup) => {
       if (touchDevice) enterFullscreen();
       const pool = menuFighters().map((f) => ({ fighter: f.id, name: f.name }));
@@ -766,6 +797,71 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
     true,
   );
+  // The tutorial (owner, 13/11/2026): guided steps in the training yard (src/tutorial).
+  if (params.has('tutorial') && scene instanceof FightArenaScene) {
+    const run = new TutorialRun();
+    const f = scene.playerFighter;
+    const keys = (): Record<string, string> => {
+      if (touchDevice)
+        return {
+          move: 'the joystick (left thumb)',
+          attack: 'MELEE',
+          heavy: 'HEAVY',
+          dodge: 'DODGE',
+          abilities: 'the four ability buttons',
+          ultimate: 'ULT',
+        };
+      const b = settings.bindings;
+      const k = (c: string) => codeLabel(c);
+      return {
+        move: `${k(b.moveUp)}${k(b.moveLeft)}${k(b.moveDown)}${k(b.moveRight)}`,
+        attack: k(b.attack),
+        heavy: k(b.heavyAttack),
+        dodge: k(b.dodge),
+        abilities: `${k(b.ability1)}, ${k(b.ability2)}, ${k(b.ability3)} or ${k(b.ability4)}`,
+        ultimate: k(b.ultimate),
+      };
+    };
+    const overlay = new TutorialOverlay(document.body, keys, {
+      skip: () => run.skip(),
+      openZone: () => {
+        front.setOpen(true);
+        front.openSelect('practice');
+      },
+      menu: () => front.setOpen(true, 'title'),
+    });
+    let last = { x: f.x, y: f.y, hits: f.hits };
+    let ultReady = false;
+    let lastMs = performance.now();
+    tutorialFrame = () => {
+      // Real time since the last frame (frames come at the display's rate, not the simulation's).
+      const now = performance.now();
+      const dtS = Math.min(0.5, (now - lastMs) / 1000);
+      lastMs = now;
+      const ultId = f.caster?.def('ult').id;
+      const cast = f.caster?.cast?.def.id ?? null;
+      run.update(
+        {
+          movedM: Math.hypot(f.x - last.x, f.y - last.y),
+          hits: Math.max(0, f.hits - last.hits),
+          heavy: f.combo.attack?.id !== undefined && f.combo.attack.id === f.def.starters.heavy,
+          guarding: f.combatant.state === 'guarding',
+          dodging: f.combatant.state === 'dodging',
+          ability: cast ? (cast === ultId ? 'ultimate' : 'basic') : null,
+        },
+        dtS,
+      );
+      last = { x: f.x, y: f.y, hits: f.hits };
+      // The dummy only fights back while blocking is taught; the ultimate comes charged.
+      scene.dummyAttacks = run.step?.id === 'block';
+      if (run.step?.id === 'ultimate' && !ultReady) {
+        ultReady = true;
+        f.caster?.fillMeter();
+      }
+      overlay.update(run);
+      debug.tutorial = run.finished ? 'done' : (run.step?.id ?? 'done');
+    };
+  }
   const menuFirst = scene instanceof FightArenaScene && !automated && !params.has('play');
   if (menuFirst) front.setOpen(true, 'title');
   // Tournament mode (owner, 13/11/2026): a saved tournament can be resumed from the menu; its

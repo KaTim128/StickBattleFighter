@@ -3,6 +3,7 @@ import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster'
 import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../../abilities/ability-def';
 import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
+import { showmanship } from '../../ai/showmanship';
 import { abilityPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
@@ -1655,7 +1656,10 @@ export class FightArenaScene implements ArenaScene {
       abilities,
       profile: f.def.ai,
       design: brainDesignFor(f.def.ai.id),
-      difficulty: this.difficulty,
+      // A watched battle (both sides AI) plays sharp and stays close (owner, 13/11/2026).
+      difficulty: this.match?.spectate
+        ? showmanship(this.difficulty, c.hp / c.stats.maxHp, p.combatant.hp / p.combatant.stats.maxHp)
+        : this.difficulty,
       route: f.aiRoute,
       random: () => this.rng(),
     });

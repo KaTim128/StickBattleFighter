@@ -22,7 +22,7 @@ import { TOURNAMENT_SIZES } from './main-menu';
  * - Quit: browsers only let a page close a window it opened, so Quit tries, then shows a goodbye.
  */
 
-export type FrontScreen = 'title' | 'name' | 'modes' | 'select' | 'quit';
+export type FrontScreen = 'title' | 'name' | 'modes' | 'practice' | 'select' | 'quit';
 
 export interface FighterPresentation {
   readonly title: string;
@@ -38,6 +38,14 @@ export interface StanceStrip {
   readonly spanS: number;
 }
 
+/** Open Zone (owner, 13/11/2026): try any fighter against the dummy or an AI fighter. */
+export interface PracticeSetup {
+  readonly fighter: string;
+  readonly arena: string;
+  readonly opponent: string;
+  readonly difficulty: string;
+}
+
 export interface TournamentSetup {
   readonly fighter: string;
   readonly arena: string;
@@ -49,6 +57,8 @@ export interface FrontEndOptions {
   readonly fighters: readonly MenuFighter[];
   readonly arenas: readonly MenuArena[];
   readonly difficulties: readonly MenuOpponent[];
+  /** Open Zone opponents: the training dummy first, then every fighter. */
+  readonly opponents: readonly MenuOpponent[];
   readonly initial: TournamentSetup;
   presentation(fighterId: string): FighterPresentation | undefined;
   sheetFor(fighterId: string): FighterSheet | null;
@@ -61,13 +71,17 @@ export interface FrontEndOptions {
   openSettings(): void;
   openAdmin(): void;
   startTournament(setup: TournamentSetup): void;
+  startPractice(setup: PracticeSetup): void;
+  startTutorial(fighter: string): void;
 }
 
 export class FrontEnd {
   readonly root: HTMLDivElement;
   private screen: FrontScreen = 'title';
   private open = false;
-  private choice: { fighter: string; arena: string; difficulty: string; size: number };
+  private choice: { fighter: string; arena: string; difficulty: string; size: number; opponent: string };
+  /** What fighter select leads to: a tournament or the Open Zone. */
+  private selectFor: 'tournament' | 'practice' = 'tournament';
   private afterName: FrontScreen = 'modes';
   private resume: (() => void) | null = null;
   private readonly portraits = new Map<string, string>();
@@ -80,13 +94,13 @@ export class FrontEnd {
     parent: HTMLElement,
     private readonly o: FrontEndOptions,
   ) {
-    this.choice = { ...o.initial };
+    this.choice = { ...o.initial, opponent: o.opponents[0]?.id ?? '' };
     for (const f of o.fighters) this.names.set(f.id, f.name);
     this.root = el('div', 'front-end');
     this.root.hidden = true;
     this.root.setAttribute('role', 'dialog');
     this.root.setAttribute('aria-label', 'Stickman Arena');
-    for (const s of ['title', 'name', 'modes', 'select', 'quit'] as const) {
+    for (const s of ['title', 'name', 'modes', 'practice', 'select', 'quit'] as const) {
       const sec = el('section', `fe-screen fe-${s}`);
       sec.dataset.screen = s;
       sec.hidden = true;
@@ -158,6 +172,7 @@ export class FrontEnd {
     if (screen === 'title') this.buildTitle(sec);
     else if (screen === 'name') this.buildName(sec);
     else if (screen === 'modes') this.buildModes(sec);
+    else if (screen === 'practice') this.buildPractice(sec);
     else if (screen === 'select') this.buildSelect(sec);
     else this.buildQuit(sec);
     this.root.dataset.screen = screen;
@@ -168,8 +183,14 @@ export class FrontEnd {
     this.show(this.screen);
   }
 
+  /** Fighter select for a tournament or for the Open Zone. */
+  openSelect(forWhat: 'tournament' | 'practice'): void {
+    this.selectFor = forWhat;
+    this.show('select');
+  }
+
   private back(): void {
-    if (this.screen === 'select') this.show('modes');
+    if (this.screen === 'select') this.show(this.selectFor === 'practice' ? 'practice' : 'modes');
     else this.show('title');
   }
 
@@ -224,6 +245,10 @@ export class FrontEnd {
     story.append(el('span', 'fe-lock', 'LOCKED'));
     const modes = item('modes', 'Game Modes', () => {
       if (!this.needName('modes')) this.show('modes');
+    });
+    // Practice (owner, 13/11/2026), under Game Modes: the tutorial or the Open Zone.
+    item('practice', 'Practice', () => {
+      if (!this.needName('practice')) this.show('practice');
     });
     item('settings', 'Settings', () => this.o.openSettings());
     item('quit', 'Quit Game', () => this.quit());
@@ -307,7 +332,7 @@ export class FrontEnd {
       'Tournament',
       'A knockout bracket of 4 to 16 fighters. Win every round to be champion.',
       false,
-      () => this.show('select'),
+      () => this.openSelect('tournament'),
     );
     card('3v3', '3 vs 3', 'Pick a team of three fighters and battle another team.', true, () =>
       this.say('3 vs 3 is coming in a later update.'),
@@ -322,12 +347,36 @@ export class FrontEnd {
     sec.append(row);
   }
 
+  private buildPractice(sec: HTMLElement): void {
+    sec.append(el('h2', 'fe-h fe-screen-title', 'PRACTICE'));
+    const list = el('div', 'fe-mode-list');
+    const card = (id: string, name: string, text: string, onClick: () => void) => {
+      const b = button('fe-mode', '', onClick);
+      b.dataset.practice = id;
+      b.append(el('strong', 'fe-mode-name', name), el('span', 'fe-mode-text', text));
+      list.append(b);
+    };
+    card(
+      'tutorial',
+      'Tutorial',
+      'Learn to move, punch, combo, block, dodge and use your abilities, step by step.',
+      () => this.o.startTutorial(this.choice.fighter),
+    );
+    card('open-zone', 'Open Zone', 'Try any fighter against the training dummy or an AI fighter, in any arena.', () =>
+      this.openSelect('practice'),
+    );
+    sec.append(list);
+    const row = el('div', 'fe-row');
+    row.append(button('fe-back', 'Back', () => this.show('title')));
+    sec.append(row);
+  }
+
   private buildSelect(sec: HTMLElement): void {
     const f = this.o.fighters.find((x) => x.id === this.choice.fighter) ?? this.o.fighters[0];
     if (!f) return;
     sec.style.setProperty('--fighter', accentColour(f.colour));
     const head = el('header', 'fe-sel-head');
-    head.append(el('h2', 'fe-h', 'SELECT YOUR FIGHTER'));
+    head.append(el('h2', 'fe-h', this.selectFor === 'practice' ? 'OPEN ZONE' : 'SELECT YOUR FIGHTER'));
     const who = el('div', 'fe-who');
     who.append(el('span', 'fe-player-label', 'PLAYER'), el('strong', '', this.o.playerName() ?? 'Player'));
     head.append(who);
@@ -425,15 +474,26 @@ export class FrontEnd {
         this.choice.arena = v;
       },
     );
-    chips(
-      'Fighters',
-      'size',
-      TOURNAMENT_SIZES.map((n) => ({ id: n as number, name: String(n) })),
-      () => this.choice.size,
-      (v) => {
-        this.choice.size = v;
-      },
-    );
+    if (this.selectFor === 'practice')
+      chips(
+        'Opponent',
+        'opponent',
+        this.o.opponents.map((d) => ({ id: d.id, name: d.name })),
+        () => this.choice.opponent,
+        (v) => {
+          this.choice.opponent = v;
+        },
+      );
+    else
+      chips(
+        'Fighters',
+        'size',
+        TOURNAMENT_SIZES.map((n) => ({ id: n as number, name: String(n) })),
+        () => this.choice.size,
+        (v) => {
+          this.choice.size = v;
+        },
+      );
     chips(
       'AI',
       'difficulty',
@@ -445,8 +505,17 @@ export class FrontEnd {
     );
     const actions = el('div', 'fe-sel-actions');
     actions.append(
-      button('fe-back', 'Back', () => this.show('modes')),
-      button('fe-go fe-fight', 'FIGHT', () => this.o.startTournament({ ...this.choice })),
+      button('fe-back', 'Back', () => this.back()),
+      this.selectFor === 'tournament'
+        ? button('fe-go fe-fight', 'FIGHT', () => this.o.startTournament({ ...this.choice }))
+        : button('fe-go fe-fight fe-enter', 'ENTER', () =>
+            this.o.startPractice({
+              fighter: this.choice.fighter,
+              arena: this.choice.arena,
+              opponent: this.choice.opponent,
+              difficulty: this.choice.difficulty,
+            }),
+          ),
     );
     bar.append(actions);
     sec.append(head, info, stage, roster, bar);

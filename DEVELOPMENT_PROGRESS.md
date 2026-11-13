@@ -23,6 +23,14 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+9): Practice (Tutorial, Open Zone), close watched battles, icon, art fixes (owner)
+- **Practice:** title item under Game Modes → Tutorial (`src/tutorial/tutorial.ts` step machine, `src/interface/tutorial-overlay.ts`, wired in bootstrap with `?tutorial`) or Open Zone (fighter select in practice mode: opponent chips, ENTER; `?practice` pages leave back to Practice).
+- **Watched battles (REQ-AI-9):** `src/ai/showmanship.ts`: both at least Hard; the leader eases off by decisions only. Measured over six matchups: winner's health left 22% on average (46% without), fights 27-50 s.
+- **Art:** title art anchored to the top (Titan's head shows on wide fullscreen phones), Necro's face dark, Shroud's mask shaded as a curved dome; new app icon (Inferno's face + logo) with maskable and Apple versions.
+- **Titan select pose** restored to the owner's preferred hands-on-hips version.
+- **Tests:** tutorial (unit), showmanship (unit), watched-battle closeness (integration), Practice journey (e2e desktop + mobile).
+- **Next task:** owner review on a phone; 3 vs 3 (REQ-MOD-2); premium ability icons (#51).
+
 ### 13/11/2026 (latest+8): menu buttons, fit and fullscreen, Titan stance, dodge, stages (owner)
 - **Title:** the owner's art with its painted plates inpainted away, Necro's glowing eyes removed, and Shroud given a porcelain mask matching his in-game mask (owner request); the menu is real buttons styled like the Admin Panel plate.
 - **Fit and fullscreen:** viewport locks zoom (and iOS pinch is cancelled, `src/input/no-zoom.ts`); `keepFullscreen` asks on every tap until granted; manifest + icons for home-screen full screen; iPhone hint once a session. Tournament draw scaled to fit one screen (`TournamentScreen.fit`). Checked on Pixel 7 (landscape and upright) and a 667×375 phone: title, modes, select, settings, Top-16 draw all fit without scrolling.
