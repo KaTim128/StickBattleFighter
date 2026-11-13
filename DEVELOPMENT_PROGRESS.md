@@ -23,6 +23,16 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest): Fighter redesign proposal, preview only (owner review in progress)
+- **Preview gate:** `?redesign` turns on `src/rendering/premium-model.ts` skins for the non-Inferno fighters (off by default; the shipped game is unchanged apart from the Titan rename).
+- **Titan (formerly Braxon; character id `rampage`):** renamed in game data, the menu e2e test and the spec (REQ-ABL-14, §23). Proposal: gunmetal armour with steel-blue seams, a brute head, and an upper back and trapezius drawn in two passes (silhouette behind the body, seamless skin over it) so they read as one body; kept on his back when he faces left (the container already mirrors him).
+- **Necro (Mage of Death):** deep black and dark purple, cursed-violet seams with a sickly-green core, no eyes in the hood; a gnarled blackwood staff with cursed runes, held lower in the left hand at a slight diagonal (foot about 5 cm off the floor); a three-quarter skull on an iron thorn collar whose sockets, aura and runes glow green while staff magic is used; darker cast particles.
+- **Shroud:** a white mask with large, hollow almond eye openings after the owner's reference.
+- **Files:** `src/rendering/premium-model.ts`, `src/rendering/stickman-view.ts`, `src/rendering/portraits.ts`, `src/data/characters/rampage/character.json`, `tests/e2e/menu.spec.ts`, `STICKMAN_ARENA_MASTER_SPEC.md`.
+- **Checks:** `npx tsc --noEmit` clean; `npx vitest run` 49 files, 378 tests passed; `npx playwright test tests/e2e/menu.spec.ts` 4 passed; in-game and portrait screenshots captured with Playwright and reviewed.
+- **Known issues:** Necro's health bar overlaps the staff skull; Necro's portrait does not show the skull (chest-up framing); the Soul Drain cast effect is still pale lavender; the live site is behind this branch (it was last deployed before the rollback).
+- **Next task:** owner approval of the proposal; then turn it on by default, update REQ-VIS-10 and the TD log, run the full unit and e2e suites, wait for CI and deploy Pages.
+
 ### 13/11/2026 (later still): Fighter redesign rolled back (owner)
 - The owner did not approve the rollout of the premium style to Braxon, Necro, Shroud and the dummy (nor the attempt after their reference images), and asked to roll back to the last approved state. Reverted commit af264aa (skins and portraits for all); Inferno keeps the approved model (`src/rendering/magma-model.ts`). Kept: the bookshelf, the furniture material finish, the detailed office props and the monitor-back fix.
 - Open decision for the owner: how to bring the other fighters up to the reference images (code-drawn as now, or hand-painted sprite art on the same rig, which changes the asset pipeline and needs approval).
