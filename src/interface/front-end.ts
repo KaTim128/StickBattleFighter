@@ -2,7 +2,7 @@ import titleArt from '../../assets/ui/title-menu.webp?url';
 import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
 import { draftPool } from '../modes/team/team-battle';
 import type { NameCheck } from '../progression/player-name';
-import { PLAYER_NAME_MAX } from '../progression/player-name';
+import { nameLength, PLAYER_NAME_MAX } from '../progression/player-name';
 import { abilityIcon } from './ability-icons';
 import { accentColour } from './accent-colour';
 import type { FighterSheet } from './fighter-sheet';
@@ -288,7 +288,6 @@ export class FrontEnd {
     const input = document.createElement('input');
     input.className = 'fe-name-input';
     input.type = 'text';
-    input.maxLength = PLAYER_NAME_MAX;
     input.autocomplete = 'off';
     input.spellcheck = false;
     input.setAttribute('aria-label', 'Player name');
@@ -297,7 +296,7 @@ export class FrontEnd {
     const error = el('div', 'fe-name-error');
     error.setAttribute('role', 'alert');
     const update = () => {
-      count.textContent = `${[...input.value].length}/${PLAYER_NAME_MAX}`;
+      count.textContent = `${nameLength(input.value)}/${PLAYER_NAME_MAX}`;
     };
     input.addEventListener('input', () => {
       update();

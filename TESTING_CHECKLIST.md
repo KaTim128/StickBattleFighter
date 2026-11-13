@@ -439,3 +439,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Shroud on fighter select: mask inside the hood; robe has no crossing lines; trim follows the torn hem; checked in Chromium
 - [x] Titan after the second reference (ball joints, chest panel, one eye), checked on fighter select and in a fight; no stray line from the head's rim light
 - [x] Fighter-select strips (30 frames) render for every fighter (not blank)
+- [x] Names with symbols and emojis accepted and shown (fighter select, tournament draw); an emoji counts as one; too long refused (`player-name.test.ts`, `front-end.spec.ts`)
+- [x] Typing W A S D, Q E R F and Space into the name screen and the Settings name box writes them as text (`front-end.spec.ts`)

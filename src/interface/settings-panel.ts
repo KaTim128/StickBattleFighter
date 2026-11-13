@@ -73,7 +73,7 @@ export class SettingsPanel {
         </section>
         <section data-pane="profile" hidden>
           <label class="settings-name">Player name
-            <input type="text" class="settings-name-input" maxlength="10" autocomplete="off" spellcheck="false" />
+            <input type="text" class="settings-name-input" autocomplete="off" spellcheck="false" />
           </label>
           <div class="settings-name-message" role="status" aria-live="polite"></div>
           <button type="button" class="settings-name-save">Save name</button>

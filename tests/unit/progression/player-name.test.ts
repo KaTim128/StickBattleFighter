@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ADMIN_NAME, isAdminName } from '../../../src/admin/local-access';
 import {
   loadPlayerName,
+  nameLength,
   PLAYER_NAME_KEY,
   savePlayerName,
   validatePlayerName,
@@ -14,18 +15,26 @@ const memory = () => {
 
 /** Player name registration (owner, 13/11/2026). */
 describe('player name', () => {
-  it('accepts 1 to 10 characters of letters, numbers, spaces and - _ .', () => {
+  it('accepts 1 to 10 characters of anything: letters, numbers, symbols, emojis (owner, 13/11/2026)', () => {
+    for (const n of ['<b>x</b>', 'a;drop', '!@#$%^&*()', 'Ninja🔥', '戦士', 'Ωmega™', '👨‍👩‍👧x', '#1 Fan!']) {
+      expect(validatePlayerName(n)).toEqual({ ok: true, name: n });
+    }
+    // An emoji counts as one character, even a combined one.
+    expect(validatePlayerName('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥').ok).toBe(true); // 10 emojis
+    expect(validatePlayerName('👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽').ok).toBe(true);
+    expect(nameLength('👨‍👩‍👧')).toBe(1);
     expect(validatePlayerName('Katim')).toEqual({ ok: true, name: 'Katim' });
     expect(validatePlayerName('  Ali   Bin ')).toEqual({ ok: true, name: 'Ali Bin' });
     expect(validatePlayerName('Zoë_99')).toEqual({ ok: true, name: 'Zoë_99' });
     expect(validatePlayerName('abcdefghij').ok).toBe(true); // exactly 10
   });
 
-  it('refuses empty, too long and unsafe names with a reason', () => {
+  it('refuses only empty and too-long names; invisible control characters are removed', () => {
     expect(validatePlayerName('   ')).toEqual({ ok: false, error: 'Enter a name.' });
     expect(validatePlayerName('abcdefghijk')).toMatchObject({ ok: false, error: /10 characters/ });
-    expect(validatePlayerName('<b>x</b>')).toMatchObject({ ok: false });
-    expect(validatePlayerName('a;drop')).toMatchObject({ ok: false });
+    expect(validatePlayerName('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥')).toMatchObject({ ok: false, error: /10 characters/ });
+    expect(validatePlayerName('Ka\ntim\t')).toEqual({ ok: true, name: 'Ka tim' });
+    expect(validatePlayerName('\u0000\u0007')).toEqual({ ok: false, error: 'Enter a name.' });
   });
 
   it('is saved and loaded; an invalid saved value is ignored', () => {
@@ -35,7 +44,9 @@ describe('player name', () => {
     expect(loadPlayerName(store)).toBe('Katim');
     expect(savePlayerName('waytoolongname', store).ok).toBe(false);
     expect(loadPlayerName(store)).toBe('Katim'); // unchanged
-    store.setItem(PLAYER_NAME_KEY, '<script>');
+    store.setItem(PLAYER_NAME_KEY, '<script>'); // any characters are a valid name (shown as text)
+    expect(loadPlayerName(store)).toBe('<script>');
+    store.setItem(PLAYER_NAME_KEY, 'waytoolongname');
     expect(loadPlayerName(store)).toBeNull();
   });
 });

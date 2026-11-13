@@ -55,12 +55,17 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   await expect(name).toBeVisible();
   await name.locator('.fe-name-ok').click();
   await expect(name.locator('.fe-name-error')).toHaveText('Enter a name.');
-  await name.locator('.fe-name-input').fill('<b>bad');
+  // Any characters (owner, 13/11/2026); only length is limited (an emoji counts as one).
+  await name.locator('.fe-name-input').fill('Katim12345XYZ');
   await name.locator('.fe-name-ok').click();
-  await expect(name.locator('.fe-name-error')).toHaveText(/letters, numbers/);
-  await name.locator('.fe-name-input').fill('Katim12345XYZ'); // the box stops at 10
-  await expect(name.locator('.fe-name-input')).toHaveValue('Katim12345');
-  await name.locator('.fe-name-input').fill('Katim');
+  await expect(name.locator('.fe-name-error')).toHaveText(/At most 10/);
+  // Game keys type as text in the box (W A S D, Q E R F, Space): none is swallowed by the game.
+  await name.locator('.fe-name-input').fill('');
+  await name.locator('.fe-name-input').click();
+  await page.keyboard.type('wasd qerf');
+  await expect(name.locator('.fe-name-input')).toHaveValue('wasd qerf');
+  await name.locator('.fe-name-input').fill('<K@tim🔥>');
+  await expect(name.locator('.fe-name-count')).toHaveText('8/10'); // the emoji counts as one
   await name.locator('.fe-name-ok').click();
 
   // Game Modes: Tournament and 3 vs 3 (coming soon), nothing else.
@@ -73,7 +78,7 @@ test('title → name → Game Modes → fighter select → tournament, with the 
 
   // Fighter select: the information beside the fighter updates the moment another is picked.
   const select = front.locator('[data-screen="select"]');
-  await expect(select.locator('.fe-who')).toContainText('Katim');
+  await expect(select.locator('.fe-who')).toContainText('<K@tim🔥>');
   for (const [id, shown, titleText] of [
     ['necro', 'Necro', 'Keeper of the Grave'],
     ['shroud', 'Shroud', 'The Unseen Blade'],
@@ -91,7 +96,7 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   await Promise.all([page.waitForURL(/mode=tournament/), select.locator('.fe-fight').click()]);
   const screen = page.locator('.tournament');
   await expect(screen).toBeVisible({ timeout: 60_000 });
-  await expect(screen.locator('.tn-entry.player')).toContainText('Katim (Titan)');
+  await expect(screen.locator('.tn-entry.player')).toContainText('<K@tim🔥> (Titan)');
   // One landscape screen: the draw never scrolls, and the page cannot be zoomed (owner, 13/11/2026).
   const fits = await screen.evaluate(
     (el) => el.scrollHeight <= el.clientHeight + 1 && el.scrollWidth <= el.clientWidth + 1,
@@ -119,8 +124,14 @@ test('Settings from the title, change the name there; Quit says goodbye; the adm
   await expect(panel).toBeVisible();
   await panel.locator('[data-tab="profile"]').click();
   await expect(panel.locator('.settings-name-input')).toHaveValue('Katim');
+  // Typing game keys in the Settings name box writes them (owner, 13/11/2026); too long is refused.
+  await panel.locator('.settings-name-input').fill('');
+  await panel.locator('.settings-name-input').click();
+  await page.keyboard.type('W A S D!');
+  await expect(panel.locator('.settings-name-input')).toHaveValue('W A S D!');
   await panel.locator('.settings-name-input').fill('toolongname1');
-  await expect(panel.locator('.settings-name-input')).toHaveValue('toolongnam'); // 10 at most
+  await panel.locator('.settings-name-save').click();
+  await expect(panel.locator('.settings-name-message')).toHaveText(/At most 10/);
   await panel.locator('.settings-name-input').fill('addmen1280');
   await panel.locator('.settings-name-save').click();
   await expect(panel.locator('.settings-name-message')).toHaveText('Saved: addmen1280');

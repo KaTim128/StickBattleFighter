@@ -23,6 +23,10 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+13): open player names, typing never triggers controls (owner)
+- `validatePlayerName` accepts any characters (control characters removed), 10 visible characters (`nameLength`, grapheme clusters); inputs lose `maxlength` (it counted emojis as 2+). `src/input/typing.ts` `isTypingTarget`: the game keyboard ignores keys typed in text fields (it used to cancel their default, so bound letters and Space never reached the box) and releases held keys when typing starts; debug hotkeys use the same check (REQ-UI-37).
+- Tests: `player-name.test.ts` (symbols, emojis, length, control characters), `front-end.spec.ts` (typing game keys into both name fields; a symbol-and-emoji name shown on fighter select and in the draw).
+
 ### 13/11/2026 (latest+12): Titan and Shroud redesigns, countdown, fullscreen shell, Leave, Quit, grab fix (owner)
 - Titan (`src/rendering/premium-model.ts`, skin `muscle`): V-shaped muscular body, trapezius to a thick neck, bare deltoids, grey with a white chest panel, white eyes; no hump, armour or core. Rampage Mode: `sizeFactor` 1.1 (drawn bigger, `StickmanView.setGrowth`) and a one-time `shockwave` (2.2 m, 10 damage, push) (REQ-ABL-23).
 - Grapple Slam: `SceneAbilities.hold` now cancels the seized fighter's cast, charge, dash and scripted attack; the stun blocks new ones (regression test fails without the fix).

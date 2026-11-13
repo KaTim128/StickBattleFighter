@@ -1,5 +1,6 @@
 import { actionsFor, type BindAction, type Bindings, DEFAULT_BINDINGS, mouseCode } from './bindings';
 import type { PlayerIntents, Vec2 } from './intents';
+import { isTypingTarget } from './typing';
 
 /** Screen direction of each movement action (+y is down the screen). */
 const MOVE_DIRS: Partial<Record<BindAction, Vec2>> = {
@@ -140,19 +141,27 @@ const SCROLL_KEYS = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'Arro
 export function attachKeyboard(target: Window, input: DesktopInput): () => void {
   const down = (e: KeyboardEvent): void => {
     if (e.defaultPrevented) return; // the settings screen took it (e.g. while rebinding)
+    // Typing in a text field (the player's name) writes text and never moves or attacks.
+    if (isTypingTarget(e.target)) return;
     if (input.isBound(e.code) || SCROLL_KEYS.has(e.code)) e.preventDefault();
     input.down(e.code);
   };
   const up = (e: KeyboardEvent): void => input.up(e.code);
   // Releasing keys while the window is unfocused must not leave the fighter running.
   const blur = (): void => input.releaseAll();
+  // Starting to type lets go of anything held, so the fighter never keeps walking meanwhile.
+  const focusIn = (e: FocusEvent): void => {
+    if (isTypingTarget(e.target)) input.releaseAll();
+  };
   target.addEventListener('keydown', down);
   target.addEventListener('keyup', up);
   target.addEventListener('blur', blur);
+  target.addEventListener('focusin', focusIn);
   return () => {
     target.removeEventListener('keydown', down);
     target.removeEventListener('keyup', up);
     target.removeEventListener('blur', blur);
+    target.removeEventListener('focusin', focusIn);
   };
 }
 
