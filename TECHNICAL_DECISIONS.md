@@ -544,3 +544,15 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** New CSS must use `--vw`/`--vh` and the size classes, not raw viewport units or size media queries; the browser's own UI (address bar) stays upright until fullscreen.
 **Status.** ACCEPTED.
 
+### TD-065: Admin Screen chosen by the registered name, on the device only — ACCEPTED WITH A FLAGGED RISK (owner request 13/11/2026)
+**Context.** The owner asked that the player name `addmen1280` grant the Admin Screen and every other name the User Screen. The project's security rules say a username is **never** proof of admin privilege; roles must come from verified server-side identity (REQ-BE-4). No server exists yet.
+**Decision.** Implemented as asked, as a **screen choice only**: `src/admin/local-access.ts` (`isAdminName`, exact match). The Admin Panel holds tools that only change this browser's own copy of the game (fighter overrides in localStorage, practice set-up). Nothing valuable, shared or published is reachable from it.
+**Risk (flagged to the owner).** Anyone can type the name or edit the page, so this hides the tools; it does not protect them. Before any admin action affects other players or published data, it must move behind a server-verified role with an audit log (REQ-BE-4); the name gate must then be removed.
+**Alternatives.** A password (rejected: still client-side, gives a false sense of security); refusing (rejected: the owner's explicit instruction, and the tools are local-only today).
+**Status.** ACCEPTED for local tools only.
+
+### TD-066: Front end as one screen module; title art with painted plates; select stances as data — ACCEPTED (owner request 13/11/2026)
+**Decision.** `src/interface/front-end.ts` owns title, name, Game Modes, fighter select and quit screens; the old main menu is kept intact as the Admin Panel (no functionality removed). The title is the owner's supplied art covering the screen (cover fit, centred) with invisible buttons positioned in picture percentages over its painted plates. Select stances are data (`src/data/presentation/select-stances.ts`), turned into poses by `src/animation/stance.ts` (IK, so any build fits) and rendered by the game's own rig and view into breathing frame strips (`renderIdleStrips`), drawn only the first time the front end opens. Music rules live in `musicFor` (pure, tested).
+**Trade-offs.** Painted plates cannot un-highlight (Story Mode is lit in the art); hovering another plate adds a glow. The rig is a 2D side-view rig, so the "2.5D" stance is suggested by pose, a slight foreshortening, rim light and floor shadow, not a true three-quarter turn; true turned art would need new character artwork.
+**Status.** ACCEPTED.
+

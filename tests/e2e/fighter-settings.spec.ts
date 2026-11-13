@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { asAdmin, openAdminPanel } from './front';
 
 /** Admin fighter settings (owner, 13/11/2026): edit a fighter from its page, then fight with it. */
 test("fighter settings: change Titan's stats and an ability from his page, then fight with them", async ({
@@ -9,12 +10,14 @@ test("fighter settings: change Titan's stats and an ability from his page, then 
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
   await page.evaluate(() => {
     localStorage.clear();
     localStorage.setItem('stickman-arena.test-hooks', '1');
   });
+  await openAdminPanel(page);
   const menu = page.locator('.main-menu');
   await menu.locator('[data-fighter="rampage"]').click();
   const details = page.locator('.mm-details');

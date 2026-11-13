@@ -34,6 +34,8 @@ export function onFirstInput(target: Window, callback: () => void): void {
 
 function onKey(target: Window, code: string, callback: () => void): () => void {
   const listener = (event: KeyboardEvent): void => {
+    // Typing in a text box (the player's name) never triggers a hotkey.
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
     if (event.code === code && !event.repeat) callback();
   };
   target.addEventListener('keydown', listener);

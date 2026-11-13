@@ -1,7 +1,6 @@
-import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
-import { abilityIcon } from './ability-icons';
 import { accentColour } from './accent-colour';
 import { type FighterConfigHost, renderConfigPanel } from './fighter-config';
+import { buildFighterInfo } from './fighter-info';
 import type { FighterSheet } from './fighter-sheet';
 
 /**
@@ -89,9 +88,10 @@ export class MainMenu {
     this.root.className = 'main-menu';
     this.root.hidden = true;
     this.root.setAttribute('role', 'dialog');
-    this.root.setAttribute('aria-label', 'Main menu');
+    this.root.setAttribute('aria-label', 'Admin panel');
     const title = document.createElement('h1');
-    title.textContent = 'STICKMAN ARENA';
+    // The Admin Panel (owner, 13/11/2026): every set-up and test tool, for the admin name only.
+    title.textContent = 'ADMIN PANEL';
     const fighterLabel = document.createElement('h2');
     fighterLabel.textContent = 'Choose your fighter';
     const fighterRow = document.createElement('div');
@@ -299,101 +299,18 @@ export class MainMenu {
     }
 
     if (sheet) {
-      const stats = document.createElement('div');
-      stats.className = 'mm-d-stats';
-      const fills: { el: HTMLElement; value: number }[] = [];
-      for (const k of RATING_KEYS) {
-        const value = Math.round(sheet.ratings[k]);
-        const row = document.createElement('div');
-        row.className = 'mm-d-stat';
-        row.dataset.stat = k;
-        const label = document.createElement('span');
-        label.textContent = RATING_LABELS[k];
-        const track = document.createElement('span');
-        track.className = 'mm-d-track';
-        const fill = document.createElement('span');
-        fill.className = 'mm-d-fill';
-        fill.dataset.value = String(value);
-        track.append(fill);
-        const num = document.createElement('b');
-        num.textContent = String(value);
-        row.append(label, track, num);
-        stats.append(row);
-        fills.push({ el: fill, value });
-      }
-      const abilities = document.createElement('div');
-      abilities.className = 'mm-d-abilities';
-      const heading = document.createElement('h3');
-      heading.className = 'mm-d-ab-heading';
-      heading.textContent = 'Abilities';
+      const info = buildFighterInfo(sheet);
       if (host) {
         const moveConfig = document.createElement('button');
         moveConfig.type = 'button';
         moveConfig.className = 'mm-d-moveconfig';
         moveConfig.textContent = 'Move Config';
         moveConfig.addEventListener('click', () => openConfig('moves'));
-        heading.append(moveConfig);
+        info.heading.append(moveConfig);
       }
-      for (const a of sheet.abilities) {
-        const item = document.createElement('div');
-        item.className = 'mm-d-ab';
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'mm-d-ab-btn';
-        btn.dataset.ability = a.slot;
-        btn.setAttribute('aria-expanded', 'false');
-        const icon = document.createElement('span');
-        icon.className = 'mm-d-ab-icon';
-        const svg = a.icon ? abilityIcon(a.icon) : null;
-        if (svg) icon.innerHTML = svg;
-        else icon.textContent = '✊';
-        const label = document.createElement('span');
-        label.className = 'mm-d-ab-name';
-        label.textContent = a.name;
-        const key = document.createElement('kbd');
-        key.textContent = a.key;
-        btn.append(icon, label, key);
-        const info = document.createElement('div');
-        info.className = 'mm-d-ab-info';
-        info.hidden = true;
-        const desc = document.createElement('p');
-        desc.textContent = a.description;
-        const list = document.createElement('dl');
-        for (const s of a.stats) {
-          const dt = document.createElement('dt');
-          dt.textContent = s.label;
-          const dd = document.createElement('dd');
-          dd.textContent = s.value;
-          list.append(dt, dd);
-        }
-        const how = document.createElement('p');
-        how.className = 'mm-d-how';
-        const strong = document.createElement('strong');
-        strong.textContent = 'How to use: ';
-        how.append(strong, a.howTo);
-        info.append(desc, list, how);
-        btn.addEventListener('click', () => {
-          const open = info.hidden;
-          for (const other of d.querySelectorAll<HTMLElement>('.mm-d-ab-info')) other.hidden = true;
-          for (const other of d.querySelectorAll<HTMLElement>('.mm-d-ab-btn'))
-            other.setAttribute('aria-expanded', 'false');
-          info.hidden = !open;
-          btn.setAttribute('aria-expanded', String(open));
-        });
-        item.append(btn, info);
-        abilities.append(item);
-      }
-      card.append(stats, heading, abilities);
-      content.push(stats, heading, abilities);
-      // Fill each bar from empty to its value, smoothly and one after another.
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          fills.forEach(({ el, value }, i) => {
-            el.style.transitionDelay = `${i * 70}ms`;
-            el.style.width = `${value}%`;
-          });
-        }),
-      );
+      card.append(info.stats, info.heading, info.abilities);
+      content.push(info.stats, info.heading, info.abilities);
+      info.animate();
     }
 
     const actions = document.createElement('div');
@@ -438,6 +355,16 @@ export class MainMenu {
     this.open = open;
     this.root.hidden = !open;
     this.onOpenChange(open);
+  }
+
+  /** A Back button to the title screen. */
+  setBack(onBack: () => void): void {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mm-arena mm-back';
+    b.textContent = 'Back';
+    b.addEventListener('click', onBack);
+    this.root.querySelector('.mm-play')?.before(b);
   }
 
   /** Offer to resume a tournament in progress (or remove the offer with null). */

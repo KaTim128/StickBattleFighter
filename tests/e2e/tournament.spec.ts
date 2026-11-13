@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { asAdmin, openAdminPanel } from './front';
 
 /** End the current tournament match at once in the player's favour (the test-hooks flag exposes the scene). */
 async function knockOutOpponent(page: Page): Promise<void> {
@@ -30,8 +31,10 @@ test('tournament: 4 fighters, semi final, skip the other battle, win the final, 
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  await openAdminPanel(page);
   const menu = page.locator('.main-menu');
   await expect(menu).toBeVisible();
   await page.evaluate(() => {
@@ -53,7 +56,7 @@ test('tournament: 4 fighters, semi final, skip the other battle, win the final, 
   await knockOutOpponent(page);
   await expect(screen).toBeVisible({ timeout: 60_000 });
   // The other semi final: skip it with the one Skip button under the draw; the final follows.
-  await expect(screen.locator('.tn-latest')).toHaveText(/Semi Finals: .*\(You\) beat/);
+  await expect(screen.locator('.tn-latest')).toHaveText(/Semi Finals: addmen1280 \(Inferno\) beat/);
   await expect(screen.locator('.tn-match.watchable')).toHaveCount(1);
   await expect(screen.locator('.tn-skip-all')).toHaveCount(1);
   await screen.locator('.tn-skip-all').click();
@@ -62,22 +65,24 @@ test('tournament: 4 fighters, semi final, skip the other battle, win the final, 
   await knockOutOpponent(page);
   await expect(screen).toBeVisible({ timeout: 60_000 });
   await expect(screen.locator('.tn-title')).toHaveText('TOURNAMENT CHAMPION');
-  await expect(screen.locator('.tn-champion-name')).toHaveText(/\(You\)/);
+  await expect(screen.locator('.tn-champion-name')).toHaveText('addmen1280 (Inferno)'); // the player's name
   await expect(screen.locator('.tn-placement')).toHaveText(/Champion/);
   await screen.locator('.tn-leave').click();
-  await expect(menu).toBeVisible();
+  await expect(page.locator('.front-end [data-screen="modes"]')).toBeVisible(); // back to Game Modes
   expect(errors).toEqual([]);
 });
 
 /** Start a tournament of `size` from the menu and win the player's first match. */
 async function startAndWinFirst(page: Page, size: number): Promise<void> {
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
   await page.evaluate(() => {
     localStorage.clear();
     localStorage.setItem('stickman-arena.test-hooks', '1');
   });
+  await openAdminPanel(page);
   const menu = page.locator('.main-menu');
   await menu.locator('[data-mode="tournament"]').click();
   await menu.locator(`[data-size="${size}"]`).click();
@@ -143,7 +148,7 @@ test('tournament: leaving your own fight settles it and the bracket moves on', a
   // Both at full health: the side that stayed wins when you leave.
   await leaveFight(page);
   await expect(screen.locator('.tn-title')).toHaveText('TOURNAMENT CHAMPION', { timeout: 60_000 });
-  await expect(screen.locator('.tn-latest')).toHaveText(/Final: .* beat .*\(You\).*left early/);
+  await expect(screen.locator('.tn-latest')).toHaveText(/Final: .* beat addmen1280 \(Inferno\).*left early/);
   await expect(screen.locator('.tn-placement')).toHaveText(/Runner-up/);
   expect(errors).toEqual([]);
 });

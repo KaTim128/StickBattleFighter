@@ -73,6 +73,7 @@ export class MusicLoop {
   private source: AudioBufferSourceNode | null = null;
   private gain: GainNode | null = null;
   private volume = 1;
+  private duck = 1;
   private muted = false;
   private wantPlaying = false;
 
@@ -91,12 +92,18 @@ export class MusicLoop {
     this.applyLevel(0.1);
   }
 
+  /** Lower the track under something (0..1 of its level), easing there over `timeS`. */
+  setDuck(k: number, timeS = 0.6): void {
+    this.duck = Math.min(1, Math.max(0, k));
+    this.applyLevel(timeS);
+  }
+
   get playing(): boolean {
     return this.source !== null;
   }
 
   /** Start (once loaded) on the given context and output; a no-op if already playing. */
-  start(ctx: AudioContext, out: AudioNode): void {
+  start(ctx: AudioContext, out: AudioNode, fadeInS = this.fadeInS): void {
     this.wantPlaying = true;
     if (this.source) return;
     void this.clip.load(ctx).then((buffer) => {
@@ -118,7 +125,7 @@ export class MusicLoop {
       src.start(ctx.currentTime, lp.offset); // the intro once, then the loop
       this.source = src;
       this.gain = gain;
-      this.applyLevel(this.fadeInS);
+      this.applyLevel(fadeInS);
     });
   }
 
@@ -139,8 +146,22 @@ export class MusicLoop {
   private applyLevel(timeS: number): void {
     const g = this.gain;
     if (!g) return;
-    const level = this.muted ? 0 : this.clip.def.level * this.volume;
+    const level = this.muted ? 0 : this.clip.def.level * this.volume * this.duck;
     g.gain.cancelScheduledValues(g.context.currentTime);
     g.gain.setTargetAtTime(level, g.context.currentTime, timeS / 3);
   }
+}
+
+/**
+ * Which music plays (owner, 13/11/2026): the menu music through every menu (title, Game Modes,
+ * fighter select, the tournament draw, settings over a menu), the battle music once a fight has
+ * started, and the menu music again, slowly, once the battle is over. Fighter select lowers it.
+ */
+export function musicFor(s: {
+  menusUp: boolean;
+  fightStarted: boolean;
+  battleOver: boolean;
+}): 'menu' | 'battle' | 'none' {
+  if (s.menusUp || s.battleOver) return 'menu';
+  return s.fightStarted ? 'battle' : 'none';
 }

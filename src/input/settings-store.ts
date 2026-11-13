@@ -10,7 +10,11 @@ export interface PlayerSettings {
   /** 0..1 */
   sfxVolume: number;
   bindings: Bindings;
+  /** Size of the touch combat buttons, 0.8..1.3 (owner, 13/11/2026: mobile control configuration). */
+  touchScale: number;
 }
+
+export const TOUCH_SCALE_RANGE = { min: 0.8, max: 1.3 } as const;
 
 /**
  * v2 (owner, 12/11/2026): the default layout changed (J attack, K ultimate, L dodge, F ability 3,
@@ -20,7 +24,12 @@ export const SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v3';
 /** Older layouts (v2: before the Heavy Attack on K and the ultimate on I): volumes carried over, keys reset. */
 const OLD_SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v2';
 
-export const DEFAULT_SETTINGS: PlayerSettings = { musicVolume: 0.8, sfxVolume: 0.8, bindings: DEFAULT_BINDINGS };
+export const DEFAULT_SETTINGS: PlayerSettings = {
+  musicVolume: 0.8,
+  sfxVolume: 0.8,
+  bindings: DEFAULT_BINDINGS,
+  touchScale: 1,
+};
 
 const volume = (v: unknown, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : fallback;
@@ -47,6 +56,10 @@ export function loadSettings(storage: SettingsStorage | null): PlayerSettings {
     musicVolume: volume(r.musicVolume, DEFAULT_SETTINGS.musicVolume),
     sfxVolume: volume(r.sfxVolume, DEFAULT_SETTINGS.sfxVolume),
     bindings: sanitiseBindings(r.bindings),
+    touchScale:
+      typeof r.touchScale === 'number' && Number.isFinite(r.touchScale)
+        ? Math.min(TOUCH_SCALE_RANGE.max, Math.max(TOUCH_SCALE_RANGE.min, r.touchScale))
+        : 1,
   };
 }
 

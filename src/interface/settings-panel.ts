@@ -1,5 +1,6 @@
 import { BIND_ACTIONS, type BindAction, codeLabel, DEFAULT_BINDINGS, mouseCode, rebind } from '../input/bindings';
 import type { SettingsState } from '../input/settings-store';
+import type { NameCheck } from '../progression/player-name';
 
 /**
  * The Settings screen (owner, 11/11/2026; REQ-CTL-15, REQ-UI settings): opened with the gear
@@ -48,6 +49,7 @@ export class SettingsPanel {
         <div class="settings-tabs" role="tablist">
           <button type="button" role="tab" data-tab="audio" class="active">Audio</button>
           <button type="button" role="tab" data-tab="controls">Controls</button>
+          <button type="button" role="tab" data-tab="profile" hidden>Profile</button>
         </div>
         <section data-pane="audio">
           <label class="settings-slider">Music and ambience volume
@@ -63,7 +65,18 @@ export class SettingsPanel {
           <p class="settings-hint">Click a control, then press the new key or mouse button (Esc cancels).</p>
           <div class="settings-message" role="status" aria-live="polite"></div>
           <div class="settings-binds"></div>
+          <label class="settings-slider">Touch button size
+            <input type="range" min="80" max="130" step="5" data-touch-scale />
+            <output></output>
+          </label>
           <button type="button" class="settings-reset">Reset to defaults</button>
+        </section>
+        <section data-pane="profile" hidden>
+          <label class="settings-name">Player name
+            <input type="text" class="settings-name-input" maxlength="10" autocomplete="off" spellcheck="false" />
+          </label>
+          <div class="settings-name-message" role="status" aria-live="polite"></div>
+          <button type="button" class="settings-name-save">Save name</button>
         </section>
         <div class="settings-actions">
           <button type="button" class="settings-fullscreen">Fullscreen</button>
@@ -127,6 +140,11 @@ export class SettingsPanel {
       list.appendChild(row);
       this.rows.set(action, key);
     }
+    const touch = this.root.querySelector<HTMLInputElement>('[data-touch-scale]')!;
+    touch.addEventListener('input', () => {
+      this.settings.update({ touchScale: Number(touch.value) / 100 });
+      this.refreshVolumes();
+    });
     this.root.querySelector('.settings-reset')!.addEventListener('click', () => {
       this.capturing = null;
       this.settings.update({ bindings: DEFAULT_BINDINGS });
@@ -147,6 +165,30 @@ export class SettingsPanel {
     return this.openState;
   }
 
+  private profile: { name(): string | null; save(raw: string): NameCheck } | null = null;
+
+  /**
+   * The Profile tab (owner, 13/11/2026): change the registered player name, validated like the
+   * first time (10 characters at most).
+   */
+  setProfile(profile: { name(): string | null; save(raw: string): NameCheck }): void {
+    this.profile = profile;
+    const tab = this.root.querySelector<HTMLButtonElement>('[data-tab="profile"]')!;
+    tab.hidden = false;
+    const input = this.root.querySelector<HTMLInputElement>('.settings-name-input')!;
+    const msg = this.root.querySelector<HTMLElement>('.settings-name-message')!;
+    const save = (): void => {
+      const r = profile.save(input.value);
+      msg.textContent = r.ok ? `Saved: ${r.name}` : r.error;
+      msg.dataset.kind = r.ok ? 'ok' : 'error';
+      if (r.ok) input.value = r.name;
+    };
+    this.root.querySelector('.settings-name-save')!.addEventListener('click', save);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') save();
+    });
+  }
+
   setOpen(open: boolean): void {
     if (open === this.openState) return;
     this.openState = open;
@@ -156,6 +198,10 @@ export class SettingsPanel {
     if (open) {
       this.refreshVolumes();
       this.refreshBindings();
+      const input = this.root.querySelector<HTMLInputElement>('.settings-name-input');
+      if (input && this.profile) input.value = this.profile.name() ?? '';
+      const msg = this.root.querySelector<HTMLElement>('.settings-name-message');
+      if (msg) msg.textContent = '';
       this.say('', 'ok');
     }
     this.onOpenChange(open);
@@ -230,6 +276,12 @@ export class SettingsPanel {
       input.value = String(Math.round(v * 100));
       const out = input.nextElementSibling;
       if (out) out.textContent = `${Math.round(v * 100)}%`;
+    }
+    const touch = this.root.querySelector<HTMLInputElement>('[data-touch-scale]');
+    if (touch) {
+      touch.value = String(Math.round(s.touchScale * 100));
+      const out = touch.nextElementSibling;
+      if (out) out.textContent = `${Math.round(s.touchScale * 100)}%`;
     }
   }
 

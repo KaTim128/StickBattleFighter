@@ -1,8 +1,10 @@
 import { type Application, Container, Rectangle } from 'pixi.js';
-import { idlePose } from '../animation/greybox-motion';
+import { idlePose, idleStyleFor } from '../animation/greybox-motion';
 import type { Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
+import { stancePose } from '../animation/stance';
 import type { FighterDef } from '../data/fighters/fighter-def';
+import type { SelectStance } from '../data/presentation/select-stances';
 import { StickmanView } from './stickman-view';
 
 /**
@@ -52,8 +54,9 @@ function heroPose(def: FighterDef): Pose {
   };
 }
 
-function placeFighter(def: FighterDef): Slot {
-  const view = new StickmanView(
+/** The fighter's own view, drawn as in the arena. */
+function makeView(def: FighterDef): StickmanView {
+  return new StickmanView(
     def.bones,
     def.look,
     def.effects.head === 'flame' && !def.capabilities.usesFireEffects ? 'round' : (def.effects.head ?? 'round'),
@@ -63,6 +66,10 @@ function placeFighter(def: FighterDef): Slot {
     1,
     def.effects.held ?? null,
   );
+}
+
+function placeFighter(def: FighterDef): Slot {
+  const view = makeView(def);
   const premium = lookFor(def.effects.body) !== undefined;
   const bodyK = def.bones.spine / 0.5; // bigger rigs get a bigger window
   // Premium portraits: a relaxed, open stance so the face and chest are not hidden by the guard,
@@ -216,4 +223,93 @@ function premiumFinish(ctx: CanvasRenderingContext2D, size: number, look: Premiu
 
 export async function renderPortrait(app: Application, def: FighterDef): Promise<string> {
   return (await renderPortraits(app, [def]))[0]!;
+}
+
+/** The select stance's quarter turn: the body seen a little from the front, so a touch narrower. */
+const TURN_FORESHORTEN = 0.9;
+
+/** A fighter's idle animation as a strip of frames (the title screen and fighter select). */
+export interface IdleStrip {
+  /** PNG of `frames` frames side by side, each `cellW` × `cellH` px. */
+  readonly url: string;
+  readonly frames: number;
+  readonly cellW: number;
+  readonly cellH: number;
+  /** Seconds the strip spans: play it forwards then backwards (ping-pong) and it loops seamlessly. */
+  readonly spanS: number;
+}
+
+/**
+ * The fighters' idle animations, full body, drawn by the game's own rig and view (owner,
+ * 13/11/2026: the title screen shows "the existing Stickman fighters, animated with idle/breathing
+ * poses"). Each fighter's idle has its own rhythm, so the strip covers one half-cycle of it (from
+ * the lowest to the highest point of the head, measured from the rig); played back and forth it
+ * loops with no jump. One GPU read-back per fighter.
+ */
+export async function renderIdleStrips(
+  app: Application,
+  defs: readonly FighterDef[],
+  /** The fighter's select stance, if it has one (owner, 13/11/2026); otherwise its idle is used. */
+  stanceFor: (def: FighterDef) => SelectStance | undefined = () => undefined,
+  frames = 10,
+  cellH = 300,
+): Promise<IdleStrip[]> {
+  const out: IdleStrip[] = [];
+  for (const def of defs) {
+    const stance = stanceFor(def);
+    let poseAt: (k: number) => Pose;
+    let spanS: number;
+    if (stance) {
+      // One breath in, played back and forth.
+      poseAt = (k) => stancePose(stance, def.bones, k);
+      spanS = 1.7;
+    } else {
+      const clip = def.animation.clips.Idle[0];
+      const style = idleStyleFor(clip?.kind === 'procedural' ? clip.id : undefined);
+      const headY = (t: number) => solveSkeleton(idlePose(t, def.bones, style), def.bones).head.y;
+      // The half-cycle: the head's lowest point in the first 3 s, then its next highest point.
+      const step = 1 / 60;
+      let t0 = 0;
+      for (let t = 0; t < 3; t += step) if (headY(t) > headY(t0)) t0 = t;
+      let t1 = t0 + step;
+      while (t1 < t0 + 3 && headY(t1 + step) <= headY(t1)) t1 += step;
+      spanS = Math.max(0.4, t1 - t0);
+      poseAt = (k) => idlePose(t0 + spanS * k, def.bones, style);
+    }
+    // Every fighter at the same scale (a bigger rig is drawn bigger, like in the arena) and facing
+    // the same diagonal: towards the screen's left, a little turned (foreshortened) for depth.
+    const bodyK = def.bones.spine / 0.5;
+    const top =
+      Math.min(...[0, 0.5, 1].map((k) => solveSkeleton(poseAt(k), def.bones).head.y)) -
+      (def.effects.held === 'staff' ? 0.9 : 0.5) * bodyK; // a planted staff stands above the head
+    const heightM = -top + 0.1;
+    const widthM = 1.7 * bodyK;
+    const px = cellH / heightM;
+    const cellW = Math.round(widthM * px);
+    const pitch = cellW * 2; // a gap so a staff or knife never reaches into the next frame
+    const sheet = new Container();
+    for (let i = 0; i < frames; i++) {
+      const view = makeView(def);
+      view.draw(poseAt(i / (frames - 1)), -1, 0);
+      view.root.scale.set(px * TURN_FORESHORTEN, px);
+      view.root.position.set(i * pitch + cellW / 2, -top * px);
+      sheet.addChild(view.root);
+    }
+    try {
+      const canvas = app.renderer.extract.canvas({
+        target: sheet,
+        frame: new Rectangle(0, 0, pitch * frames, cellH),
+        resolution: 1,
+      }) as HTMLCanvasElement;
+      const strip = document.createElement('canvas');
+      strip.width = cellW * frames;
+      strip.height = cellH;
+      const ctx = strip.getContext('2d');
+      for (let i = 0; i < frames; i++) ctx?.drawImage(canvas, i * pitch, 0, cellW, cellH, i * cellW, 0, cellW, cellH);
+      out.push({ url: strip.toDataURL('image/png'), frames, cellW, cellH, spanS });
+    } finally {
+      sheet.destroy({ children: true });
+    }
+  }
+  return out;
 }

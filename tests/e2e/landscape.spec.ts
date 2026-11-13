@@ -72,10 +72,10 @@ test('combat controls are hidden on the menu, however it is scrolled, and shown 
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
-  await expect(page.locator('.main-menu')).toBeVisible();
+  await expect(page.locator('.front-end')).toBeVisible();
   await touch(page, 'pointerdown', 50, 50); // a touch reveals the touch layer in a fight; not here
   await touch(page, 'pointerup', 50, 50);
-  await page.locator('.main-menu').evaluate((m) => m.scrollTo(0, m.scrollHeight));
+  await page.locator('.front-end').evaluate((m) => m.scrollTo(0, m.scrollHeight));
   await page.mouse.wheel(0, 600);
   await expect(page.locator('.melee-button')).toBeHidden();
   await expect(page.locator('.ability-bar')).toBeHidden();

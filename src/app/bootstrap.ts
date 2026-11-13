@@ -1,8 +1,9 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
+import { isAdminName } from '../admin/local-access';
 import { AmbiencePlayer } from '../audio/ambience';
 import { Announcer } from '../audio/announcer';
-import { AudioClip, MusicLoop } from '../audio/music';
+import { AudioClip, MusicLoop, musicFor } from '../audio/music';
 import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
@@ -20,7 +21,8 @@ import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { AMBIENCES } from '../data/audio/ambiences';
-import { BATTLE_MUSIC, FIGHT_STINGER } from '../data/audio/music';
+import { BATTLE_MUSIC, FIGHT_STINGER, MENU_MUSIC, UI_CLICK } from '../data/audio/music';
+import { SELECT_STANCES } from '../data/presentation/select-stances';
 import { codeLabel } from '../input/bindings';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
 import { PlayerIntents } from '../input/intents';
@@ -34,15 +36,17 @@ import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { FightIntro } from '../interface/fight-intro';
 import { fighterSheet } from '../interface/fighter-sheet';
+import { FrontEnd } from '../interface/front-end';
 import { keepLandscape } from '../interface/landscape';
 import { enterFullscreen, exitFullscreen, MainMenu, type MenuFighter, type MenuOpponent } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { VisionVeil } from '../interface/vision-veil';
 import { initPhysics } from '../physics/physics-world';
+import { loadPlayerName, savePlayerName } from '../progression/player-name';
 import { DebugOverlay } from '../rendering/debug-overlay';
 import { createTextureLoader } from '../rendering/pixi-assets';
-import { renderPortraits } from '../rendering/portraits';
+import { renderIdleStrips, renderPortraits } from '../rendering/portraits';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
 import { fighterSettingsHost } from './fighter-settings';
@@ -84,6 +88,9 @@ export interface EngineDebugInfo {
   ambience: string | null;
   /** The battle music is playing (owner, 12/11/2026). */
   musicPlaying: boolean;
+  /** Interface button clicks that played the click sound (owner, 13/11/2026). */
+  uiClicks: number;
+  menuMusicPlaying: boolean;
   /** Where the ability being aimed will land (the ultimate's leap or a point-aimed ability), or null. */
   aimSpot: { x: number; y: number } | null;
   /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
@@ -228,6 +235,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const settings = new SettingsState(browserStorage());
   // Overlays that pause the fight (Settings, the main menu): the game ignores input while any is open.
   const pausedBy = new Set<string>();
+  // The player's registered name (owner, 13/11/2026): their identity on screen; display only.
+  let playerName = loadPlayerName();
   const blindVeil = new BlindVeil(document.body);
   const visionVeil = new VisionVeil(document.body);
   const aimHint = new AimHint(document.body);
@@ -305,30 +314,69 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const battleMusic = musicDef ? new MusicLoop(new AudioClip(musicDef)) : null;
   battleMusic?.setMuted(sound.muted);
   const stinger = new AudioClip(FIGHT_STINGER);
+  // Menu music (owner, 13/11/2026): on the title screen and every menu, looping; it gives way to
+  // the battle music in a fight. Browsers only allow sound after the first tap or key.
+  const menuMusic = new MusicLoop(new AudioClip(MENU_MUSIC));
+  menuMusic.setMuted(sound.muted);
+  const click = new AudioClip(UI_CLICK);
+  const menusUp = (): boolean => ['menu', 'front', 'tournament'].some((k) => pausedBy.has(k));
+  // Owner, 13/11/2026: the menu music runs through every menu, gives way to the battle music when
+  // a fight starts, and comes back slowly once the battle is over.
+  let battleOver = false;
+  const updateMenuMusic = (): void => {
+    if (automated && !params.has('music')) return;
+    if (musicFor({ menusUp: menusUp(), fightStarted, battleOver }) === 'menu') {
+      battleMusic?.stop(0.6);
+      if (sound.context && sound.musicBus) menuMusic.start(sound.context, sound.musicBus, battleOver ? 5 : 1.5);
+      debug.menuMusicPlaying = true;
+    } else {
+      menuMusic.stop(0.8);
+      debug.menuMusicPlaying = false;
+      startBattleMusic();
+    }
+  };
   let stingerPlayed = false;
   /** The fight has begun (FIGHT!, or straight away without an intro): start the music once audio is on. */
   let fightStarted = false;
   const startBattleMusic = (): void => {
-    if (fightStarted && battleMusic && sound.context && sound.musicBus)
+    if (fightStarted && !battleOver && battleMusic && sound.context && sound.musicBus)
       battleMusic.start(sound.context, sound.musicBus);
   };
   // The game falls silent the moment its tab is hidden, and plays on when you come back (owner).
   pauseAudioWhenHidden(document, () => sound.context, window);
+  // A page reached from the game itself (Play, a tournament step) tries to start its sound at once:
+  // the browser allows it where the player has already interacted with the game; otherwise it
+  // waits for the first tap or key as before.
+  if (!automated && (params.has('play') || params.get('mode') === 'tournament')) {
+    sound.unlock();
+    if (sound.context && sound.musicBus) {
+      music.attach(sound.context, sound.musicBus);
+      void click.load(sound.context);
+      void stinger.load(sound.context);
+      if (menusUp()) updateMenuMusic();
+    }
+  }
   onFirstInput(window, () => {
+    void sound.context?.resume();
     sound.unlock();
     if (sound.context && sound.musicBus) music.attach(sound.context, sound.musicBus);
     if (sound.context) void stinger.load(sound.context); // ready before READY
-    startBattleMusic();
+    if (sound.context) void click.load(sound.context);
+    if (menusUp()) updateMenuMusic();
+    else startBattleMusic();
   });
   onToggleMute(window, () => {
     sound.muted = !sound.muted;
     music.setMuted(sound.muted);
     battleMusic?.setMuted(sound.muted);
+    menuMusic.setMuted(sound.muted);
   });
   const applyAudio = (): void => {
     music.setVolume(settings.current.musicVolume);
     battleMusic?.setVolume(settings.current.musicVolume);
+    menuMusic.setVolume(settings.current.musicVolume);
     sound.setVolume(settings.current.sfxVolume);
+    document.documentElement.style.setProperty('--touch-scale', String(settings.current.touchScale));
   };
   applyAudio();
   const controlsHint = (): string => {
@@ -362,6 +410,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     sounds: [],
     ambience: music.current,
     musicPlaying: false,
+    uiClicks: 0,
+    menuMusicPlaying: false,
     aimSpot: null,
     setDummyHp() {}, // replaced once the scene exists
     clash: null,
@@ -473,7 +523,18 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         }
         combatText.show(events, (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
-        topHud.update(scene.topHud);
+        const hud = scene.topHud;
+        topHud.update(
+          playerName && !scene.match?.spectate
+            ? { ...hud, left: { ...hud.left, name: `${playerName} · ${hud.left.name}` } }
+            : hud,
+        );
+        if (scene.matchResult && !battleOver) {
+          // The battle is over: its music fades out and the menu music slowly returns.
+          battleOver = true;
+          battleMusic?.stop(2.5);
+          updateMenuMusic();
+        }
         if (scene.drainShowcases() > 0) showcase.play();
         clashHud.update(scene.clashHud);
         debug.clash = scene.clashHud.state;
@@ -518,7 +579,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // the tournament draw or a watched battle, however the page is scrolled. The stylesheet hides
   // them unless the body has `fighting`.
   const showCombatControls = (): void => {
-    const screenUp = ['menu', 'tournament'].some((k) => pausedBy.has(k));
+    const screenUp = ['menu', 'front', 'tournament'].some((k) => pausedBy.has(k));
     document.body.classList.toggle(
       'fighting',
       scene instanceof FightArenaScene && !screenUp && !document.body.classList.contains('spectating'),
@@ -532,6 +593,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     else pausedBy.delete(reason);
     const now = pausedBy.size > 0;
     showCombatControls();
+    updateMenuMusic();
     if (was === now) return;
     desktop.releaseAll();
     intents.clear();
@@ -561,7 +623,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       if (touchDevice) enterFullscreen();
       if (choice.mode === 'tournament') {
         const pool = menuFighters().map((f) => ({ fighter: f.id, name: f.name }));
-        startTournament(choice, pool, params.has('mute'));
+        startTournament(choice, pool, params.has('mute'), playerName);
         return;
       }
       if (
@@ -601,8 +663,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     }),
   );
   // Settings → Leave: back to the menu, unless this page sets its own (a tournament fight is settled).
-  let leave = (): void => menu.setOpen(true);
-  new SettingsPanel(
+  let drawStances = async (): Promise<void> => {};
+  let leave = (): void => {
+    menu.setOpen(false);
+    front.setOpen(true, 'title');
+  };
+  const settingsPanel = new SettingsPanel(
     document.body,
     settings,
     (open) => setPaused('settings', open),
@@ -617,19 +683,95 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       return true;
     },
   );
+  // The front end (owner, 13/11/2026): title screen, name, Game Modes, fighter select. The old
+  // set-up screen (practice opponent, both modes, fighter settings and Move Config) is now the
+  // Admin Panel, shown only to the admin name (TD-065: a screen choice, not security).
+  const front = new FrontEnd(document.body, {
+    fighters: menuFighters(),
+    arenas: MENU_ARENAS,
+    difficulties: Object.values(DIFFICULTIES).map((d) => ({ id: d.id, name: d.label })),
+    initial: {
+      fighter: currentChoice.fighter,
+      arena: currentChoice.arena,
+      difficulty: currentChoice.difficulty,
+      size: currentChoice.size,
+    },
+    presentation: (id) => SELECT_STANCES[id],
+    sheetFor: (id) => {
+      const def = loadCharacter(id, tunedLibrary()).def;
+      return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings);
+    },
+    playerName: () => playerName,
+    saveName: (raw) => {
+      const r = savePlayerName(raw);
+      if (r.ok) playerName = r.name;
+      return r;
+    },
+    isAdmin: () => isAdminName(playerName),
+    onScreen: (screen) => menuMusic.setDuck(screen === 'select' ? 0.4 : 1),
+    onOpenChange: (open) => {
+      setPaused('front', open);
+      if (open) void drawStances();
+    },
+    openSettings: () => settingsPanel.setOpen(true),
+    openAdmin: () => {
+      if (!isAdminName(playerName)) return;
+      front.setOpen(false);
+      menu.setOpen(true);
+    },
+    startTournament: (setup) => {
+      if (touchDevice) enterFullscreen();
+      const pool = menuFighters().map((f) => ({ fighter: f.id, name: f.name }));
+      startTournament(setup, pool, params.has('mute'), playerName);
+    },
+  });
+  menu.setBack(() => {
+    menu.setOpen(false);
+    front.setOpen(true, 'title');
+  });
+  settingsPanel.setProfile({
+    name: () => playerName,
+    save: (raw) => {
+      const r = savePlayerName(raw);
+      if (r.ok) {
+        playerName = r.name;
+        // A name that is no longer the admin's closes the Admin Panel at once.
+        if (!isAdminName(playerName) && menu.isOpen) {
+          menu.setOpen(false);
+          front.setOpen(true, 'title');
+        }
+        front.refresh();
+      }
+      return r;
+    },
+  });
+  // Every interface button clicks (owner, 13/11/2026), once per press; never the combat buttons.
+  document.addEventListener(
+    'click',
+    (e) => {
+      const t = e.target instanceof Element ? e.target.closest('button, [role="button"]') : null;
+      if (!t || t.closest('.touch-controls, .ability-bar')) return;
+      debug.uiClicks++;
+      sound.playClip(click.ready, UI_CLICK.level);
+    },
+    true,
+  );
   const menuFirst = scene instanceof FightArenaScene && !automated && !params.has('play');
-  if (menuFirst) menu.setOpen(true);
+  if (menuFirst) front.setOpen(true, 'title');
   // Tournament mode (owner, 13/11/2026): a saved tournament can be resumed from the menu; its
   // bracket and match pages are set up here.
   const resumable = tournamentInProgress();
-  if (resumable) menu.setResume('Resume tournament', () => goToBracket(resumable.arena, params.has('mute')));
+  if (resumable) {
+    menu.setResume('Resume tournament', () => goToBracket(resumable.arena, params.has('mute')));
+    front.setResume(() => goToBracket(resumable.arena, params.has('mute')));
+  }
   const bracketPage = params.get('mode') === 'tournament' && !params.has('match');
   const tournamentScreen = setupTournamentPage({
     params,
     scene: scene instanceof FightArenaScene ? scene : null,
     muted: params.has('mute'),
     setPaused,
-    openMenu: () => menu.setOpen(true),
+    openMenu: () => front.setOpen(true, 'modes'),
     setLeave: (fn) => {
       leave = fn;
     },
@@ -655,11 +797,33 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       const urls = await renderPortraits(app, defs);
       fighters.forEach((f, i) => {
         menu.setPortrait(f.id, urls[i]!);
+        front.setPortrait(f.id, urls[i]!);
       });
       tournamentScreen?.setPortraits(new Map(fighters.map((f, i) => [f.id, urls[i]!])));
       if (scene instanceof FightArenaScene) topHud.setPortraits(urls[fighters.length]!, urls[fighters.length + 1]!);
+      if (front.isOpen) await drawStances();
     } catch (error) {
       console.warn('[portraits] could not render fighter portraits', error);
+    }
+  };
+  // The fighters in their select stances (owner, 13/11/2026), for the title and fighter select:
+  // drawn the first time the front end shows, never during a fight.
+  let stancesDrawn = false;
+  drawStances = async (): Promise<void> => {
+    if (stancesDrawn) return;
+    stancesDrawn = true;
+    try {
+      const fighters = menuFighters();
+      const strips = await renderIdleStrips(
+        app,
+        fighters.map((f) => resolveCharacter(f.id, tunedLibrary())),
+        (d) => SELECT_STANCES[d.id],
+      );
+      fighters.forEach((f, i) => {
+        front.setStrip(f.id, strips[i]!);
+      });
+    } catch (error) {
+      console.warn('[select stances] could not draw the fighters', error);
     }
   };
   if (typeof requestIdleCallback === 'function') requestIdleCallback(() => void drawPortraits(), { timeout: 1500 });

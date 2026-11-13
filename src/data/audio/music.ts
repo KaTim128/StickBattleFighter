@@ -1,7 +1,11 @@
 import battleMp3 from '../../../assets/audio/music-battle-japanese-boss.mp3?url';
 import battleOgg from '../../../assets/audio/music-battle-japanese-boss.ogg?url';
+import menuMp3 from '../../../assets/audio/music-menu-pulse-epic.mp3?url';
+import menuOgg from '../../../assets/audio/music-menu-pulse-epic.ogg?url';
 import stingerMp3 from '../../../assets/audio/sfx-fight-stinger.mp3?url';
 import stingerOgg from '../../../assets/audio/sfx-fight-stinger.ogg?url';
+import clickMp3 from '../../../assets/audio/sfx-ui-click.mp3?url';
+import clickOgg from '../../../assets/audio/sfx-ui-click.ogg?url';
 
 /** Recorded audio, each as Ogg Vorbis with an MP3 fallback. */
 export interface AudioTrackDef {
@@ -31,3 +35,18 @@ export const BATTLE_MUSIC: Readonly<Record<string, AudioTrackDef>> = {
  * lands 1.5 s in.
  */
 export const FIGHT_STINGER: AudioTrackDef = { ogg: stingerOgg, mp3: stingerMp3, level: 0.9 };
+
+/**
+ * Menu music (owner, 13/11/2026): the owner's supplied "Pulse" epic track on the title screen and
+ * every menu, looping with no gap: trimmed to its first and last sound, its last 0.3 s crossfaded
+ * into its opening, so after the first pass it loops [0.3 s, end) (see assets/ASSET_REGISTER.md).
+ */
+export const MENU_MUSIC: AudioTrackDef = {
+  ogg: menuOgg,
+  mp3: menuMp3,
+  loop: { startS: 0.3, endS: 137.154195 },
+  level: 0.4,
+};
+
+/** The click on every interface button (owner, 13/11/2026; never on combat buttons). */
+export const UI_CLICK: AudioTrackDef = { ogg: clickOgg, mp3: clickMp3, level: 0.6 };

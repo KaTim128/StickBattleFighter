@@ -387,3 +387,16 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Punch Clash in a watched battle: both fighters mash (unit + integration; failed before the fix)
 - [ ] Real device: Android Chrome and iPhone Safari held upright and sideways (manual)
 
+## Front end, name, admin screen, fighter select, menu music (13/11/2026; REQ-UI-32..34, REQ-AUD-11)
+- [x] Title is the owner's art covering the screen on desktop, a Pixel 7 and a wide window; plates never cropped (e2e `front-end.spec.ts`, screenshots)
+- [x] Only Story Mode (locked, explains), Game Modes, Settings, Quit Game; no Admin Panel for players (e2e)
+- [x] Name required before Game Modes; empty, unsafe and over-10 names refused; saved; changed in Settings → Profile (unit + e2e)
+- [x] Only `addmen1280` (exact) shows the Admin Panel; it holds fighter settings and Move Config (unit + e2e)
+- [x] Game Modes: Tournament and 3 vs 3 (coming soon) only; no Ladder (e2e)
+- [x] Fighter select: name, title, style, story, 6 stats, 4 abilities and ultimate update on every pick; each fighter's stance shown (e2e)
+- [x] Every playable fighter has a distinct stance that fits its rig, feet on the floor, breathing (unit)
+- [x] Tournament from fighter select; the draw shows "Name (Fighter)"; HUD shows "Name · Fighter" (e2e)
+- [x] One click sound per interface press, none on combat buttons (debug counter, e2e)
+- [x] Music rules: menus → menu music; fight → battle music; battle over → menu music (unit `musicFor`)
+- [ ] Listen on a real phone: menu music loop seam, ducking on fighter select, fade back after a tournament fight (manual)
+

@@ -49,11 +49,13 @@ export function startTournament(
   choice: { fighter: string; arena: string; difficulty: string; size: number },
   pool: readonly { fighter: string; name: string }[],
   muted: boolean,
+  /** The player's registered name (owner, 13/11/2026): their identity in the draw, with their fighter. */
+  playerName: string | null = null,
 ): void {
   const me = pool.find((p) => p.fighter === choice.fighter);
   const state = createTournament(
     choice.size,
-    { fighter: choice.fighter, name: `${me?.name ?? choice.fighter} (You)` },
+    { fighter: choice.fighter, name: `${playerName ?? 'You'} (${me?.name ?? choice.fighter})` },
     pool,
     Math.random,
   );

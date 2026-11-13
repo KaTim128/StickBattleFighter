@@ -36,3 +36,14 @@ describe('battle music and the fight stinger (owner, 12/11/2026)', () => {
     expect(loopPoints(2.5, 0.1, { startS: 1, endS: 2.5 }).end).toBe(2.5); // never past what was decoded
   });
 });
+
+describe('menu and battle music (owner, 13/11/2026)', () => {
+  it('menus play the menu music; a started fight plays the battle music; after the battle the menu music returns', async () => {
+    const { musicFor } = await import('../../../src/audio/music');
+    expect(musicFor({ menusUp: true, fightStarted: false, battleOver: false })).toBe('menu');
+    expect(musicFor({ menusUp: false, fightStarted: false, battleOver: false })).toBe('none'); // READY... silent
+    expect(musicFor({ menusUp: false, fightStarted: true, battleOver: false })).toBe('battle');
+    expect(musicFor({ menusUp: true, fightStarted: true, battleOver: false })).toBe('menu'); // left to the menu
+    expect(musicFor({ menusUp: false, fightStarted: true, battleOver: true })).toBe('menu');
+  });
+});

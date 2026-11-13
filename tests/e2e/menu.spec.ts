@@ -1,12 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { asAdmin, openAdminPanel } from './front';
 
 /** Main menu and Leave game (owner, 12/11/2026). Test browsers skip the menu, so this one pretends to be a person. */
-test('main menu: pick Rampage and the Colosseum, play, then leave the game back to the menu', async ({ page }) => {
+test('admin panel: pick Titan and the training yard, play, then leave the game back to the title', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
+  await openAdminPanel(page);
   const menu = page.locator('.main-menu');
   await expect(menu).toBeVisible();
   await expect(menu.locator('[data-fighter]')).toHaveCount(4); // Inferno, Titan, Necro and Shroud (summons are never in the menu)
@@ -17,10 +20,11 @@ test('main menu: pick Rampage and the Colosseum, play, then leave the game back 
   await Promise.all([page.waitForURL(/character=rampage/), menu.locator('.mm-play').click()]);
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.locator('.main-menu')).toBeHidden(); // straight into the fight
-  await expect(page.locator('.th-left .th-name')).toHaveText('Titan'); // owner 13/11/2026: renamed from Braxon (formerly Rampage Buffer)
+  // Owner 13/11/2026: renamed from Braxon (formerly Rampage Buffer); the player's name beside it.
+  await expect(page.locator('.th-left .th-name')).toHaveText('addmen1280 · Titan');
   await page.locator('.settings-button').click();
   await page.locator('.settings-leave').click();
-  await expect(page.locator('.main-menu')).toBeVisible();
+  await expect(page.locator('.front-end [data-screen="title"]')).toBeVisible(); // Leave goes to the title screen
   await expect(page.locator('.settings-panel')).toBeHidden();
   expect(errors).toEqual([]);
 });
@@ -32,8 +36,10 @@ test('fighter details: stat bars fill, abilities explain themselves, Back keeps 
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
+  await openAdminPanel(page);
   const menu = page.locator('.main-menu');
   const selectedBefore = await menu.locator('.mm-card.selected').getAttribute('data-fighter');
   await menu.locator('[data-fighter="necro"]').click();
@@ -79,8 +85,10 @@ test('opponent and difficulty pickers: dummy and Normal by default; picking Shro
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
+  await openAdminPanel(page);
   const menu = page.locator('.main-menu');
   await expect(menu).toBeVisible();
   await expect(menu.locator('[data-opponent="training-dummy"]')).toHaveClass(/selected/);
