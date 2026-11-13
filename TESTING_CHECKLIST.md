@@ -437,3 +437,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Undead Army: four skeletons in front of the enemy (the side it faces), 1.8–3.7 m off, facing it (`necro.test.ts`)
 - [x] No eyes or mouths on Inferno, Titan, Necro, the dummy (skeleton warriors unchanged); Shroud keeps his mask; flames move on fighter select (strip frames differ); checked in Chromium
 - [x] Shroud on fighter select: mask inside the hood; robe has no crossing lines; trim follows the torn hem; checked in Chromium
+- [x] Titan after the second reference (ball joints, chest panel, one eye), checked on fighter select and in a fight; no stray line from the head's rim light
+- [x] Fighter-select strips (30 frames) render for every fighter (not blank)

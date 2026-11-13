@@ -70,8 +70,12 @@ export interface PremiumSkin {
    * and white mask, a mannequin egg; or 'own' (the view draws its head style).
    */
   readonly head: 'crest' | 'brute' | 'cowl' | 'mask' | 'egg' | 'own';
-  /** A light panel down the chest (owner, 13/11/2026, Titan: grey body, white chest). */
+  /** A light panel slanting across the chest (owner, 13/11/2026, Titan: grey body, white chest). */
   readonly chestPanel?: number;
+  /** A round ball at the pelvis, like the mannequin joints (Titan). */
+  readonly pelvisBall?: boolean;
+  /** One glowing eye on the round head (Titan's reference: a white slanted eye). */
+  readonly eye?: number;
 }
 
 /** Fire (the approved Inferno look). */
@@ -97,20 +101,21 @@ export const MAGMA: PremiumPalette = {
  * hands), themed to the fighter. Keyed by body style (no character names in shared code).
  */
 export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
-  // Titan (owner, 13/11/2026, after his reference image): a muscular grey-and-white brawler. A
-  // V-shaped body with broad shoulders, trapezius sloping up to a thick neck, bare deltoids, a white
-  // chest panel; no eyes or mouth (owner, 13/11/2026: only Shroud has a face), no armour plates or glowing core.
+  // Titan (owner, 13/11/2026: "recreate Titan exactly like the image"): a dark grey mannequin
+  // brawler with thick black outlines. Big ball shoulders, ball knees and a ball at the pelvis, a
+  // V-shaped torso with a white panel slanting across the chest, blocky abdominals, plated shins,
+  // grey boots; a round shaded head with one white eye.
   muscle: {
     palette: {
-      outline: 0x101216,
-      skin: 0x6f747f,
-      skinLit: 0xb4bac5,
-      skinShade: 0x3e424b,
-      skinBack: 0x555a64,
-      rim: 0xe6eaf2,
-      armour: 0x2a2d35,
-      armourLit: 0x5a5f6b,
-      armourEdge: 0x0a0b0e,
+      outline: 0x0a0b0d,
+      skin: 0x5d626b,
+      skinLit: 0x868b95,
+      skinShade: 0x3a3e46,
+      skinBack: 0x4a4f57,
+      rim: 0xc9ced8,
+      armour: 0x5d626b,
+      armourLit: 0x8a8f99,
+      armourEdge: 0x0a0b0d,
       seam: null,
       lava: null,
       glow: null,
@@ -120,15 +125,18 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     gear: {
       shoulder: 'none',
       bracers: false,
-      legs: 'trunks',
+      legs: 'none',
       kneeGuards: false,
-      shinGuards: false,
+      shinGuards: true,
       feet: 'boots',
-      belt: true,
+      belt: false,
+      joints: true,
     },
     fire: { core: false, veins: false, fists: false },
     head: 'brute',
-    chestPanel: 0xe8eaef,
+    chestPanel: 0xe9ebef,
+    pelvisBall: true,
+    eye: 0xffffff,
   },
   // Death mage: ash-violet skin, violet-black armour with glowing violet seams, a soul core, violet
   // veins and glowing hands; a robe falling from the sash; a hood with two glowing eyes.
@@ -551,7 +559,8 @@ export class PremiumModel {
     } else if (!far && gear.shoulder === 'bone') {
       this.bonePauldron(g, sh);
     } else if (gear.joints) {
-      this.joint(g, sh, w * 0.36, far);
+      // A brute's shoulder is a big round ball (Titan's reference); a mannequin's a small joint.
+      this.joint(g, m > 1.2 ? capC : sh, m > 1.2 ? w * 0.66 : w * 0.36, far);
     } else if (m > 0) {
       this.muscle(g, capC, u.ux, u.uy, capR * Math.min(1.3, m), capR * 0.85 * Math.min(1.3, m), far);
     }
@@ -947,15 +956,16 @@ export class PremiumModel {
     if (brute) this.bruteDefinition(g, at, w);
     if (this.skin.chestPanel !== undefined) {
       // The light chest panel: from the collar down to a point above the navel, shaded like the skin.
-      const panel = [at(1.06, -0.3), at(1.02, 1.3), at(0.66, 1.0), at(0.36, 0.56), at(0.33, 0.08), at(0.7, -0.22)];
+      // A white panel slanting from the collar across the near pectoral down to the abdomen.
+      const panel = [at(1.08, 0.05), at(1.03, 1.0), at(0.82, 1.42), at(0.5, 1.0), at(0.44, 0.55), at(0.8, 0.25)];
       const pc = this.skin.chestPanel;
       g.poly(panel.flatMap((p) => [p.x, p.y])).fill(this.c(pc));
-      g.poly([at(1.0, 0.1), at(0.98, 1.1), at(0.68, 0.82), at(0.5, 0.35)].flatMap((p) => [p.x, p.y])).fill({
+      g.poly([at(1.04, 0.2), at(1.0, 0.95), at(0.84, 1.25), at(0.78, 0.55)].flatMap((p) => [p.x, p.y])).fill({
         color: this.c(0xffffff),
-        alpha: 0.55,
+        alpha: 0.6,
       });
-      g.poly([at(0.66, 1.0), at(0.36, 0.56), at(0.33, 0.08), at(0.52, 0.5)].flatMap((p) => [p.x, p.y])).fill({
-        color: this.c(toward(pc, 0x000000, 0.3)),
+      g.poly([at(0.82, 1.42), at(0.5, 1.0), at(0.44, 0.55), at(0.62, 0.95)].flatMap((p) => [p.x, p.y])).fill({
+        color: this.c(toward(pc, 0x000000, 0.28)),
         alpha: 0.6,
       });
     }
@@ -1054,6 +1064,17 @@ export class PremiumModel {
       g.circle(bc.x, bc.y, w * 0.32).fill(this.c(this.P.armourLit));
       if (this.P.seam !== null) fire.circle(bc.x, bc.y, w * 0.2).fill({ color: this.P.seam, alpha: 0.9 });
     }
+    if (this.skin.pelvisBall) {
+      // The mannequin's hip ball, in front of the pelvis.
+      const hb = at(-0.02, 0.3);
+      const pr = w * 0.62;
+      g.circle(hb.x, hb.y, pr + w * 0.28).fill(this.c(this.P.outline));
+      g.circle(hb.x, hb.y, pr).fill(this.c(this.P.skin));
+      g.circle(hb.x + this.lx * pr * 0.3, hb.y + this.ly * pr * 0.3, pr * 0.55).fill({
+        color: this.c(this.P.skinLit),
+        alpha: 0.75,
+      });
+    }
     if (this.skin.fire.core && this.P.glow !== null && this.P.lava !== null) {
       // The molten core in the chest: a glowing heart of fire with cracks running out of it.
       const t = this.st.t;
@@ -1110,6 +1131,14 @@ export class PremiumModel {
       this.ly,
     );
     if (style === 'crest') this.crest(fire, h, r);
+    if (this.skin.eye !== undefined) {
+      // One white eye, a sharp slanted leaf toward the front of the face (Titan's reference).
+      const ex = h.x + r * 0.42;
+      const ey = h.y - r * 0.08;
+      const eye = [ex - r * 0.26, ey - r * 0.14, ex + r * 0.3, ey + r * 0.04, ex - r * 0.16, ey + r * 0.12];
+      g.poly(eye).fill(this.c(this.skin.eye));
+      fire.poly(eye).fill({ color: this.skin.eye, alpha: 0.35 });
+    }
   }
 
   /**

@@ -246,6 +246,9 @@ export interface IdleStrip {
  * the lowest to the highest point of the head, measured from the rig); played back and forth it
  * loops with no jump. One GPU read-back per fighter.
  */
+/** The widest read-back of a select strip at once, px (well inside every GPU's texture limit). */
+const MAX_READ_PX = 4096;
+
 export async function renderIdleStrips(
   app: Application,
   defs: readonly FighterDef[],
@@ -300,16 +303,23 @@ export async function renderIdleStrips(
       sheet.addChild(view.root);
     }
     try {
-      const canvas = app.renderer.extract.canvas({
-        target: sheet,
-        frame: new Rectangle(0, 0, pitch * frames, cellH),
-        resolution: 1,
-      }) as HTMLCanvasElement;
       const strip = document.createElement('canvas');
       strip.width = cellW * frames;
       strip.height = cellH;
       const ctx = strip.getContext('2d');
-      for (let i = 0; i < frames; i++) ctx?.drawImage(canvas, i * pitch, 0, cellW, cellH, i * cellW, 0, cellW, cellH);
+      // Read back a few frames at a time: one read of the whole sheet would exceed the GPU's
+      // largest texture (a blank strip on phones and in some browsers).
+      const perRead = Math.max(1, Math.floor(MAX_READ_PX / pitch));
+      for (let f0 = 0; f0 < frames; f0 += perRead) {
+        const n = Math.min(perRead, frames - f0);
+        const canvas = app.renderer.extract.canvas({
+          target: sheet,
+          frame: new Rectangle(f0 * pitch, 0, pitch * n, cellH),
+          resolution: 1,
+        }) as HTMLCanvasElement;
+        for (let i = 0; i < n; i++)
+          ctx?.drawImage(canvas, i * pitch, 0, cellW, cellH, (f0 + i) * cellW, 0, cellW, cellH);
+      }
       out.push({ url: strip.toDataURL('image/png'), frames, cellW, cellH, spanS });
     } finally {
       sheet.destroy({ children: true });

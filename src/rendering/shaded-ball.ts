@@ -32,5 +32,9 @@ export function shadedBall(
   g.circle(x + lx * r * 0.5, y + ly * r * 0.5, r * 0.16).fill({ color: 0xffffff, alpha: 0.55 });
   // Rim light along the shadowed edge.
   const away = Math.atan2(-ly, -lx);
-  g.arc(x, y, r * 0.9, away - 0.9, away + 0.9).stroke({ width: r * 0.1, color: t.rim, alpha: 0.45, cap: 'round' });
+  // Start a fresh path at the arc's first point: arc() otherwise joins on from wherever the pen last
+  // was (it drew a stray line down to the feet).
+  g.moveTo(x + Math.cos(away - 0.9) * r * 0.9, y + Math.sin(away - 0.9) * r * 0.9)
+    .arc(x, y, r * 0.9, away - 0.9, away + 0.9)
+    .stroke({ width: r * 0.1, color: t.rim, alpha: 0.45, cap: 'round' });
 }
