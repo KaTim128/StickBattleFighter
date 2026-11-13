@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 type DebugWindow = Window & { __stickmanDebug?: { musicPlaying: boolean } };
 
-test('battle music (owner, 12/11/2026): silent through READY, then the battle track loops from FIGHT!', async ({
+test('battle music (owner, 12/11/2026): silent through the 3, 2, 1 countdown, then the battle track loops from FIGHT!', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'one audio check is enough');

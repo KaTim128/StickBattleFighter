@@ -2,6 +2,7 @@ import { accentColour } from './accent-colour';
 import { type FighterConfigHost, renderConfigPanel } from './fighter-config';
 import { buildFighterInfo } from './fighter-info';
 import type { FighterSheet } from './fighter-sheet';
+import { topWindow } from './quit-game';
 
 /**
  * Main menu (owner, 12/11/2026: "the settings also has a button to leave game"): the screen the
@@ -415,13 +416,24 @@ export class MainMenu {
  */
 const FULLSCREEN_OFF_KEY = 'stickman-arena.fullscreen-off';
 
+/**
+ * The document that holds fullscreen: the outer shell when the game runs inside it (owner,
+ * 13/11/2026: fullscreen must survive every mode change; each fight is its own page, and a page
+ * change only ends fullscreen for the page being left, never for the shell around it).
+ */
+function screenDoc(): Document {
+  return topWindow().document;
+}
+
 export function enterFullscreen(): void {
-  const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+  const top = topWindow();
+  const doc = top.document;
+  const el = doc.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
   const lock = () => {
-    const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    const orientation = top.screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
     return orientation?.lock?.('landscape');
   };
-  if (document.fullscreenElement) {
+  if (doc.fullscreenElement) {
     void Promise.resolve(lock()).catch(() => {});
     return;
   }
@@ -439,12 +451,18 @@ export function enterFullscreen(): void {
 }
 
 export function exitFullscreen(): void {
-  if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+  const doc = screenDoc();
+  if (doc.fullscreenElement) void doc.exitFullscreen().catch(() => {});
+}
+
+/** Whether the game fills the screen right now (in the shell or in its own page). */
+export function isFullscreen(): boolean {
+  return screenDoc().fullscreenElement !== null;
 }
 
 /** The Settings fullscreen button: switching it off keeps it off for this session. */
 export function toggleFullscreen(): void {
-  if (document.fullscreenElement) {
+  if (isFullscreen()) {
     sessionStore()?.setItem(FULLSCREEN_OFF_KEY, '1');
     exitFullscreen();
   } else {
@@ -456,7 +474,7 @@ export function toggleFullscreen(): void {
 /** On a touch device: ask for the whole screen on every tap until it is granted. */
 export function keepFullscreen(): void {
   const ask = (): void => {
-    if (document.fullscreenElement || sessionStore()?.getItem(FULLSCREEN_OFF_KEY)) return;
+    if (isFullscreen() || sessionStore()?.getItem(FULLSCREEN_OFF_KEY)) return;
     enterFullscreen();
   };
   window.addEventListener('pointerup', ask, { passive: true });

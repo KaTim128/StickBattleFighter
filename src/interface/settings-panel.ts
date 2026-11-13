@@ -80,7 +80,7 @@ export class SettingsPanel {
         </section>
         <div class="settings-actions">
           <button type="button" class="settings-fullscreen">Fullscreen</button>
-          <button type="button" class="settings-leave">Leave game</button>
+          <button type="button" class="settings-leave">Leave</button>
         </div>
       </div>`;
     parent.appendChild(this.root);

@@ -8,6 +8,7 @@ import { accentColour } from './accent-colour';
 import type { FighterSheet } from './fighter-sheet';
 import type { MenuArena, MenuFighter, MenuOpponent } from './main-menu';
 import { TOURNAMENT_SIZES } from './main-menu';
+import { quitGame } from './quit-game';
 
 /**
  * The game's front end (owner, 13/11/2026: "Main Menu, Player Identification and Interface
@@ -23,7 +24,7 @@ import { TOURNAMENT_SIZES } from './main-menu';
  * - Quit: browsers only let a page close a window it opened, so Quit tries, then shows a goodbye.
  */
 
-export type FrontScreen = 'title' | 'name' | 'modes' | 'practice' | 'select' | 'team' | 'quit';
+export type FrontScreen = 'title' | 'name' | 'modes' | 'practice' | 'select' | 'team';
 
 export interface FighterPresentation {
   readonly title: string;
@@ -109,7 +110,7 @@ export class FrontEnd {
     this.root.hidden = true;
     this.root.setAttribute('role', 'dialog');
     this.root.setAttribute('aria-label', 'Stickman Arena');
-    for (const s of ['title', 'name', 'modes', 'practice', 'select', 'team', 'quit'] as const) {
+    for (const s of ['title', 'name', 'modes', 'practice', 'select', 'team'] as const) {
       const sec = el('section', `fe-screen fe-${s}`);
       sec.dataset.screen = s;
       sec.hidden = true;
@@ -183,8 +184,7 @@ export class FrontEnd {
     else if (screen === 'modes') this.buildModes(sec);
     else if (screen === 'practice') this.buildPractice(sec);
     else if (screen === 'team') this.buildTeam(sec);
-    else if (screen === 'select') this.buildSelect(sec);
-    else this.buildQuit(sec);
+    else this.buildSelect(sec);
     this.root.dataset.screen = screen;
     this.o.onScreen?.(screen);
   }
@@ -650,20 +650,8 @@ export class FrontEnd {
     sec.append(head, info, stage, roster, bar);
   }
 
-  private buildQuit(sec: HTMLElement): void {
-    const card = el('div', 'fe-panel');
-    card.append(
-      el('h2', 'fe-h', 'THANKS FOR PLAYING'),
-      el('p', 'fe-sub', 'You can close this tab now.'),
-      button('fe-go', 'Back to title', () => this.show('title')),
-    );
-    sec.append(card);
-  }
-
   private quit(): void {
-    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-    window.close(); // only works for a window the game opened itself
-    this.show('quit');
+    quitGame();
   }
 
   /** The fighter, large, in its select stance (or its portrait until the stance is drawn). */

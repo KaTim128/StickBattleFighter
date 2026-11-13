@@ -6,7 +6,10 @@ test('admin panel: pick Titan and the training yard, play, then leave the game b
   test.setTimeout(60_000); // two whole game pages (the menu, then the fight), like the other page-change tests
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1'); // play the page itself, not the fullscreen shell
+  });
   await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
@@ -36,7 +39,10 @@ test('fighter details: stat bars fill, abilities explain themselves, Back keeps 
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1'); // play the page itself, not the fullscreen shell
+  });
   await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
@@ -85,7 +91,10 @@ test('opponent and difficulty pickers: dummy and Normal by default; picking Shro
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1'); // play the page itself, not the fullscreen shell
+  });
   await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });

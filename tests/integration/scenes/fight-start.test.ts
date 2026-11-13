@@ -49,7 +49,7 @@ describe('squaring up before the fight', () => {
         scenes.update(STEP);
         scenes.render(1, STEP);
       }
-      check(); // still squared up while the announcer speaks
+      check(); // still squared up through the countdown
       scenes.clear();
     });
   }

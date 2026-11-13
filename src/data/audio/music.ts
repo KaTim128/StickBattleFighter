@@ -2,8 +2,8 @@ import battleMp3 from '../../../assets/audio/music-battle-japanese-boss.mp3?url'
 import battleOgg from '../../../assets/audio/music-battle-japanese-boss.ogg?url';
 import menuMp3 from '../../../assets/audio/music-menu-pulse-epic.mp3?url';
 import menuOgg from '../../../assets/audio/music-menu-pulse-epic.ogg?url';
-import stingerMp3 from '../../../assets/audio/sfx-fight-stinger.mp3?url';
-import stingerOgg from '../../../assets/audio/sfx-fight-stinger.ogg?url';
+import countdownMp3 from '../../../assets/audio/sfx-countdown-fight.mp3?url';
+import countdownOgg from '../../../assets/audio/sfx-countdown-fight.ogg?url';
 import clickMp3 from '../../../assets/audio/sfx-ui-click.mp3?url';
 import clickOgg from '../../../assets/audio/sfx-ui-click.ogg?url';
 
@@ -31,10 +31,12 @@ export const BATTLE_MUSIC: Readonly<Record<string, AudioTrackDef>> = {
 };
 
 /**
- * The READY... FIGHT! stinger under the announcer (original, rendered by tools/audio/); its FIGHT hit
- * lands 1.5 s in.
+ * The fight countdown (owner, 13/11/2026: the owner's supplied deep-voice "3, 2, 1, Fight!" clip,
+ * trimmed to start on "three"). The words land at `COUNTDOWN_WORDS_S` seconds into the clip; the
+ * scene's intro timeline is built from the same numbers, so the text and the voice stay together.
  */
-export const FIGHT_STINGER: AudioTrackDef = { ogg: stingerOgg, mp3: stingerMp3, level: 0.9 };
+export const FIGHT_COUNTDOWN: AudioTrackDef = { ogg: countdownOgg, mp3: countdownMp3, level: 0.95 };
+export const COUNTDOWN_WORDS_S = { three: 0.01, two: 1.12, one: 1.98, fight: 2.86 } as const;
 
 /**
  * Menu music (owner, 13/11/2026): the owner's supplied "Pulse" epic track on the title screen and

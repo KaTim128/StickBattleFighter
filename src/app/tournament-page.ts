@@ -44,6 +44,15 @@ export interface TournamentPageContext {
   setLeave(leave: () => void): void;
 }
 
+/** The main menu page (the title), with sound allowed at once. */
+export function goToTitle(muted: boolean): void {
+  const next = new URLSearchParams();
+  next.set('home', '');
+  if (muted) next.set('mute', '');
+  next.set('play', '');
+  window.location.search = next.toString();
+}
+
 /** Start a new tournament from the menu's choices and go to its bracket. */
 export function startTournament(
   choice: { fighter: string; arena: string; difficulty: string; size: number },
@@ -156,7 +165,9 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
         recordResult(fresh.state, matchId, by, mine ? 'played' : 'watched');
         commit(fresh);
       }
-      goToBracket(fresh.arena, ctx.muted, { match: matchId, early: leftEarly });
+      // Leave (owner, 13/11/2026): the fight is settled and recorded, then straight to the main menu.
+      if (leftEarly) goToTitle(ctx.muted);
+      else goToBracket(fresh.arena, ctx.muted, { match: matchId, early: false });
     };
     return null;
   }

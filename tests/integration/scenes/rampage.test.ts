@@ -268,4 +268,56 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     expect(caster.cooldown('a2')).toBeCloseTo(K.a2.cooldownS, 1);
     scenes.clear();
   });
+
+  it('Rampage Mode (owner, 13/11/2026): he grows 10% bigger; a close enemy takes about 10 and is shoved back once', async () => {
+    const intents = new PlayerIntents();
+    const scene = new FightArenaScene(
+      { ...TRAINING_YARD, playerStart: { x: 14, y: 13 }, dummyStart: { x: 15.5, y: 13 } },
+      new Container(),
+      intents,
+      () => ({ width: 1280, height: 720 }),
+      false,
+      { player: 'rampage' },
+    );
+    const scenes = new SceneManager();
+    await scenes.switchTo(() => scene);
+    const run = (seconds: number) => {
+      for (let i = 0; i < Math.round(seconds / STEP); i++) {
+        scenes.update(STEP);
+        scenes.render(1, STEP);
+      }
+    };
+    run(0.2);
+    const x0 = scene.dummy.x;
+    scene.playerFighter.caster!.fillMeter();
+    intents.pressAbility('ult');
+    for (let i = 0; i < 120 && scene.playerFighter.buff === null; i++) run(STEP);
+    expect(scene.playerFighter.buff).not.toBeNull();
+    run(0.05);
+    const hit = 1000 - scene.dummy.hp;
+    expect(hit).toBeGreaterThanOrEqual(8); // about 10 (the combat rules' defence and variance apply)
+    expect(hit).toBeLessThanOrEqual(13);
+    const hpAfter = scene.dummy.hp;
+    run(0.5);
+    expect(scene.dummy.x).toBeGreaterThan(x0 + 0.5); // pushed straight back
+    run(1.5);
+    expect(scene.dummy.hp).toBe(hpAfter); // once only, never again while it lasts
+    expect(scene.playerFighter.growth).toBeCloseTo(1.1, 2); // drawn 10% bigger
+    run(7);
+    expect(scene.playerFighter.buff).toBeNull();
+    run(1.5);
+    expect(scene.playerFighter.growth).toBeCloseTo(1, 2); // back to his size
+    scenes.clear();
+  });
+
+  it('Rampage Mode shockwave only reaches enemies close by', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 5, y: 5 });
+    scene.respawnDummy({ x: 9, y: 5 });
+    scene.playerFighter.caster!.fillMeter();
+    intents.pressAbility('ult');
+    runUntil(() => scene.playerFighter.buff !== null, 2);
+    run(0.3);
+    expect(scene.dummy.hp).toBe(1000);
+    scenes.clear();
+  });
 });

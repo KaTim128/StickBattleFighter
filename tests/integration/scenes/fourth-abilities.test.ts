@@ -88,6 +88,55 @@ describe('fourth abilities (R)', () => {
     scenes.clear();
   });
 
+  it('seized mid-charge (owner, 13/11/2026): the charge stops at once and nothing new can start while held', async () => {
+    const intents = new PlayerIntents();
+    const scene = new FightArenaScene(
+      { ...TRAINING_YARD, playerStart: { x: 12, y: 13 }, dummyStart: { x: 17, y: 13 } },
+      new Container(),
+      intents,
+      () => ({ width: 1280, height: 720 }),
+      false,
+      { player: 'rampage', opponent: 'rampage' },
+    );
+    const scenes = new SceneManager();
+    await scenes.switchTo(() => scene);
+    const step = (s: number) => {
+      for (let i = 0; i < Math.round(s / STEP); i++) {
+        scenes.update(STEP);
+        scenes.render(1, STEP);
+      }
+    };
+    const foe = scene.dummyFighter;
+    // The other Titan acts only when told here: its AI decides nothing (a repeatable test).
+    const idle = {
+      move: { x: 0, y: 0 },
+      jump: false,
+      dodge: false,
+      guard: false,
+      ability: null,
+      heavy: false,
+      melee: false,
+      sprint: false,
+    };
+    (foe as unknown as { brain: unknown }).brain = { think: () => idle };
+    step(0.2);
+    expect(scene.abilities!.tryCast(foe, 'a2')).toBeNull();
+    for (let i = 0; i < 90 && !foe.driveVelocity; i++) step(STEP);
+    expect(foe.driveVelocity).not.toBeNull(); // charging
+    // Seized now (what the Grapple Slam does to whoever it catches).
+    scene.abilities!.hold(foe.name, 1);
+    expect(foe.caster!.cast).toBeNull(); // the charge is cancelled...
+    expect(scene.abilities!.world.driving(foe.name)).toBe(false); // ...and no longer moves it
+    expect(foe.driveVelocity).toBeNull();
+    const at = foe.x;
+    step(0.3);
+    expect(Math.abs(foe.x - at)).toBeLessThan(0.6); // no flight across the arena
+    expect(scene.dummy.state).toBe('stunned');
+    expect(scene.abilities!.tryCast(foe, 'a1')).not.toBeNull(); // nothing new while held
+    expect(foe.caster!.cast).toBeNull();
+    scenes.clear();
+  });
+
   it('Grapple Slam knocks the slammed enemy back from him', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 14, y: 13 }, { x: 15.1, y: 13 });
     intents.pressAbility('a4');
@@ -162,7 +211,7 @@ describe('fight intro lock', () => {
     await initPhysics();
   });
 
-  it('both fighters stay put and nothing fires until the announcer has said FIGHT, then combat is on', async () => {
+  it('both fighters stay put and nothing fires through 3, 2, 1 until FIGHT (owner, 13/11/2026: no READY), then combat is on', async () => {
     const { FIGHT_INTRO } = await import('../../../src/app/scenes/fight-arena-scene');
     const { intents, scene, scenes, run } = await setup('inferno', { x: 14, y: 13 }, { x: 15.3, y: 13 });
     scene.dummyAttacks = true;
@@ -172,10 +221,17 @@ describe('fight intro lock', () => {
     intents.setMove('t', { x: -1, y: 0 });
     intents.pressMelee();
     intents.pressAbility('a1');
-    run(FIGHT_INTRO.readyAtS + 0.1);
-    expect(scene.introState?.phase).toBe('ready');
-    run(FIGHT_INTRO.fightAtS - FIGHT_INTRO.readyAtS);
+    const seen: string[] = [];
+    while (scene.introState && scene.introState.phase !== 'fight') {
+      const ph = scene.introState.phase;
+      if (seen.at(-1) !== ph) seen.push(ph);
+      run(1 / 60);
+    }
+    expect(seen).toEqual(['lead-in', 'three', 'two', 'one']); // never a READY
     expect(scene.introState?.phase).toBe('fight');
+    // The words follow the supplied voice clip's timing, about 0.9-1.1 s apart.
+    expect(FIGHT_INTRO.twoAtS - FIGHT_INTRO.threeAtS).toBeGreaterThan(0.8);
+    expect(FIGHT_INTRO.fightAtS - FIGHT_INTRO.oneAtS).toBeLessThan(1.2);
     expect(Math.abs(scene.player.x - x0)).toBeLessThan(0.02); // never moved
     expect(scene.player.attack).toBeNull();
     expect(scene.player.ability).toBeNull();

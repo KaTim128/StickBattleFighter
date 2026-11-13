@@ -30,7 +30,10 @@ test('tournament: 4 fighters, Top 4, skip the other battle, win the Top 2, champ
   test.setTimeout(240_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1'); // play the page itself, not the fullscreen shell
+  });
   await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
@@ -74,7 +77,10 @@ test('tournament: 4 fighters, Top 4, skip the other battle, win the Top 2, champ
 
 /** Start a tournament of `size` from the menu and win the player's first match. */
 async function startAndWinFirst(page: Page, size: number): Promise<void> {
-  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1'); // play the page itself, not the fullscreen shell
+  });
   await asAdmin(page);
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
@@ -96,10 +102,17 @@ async function startAndWinFirst(page: Page, size: number): Promise<void> {
   await expect(screen).toBeVisible({ timeout: 60_000 });
 }
 
-/** Settings → Leave in the middle of a tournament fight. */
+/**
+ * Settings → Leave in the middle of a tournament fight: the fight is settled and recorded, and
+ * Leave goes straight to the main menu (owner, 13/11/2026); Game Modes → Resume shows the draw.
+ */
 async function leaveFight(page: Page): Promise<void> {
   await page.locator('.settings-button').click();
-  await Promise.all([page.waitForURL(/last=/), page.locator('.settings-leave').click()]);
+  await Promise.all([page.waitForURL(/home/), page.locator('.settings-leave').click()]);
+  const front = page.locator('.front-end');
+  await expect(front.locator('[data-screen="title"]')).toBeVisible({ timeout: 60_000 });
+  await front.locator('[data-nav="modes"]').click();
+  await Promise.all([page.waitForURL(/mode=tournament/), front.locator('.fe-resume').click()]);
 }
 
 test('tournament: any number of AI battles can be watched (no limit), each one tapped in the draw', async ({
@@ -120,8 +133,7 @@ test('tournament: any number of AI battles can be watched (no limit), each one t
     await expect(page.locator('.tn-skip-battle')).toHaveCount(0); // no per-battle buttons
     await expect(page.locator('.ability-bar')).toBeHidden(); // spectating: no combat controls
     await leaveFight(page);
-    await expect(screen.locator('.tn-latest')).toHaveText(/Top 16: .* beat .*left early/, { timeout: 60_000 });
-    await expect(screen.locator('.tn-match.watchable')).toHaveCount(left - 1);
+    await expect(screen.locator('.tn-match.watchable')).toHaveCount(left - 1, { timeout: 60_000 });
     await expect(screen.locator('.tn-stage')).toHaveText(/Top 16/i); // still this stage
   }
   await screen.locator('.tn-skip-all').click();
@@ -148,7 +160,6 @@ test('tournament: leaving your own fight settles it and the bracket moves on', a
   // Both at full health: the side that stayed wins when you leave.
   await leaveFight(page);
   await expect(screen.locator('.tn-title')).toHaveText('TOURNAMENT CHAMPION', { timeout: 60_000 });
-  await expect(screen.locator('.tn-latest')).toHaveText(/Top 2: .* beat addmen1280 \(Inferno\).*left early/);
   await expect(screen.locator('.tn-placement')).toHaveText(/Runner-up/);
   expect(errors).toEqual([]);
 });

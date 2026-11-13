@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { leadingSilenceS, loopPoints, trackUrl } from '../../../src/audio/music';
 import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
-import { BATTLE_MUSIC, FIGHT_STINGER } from '../../../src/data/audio/music';
+import { BATTLE_MUSIC, COUNTDOWN_WORDS_S, FIGHT_COUNTDOWN } from '../../../src/data/audio/music';
 
-describe('battle music and the fight stinger (owner, 12/11/2026)', () => {
+describe('battle music and the fight countdown (owner, 12/11/2026 and 13/11/2026)', () => {
   it("the office fights to the owner's Japanese boss track; the Testing Area stays without music (SUP-22)", () => {
     expect(OFFICE.music).toBe('japanese-boss');
     expect(BATTLE_MUSIC[OFFICE.music!]).toBeDefined();
@@ -18,11 +18,15 @@ describe('battle music and the fight stinger (owner, 12/11/2026)', () => {
     expect(loop.endS).toBeLessThan(172); // the original fades out from about 172 s
   });
 
-  it('plays Ogg Vorbis where the browser can, MP3 otherwise; the stinger rides over the music', () => {
+  it('plays Ogg Vorbis where the browser can, MP3 otherwise; the countdown voice rides over the music, words in order', () => {
     const def = BATTLE_MUSIC['japanese-boss']!;
     expect(trackUrl(def, () => 'probably')).toBe(def.ogg);
     expect(trackUrl(def, () => '')).toBe(def.mp3);
-    expect(FIGHT_STINGER.level).toBeGreaterThan(def.level);
+    expect(FIGHT_COUNTDOWN.level).toBeGreaterThan(def.level);
+    const w = COUNTDOWN_WORDS_S;
+    expect(w.three).toBeLessThan(w.two);
+    expect(w.two).toBeLessThan(w.one);
+    expect(w.one).toBeLessThan(w.fight);
   });
 
   it("skips an encoder's leading silence, shifting the intro and the loop with it (no gap, no clipped beat)", () => {

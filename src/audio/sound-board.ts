@@ -426,15 +426,8 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     },
     { crackle: { dur: 0.6, gain: 0.25, count: 14 } },
   ],
-  // Fight intro (owner, 12/11/2026). READY: a deep, swelling riser under the announcer, a low
-  // drum hit and a metallic shimmer, building tension.
-  'intro-ready': [
-    { tone: { wave: 'sine', f0: 48, f1: 62, dur: 1.3, gain: 0.5, attack: 0.5 } },
-    { noise: { dur: 1.3, gain: 0.25, type: 'bandpass', freq: 300, freqEnd: 1600, q: 1.2, attack: 1.0 } },
-    { tone: { wave: 'sine', f0: 90, f1: 38, dur: 0.5, gain: 0.8, drive: 0.3 } },
-    { tone: { wave: 'triangle', f0: 1240, f1: 1200, dur: 0.9, gain: 0.04, attack: 0.3 } },
-  ],
-  // FIGHT: a huge impact on the word: a sub-bass drop, a cracking slam, a rush of air and a long
+  // Fight countdown fallback (owner, 13/11/2026): only while the supplied countdown clip is still
+  // loading. FIGHT: a huge impact on the word: a sub-bass drop, a cracking slam, a rush of air and a long
   // ringing metallic tail.
   'intro-fight': [
     { tone: { wave: 'sine', f0: 70, f1: 24, dur: 0.9, gain: 1, drive: 0.5 } },

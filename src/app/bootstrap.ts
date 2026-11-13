@@ -2,7 +2,6 @@ import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
 import { isAdminName } from '../admin/local-access';
 import { AmbiencePlayer } from '../audio/ambience';
-import { Announcer } from '../audio/announcer';
 import { AudioClip, MusicLoop, musicFor } from '../audio/music';
 import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
@@ -21,7 +20,7 @@ import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { AMBIENCES } from '../data/audio/ambiences';
-import { BATTLE_MUSIC, FIGHT_STINGER, MENU_MUSIC, UI_CLICK } from '../data/audio/music';
+import { BATTLE_MUSIC, FIGHT_COUNTDOWN, MENU_MUSIC, UI_CLICK } from '../data/audio/music';
 import { SELECT_STANCES } from '../data/presentation/select-stances';
 import { codeLabel } from '../input/bindings';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
@@ -264,10 +263,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const visionVeil = new VisionVeil(document.body);
   const aimHint = new AimHint(document.body);
   const fightIntro = new FightIntro(document.body);
-  const announcer = new Announcer(
-    () => settings.current.sfxVolume,
-    () => sound.muted,
-  );
   const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => pausedBy.size > 0 });
   attachKeyboard(window, desktop);
   attachMouse(container, desktop, intents);
@@ -338,7 +333,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const musicDef = musicId ? BATTLE_MUSIC[musicId] : undefined;
   const battleMusic = musicDef ? new MusicLoop(new AudioClip(musicDef)) : null;
   battleMusic?.setMuted(sound.muted);
-  const stinger = new AudioClip(FIGHT_STINGER);
+  const countdown = new AudioClip(FIGHT_COUNTDOWN);
   // Menu music (owner, 13/11/2026): on the title screen and every menu, looping; it gives way to
   // the battle music in a fight. Browsers only allow sound after the first tap or key.
   const menuMusic = new MusicLoop(new AudioClip(MENU_MUSIC));
@@ -360,7 +355,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       startBattleMusic();
     }
   };
-  let stingerPlayed = false;
+  let countdownPlayed = false;
   /** The fight has begun (FIGHT!, or straight away without an intro): start the music once audio is on. */
   let fightStarted = false;
   const startBattleMusic = (): void => {
@@ -377,7 +372,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     if (sound.context && sound.musicBus) {
       music.attach(sound.context, sound.musicBus);
       void click.load(sound.context);
-      void stinger.load(sound.context);
+      void countdown.load(sound.context);
       if (menusUp()) updateMenuMusic();
     }
   }
@@ -385,7 +380,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     void sound.context?.resume();
     sound.unlock();
     if (sound.context && sound.musicBus) music.attach(sound.context, sound.musicBus);
-    if (sound.context) void stinger.load(sound.context); // ready before READY
+    if (sound.context) void countdown.load(sound.context); // ready before the countdown
     if (sound.context) void click.load(sound.context);
     if (menusUp()) updateMenuMusic();
     else startBattleMusic();
@@ -514,17 +509,14 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           settings.bindings,
           scene.beaming,
         );
-        // The intro's words, voice and impacts all start on the frame its phase begins.
+        // The countdown's words and voice start on the same frame (owner, 13/11/2026): the supplied
+        // "3, 2, 1, Fight!" clip starts with "three"; the scene's timeline follows its word times.
+        // If the clip has not loaded yet, a synthesised hit marks FIGHT instead.
         const began = fightIntro.update(scene.introState);
-        // The recorded stinger (owner, 12/11/2026) carries READY's hit, the build and FIGHT's impact
-        // and echo from this one start; until it has loaded the synthesised hits stand in.
-        if (began === 'ready') {
-          announcer.say('ready');
-          if (!sound.playClip(stinger.ready, FIGHT_STINGER.level)) sound.play('intro-ready');
-          stingerPlayed = stinger.ready !== null && !sound.muted;
+        if (began === 'three') {
+          countdownPlayed = sound.playClip(countdown.ready, FIGHT_COUNTDOWN.level);
         } else if (began === 'fight') {
-          announcer.say('fight');
-          if (!stingerPlayed) sound.play('intro-fight', 1.2);
+          if (!countdownPlayed) sound.play('intro-fight', 1.2);
           fightStarted = true;
           startBattleMusic();
         }
@@ -712,10 +704,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     next.set('play', '');
     window.location.search = next.toString();
   };
+  // Leave (owner, 13/11/2026): every mode goes straight back to the main menu (the title).
   let leave = (): void => {
     menu.setOpen(false);
-    // A practice fight (Open Zone or the tutorial) goes back to Practice, to try another fighter.
-    front.setOpen(true, params.has('practice') ? 'practice' : 'title');
+    front.setOpen(true, 'title');
   };
   const settingsPanel = new SettingsPanel(
     document.body,
@@ -851,7 +843,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       debug.team = t;
     };
     onPortraits = (urls) => teamHud.setPortraits(urls);
-    leave = () => front.setOpen(true, 'modes');
     scene.onMatchEnd = (winner) => {
       const card = document.createElement('div');
       card.className = `team-result ${winner === 'player' ? 'victory' : 'defeat'}`;
@@ -951,7 +942,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       debug.tutorial = run.finished ? 'done' : (run.step?.id ?? 'done');
     };
   }
-  const menuFirst = scene instanceof FightArenaScene && !automated && !params.has('play');
+  // The title first: a fresh visit, or `?home` (Leave from a page that had to be settled first).
+  const menuFirst = scene instanceof FightArenaScene && ((!automated && !params.has('play')) || params.has('home'));
   if (menuFirst) front.setOpen(true, 'title');
   // Tournament mode (owner, 13/11/2026): a saved tournament can be resumed from the menu; its
   // bracket and match pages are set up here.
@@ -972,12 +964,13 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
   });
   showCombatControls();
-  // READY... FIGHT! before every fight (owner, 12/11/2026). The menu's Play starts a new fight page,
-  // which gets its own intro; automated browsers skip it unless asked (`?intro`).
+  // 3, 2, 1, FIGHT before every fight (owner, 13/11/2026), but never in the tutorial, which starts
+  // straight into its first instruction. Automated browsers skip it unless asked (`?intro`).
   if (
     scene instanceof FightArenaScene &&
     !menuFirst &&
     !bracketPage &&
+    !params.has('tutorial') &&
     (!automated || params.has('intro')) &&
     !params.has('nointro')
   )

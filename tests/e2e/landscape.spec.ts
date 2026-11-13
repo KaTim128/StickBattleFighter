@@ -69,7 +69,10 @@ test('upright phone: the game is laid out in landscape and the joystick follows 
 });
 
 test('combat controls are hidden on the menu, however it is scrolled, and shown in the fight', async ({ page }) => {
-  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1'); // play the page itself, not the fullscreen shell
+  });
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
   await expect(page.locator('.front-end')).toBeVisible();

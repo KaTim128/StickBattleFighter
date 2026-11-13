@@ -285,6 +285,13 @@ export interface BuffDelivery {
    * `visibleM` round itself for the buff's whole duration (everything further is almost black).
    */
   readonly darkensFoes?: { readonly visibleM: number };
+  /** The caster is drawn this much bigger while it lasts (Rampage Mode, owner 13/11/2026: 1.1). */
+  readonly sizeFactor?: number;
+  /**
+   * A shockwave as it begins (Rampage Mode, owner 13/11/2026): every enemy within `radiusM` of the
+   * caster takes the payload once, pushed straight away from him.
+   */
+  readonly shockwave?: { readonly radiusM: number; readonly payload: AbilityPayload };
 }
 
 /**
@@ -303,7 +310,7 @@ export interface GrabDelivery {
 }
 
 /** What a running buff does (the buff delivery without its summons). */
-export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon'>;
+export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon' | 'shockwave'>;
 
 export type Delivery =
   | ProjectileDelivery

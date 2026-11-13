@@ -23,6 +23,16 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (latest+12): Titan and Shroud redesigns, countdown, fullscreen shell, Leave, Quit, grab fix (owner)
+- Titan (`src/rendering/premium-model.ts`, skin `muscle`): V-shaped muscular body, trapezius to a thick neck, bare deltoids, grey with a white chest panel, white eyes; no hump, armour or core. Rampage Mode: `sizeFactor` 1.1 (drawn bigger, `StickmanView.setGrowth`) and a one-time `shockwave` (2.2 m, 10 damage, push) (REQ-ABL-23).
+- Grapple Slam: `SceneAbilities.hold` now cancels the seized fighter's cast, charge, dash and scripted attack; the stun blocks new ones (regression test fails without the fix).
+- Shroud: hood face opening with a lit lip, a bigger mask filling it with curved shading (`maskInHood`).
+- Title art (`assets/ui/title-menu.webp`): Titan about 20% taller than the others; Shroud's mask in a framed opening. LOCKED tag not clipped.
+- Countdown 3, 2, 1, FIGHT with the owner's clip (`assets/audio/sfx-countdown-fight.*`), none in the Tutorial; announcer and stinger removed (REQ-AUD-12).
+- Fullscreen shell (`src/app/shell.ts`, TD-070); Leave → main menu everywhere (`goToTitle`, `?home`); Quit without a goodbye screen (`src/interface/quit-game.ts`) (REQ-UI-36).
+- Checks: `npx vitest run` 486 pass; typecheck and lint clean; e2e (see below); browser screenshots of Titan, Shroud and the title art.
+- Next task: owner phone check of fullscreen across modes; premium ability icons (#51).
+
 ### 13/11/2026 (latest+11): Shroud's Bloodfade and three-stab Stalker Lunge; Rampage Mode cooldown cut (owner)
 - New shared `assault` delivery (TD-069): approach, timed stabs (each a real hit), optional retreat; `assaultPose` gives three distinct stab motions and a backward spring; directional blood spray on every stab; per-stab sounds `blade-pierce`, `blade-stab-1/2/3`; new Bloodfade icon. Shroud a1 Bloodfade (70 + bleed 10/s × 3 s, flinch, spring back 5 m), a2 Stalker Lunge (3 × 26 + bleed 9/s × 3 s refreshed, never stacked). AI uses Bloodfade as a burst (0–5 m). Rampage Mode `cooldownFactor` 0.75 (REQ-ABL-22, SUP-34).
 - Files: `src/abilities/{ability-def,ability-caster,ability-world}.ts`, `src/animation/ability-poses.ts`, `src/app/scenes/{fight-arena-scene,scene-abilities}.ts`, `src/audio/sound-board.ts`, `src/vfx/ability-vfx.ts`, `src/interface/ability-icons.ts`, `src/data/abilities/{shroud,rampage}.ts`, `src/data/ai/brains.ts`; tests `shroud.test.ts`, `rampage.test.ts`, `ability-caster.test.ts`.

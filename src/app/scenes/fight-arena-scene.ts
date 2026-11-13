@@ -44,6 +44,7 @@ import type { CombatEvent } from '../../combat/events';
 import { brainDesignFor } from '../../data/ai/brains';
 import { type Difficulty, difficultyFor } from '../../data/ai/difficulty';
 import type { ArenaLayout } from '../../data/arenas/arena-layout';
+import { COUNTDOWN_WORDS_S } from '../../data/audio/music';
 import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
 import { THROWING } from '../../data/combat/throwing';
 import type { Material } from '../../data/objects/props';
@@ -257,11 +258,20 @@ const DEFAULT_AIM_SPEED_MPS = 7;
 /** The player locks on to an opponent in sight within this range (owner, 12/11/2026). */
 const TARGET_LOCK_SIGHT_M = 14;
 /**
- * The fight intro's timeline (owner, 12/11/2026), in seconds of game time: a short lead-in, the
- * announcer's "READY...", then "FIGHT!"; combat unlocks the moment FIGHT has been said. The
- * presentation (text, voice, impact sounds) keys off the same times, so they stay in sync.
+ * The fight countdown's timeline (owner, 13/11/2026: "3, 2, 1, FIGHT", no READY), in seconds of
+ * game time: a short lead-in, then the supplied voice clip starts with "three" and each word shows
+ * as the clip says it (COUNTDOWN_WORDS_S); combat unlocks the moment FIGHT is said.
  */
-export const FIGHT_INTRO = { readyAtS: 0.35, fightAtS: 1.85, combatAtS: 2.5, endS: 3.1 } as const;
+const COUNTDOWN_LEAD_S = 0.3;
+export const FIGHT_INTRO = {
+  threeAtS: COUNTDOWN_LEAD_S + COUNTDOWN_WORDS_S.three,
+  twoAtS: COUNTDOWN_LEAD_S + COUNTDOWN_WORDS_S.two,
+  oneAtS: COUNTDOWN_LEAD_S + COUNTDOWN_WORDS_S.one,
+  fightAtS: COUNTDOWN_LEAD_S + COUNTDOWN_WORDS_S.fight,
+  combatAtS: COUNTDOWN_LEAD_S + COUNTDOWN_WORDS_S.fight + 0.05,
+} as const;
+/** A phase of the fight countdown, for the presentation. */
+export type IntroPhase = 'lead-in' | 'three' | 'two' | 'one' | 'fight';
 /** Standing relaxed after this long without fighting (owner, 12/11/2026). */
 const RELAX_AFTER_S = 3;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
@@ -472,7 +482,7 @@ export class FightArenaScene implements ArenaScene {
   /** The fight intro running (seconds since it began), or null once combat is on. */
   private intro: { t: number } | null = null;
 
-  /** Start the READY... FIGHT! sequence: combat is locked until it ends (every fight, owner 12/11/2026). */
+  /** Start the 3, 2, 1, FIGHT countdown: combat is locked until FIGHT (every fight but the tutorial). */
   startIntro(): void {
     this.intro = { t: 0 };
     this.squareUp();
@@ -519,10 +529,20 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /** Where the intro is, for the presentation (null once the fight is on). */
-  get introState(): { t: number; phase: 'ready' | 'fight' | 'lead-in' } | null {
+  get introState(): { t: number; phase: IntroPhase } | null {
     const i = this.intro;
     if (!i) return null;
-    const phase = i.t < FIGHT_INTRO.readyAtS ? 'lead-in' : i.t < FIGHT_INTRO.fightAtS ? 'ready' : 'fight';
+    const F = FIGHT_INTRO;
+    const phase: IntroPhase =
+      i.t < F.threeAtS
+        ? 'lead-in'
+        : i.t < F.twoAtS
+          ? 'three'
+          : i.t < F.oneAtS
+            ? 'two'
+            : i.t < F.fightAtS
+              ? 'one'
+              : 'fight';
     return { t: i.t, phase };
   }
 
@@ -874,8 +894,8 @@ export class FightArenaScene implements ArenaScene {
     if (this.match) this.decideMatch();
     this.climbing?.refresh();
     if (this.intro) {
-      // READY... FIGHT! (owner, 12/11/2026): both fighters stand still and nothing can be done
-      // until the announcer has said FIGHT. Inputs pressed meanwhile are dropped, not queued.
+      // The countdown (owner, 13/11/2026): both fighters stand still and nothing can be done until
+      // the voice says FIGHT. Inputs pressed meanwhile are dropped, not queued.
       this.intro.t += stepS;
       this.dropPlayerInputs();
       for (const f of this.fighters) this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
@@ -2963,6 +2983,13 @@ export class FightArenaScene implements ArenaScene {
     f.staffSwing += ((f.combo.attack ? 1 : 0) - f.staffSwing) * smoothing(18, frameDtS);
     f.view.magic = f.magicGlow;
     f.view.heldSwing = f.staffSwing;
+    // Rampage Mode (owner, 13/11/2026): he swells 10% bigger over a moment, and back when it ends.
+    const growTo = f.buff?.sizeFactor ?? 1;
+    if (f.growth !== growTo) {
+      f.growth += (growTo - f.growth) * smoothing(6, frameDtS);
+      if (Math.abs(f.growth - growTo) < 1e-3) f.growth = growTo;
+      f.view.setGrowth(f.growth);
+    }
     f.view.draw(pose, f.facing, drawnHeight, f.tilt, flash, flashColour, dodge);
     this.limbEffects(f, x, y);
     const stepDust = f.def.effects.aura ? EFFECTS[f.def.effects.aura]?.stepDust : undefined;

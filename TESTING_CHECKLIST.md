@@ -423,3 +423,14 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Pick three in order (FIGHT disabled until then), fight, tag with H / TAG, leave to Game Modes (e2e desktop + mobile)
 - [ ] Play a full 3 vs 3 on a real phone (manual)
 
+## Owner batch 13/11/2026: Titan, Shroud, countdown, fullscreen, Leave, Quit, grab
+- [x] Countdown 3, 2, 1, FIGHT (no READY), timed from the supplied clip; combat locked until FIGHT (`fourth-abilities.test.ts`, `music.test.ts`)
+- [x] Tutorial starts with no countdown (`front-end.spec.ts`)
+- [x] Fullscreen survives a page change inside the shell (`shell.spec.ts`; also checked by hand in Chromium)
+- [x] Leave is labelled "Leave" and returns to the main menu from Open Zone, 3 vs 3 and tournament fights (tournament fight settled first) (`front-end.spec.ts`, `tournament.spec.ts`)
+- [x] Quit: no Thanks screen; a tab it cannot close leaves for the referrer or an empty page (`front-end.spec.ts`, `quit-game.test.ts`)
+- [x] Grapple Slam on a fighter mid-charge: the charge stops, nothing new can start while held (`fourth-abilities.test.ts`, fails without the fix)
+- [x] Rampage Mode: 10% bigger while it lasts, back after; shockwave about 10 damage and a push once, nothing beyond 2.2 m (`rampage.test.ts`)
+- [x] Titan's new body and Shroud's hood and mask checked in Chromium (game and fighter select); title art checked
+- [x] LOCKED tag on Story Mode no longer clipped
+- [ ] Owner check on a phone: fullscreen kept through Practice, Open Zone, Tournament, Tutorial; Quit behaviour on Android

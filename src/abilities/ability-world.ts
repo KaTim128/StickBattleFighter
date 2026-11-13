@@ -545,10 +545,20 @@ export class AbilityWorld {
       }
       case 'buff':
         {
-          const { type: _type, summon: _summon, ...effect } = d;
+          const { type: _type, summon: _summon, shockwave: _shockwave, ...effect } = d;
           host.buff(casterId, effect);
         }
         if (d.summon) host.summon?.(casterId, d.summon);
+        if (d.shockwave) {
+          // Once, as it begins: everyone close is hit and pushed straight away from the caster.
+          for (const f of host.fighters()) {
+            if (this.friendly(f, casterId, host) || !f.hittable) continue;
+            const gap = Math.hypot(f.x - at.x, f.y - at.y);
+            if (gap > d.shockwave.radiusM + f.radiusM) continue;
+            const away = gap > 1e-6 ? { x: (f.x - at.x) / gap, y: (f.y - at.y) / gap } : dir;
+            this.hit(host, casterId, f.id, d.shockwave.payload, away, def.look?.hitFlash);
+          }
+        }
         host.emit({
           kind: 'impact',
           ability: def.id,

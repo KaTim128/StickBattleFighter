@@ -12,7 +12,10 @@ const debug = (page: Page) => page.evaluate(() => (window as Debug).__stickmanDe
 async function launch(page: Page): Promise<string[]> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1'); // play the page itself, not the fullscreen shell
+  });
   await page.goto('/?mute');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
   return errors;
@@ -137,10 +140,11 @@ test('Settings from the title, change the name there; Quit says goodbye; the adm
   await panel.locator('.settings-name-save').click();
   await panel.locator('.settings-close').click();
   await expect(title.locator('[data-nav="admin"]')).toHaveCount(0);
-  // Quit: a page cannot close a tab it did not open, so it says goodbye.
-  await title.locator('[data-nav="quit"]').click();
-  await expect(page.locator('.front-end [data-screen="quit"]')).toContainText('THANKS FOR PLAYING');
   expect(errors).toEqual([]);
+  // Quit (owner, 13/11/2026): no goodbye screen. A tab the game did not open cannot be closed, so
+  // the game leaves itself: an empty page (nothing claims the tab closed).
+  await Promise.all([page.waitForURL('about:blank'), title.locator('[data-nav="quit"]').click()]);
+  await expect(page.locator('text=THANKS FOR PLAYING')).toHaveCount(0);
 });
 
 test('Practice: the tutorial teaches step by step; the Open Zone tries any fighter and Leave comes back', async ({
@@ -165,7 +169,8 @@ test('Practice: the tutorial teaches step by step; the Open Zone tries any fight
     await expect(card.locator('.tut-text')).toContainText('joystick');
   } else {
     await expect(card.locator('.tut-text')).toContainText('WASD');
-    await page.waitForTimeout(3500); // READY... FIGHT!
+    // No countdown in the tutorial (owner, 13/11/2026): moving works at once.
+    await expect(page.locator('.fight-intro')).toBeHidden();
     await page.keyboard.down('KeyD');
     await expect(card.locator('.tut-title')).toHaveText('Punch', { timeout: 30_000 });
     await page.keyboard.up('KeyD');
@@ -182,12 +187,13 @@ test('Practice: the tutorial teaches step by step; the Open Zone tries any fight
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
   expect(page.url()).toContain('character=shroud');
   await page.locator('.settings-button').click();
+  await expect(page.locator('.settings-leave')).toHaveText('Leave');
   await page.locator('.settings-leave').click();
-  await expect(front.locator('[data-screen="practice"]')).toBeVisible(); // back to Practice
+  await expect(front.locator('[data-screen="title"]')).toBeVisible(); // straight back to the main menu
   expect(errors).toEqual([]);
 });
 
-test('3 vs 3: pick three from the pool of five, fight, tag in a teammate, leave back to Game Modes', async ({
+test('3 vs 3: pick three from the pool of five, fight, tag in a teammate, leave back to the main menu', async ({
   page,
 }, testInfo) => {
   test.setTimeout(150_000);
@@ -232,6 +238,6 @@ test('3 vs 3: pick three from the pool of five, fight, tag in a teammate, leave 
   expect(await second()).toBe(true);
   await page.locator('.settings-button').click();
   await page.locator('.settings-leave').click();
-  await expect(front.locator('[data-screen="modes"]')).toBeVisible();
+  await expect(front.locator('[data-screen="title"]')).toBeVisible(); // Leave: the main menu
   expect(errors).toEqual([]);
 });

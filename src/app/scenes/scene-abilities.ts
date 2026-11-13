@@ -221,6 +221,12 @@ export class SceneAbilities implements AbilityHost {
   hold(targetId: string, seconds: number): void {
     const f = this.byName(targetId);
     if (!f) return;
+    // Seized (owner, 13/11/2026): whatever it was doing stops at once, a charge or a dash included,
+    // or its own drive and the grab's would fight and fling both round the arena. The stun keeps it
+    // from starting anything new until it is slammed down.
+    f.caster?.interrupt(true);
+    this.world.cancel(f.name, this);
+    f.scriptedAttack = null;
     f.combo.interrupt();
     f.combatant.setGuard(false);
     f.combatant.stun(seconds);

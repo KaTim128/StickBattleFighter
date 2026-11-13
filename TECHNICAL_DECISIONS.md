@@ -574,3 +574,10 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Alternatives.** A multi-hit dash (no planted stabs, no retreat); scripted per-fighter code (rejected: no character branches in shared engines).
 **Trade-offs.** The retreat steers by physics only, so a wall shortens it. The retreating blink (`retreatM` teleport) remains in the framework, unused for now.
 **Status.** ACCEPTED.
+
+### TD-070: Fullscreen shell around the game's pages — ACCEPTED (owner request 13/11/2026)
+**Context.** Every fight, tournament step and practice session is its own page (URL parameters build the scene). Browsers always leave fullscreen when the page in fullscreen unloads, and only a tap may enter it again, so fullscreen dropped on every mode change (owner report).
+**Decision.** On a player's visit the top window becomes a thin shell (`src/app/shell.ts`) holding the game in a full-window, same-origin iframe. The game asks for fullscreen on the shell's document (`topWindow()`); a tap inside the frame counts as activation for the shell. When the frame navigates, only its own document unloads, so the shell stays fullscreen. The shell keeps its address in step with the frame (a reload returns to the same page). Automated browsers run unwrapped unless `?shell`; `?noshell` or the session flag `stickman-arena.no-shell` turn it off.
+**Alternatives.** Turning the multi-page flow into one page (rejected for now: a large rewrite of bootstrap and every mode); re-requesting fullscreen on the next tap (rejected by the owner: no extra interaction).
+**Trade-offs.** The shell loads the game bundle twice from cache (one parse is wasted); browsers that refuse fullscreen (iPhone Safari) are unchanged and still rely on the home-screen app.
+**Status.** ACCEPTED.

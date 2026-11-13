@@ -1,14 +1,17 @@
+import type { IntroPhase } from '../app/scenes/fight-arena-scene';
+
 /**
- * READY... FIGHT! (owner, 12/11/2026): the cinematic text before every fight. Bold, slanted
- * fighting-game lettering with a metallic face, deep bevelled edges, a light sweep and a glow;
- * READY slides in heavy and steady; FIGHT! slams down from the screen with a flash, a shockwave,
- * speed lines and a shake, then bursts away. Presentation only: the scene's intro timeline drives it.
+ * The fight countdown (owner, 13/11/2026: "3, 2, 1, FIGHT", no READY). Each number punches in as
+ * the supplied voice says it; FIGHT slams down with a flash, a shockwave and speed lines, then
+ * bursts away. Only transforms and opacity animate (no blurs or animated filters), so it stays
+ * smooth on phones. Presentation only: the scene's intro timeline drives it.
  */
 export class FightIntro {
   private readonly root: HTMLDivElement;
-  private readonly ready: HTMLDivElement;
+  private readonly num: HTMLDivElement;
+  private readonly numFace: HTMLSpanElement;
   private readonly fight: HTMLDivElement;
-  private shown: 'none' | 'lead-in' | 'ready' | 'fight' = 'none';
+  private shown: IntroPhase | 'none' = 'none';
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('div');
@@ -20,18 +23,19 @@ export class FightIntro {
       <div class="fi-lines"></div>
       <div class="fi-ring"></div>
       <div class="fi-flash"></div>
-      <div class="fi-word fi-ready" data-text="READY..."><span class="fi-face fi-face-ready">READY...</span></div>
+      <div class="fi-word fi-num" data-text="3"><span class="fi-face fi-face-num">3</span></div>
       <div class="fi-word fi-fight" data-text="FIGHT!"><span class="fi-face fi-face-fight">FIGHT!</span></div>`;
-    this.ready = this.root.querySelector('.fi-ready')!;
+    this.num = this.root.querySelector('.fi-num')!;
+    this.numFace = this.root.querySelector('.fi-face-num')!;
     this.fight = this.root.querySelector('.fi-fight')!;
     parent.appendChild(this.root);
   }
 
   /**
-   * Follow the scene's intro. Returns the phase that just began (so the caller can fire the voice
-   * and impact sound on the same frame), or null.
+   * Follow the scene's intro. Returns the phase that just began (so the caller can start the voice
+   * on the same frame), 'done' when it has finished, or null.
    */
-  update(state: { phase: 'lead-in' | 'ready' | 'fight' } | null): 'lead-in' | 'ready' | 'fight' | 'done' | null {
+  update(state: { phase: IntroPhase } | null): IntroPhase | 'done' | null {
     const next = state?.phase ?? 'none';
     if (next === this.shown) return null;
     const was = this.shown;
@@ -44,13 +48,18 @@ export class FightIntro {
           this.root.hidden = true;
           this.root.className = 'fight-intro';
         }
-      }, 700);
+      }, 600);
       return was === 'none' ? null : 'done';
     }
     this.root.hidden = false;
-    this.root.className = `fight-intro fi-${next}`;
+    const digit = next === 'three' ? '3' : next === 'two' ? '2' : next === 'one' ? '1' : null;
+    this.root.className = `fight-intro fi-${digit ? 'count' : next}`;
+    if (digit) {
+      this.num.dataset.text = digit;
+      this.numFace.textContent = digit;
+    }
     // Restart the word's animation each time it is shown.
-    for (const el of [this.ready, this.fight]) {
+    for (const el of [this.num, this.fight]) {
       el.style.animation = 'none';
       void el.offsetWidth;
       el.style.animation = '';

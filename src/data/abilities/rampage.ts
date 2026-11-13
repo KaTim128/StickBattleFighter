@@ -176,7 +176,7 @@ export const RAMPAGE_KIT: AbilityKit = {
     name: 'Rampage Mode',
     label: 'ULT',
     description:
-      'Flies into a rage for 8 seconds: faster, taking less damage, and his other abilities come back 25% sooner.',
+      'Flies into a rage for 8 seconds: he grows bigger, his roar shoves back anyone close, and he is faster, takes less damage and gets his other abilities back 25% sooner.',
     icon: 'rampage-mode',
     slot: 'ult',
     staminaCost: 0,
@@ -188,7 +188,19 @@ export const RAMPAGE_KIT: AbilityKit = {
     interruptible: false,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
     // Owner, 13/11/2026: his other abilities' cooldowns are also 25% shorter while it lasts.
-    delivery: { type: 'buff', durationS: 8, speedFactor: 1.15, damageTakenFactor: 0.85, cooldownFactor: 0.75 },
+    // Owner, 13/11/2026 (later): he grows 10% bigger, and anyone close is hit for 10 and shoved back once.
+    delivery: {
+      type: 'buff',
+      durationS: 8,
+      speedFactor: 1.15,
+      damageTakenFactor: 0.85,
+      cooldownFactor: 0.75,
+      sizeFactor: 1.1,
+      shockwave: {
+        radiusM: 2.2,
+        payload: { damage: 10, knockbackMps: 7, heavy: false, strength: 300, impact: 'knuckle-heavy', stunS: 0.25 },
+      },
+    },
     vfx: 'rampage-mode',
     sfx: { cast: 'rampage-roar', release: 'rage-burst', impact: 'rage-burst' },
     look: {

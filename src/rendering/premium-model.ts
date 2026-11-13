@@ -69,6 +69,10 @@ export interface PremiumSkin {
    * and white mask, a mannequin egg; or 'own' (the view draws its head style).
    */
   readonly head: 'crest' | 'brute' | 'cowl' | 'mask' | 'egg' | 'own';
+  /** A light panel down the chest (owner, 13/11/2026, Titan: grey body, white chest). */
+  readonly chestPanel?: number;
+  /** Glowing eyes on a sculpted brute head. */
+  readonly eyes?: number;
 }
 
 /** Fire (the approved Inferno look). */
@@ -94,36 +98,39 @@ export const MAGMA: PremiumPalette = {
  * hands), themed to the fighter. Keyed by body style (no character names in shared code).
  */
 export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
-  // Steel brawler: grey skin with a cold rim light, gunmetal armour with icy-blue energy seams and a
-  // steel heart glowing in the chest; a sculpted bald head.
+  // Titan (owner, 13/11/2026, after his reference image): a muscular grey-and-white brawler. A
+  // V-shaped body with broad shoulders, trapezius sloping up to a thick neck, bare deltoids, a white
+  // chest panel, white eyes; no armour plates or glowing core.
   muscle: {
     palette: {
-      outline: 0x14171c,
-      skin: 0x9aa0aa,
-      skinLit: 0xd2d7df,
-      skinShade: 0x5c626d,
-      skinBack: 0x777d88,
-      rim: 0xc8e6ff,
-      armour: 0x30353f,
-      armourLit: 0x6c7689,
-      armourEdge: 0x0a0c11,
-      seam: 0x7fd4ff,
-      lava: 0xdff6ff,
-      glow: 0x3aa8ff,
+      outline: 0x101216,
+      skin: 0x6f747f,
+      skinLit: 0xb4bac5,
+      skinShade: 0x3e424b,
+      skinBack: 0x555a64,
+      rim: 0xe6eaf2,
+      armour: 0x2a2d35,
+      armourLit: 0x5a5f6b,
+      armourEdge: 0x0a0b0e,
+      seam: null,
+      lava: null,
+      glow: null,
     },
     bulk: 1.7,
     muscle: 1.3,
     gear: {
-      shoulder: 'guard',
-      bracers: true,
+      shoulder: 'none',
+      bracers: false,
       legs: 'trunks',
-      kneeGuards: true,
-      shinGuards: true,
+      kneeGuards: false,
+      shinGuards: false,
       feet: 'boots',
       belt: true,
     },
-    fire: { core: true, veins: false, fists: false },
+    fire: { core: false, veins: false, fists: false },
     head: 'brute',
+    chestPanel: 0xe8eaef,
+    eyes: 0xffffff,
   },
   // Death mage: ash-violet skin, violet-black armour with glowing violet seams, a soul core, violet
   // veins and glowing hands; a robe falling from the sash; a hood with two glowing eyes.
@@ -366,9 +373,6 @@ export class PremiumModel {
     this.st = { ...st, w: st.w * this.skin.bulk };
     this.lx = -0.55 * st.facing;
     this.ly = -0.83;
-    // A brute's upper back: its silhouette first, so its outline joins the body's outer edge.
-    const brute = this.skin.muscle > 1.2;
-    if (brute) this.upperBack(g, s, true);
     this.arm(g, fire, s.armBack, true);
     this.leg(g, fire, s.legBack, true);
     if (this.skin.garment) {
@@ -380,7 +384,6 @@ export class PremiumModel {
       this.torso(g, fire, s);
       this.leg(g, fire, s.legFront, false);
     }
-    if (brute) this.upperBack(g, s, false);
     const hs = this.skin.head;
     if (hs === 'crest' || hs === 'brute') this.head(g, fire, s, hs);
     else if (hs === 'cowl' || hs === 'mask') this.hooded(g, fire, s, hs);
@@ -824,54 +827,25 @@ export class PremiumModel {
   }
 
   /**
-   * A brute's upper back (owner, 13/11/2026, Titan): a mound of trapezius and upper-back muscle
-   * rising from the rear shoulder to the back of the skull, so the space behind the head is filled
-   * with muscle that flows into the shoulders and neck. Two passes: the silhouette behind the body,
-   * then seamless skin and muscle shading over the torso, under the head.
+   * A brute's back and shoulder definition: the trapezius ridge from neck to shoulder point on both
+   * sides, the deltoid groove, and the lats flaring under the arms, so the muscles read as one body.
    */
-  private upperBack(g: Graphics, s: Skel, silhouette: boolean): void {
-    const w = this.st.w;
-    const r = this.st.headRadius;
-    // His back is always -x in the model's own frame: the container mirrors the whole figure when
-    // he faces left, so flipping here as well would put the muscle on his chest.
-    const back = -1;
-    const u = frame(s.pelvis, s.chest);
-    const sh = { x: s.chest.x + back * w * 1.2, y: s.chest.y - u.uy * w * 0.05 };
-    const skull = { x: s.head.x + back * r * 0.55, y: s.head.y + r * 0.35 };
-    const peak = {
-      x: (sh.x + skull.x) / 2 + back * w * 0.55,
-      y: Math.min(sh.y, skull.y) + (skull.y - sh.y) * 0.1 - w * 0.25,
+  private bruteDefinition(g: Graphics, at: (k: number, n: number) => Point, w: number): void {
+    const line = (pts: Point[], width: number, colour: number, alpha: number): void => {
+      g.moveTo(pts[0]!.x, pts[0]!.y);
+      for (let i = 1; i + 1 < pts.length; i += 2)
+        g.quadraticCurveTo(pts[i]!.x, pts[i]!.y, pts[i + 1]!.x, pts[i + 1]!.y);
+      g.stroke({ width, color: this.c(colour), alpha, cap: 'round' });
     };
-    const inner = { x: s.neck.x - back * w * 0.1, y: s.chest.y + w * 0.15 };
-    const shape = (grow: number): void => {
-      g.moveTo(inner.x, inner.y)
-        .lineTo(sh.x + back * grow, sh.y + grow * 0.3)
-        .quadraticCurveTo(peak.x + back * grow, peak.y - grow, skull.x - back * grow * 0.2, skull.y - grow)
-        .lineTo(s.neck.x, s.neck.y)
-        .closePath();
-    };
-    if (silhouette) {
-      // Behind everything: the outline and skin, so the torso, shoulder and neck overlap it and the
-      // outer edge runs as one line round the whole body.
-      shape(w * 0.32);
-      g.fill(this.c(this.P.outline));
-      shape(0);
-      g.fill(this.c(this.P.skin));
-      return;
+    for (const side of [1, -1]) {
+      // Trapezius ridge: lit along the top, a shadow groove under it where it meets the shoulder.
+      line([at(1.15, 0.5 * side), at(1.08, 1.0 * side), at(0.99, 1.42 * side)], w * 0.16, this.P.skinLit, 0.6);
+      line([at(1.07, 0.45 * side), at(1.0, 0.95 * side), at(0.93, 1.3 * side)], w * 0.08, this.P.skinShade, 0.75);
+      // The lats flaring out under the shoulder, a shadow down the side.
+      line([at(0.86, 1.45 * side), at(0.6, 1.25 * side), at(0.36, 0.78 * side)], w * 0.1, this.P.skinShade, 0.7);
     }
-    // Over the torso: skin only, no outline, painting out the seams so the muscle runs unbroken
-    // from the neck over the shoulder into the back.
-    shape(-w * 0.04);
-    g.fill(this.c(this.P.skin));
-    // Definition: shadow under the mound, a lit ridge along the top, the groove into the shoulder.
-    const mid = { x: (sh.x + skull.x) / 2 + back * w * 0.15, y: (sh.y + skull.y) / 2 + w * 0.05 };
-    oval(g, { x: mid.x, y: mid.y + w * 0.25 }, 1, 0, w * 0.7, w * 0.35, this.c(this.P.skinShade), 0.6);
-    g.moveTo(sh.x - back * w * 0.1, sh.y - w * 0.15)
-      .quadraticCurveTo(peak.x - back * w * 0.1, peak.y + w * 0.15, skull.x - back * w * 0.15, skull.y)
-      .stroke({ width: w * 0.16, color: this.c(this.P.skinLit), alpha: 0.65, cap: 'round' });
-    g.moveTo(sh.x - back * w * 0.35, sh.y + w * 0.25)
-      .quadraticCurveTo(mid.x, mid.y + w * 0.15, s.neck.x, s.neck.y + w * 0.1)
-      .stroke({ width: w * 0.07, color: this.c(this.P.skinShade), alpha: 0.8, cap: 'round' });
+    // The spine's groove between the shoulder blades, on the back.
+    line([at(1.05, -0.55), at(0.8, -0.75), at(0.5, -0.6)], w * 0.07, this.P.skinShade, 0.6);
   }
 
   /** The neck, for skins whose head the view draws (its own head style sits on top). */
@@ -893,18 +867,34 @@ export class PremiumModel {
     const u = frame(base, top);
     // The torso's outline as a smooth profile: hips, waist, ribcage, shoulders (half-widths). A brute
     // has a broader chest; cloth hangs straighter.
-    const chestK = m > 1.2 ? 1.32 : m === 0 ? 0.9 : 1;
-    const prof: [number, number][] = [
-      [-0.06, 0.82],
-      [0.08, 0.86],
-      [0.3, m === 0 ? 0.82 : 0.72],
-      [0.55, 1.02 * chestK],
-      [0.8, 1.27 * chestK],
-      [0.92, 1.3 * chestK],
-      [1.0, 1.2 * chestK],
-      [1.05, 1.02 + 0.1 * (chestK - 1)],
-      [1.09, 0.8],
-    ];
+    // A brute (owner, 13/11/2026: "a properly structured muscular body, not a semicircle"): a V from
+    // a narrow waist out to broad shoulder points, then the trapezius sloping in to a thick neck.
+    const brute = m > 1.2;
+    const chestK = m === 0 ? 0.9 : 1;
+    const prof: [number, number][] = brute
+      ? [
+          [-0.06, 0.8],
+          [0.08, 0.82],
+          [0.3, 0.7],
+          [0.52, 1.05],
+          [0.74, 1.38],
+          [0.9, 1.55],
+          [0.99, 1.52],
+          [1.05, 1.3],
+          [1.11, 0.92],
+          [1.17, 0.62],
+        ]
+      : [
+          [-0.06, 0.82],
+          [0.08, 0.86],
+          [0.3, m === 0 ? 0.82 : 0.72],
+          [0.55, 1.02 * chestK],
+          [0.8, 1.27 * chestK],
+          [0.92, 1.3 * chestK],
+          [1.0, 1.2 * chestK],
+          [1.05, 1.02 + 0.1 * (chestK - 1)],
+          [1.09, 0.8],
+        ];
     const outline = (grow: number): number[] => {
       const left: number[] = [];
       const right: number[] = [];
@@ -920,11 +910,13 @@ export class PremiumModel {
     };
     g.poly(outline(w * 0.32)).fill(this.c(this.P.outline));
     g.poly(outline(0)).fill(this.c(this.P.skin));
-    // Trapezius up into the neck.
+    // Trapezius up into the neck (a brute's is part of the profile's slope).
     const neckTop = lerp(top, s.neck, 0.9);
-    capsule(g, top, neckTop, w * 0.62 + w * 0.3, w * 0.42 + w * 0.3, this.c(this.P.outline));
-    capsule(g, top, neckTop, w * 0.62, w * 0.42, this.c(this.P.skin));
-    band(g, top, neckTop, w * 0.62, w * 0.42, -this.litSide(top, neckTop), 0.2, 1, this.c(this.P.skinShade), 0.8);
+    if (!brute) {
+      capsule(g, top, neckTop, w * 0.62 + w * 0.3, w * 0.42 + w * 0.3, this.c(this.P.outline));
+      capsule(g, top, neckTop, w * 0.62, w * 0.42, this.c(this.P.skin));
+      band(g, top, neckTop, w * 0.62, w * 0.42, -this.litSide(top, neckTop), 0.2, 1, this.c(this.P.skinShade), 0.8);
+    }
     // Shading: the far side in shadow, the near side lit, a rim light on the shadow edge.
     const side = this.litSide(base, top);
     const shadeBand = (from: number, to: number, sgn: number, colour: number, alpha: number) => {
@@ -945,6 +937,26 @@ export class PremiumModel {
     shadeBand(0.85, 0.98, -side, this.c(this.P.rim), 0.5);
     const chestC = lerp(base, top, 0.78);
     const fwd = u.nx >= 0 ? 1 : -1; // toward +x (the front)
+    // Points on the torso in its own frame: k along the spine, n across it toward the front.
+    const at = (k: number, n: number): Point => {
+      const p = lerp(base, top, k);
+      return { x: p.x + u.nx * w * n * fwd, y: p.y + u.ny * w * n * fwd };
+    };
+    if (brute) this.bruteDefinition(g, at, w);
+    if (this.skin.chestPanel !== undefined) {
+      // The light chest panel: from the collar down to a point above the navel, shaded like the skin.
+      const panel = [at(1.06, -0.3), at(1.02, 1.3), at(0.66, 1.0), at(0.36, 0.56), at(0.33, 0.08), at(0.7, -0.22)];
+      const pc = this.skin.chestPanel;
+      g.poly(panel.flatMap((p) => [p.x, p.y])).fill(this.c(pc));
+      g.poly([at(1.0, 0.1), at(0.98, 1.1), at(0.68, 0.82), at(0.5, 0.35)].flatMap((p) => [p.x, p.y])).fill({
+        color: this.c(0xffffff),
+        alpha: 0.55,
+      });
+      g.poly([at(0.66, 1.0), at(0.36, 0.56), at(0.33, 0.08), at(0.52, 0.5)].flatMap((p) => [p.x, p.y])).fill({
+        color: this.c(toward(pc, 0x000000, 0.3)),
+        alpha: 0.6,
+      });
+    }
     if (m > 0) {
       // Chest: two pectoral masses under the shoulders, split down the middle.
       const k2 = Math.min(1.3, m);
@@ -1073,9 +1085,10 @@ export class PremiumModel {
     const w = this.st.w;
     const h = s.head;
     const u = frame(s.neck, h); // up along the neck
-    // Neck.
-    capsule(g, s.neck, h, w * 0.42 + w * 0.3, w * 0.4 + w * 0.3, this.c(this.P.outline));
-    capsule(g, s.neck, h, w * 0.42, w * 0.4, this.c(this.P.skin));
+    // Neck (a brute's thick and short, rising out of the trapezius).
+    const nk = style === 'brute' ? 0.62 : 0.42;
+    capsule(g, s.neck, h, w * nk + w * 0.3, w * (nk - 0.02) + w * 0.3, this.c(this.P.outline));
+    capsule(g, s.neck, h, w * nk, w * (nk - 0.02), this.c(this.P.skin));
     // Skull and jaw: a round cranium with a squarer jaw toward his front and down.
     const jaw = { x: h.x + r * 0.28 - u.ux * r * 0.45, y: h.y - u.uy * r * 0.45 + r * 0.05 };
     const skull = (grow: number, colour: number) => {
@@ -1148,6 +1161,36 @@ export class PremiumModel {
     });
     if (this.P.seam !== null)
       fire.circle(h.x + r * 0.55, h.y - r * 0.42, r * 0.07).fill({ color: this.P.seam, alpha: 0.9 });
+    if (this.skin.eyes !== undefined) {
+      // Two narrow, angry glowing eyes under the brow (his reference: white slits in a dark face).
+      for (const [ex, k] of [
+        [0.72, 1],
+        [0.32, 0.8],
+      ] as const) {
+        const c = { x: h.x + r * ex, y: h.y - r * 0.12 };
+        g.poly([
+          c.x - r * 0.17 * k,
+          c.y - r * 0.07,
+          c.x + r * 0.17 * k,
+          c.y - r * 0.12,
+          c.x + r * 0.13 * k,
+          c.y + r * 0.06,
+          c.x - r * 0.15 * k,
+          c.y + r * 0.05,
+        ]).fill(this.c(0x0b0c10));
+        g.poly([
+          c.x - r * 0.12 * k,
+          c.y - r * 0.04,
+          c.x + r * 0.13 * k,
+          c.y - r * 0.08,
+          c.x + r * 0.1 * k,
+          c.y + r * 0.03,
+          c.x - r * 0.1 * k,
+          c.y + r * 0.03,
+        ]).fill(this.skin.eyes);
+        fire.circle(c.x, c.y - r * 0.02, r * 0.16 * k).fill({ color: this.skin.eyes, alpha: 0.25 });
+      }
+    }
   }
 
   /**
@@ -1209,57 +1252,92 @@ export class PremiumModel {
         .moveTo(h.x + 0.95 * r, h.y - 0.5 * r)
         .quadraticCurveTo(h.x + 1.1 * r, h.y + 0.1 * r, h.x + 0.95 * r, h.y + 0.62 * r)
         .stroke({ width: r * 0.06, color: this.P.seam, alpha: 0.75, cap: 'round' });
-    const oc = { x: h.x + 0.5 * r, y: h.y + 0.1 * r };
-    oval(g, oc, 0.3, 1, r * 0.68, r * 0.46, this.c(this.P.outline));
-    oval(g, oc, 0.3, 1, r * 0.6, r * 0.38, this.c(0x060408));
-    // Owner, 13/11/2026: Necro has no eyes; the hood holds only darkness.
     if (style === 'cowl') {
+      // Owner, 13/11/2026: Necro has no eyes; the hood holds only darkness.
+      const oc = { x: h.x + 0.5 * r, y: h.y + 0.1 * r };
+      oval(g, oc, 0.3, 1, r * 0.68, r * 0.46, this.c(this.P.outline));
+      oval(g, oc, 0.3, 1, r * 0.6, r * 0.38, this.c(0x060408));
       return;
     }
-    // The white mask: shaded far side, a lit brow, dark eye hollows, nostrils and a thin mouth.
-    // Tipped down a little (owner, 13/11/2026): the face sits lower in the hood and leans forward.
-    const mc = { x: h.x + 0.57 * r, y: h.y + 0.22 * r };
-    const bone = 0xf1eee6;
-    oval(g, mc, MASK_TILT, 1, r * 0.66 + w * 0.12, r * 0.4 + w * 0.12, this.c(0x111114));
-    oval(g, mc, MASK_TILT, 1, r * 0.66, r * 0.4, this.c(bone));
-    oval(g, { x: mc.x - r * 0.15, y: mc.y + r * 0.05 }, MASK_TILT, 1, r * 0.58, r * 0.18, this.c(0xbdb8ac), 0.65);
-    oval(g, { x: mc.x + r * 0.05, y: mc.y - r * 0.3 }, MASK_TILT, 1, r * 0.22, r * 0.14, 0xffffff, 0.6);
-    // Eye openings after the owner's reference (13/11/2026): large, dark, hollow almond holes cut
-    // through the mask, each pointed and dipped low at the inner corner by the nose, so the blank
-    // face stares down with a menacing scowl. The far one is foreshortened and mirrored.
+    this.maskInHood(g, h, r, w);
+  }
+
+  /**
+   * Shroud's face (owner, 13/11/2026: "a clearly defined face opening, the mask filling it, curved
+   * outward, not a small flat sticker"): a deep opening cut in the hood with a lit lip round it and
+   * the hood's shadow falling across its top; the mask fills it and bulges outward, shaded from its
+   * lit crown to a dark rim, with a highlight on the brow and cheek. Tipped down a little.
+   */
+  private maskInHood(g: Graphics, h: Point, r: number, w: number): void {
+    const oc = { x: h.x + 0.5 * r, y: h.y + 0.14 * r };
+    // The opening: outline, the hood's lit lip round it, then the dark recess.
+    oval(g, oc, MASK_TILT, 1, r * 0.86 + w * 0.12, r * 0.64 + w * 0.12, this.c(this.P.outline));
+    oval(g, oc, MASK_TILT, 1, r * 0.86, r * 0.64, this.c(this.P.armourLit));
+    oval(g, { x: oc.x + r * 0.02, y: oc.y + r * 0.02 }, MASK_TILT, 1, r * 0.78, r * 0.57, this.c(0x050407));
+    // The mask: big enough to fill the opening, set slightly forward of it.
+    const mc = { x: oc.x + r * 0.06, y: oc.y + r * 0.06 };
+    const mw = r * 0.74;
+    const mh = r * 0.53;
+    const bone = 0xeeeae1;
+    oval(g, mc, MASK_TILT, 1, mw + w * 0.1, mh + w * 0.1, this.c(0x111114));
+    // Curved surface: a dark rim, then lighter layers stepping toward the lit upper front.
+    oval(g, mc, MASK_TILT, 1, mw, mh, this.c(0x9d978b));
+    oval(g, { x: mc.x + r * 0.03, y: mc.y - r * 0.03 }, MASK_TILT, 1, mw * 0.9, mh * 0.88, this.c(0xc9c4b8));
+    oval(g, { x: mc.x + r * 0.06, y: mc.y - r * 0.06 }, MASK_TILT, 1, mw * 0.76, mh * 0.74, this.c(bone));
+    oval(g, { x: mc.x + r * 0.09, y: mc.y - r * 0.1 }, MASK_TILT, 1, mw * 0.5, mh * 0.45, this.c(0xfbf9f4), 0.85);
+    // (The mask's long axis runs down the face: `mw` is its half-height, `mh` its half-width.)
+    // The hood's overhang shades the top of the mask: a band across its crown.
+    oval(
+      g,
+      { x: mc.x - mw * MASK_TILT * 0.8, y: mc.y - mw * 0.82 },
+      1,
+      -MASK_TILT,
+      mh * 0.9,
+      mw * 0.24,
+      this.c(0x050407),
+      0.5,
+    );
+    // Specular highlights: a glint across the brow and a softer one on the cheek, where it curves out.
+    oval(g, { x: mc.x + r * 0.1, y: mc.y - r * 0.3 }, 1, -MASK_TILT, r * 0.16, r * 0.05, 0xffffff, 0.85);
+    oval(g, { x: mc.x + r * 0.3, y: mc.y + r * 0.22 }, 1, -MASK_TILT, r * 0.08, r * 0.045, 0xffffff, 0.5);
+    // Eye openings after the owner's reference (13/11/2026): large, dark, hollow almond holes,
+    // pointed and dipped low at the inner corner by the nose, so the blank face scowls. The far one
+    // is foreshortened (the mask curves away) and mirrored.
+    const k0 = 1.15;
     for (const [dx, k, dir] of [
-      [-0.05, 1, 1],
-      [0.4, 0.78, -1],
+      [-0.07, 1, 1],
+      [0.42, 0.74, -1],
     ] as const) {
       const cx = mc.x + dx * r;
       const cy = mc.y - r * 0.08;
-      const half = r * 0.22 * k;
+      const kk = k * k0;
+      const half = r * 0.22 * kk;
       const inner = cx + dir * half;
       const outer = cx - dir * half;
       const hole = [
         outer,
-        cy - r * 0.1 * k,
+        cy - r * 0.1 * kk,
         cx - dir * half * 0.2,
-        cy - r * 0.12 * k,
+        cy - r * 0.12 * kk,
         inner,
-        cy + r * 0.06 * k,
+        cy + r * 0.06 * kk,
         cx,
-        cy + r * 0.1 * k,
+        cy + r * 0.1 * kk,
         outer + dir * half * 0.15,
-        cy + r * 0.04 * k,
+        cy + r * 0.04 * kk,
       ];
-      // A soft shadow round the hole gives the cut depth, then the hollow itself.
+      // A shadow round the hole gives the cut depth through the curved shell, then the hollow.
       g.poly(hole.map((v, i) => (i % 2 ? cy + (v - cy) * 1.35 : cx + (v - cx) * 1.15))).fill({
         color: this.c(0x8e897e),
-        alpha: 0.55,
+        alpha: 0.6,
       });
       g.poly(hole).fill(this.c(0x050506));
     }
-    g.circle(mc.x + r * 0.27, mc.y + r * 0.14, r * 0.025).fill(0x2a2a30);
-    g.circle(mc.x + r * 0.32, mc.y + r * 0.13, r * 0.022).fill(0x2a2a30);
-    g.moveTo(mc.x + r * 0.08, mc.y + r * 0.36)
-      .quadraticCurveTo(mc.x + r * 0.2, mc.y + r * 0.4, mc.x + r * 0.33, mc.y + r * 0.34)
-      .stroke({ width: r * 0.045, color: 0x1a1a1e, cap: 'round' });
+    g.circle(mc.x + r * 0.3, mc.y + r * 0.16, r * 0.028).fill(0x2a2a30);
+    g.circle(mc.x + r * 0.36, mc.y + r * 0.15, r * 0.024).fill(0x2a2a30);
+    g.moveTo(mc.x + r * 0.08, mc.y + r * 0.4)
+      .quadraticCurveTo(mc.x + r * 0.22, mc.y + r * 0.45, mc.x + r * 0.37, mc.y + r * 0.38)
+      .stroke({ width: r * 0.05, color: 0x1a1a1e, cap: 'round' });
   }
 
   /** A mannequin's head: a smooth egg with a seam round it and a soft highlight. */

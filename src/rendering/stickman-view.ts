@@ -125,6 +125,19 @@ export class StickmanView {
     scaled.scale.set(size);
     scaled.addChild(this.shadow, this.trail, this.figure);
     this.root.addChild(scaled);
+    this.scaled = scaled;
+    this.baseSize = size;
+  }
+
+  private readonly scaled: Container;
+  private readonly baseSize: number;
+
+  /**
+   * Draw the whole figure this much bigger (a rage buff, owner 13/11/2026: 1.1). The whole figure
+   * scales about its feet, so proportions and animations are untouched.
+   */
+  setGrowth(k: number): void {
+    this.scaled.scale.set(this.baseSize * k);
   }
 
   /** Seconds since this view was made (render-only animation clock for the flame head). */

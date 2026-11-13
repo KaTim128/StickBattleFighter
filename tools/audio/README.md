@@ -5,13 +5,11 @@ Everything is original synthesis in numpy (no samples, no third-party audio); th
 
 | Script | Output |
 |---|---|
-| `fight_stinger.py` | The READY... FIGHT! stinger (FIGHT lands 1.5 s in) |
 | `synth.py` | Shared instruments, reverb, EQ and mastering |
 
 Re-render and encode (needs Python 3 with numpy, and ffmpeg):
 
 ```sh
-python3 tools/audio/fight_stinger.py /tmp/stinger.wav
 ffmpeg -y -i /tmp/stinger.wav -c:a libvorbis -q:a 6 assets/audio/sfx-fight-stinger.ogg
 ffmpeg -y -i /tmp/stinger.wav -c:a libmp3lame -b:a 192k assets/audio/sfx-fight-stinger.mp3
 ```

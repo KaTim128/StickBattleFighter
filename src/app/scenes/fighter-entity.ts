@@ -146,6 +146,8 @@ export class FighterEntity {
   liftTotalS = 0;
   /** Presentation: how far into the arms-up carry pose (0..1), and time left in a throw follow-through. */
   carryWeight = 0;
+  /** Presentation: how much bigger it is drawn right now (eases to a buff's sizeFactor and back). */
+  growth = 1;
   /** Presentation: how strongly magic glows on it (0..1), and how far a held staff follows a swing. */
   magicGlow = 0;
   staffSwing = 0;
