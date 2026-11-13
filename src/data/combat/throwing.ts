@@ -48,8 +48,6 @@ export const THROWING = {
   hitMinSpeedMps: 2,
   /** Higher than this, a flying object clears desks, tables and chairs (it still hits walls), metres. */
   overFurnitureM: 0.95,
-  /** Glass and ceramic landing faster than this shatter. */
-  fragileBreakMps: 4,
   /** How far the throw reaches for the locked target before it just goes the way you face. */
   aimRangeM: 12,
 } as const;

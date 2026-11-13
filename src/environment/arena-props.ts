@@ -367,7 +367,7 @@ export class ArenaProps {
           f.vz -= FLIGHT_GRAVITY * stepS;
           f.heightM = Math.max(0, f.heightM + f.vz * stepS);
           prop.roll += prop.rollVel * stepS; // tumbling through the air
-          if (f.heightM === 0 && f.vz < 0) this.land(prop, -f.vz);
+          if (f.heightM === 0 && f.vz < 0) this.land(prop);
         } else if (prop.rollVel !== 0) {
           // On the floor: it tips over onto whichever face it was closest to and lies there.
           const rest = restingRoll(prop.roll);
@@ -547,8 +547,8 @@ export class ArenaProps {
     });
   }
 
-  /** It hit the floor: fragile things shatter if it came down hard; anything thrown stops flying. */
-  private land(prop: ArenaProp, fallMps: number): void {
+  /** It hit the floor: anything thrown breaks there (or, if unbreakable, stops flying). */
+  private land(prop: ArenaProp): void {
     // Landing ends the free tumble: from here it settles onto its nearest face (see update). Whole
     // turns made in the air are dropped, so it tips the short way onto that face.
     if (prop.rollVel !== 0) {
@@ -558,13 +558,13 @@ export class ArenaProps {
     const body = prop.body;
     const v = body ? body.linvel() : { x: 0, y: 0 };
     const along = Math.hypot(v.x, v.y);
-    const speed = along + fallMps * 0.5;
     if (body) body.setLinearDamping(2.2); // floor friction again (it can still skid into someone)
     if (!prop.flight) return;
     const dir = along > 0.01 ? { x: v.x / along, y: v.y / along } : { x: 0, y: 1 };
-    const fragile = prop.kind.material === 'glass' || prop.kind.material === 'ceramic';
-    if (fragile && speed > THROWING.fragileBreakMps) {
-      this.applyHit(prop, { blow: 'knockback', damage: prop.hp ?? 0, strength: 0, direction: dir });
+    // Anything thrown breaks where it lands (owner, 13/11/2026: "once the furniture is thrown it
+    // should break"); only pieces that can never break (no durability) survive the throw.
+    if (prop.hp !== null && prop.hp > 0) {
+      this.applyHit(prop, { blow: 'knockback', damage: prop.hp, strength: 0, direction: dir });
       return;
     }
     this.pending.push({

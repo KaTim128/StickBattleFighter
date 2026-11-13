@@ -141,7 +141,7 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
     scenes.clear();
   });
 
-  it('a short press throws it at the target: it flies, hits and hurts the dummy, then lands and is furniture again', async () => {
+  it('a short press throws it at the target: it flies, hits and hurts the dummy, then breaks where it lands (owner, 13/11/2026)', async () => {
     const { scene, scenes, run, runUntil, tap, pickUp, chair } = await setup();
     run(0.1);
     pickUp();
@@ -149,10 +149,10 @@ describe('pick up, carry and throw (Phase 7, REQ-PHY-8..10)', () => {
     expect(scene.player.carrying).toBeNull();
     runUntil(() => scene.dummy.hp < 1000, 2);
     expect(scene.dummy.hp).toBeLessThan(1000);
-    run(3);
-    const c = chair();
-    expect(c.x).toBeGreaterThan(5); // travelled toward the dummy
-    expect(c.awake).toBe(false); // came to rest and was planted again
+    runUntil(() => chair().broken, 3);
+    expect(chair().broken).toBe(true); // a thrown piece breaks on landing
+    // ...out where it came down, toward the dummy (its pieces lie there).
+    expect(scene.props!.debris.pieces.some((d) => d.body.translation().x > 5)).toBe(true);
     scenes.clear();
   });
 
