@@ -368,6 +368,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Match mode: AI battles end once, KO ends a match with no respawn, Skip battle settles on health (`tests/integration/scenes/match-mode.test.ts`).
 - [x] Full tournament in the browser: menu, bracket, fight, skip, final, champion; watch an AI battle and skip it (`tests/e2e/tournament.spec.ts`).
 - [x] Bracket entries never clipped (16-fighter bracket and champion screen screenshots).
+- [x] Fighters square up about 3 m apart, facing each other, through READY... FIGHT! (`tests/integration/scenes/fight-start.test.ts`, office screenshot).
 - [ ] Owner playtest: tournament pacing on a phone, AI difficulty feel.
 
 ## 14. Regression (every milestone)

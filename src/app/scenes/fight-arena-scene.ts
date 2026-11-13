@@ -223,6 +223,8 @@ const NAV_CLEARANCE_M = 0.3;
 const NAV_REFRESH_S = 2;
 /** How often an AI re-plans its route to the target. */
 const AI_ROUTE_EVERY_S = 0.4;
+/** How far apart the fighters stand, facing each other, when READY... FIGHT! begins (metres). */
+const FIGHT_START_GAP_M = 3;
 /** A tournament match is decided at this time if nobody is knocked out (seconds of play). */
 const MATCH_TIME_LIMIT_S = 150;
 /** Seconds between the deciding KO and the result (the fall and dust play out). */
@@ -431,6 +433,47 @@ export class FightArenaScene implements ArenaScene {
   /** Start the READY... FIGHT! sequence: combat is locked until it ends (every fight, owner 12/11/2026). */
   startIntro(): void {
     this.intro = { t: 0 };
+    this.squareUp();
+  }
+
+  /**
+   * Before the fight (owner, 13/11/2026): the two fighters stand a short distance apart, facing
+   * each other. The opponent is set down `FIGHT_START_GAP_M` from the player, toward where it
+   * started, turning aside to the nearest clear floor if furniture or a wall is there.
+   */
+  private squareUp(): void {
+    const p = this.playerFighter;
+    const o = this.dummyFighter;
+    const physics = this.physics;
+    let dx = o.x - p.x;
+    let dy = o.y - p.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-3) {
+      dx = 1;
+      dy = 0;
+    } else {
+      dx /= len;
+      dy /= len;
+    }
+    if (physics) {
+      const r = o.def.body.footRadiusM + 0.1;
+      const inside = (q: { x: number; y: number }) =>
+        q.x > r && q.y > r && q.x < this.arena.widthM - r && q.y < this.arena.heightM - r;
+      // Straight ahead first, then turning further and further aside.
+      for (let i = 0; i < 24; i++) {
+        const turn = ((i + 1) >> 1) * (Math.PI / 12) * (i % 2 ? 1 : -1);
+        const c = Math.cos(turn);
+        const sn = Math.sin(turn);
+        const ux = dx * c - dy * sn;
+        const uy = dx * sn + dy * c;
+        const at = { x: p.x + ux * FIGHT_START_GAP_M, y: p.y + uy * FIGHT_START_GAP_M };
+        if (!inside(at) || !physics.isFree(at, r)) continue;
+        o.placeAt(at);
+        break;
+      }
+    }
+    p.faceToward(o.x - p.x, o.y - p.y);
+    o.faceToward(p.x - o.x, p.y - o.y);
   }
 
   /** Where the intro is, for the presentation (null once the fight is on). */

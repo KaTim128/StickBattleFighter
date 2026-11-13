@@ -601,3 +601,4 @@ Browser verification uses the documented dev command and browser automation: tes
 | 13/11/2026 | Owner: taller walls always shown (REQ-PHY-14, SUP-28); Shroud's knife points up diagonally and his mask tips down slightly. | Master Developer |
 | 13/11/2026 | Owner: thrown furniture breaks on landing (SUP-29); fighter AI opponents and the menu's opponent picker (REQ-AI-7). | Master Developer |
 | 13/11/2026 | Owner: AI path-finding and difficulty levels (REQ-AI-7); Tournament mode (REQ-MOD-8). | Master Developer |
+| 13/11/2026 | Owner: before every fight (READY... FIGHT!) the fighters stand about 3 m apart on clear floor, facing each other (REQ-UI intro, `FIGHT_START_GAP_M`). | Master Developer |
