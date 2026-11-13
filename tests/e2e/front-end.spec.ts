@@ -220,7 +220,7 @@ test('3 vs 3: pick three from the pool of five, fight, tag in a teammate, leave 
   );
   await expect(page.locator('.team-hud .team-member')).toHaveCount(6);
   type Dbg = Window & { __stickmanDebug: { team?: { player: { active: boolean }[] } } };
-  const second = () => page.evaluate(() => (window as Dbg).__stickmanDebug.team?.player[1]?.active ?? false);
+  const second = () => page.evaluate(() => (window as unknown as Dbg).__stickmanDebug.team?.player[1]?.active ?? false);
   // Tag: the key on desktop, the TAG button on a phone (a free moment is needed, so try a few times).
   for (let i = 0; i < 15 && !(await second()); i++) {
     if (testInfo.project.name.includes('mobile')) {
