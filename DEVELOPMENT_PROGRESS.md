@@ -23,6 +23,10 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 13/11/2026 (later still): Fighter redesign rolled back (owner)
+- The owner did not approve the rollout of the premium style to Braxon, Necro, Shroud and the dummy (nor the attempt after their reference images), and asked to roll back to the last approved state. Reverted commit af264aa (skins and portraits for all); Inferno keeps the approved model (`src/rendering/magma-model.ts`). Kept: the bookshelf, the furniture material finish, the detailed office props and the monitor-back fix.
+- Open decision for the owner: how to bring the other fighters up to the reference images (code-drawn as now, or hand-painted sprite art on the same rig, which changes the asset pipeline and needs approval).
+
 ### 13/11/2026 (later): Redesign rolled out to everything (owner request; Master Developer)
 - Fighters: shared premium painter `src/rendering/premium-model.ts` with a skin per body style (magma, muscle, robe, cloak, solid); premium portraits for all (`src/rendering/portraits.ts`).
 - Furniture: material-aware finish in `isoBlock` (`src/rendering/iso-draw.ts`, `withMaterial`) on every prop; detailed cubicle panels, desks, monitors and filing cabinets (`src/rendering/prop-view.ts`).

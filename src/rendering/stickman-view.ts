@@ -2,7 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
-import { PREMIUM_SKINS, PremiumModel } from './premium-model';
+import { MagmaModel } from './magma-model';
 
 export interface StickmanLook {
   readonly limb: number;
@@ -79,8 +79,8 @@ export class StickmanView {
   /** 0..1 how fast the fighter is moving: the flames stream back. */
   motion = 0;
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
-  /** The premium painted model for this body style (owner, 13/11/2026), drawn on the same rig. */
-  private readonly premium: PremiumModel | null;
+  /** Inferno's premium model (body style `magma`), drawn on the same rig. */
+  private readonly magma: MagmaModel | null;
 
   constructor(
     private readonly bones: BoneLengths,
@@ -93,8 +93,7 @@ export class StickmanView {
     private readonly held: HeldItem | null = null,
   ) {
     this.root.label = 'stickman';
-    const skin = PREMIUM_SKINS[bodyStyle];
-    this.premium = skin ? new PremiumModel(skin) : null;
+    this.magma = bodyStyle === 'magma' ? new MagmaModel() : null;
     this.fire.blendMode = 'add';
     this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
     const scaled = new Container();
@@ -298,10 +297,10 @@ export class StickmanView {
       else if (this.head === 'mask') this.maskHead(g, s, limb, toward(limb, outline, 0.68), o);
       else this.plainHead(g, s, limb, toward(limb, outline, 0.68), o);
     };
-    if (this.premium) {
-      // The premium painted model: the whole body in one pass, the head behind the near arm (its
-      // own crest, or this fighter's head style). A flame dodge still turns him into a streak of fire.
-      this.premium.draw(g, this.fire, s, {
+    if (this.magma) {
+      // Inferno's premium model: the whole body, head and fire details in one pass (it keeps the
+      // head behind the near arm itself). A flame dodge still turns him into a streak of fire.
+      this.magma.draw(g, this.fire, s, {
         facing,
         t,
         flash,
@@ -309,8 +308,6 @@ export class StickmanView {
         w,
         headRadius: this.bones.headRadius,
         motion: this.motion,
-        tint: this.rage > 0 && muscled ? { colour: BRUTE.rage, k: this.rage * 0.3 } : undefined,
-        drawHead: flame <= 0.01 ? drawHead : undefined,
       });
       if (flame > 0.01) drawHead();
     } else {

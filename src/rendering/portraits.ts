@@ -32,20 +32,12 @@ const rad = (d: number): number => (d * Math.PI) / 180;
  */
 function heroPose(def: FighterDef): Pose {
   const base = idlePose(0.2, def.bones);
-  const staff = def.effects.held === 'staff';
-  const heavy = def.effects.body === 'muscle';
   return {
     ...base,
     lean: rad(4),
     head: rad(-6),
-    // A staff (held in the rear hand) stands out in front, clear of the face; a heavyweight's fists
-    // sit low at the chest so the head shows.
-    armFront: heavy ? { root: rad(-15), bend: rad(48) } : { root: rad(38), bend: rad(95) },
-    armBack: staff
-      ? { root: rad(64), bend: rad(10) }
-      : heavy
-        ? { root: rad(-55), bend: rad(55) }
-        : { root: rad(-25), bend: rad(110) },
+    armFront: { root: rad(38), bend: rad(95) },
+    armBack: { root: rad(-25), bend: rad(110) },
   };
 }
 
@@ -61,8 +53,6 @@ function placeFighter(def: FighterDef): Slot {
     def.effects.held ?? null,
   );
   const premium = PREMIUM[def.effects.body ?? ''] !== undefined;
-  // Bigger rigs get a bigger window (the frame is set for a standard 0.5 m spine).
-  const bodyK = def.bones.spine / 0.5;
   // Premium portraits: a relaxed, open stance so the face and chest are not hidden by the guard,
   // framed wider so the head, its crest and the shoulders all fit (head in the upper third).
   const pose = premium ? heroPose(def) : idlePose(0.2, def.bones);
@@ -70,7 +60,7 @@ function placeFighter(def: FighterDef): Slot {
   // Centre on this fighter's own head (heights and stances differ), with the shoulders below it.
   const head = solveSkeleton(pose, def.bones).head;
   return premium
-    ? { view, cx: head.x + 0.02, cy: head.y + 0.24 * bodyK, frameM: 1.25 * bodyK }
+    ? { view, cx: head.x + 0.02, cy: head.y + 0.24, frameM: 1.25 }
     : { view, cx: head.x + 0.08, cy: head.y + 0.2, frameM: FRAME_M };
 }
 
@@ -117,7 +107,7 @@ export async function renderPortraits(app: Application, defs: readonly FighterDe
 /**
  * Premium portraits (owner, 13/11/2026: the visual-redesign prototype): the in-game model lit
  * against an atmospheric backdrop in the fighter's element, with a rim of light, a vignette and a
- * frame. Keyed by body style (each skin its own element colours).
+ * frame. Keyed by body style while only the redesigned fighters have one (Inferno: `magma`).
  */
 interface PremiumLook {
   readonly deep: string;
@@ -128,19 +118,9 @@ interface PremiumLook {
 }
 const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   magma: { deep: '#120403', mid: '#5a1306', glow: '#ff6a1a', spark: '#ffc24a', frame: '#ffb347' },
-  muscle: { deep: '#07090d', mid: '#1f2a3c', glow: '#7f9cc4', spark: '#d6e2f4', frame: '#c9d4e6' },
-  robe: { deep: '#07030c', mid: '#2a0f45', glow: '#9a5cff', spark: '#e2ccff', frame: '#c9a6ff' },
-  cloak: { deep: '#040304', mid: '#2a0608', glow: '#c0141e', spark: '#ff8a8a', frame: '#e5242e' },
-  solid: { deep: '#0b0d12', mid: '#2b3240', glow: '#9fb0c8', spark: '#ffffff', frame: '#dfe5ee' },
 };
 
-/** '#rrggbb' at an alpha, as a CSS colour. */
-function rgba(hex: string, alpha: number): string {
-  const n = Number.parseInt(hex.slice(1), 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
-}
-
-/** Behind the fighter: a dark arena glowing in its element's colour from below and behind, with sparks. */
+/** Behind the fighter: a dark arena glowing with fire from below and behind, smoke and embers. */
 function premiumBackdrop(ctx: CanvasRenderingContext2D, size: number, look: PremiumLook): void {
   const bg = ctx.createLinearGradient(0, 0, 0, size);
   bg.addColorStop(0, look.deep);
@@ -151,9 +131,9 @@ function premiumBackdrop(ctx: CanvasRenderingContext2D, size: number, look: Prem
   // A burst of light behind the head and shoulders.
   const halo = ctx.createRadialGradient(size * 0.5, size * 0.3, size * 0.12, size * 0.5, size * 0.35, size * 0.7);
   halo.addColorStop(0, 'rgba(20, 4, 2, 0.55)');
-  halo.addColorStop(0.45, rgba(look.glow, 0.12));
-  halo.addColorStop(0.8, rgba(look.glow, 0.38));
-  halo.addColorStop(1, rgba(look.glow, 0.15));
+  halo.addColorStop(0.45, 'rgba(255, 106, 26, 0.12)');
+  halo.addColorStop(0.8, 'rgba(255, 140, 40, 0.38)');
+  halo.addColorStop(1, 'rgba(255, 106, 26, 0.15)');
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, size, size);
   // Light rays fanning up from behind him.
@@ -161,7 +141,7 @@ function premiumBackdrop(ctx: CanvasRenderingContext2D, size: number, look: Prem
   ctx.translate(size * 0.5, size * 0.55);
   for (let i = 0; i < 9; i++) {
     ctx.rotate((Math.PI * 2) / 9);
-    ctx.fillStyle = rgba(look.spark, 0.05);
+    ctx.fillStyle = 'rgba(255, 170, 70, 0.05)';
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(-size * 0.06, -size);
@@ -191,8 +171,8 @@ function premiumFinish(ctx: CanvasRenderingContext2D, size: number, look: Premiu
   ctx.fillStyle = v;
   ctx.fillRect(0, 0, size, size);
   const under = ctx.createLinearGradient(0, size * 0.7, 0, size);
-  under.addColorStop(0, rgba(look.glow, 0));
-  under.addColorStop(1, rgba(look.glow, 0.35));
+  under.addColorStop(0, 'rgba(255, 120, 30, 0)');
+  under.addColorStop(1, 'rgba(255, 120, 30, 0.35)');
   ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = under;
   ctx.fillRect(0, size * 0.7, size, size * 0.3);
