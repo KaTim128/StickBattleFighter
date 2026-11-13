@@ -145,7 +145,10 @@ export class StickmanView {
     flashColour = 0xffffff,
     dodge: DodgeLook = {},
   ): void {
-    const s = this.turn > 0 ? turnSkeleton(solveSkeleton(pose, this.bones), this.bones, this.turn) : solveSkeleton(pose, this.bones);
+    const s =
+      this.turn > 0
+        ? turnSkeleton(solveSkeleton(pose, this.bones), this.bones, this.turn)
+        : solveSkeleton(pose, this.bones);
     this.last = { s, facing, heightM, rot: -facing * tiltRad };
     const { limbWidthM: w, outlineWidthM: o } = this.look;
     const limb = toward(this.look.limb, flashColour, flash);
@@ -1803,4 +1806,3 @@ export function turnSkeleton(
     legBack: shift(s.legBack, hip),
   };
 }
-

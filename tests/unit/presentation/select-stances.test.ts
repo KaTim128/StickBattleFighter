@@ -60,7 +60,8 @@ describe('select stances', () => {
       expect(Math.asin(t) * (180 / Math.PI), c.id).toBeLessThanOrEqual(45.1);
     }
     const titan = SELECT_STANCES.rampage!;
-    for (const c of playable) if (c.id !== 'rampage') expect(titan.scale).toBeGreaterThan(SELECT_STANCES[c.id]!.scale * 1.2);
+    for (const c of playable)
+      if (c.id !== 'rampage') expect(titan.scale).toBeGreaterThan(SELECT_STANCES[c.id]!.scale * 1.2);
     const def = resolveCharacter('rampage', BUILT_IN_LIBRARY);
     const sk = solveSkeleton(stancePose(titan, def.bones, 0), def.bones);
     for (const arm of [sk.armFront, sk.armBack]) {
@@ -73,4 +74,3 @@ describe('select stances', () => {
     expect(Math.sign(sk.armFront[1]!.x - sk.chest.x)).not.toBe(Math.sign(sk.armBack[1]!.x - sk.chest.x));
   });
 });
-
