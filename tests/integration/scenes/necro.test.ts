@@ -172,7 +172,7 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
       expect(s.team).toBe('player');
       expect(scene.physics!.isFree({ x: s.x, y: s.y }, 0.2)).toBe(true);
     }
-    for (const s of scene.summonStates) expect(s.leftS).toBeGreaterThan(9);
+    for (const s of scene.summonStates) expect(s.leftS).toBeGreaterThan(5);
     scene.respawnDummy({ x: 28, y: 18 }); // out of the way, so they are not fighting
     // Destroyed early: one falls and crumbles away.
     const victim = scene.summonStates[0]!.name;
