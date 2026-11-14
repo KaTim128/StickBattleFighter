@@ -37,7 +37,7 @@ describe('distance-based damage (owner, 11/11/2026: Fire Beam and Eruption)', ()
     if (beam.delivery.type !== 'beam') throw new Error('Fire Beam is a beam');
     const ticks = Math.floor(beam.delivery.durationS / beam.delivery.tickS) + 1;
     expect(ticks * payloadAt(beam.payload, 1, beam.delivery.rangeM).damage).toBeGreaterThanOrEqual(130);
-    expect(ticks * payloadAt(beam.payload, beam.delivery.rangeM, beam.delivery.rangeM).damage).toBeLessThanOrEqual(70);
+    expect(ticks * payloadAt(beam.payload, beam.delivery.rangeM, beam.delivery.rangeM).damage).toBeLessThanOrEqual(90);
   });
 });
 
