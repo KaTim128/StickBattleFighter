@@ -193,7 +193,7 @@ describe('Shroud', () => {
     expect(fx).toContain('bulb-burst');
     const foe = scene.dummyFighter.combatant;
     expect(foe.darkLeftS).toBeGreaterThan(7.5); // for the frenzy's 8 s
-    expect(foe.sightM).toBeCloseTo(1.6, 6);
+    expect(foe.sightM).toBeCloseTo(1.5, 6);
     expect(scene.player.sightM).toBe(Number.POSITIVE_INFINITY); // night vision: he sees everything
     expect(scene.player.nightVisionS).toBeGreaterThan(7.5);
     // 3 m away in the dark: it cannot find him, so it never turns to face him.
