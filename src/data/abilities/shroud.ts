@@ -189,7 +189,7 @@ export const SHROUD_KIT: AbilityKit = {
     delivery: {
       type: 'buff',
       durationS: 8,
-      speedFactor: 1.30,
+      speedFactor: 1.3,
       damageTakenFactor: 1,
       attackSpeedFactor: 1.1,
       // Owner, 12/11/2026: the knife buff is 10% (was 35%); the lights go out on the opponent.
