@@ -21,7 +21,7 @@
   "critMultiplier": 1.6,
   "knockbackResistance": 0,
   "multipliers": {
-    "attackSpeed": 1.1,
+    "attackSpeed": 1,
     "punchDamage": 1,
     "kickDamage": 1.0,
     "aerialDamage": 1,
