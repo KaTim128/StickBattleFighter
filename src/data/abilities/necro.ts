@@ -178,7 +178,7 @@ export const NECRO_KIT: AbilityKit = {
     delivery: {
       type: 'summon',
       character: 'skeleton-warrior',
-      count: 4,
+      count: 2,
       // Owner, 12/11/2026 (SUP-24): the skeletons are on a timer again, as Undead Army first was.
       lifeS: 8,
       maxAlive: 4,
