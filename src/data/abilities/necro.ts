@@ -165,7 +165,7 @@ export const NECRO_KIT: AbilityKit = {
     label: 'ULT',
     icon: 'undead-army',
     description:
-      'Four skeleton warriors claw out of the ground around the enemy and fight for Necro for 10 seconds, then crumble.',
+      'Two skeleton warriors claw out of the ground around the enemy and fight for Necro for 10 seconds, then crumble.',
     slot: 'ult',
     staminaCost: 0,
     cooldownS: 1,
