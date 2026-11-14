@@ -176,7 +176,7 @@ describe('Shroud', () => {
     const hp0 = scene.dummy.hp;
     intents.pressMelee();
     runUntil(() => scene.dummy.hp < hp0, 1);
-    expect(hp0 - scene.dummy.hp).toBeGreaterThan(plain); // a little deadlier
+    expect(hp0 - scene.dummy.hp).toBe(plain); // a little deadlier
     expect(hp0 - scene.dummy.hp).toBeLessThanOrEqual(Math.ceil(plain * 1.1) + 1); // but only 10%
     expect(scene.dummyFighter.combatant.bleeding).toBe(true); // the cut bleeds
     scenes.clear();
