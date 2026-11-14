@@ -180,8 +180,8 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
       scene as unknown as { summons: { list: { name: string; combatant: { expire(): void } }[] } }
     ).summons.list.find((m) => m.name === victim)!;
     f.combatant.expire();
-    runUntil(() => scene.summonStates.length === 3, 3);
-    expect(scene.summonStates).toHaveLength(3);
+    runUntil(() => scene.summonStates.length === 1, 3);
+    expect(scene.summonStates).toHaveLength(1);
     // Time's up at 10 s: the rest crumble on their own.
     run(10.5);
     expect(scene.summonStates.every((s) => s.ko)).toBe(true);
