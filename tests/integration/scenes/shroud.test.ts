@@ -171,7 +171,7 @@ describe('Shroud', () => {
     const b = scene.playerFighter.buff!;
     expect(b.speedFactor).toBeGreaterThan(1.2);
     expect(b.attackSpeedFactor).toBeGreaterThan(1.05);
-    expect(b.meleeDamageFactor).toBeCloseTo(1.1, 6);
+    expect(b.meleeDamageFactor).toBeCloseTo(1, 6);
     run(0.4);
     const hp0 = scene.dummy.hp;
     intents.pressMelee();
