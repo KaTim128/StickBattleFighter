@@ -1,6 +1,12 @@
 import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
-import { ABILITY_SLOTS, type AbilitySlot, type Burn, type MagicLook } from '../../abilities/ability-def';
+import {
+  ABILITY_SLOTS,
+  type AbilityDef,
+  type AbilitySlot,
+  type Burn,
+  type MagicLook,
+} from '../../abilities/ability-def';
 import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
 import { showmanship } from '../../ai/showmanship';
@@ -814,6 +820,7 @@ export class FightArenaScene implements ArenaScene {
       this.walls,
     );
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
+    this.abilities.releaseAimSource = (f, def) => this.aiBeamAim(f, def);
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
     this.view = buildArenaView(arena);
@@ -1386,7 +1393,16 @@ export class FightArenaScene implements ArenaScene {
       const p = this.pointerOnFloor();
       return p ? { x: p.x - f.x, y: p.y - f.y } : null;
     }
-    // An AI's beam follows the nearest enemy it can see; blinded or in the dark it holds its line.
+    // An AI's beam follows where it last read the target, swinging no faster than its skill allows
+    // (master plan B4): never an instant, perfect lock. Blinded or in the dark it holds its line.
+    if (f.combatant.blinded) return null;
+    if (f.aiBeam.active) return { x: Math.cos(f.aiBeam.angle), y: Math.sin(f.aiBeam.angle) };
+    const foe = this.nearestSeenEnemy(f);
+    return foe ? { x: foe.x - f.x, y: foe.y - f.y } : null;
+  }
+
+  /** The nearest living enemy this fighter can see (not blinded, inside its sight). */
+  private nearestSeenEnemy(f: FighterEntity): FighterEntity | null {
     if (f.combatant.blinded) return null;
     let best: FighterEntity | null = null;
     let bestD = f.combatant.sightM;
@@ -1398,7 +1414,29 @@ export class FightArenaScene implements ArenaScene {
         bestD = d;
       }
     }
-    return best ? { x: best.x - f.x, y: best.y - f.y } : null;
+    return best;
+  }
+
+  /** Where an AI's beam points as it is released: its delayed, slew-limited aim, not the target's true position. */
+  private aiBeamAim(f: FighterEntity, def: AbilityDef): { x: number; y: number } | null {
+    if (def.delivery.type !== 'beam' || f === this.playerFighter || !f.aiBeam.active) return null;
+    return { x: f.x + Math.cos(f.aiBeam.angle) * 5, y: f.y + Math.sin(f.aiBeam.angle) * 5 };
+  }
+
+  /** Advance an AI's beam aim while it charges or pours a beam; drop it when the beam is over. */
+  private stepAiBeam(f: FighterEntity, stepS: number, diff: Difficulty): void {
+    const beaming =
+      f.caster?.cast?.def.delivery.type === 'beam' ||
+      (this.abilities?.world.beams.some((b) => b.casterId === f.name) ?? false);
+    if (!beaming) {
+      f.aiBeam.stop();
+      return;
+    }
+    const foe = this.nearestSeenEnemy(f);
+    f.aiBeam.step(stepS, foe ? Math.atan2(foe.y - f.y, foe.x - f.x) : null, {
+      reactionS: diff.beamReadS,
+      trackRadPerS: diff.beamTrackRadPerS,
+    });
   }
 
   /** A point-aimed ability being aimed by the player (Teleport), with the spot it will go to. */
@@ -1700,6 +1738,11 @@ export class FightArenaScene implements ArenaScene {
       : [];
     const pc = p.combatant.state;
     const pv = p.body?.linvel() ?? { x: 0, y: 0 };
+    // A watched battle (both sides AI) plays sharp and stays close (owner, 13/11/2026).
+    const diff = this.match?.spectate
+      ? showmanship(this.difficulty, c.hp / c.stats.maxHp, p.combatant.hp / p.combatant.stats.maxHp)
+      : this.difficulty;
+    this.stepAiBeam(f, stepS, diff);
     const out = brain.think({
       timeS: this.simTimeS,
       self: {
@@ -1732,10 +1775,7 @@ export class FightArenaScene implements ArenaScene {
       abilities,
       profile: f.def.ai,
       design: brainDesignFor(f.def.ai.id),
-      // A watched battle (both sides AI) plays sharp and stays close (owner, 13/11/2026).
-      difficulty: this.match?.spectate
-        ? showmanship(this.difficulty, c.hp / c.stats.maxHp, p.combatant.hp / p.combatant.stats.maxHp)
-        : this.difficulty,
+      difficulty: diff,
       route: f.aiRoute,
       random: () => this.rng(),
     });
@@ -1784,8 +1824,12 @@ export class FightArenaScene implements ArenaScene {
       u.leftS -= stepS;
       if (u.leftS <= 0) f.aiUnstick = null;
     }
-    if (out.ability && this.abilities) this.abilities.tryCast(f, out.ability.slot, out.ability.at);
-    else if (out.heavy) f.combo.pressHeavy(GROUND);
+    if (out.ability && this.abilities) {
+      const started = this.abilities.tryCast(f, out.ability.slot, out.ability.at) === null;
+      // A beam starts aimed where the AI last read the target, then swings no faster than its skill.
+      if (started && f.caster?.def(out.ability.slot).delivery.type === 'beam')
+        f.aiBeam.start(Math.atan2(out.ability.at.y - f.y, out.ability.at.x - f.x));
+    } else if (out.heavy) f.combo.pressHeavy(GROUND);
     else if (out.melee) f.combo.press(GROUND);
     f.sprinting = out.sprint;
     this.stepFighter(f, stepS, move, out.jump);

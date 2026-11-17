@@ -1,6 +1,7 @@
 import type { RigidBody } from '@dimforge/rapier2d';
 import type { Container } from 'pixi.js';
 import { AbilityCaster } from '../../abilities/ability-caster';
+import { BeamTracker } from '../../ai/beam-tracker';
 import { StickmanAnimator } from '../../animation/animator';
 import type { Clip, StrikeClip } from '../../animation/clips';
 import { CLIPS } from '../../animation/clips';
@@ -171,6 +172,8 @@ export class FighterEntity {
   aiRouteAgeS = Number.POSITIVE_INFINITY;
   /** AI: how long it has pushed against something without moving, and the sidestep that frees it. */
   aiStuckS = 0;
+  /** How an AI aims its Fire Beam: delayed and slew-limited (B4). */
+  readonly aiBeam = new BeamTracker();
   aiLastPos: { x: number; y: number } | null = null;
   aiUnstick: { x: number; y: number; leftS: number } | null = null;
   /** Smoothed presentation values. */

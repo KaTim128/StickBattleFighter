@@ -94,16 +94,17 @@ export const INFERNO_KIT: AbilityKit = {
     name: 'Fire Beam',
     label: 'BEAM',
     description:
-      'After a 1-second charge, a roaring beam of fire pours from his hands. It hits again and again, hurts more up close, burns, and hits harder the longer it stays on the same target.',
+      'After a 1-second charge, a roaring beam of fire pours from his hands for 2.4 seconds. It hits again and again, hurts more up close, burns, and hits harder the longer it stays on the same target. Any hit on Inferno puts it out at once.',
     icon: 'fire-beam',
     slot: 'a3',
     staminaCost: 35,
     cooldownS: 8,
     castS: 1,
-    recoveryS: 1.75,
+    recoveryS: 0.7, // the beam holds the cast open while it pours, so this is only the tail after it ends
     aimRangeM: 7,
     moveFactor: 0,
     interruptible: true,
+    breaksOnHit: true,
     payload: {
       damage: 20,
       knockbackMps: 1.6,
@@ -113,16 +114,19 @@ export const INFERNO_KIT: AbilityKit = {
       ignites: true,
       falloff: { fullWithinM: 1.5, minFactor: 0.45 },
     },
-    // Owner, 12/11/2026: holding the beam on someone builds the damage up: after 0.6 s of unbroken
-    // contact each tick hits 40% harder, rising 60% a second more, capped at double.
+    // Owner, 12/11/2026: holding the beam on someone builds the damage up. Master plan B4 (17/11/2026):
+    // 1 s longer and more damage in total, without being excessive: the ramp is gentler (after 1 s of
+    // unbroken contact each tick hits 10% harder, rising 20% a second more, capped at 1.3x), which
+    // lands about 31% more total damage than the old 1.4 s beam at every range (measured: 360 at 1 m,
+    // 289 at 3.5 m, 198 at 6.2 m, against 275, 220 and 149) while the peak tick falls from 40 to 26.
     delivery: {
       type: 'beam',
       rangeM: 6.5,
       widthM: 0.6,
-      durationS: 1.4,
+      durationS: 2.4,
       tickS: 0.15,
       turnRadPerS: 3.5,
-      ramp: { afterS: 0.6, startFactor: 1.4, perS: 0.6, maxFactor: 2 },
+      ramp: { afterS: 1, startFactor: 1.1, perS: 0.2, maxFactor: 1.3 },
     },
     vfx: 'fire-beam',
     sfx: { cast: 'beam-charge', release: 'beam-roar', impact: 'beam-sear' },

@@ -52,10 +52,15 @@ function castDamage(a: AbilityDef): number {
   return (a.payload.damage ?? 0) * hits;
 }
 
-/** Ranged poke (projectile or beam) against everything that has to get close. */
-const isRanged = (a: AbilityDef): boolean => a.delivery.type === 'projectile' || a.delivery.type === 'beam';
-/** Damage per second of cooldown allowed: ranged abilities are weighed lower than close ones. */
-const BUDGET_PER_S = { ranged: 24, close: 32 } as const;
+/**
+ * Damage per second of cooldown allowed. A ranged poke (projectile) is weighed lowest, a close
+ * ability higher, and a channelled beam highest: it roots its caster for a charge and 2.4 s of
+ * pouring, a hit on the caster puts it out, and it can be dodged sideways (master plan B4).
+ * The beam is counted before its ramp and range falloff, which net out lower in play.
+ */
+const BUDGET_PER_S = { ranged: 24, close: 32, channel: 40 } as const;
+const classOf = (a: AbilityDef): keyof typeof BUDGET_PER_S =>
+  a.delivery.type === 'beam' ? 'channel' : a.delivery.type === 'projectile' ? 'ranged' : 'close';
 
 describe('melee relationships (B3)', () => {
   for (const f of FIGHTERS) {
@@ -84,11 +89,12 @@ describe('ability weighting against cooldown and range (B3)', () => {
       }
     });
 
-    it(`${f.name}: damage per second of cooldown stays inside the range and close budgets`, () => {
+    it(`${f.name}: damage per second of cooldown stays inside its class budget (ranged, close, channelled)`, () => {
       for (const a of damaging) {
         const perS = castDamage(a) / a.cooldownS;
-        const budget = isRanged(a) ? BUDGET_PER_S.ranged : BUDGET_PER_S.close;
-        expect(perS, `${a.name}: ${perS.toFixed(1)} per second of cooldown`).toBeLessThanOrEqual(budget);
+        expect(perS, `${a.name}: ${perS.toFixed(1)} per second of cooldown`).toBeLessThanOrEqual(
+          BUDGET_PER_S[classOf(a)],
+        );
       }
     });
   }

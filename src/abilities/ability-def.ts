@@ -392,6 +392,12 @@ export interface AbilityDef {
   readonly moveFactor: number;
   /** A hit during the wind-up cancels it (true for normal abilities; the ultimate is uninterruptible). */
   readonly interruptible: boolean;
+  /**
+   * A hit on the caster ends the ability at any moment, not only during the wind-up (Fire Beam,
+   * master plan B4: a beam stops the instant Inferno is hit, taking its hitbox, damage ticks and
+   * effects with it).
+   */
+  readonly breaksOnHit?: boolean;
   readonly payload: AbilityPayload;
   readonly delivery: Delivery;
   /** Presentation hooks (REQ-ABL-1): VFX profile and sound-effect ids fired on cast events. */

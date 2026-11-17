@@ -475,3 +475,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] A grounded fighter is never more than 3 cm inside a wall or planted furniture over four 60 s watched fights; the test fails without the fix (`furniture-collision.test.ts`, `depenetrate.test.ts`)
 - [x] A step that cancels several actions does not crash the ability world (`ability-world.test.ts`)
 - [ ] Owner check: shoving fighters against walls and furniture in the office by hand; the ability names at 1280x720 and on a small laptop
+
+## Fire Beam (17/11/2026, Phase 1 B4)
+- [x] Pours 2.4 s with Inferno rooted, frees him a moment after (`fire-beam.test.ts`)
+- [x] A hit on Inferno during the pour removes the beam, its ticks and his cast at once; a stun or knockdown from any source does the same; a hit during the charge still interrupts it (fail without `breaksOnHit`)
+- [x] AI beam: not a lock. A standing player is always hit; Easy loses a stroll, Normal a walk, Hard a brisk circle, Expert mostly a full-speed circle (`beam-tracker.test.ts`); an Easy AI whose target sidesteps during the charge fires where it last read them and misses (`fire-beam.test.ts`)
+- [x] Total beam damage about 31% above the old beam at every range (measured; recorded in TD-076)
+- [ ] Owner check: how the beam feels in play against Easy, Normal, Hard and Expert Inferno, and the extra second of rooted pouring

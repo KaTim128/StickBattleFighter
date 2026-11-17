@@ -115,7 +115,7 @@ export class AbilityCaster {
   interrupt(force = false): boolean {
     const c = this.active;
     if (!c) return false;
-    if (!force && (c.phase !== 'windup' || !c.def.interruptible)) return false;
+    if (!force && !c.def.breaksOnHit && (c.phase !== 'windup' || !c.def.interruptible)) return false;
     this.active = null;
     return true;
   }

@@ -64,6 +64,11 @@ export class SceneAbilities implements AbilityHost {
   summonSource: (f: FighterEntity, spec: SummonSpec) => void = () => {};
   /** Where a fighter is steering its beam (set by the scene: player input or the AI's target). */
   steerSource: (f: FighterEntity, fresh: boolean) => Vec2 | null = () => null;
+  /**
+   * Where an AI aims an ability at its release, when it aims imperfectly (the scene's beam tracker,
+   * master plan B4); null means the usual aim at the nearest enemy.
+   */
+  releaseAimSource: (f: FighterEntity, def: AbilityDef) => Vec2 | null = () => null;
   /** Sound ids not yet played (the sound board drains them every frame). */
   private readonly sounds: string[] = [];
 
@@ -104,11 +109,14 @@ export class SceneAbilities implements AbilityHost {
   stepCaster(f: FighterEntity, stepS: number): void {
     const caster = f.caster;
     if (!caster) return;
+    // A channelled ability (Fire Beam) also ends when its caster is stunned, knocked down or grabbed
+    // by anything, not only by a blow: it never pours through a hit reaction (master plan B4).
+    if (caster.cast?.def.breaksOnHit && !f.combatant.canAct) this.interrupt(f, true);
     const ev = caster.update(stepS, this.world.driving(f.name));
     if (ev.released) {
       const def = ev.released;
       if (def.delivery.type === 'leap') f.combatant.grantInvulnerability(def.delivery.airS + 0.1); // airborne: untouchable
-      const aim = this.aimOverrides.get(f.name) ?? this.aimFor(f, def);
+      const aim = this.aimOverrides.get(f.name) ?? this.releaseAimSource(f, def) ?? this.aimFor(f, def);
       this.aimOverrides.delete(f.name);
       this.world.release(f.name, def, aim, this);
     }

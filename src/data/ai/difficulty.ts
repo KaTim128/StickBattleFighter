@@ -27,6 +27,16 @@ export interface Difficulty {
   readonly defendSkill: number;
   /** How far ahead of a moving player it aims (0 = where they are, 1 = where they will be). */
   readonly predictLead: number;
+  /**
+   * The fastest it can swing a beam's aim, radians per second (master plan B4). A player running
+   * round it at 3 m turns about 1.7 rad/s: Easy and Normal can be out-circled, Expert barely.
+   */
+  readonly beamTrackRadPerS: number;
+  /**
+   * Seconds between fresh readings of where the target is while it aims a beam (master plan B4). Slower
+   * than `reactionS` at every level: a beam is never a perfect lock, even on Expert.
+   */
+  readonly beamReadS: number;
   /** Saves escapes and finishers for the moment they matter, instead of using them at once. */
   readonly cooldownPlanning: boolean;
   /** Watches the player's habits (rushing in, keeping away) and adjusts its approach. */
@@ -46,6 +56,8 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     punishSkill: 0.1,
     defendSkill: 0.05,
     predictLead: 0,
+    beamTrackRadPerS: 0.8,
+    beamReadS: 0.7,
     cooldownPlanning: false,
     adapts: false,
   },
@@ -61,6 +73,8 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     punishSkill: 0.35,
     defendSkill: 0.2,
     predictLead: 0.3,
+    beamTrackRadPerS: 1.3,
+    beamReadS: 0.45,
     cooldownPlanning: false,
     adapts: false,
   },
@@ -76,6 +90,8 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     punishSkill: 0.7,
     defendSkill: 0.45,
     predictLead: 0.7,
+    beamTrackRadPerS: 1.9,
+    beamReadS: 0.3,
     cooldownPlanning: true,
     adapts: true,
   },
@@ -91,6 +107,8 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     punishSkill: 0.95,
     defendSkill: 0.65,
     predictLead: 1,
+    beamTrackRadPerS: 2.8,
+    beamReadS: 0.2,
     cooldownPlanning: true,
     adapts: true,
   },

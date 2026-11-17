@@ -28,7 +28,7 @@ describe('distance-based damage (owner, 11/11/2026: Fire Beam and Eruption)', ()
     expect(payloadAt(p, 3.2, 3.2).knockbackMps).toBeCloseTo(7.25, 6);
   });
 
-  it("Inferno's numbers: Eruption 300 at the centre to 135 at the edge; Fire Beam about 135 close, 60 far", () => {
+  it("Inferno's numbers: Eruption 300 at the centre to 135 at the edge; Fire Beam about 340 close and 150 far before its ramp (2.4 s, master plan B4)", () => {
     const ult = INFERNO_KIT.ult;
     const beam = INFERNO_KIT.a3;
     expect(ult.delivery.type === 'leap' && ult.delivery.radiusM).toBe(3.2);
@@ -36,8 +36,9 @@ describe('distance-based damage (owner, 11/11/2026: Fire Beam and Eruption)', ()
     expect(payloadAt(ult.payload, 3.2, 3.2).damage).toBe(135);
     if (beam.delivery.type !== 'beam') throw new Error('Fire Beam is a beam');
     const ticks = Math.floor(beam.delivery.durationS / beam.delivery.tickS) + 1;
-    expect(ticks * payloadAt(beam.payload, 1, beam.delivery.rangeM).damage).toBeGreaterThanOrEqual(130);
-    expect(ticks * payloadAt(beam.payload, beam.delivery.rangeM, beam.delivery.rangeM).damage).toBeLessThanOrEqual(90);
+    expect(beam.delivery.durationS).toBe(2.4); // a second longer than the 1.4 s beam it replaces
+    expect(ticks * payloadAt(beam.payload, 1, beam.delivery.rangeM).damage).toBeGreaterThanOrEqual(300);
+    expect(ticks * payloadAt(beam.payload, beam.delivery.rangeM, beam.delivery.rangeM).damage).toBeLessThanOrEqual(160);
   });
 });
 
@@ -70,8 +71,8 @@ describe('beam delivery', () => {
     const { h, hits } = host(3, null);
     const w = new AbilityWorld();
     w.release('me', INFERNO_KIT.a3, { x: 5, y: 0 }, h);
-    for (let i = 0; i < 120; i++) w.update(1 / 60, h);
-    expect(hits.length).toBeGreaterThanOrEqual(9);
+    for (let i = 0; i < 200; i++) w.update(1 / 60, h); // the 2.4 s beam, then some
+    expect(hits.length).toBeGreaterThanOrEqual(15);
     expect(w.beams).toHaveLength(0);
   });
 
@@ -141,9 +142,9 @@ describe('Fire Beam damage build-up (owner, 12/11/2026)', () => {
       emit: () => {},
     };
     w.release('me', INFERNO_KIT.a3, { x: 5, y: 0 }, h);
-    for (let i = 0; i < 60; i++) w.update(1 / 60, h); // 1 s of beam
-    expect(hits.length).toBeGreaterThan(5);
-    expect(hits[hits.length - 1]!).toBeGreaterThan(hits[0]! * 1.3); // built up
+    for (let i = 0; i < 108; i++) w.update(1 / 60, h); // 1.8 s of beam: the ramp starts after 1 s
+    expect(hits.length).toBeGreaterThan(10);
+    expect(hits[hits.length - 1]!).toBeGreaterThan(hits[0]! * 1.15); // built up
     // Out of the beam for a while, then back in: the build-up starts again.
     inBeam = false;
     for (let i = 0; i < 12; i++) w.update(1 / 60, h);

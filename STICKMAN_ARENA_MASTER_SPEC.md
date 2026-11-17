@@ -691,3 +691,4 @@ When a phase is implemented, its requirements will be added to the sections abov
 | 17/11/2026 | Owner approved Phase 0 ("Ok start"); recommended answers to OQ-P0-1, 2, 4, 6, 8 adopted (TD-072). | Master Developer |
 | 17/11/2026 | Phase 1 Batch A: per-fighter controls with tap/hold, General Settings split, Story Mode removed, Admin lists every character (REQ-CTL-17a). | Master Developer |
 | 17/11/2026 | Phase 1 B8 and B7: status-effect registry; bleeding becomes a x1.1 damage-taken effect for 6 s (SUP-35, TD-073). | Master Developer |
+| 17/11/2026 | Phase 1 B3 and B4: damage relationships, ability names on the HUD, no fighter inside solids; Fire Beam 2.4 s, interrupted by any hit, imperfect AI aim (TD-075, TD-076). | Master Developer |

@@ -273,8 +273,12 @@ export class AbilityWorld {
 
   /** Is this caster mid-dash or mid-leap (its body is driven by the world)? */
   driving(casterId: string): boolean {
-    return this.actions.some(
-      (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault') && a.casterId === casterId,
+    // A beam holds its caster's cast open while it pours, so a hit can still end it (B4).
+    return (
+      this.beams.some((b) => b.casterId === casterId) ||
+      this.actions.some(
+        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault') && a.casterId === casterId,
+      )
     );
   }
 
