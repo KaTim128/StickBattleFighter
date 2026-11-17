@@ -13,8 +13,7 @@ test('fullscreen stays on when the game moves to another mode (the shell)', asyn
   await page.goto('/?shell&fullscreen'); // automated browsers stay windowed unless asked
   const game = page.frameLocator('#game-frame');
   await expect(game.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
-  await game.locator('.settings-button').click();
-  await game.locator('.settings-fullscreen').click();
+  await page.mouse.click(900, 650); // the first input enters fullscreen (Settings has no Fullscreen toggle any more, master plan A3)
   await expect.poll(() => page.evaluate(() => document.fullscreenElement !== null)).toBe(true);
   // A new page inside the frame, as when Practice or a fight starts.
   const inner = page.frames().find((f) => f !== page.mainFrame())!;
