@@ -56,6 +56,11 @@ export interface AbilityFx {
 export interface AbilityHost {
   fighters(): readonly AbilityTarget[];
   /**
+   * Can the caster see this fighter (not blinded, inside its sight in the dark)? Abilities that
+   * pick their own target (Behind You, Bloodfade, a retreat) only pick one it can see.
+   */
+  sees?(casterId: string, targetId: string): boolean;
+  /**
    * Apply an ability hit to a fighter. Returns true if it connected (not dodged or ignored).
    * `hitFlash` = the colour the target's body flashes (the ability's look; default the caster's).
    */
@@ -779,6 +784,7 @@ export class AbilityWorld {
     let bestD = rangeM;
     for (const f of host.fighters()) {
       if (this.friendly(f, casterId, host) || !f.hittable) continue;
+      if (host.sees && !host.sees(casterId, f.id)) continue; // blinded or in the dark: no target found
       const dd = Math.hypot(f.x - at.x, f.y - at.y);
       if (dd <= bestD) {
         best = f;

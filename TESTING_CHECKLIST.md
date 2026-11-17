@@ -444,3 +444,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Game Modes shows Tag Team (no '3 vs 3'); team-pick title and Tag key label renamed (`front-end.spec.ts`)
 - [x] Desktop: the first click on the title screen enters fullscreen; the canvas fills the window, nothing scrolls (`shell.spec.ts`)
 - [ ] Owner check on a phone and a desktop browser: fullscreen from the first tap, kept across every screen
+
+## AI engagement and blindness (16/11/2026)
+- [x] Every pairing of the four fighters, 90 s watched fight: no AI idle over 1.5 s outside a Punch Clash (`tests/integration/ai/engagement.test.ts`; 6 of 10 failed before the fix, up to 8.4 s idle)
+- [x] Blinded AI does not track a circling player, keeps moving, tracks again after (`blindness.test.ts`)
+- [x] Blinded player: no lock-on, no ability aim help, Bloodfade finds no one, faces the way it walks; help returns after (`blindness.test.ts`)

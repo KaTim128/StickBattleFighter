@@ -152,9 +152,10 @@ export class SceneAbilities implements AbilityHost {
   /** Soft lock (CONTROL_SCHEME §2): the nearest opponent within the ability's range, else straight ahead. */
   aimFor(f: FighterEntity, def: AbilityDef): Vec2 {
     let best: FighterEntity | null = null;
-    let bestD = def.aimRangeM;
+    // Blinded: no aim help at all; in the dark, only someone inside its circle of sight (owner, 13/11/2026).
+    let bestD = f.combatant.blinded ? -1 : Math.min(def.aimRangeM, f.combatant.sightM);
     for (const o of this.fightersOf()) {
-      if (o === f || o.combatant.isKo) continue;
+      if (o === f || o.combatant.isKo || o.team === f.team) continue;
       const d = Math.hypot(o.x - f.x, o.y - f.y);
       if (d <= bestD) {
         best = o;
@@ -177,6 +178,13 @@ export class SceneAbilities implements AbilityHost {
       hittable: !f.combatant.isKo && f.body !== null,
       team: f.team,
     }));
+  }
+
+  sees(casterId: string, targetId: string): boolean {
+    const f = this.byName(casterId);
+    const o = this.byName(targetId);
+    if (!f || !o) return false;
+    return !f.combatant.blinded && Math.hypot(o.x - f.x, o.y - f.y) <= f.combatant.sightM;
   }
 
   hitFighter(casterId: string, targetId: string, payload: AbilityPayload, dir: Vec2, hitFlash?: number): boolean {

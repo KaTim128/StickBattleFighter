@@ -81,6 +81,9 @@ const PLANNER_PATIENCE_S = 20;
 /** How far ahead a projectile is aimed at full prediction, in seconds of the target's motion. */
 const LEAD_S = 0.5;
 
+/** How long an unsighted AI still heads for where it last saw its target (seconds). */
+const UNSIGHTED_MEMORY_S = 4;
+
 export class FighterBrain {
   private lastS = 0;
   private nextAbilityS = 1.2;
@@ -98,6 +101,11 @@ export class FighterBrain {
   private brawl = false;
   private nextPhaseS = 0;
   private threatSeenS = -1;
+  /** Where the target was last seen, and when (game seconds); null before it was ever seen. */
+  private lastSeen: { x: number; y: number; atS: number } | null = null;
+  /** Unsighted: the way it is searching, until when. */
+  private searchDir = { x: 1, y: 0 };
+  private nextSearchTurnS = 0;
   private threatHandled = false;
   private openingSeenS = -1;
   private comboNext: AbilitySlot | null = null;
@@ -116,6 +124,51 @@ export class FighterBrain {
   /** Which abilities it has used, for tests and tuning. */
   get used(): ReadonlySet<AbilitySlot> {
     return new Set(this.lastUsed.keys());
+  }
+
+  /**
+   * Fighting without sight: head for the target's last known position and swing when there (the
+   * target may well have moved); once that memory is stale or reached, wander in a direction that
+   * changes every second or so, guarding at random. It never stands still and never reads the
+   * target's real position.
+   */
+  private unsighted(v: BrainView, out: BrainOutput): BrainOutput {
+    const now = v.timeS;
+    const s = v.self;
+    const mem = this.lastSeen;
+    if (mem && now - mem.atS < UNSIGHTED_MEMORY_S) {
+      const dx = mem.x - s.x;
+      const dy = mem.y - s.y;
+      const d = Math.hypot(dx, dy);
+      if (d > v.meleeReachM * 0.8) {
+        out.move = { x: dx / d, y: dy / d };
+        return out;
+      }
+      // At the spot: a strike where it was, then search from here.
+      if (!s.busy && now >= this.nextMeleeS) {
+        out.melee = true;
+        this.nextMeleeS = now + v.profile.attackEveryS;
+      }
+      this.lastSeen = null;
+      return out;
+    }
+    if (now >= this.nextSearchTurnS) {
+      const a = v.random() * Math.PI * 2;
+      this.searchDir = { x: Math.cos(a), y: Math.sin(a) };
+      this.nextSearchTurnS = now + 0.7 + v.random() * 0.9;
+      // Now and then it raises its guard for a moment instead (it cannot see what is coming).
+      if (v.random() < 0.25) this.guardUntilS = now + 0.4;
+    }
+    if (now < this.guardUntilS) {
+      out.guard = true;
+      return out;
+    }
+    out.move = this.searchDir;
+    if (!s.busy && now >= this.nextMeleeS && v.random() < 0.02) {
+      out.melee = true; // a wild swing into the dark
+      this.nextMeleeS = now + v.profile.attackEveryS;
+    }
+    return out;
   }
 
   think(v: BrainView): BrainOutput {
@@ -141,7 +194,12 @@ export class FighterBrain {
       return out;
     }
     const t = v.target;
-    if (!t || !s.canAct) return out;
+    if (!s.canAct) return out;
+    // Unsighted (blinded, or the target outside its sight in the dark; owner, 13/11/2026): it never
+    // freezes and never knows where the target is. It goes for where it last saw it and strikes
+    // there, or searches unpredictably, guarding now and then.
+    if (!t) return this.unsighted(v, out);
+    this.lastSeen = { x: t.x, y: t.y, atS: now };
     const diff = v.difficulty;
     const d = v.design;
     const dx = t.x - s.x;
@@ -189,11 +247,16 @@ export class FighterBrain {
     }
     if (out.dodge) return out;
 
-    // An easier opponent hesitates now and then.
-    if (now < this.hesitateUntilS) return out;
+    // An easier opponent hesitates now and then: no attack for a moment, but it keeps moving
+    // round the target (owner, 13/11/2026: an AI never stands idle).
+    const hesitating = (): BrainOutput => {
+      out.move = { x: -toward.y * this.strafe * 0.45, y: toward.x * this.strafe * 0.45 };
+      return out;
+    };
+    if (now < this.hesitateUntilS) return hesitating();
     if (diff.hesitatePerS > 0 && v.random() < diff.hesitatePerS * dtS) {
       this.hesitateUntilS = now + 0.4 + v.random() * 0.5;
-      return out;
+      return hesitating();
     }
 
     // Seeing an opening takes its reaction time; spotting it at all takes skill.

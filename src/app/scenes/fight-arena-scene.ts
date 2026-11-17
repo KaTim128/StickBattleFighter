@@ -255,6 +255,9 @@ const PROP_SOUNDS: Partial<Record<Material, { hit: string; break: string }>> = {
 /** How fast WASD slides the ultimate's landing spot while aiming, m/s. */
 /** Target speed under WASD or the joystick when an ability's data sets none (Inferno's leap, owner 11/11/2026). */
 const DEFAULT_AIM_SPEED_MPS = 7;
+/** An AI pushing without moving this long (s) is stuck; it then slides aside for AI_UNSTICK_S. */
+const AI_STUCK_S = 0.35;
+const AI_UNSTICK_S = 0.7;
 /** The player locks on to an opponent in sight within this range (owner, 12/11/2026). */
 const TARGET_LOCK_SIGHT_M = 14;
 /**
@@ -1380,8 +1383,10 @@ export class FightArenaScene implements ArenaScene {
       const p = this.pointerOnFloor();
       return p ? { x: p.x - f.x, y: p.y - f.y } : null;
     }
+    // An AI's beam follows the nearest enemy it can see; blinded or in the dark it holds its line.
+    if (f.combatant.blinded) return null;
     let best: FighterEntity | null = null;
-    let bestD = Number.POSITIVE_INFINITY;
+    let bestD = f.combatant.sightM;
     for (const o of this.fighters) {
       if (o.team === f.team || o.combatant.isKo) continue;
       const d = Math.hypot(o.x - f.x, o.y - f.y);
@@ -1732,17 +1737,41 @@ export class FightArenaScene implements ArenaScene {
       random: () => this.rng(),
     });
     if (sees && c.canAct && !f.combo.attack && !caster?.cast) f.faceToward(p.x - f.x, p.y - f.y);
+    // Unsighted (blinded or in the dark): no turning to the target; it faces the way it moves.
+    else if (!sees && c.canAct && !f.combo.attack && !caster?.cast && Math.hypot(out.move.x, out.move.y) > 0.1)
+      f.faceToward(out.move.x, out.move.y);
     // Defending as its personality does: a dodge back, or the guard up for a moment.
     if (out.dodge && !f.airborne && !caster?.cast && c.tryDodge()) {
       f.combo.interrupt();
       this.startBackDodge(f);
     }
     c.setGuard(out.guard && f.def.capabilities.canBlock && !f.combo.attack && !caster?.cast);
+    // Never stuck (owner, 13/11/2026): pushing against furniture, a wall or a body without moving,
+    // it slides aside for a moment (alternating sides), hops if it can, and plans a fresh route.
+    let move = out.move;
+    const pushing = Math.hypot(move.x, move.y) > 0.3 && c.canAct && !f.combo.attack && !caster?.cast;
+    const v = f.body?.linvel() ?? { x: 0, y: 0 };
+    if (pushing && Math.hypot(v.x, v.y) < 0.15) f.aiStuckS += stepS;
+    else f.aiStuckS = Math.max(0, f.aiStuckS - stepS * 2);
+    if (f.aiStuckS > AI_STUCK_S && !f.aiUnstick) {
+      const sideK = this.rng() < 0.5 ? 1 : -1;
+      const len = Math.hypot(move.x, move.y) || 1;
+      f.aiUnstick = { x: (-move.y / len) * sideK, y: (move.x / len) * sideK, leftS: AI_UNSTICK_S };
+      f.aiStuckS = 0;
+      f.aiRouteAgeS = AI_ROUTE_EVERY_S; // re-plan the way round
+      if (f.def.capabilities.canJump && !f.airborne) out.jump = true;
+    }
+    if (f.aiUnstick) {
+      const u = f.aiUnstick;
+      move = { x: u.x * 0.85 + move.x * 0.3, y: u.y * 0.85 + move.y * 0.3 };
+      u.leftS -= stepS;
+      if (u.leftS <= 0) f.aiUnstick = null;
+    }
     if (out.ability && this.abilities) this.abilities.tryCast(f, out.ability.slot, out.ability.at);
     else if (out.heavy) f.combo.pressHeavy(GROUND);
     else if (out.melee) f.combo.press(GROUND);
     f.sprinting = out.sprint;
-    this.stepFighter(f, stepS, out.move, out.jump);
+    this.stepFighter(f, stepS, move, out.jump);
   }
 
   /** Can this fighter tag out now? On the ground, free, not mid-attack, not in a Punch Clash. */

@@ -23,6 +23,11 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 16/11/2026: AI never idle; blindness removes all tracking (owner)
+- Root causes found with a new 90 s watched-fight test across all ten pairings: (1) the brain returned no action at all when it could not see its target (blinded by Soul Drain, or in Hunting Frenzy's dark), up to 8.4 s still; (2) AI pushing into furniture or a wall stayed stuck; (3) Normal's hesitation stood still and could chain.
+- Fixes: `src/ai/fighter-brain.ts` (`unsighted`: last known position, then search, guard; hesitation strafes), `fight-arena-scene.ts` (stuck detection and sidestep `AI_STUCK_S`/`AI_UNSTICK_S`, unsighted AI faces its movement, AI beam steering needs sight), `scene-abilities.ts` (`aimFor` no help when blinded, only within sight in the dark; `sees`), `ability-world.ts` (`AbilityHost.sees`: self-targeting abilities need sight).
+- Tests: `tests/integration/ai/engagement.test.ts`, `tests/integration/ai/blindness.test.ts`; full suite 498 pass; typecheck, lint clean.
+
 ### 13/11/2026 (latest+14): fullscreen throughout, Tag Team (owner)
 - `keepFullscreen` on every device (not only touch): the first tap, click or key on the title screen enters fullscreen; any later input re-enters if lost; the Settings button only enters; the session "off" switch is gone (only Quit Game leaves it). Automated browsers stay windowed unless `?fullscreen` (REQ-UI-39). 3 vs 3 shown as Tag Team (REQ-UI-38).
 - Checks: 486 unit/integration pass; typecheck and lint clean; e2e `shell.spec.ts` (first click → fullscreen, canvas fills the window), `front-end.spec.ts`, `landscape.spec.ts` pass.
