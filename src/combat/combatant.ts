@@ -358,8 +358,10 @@ export class Combatant {
       this.getUpS = 0;
       return { outcome: 'ko', damage, knockbackScale: kbKeep, attackerStunS: 0 };
     }
-    if (hit.staggers === false) {
-      // Damage only: no flinch, no fall, nothing to interrupt (summoned skeletons, B5).
+    if (hit.staggers === false || this.knockdownS > 0 || this.getUpS > 0) {
+      // Damage only: no flinch and no fall (skeletons, B5; no-flinch stabs, B6). A fighter already
+      // down or getting up is never knocked down or stunned afresh, so no chain of hits can keep the
+      // fall going or restart the get-up (B6).
     } else if (hit.heavy) {
       if (this.knockdownS === 0) this.downS = 0; // a fresh fall (a hit while already down keeps the fall going)
       this.knockdownS = DEFENCE.heavyKnockdownS;

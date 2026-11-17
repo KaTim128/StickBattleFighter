@@ -268,3 +268,41 @@ describe('Combatant: Curse of Decay and darkness (owner, 12/11/2026)', () => {
     expect(c.sightM).toBe(Number.POSITIVE_INFINITY);
   });
 });
+
+describe('repeated hits cannot lock a fighter down (master plan B6)', () => {
+  it('a no-flinch hit damages without stunning or knocking down', () => {
+    const c = new Combatant(STATS);
+    const r = c.receive({ ...HIT, staggers: false });
+    expect(r.damage).toBeGreaterThan(0);
+    expect(c.state).toBe('free');
+    const h = new Combatant(STATS);
+    h.receive({ ...HIT, heavy: true, staggers: false });
+    expect(h.state).toBe('free'); // not even a heavy knocks down
+  });
+
+  it('hits on a fighter who is down never restart the fall, so it stands up on time', () => {
+    const c = new Combatant(STATS);
+    c.receive({ ...HIT, heavy: true });
+    expect(c.state).toBe('knockdown');
+    tick(c, DEFENCE.heavyKnockdownS * 0.6);
+    // A chain of stabs while it lies there: damage lands, the fall is not extended.
+    for (let i = 0; i < 6; i++) {
+      c.receive({ ...HIT, baseDamage: 20, heavy: true });
+      c.receive({ ...HIT, baseDamage: 20 });
+    }
+    tick(c, DEFENCE.heavyKnockdownS * 0.4 + 0.05);
+    expect(c.state).toBe('gettingUp');
+    tick(c, DEFENCE.getUpS + 0.05);
+    expect(c.canAct).toBe(true);
+  });
+
+  it('hits while getting up do not stun it or knock it down again', () => {
+    const c = new Combatant(STATS);
+    c.receive({ ...HIT, heavy: true });
+    tick(c, DEFENCE.heavyKnockdownS + 0.05);
+    expect(c.state).toBe('gettingUp');
+    c.receive({ ...HIT });
+    c.receive({ ...HIT, heavy: true });
+    expect(c.state).toBe('gettingUp');
+  });
+});

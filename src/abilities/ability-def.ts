@@ -37,6 +37,11 @@ export interface AbilityPayload {
   /** Stuns the target this long after it lands (Crushing Strike). */
   readonly stunS?: number;
   /**
+   * The hit deals its damage (and push) without the usual flinch or fall: Shroud's stabs never stun
+   * or knock down, so repeated stabbing cannot lock a target (master plan B6).
+   */
+  readonly noFlinch?: boolean;
+  /**
    * Smashes through obstacles (Rampage Charge): breakable wall sections take this much damage, and
    * furniture and doors in the way are hit with the payload's full strength. Solid walls still stop it.
    */

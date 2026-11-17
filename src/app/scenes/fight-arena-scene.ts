@@ -2073,6 +2073,7 @@ export class FightArenaScene implements ArenaScene {
       flashColour?: number;
       /** Stun the target this long if the blow lands unguarded (Crushing Strike). */
       stunS?: number;
+      noFlinch?: boolean;
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
@@ -2090,7 +2091,7 @@ export class FightArenaScene implements ArenaScene {
         heavy: s.heavy,
         fromFront,
         critRoll: this.rng(),
-        staggers,
+        staggers: staggers && !s.noFlinch,
       },
       attacker.def.stats.critChance,
       attacker.def.stats.critMultiplier,

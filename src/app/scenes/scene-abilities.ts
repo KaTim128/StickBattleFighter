@@ -37,6 +37,8 @@ export type StrikeFn = (
     flashColour?: number;
     /** Stun the target this long if the blow lands unguarded. */
     stunS?: number;
+    /** No flinch or knockdown from this blow (Shroud's stabs). */
+    noFlinch?: boolean;
   },
 ) => boolean;
 
@@ -215,6 +217,7 @@ export class SceneAbilities implements AbilityHost {
       impact: payload.impact ?? (payload.heavy ? 'fire-heavy' : 'fire'),
       flashColour: hitFlash,
       stunS: payload.stunS,
+      noFlinch: payload.noFlinch,
     });
     // Shroud's knife: deep cuts bleed.
     if (landed && payload.bleed) target.combatant.bleed();

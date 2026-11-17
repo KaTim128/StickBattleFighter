@@ -43,7 +43,8 @@ Check this table before assigning work. No two active assignments may share a pa
 - **B4 done (TD-076):** Fire Beam 2.4 s and about 31% more total damage; ends at once on any hit or stun (`breaksOnHit`); AI aims it through a delayed, slew-limited `BeamTracker` per difficulty. The extra second more than doubled the beam's damage until the ramp was softened (measured before choosing).
 - **Verification:** typecheck clean, lint 0 errors, 565 unit and integration tests pass; `phase6`, `controls`, `fighter-controls` e2e pass on desktop. The interruption tests fail without the flag. Full e2e on CI.
 - **B5 done (TD-077):** hard cap of four with refusal before the ultimate is spent; new `staggersTargets` capability makes skeleton hits damage-only.
-- **Next:** B6 Shroud stabs, then B9, B10, B11, B13 and onward.
+- **B6 done (TD-078):** `noFlinch` stabs, no hit chain restarts a fall; stab damage +12% to keep the close-battle standard.
+- **Next:** B9 Titan grab, B10 ultimate costs and AI targeting, B11 jumping, B13 fifth abilities and loadout, B14 loadout UI, B15 Shroud combo, B16 dodge, B17 fight length, B18 audio.
 
 ## Completed work
 

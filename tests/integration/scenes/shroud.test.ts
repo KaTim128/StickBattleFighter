@@ -67,7 +67,7 @@ describe('Shroud', () => {
     scenes.clear();
   });
 
-  it('Bloodfade (owner, 13/11/2026): darts in, one bloody stab that bleeds and staggers, then springs well away', async () => {
+  it('Bloodfade (owner, 13/11/2026): darts in, one bloody stab that bleeds without stunning, then springs well away', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 12, y: 13 }, { x: 15, y: 13 });
     (scene.playerFighter.def.stats as { critChance: number }).critChance = 0;
     scene.drainEvents();
@@ -77,7 +77,8 @@ describe('Shroud', () => {
     expect(1000 - hp).toBeGreaterThanOrEqual(60); // a powerful stab
     expect(1000 - hp).toBeLessThan(90);
     expect(scene.dummyFighter.combatant.bleeding).toBe(true);
-    expect(scene.dummy.state).toBe('stunned'); // a clear flinch
+    expect(scene.dummy.state).not.toBe('stunned'); // no stun (owner master plan B6): the stab hurts, it never locks
+    expect(scene.dummy.state).not.toBe('knockdown');
     const struckAt = scene.player.x;
     expect(struckAt).toBeGreaterThan(13); // he closed the gap to stab
     const fx = scene.abilities!.recentFx.filter((e) => e.kind === 'impact' && e.ability === 'bloodfade');

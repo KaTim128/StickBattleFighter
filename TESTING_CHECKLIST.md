@@ -489,3 +489,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] One hit per swing: no two blows from one skeleton under 0.2 s apart
 - [x] Skeletons are frail (67 health)
 - [ ] Owner check: four skeletons against a player in play; that it never feels stun-locked
+
+## Shroud stabbing and recovery (17/11/2026, Phase 1 B6)
+- [x] A no-flinch hit damages without stun or knockdown, even a heavy one (`combatant.test.ts`)
+- [x] A chain of hits on a downed fighter does not extend the fall; it stands up on time (fails without the rule)
+- [x] Hits while getting up do not stun or re-knock-down
+- [x] Bloodfade bleeds without stunning (`shroud.test.ts`)
+- [ ] Owner check: stab-spamming a downed or recovering fighter in play

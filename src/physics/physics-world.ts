@@ -243,23 +243,28 @@ export class PhysicsWorld {
    * Push a grounded fighter back out of walls and planted furniture it has sunk into (master plan
    * Phase 1 B3: fighters must never stand inside solid objects). The solver is soft: a fast dash or
    * knock, or a heavy fighter shoving another against a wall, can leave a body 0.1-0.3 m deep.
-   * Moves it along the contact normal by the overlap (at most `MAX_DEPENETRATE_M` a step so it can
+   * Moves it along the contact normal by the overlap (at most `MAX_DEPENETRATE_M` a pass, three passes, so it can
    * never be thrown through a thin wall) and drops the velocity that drives it into the surface.
    * Returns the metres moved. `overFurniture` fighters ignore furniture, as in `setOverFurniture`.
    */
   depenetrate(body: RapierModule.RigidBody, radiusM: number, overFurniture: boolean): number {
-    const at = body.translation();
-    const depth = this.pushOut(at, radiusM, overFurniture);
-    if (depth <= 0) return 0;
-    const moved = Math.hypot(this.push.x, this.push.y);
-    const scale = moved > MAX_DEPENETRATE_M ? MAX_DEPENETRATE_M / moved : 1;
-    body.setTranslation({ x: at.x + this.push.x * scale, y: at.y + this.push.y * scale }, true);
-    const v = body.linvel();
-    const nx = this.push.x / moved;
-    const ny = this.push.y / moved;
-    const into = v.x * nx + v.y * ny;
-    if (into < 0) body.setLinvel({ x: v.x - into * nx, y: v.y - into * ny }, true);
-    return moved * scale;
+    let total = 0;
+    // Up to three passes: in a corner two solids push in different directions and one pass can leave
+    // part of the overlap (found by the long soak).
+    for (let pass = 0; pass < 3; pass++) {
+      const at = body.translation();
+      if (this.pushOut(at, radiusM, overFurniture) <= 0) break;
+      const moved = Math.hypot(this.push.x, this.push.y);
+      const scale = moved > MAX_DEPENETRATE_M ? MAX_DEPENETRATE_M / moved : 1;
+      body.setTranslation({ x: at.x + this.push.x * scale, y: at.y + this.push.y * scale }, true);
+      const v = body.linvel();
+      const nx = this.push.x / moved;
+      const ny = this.push.y / moved;
+      const into = v.x * nx + v.y * ny;
+      if (into < 0) body.setLinvel({ x: v.x - into * nx, y: v.y - into * ny }, true);
+      total += moved * scale;
+    }
+    return total;
   }
 
   /** How deep a circle at `at` sits inside walls and planted furniture, metres (0 = clear). */
