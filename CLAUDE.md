@@ -3,6 +3,13 @@
 ## Project identity
 Stickman Arena is an original, browser-based, **2D top-down, real-time, free-movement arena fighting game** (move up/down/left/right like Creature Clash). The full requirements are in `STICKMAN_ARENA_MASTER_SPEC.md`; cite its REQ, INV and OQ IDs.
 
+## Master plan (owner, 16/11/2026)
+- Development follows the owner's master plan (`docs/references/master-plan/Stickman_Arena_Full_Master_Prompt_Updated.md`, spec §20A) in its fixed order: Phase 1 fighters → Phase 2 Hide and Seek → Phase 3 Colosseum, 16 fighters, UI and tutorial → Phase 4 Parkour. Work from `IMPLEMENTATION_PLAN.md`; resume from `PHASE_HANDOFF.md`.
+- One phase at a time: never start the next phase without the owner's approval; one consolidated review per phase.
+- Model names never go into committed files: use the role labels "planning/review model" and "implementation model".
+- Desktop first; existing phone play must keep working unless the owner decides otherwise (OQ-P0-4).
+- Keep `FIGHTER_SYSTEM_DEVELOPMENT_GUIDE.md`, `FIGHTER_SYSTEM_CHANGELOG.md`, `AUDIO_ASSET_CATALOG.md` and `STICKMAN_ARENA_VISUAL_STYLE_GUIDE.md` current.
+
 ## Authority and role
 - The **primary Claude Code session is the Master Developer**: Technical Lead and Project Architect. It owns roadmap coordination, architecture decisions, task assignment, integration, regression control and milestone sign-off. It stays accountable for the final integrated project.
 - It delegates bounded work to the specialists in `.claude/agents/` and coordinates them using `docs/workflow/MASTER_DEVELOPER_WORKFLOW.md`.

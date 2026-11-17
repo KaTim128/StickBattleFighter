@@ -23,6 +23,36 @@ Check this table before assigning work. No two active assignments may share a pa
 
 ## Completed work
 
+### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes
+- Documents:
+  - `IMPLEMENTATION_PLAN.md`, `PHASE_HANDOFF.md`, `AUDIO_ASSET_CATALOG.md`;
+  - `FIGHTER_SYSTEM_DEVELOPMENT_GUIDE.md`, `FIGHTER_SYSTEM_CHANGELOG.md`, `STICKMAN_ARENA_VISUAL_STYLE_GUIDE.md`;
+  - `docs/ARCHITECTURE_OVERVIEW.md`;
+  - spec §20A and OQ-P0-1…8, TD-071, `CLAUDE.md`;
+  - the owner's references in `docs/references/master-plan/`.
+- Findings:
+  - four normal abilities per fighter today, with no loadout;
+  - global keybinds only;
+  - status effects as separate fields;
+  - no Parkour, no blue-flame transformation, no Other Games;
+  - single-floor rendering;
+  - all combat audio synthesised, with several reused sounds;
+  - no positional audio;
+  - Pixabay unreachable; FFmpeg present;
+  - the three horror uploads are one file;
+  - CI is cancelled at its 20-minute limit.
+- **Self-audit (planning/review model, same run).**
+  - Every path in the plan and the architecture overview was opened during inspection.
+  - Every master-plan phase item has a row in the plan or an open question.
+  - The order matches the owner's (1 → 2 → 3 → 4, with Parkour last and UI and tutorial before Parkour).
+  - Contradictions found in the master plan:
+    - bleeding stacking text;
+    - Vexoris stacks;
+    - the missing transformation and Parkour.
+  - These are raised as open questions, not resolved silently.
+  - Remaining uncertainty: the fifth abilities' exact numbers and the Hide and Seek renderer work (floors and room masking) are estimates until Phase 1 and 2 inspection of the affected files.
+- Next task: the owner approves Phase 0 and answers the Phase 1 open questions; then Phase 1 Batch A.
+
 ### 16/11/2026: AI never idle; blindness removes all tracking (owner)
 - Root causes found with a new 90 s watched-fight test across all ten pairings: (1) the brain returned no action at all when it could not see its target (blinded by Soul Drain, or in Hunting Frenzy's dark), up to 8.4 s still; (2) AI pushing into furniture or a wall stayed stuck; (3) Normal's hesitation stood still and could chain.
 - Fixes: `src/ai/fighter-brain.ts` (`unsighted`: last known position, then search, guard; hesitation strafes), `fight-arena-scene.ts` (stuck detection and sidestep `AI_STUCK_S`/`AI_UNSTICK_S`, unsighted AI faces its movement, AI beam steering needs sight), `scene-abilities.ts` (`aimFor` no help when blinded, only within sight in the dark; `sees`), `ability-world.ts` (`AbilityHost.sees`: self-targeting abilities need sight).

@@ -1,0 +1,9 @@
+# Fighter system changelog
+
+Changes to fighter statistics, abilities, combat mechanics, status effects and fighter configuration. Dates are DD/MM/YYYY. Older history is in `DEVELOPMENT_PROGRESS.md` and the spec's change log (§23); this file starts with the master plan.
+
+| Date | Change | Files | Why | Tests |
+|---|---|---|---|---|
+| 14/11/2026 | Owner balance pass, edited directly on GitHub. Skeleton warrior stats lowered and lifetime 8 → 6 s. Undead Army summons fewer per cast (`count: 2`, `maxAlive: 4`) with a new description. Shroud ability and Hunting Frenzy values changed (`attackSpeedFactor` 1.1 → 1, `meleeDamageFactor` now 1, speed factor format). Inferno ability parameters changed. Tests updated to match. | `src/data/characters/skeleton-warrior/stats.json`, `src/data/abilities/{necro,shroud,inferno}.ts`, `tests/integration/scenes/{necro,shroud}.test.ts`, `tests/unit/abilities/*` | Owner balance | Owner commits `d61ed7b`…`dc05cc6` |
+| 16/11/2026 | AI never idles: unsighted search (last known position, then search and guard); hesitation keeps circling; stuck detection by real movement with an open-side sidestep; overdue basic attacks pull a keep-away fighter in from 9 m | `src/ai/fighter-brain.ts`, `src/app/scenes/fight-arena-scene.ts`, `fighter-entity.ts` | Owner (AI must stay engaged) | `tests/integration/ai/engagement.test.ts` |
+| 16/11/2026 | Blindness removes all enemy tracking for AI and players: no facing or lock-on, no ability aim help, self-targeting abilities need sight, AI beam steering needs sight | `scene-abilities.ts`, `ability-world.ts` (`AbilityHost.sees`), `fight-arena-scene.ts` | Owner | `tests/integration/ai/blindness.test.ts` |

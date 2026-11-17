@@ -581,3 +581,19 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Alternatives.** Turning the multi-page flow into one page (rejected for now: a large rewrite of bootstrap and every mode); re-requesting fullscreen on the next tap (rejected by the owner: no extra interaction).
 **Trade-offs.** The shell loads the game bundle twice from cache (one parse is wasted); browsers that refuse fullscreen (iPhone Safari) are unchanged and still rely on the home-screen app.
 **Status.** ACCEPTED.
+
+### TD-071: Master development plan and phase structure — ACCEPTED (owner, 16/11/2026)
+**Context.** The owner supplied a master plan with a fixed order (Phase 0 inspection, then Phases 1–4) and a model workflow (one model plans and reviews; another implements a whole phase).
+**Decision.**
+- Adopt the plan as the requirements source for this cycle (spec §20A). Work follows `IMPLEMENTATION_PLAN.md`.
+- Each phase is implemented in batches and reviewed once.
+- Phase handoffs are recorded in `PHASE_HANDOFF.md`.
+- Model names are kept out of committed files: the documents use role labels ("planning/review model", "implementation model"), and the chat names the models.
+- New modes get their own scene and mode modules rather than growing `fight-arena-scene.ts`:
+  - Hide and Seek: `src/app/scenes/hide-seek-scene.ts`, `src/modes/hide-seek/`;
+  - Parkour: `src/modes/parkour/`.
+- Phase 1 introduces a status-effect registry before bleeding, poison or new fighters are built on it.
+**Alternatives.** Building Hide and Seek inside the fight scene (rejected: the fight scene is 3,213 lines and owns combat); adding fifth abilities before the status framework (rejected: B7, B8 and the roster depend on it).
+**Trade-offs.** A separate scene duplicates some set-up (physics, views, camera), which shared helpers keep small.
+**Status.** ACCEPTED.
+

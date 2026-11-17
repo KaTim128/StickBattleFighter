@@ -507,6 +507,37 @@ Browser verification uses the documented dev command and browser automation: tes
 - Additional arenas: playground, street, jungle, field `[PB §12 Phase 15, §14.4]`.
 - Release phase: performance, security, compatibility, release and maintenance. Public deployment only with explicit approval `[PB §12 Phase 16]`.
 
+## 20A. Master development plan (owner, 16/11/2026)
+
+The owner's master plan is adopted as the requirements source for the next development cycle. Its copy is in the repo, with model names replaced by role labels:
+
+`docs/references/master-plan/Stickman_Arena_Full_Master_Prompt_Updated.md`
+
+Its requirements are binding in the phase order it fixes (TD-071):
+- **Phase 1:** stabilise and balance Inferno, Titan, Necro and Shroud. This includes:
+  - five normal abilities each, with a four-of-five loadout, plus the ultimate;
+  - per-fighter keybinds;
+  - a status-effect framework;
+  - unique audio per move;
+  - longer fights.
+- **Phase 2:** Hide and Seek Nightmare.
+- **Phase 3:** the Roman Colosseum, Vexoris and eleven more fighters (sixteen in total), the UI redesign and the complete tutorial.
+- **Phase 4:** Ancient Ruins Expedition Parkour, then release.
+
+Story Mode leaves the game.
+
+How the plan is carried out is in `IMPLEMENTATION_PLAN.md`. Where the plan conflicts with the project or with itself, the conflicts are open questions OQ-P0-1 to OQ-P0-8 (§21, detailed in `IMPLEMENTATION_PLAN.md` §0). Nothing that depends on them is built before the owner decides.
+
+Owner additions (16/11/2026, with reference images in `docs/references/master-plan/`):
+- game mode buttons as image cards that show each game;
+- abilities: click for full details, drag four of five into the active slots, with unequipped abilities shown as available alternatives, never locked;
+- the tournament draw screen built from the owner's bracket art;
+- the Horror Nightmare House in the isometric architectural style of the reference, dark and atmospheric, with the staircase at the bottom right leading upstairs and the entrance door at the front.
+
+These belong to Phase 1 B14 / Phase 3 C7 (abilities), Phase 3 C2 and C4 (cards, draw) and Phase 2 (house).
+
+When a phase is implemented, its requirements will be added to the sections above as REQ entries. Rules they replace move to §22 with a §23 log line, as always.
+
 ## 21. Open questions (need owner decisions)
 
 | ID | Question | Why it matters | Blocks / status |
@@ -529,6 +560,14 @@ Browser verification uses the documented dev command and browser automation: tes
 | OQ-16 | Art direction: what should the 2D top-down stickmen look like (pure line figures, thicker limbs, outlines, colours; seen from above or at a slight three-quarter angle)? How do the five fighters keep distinct silhouettes within it? | REQ-CHR-1, REQ-CHR-3 | Phase 8 |
 | OQ-17 | Audio source: **partly answered 11/11/2026** (owner asked for impact sounds now): sound effects are synthesised in code (original, no files, TD-033). Still open: music, and whether to replace the synth with recorded or commissioned SFX later. | REQ-ABL-1 | Phase 6 on |
 | OQ-18 | The specialist team was set by the owner (10 roles), which differs from the playbook's 9. The mapping of the playbook's environment, game-mode, UI and tutorial duties onto the 10 roles is in `docs/workflow/SYSTEM_OWNERSHIP.md`. Confirm. | Ownership clarity. | **RESOLVED 10/11/2026:** mapping confirmed, on condition that specialists are only used when needed to save tokens (TD-019). |
+| OQ-P0-1 | Inferno's blue-flame transformation (named by the master plan as his current ultimate) does not exist; his ultimate is Eruption. Build the transformation as his fifth normal ability and keep Eruption as the ultimate, or design a new ultimate? | Phase 1 B10/B13 | Open (recommendation in IMPLEMENTATION_PLAN.md §0) |
+| OQ-P0-2 | Bleeding: current damage-over-time, or the master plan's ×1.1 vulnerability for 6 s (its stacking text contradicts itself)? | Phase 1 B7; Bloodfade and Stalker Lunge use bleed | Open |
+| OQ-P0-3 | Vexoris toxicity: one interpretation of the conflicting stack numbers (proposed: toxicity points capped at 25, combo splash +1) | Phase 3 | Open |
+| OQ-P0-4 | "Desktop only": keep the existing phone play (proposed) or drop it? | All phases | Open |
+| OQ-P0-5 | No office Parkour exists to reuse; build Parkour on the existing jump and climb systems (proposed) | Phase 4 | Open |
+| OQ-P0-6 | Pixabay is unreachable from the build environment: allow access or supply the sound files | Phase 1 B18, Phase 3 audio | Open |
+| OQ-P0-7 | The three horror ambience uploads are one identical file: use it as the single ambience bed; confirm its licence | Phase 2 | Open |
+| OQ-P0-8 | Shroud's ultimate per the master plan (4 s, whole arena dark for opponents, spectators unaffected, +17% speed) replaces REQ-ABL-21's 8 s, 1.6 m circle | Phase 1 B10 | Proposed: follow the plan |
 
 ## 22. Superseded requirements
 
@@ -646,3 +685,4 @@ Browser verification uses the documented dev command and browser automation: tes
 | 13/11/2026 | Owner: the 3 vs 3 mode renamed Tag Team (REQ-UI-38). | Master Developer |
 | 13/11/2026 | Owner: fullscreen throughout on every device from the first input, only Quit leaves it (REQ-UI-39, SUP-38). | Master Developer |
 | 16/11/2026 | Owner: AI never idle; blindness removes all enemy tracking for AI and players (REQ-AI-10). | Master Developer |
+| 17/11/2026 | Owner's master development plan adopted (§20A); Phase 0 inspection and plan; open questions OQ-P0-1 to OQ-P0-8 (§21). | Master Developer |
