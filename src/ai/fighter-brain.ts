@@ -83,6 +83,11 @@ const LEAD_S = 0.5;
 
 /** How long an unsighted AI still heads for where it last saw its target (seconds). */
 const UNSIGHTED_MEMORY_S = 4;
+/**
+ * An overdue punch string or heavy brings it in from this far (owner: every fighter uses its whole
+ * kit; a keep-away fighter like Necro would otherwise never get close enough for its heavy).
+ */
+const BASIC_DUE_CHASE_M = 9;
 
 export class FighterBrain {
   private lastS = 0;
@@ -328,7 +333,9 @@ export class FighterBrain {
     // Melee-minded fighters close in to punish an opening; casters punish with their spells.
     // A due basic attack brings even a caster in for a moment.
     const committed =
-      now < this.commitUntilS || (punishing && d.meleeBias >= 0.5) || ((heavyDue || stringDue) && dist < 4);
+      now < this.commitUntilS ||
+      (punishing && d.meleeBias >= 0.5) ||
+      ((heavyDue || stringDue) && dist < BASIC_DUE_CHASE_M);
     // Kiters and stalkers step in only briefly (their hit and run takes them out again).
     const wantsClose = d.movement === 'direct' || committed || this.brawl;
     const reach = v.meleeReachM;

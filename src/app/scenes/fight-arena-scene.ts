@@ -1750,20 +1750,34 @@ export class FightArenaScene implements ArenaScene {
     // it slides aside for a moment (alternating sides), hops if it can, and plans a fresh route.
     let move = out.move;
     const pushing = Math.hypot(move.x, move.y) > 0.3 && c.canAct && !f.combo.attack && !caster?.cast;
-    const v = f.body?.linvel() ?? { x: 0, y: 0 };
-    if (pushing && Math.hypot(v.x, v.y) < 0.15) f.aiStuckS += stepS;
+    // Real movement since the last step (a body pressed into furniture keeps its velocity but not its place).
+    const movedMps = f.aiLastPos ? Math.hypot(f.x - f.aiLastPos.x, f.y - f.aiLastPos.y) / stepS : 1;
+    f.aiLastPos = { x: f.x, y: f.y };
+    if (pushing && movedMps < 0.15) f.aiStuckS += stepS;
     else f.aiStuckS = Math.max(0, f.aiStuckS - stepS * 2);
     if (f.aiStuckS > AI_STUCK_S && !f.aiUnstick) {
-      const sideK = this.rng() < 0.5 ? 1 : -1;
+      // Slide along whichever way is open: a side (random first), else straight back out.
       const len = Math.hypot(move.x, move.y) || 1;
-      f.aiUnstick = { x: (-move.y / len) * sideK, y: (move.x / len) * sideK, leftS: AI_UNSTICK_S };
+      const ux = move.x / len;
+      const uy = move.y / len;
+      const first = this.rng() < 0.5 ? 1 : -1;
+      const options = [
+        { x: -uy * first, y: ux * first },
+        { x: uy * first, y: -ux * first },
+        { x: -ux, y: -uy },
+      ];
+      const r = f.def.body.footRadiusM;
+      const open = (d: { x: number; y: number }) =>
+        !this.physics || this.physics.isFree({ x: f.x + d.x * 0.6, y: f.y + d.y * 0.6 }, r);
+      const pick = options.find(open) ?? options[2]!;
+      f.aiUnstick = { x: pick.x, y: pick.y, leftS: AI_UNSTICK_S };
       f.aiStuckS = 0;
       f.aiRouteAgeS = AI_ROUTE_EVERY_S; // re-plan the way round
       if (f.def.capabilities.canJump && !f.airborne) out.jump = true;
     }
     if (f.aiUnstick) {
       const u = f.aiUnstick;
-      move = { x: u.x * 0.85 + move.x * 0.3, y: u.y * 0.85 + move.y * 0.3 };
+      move = { x: u.x, y: u.y };
       u.leftS -= stepS;
       if (u.leftS <= 0) f.aiUnstick = null;
     }

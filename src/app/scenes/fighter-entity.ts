@@ -171,6 +171,7 @@ export class FighterEntity {
   aiRouteAgeS = Number.POSITIVE_INFINITY;
   /** AI: how long it has pushed against something without moving, and the sidestep that frees it. */
   aiStuckS = 0;
+  aiLastPos: { x: number; y: number } | null = null;
   aiUnstick: { x: number; y: number; leftS: number } | null = null;
   /** Smoothed presentation values. */
   tilt = 0;
