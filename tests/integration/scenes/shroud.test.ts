@@ -88,10 +88,11 @@ describe('Shroud', () => {
     expect(struckAt - scene.player.x).toBeGreaterThan(3.5); // sprang straight back
     expect(scene.player.facing).toBe(1); // still facing his prey while retreating
     expect(scene.physics!.isFree({ x: scene.player.x, y: scene.player.y }, 0.25)).toBe(true);
-    // Bleeding (10/s for 3 s) takes about 30 more, never more.
+    // Bleeding (TD-072, owner 17/11/2026) is a x1.1 vulnerability for 6 s: it deals nothing itself.
     run(3.5);
-    expect(hp - scene.dummy.hp).toBeGreaterThan(20);
-    expect(hp - scene.dummy.hp).toBeLessThanOrEqual(32);
+    expect(hp - scene.dummy.hp).toBe(0);
+    expect(scene.dummyFighter.combatant.bleeding).toBe(true);
+    expect(scene.dummyFighter.combatant.status.damageTakenFactor).toBeCloseTo(1.1, 5);
     expect(scene.playerFighter.caster!.cooldown('a1')).toBeGreaterThan(3);
     scenes.clear();
   });
@@ -119,9 +120,10 @@ describe('Shroud', () => {
     intents.pressAbility('a2');
     run(1.2);
     const after = scene.dummy.hp;
-    // Three stabs at 9/s each would be 27/s if stacked: over one second it must stay near 9.
+    // Three stabs refresh one wound: nothing stacks, and bleeding itself deals no damage.
     run(1);
-    expect(after - scene.dummy.hp).toBeLessThanOrEqual(11);
+    expect(after - scene.dummy.hp).toBe(0);
+    expect(scene.dummyFighter.combatant.status.damageTakenFactor).toBeCloseTo(1.1, 5);
     // Both abilities back to back: total well below a knockout, nothing runs away.
     scene.playerFighter.caster!.reset();
     scene.playerFighter.placeAt({ x: 13, y: 13 });

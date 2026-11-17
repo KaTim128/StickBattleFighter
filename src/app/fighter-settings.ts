@@ -62,8 +62,6 @@ const ABILITY_FIELDS: readonly [string, string, number, number, number][] = [
   ['payload.blindS', 'Effect: blind (s)', 0, 30, 0.1],
   ['payload.burn.dps', 'Effect: burn damage per second', 0, 1000, 1],
   ['payload.burn.durationS', 'Effect: burn duration (s)', 0, 60, 0.1],
-  ['payload.bleed.dps', 'Effect: bleed damage per second', 0, 1000, 1],
-  ['payload.bleed.durationS', 'Effect: bleed duration (s)', 0, 60, 0.1],
   ['payload.lifesteal', 'Effect: life steal (share of damage)', 0, 5, 0.05],
 ];
 
@@ -243,11 +241,11 @@ export function fighterSettingsHost(onSaved: (fighterId: string) => void): Fight
       };
       const errors = checkOverride(base, id, override);
       if (errors.length > 0) return errors;
-      // An effect needs both of its numbers (burn and bleed: damage per second and duration).
+      // An effect needs both of its numbers (burn: damage per second and duration).
       if (kit) {
         const tried = kitWithOverrides(id, kit, { [id]: override });
         for (const slot of ABILITY_SLOTS) {
-          for (const eff of ['burn', 'bleed'] as const) {
+          for (const eff of ['burn'] as const) {
             const e = tried[slot].payload[eff];
             if (e && (!(e.dps > 0) || !(e.durationS > 0)) && (e.dps > 0 || e.durationS > 0))
               return [`${tried[slot].name}: ${eff} needs both damage per second and a duration.`];

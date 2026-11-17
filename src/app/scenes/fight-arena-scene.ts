@@ -2315,8 +2315,7 @@ export class FightArenaScene implements ArenaScene {
       if (this.applyStrike(attacker, target, { ...strike, dir: { x: kx / kl, y: ky / kl } })) {
         connected = true;
         hitFighter = true;
-        if (frenzy?.meleeBleed) target.combatant.bleed(frenzy.meleeBleed.dps, frenzy.meleeBleed.durationS);
-        if (a.bleed) target.combatant.bleed(a.bleed.dps, a.bleed.durationS);
+        if (frenzy?.meleeBleed || a.bleed) target.combatant.bleed();
       }
     }
 

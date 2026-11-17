@@ -39,7 +39,7 @@ export const SHROUD_KIT: AbilityKit = {
       strength: 500,
       impact: 'knuckle-heavy',
       stunS: 0.35,
-      bleed: { dps: 10, durationS: 3 },
+      bleed: true,
     },
     delivery: {
       type: 'assault',
@@ -86,7 +86,7 @@ export const SHROUD_KIT: AbilityKit = {
       strength: 300,
       impact: 'knuckle-light',
       stunS: 0.22,
-      bleed: { dps: 9, durationS: 3 },
+      bleed: true,
     },
     delivery: {
       type: 'assault',
@@ -155,7 +155,7 @@ export const SHROUD_KIT: AbilityKit = {
       strength: 600,
       impact: 'knuckle-heavy',
       stunS: 0.6,
-      bleed: { dps: 15, durationS: 4 },
+      bleed: true,
     },
     delivery: { type: 'strike', reachM: 1.15, radiusM: 0.6 },
     vfx: 'rending-flurry',
@@ -194,7 +194,7 @@ export const SHROUD_KIT: AbilityKit = {
       attackSpeedFactor: 1.1,
       // Owner, 12/11/2026: the knife buff is 10% (was 35%); the lights go out on the opponent.
       meleeDamageFactor: 1,
-      meleeBleed: { dps: 8, durationS: 3 },
+      meleeBleed: true,
       darkensFoes: { visibleM: 1.5 },
     },
     vfx: 'hunting-frenzy',

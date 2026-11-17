@@ -137,10 +137,7 @@
       "zoomPunch": 0.04,
       "requires": ["canPunch"],
       "status": {
-        "bleed": {
-          "dps": 14,
-          "durationS": 4
-        }
+        "bleed": true
       }
     }
   ]

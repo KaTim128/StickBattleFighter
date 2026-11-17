@@ -31,6 +31,13 @@ Check this table before assigning work. No two active assignments may share a pa
 - **Limitation:** Esc capture depends on browser support for Keyboard Lock; checked in Chromium only.
 - **Next:** Phase 1 Batch B (`IMPLEMENTATION_PLAN.md` §1), status-effect registry first.
 
+## Phase 1 Batch B progress (17/11/2026)
+
+- **B8 done:** `src/combat/status-effects.ts` registry; `Combatant.status`; entry points unchanged. 
+- **B7 done:** bleeding is x1.1 damage taken for 6 s (TD-073, SUP-35). Test changes, explained: two Shroud tests asserted the old bleed damage over time (about 30 extra damage; "near 9 per second"); they now assert bleeding deals nothing itself and the factor is 1.1. Required by the owner decision in TD-072; nothing else loosened.
+- **Verification:** typecheck clean, 527 unit and integration tests pass. Browser checks for B8/B7 not yet run.
+- **Next:** B1-B2 stat audit and one stat pipeline, then B3.
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

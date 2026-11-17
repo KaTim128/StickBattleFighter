@@ -608,3 +608,13 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Still open:** OQ-P0-3 (Vexoris, Phase 3), OQ-P0-5 (Parkour, Phase 4), OQ-P0-7 (ambience licence, Phase 2).
 **Status.** ACCEPTED.
 
+
+### TD-073: Status-effect registry (`src/combat/status-effects.ts`); bleeding is a x1.1 vulnerability — ACCEPTED (Phase 1 B8 and B7, 17/11/2026)
+**Context.** Burn, bleed, blind, Curse of Decay and darkness each kept their own timer fields in `Combatant`. The master plan needs more effects (poison in Phase 3, slows, vulnerability) and a consistent way to stack, refresh, cleanse and show them. TD-072 turned bleeding into a damage-taken multiplier.
+**Decision.**
+- `StatusEffects` holds every timed effect: duration, damage over time (continuous or at a tick interval), multipliers for damage dealt, defence, damage taken and speed, a sight limit, a stacking policy (`strongest` refreshes to the longer time and stronger values; `stack` adds stacks up to a cap), immunity, cleanse (`clear`, `clearAll`) and `active` for indicators. Its tick allocates nothing.
+- `Combatant` owns one registry (`combatant.status`) and keeps its entry points (`ignite`, `bleed`, `blind`, `decay`, `darken` and their getters), so no ability, AI or scene code changed shape.
+- Bleeding: `BLEED = { damageTakenFactor: 1.1, durationS: 6 }`; `bleed()` takes no numbers; a new cut refreshes the 6 s and never raises the 10%; it deals no damage itself. The factor also applies to burn damage over time ("every source"). Data uses `bleed: true` / `meleeBleed: true`; the Admin Panel no longer edits bleed numbers.
+**Alternatives.** Keep the old damage over time beside the multiplier (rejected: two effects under one name). A free-form effect list in data (deferred until a second fighter needs data-defined effects).
+**Trade-offs.** Shroud's total damage falls by the old bleed damage; the 10% only pays off if he keeps hitting, so his balance is re-measured in B17.
+**Status.** ACCEPTED.

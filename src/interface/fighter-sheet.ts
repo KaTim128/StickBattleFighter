@@ -1,5 +1,6 @@
 import type { AbilityDef, AbilitySlot } from '../abilities/ability-def';
 import { type FighterRatings, fighterRatings } from '../characters/ratings';
+import { BLEED } from '../combat/status-effects';
 import type { FighterDef } from '../data/fighters/fighter-def';
 import { type Bindings, codeLabel, SLOT_ACTION } from '../input/bindings';
 
@@ -35,6 +36,9 @@ const SLOT_BUTTON: Readonly<Record<AbilitySlot, string>> = {
   ult: 'ULT',
 };
 
+/** How bleeding reads on the sheet (it is a vulnerability, not damage over time; TD-072). */
+const BLEED_TEXT = `+${Math.round((BLEED.damageTakenFactor - 1) * 100)}% damage taken for ${BLEED.durationS} s`;
+
 const s1 = (n: number) => (Math.round(n * 10) / 10).toString();
 
 /** The numbers worth knowing, in plain words. */
@@ -60,7 +64,7 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
     out.push({ label: 'Target defence', value: `-${Math.round((1 - p.decay.defenceFactor) * 100)}%` });
     out.push({ label: 'Curse lasts', value: `${s1(p.decay.durationS)} s` });
   }
-  if (p.bleed) out.push({ label: 'Bleed', value: `${p.bleed.dps}/s for ${s1(p.bleed.durationS)} s` });
+  if (p.bleed) out.push({ label: 'Bleed', value: BLEED_TEXT });
   if (p.lifesteal) out.push({ label: 'Heals', value: `${Math.round(p.lifesteal * 100)}% of damage dealt` });
   if (p.heavy) out.push({ label: 'Knockdown', value: 'yes' });
   if (d.type === 'buff') {
@@ -70,8 +74,7 @@ function abilityStats(a: AbilityDef): { label: string; value: string }[] {
       out.push({ label: 'Attack speed', value: `+${Math.round((d.attackSpeedFactor - 1) * 100)}%` });
     if (d.meleeDamageFactor && d.meleeDamageFactor !== 1)
       out.push({ label: 'Knife damage', value: `+${Math.round((d.meleeDamageFactor - 1) * 100)}%` });
-    if (d.meleeBleed)
-      out.push({ label: 'Cuts bleed', value: `${d.meleeBleed.dps}/s for ${s1(d.meleeBleed.durationS)} s` });
+    if (d.meleeBleed) out.push({ label: 'Cuts bleed', value: BLEED_TEXT });
     if (d.darkensFoes) out.push({ label: 'Enemy sight', value: `${s1(d.darkensFoes.visibleM)} m in the dark` });
     if (d.damageTakenFactor !== 1)
       out.push({ label: 'Damage taken', value: `-${Math.round((1 - d.damageTakenFactor) * 100)}%` });
@@ -173,7 +176,7 @@ function heavyEntry(def: FighterDef, device: Device, keys: Bindings): SheetAbili
   ];
   if (m.heavy) stats.push({ label: 'Knockdown', value: 'yes' });
   if (m.burn) stats.push({ label: 'Burn', value: `${m.burn.dps}/s for ${s1(m.burn.durationS)} s` });
-  if (m.bleed) stats.push({ label: 'Bleed', value: `${m.bleed.dps}/s for ${s1(m.bleed.durationS)} s` });
+  if (m.bleed) stats.push({ label: 'Bleed', value: BLEED_TEXT });
   stats.push({ label: 'Stamina', value: 'none' });
   const key = device === 'touch' ? 'HEAVY' : codeLabel(keys.heavyAttack);
   return {

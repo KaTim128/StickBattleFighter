@@ -205,7 +205,7 @@ export class SceneAbilities implements AbilityHost {
       stunS: payload.stunS,
     });
     // Shroud's knife: deep cuts bleed.
-    if (landed && payload.bleed) target.combatant.bleed(payload.bleed.dps, payload.bleed.durationS);
+    if (landed && payload.bleed) target.combatant.bleed();
     // Soul Drain: the target is blinded for a while.
     if (landed && payload.blindS) target.combatant.blind(payload.blindS);
     // Curse of Decay: weaker blows and weaker defence for a while.

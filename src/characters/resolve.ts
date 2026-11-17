@@ -205,7 +205,7 @@ export function resolveMoves(
       next: next as Partial<Record<MoveInput, string>>,
       effect: m.effect ?? null,
       burn: m.status?.burn ?? null,
-      bleed: m.status?.bleed ?? null,
+      bleed: m.status?.bleed ?? false,
       groundBounce: (m.groundBounce ?? false) && caps.canGroundBounce,
     };
   }

@@ -8,6 +8,8 @@
  * PROVISIONAL baselines pending the owner's stat decision (OQ-05, TD-030).
  */
 
+import { BLEED, type DotSink, StatusEffects } from './status-effects';
+
 export interface CombatStats {
   readonly maxHp: number;
   readonly maxStamina: number;
@@ -118,17 +120,13 @@ export class Combatant {
   private getUpS = 0;
   private downS = 0;
   private invulnS = 0;
-  /** Seconds of blindness left (Soul Drain, owner 12/11/2026). */
-  private blindS = 0;
-  /** Curse of Decay (owner, 12/11/2026): seconds left, and what it does to attack and defence. */
-  private decayS = 0;
-  private decayAttack = 1;
-  private decayDefence = 1;
+  /**
+   * Every timed effect on this fighter (burn, bleed, blind, Curse of Decay, darkness) lives in the
+   * status registry (TD-073); the methods below are the stable entry points the abilities use.
+   */
+  readonly status = new StatusEffects();
   /** The curse ran out during the last update (the scene plays its fading effect once). */
   decayEnded = false;
-  /** Lights out (Shroud's Hunting Frenzy): seconds left, and how far it can still see. */
-  private darkS = 0;
-  private darkSightM = Number.POSITIVE_INFINITY;
   private dodgeS = 0;
   private dodgeCooldownS = 0;
   /** Dodges in the current chain (0 when rested) and time since the last one. */
@@ -138,13 +136,16 @@ export class Combatant {
   private sinceDodgeReadyS = Number.POSITIVE_INFINITY;
   private sinceStaminaUseS = 0;
   private koAgeS = -1;
-  private burnS = 0;
-  private bleedS = 0;
-  private bleedDps = 0;
   private burnKo = false;
+  private dotTaken = 0;
+  /** Built once so the per-step tick allocates nothing (performance rule). */
+  private readonly dotSink: DotSink = (id, amount) => {
+    const dealt = this.takeDot(id, amount);
+    this.dotTaken += dealt;
+    return dealt;
+  };
   /** Multiplies damage taken (a durability buff such as Rampage Mode sets 0.85). */
   damageTakenScale = 1;
-  private burnDps = 0;
 
   constructor(readonly stats: CombatStats) {
     this.hp = stats.maxHp;
@@ -273,31 +274,30 @@ export class Combatant {
   /** Set on fire: damage over time; a new burn refreshes the timer and keeps the stronger rate. */
   ignite(dps: number, durationS: number): void {
     if (this.isKo) return;
-    this.burnDps = Math.max(this.burnS > 0 ? this.burnDps : 0, dps);
-    this.burnS = Math.max(this.burnS, durationS);
+    this.status.apply('burn', durationS, { dps });
   }
 
   /**
-   * Bleeding (owner, 12/11/2026, Shroud's knife): damage over time like a burn, but from deep cuts;
-   * a new cut refreshes the timer and keeps the stronger rate. Runs alongside a burn.
+   * Bleeding (Shroud's knife; owner decision 17/11/2026, TD-072): for `BLEED.durationS` this fighter
+   * takes `BLEED.damageTakenFactor` times the damage from every source. A new cut refreshes the time
+   * and never raises the factor.
    */
-  bleed(dps: number, durationS: number): void {
-    if (this.isKo || dps <= 0 || durationS <= 0) return;
-    this.bleedDps = Math.max(this.bleedS > 0 ? this.bleedDps : 0, dps);
-    this.bleedS = Math.max(this.bleedS, durationS);
+  bleed(): void {
+    if (this.isKo) return;
+    this.status.apply('bleed', BLEED.durationS, { damageTakenFactor: BLEED.damageTakenFactor });
   }
 
   get bleeding(): boolean {
-    return this.bleedS > 0;
+    return this.status.has('bleed');
   }
 
   get burning(): boolean {
-    return this.burnS > 0;
+    return this.status.has('burn');
   }
 
   /** Seconds of burning left (flames shrink as it runs out). */
   get burnLeftS(): number {
-    return this.burnS;
+    return this.status.leftS('burn');
   }
 
   /** The KO came from burning (the burn finished the fighter off). */
@@ -317,7 +317,9 @@ export class Combatant {
     if (this.invulnS > 0) return none('dodged');
 
     const raw =
-      ((hit.baseDamage * hit.attackerPower) / (this.stats.defence * this.defenceFactor)) * this.damageTakenScale;
+      ((hit.baseDamage * hit.attackerPower) / (this.stats.defence * this.defenceFactor)) *
+      this.damageTakenScale *
+      this.status.damageTakenFactor;
     const kbKeep = 1 - this.stats.knockbackResistance;
 
     if (this.guardUp && hit.fromFront) {
@@ -404,70 +406,69 @@ export class Combatant {
     this.getUpS = 0;
   }
 
-  /** Advance timers. Returns burn damage taken this step (for floating numbers and the ultimate meter). */
   /** Blinded (it cannot lock on to anyone; the AI cannot find its target; a player's view darkens). */
   get blinded(): boolean {
-    return this.blindS > 0;
+    return this.status.has('blind');
   }
 
-  /** 0..1 how much blindness is left (presentation: the smoke over the eyes thins as it ends). */
+  /** Seconds of blindness left (presentation: the smoke over the eyes thins as it ends). */
   get blindLeftS(): number {
-    return this.blindS;
+    return this.status.leftS('blind');
   }
 
   /** Seconds of Curse of Decay left (0 = none). */
   get decayLeftS(): number {
-    return this.decayS;
+    return this.status.leftS('decay');
   }
 
   /** Multiplier on the damage this fighter deals (Curse of Decay: 0.7 while it lasts). */
   get attackFactor(): number {
-    return this.decayS > 0 ? this.decayAttack : 1;
+    return this.status.attackFactor;
   }
 
   /** Multiplier on this fighter's defence (Curse of Decay: 0.8 while it lasts). */
   get defenceFactor(): number {
-    return this.decayS > 0 ? this.decayDefence : 1;
+    return this.status.defenceFactor;
   }
 
   /** Cursed for `seconds`: a new curse refreshes the time; the weakening never stacks. */
   decay(seconds: number, attackFactor: number, defenceFactor: number): void {
     if (this.koAgeS >= 0) return;
-    this.decayS = Math.max(this.decayS, seconds);
-    this.decayAttack = attackFactor;
-    this.decayDefence = defenceFactor;
+    this.status.apply('decay', seconds, { attackFactor, defenceFactor });
   }
 
   /** Seconds of darkness left (0 = it sees normally). */
   get darkLeftS(): number {
-    return this.darkS;
+    return this.status.leftS('dark');
   }
 
   /** How far it can see, metres: unlimited, or the small circle left to it in the dark. */
   get sightM(): number {
-    return this.darkS > 0 ? this.darkSightM : Number.POSITIVE_INFINITY;
+    return this.status.sightM;
   }
 
   /** Plunged into darkness for `seconds`, seeing only `sightM` round itself. Refreshes, never stacks. */
   darken(seconds: number, sightM: number): void {
     if (this.koAgeS >= 0) return;
-    this.darkS = Math.max(this.darkS, seconds);
-    this.darkSightM = sightM;
+    this.status.apply('dark', seconds, { sightM });
   }
 
   /** Blind for `seconds` (a longer blind replaces a shorter one; never stacks). */
   blind(seconds: number): void {
     if (this.koAgeS >= 0) return;
-    this.blindS = Math.max(this.blindS, seconds);
+    this.status.apply('blind', seconds);
   }
 
+  /** Advance timers. Returns damage-over-time taken this step (for floating numbers and the ultimate meter). */
   update(dtS: number): number {
-    this.blindS = Math.max(0, this.blindS - dtS);
-    const cursed = this.decayS > 0;
-    this.decayS = Math.max(0, this.decayS - dtS);
-    this.decayEnded = cursed && this.decayS === 0;
-    this.darkS = Math.max(0, this.darkS - dtS);
-    const burned = this.tickBurn(dtS) + this.tickBleed(dtS);
+    if (this.isKo) {
+      this.status.clear('burn');
+      this.status.clear('bleed');
+    }
+    this.dotTaken = 0;
+    this.status.tick(dtS, this.dotSink);
+    const burned = this.dotTaken;
+    this.decayEnded = this.status.endedLastTick('decay');
     if (this.koAgeS >= 0) {
       this.koAgeS += dtS;
       this.downS += dtS;
@@ -500,14 +501,10 @@ export class Combatant {
     return burned;
   }
 
-  private tickBurn(dtS: number): number {
-    if (this.burnS <= 0 || this.isKo) {
-      this.burnS = 0;
-      return 0;
-    }
-    const step = Math.min(dtS, this.burnS);
-    this.burnS -= step;
-    const damage = Math.min(this.hp, this.burnDps * step);
+  /** Damage over time from a burn; a KO by it clears the effects and remembers a burn did it. */
+  private takeDot(id: string, amount: number): number {
+    if (this.isKo) return 0;
+    const damage = Math.min(this.hp, amount * this.status.damageTakenFactor);
     this.hp -= damage;
     if (this.hp <= 0) {
       this.hp = 0;
@@ -516,39 +513,17 @@ export class Combatant {
       this.stunS = 0;
       this.knockdownS = 0;
       this.getUpS = 0;
-      this.burnS = 0;
-      this.burnKo = true;
-    }
-    return damage;
-  }
-
-  private tickBleed(dtS: number): number {
-    if (this.bleedS <= 0 || this.isKo) {
-      this.bleedS = 0;
-      return 0;
-    }
-    const step = Math.min(dtS, this.bleedS);
-    this.bleedS -= step;
-    const damage = Math.min(this.hp, this.bleedDps * step);
-    this.hp -= damage;
-    if (this.hp <= 0) {
-      this.hp = 0;
-      if (this.knockdownS === 0) this.downS = 0;
-      this.koAgeS = 0;
-      this.stunS = 0;
-      this.knockdownS = 0;
-      this.getUpS = 0;
-      this.bleedS = 0;
+      this.status.clear('burn');
+      this.status.clear('bleed');
+      if (id === 'burn') this.burnKo = true;
     }
     return damage;
   }
 
   /** Back on its feet at full health and stamina (KO respawn, Practice Zone). */
   reset(): void {
-    this.bleedS = 0;
-    this.blindS = 0;
-    this.decayS = 0;
-    this.darkS = 0;
+    this.status.clearAll();
+    this.decayEnded = false;
     this.hp = this.stats.maxHp;
     this.stamina = this.stats.maxStamina;
     this.guardUp = false;
@@ -560,8 +535,6 @@ export class Combatant {
     this.dodgeS = 0;
     this.dodgeCooldownS = 0;
     this.koAgeS = -1;
-    this.burnS = 0;
-    this.burnDps = 0;
     this.burnKo = false;
   }
 }

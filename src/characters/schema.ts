@@ -149,7 +149,7 @@ export interface MoveDef {
   readonly status?: {
     readonly burn?: { readonly dps: number; readonly durationS: number };
     /** The target bleeds (Shroud's knife). */
-    readonly bleed?: { readonly dps: number; readonly durationS: number };
+    readonly bleed?: boolean;
   };
   /** The target bounces off the floor (downward kicks). */
   readonly groundBounce?: boolean;

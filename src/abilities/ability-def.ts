@@ -53,8 +53,8 @@ export interface AbilityPayload {
    * damage and its defence is multiplied by `defenceFactor`. Refreshes, never stacks.
    */
   readonly decay?: { readonly durationS: number; readonly attackFactor: number; readonly defenceFactor: number };
-  /** Deep cuts: the target bleeds this much damage per second for this long (Shroud's knife). */
-  readonly bleed?: Burn;
+  /** Deep cuts: the target bleeds (takes 10% more damage for 6 s, `BLEED`; Shroud's knife). */
+  readonly bleed?: boolean;
   /**
    * Drags the target toward the caster when it lands (Grave Chains, owner 12/11/2026), at
    * `speedMps`, stopping `stopM` in front of the caster or at anything solid in the way.
@@ -274,7 +274,7 @@ export interface BuffDelivery {
   /** Multiplies melee (knife) damage while it lasts. */
   readonly meleeDamageFactor?: number;
   /** Melee hits make the target bleed while it lasts. */
-  readonly meleeBleed?: Burn;
+  readonly meleeBleed?: boolean;
   /**
    * Shorter cooldowns for the caster's other abilities (Rampage Mode, owner 13/11/2026: 0.75 =
    * 25% shorter): cooldowns already running are cut at once, and new ones start shorter while it lasts.

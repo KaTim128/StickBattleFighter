@@ -611,6 +611,7 @@ When a phase is implemented, its requirements will be added to the sections abov
 | SUP-37 | Player names limited to letters, numbers, spaces, `-`, `_` and `.` (owner, 13/11/2026, earlier). | Any characters, emojis included (REQ-UI-37). | 13/11/2026 |
 | SUP-38 | REQ-UI-31/36: fullscreen asked for on touch devices only; the Settings button turned it off for the session. | Fullscreen on every device from the first input; only Quit leaves it (REQ-UI-39). | 13/11/2026 |
 | SUP-23 | REQ-CTL-21 defaults: K ultimate. | K Heavy Attack, I ultimate; J/L also sweep a pouring Fire Beam (settings v3). | 12/11/2026 |
+| SUP-35 | REQ-ABL-22 / REQ-ABL-18 bleeding as damage over time (10/s for 3 s, 9/s for 3 s, 15/s for 4 s, 8/s for 3 s, 14/s for 4 s) and "bleeding never stacks" by rate. | Bleeding is a x1.1 damage-taken effect for 6 s from every source, refreshed and never stacking, dealing no damage itself (TD-072, TD-073). | 17/11/2026 |
 | SUP-12 | REQ-CMB-12: three-strike 1-2-3 combo (jab, hook, heavy finisher). | REQ-CMB-26: three punches then a kick. | 11/11/2026 |
 
 ## 23. Change log
@@ -689,3 +690,4 @@ When a phase is implemented, its requirements will be added to the sections abov
 | 17/11/2026 | Owner's master development plan adopted (§20A); Phase 0 inspection and plan; open questions OQ-P0-1 to OQ-P0-8 (§21). | Master Developer |
 | 17/11/2026 | Owner approved Phase 0 ("Ok start"); recommended answers to OQ-P0-1, 2, 4, 6, 8 adopted (TD-072). | Master Developer |
 | 17/11/2026 | Phase 1 Batch A: per-fighter controls with tap/hold, General Settings split, Story Mode removed, Admin lists every character (REQ-CTL-17a). | Master Developer |
+| 17/11/2026 | Phase 1 B8 and B7: status-effect registry; bleeding becomes a x1.1 damage-taken effect for 6 s (SUP-35, TD-073). | Master Developer |

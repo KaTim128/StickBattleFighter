@@ -456,3 +456,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] In a fight, Esc opens Settings and "Change Fighter Keybinds" opens the fighter being played
 - [x] Story Mode gone; Admin lists all characters (`roster.test.ts`, `admin-roster.test.ts`, `menu.spec.ts`)
 - [ ] Owner check: Esc behaviour in other browsers (Keyboard Lock support varies) and Hold controls on a real keyboard
+
+## Status-effect registry and bleeding (17/11/2026, Phase 1 B8, B7)
+- [x] Registry: damage over time, refresh to strongest, stacking cap, tick intervals, multipliers and slows, sight limit, immunity, cleanse, ended-once, zero duration (`status-effects.test.ts`)
+- [x] Combatant keeps burn, KO by burn, reset cleanse; bleeding is x1.1 for 6 s, refreshed never raised, no damage of its own, also scales burn
+- [x] Shroud's Bloodfade, Stalker Lunge, Rending Flurry and Hunting Frenzy bleed through the new rule (`shroud.test.ts`)
