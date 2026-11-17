@@ -822,6 +822,7 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
     this.abilities.releaseAimSource = (f, def) => this.aiBeamAim(f, def);
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
+    this.abilities.summonRoom = (f, spec) => this.summons.room(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
@@ -2079,6 +2080,8 @@ export class FightArenaScene implements ArenaScene {
     // A block only works when facing the attacker.
     // In front: the attacker is on the side the target faces (any direction in the 2.5D view).
     const fromFront = !s.unblockable && (attacker.x - t.x) * target.aim.x + (attacker.y - t.y) * target.aim.y > 0;
+    // Summoned skeletons only hurt: no flinch, push, interruption or freeze (master plan B5).
+    const staggers = attacker.def.capabilities.staggersTargets !== false;
     const result = target.combatant.receive(
       {
         baseDamage: s.damage,
@@ -2087,6 +2090,7 @@ export class FightArenaScene implements ArenaScene {
         heavy: s.heavy,
         fromFront,
         critRoll: this.rng(),
+        staggers,
       },
       attacker.def.stats.critChance,
       attacker.def.stats.critMultiplier,
@@ -2139,14 +2143,15 @@ export class FightArenaScene implements ArenaScene {
     // Damage dealt and taken fills the ultimate meters (OQ-04: charge meter).
     attacker.caster?.onDamage(result.damage, 0);
     target.caster?.onDamage(0, result.damage);
-    if (result.outcome !== 'blocked') {
+    if (result.outcome !== 'blocked' && (staggers || result.outcome === 'ko')) {
       target.combo.interrupt();
       this.abilities?.interrupt(target, result.outcome === 'ko');
       if (s.burn && result.outcome !== 'ko') target.combatant.ignite(s.burn.dps, s.burn.durationS);
       if (s.stunS && result.outcome !== 'ko') target.combatant.stun(s.stunS);
     }
 
-    const speed = s.knockbackMps * result.knockbackScale;
+    const speed = staggers ? s.knockbackMps * result.knockbackScale : 0;
+    if (!staggers && result.outcome !== 'ko') return true; // no push: leave the target's own movement alone
     target.body.setLinvel({ x: s.dir.x * speed, y: s.dir.y * speed }, true);
     target.knockFlightS = speed >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : 0;
     target.wallSlammed = false; // a new flight may chip a wall again
@@ -2187,8 +2192,11 @@ export class FightArenaScene implements ArenaScene {
       );
       target.flashColour = s.flashColour ?? colourOf(fx.flashColour);
     }
-    this.hitstopS = Math.max(this.hitstopS, profile.hitstopS * fx.hitstopScale);
-    this.shake.addTrauma(profile.shake * fx.shakeScale);
+    // A skeleton's blow neither freezes the fight nor shakes the screen (B5: no hit-reaction loops).
+    if (attacker.def.capabilities.staggersTargets !== false) {
+      this.hitstopS = Math.max(this.hitstopS, profile.hitstopS * fx.hitstopScale);
+      this.shake.addTrauma(profile.shake * fx.shakeScale);
+    }
     // The look of the contact comes from the attacker's Effects Profile (TD-039).
     const effectId = guarded
       ? fx.blockImpact

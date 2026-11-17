@@ -646,3 +646,9 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 - *Budget:* the damage-per-cooldown test gains a "channelled beam" class (40 per second, counted before ramp and falloff) beside ranged (24) and close (32).
 **Alternatives.** Leaving the 1.75 s recovery (rejected: Inferno would be free, and un-interruptible, while the beam still poured). One reaction time for everything (rejected: Expert would then lock a zig-zagging player 100%).
 **Status.** ACCEPTED.
+
+### TD-077: Necro's skeletons: hard cap of four, refusal, and damage-only hits — ACCEPTED (Phase 1 B5, 17/11/2026)
+**Context.** The master plan wants exactly four skeletons, a fifth rejected, slots freed when one falls, no stun, no interruption of the target's movement, attacks or recovery, and no hit-reaction loops from several skeletons. Before: a fifth summon made the oldest crumble (a rolling cap), and a skeleton's blow stunned, pushed, interrupted and froze the fight like anyone's.
+**Decision.** (1) `SceneSummons.room` counts living minions; a summon raises only the free slots (three standing: one rises; four: none, and nobody crumbles to make room). Casting the ultimate with no room is refused with the new cast block `limit` before the meter is spent. (2) A new capability `staggersTargets` (true for every fighter, false for skeletons) makes a blow damage only: no light stun or knockdown (`IncomingHit.staggers`), no combo or ability interruption, no knockback push or flight, no hit-stop and no screen shake. A KO still resolves normally. (3) Skeletons stay frail (67 health, from the 13/11/2026 balance pass). One hit per swing is pinned by a test: no two blows from one skeleton closer than 0.2 s.
+**Alternatives.** Per-move flags in the skeleton moveset (rejected: one fighter-level rule is simpler and also covers anything else a summon does). Keeping the rolling cap (rejected by the plan).
+**Status.** ACCEPTED.

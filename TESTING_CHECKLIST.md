@@ -482,3 +482,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] AI beam: not a lock. A standing player is always hit; Easy loses a stroll, Normal a walk, Hard a brisk circle, Expert mostly a full-speed circle (`beam-tracker.test.ts`); an Easy AI whose target sidesteps during the charge fires where it last read them and misses (`fire-beam.test.ts`)
 - [x] Total beam damage about 31% above the old beam at every range (measured; recorded in TD-076)
 - [ ] Owner check: how the beam feels in play against Easy, Normal, Hard and Expert Inferno, and the extra second of rooted pouring
+
+## Necro skeletons (17/11/2026, Phase 1 B5)
+- [x] Exactly four; only free slots are raised; a fifth is refused with the meter unspent; a defeated skeleton frees one slot (`necro-skeletons.test.ts`)
+- [x] Four skeletons on one target: damage lands, but no stun, knockdown, push or interrupted wind-up (fails without `staggersTargets: false`)
+- [x] One hit per swing: no two blows from one skeleton under 0.2 s apart
+- [x] Skeletons are frail (67 health)
+- [ ] Owner check: four skeletons against a player in play; that it never feels stun-locked

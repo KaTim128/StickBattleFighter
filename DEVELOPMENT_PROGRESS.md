@@ -42,7 +42,8 @@ Check this table before assigning work. No two active assignments may share a pa
 - **Verification:** typecheck clean, lint 0 errors, 553 unit and integration tests pass; `button-fit` and `phase6` e2e pass on desktop; screenshot of the new bar checked. Full e2e runs on CI.
 - **B4 done (TD-076):** Fire Beam 2.4 s and about 31% more total damage; ends at once on any hit or stun (`breaksOnHit`); AI aims it through a delayed, slew-limited `BeamTracker` per difficulty. The extra second more than doubled the beam's damage until the ramp was softened (measured before choosing).
 - **Verification:** typecheck clean, lint 0 errors, 565 unit and integration tests pass; `phase6`, `controls`, `fighter-controls` e2e pass on desktop. The interruption tests fail without the flag. Full e2e on CI.
-- **Next:** B5 Necro skeletons, B6 Shroud stabs.
+- **B5 done (TD-077):** hard cap of four with refusal before the ultimate is spent; new `staggersTargets` capability makes skeleton hits damage-only.
+- **Next:** B6 Shroud stabs, then B9, B10, B11, B13 and onward.
 
 ## Completed work
 

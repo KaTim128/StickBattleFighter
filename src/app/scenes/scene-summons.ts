@@ -36,8 +36,8 @@ const FOLLOW_M = 2.4;
  * summoner's team, run by the shared combat engine (INV-5), so they move, attack, get hit, fall and
  * crumble exactly like everyone else. Each has its own simple AI: go for the nearest enemy in
  * sight and attack in reach, otherwise stay near the summoner. They never appear inside walls or
- * furniture, crumble when their time is up, and a summoner never has more than `maxAlive` (the
- * oldest goes first).
+ * furniture, crumble when their time is up, and a summoner never has more than `maxAlive` (a
+ * summon past the cap is refused, B5).
  */
 export class SceneSummons {
   readonly list: FighterEntity[] = [];
@@ -45,8 +45,14 @@ export class SceneSummons {
 
   constructor(private readonly host: SummonHost) {}
 
+  /** How many more of `owner`'s minions may stand now (the cap counts the living, not the crumbling). */
+  room(owner: FighterEntity, spec: SummonSpec): number {
+    const alive = this.list.filter((m) => m.summon?.owner === owner && !m.combatant.isKo).length;
+    return Math.max(0, spec.maxAlive - alive);
+  }
+
   /**
-   * Raise `spec.count` minions around `owner`, or in a fan in front of its nearest enemy
+   * Raise up to `spec.count` minions around `owner`, or in a fan in front of its nearest enemy
    * (`near: 'enemy'`). Returns how many appeared (some spots may be blocked).
    */
   spawn(owner: FighterEntity, spec: SummonSpec): number {
@@ -54,12 +60,11 @@ export class SceneSummons {
     const radius = def.body.footRadiusM;
     const enemy = spec.near === 'enemy' ? this.nearestEnemy(owner, Number.POSITIVE_INFINITY) : null;
     let raised = 0;
-    for (let i = 0; i < spec.count; i++) {
+    // Never above the cap: a summon with four standing raises none, with three it raises one (B5).
+    const allowed = Math.min(spec.count, this.room(owner, spec));
+    for (let i = 0; i < allowed; i++) {
       const spot = enemy ? this.spotInFront(enemy, radius, i, spec.count) : this.spotNear(owner, radius, i, spec.count);
       if (!spot) continue;
-      // Keep within the cap: the summoner's oldest minion crumbles to make room.
-      const mine = this.list.filter((m) => m.summon?.owner === owner && !m.combatant.isKo);
-      if (mine.length >= spec.maxAlive) mine[0]?.combatant.expire();
       const f = new FighterEntity(`${owner.name}-summon-${++this.made}`, def, spot, false);
       f.team = owner.team;
       f.summon = { owner, leftS: spec.lifeS, persistent: spec.persistent === true };

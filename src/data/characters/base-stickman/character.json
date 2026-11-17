@@ -46,6 +46,7 @@
     "canWallBounce": true,
     "canGroundBounce": true,
     "canDisintegrate": true,
+    "staggersTargets": true,
     "isPlayable": true,
     "canDoubleJump": false,
     "usesElementalEffects": false,

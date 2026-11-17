@@ -326,6 +326,8 @@ export const CAPABILITY_KEYS = [
   'canWallBounce',
   'canGroundBounce',
   'canDisintegrate',
+  /** Its hits flinch, push, interrupt and freeze the target (false for summoned skeletons: they only hurt; B5). */
+  'staggersTargets',
   'usesElementalEffects',
   'usesFireEffects',
   'usesElectricEffects',

@@ -94,6 +94,8 @@ export interface IncomingHit {
   readonly fromFront: boolean;
   /** Uniform 0..1 random roll for the critical check (seeded by the caller). */
   readonly critRoll: number;
+  /** False: the hit only damages, with no flinch or knockdown (a skeleton's blows; default true). */
+  readonly staggers?: boolean;
 }
 
 export type HitOutcome = 'hit' | 'crit' | 'blocked' | 'parried' | 'guardBreak' | 'dodged' | 'ko' | 'ignored';
@@ -356,7 +358,9 @@ export class Combatant {
       this.getUpS = 0;
       return { outcome: 'ko', damage, knockbackScale: kbKeep, attackerStunS: 0 };
     }
-    if (hit.heavy) {
+    if (hit.staggers === false) {
+      // Damage only: no flinch, no fall, nothing to interrupt (summoned skeletons, B5).
+    } else if (hit.heavy) {
       if (this.knockdownS === 0) this.downS = 0; // a fresh fall (a hit while already down keeps the fall going)
       this.knockdownS = DEFENCE.heavyKnockdownS;
     } else this.stunS = Math.max(this.stunS, DEFENCE.lightStunS * (1 - (this.stats.hitStunResistance ?? 0)));

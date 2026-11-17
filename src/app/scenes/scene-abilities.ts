@@ -62,6 +62,8 @@ export class SceneAbilities implements AbilityHost {
   teleportSource: (f: FighterEntity, to: Vec2) => Vec2 | null = () => null;
   /** Raises a caster's minions (set by the scene, which owns the fighters). */
   summonSource: (f: FighterEntity, spec: SummonSpec) => void = () => {};
+  /** How many more minions this fighter may raise right now (the scene counts the living ones). */
+  summonRoom: (f: FighterEntity, spec: SummonSpec) => number = () => Number.POSITIVE_INFINITY;
   /** Where a fighter is steering its beam (set by the scene: player input or the AI's target). */
   steerSource: (f: FighterEntity, fresh: boolean) => Vec2 | null = () => null;
   /**
@@ -94,6 +96,8 @@ export class SceneAbilities implements AbilityHost {
     });
     if (block) return block;
     const def = caster.def(slot);
+    // A fifth skeleton is refused before anything is spent (master plan B5).
+    if (def.delivery.type === 'summon' && this.summonRoom(f, def.delivery) <= 0) return 'limit';
     if (slot !== 'ult' && !c.spendStamina(def.staminaCost)) return 'stamina';
     c.setGuard(false);
     caster.start(slot);

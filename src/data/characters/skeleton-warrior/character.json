@@ -45,6 +45,7 @@
     "canUseDownwardKick": true,
     "canUseSpinningKick": true,
     "canUsePunchClash": true,
+    "staggersTargets": false,
     "canWallBounce": true,
     "canGroundBounce": true,
     "canDisintegrate": true,
