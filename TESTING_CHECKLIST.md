@@ -467,3 +467,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Layer order buff, status, sprint; a slow in the registry reaches final speed
 - [x] The damage a hit does matches the pipeline's damage-taken factor
 - [x] Rating totals stay within the balance tolerance (`balance.test.ts`)
+
+## Damage relationships, HUD names, furniture (17/11/2026, Phase 1 B3)
+- [x] Heavy beats any single light hit; the combo's last hit is above the heavy and within 25% of it, for all four fighters (`damage-relationships.test.ts`)
+- [x] Damaging abilities beat the heavy unless they control; damage per second of cooldown inside the ranged (24) and close (32) budgets
+- [x] Desktop ability bar shows key, name, icon and cost; no text outside a button (`button-fit.spec.ts`)
+- [x] A grounded fighter is never more than 3 cm inside a wall or planted furniture over four 60 s watched fights; the test fails without the fix (`furniture-collision.test.ts`, `depenetrate.test.ts`)
+- [x] A step that cancels several actions does not crash the ability world (`ability-world.test.ts`)
+- [ ] Owner check: shoving fighters against walls and furniture in the office by hand; the ability names at 1280x720 and on a small laptop

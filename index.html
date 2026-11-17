@@ -142,7 +142,7 @@
       }
       .ability-bar[hidden], body.touch-mode .ability-bar { display: none; }
       .ability-slot {
-        position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden;
+        position: relative; width: 84px; height: 90px; border-radius: 8px; overflow: hidden;
         border: 2px solid rgba(255, 140, 60, 0.7); display: flex; flex-direction: column;
         align-items: center; justify-content: center; gap: 2px;
         background: linear-gradient(to top, rgba(200, 70, 20, 0.75) var(--fill, 100%), rgba(20, 22, 28, 0.8) 0);
@@ -157,6 +157,11 @@
       .ab-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6)); }
       .ability-button .ab-icon { margin: 0; width: 72%; height: 72%; pointer-events: none; }
       .ability-button .ab-ult { position: absolute; bottom: 6px; left: 0; right: 0; font: 800 9px system-ui, sans-serif; color: #fff2a8; text-shadow: 0 1px 0 #000; pointer-events: none; }
+      .ab-name {
+        width: 100%; padding: 0 3px; box-sizing: border-box; text-align: center; line-height: 1.05;
+        font: 700 9px/1.05 system-ui, sans-serif; letter-spacing: 0.01em; white-space: normal; overflow-wrap: anywhere;
+        color: #fff; text-shadow: 0 1px 0 #000;
+      }
       .ab-cost { font-size: 10px; opacity: 0.85; }
       .clash-hud {
         position: fixed; left: 50%; top: 46px; transform: translateX(-50%); pointer-events: none;

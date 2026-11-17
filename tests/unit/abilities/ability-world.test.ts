@@ -154,3 +154,34 @@ describe('Fire Beam damage build-up (owner, 12/11/2026)', () => {
     expect(hits[hits.length - 1]!).toBe(hits[0]!);
   });
 });
+
+describe('actions removed while the world steps (found by the long AI soak, B3)', () => {
+  it('two dashes whose hit callback cancels both casters do not crash the loop', () => {
+    const w = new AbilityWorld();
+    let h: AbilityHost;
+    h = {
+      fighters: () => [
+        { id: 'a', x: 0, y: 0, radiusM: 0.3, hittable: true },
+        { id: 'b', x: 0.5, y: 0, radiusM: 0.3, hittable: true },
+      ],
+      // The first hit knocks both casters out: every action either owns is cancelled mid-step.
+      hitFighter: () => {
+        w.cancel('a', h);
+        w.cancel('b', h);
+        return true;
+      },
+      hitEnvironment: () => {},
+      blocked: () => null,
+      position: (id: string) => (id === 'a' ? { x: 0, y: 0 } : { x: 0.5, y: 0 }),
+      drive: () => {},
+      burnFighter: () => {},
+      buff: () => {},
+      emit: () => {},
+    };
+    w.release('a', INFERNO_KIT.a2, { x: 5, y: 0 }, h);
+    w.release('b', INFERNO_KIT.a2, { x: -5, y: 0 }, h);
+    expect(() => {
+      for (let i = 0; i < 30; i++) w.update(1 / 60, h);
+    }).not.toThrow();
+  });
+});

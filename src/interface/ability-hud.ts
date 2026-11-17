@@ -4,7 +4,7 @@ import { abilityIcon } from './ability-icons';
 
 /**
  * Ability HUD (CONTROL_SCHEME §3, REQ-CTL): on desktop a bar at the bottom
- * centre shows the keys, names, cooldown sweeps, stamina costs and the ultimate
+ * centre shows each ability's key and name, cooldown sweeps, stamina costs and the ultimate
  * meter; on touch the same state is drawn onto the A1–A3 and ULT buttons (the
  * bar is hidden in touch mode). Read-only: it never changes gameplay.
  * Create it after the touch controls so it can find their buttons.
@@ -29,7 +29,7 @@ export class AbilityHud {
       const el = document.createElement('div');
       el.className = `ability-slot${slot === 'ult' ? ' ult' : ''}`;
       el.dataset.slot = slot;
-      el.innerHTML = `<span class="ab-key">${codeLabel(this.keys()[SLOT_ACTION[slot]])}</span><span class="ab-icon"></span><span class="ab-cost"></span>`;
+      el.innerHTML = `<span class="ab-key">${codeLabel(this.keys()[SLOT_ACTION[slot]])}</span><span class="ab-icon"></span><span class="ab-name"></span><span class="ab-cost"></span>`;
       this.bar.appendChild(el);
       this.keyLabels.set(slot, el.querySelector<HTMLElement>('.ab-key')!);
       const button = root.querySelector<HTMLElement>(`.ability-button[data-slot="${slot}"]`);
@@ -70,6 +70,8 @@ function paint(el: HTMLElement, s: AbilitySlotState, state: AbilityHudState): vo
     el.dataset.ability = s.name;
     el.title = s.name;
     el.setAttribute('aria-label', s.name);
+    const named = el.querySelector('.ab-name'); // the desktop bar spells the name out (B3); touch buttons stay icon-only
+    if (named) named.textContent = s.name;
     const icon = abilityIcon(s.icon);
     const holder = el.classList.contains('ability-button') ? el : el.querySelector('.ab-icon');
     if (holder && icon) {

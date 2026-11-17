@@ -25,7 +25,7 @@ export const INFERNO_KIT: AbilityKit = {
     icon: 'fireball',
     slot: 'a1',
     staminaCost: 20,
-    cooldownS: 2.5,
+    cooldownS: 3,
     castS: 0.4,
     recoveryS: 0.25,
     aimRangeM: 10,

@@ -625,3 +625,14 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Stat audit (17/11/2026, base ratings 0-100).** Inferno 301, Titan (rampage) 303, Necro 304, Shroud 299 in total: within the existing balance tolerance, so no base stat was changed. Rating shapes: Inferno speed 80 / power 53; Titan HP 69 / defence 78 / speed 18; Necro stamina 75; Shroud speed 77 / HP 31.
 **Alternatives.** One allocated stats object per fighter per step (rejected: per-step allocation). Moving `Combatant.damageTakenScale` into the pipeline (deferred; a test pins that the pipeline factor equals the damage really taken).
 **Status.** ACCEPTED.
+
+### TD-075: Damage relationships, HUD names and furniture depenetration — ACCEPTED (Phase 1 B3, 17/11/2026)
+**Context.** The master plan asks that a heavy beats a single light hit, a full light combo's last hit sits slightly above a heavy, abilities are weighed against cooldown and range, the combat HUD names each ability beside its key, and fighters never pass through furniture.
+**Decision.**
+- *Melee:* already true after the 13/11/2026 balance pass (finishers 3% to 10% above the heavy); now pinned by `tests/unit/abilities/damage-relationships.test.ts`.
+- *Abilities:* a damaging ability that does not mainly control the enemy is worth more than the fighter's heavy; damage per second of cooldown stays within a budget of 24 for ranged abilities (projectiles, beams) and 32 for close ones. The audit found one outlier, Inferno's Fireball (28), so its cooldown went 2.5 s to 3 s (23.3). The two budgets are constants in the test and are the one place to tune the rule.
+- *HUD:* each desktop ability slot shows key, icon, name and stamina cost; names wrap onto two lines (an ellipsis would hide part of the name). Touch buttons stay icon-only.
+- *Furniture:* velocity-driven movement cannot tunnel (checked at up to 120 m/s). The leaks were soft-solver overlaps: fast dashes and knocks, and a heavy fighter shoving another against a wall left grounded fighters up to 0.32 m inside walls and planted furniture. `PhysicsWorld.depenetrate` runs after every physics step, pushes a grounded, non-climbing fighter out along the contact normal (at most 0.35 m a step) and drops the velocity driving into the surface. Awake furniture is dynamic and left to the solver. `solidOverlapM` is the matching read-only query used by the soak test.
+- *Found on the way:* `AbilityWorld.updateActions` assumed one action disappears per step; a step that cancels two (both casters knocked out) crashed it. The loop now skips a missing slot.
+**Alternatives.** Continuous collision on a kinematic controller (rejected: a rewrite of the approved physics, REQ-ARC-12). Re-tuning every ability to one formula (rejected: one outlier).
+**Status.** ACCEPTED.

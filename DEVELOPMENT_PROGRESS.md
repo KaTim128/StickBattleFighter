@@ -38,7 +38,9 @@ Check this table before assigning work. No two active assignments may share a pa
 - **Verification:** typecheck clean, 527 unit and integration tests pass. Browser checks for B8/B7 not yet run.
 - **B1-B2 done:** `final-stats.ts` is the one stat pipeline (TD-074); audit found rating totals 299 to 304, so no base stat changed.
 - **Verification:** typecheck clean, lint 0 errors, 531 unit and integration tests pass.
-- **Next:** B3 damage relationships (heavy vs light, combo finisher, ability weights, HUD names, furniture pass-through).
+- **B3 done (TD-075):** damage relationships pinned by tests (Fireball cooldown 3 s was the one outlier); ability names on the desktop bar; `depenetrate` fixes fighters sinking up to 0.32 m into walls and planted furniture; fixed a latent crash in `AbilityWorld.updateActions` found by the AI soak.
+- **Verification:** typecheck clean, lint 0 errors, 553 unit and integration tests pass; `button-fit` and `phase6` e2e pass on desktop; screenshot of the new bar checked. Full e2e runs on CI.
+- **Next:** B4 Fire Beam, B5 Necro skeletons, B6 Shroud stabs.
 
 ## Completed work
 

@@ -20,6 +20,8 @@ type Rapier = typeof RapierModule;
  */
 export const GROUP = { WORLD: 0x1, FIGHTER: 0x2, DEBRIS: 0x4, FURNITURE: 0x8 } as const;
 const groups = (member: number, filter: number): number => (member << 16) | filter;
+/** The most a fighter is pushed out of a solid in one step (never enough to cross a thin wall). */
+const MAX_DEPENETRATE_M = 0.35;
 
 let RAPIER: Rapier | null = null;
 let initPromise: Promise<void> | null = null;
@@ -236,6 +238,75 @@ export class PhysicsWorld {
     );
     return hit === null || hit === undefined;
   }
+
+  /**
+   * Push a grounded fighter back out of walls and planted furniture it has sunk into (master plan
+   * Phase 1 B3: fighters must never stand inside solid objects). The solver is soft: a fast dash or
+   * knock, or a heavy fighter shoving another against a wall, can leave a body 0.1-0.3 m deep.
+   * Moves it along the contact normal by the overlap (at most `MAX_DEPENETRATE_M` a step so it can
+   * never be thrown through a thin wall) and drops the velocity that drives it into the surface.
+   * Returns the metres moved. `overFurniture` fighters ignore furniture, as in `setOverFurniture`.
+   */
+  depenetrate(body: RapierModule.RigidBody, radiusM: number, overFurniture: boolean): number {
+    const at = body.translation();
+    const depth = this.pushOut(at, radiusM, overFurniture);
+    if (depth <= 0) return 0;
+    const moved = Math.hypot(this.push.x, this.push.y);
+    const scale = moved > MAX_DEPENETRATE_M ? MAX_DEPENETRATE_M / moved : 1;
+    body.setTranslation({ x: at.x + this.push.x * scale, y: at.y + this.push.y * scale }, true);
+    const v = body.linvel();
+    const nx = this.push.x / moved;
+    const ny = this.push.y / moved;
+    const into = v.x * nx + v.y * ny;
+    if (into < 0) body.setLinvel({ x: v.x - into * nx, y: v.y - into * ny }, true);
+    return moved * scale;
+  }
+
+  /** How deep a circle at `at` sits inside walls and planted furniture, metres (0 = clear). */
+  solidOverlapM(at: Vec2, radiusM: number, overFurniture = false): number {
+    return this.pushOut(at, radiusM, overFurniture);
+  }
+
+  /** Reused by `pushOut` so a step allocates no vector. */
+  private readonly push = { x: 0, y: 0 };
+
+  /**
+   * Sum, over every fixed solid the circle overlaps, of the shove that would free it (written to
+   * `this.push`). Returns the deepest single overlap. Awake furniture is dynamic: the solver moves
+   * it, so only fixed solids count here.
+   */
+  private pushOut(at: Vec2, radiusM: number, overFurniture: boolean): number {
+    const RAPIER = rapier();
+    let ball = this.depenetrateBalls.get(radiusM);
+    if (!ball) {
+      ball = new RAPIER.Ball(radiusM);
+      this.depenetrateBalls.set(radiusM, ball);
+    }
+    this.push.x = 0;
+    this.push.y = 0;
+    let deepest = 0;
+    this.world.intersectionsWithShape(
+      at,
+      0,
+      ball,
+      (collider) => {
+        if (!collider.parent()?.isFixed()) return true;
+        const contact = collider.contactShape(ball, at, 0, 0);
+        if (!contact || contact.distance >= 0) return true;
+        const depth = Math.min(-contact.distance, MAX_DEPENETRATE_M);
+        this.push.x += contact.normal1.x * depth;
+        this.push.y += contact.normal1.y * depth;
+        deepest = Math.max(deepest, depth);
+        return true;
+      },
+      undefined,
+      groups(0xffff, GROUP.WORLD | (overFurniture ? 0 : GROUP.FURNITURE)),
+    );
+    if (Math.hypot(this.push.x, this.push.y) < 1e-4) return 0;
+    return deepest;
+  }
+
+  private readonly depenetrateBalls = new Map<number, RapierModule.Ball>();
 
   /** Advance the simulation by one fixed step. */
   step(stepS: number): void {

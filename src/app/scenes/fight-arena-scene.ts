@@ -942,6 +942,8 @@ export class FightArenaScene implements ArenaScene {
     for (const f of this.fighters) this.climbing?.beforePhysics(f);
     this.physics.step(stepS);
     for (const f of this.fighters) {
+      // Never stand inside a wall or planted furniture (B3); climbing fighters are placed on purpose.
+      if (f.body && !f.climb) this.physics.depenetrate(f.body, f.def.body.footRadiusM, f.overFurniture);
       const p = f.body?.translation();
       if (p) Object.assign(f.curr, { x: p.x, y: p.y });
       this.climbing?.afterPhysics(f);

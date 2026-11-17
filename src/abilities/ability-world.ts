@@ -857,7 +857,10 @@ export class AbilityWorld {
 
   private updateActions(dtS: number, host: AbilityHost): void {
     for (let i = this.actions.length - 1; i >= 0; i--) {
-      const a = this.actions[i]!;
+      // A step can cancel other actions (an interrupted caster loses all of its own, a new pull
+      // replaces older ones), so the list can shrink by more than the one entry this loop expects.
+      const a = this.actions[i];
+      if (!a) continue;
       const finished =
         a.kind === 'dash'
           ? this.stepDash(a, dtS, host)
