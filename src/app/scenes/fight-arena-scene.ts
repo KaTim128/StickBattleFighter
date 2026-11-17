@@ -3158,6 +3158,10 @@ export class FightArenaScene implements ArenaScene {
     f.view.stunned = c.state === 'stunned';
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
+    // Blue Inferno: dark skin and blue flames ease in on the cast and out over its last half second.
+    const blueTo = f.buff?.blueFlames ? Math.min(1, f.buff.leftS / 0.5) : 0;
+    f.view.blueFire += (blueTo - f.view.blueFire) * smoothing(7, frameDtS);
+    if (Math.abs(f.view.blueFire - blueTo) < 1e-3) f.view.blueFire = blueTo;
     // Blinded (Soul Drain): dark smoke wraps the head, thinning in its last half second.
     f.view.blind = Math.min(1, c.blindLeftS / 0.5);
     // Cursed (Curse of Decay) and in the dark (Hunting Frenzy), each easing off at its end.

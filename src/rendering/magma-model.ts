@@ -48,6 +48,8 @@ export interface MagmaDrawState {
   readonly headRadius: number;
   /** 0..1 how fast he moves (the hair streams back). */
   readonly motion: number;
+  /** 0..1 Blue Inferno: dark skin and blue flames (the whole palette is toned, not redrawn). */
+  readonly blue?: number;
 }
 
 /** How much bulkier than the rig's limb line the body is drawn. */
@@ -171,8 +173,24 @@ export class MagmaModel {
 
   // ---------------------------------------------------------------- colour helpers
 
+  /**
+   * Blue Inferno (TD-080): red and blue swap, so orange fire turns blue and yellow turns cyan; dim colours
+   * (the skin) are then darkened toward blue-black while bright ones keep glowing. Eased by `st.blue`.
+   */
+  private tone(colour: number): number {
+    const k = this.st.blue ?? 0;
+    if (k <= 0) return colour;
+    const r = (colour >> 16) & 0xff;
+    const g = (colour >> 8) & 0xff;
+    const b = colour & 0xff;
+    const swapped = (b << 16) | (g << 8) | r;
+    const lum = (r + g + b) / 765;
+    const dark = lum < 0.72 ? toward(swapped, 0x070b18, 0.55 * (1 - lum)) : swapped;
+    return toward(colour, dark, k);
+  }
+
   private c(colour: number): number {
-    return toward(colour, this.st.flashColour, this.st.flash);
+    return toward(this.tone(colour), this.st.flashColour, this.st.flash);
   }
 
   /** Which side of p→q faces the light: +1 or −1 (sign of the normal). */
@@ -187,11 +205,22 @@ export class MagmaModel {
    */
   private flesh(g: Graphics, p: Point, q: Point, ra: number, rb: number, far: boolean): void {
     const o = this.st.w * 0.32;
-    const base = this.c(far ? MAGMA.skinBack : MAGMA.skin);
+    const base = this.c(far ? this.c(MAGMA.skinBack) : this.c(MAGMA.skin));
     capsule(g, p, q, ra + o, rb + o, this.c(MAGMA.outline));
     capsule(g, p, q, ra, rb, base);
     const side = this.litSide(p, q);
-    band(g, p, q, ra, rb, -side, 0.2, 1, this.c(far ? toward(MAGMA.skinShade, 0x000000, 0.25) : MAGMA.skinShade), 0.85);
+    band(
+      g,
+      p,
+      q,
+      ra,
+      rb,
+      -side,
+      0.2,
+      1,
+      this.c(far ? toward(this.c(MAGMA.skinShade), 0x000000, 0.25) : this.c(MAGMA.skinShade)),
+      0.85,
+    );
     band(g, p, q, ra, rb, side, 0.1, 0.75, this.c(MAGMA.skinLit), far ? 0.35 : 0.7);
     band(g, p, q, ra, rb, -side, 0.84, 0.98, this.c(MAGMA.rim), far ? 0.25 : 0.55);
   }
@@ -211,7 +240,7 @@ export class MagmaModel {
     const o = this.st.w * 0.3;
     const shape = sleeve ? sleeveQuad : capsule;
     shape(g, p, q, ra + o, rb + o, this.c(MAGMA.armourEdge));
-    shape(g, p, q, ra, rb, this.c(far ? toward(MAGMA.armour, 0x000000, 0.3) : MAGMA.armour));
+    shape(g, p, q, ra, rb, this.c(far ? toward(this.c(MAGMA.armour), 0x000000, 0.3) : this.c(MAGMA.armour)));
     band(g, p, q, ra, rb, this.litSide(p, q), 0.25, 0.85, this.c(MAGMA.armourLit), far ? 0.4 : 0.8);
     if (!seam) return;
     // The glowing seam down the plate's middle.
@@ -220,14 +249,14 @@ export class MagmaModel {
     fire
       .moveTo(p.x + nx * ra * off, p.y + ny * ra * off)
       .lineTo(q.x + nx * rb * off, q.y + ny * rb * off)
-      .stroke({ width: this.st.w * 0.16, color: MAGMA.seam, alpha: far ? 0.35 : 0.75, cap: 'round' });
+      .stroke({ width: this.st.w * 0.16, color: this.c(MAGMA.seam), alpha: far ? 0.35 : 0.75, cap: 'round' });
   }
 
   /** A muscle mass: an outlined oval, lit on the light side. */
   private muscle(g: Graphics, c: Point, ux: number, uy: number, a: number, b: number, far: boolean): void {
     const o = this.st.w * 0.28;
     oval(g, c, ux, uy, a + o, b + o, this.c(MAGMA.outline));
-    oval(g, c, ux, uy, a, b, this.c(far ? MAGMA.skinBack : MAGMA.skin));
+    oval(g, c, ux, uy, a, b, this.c(far ? this.c(MAGMA.skinBack) : this.c(MAGMA.skin)));
     // Highlight toward the light.
     const lit = { x: c.x + this.lx * b * 0.35, y: c.y + this.ly * b * 0.35 };
     oval(g, lit, ux, uy, a * 0.62, b * 0.5, this.c(MAGMA.skinLit), far ? 0.3 : 0.65);
@@ -245,8 +274,8 @@ export class MagmaModel {
       pts.push({ x: p.x + (q.x - p.x) * k + nx * j, y: p.y + (q.y - p.y) * k + ny * j });
     }
     for (const [width, colour, alpha] of [
-      [this.st.w * 0.34, MAGMA.glow, 0.25],
-      [this.st.w * 0.12, MAGMA.lava, 0.9],
+      [this.st.w * 0.34, this.c(MAGMA.glow), 0.25],
+      [this.st.w * 0.12, this.c(MAGMA.lava), 0.9],
     ] as const) {
       fire.moveTo(pts[0]!.x, pts[0]!.y);
       for (const v of pts.slice(1)) fire.lineTo(v.x, v.y);
@@ -291,7 +320,7 @@ export class MagmaModel {
       });
       fire.arc(capC.x, capC.y, capR * 0.82, Math.PI * 0.15, Math.PI * 0.95).stroke({
         width: w * 0.14,
-        color: MAGMA.seam,
+        color: this.c(MAGMA.seam),
         alpha: 0.75,
       });
     }
@@ -306,9 +335,9 @@ export class MagmaModel {
     const r = w * 0.62;
     fire
       .circle(c.x, c.y, r * 2.1)
-      .fill({ color: MAGMA.glow, alpha: (far ? 0.12 : 0.22) * (0.8 + 0.2 * Math.sin(this.st.t * 9)) });
+      .fill({ color: this.c(MAGMA.glow), alpha: (far ? 0.12 : 0.22) * (0.8 + 0.2 * Math.sin(this.st.t * 9)) });
     oval(g, c, u.ux, u.uy, r * 1.1 + w * 0.28, r + w * 0.28, this.c(MAGMA.outline));
-    oval(g, c, u.ux, u.uy, r * 1.1, r, this.c(far ? MAGMA.skinBack : MAGMA.skin));
+    oval(g, c, u.ux, u.uy, r * 1.1, r, this.c(far ? this.c(MAGMA.skinBack) : this.c(MAGMA.skin)));
     oval(
       g,
       { x: c.x + this.lx * r * 0.3, y: c.y + this.ly * r * 0.3 },
@@ -327,7 +356,7 @@ export class MagmaModel {
       .stroke({ width: w * 0.12, color: this.c(MAGMA.skinShade), alpha: 0.8, cap: 'round' });
     fire
       .circle(c.x + u.ux * r * 0.4, c.y + u.uy * r * 0.4, r * 0.45)
-      .fill({ color: MAGMA.lava, alpha: far ? 0.2 : 0.4 });
+      .fill({ color: this.c(MAGMA.lava), alpha: far ? 0.2 : 0.4 });
   }
 
   private leg(g: Graphics, fire: Graphics, pts: readonly Point[], far: boolean): void {
@@ -368,7 +397,7 @@ export class MagmaModel {
     // A compact knee guard.
     const kr = w * 0.4;
     g.circle(knee.x, knee.y, kr + w * 0.2).fill(this.c(MAGMA.armourEdge));
-    g.circle(knee.x, knee.y, kr).fill(this.c(far ? toward(MAGMA.armour, 0x000000, 0.3) : MAGMA.armour));
+    g.circle(knee.x, knee.y, kr).fill(this.c(far ? toward(this.c(MAGMA.armour), 0x000000, 0.3) : this.c(MAGMA.armour)));
     g.circle(knee.x + this.lx * kr * 0.3, knee.y + this.ly * kr * 0.3, kr * 0.5).fill({
       color: this.c(MAGMA.armourLit),
       alpha: 0.8,
@@ -400,7 +429,7 @@ export class MagmaModel {
       heel.y + grow,
     ];
     g.poly(shape(w * 0.2)).fill(outline);
-    g.poly(shape(0)).fill(this.c(far ? toward(MAGMA.armour, 0x000000, 0.3) : MAGMA.armour));
+    g.poly(shape(0)).fill(this.c(far ? toward(this.c(MAGMA.armour), 0x000000, 0.3) : this.c(MAGMA.armour)));
     // Lit upper and a glowing sole line.
     g.poly([
       top.x - fx * w * 0.14,
@@ -418,7 +447,7 @@ export class MagmaModel {
       .lineTo(toe.x, toe.y - w * 0.06)
       .stroke({
         width: w * 0.14,
-        color: MAGMA.seam,
+        color: this.c(MAGMA.seam),
         alpha: far ? 0.35 : 0.8,
         cap: 'round',
       });
@@ -536,7 +565,7 @@ export class MagmaModel {
     const buckle = lerp(b0, b1, 0.5);
     const bc = { x: buckle.x + u.nx * w * 0.45 * fwd, y: buckle.y + u.ny * w * 0.45 * fwd };
     g.circle(bc.x, bc.y, w * 0.32).fill(this.c(MAGMA.armourLit));
-    fire.circle(bc.x, bc.y, w * 0.2).fill({ color: MAGMA.seam, alpha: 0.9 });
+    fire.circle(bc.x, bc.y, w * 0.2).fill({ color: this.c(MAGMA.seam), alpha: 0.9 });
     // The molten core in his chest: a glowing heart of fire with cracks running out of it.
     const t = this.st.t;
     const pulse = 0.75 + 0.25 * Math.sin(t * 4);
@@ -546,10 +575,10 @@ export class MagmaModel {
     };
     g.circle(core.x, core.y, w * 0.42).fill(this.c(MAGMA.armourEdge));
     for (const [r, colour, alpha] of [
-      [w * 1.1, MAGMA.glow, 0.18 * pulse],
-      [w * 0.36, MAGMA.glow, 0.85],
-      [w * 0.24, MAGMA.lava, 0.95],
-      [w * 0.11, 0xffffff, 0.9 * pulse],
+      [w * 1.1, this.c(MAGMA.glow), 0.18 * pulse],
+      [w * 0.36, this.c(MAGMA.glow), 0.85],
+      [w * 0.24, this.c(MAGMA.lava), 0.95],
+      [w * 0.11, this.c(0xffffff), 0.9 * pulse],
     ] as const)
       fire.circle(core.x, core.y, r).fill({ color: colour, alpha });
     for (let i = 0; i < 4; i++) {
@@ -558,7 +587,7 @@ export class MagmaModel {
       fire
         .moveTo(core.x + Math.cos(a) * w * 0.3, core.y + Math.sin(a) * w * 0.3)
         .lineTo(core.x + Math.cos(a + 0.25) * len, core.y + Math.sin(a + 0.25) * len)
-        .stroke({ width: w * 0.08, color: MAGMA.lava, alpha: 0.7 * pulse, cap: 'round' });
+        .stroke({ width: w * 0.08, color: this.c(MAGMA.lava), alpha: 0.7 * pulse, cap: 'round' });
     }
   }
 
@@ -594,9 +623,9 @@ export class MagmaModel {
     const t = this.st.t;
     const back = -0.35 - this.st.motion * 0.9;
     for (const L of [
-      { n: 6, colour: 0xff3c14, alpha: 0.6, len: 1.9, w: 0.4 },
-      { n: 5, colour: 0xff8c1e, alpha: 0.7, len: 1.5, w: 0.36 },
-      { n: 4, colour: 0xffd95a, alpha: 0.8, len: 1.05, w: 0.32 },
+      { n: 6, colour: this.c(0xff3c14), alpha: 0.6, len: 1.9, w: 0.4 },
+      { n: 5, colour: this.c(0xff8c1e), alpha: 0.7, len: 1.5, w: 0.36 },
+      { n: 4, colour: this.c(0xffd95a), alpha: 0.8, len: 1.05, w: 0.32 },
     ]) {
       for (let i = 0; i < L.n; i++) {
         const k = (i + 0.5) / L.n; // front of the crown to the back
@@ -622,7 +651,7 @@ export class MagmaModel {
           r * 0.08 * (1 - k * 0.6),
         )
         .fill({
-          color: 0xffb03c,
+          color: this.c(0xffb03c),
           alpha: 1 - k,
         });
     }

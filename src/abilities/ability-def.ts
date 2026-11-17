@@ -290,6 +290,8 @@ export interface BuffDelivery {
    * `visibleM` round itself for the buff's whole duration (everything further is almost black).
    */
   readonly darkensFoes?: { readonly visibleM: number };
+  /** The caster is drawn with dark skin and blue flames while it lasts (Inferno's Blue Inferno). */
+  readonly blueFlames?: boolean;
   /** The caster is drawn this much bigger while it lasts (Rampage Mode, owner 13/11/2026: 1.1). */
   readonly sizeFactor?: number;
   /**
@@ -425,6 +427,11 @@ export interface AbilityKit {
   readonly a2: AbilityDef;
   readonly a3: AbilityDef;
   readonly a4: AbilityDef;
+  /**
+   * An unequipped fifth normal ability (master plan B13: five abilities, four equipped). Its `slot`
+   * names the slot it takes when equipped; until the loadout screen exists it is not selectable.
+   */
+  readonly a5?: AbilityDef;
   readonly ult: AbilityDef;
   readonly charge: UltimateCharge;
   /** The basic combo's picture on the fighter details screen (owner, 12/11/2026: unique per fighter). */

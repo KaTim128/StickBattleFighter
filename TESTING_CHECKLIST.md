@@ -503,3 +503,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] AI decision rules (`prop-plan.test.ts`); a Hard Titan picks up and throws furniture in a long office fight (`ai-furniture.test.ts`)
 - [x] Rampage Mode damage taken is 1/1.4 (`rampage.test.ts`)
 - [ ] Owner check: how often the AI throws at each difficulty, and that carrying furniture feels fair to fight
+
+## Blue Inferno (17/11/2026, Phase 1 B10, TD-080)
+- [x] The ultimate is the transformation; Eruption is a nerfed a5 and not in the ultimate slot (`blue-inferno.test.ts`)
+- [x] Needs a full meter; lasts 10 s; look eases in and out; normal values return after
+- [x] +70% ability and melee damage, cooldowns 30% sooner, +15% speed, no defence bonus; a Fireball hits 70% harder
+- [x] The aimed leap ultimate mechanic still works (labelled fixture in `abilities.test.ts`)
+- [x] Telegraph and beam loops survive several cancels in one step
+- [ ] Owner check: how Blue Inferno looks and feels in play (screenshots checked: skin and flames are blue; the floor aura ring is still orange), and its numbers

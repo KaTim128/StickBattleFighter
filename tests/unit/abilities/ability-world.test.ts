@@ -28,12 +28,12 @@ describe('distance-based damage (owner, 11/11/2026: Fire Beam and Eruption)', ()
     expect(payloadAt(p, 3.2, 3.2).knockbackMps).toBeCloseTo(7.25, 6);
   });
 
-  it("Inferno's numbers: Eruption 300 at the centre to 135 at the edge; Fire Beam about 340 close and 150 far before its ramp (2.4 s, master plan B4)", () => {
-    const ult = INFERNO_KIT.ult;
+  it("Inferno's numbers: Eruption (now his fifth ability, TD-080) 150 at the centre to 68 at the edge; Fire Beam about 340 close and 150 far before its ramp (2.4 s, master plan B4)", () => {
+    const eruption = INFERNO_KIT.a5!;
     const beam = INFERNO_KIT.a3;
-    expect(ult.delivery.type === 'leap' && ult.delivery.radiusM).toBe(3.2);
-    expect(payloadAt(ult.payload, 0.5, 3.2).damage).toBe(300);
-    expect(payloadAt(ult.payload, 3.2, 3.2).damage).toBe(135);
+    expect(eruption.delivery.type === 'leap' && eruption.delivery.radiusM).toBe(2.6);
+    expect(payloadAt(eruption.payload, 0.5, 2.6).damage).toBe(150);
+    expect(payloadAt(eruption.payload, 2.6, 2.6).damage).toBe(68);
     if (beam.delivery.type !== 'beam') throw new Error('Fire Beam is a beam');
     const ticks = Math.floor(beam.delivery.durationS / beam.delivery.tickS) + 1;
     expect(beam.delivery.durationS).toBe(2.4); // a second longer than the 1.4 s beam it replaces
@@ -181,6 +181,35 @@ describe('actions removed while the world steps (found by the long AI soak, B3)'
     };
     w.release('a', INFERNO_KIT.a2, { x: 5, y: 0 }, h);
     w.release('b', INFERNO_KIT.a2, { x: -5, y: 0 }, h);
+    expect(() => {
+      for (let i = 0; i < 30; i++) w.update(1 / 60, h);
+    }).not.toThrow();
+  });
+
+  it('two telegraphed blasts whose hit callback cancels both casters do not crash the loop', () => {
+    const w = new AbilityWorld();
+    let h: AbilityHost;
+    h = {
+      fighters: () => [
+        { id: 'a', x: 0, y: 0, radiusM: 0.3, hittable: true, team: 'x' },
+        { id: 'b', x: 0.4, y: 0, radiusM: 0.3, hittable: true, team: 'y' },
+        { id: 'c', x: 0.2, y: 0.2, radiusM: 0.3, hittable: true, team: 'z' },
+      ],
+      hitFighter: () => {
+        w.cancel('a', h);
+        w.cancel('b', h);
+        return true;
+      },
+      hitEnvironment: () => {},
+      blocked: () => null,
+      position: () => ({ x: 0, y: 0 }),
+      drive: () => {},
+      burnFighter: () => {},
+      buff: () => {},
+      emit: () => {},
+    };
+    w.release('a', INFERNO_KIT.a4, { x: 1, y: 0 }, h);
+    w.release('b', INFERNO_KIT.a4, { x: -1, y: 0 }, h);
     expect(() => {
       for (let i = 0; i < 30; i++) w.update(1 / 60, h);
     }).not.toThrow();

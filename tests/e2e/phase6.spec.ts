@@ -38,7 +38,7 @@ test('abilities: Q fires a Fireball that hits and burns the dummy; the ability b
   // The ultimate is not ready at the start (charge meter, OQ-04).
   await page.keyboard.press('KeyI');
   await page.waitForTimeout(200);
-  expect((await hook(page)).player.ability).not.toBe('eruption');
+  expect((await hook(page)).player.ability).not.toBe('blueFire');
   expect(errors).toEqual([]);
 });
 

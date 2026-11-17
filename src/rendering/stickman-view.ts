@@ -66,6 +66,8 @@ export class StickmanView {
   shieldFlare = 0;
   /** 0..1 a fury buff is on (Rampage Mode): a muscle body's hide flushes red. */
   rage = 0;
+  /** 0..1 Blue Inferno is on: Inferno's body goes dark with blue flames (eased by the scene). */
+  blueFire = 0;
   /**
    * 0..1 casting magic (Necro, owner 12/11/2026): the staff skull's eyes glow purple and violet
    * energy gathers at the hood, the staff and around the body.
@@ -356,6 +358,7 @@ export class StickmanView {
         w,
         headRadius: this.bones.headRadius,
         motion: this.motion,
+        blue: this.blueFire,
       });
       if (flame > 0.01) drawHead();
     } else if (this.premium) {

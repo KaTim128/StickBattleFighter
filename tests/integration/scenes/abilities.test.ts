@@ -1,5 +1,7 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { AbilityCaster } from '../../../src/abilities/ability-caster';
+import type { AbilityDef } from '../../../src/abilities/ability-def';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
 import { INFERNO_KIT } from '../../../src/data/abilities/inferno';
@@ -11,6 +13,30 @@ import { initPhysics } from '../../../src/physics/physics-world';
 
 const STEP = 1 / 60;
 const K = INFERNO_KIT;
+
+/**
+ * A fixture, not shipped: the engine's aimed leap ultimate (K to aim, WASD to slide the spot, Escape to
+ * cancel, the range clamp) was provided by Inferno's Eruption ultimate until TD-080 made Blue Inferno
+ * his ultimate. The mechanic is general, so these tests keep it covered with the old Eruption numbers.
+ */
+const LEAP_ULT: AbilityDef = {
+  ...K.a5!,
+  slot: 'ult',
+  label: 'ULT',
+  staminaCost: 0,
+  cooldownS: 1,
+  interruptible: false,
+  aimRangeM: 8,
+  payload: { ...K.a5!.payload, damage: 300, knockbackMps: 10 },
+  delivery: { type: 'leap', maxRangeM: 8, airS: 0.75, peakM: 2.4, radiusM: 3.2, aimSpeedMps: 7 },
+};
+
+/** `setup`, but with the fixture leap ultimate in Inferno's ultimate slot. */
+async function setupLeap(playerAt: { x: number; y: number }) {
+  const r = await setup(playerAt);
+  (r.scene.playerFighter as { caster: AbilityCaster | null }).caster = new AbilityCaster({ ...K, ult: LEAP_ULT });
+  return r;
+}
 
 /** Training yard (dummy at 19, 13) with the player placed where a test needs it. */
 async function setup(playerAt: { x: number; y: number }, arena: ArenaLayout = TRAINING_YARD) {
@@ -160,7 +186,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
   });
 
   it('the ultimate needs a full meter; Eruption then leaps (untouchable), lands on the dummy and empties the meter', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
+    const { intents, scene, scenes, run, runUntil } = await setupLeap({ x: 14, y: 13 });
     intents.pressAbility('ult');
     run(STEP);
     expect(scene.lastAbilityBlock).toBe('meter');
@@ -175,14 +201,14 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     expect(scene.playerFighter.abilityLift).toBeGreaterThan(1); // in the air
     expect(scene.abilities!.world.telegraphs).toHaveLength(1); // landing spot shown
     runUntil(() => scene.dummy.hp < 1000, 1.5);
-    expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(K.ult.payload.damage);
+    expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(LEAP_ULT.payload.damage);
     expect(Math.hypot(scene.player.x - 19, scene.player.y - 13)).toBeLessThan(2.5);
     expect(scene.abilities!.sfxLog).toContain('meteor-impact');
     scenes.clear();
   });
 
   it('keyboard targeting (owner): K aims, WASD slides the spot at 7 m/s, K again launches; J meanwhile does not punch', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
+    const { intents, scene, scenes, run, runUntil } = await setupLeap({ x: 14, y: 13 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
     run(STEP);
@@ -211,7 +237,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
   });
 
   it('Escape (or the touch ✕) cancels targeting without casting and keeps the meter; other ability keys are ignored', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 });
+    const { intents, scene, scenes, run } = await setupLeap({ x: 14, y: 13 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
     run(STEP);
@@ -258,7 +284,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
   });
 
   it('aiming the ultimate (owner): K enters aim mode in a jump-prep crouch; WASD moves the spot, not the fighter', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 });
+    const { intents, scene, scenes, run, runUntil } = await setupLeap({ x: 14, y: 13 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
     run(STEP);
@@ -284,7 +310,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
   });
 
   it('the aimed spot never goes beyond the maximum jump range', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 14, y: 10 });
+    const { intents, scene, scenes, run } = await setupLeap({ x: 14, y: 10 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
     run(STEP);
@@ -297,7 +323,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
   });
 
   it('getting hit while aiming calls the jump off and keeps the meter', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 17.95, y: 13 });
+    const { intents, scene, scenes, run } = await setupLeap({ x: 17.95, y: 13 });
     scene.playerFighter.caster!.fillMeter();
     intents.pressAbility('ult');
     run(STEP);

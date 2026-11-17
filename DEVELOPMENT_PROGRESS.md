@@ -45,7 +45,8 @@ Check this table before assigning work. No two active assignments may share a pa
 - **B5 done (TD-077):** hard cap of four with refusal before the ultimate is spent; new `staggersTargets` capability makes skeleton hits damage-only.
 - **B6 done (TD-078):** `noFlinch` stabs, no hit chain restarts a fall; stab damage +12% to keep the close-battle standard.
 - **B9 done (TD-079):** smooth grab, AI throws furniture, Rampage Mode defence +40%.
-- **Next:** B10 ultimate costs and AI targeting, B11 jumping, B13 fifth abilities and loadout, B14 loadout UI, B15 Shroud combo, B16 dodge, B17 fight length, B18 audio.
+- **B10 part 1 (TD-080):** Blue Inferno ultimate, nerfed Eruption as a5, balanced by measurement. Looked at in a browser (before/during screenshots): dark navy skin, blue flame hair and sparks, new HUD icon; the soft aura ring on the floor under him stays orange (a separate layer) and is a polish item.
+- **Next:** rest of B10 (ultimate charge scaled to strength, AI skeleton targeting, Shroud's ultimate), B11 jumping, B13 fifth abilities and loadout, B14 loadout UI, B15 Shroud combo, B16 dodge, B17 fight length, B18 audio.
 
 ## Completed work
 

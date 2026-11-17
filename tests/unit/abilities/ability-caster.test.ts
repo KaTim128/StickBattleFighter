@@ -30,8 +30,10 @@ describe('Inferno kit data (REQ-ABL-2)', () => {
     const a3 = INFERNO_KIT.a3;
     expect(a3.delivery.type).toBe('beam');
     expect(a3.castS).toBe(1);
-    const ult = INFERNO_KIT.ult.delivery;
-    expect(ult.type === 'leap' && ult.airS >= 0.5).toBe(true);
+    // Eruption (now Inferno's fifth normal ability, TD-080) still leaps: untouchable in the air.
+    const eruption = INFERNO_KIT.a5!.delivery;
+    expect(eruption.type === 'leap' && eruption.airS >= 0.5).toBe(true);
+    expect(INFERNO_KIT.ult.delivery.type).toBe('buff'); // the ultimate is the Blue Inferno transformation
   });
 });
 
@@ -100,7 +102,7 @@ describe('AbilityCaster', () => {
     c.fillMeter();
     c.start('ult');
     expect(c.interrupt()).toBe(false);
-    expect(c.cast?.def.id).toBe('eruption');
+    expect(c.cast?.def.id).toBe('blueFire');
   });
 
   it('once released, an ability cannot be interrupted (the shot is already out)', () => {
@@ -118,12 +120,13 @@ describe('Phase 8: complete animation set for the kit', () => {
     const { idlePose } = await import('../../../src/animation/greybox-motion');
     const { GREYBOX_STICKMAN } = await import('../../../src/data/fighters/greybox-stickman');
     const base = idlePose(0, GREYBOX_STICKMAN.bones);
-    for (const slot of ['a1', 'a2', 'a3', 'ult'] as const) {
-      const def = INFERNO_KIT[slot];
+    for (const slot of ['a1', 'a2', 'a3', 'a5', 'ult'] as const) {
+      const def = INFERNO_KIT[slot]!;
       expect(hasAbilityPose(def.id), def.id).toBe(true);
       expect(abilityPose(base, def.id, 'windup', 0.8, false)).not.toEqual(base); // a visible wind-up
     }
-    const ult = INFERNO_KIT.ult.id;
-    expect(abilityPose(base, ult, 'recovery', 0.5, true)).not.toEqual(abilityPose(base, ult, 'recovery', 0.5, false));
+    // The leaping ability (Eruption) has its own air pose.
+    const leap = INFERNO_KIT.a5!.id;
+    expect(abilityPose(base, leap, 'recovery', 0.5, true)).not.toEqual(abilityPose(base, leap, 'recovery', 0.5, false));
   });
 });

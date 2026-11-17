@@ -8,6 +8,8 @@ import type { AbilityKit } from '../../abilities/ability-def';
  */
 /** Inferno's element colours (Magic Attack VFX Standard). */
 const FIRE_PALETTE = { deep: 0xd8320c, hot: 0xff6a00, bright: 0xffa53a, core: 0xfff1a8 } as const;
+/** Blue Inferno's flames: the same shape as the fire palette, swapped red for blue. */
+const BLUE_PALETTE = { deep: 0x0c32d8, hot: 0x006aff, bright: 0x3aa5ff, core: 0xa8f1ff } as const;
 
 export const INFERNO_KIT: AbilityKit = {
   comboIcon: 'flaming-fist',
@@ -180,38 +182,81 @@ export const INFERNO_KIT: AbilityKit = {
   // slam). Inferno squats and gathers flames (0.55 s), launches himself into the air wrapped in
   // fire, and crashes down: a fiery explosion with a clearly marked 3.2 m radius. Damage falls off
   // from the landing point: 300 within 1 m, easing to 45% (135) at the edge of the blast.
-  ult: {
+  // Owner, 17/11/2026 (TD-080): Eruption is no longer the ultimate. It is Inferno's fifth normal
+  // ability, nerfed to one: about half the damage, a smaller radius and range, a long cooldown. It takes
+  // the a4 slot when equipped in the loadout (B13).
+  a5: {
     id: 'eruption',
     name: 'Eruption',
-    label: 'ULT',
+    label: 'ERUPT',
     description: 'Leaps to the chosen spot and slams down in an eruption of fire, hardest at the centre.',
     icon: 'eruption',
-    slot: 'ult',
-    staminaCost: 0,
-    cooldownS: 1,
+    slot: 'a4',
+    staminaCost: 40,
+    cooldownS: 14,
     castS: 0.55,
     recoveryS: 1.2,
-    aimRangeM: 8,
+    aimRangeM: 6,
     moveFactor: 0,
-    interruptible: false,
+    interruptible: true,
     payload: {
-      damage: 300,
-      knockbackMps: 10,
+      damage: 150,
+      knockbackMps: 7,
       heavy: true,
       strength: 900,
       burn: { dps: 20, durationS: 3 },
       ignites: true,
       falloff: { fullWithinM: 1, minFactor: 0.45 },
     },
-    delivery: { type: 'leap', maxRangeM: 8, airS: 0.75, peakM: 2.4, radiusM: 3.2, aimSpeedMps: 7 },
+    delivery: { type: 'leap', maxRangeM: 6, airS: 0.75, peakM: 2.4, radiusM: 2.6, aimSpeedMps: 7 },
     vfx: 'eruption-slam',
     sfx: { cast: 'fire-roar', release: 'leap-whoosh', impact: 'meteor-impact' },
     look: {
       palette: FIRE_PALETTE,
       charge: { gatherRadiusM: 1.8, motesPerS: 140, coreMaxM: 0 },
       flight: { trailPerS: 120, sparksPerS: 40, shimmer: false },
-      impact: { flashM: 2.2, sparks: 70, motes: 90, ringM: 3.2, scorchM: 2.4, smoke: 24 },
+      impact: { flashM: 2.2, sparks: 70, motes: 90, ringM: 2.6, scorchM: 2.0, smoke: 24 },
       hitFlash: 0xffffff,
+    },
+  },
+  // Owner, 17/11/2026 (TD-080): the dark-skinned, blue-flamed transformation is Inferno's ultimate.
+  // The owner proposed +20% damage, 25% faster cooldowns and +10% speed and asked for the numbers to be
+  // balanced. Measured (36 seeded Hard AI fights): with those numbers Inferno won 25% against 78% with the
+  // Eruption ultimate it replaces; +50% gave 33%, +70% gave 42%. Adopted: 10 s of +70% ability and melee
+  // damage, his other abilities back 30% sooner and 15% more speed. No defence bonus (unlike Rampage
+  // Mode): he takes normal damage, so a careful opponent can burst him down or run the window out.
+  ult: {
+    id: 'blueFire',
+    name: 'Blue Inferno',
+    label: 'ULT',
+    description:
+      'His flames turn blue and his skin goes dark for 10 seconds: his abilities and blows hit 70% harder, his other abilities come back 30% sooner and he is 15% faster. He takes no less damage.',
+    icon: 'blue-fire',
+    slot: 'ult',
+    staminaCost: 0,
+    cooldownS: 1,
+    castS: 0.9,
+    recoveryS: 0.5,
+    aimRangeM: 0,
+    moveFactor: 0,
+    interruptible: false,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: {
+      type: 'buff',
+      durationS: 10,
+      speedFactor: 1.15,
+      damageTakenFactor: 1,
+      abilityDamageFactor: 1.7,
+      meleeDamageFactor: 1.7,
+      cooldownFactor: 0.7,
+      blueFlames: true,
+    },
+    vfx: 'blue-fire',
+    sfx: { cast: 'fire-roar', release: 'fire-roar', impact: 'fire-roar' },
+    look: {
+      palette: BLUE_PALETTE,
+      charge: { gatherRadiusM: 1.6, motesPerS: 150, coreMaxM: 0 },
+      impact: { flashM: 1.4, sparks: 50, motes: 80, ringM: 2, smoke: 10, groundFire: false, smokeColour: 0x101a30 },
     },
   },
   // OQ-04 (owner): a charge meter. A full combo (240) fills about 60%; you also gain from being hit.

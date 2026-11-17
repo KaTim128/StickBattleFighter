@@ -731,7 +731,8 @@ export class AbilityWorld {
 
   private updateBeams(dtS: number, host: AbilityHost): void {
     for (let i = this.beams.length - 1; i >= 0; i--) {
-      const b = this.beams[i]!;
+      const b = this.beams[i];
+      if (!b) continue; // a tick can cancel other beams
       const d = b.def.delivery;
       if (d.type !== 'beam') continue;
       b.ageS += dtS;
@@ -1127,7 +1128,9 @@ export class AbilityWorld {
 
   private updateTelegraphs(dtS: number, host: AbilityHost): void {
     for (let i = this.telegraphs.length - 1; i >= 0; i--) {
-      const t = this.telegraphs[i]!;
+      // A blast can cancel other casters' telegraphs, so the list may shrink by more than one entry.
+      const t = this.telegraphs[i];
+      if (!t) continue;
       t.ageS += dtS;
       if (t.onCaster) {
         const at = host.position(t.casterId);

@@ -78,12 +78,13 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       a2: { role: 'gapClose', minM: 3, maxM: 8, weight: 1 },
       a3: { role: 'zone', minM: 2, maxM: 6.5, weight: 0.9 },
       a4: { role: 'burst', minM: 0, maxM: 2.4, weight: 1.1 },
-      ult: { role: 'burst', minM: 2, maxM: 9, weight: 1.4, when: { targetHpBelow: 0.65 } },
+      // Blue Inferno (TD-080) is a buff: used once a fight is on, close enough to fight, not at the start.
+      ult: { role: 'buff', minM: 0, maxM: 9, weight: 1.3, when: { selfHpBelow: 0.9 } },
     },
     combos: [
       ['a2', 'a4'],
       ['a1', 'a2'],
-      ['a4', 'ult'],
+      ['ult', 'a4'],
     ],
   },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who

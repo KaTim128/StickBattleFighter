@@ -85,7 +85,7 @@ describe('2. Inferno: fire element, taekwondo style, its own profiles', () => {
     expect(d.effects.finisher).toBe('finisher-fire');
     expect(d.audio.id).toBe('inferno-audio');
     expect(d.capabilities.usesFireEffects).toBe(true);
-    expect(d.abilities?.ult.id).toBe('eruption');
+    expect(d.abilities?.ult.id).toBe('blueFire'); // Blue Inferno is the ultimate (TD-080); Eruption is the fifth ability
   });
 });
 

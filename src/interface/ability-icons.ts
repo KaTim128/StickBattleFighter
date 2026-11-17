@@ -7,7 +7,7 @@
  * deliberate shape. Original artwork; one per icon id (`AbilityDef.icon`, `AbilityKit.comboIcon`,
  * `AbilityKit.heavyIcon`).
  */
-type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay';
+type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -17,6 +17,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   blood: ['#ffb0a8', '#b3121c', '#1a0204'],
   shade: ['#b9bfcc', '#383a48', '#060609'],
   decay: ['#e2f7b8', '#4f7a1c', '#0f1608'],
+  blue: ['#d8f0ff', '#1f6fe8', '#020a22'],
 };
 
 const MATERIALS = `
@@ -98,6 +99,12 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'fire',
     rays(24, 24, 18, '#fff6d0', 0.28),
     `<circle cx="24" cy="24" r="17" fill="none" stroke="url(#fl)" stroke-width="5" filter="url(#gl)" opacity=".9"/><circle cx="24" cy="24" r="11" fill="url(#fc)" filter="url(#gl)"/><circle cx="21" cy="20.5" r="4" fill="#fff" opacity=".9"/>`,
+  ),
+  // Blue Inferno: a dark figure wreathed in blue fire, arms thrown wide.
+  'blue-fire': icon(
+    'blue',
+    rays(24, 26, 14, '#d8f0ff', 0.22),
+    `<path d="M8 36 C10 22 16 18 24 6 C32 18 38 22 40 36 C34 32 30 34 24 40 C18 34 14 32 8 36 Z" fill="#2a8cff" filter="url(#gl)" opacity=".95"/><path d="M14 36 C16 26 20 22 24 13 C28 22 32 26 34 36 C30 33 27 34 24 38 C21 34 18 33 14 36 Z" fill="#9fdcff"/><g filter="url(#ds)"><circle cx="24" cy="22" r="4.6" fill="#06080f"/><path d="M24 26 V34 M24 28 L15 24 M24 28 L33 24 M24 34 L19 41 M24 34 L29 41" stroke="#06080f" stroke-width="3.2" stroke-linecap="round" fill="none"/></g>`,
   ),
   // Eruption: a fist slamming down into a fountain of fire.
   eruption: icon(

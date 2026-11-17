@@ -135,6 +135,18 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.5,
   },
+  // Blue Inferno (Inferno): crouched with fists drawn in, then flung wide open as the blue fire surges.
+  blueFire: {
+    windup: { lean: deg(-22), head: deg(22), armFront: limb(30, 135), armBack: limb(25, 135), legFront: limb(50, -85) },
+    release: {
+      lean: deg(14),
+      head: deg(-24),
+      armFront: limb(115, 90),
+      armBack: limb(105, 95),
+      legFront: limb(28, -28),
+    },
+    settle: 0.45,
+  },
   // Necro (owner, 12/11/2026). The staff is in his rear (left) hand; the lead hand is free for
   // spellwork. Soul Drain: the free hand draws souls in as the staff tilts back, then both point.
   soulDrain: {
