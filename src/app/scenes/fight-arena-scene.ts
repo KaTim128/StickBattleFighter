@@ -28,6 +28,7 @@ import { addArenaColliders } from '../../arenas/arena-colliders';
 import { CameraShake } from '../../camera/camera-shake';
 import { fitRectToView } from '../../camera/fit-view';
 import { type CameraView, FollowCamera } from '../../camera/follow-camera';
+import { finalAttackSpeed, finalMaxSpeedMps, finalMeleeDamageFactor, finalPower } from '../../characters/final-stats';
 import { DEFAULT_CAST } from '../../characters/library';
 import { type LoadedCharacter, loadCharacter } from '../../characters/load';
 import type { AudioProfile, CharacterLibrary } from '../../characters/schema';
@@ -55,7 +56,7 @@ import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
 import type { HudFighter, TopHudState } from '../../interface/top-hud';
 import { collapseLieS, firmHoldS } from '../../physics/climbing';
-import { SPRINT, stepHop, stepVelocity } from '../../physics/movement';
+import { stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
@@ -1918,7 +1919,7 @@ export class FightArenaScene implements ArenaScene {
     const cast = f.caster?.cast ?? null;
 
     // A frenzy buff plays the fighter's strikes faster (Hunting Frenzy: attack speed).
-    const ev = f.combo.update(stepS * (f.buff?.attackSpeedFactor ?? 1), air);
+    const ev = f.combo.update(stepS * finalAttackSpeed(f.buff), air);
     const attack = f.combo.attack;
     const tuning = f.def.movement;
     const v = body.linvel();
@@ -1952,12 +1953,11 @@ export class FightArenaScene implements ArenaScene {
       const isIdle = move.x === 0 && move.y === 0;
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
-      const sprint = f.sprinting && !attack && !cast && c.state !== 'guarding' && !air ? SPRINT.speedFactor : 1;
-      const buffed = f.buff?.speedFactor ?? 1;
+      const sprinting = f.sprinting && !attack && !cast && c.state !== 'guarding' && !air;
       next = stepVelocity(
         v,
         move,
-        { ...tuning, maxSpeedMps: tuning.maxSpeedMps * sprint * buffed, decelMps2: decel },
+        { ...tuning, maxSpeedMps: finalMaxSpeedMps(f.def, sprinting, f.buff, c.status), decelMps2: decel },
         stepS,
       );
       if (f === this.playerFighter) {
@@ -2037,7 +2037,7 @@ export class FightArenaScene implements ArenaScene {
       {
         baseDamage: s.damage,
         // Curse of Decay weakens everything the cursed fighter deals (owner, 12/11/2026).
-        attackerPower: attacker.def.stats.power * attacker.combatant.attackFactor,
+        attackerPower: finalPower(attacker.def, attacker.combatant.status),
         heavy: s.heavy,
         fromFront,
         critRoll: this.rng(),
@@ -2302,7 +2302,7 @@ export class FightArenaScene implements ArenaScene {
       // A frenzy buff (Hunting Frenzy, owner 12/11/2026) sharpens the knife.
       const frenzy = attacker.buff;
       const strike = {
-        damage: a.damage * (frenzy?.meleeDamageFactor ?? 1),
+        damage: a.damage * finalMeleeDamageFactor(frenzy),
         heavy: a.heavy,
         knockbackMps: a.knockbackSpeedMps,
         melee: true,

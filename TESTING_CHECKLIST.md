@@ -461,3 +461,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Registry: damage over time, refresh to strongest, stacking cap, tick intervals, multipliers and slows, sight limit, immunity, cleanse, ended-once, zero duration (`status-effects.test.ts`)
 - [x] Combatant keeps burn, KO by burn, reset cleanse; bleeding is x1.1 for 6 s, refreshed never raised, no damage of its own, also scales burn
 - [x] Shroud's Bloodfade, Stalker Lunge, Rending Flurry and Hunting Frenzy bleed through the new rule (`shroud.test.ts`)
+
+## Stat pipeline (17/11/2026, Phase 1 B1-B2)
+- [x] No buff or status: every final value equals the base, for all four fighters (`final-stats.test.ts`)
+- [x] Layer order buff, status, sprint; a slow in the registry reaches final speed
+- [x] The damage a hit does matches the pipeline's damage-taken factor
+- [x] Rating totals stay within the balance tolerance (`balance.test.ts`)

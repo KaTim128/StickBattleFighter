@@ -11,7 +11,11 @@ const defs: Record<TestId, StatusDef> = {
 };
 const sink = () => {
   const dealt: Record<string, number> = {};
-  return { dealt, fn: (id: string, a: number) => ((dealt[id] = (dealt[id] ?? 0) + a), a) };
+  const fn = (id: string, a: number): number => {
+    dealt[id] = (dealt[id] ?? 0) + a;
+    return a;
+  };
+  return { dealt, fn };
 };
 
 describe('StatusEffects registry (B8)', () => {
@@ -50,7 +54,11 @@ describe('StatusEffects registry (B8)', () => {
     const fx = new StatusEffects<TestId>(defs);
     const calls: number[] = [];
     fx.apply('pulse', 1.2, { dps: 10 });
-    for (let t = 0; t < 1.5; t += 0.1) fx.tick(0.1, (_id, a) => (calls.push(a), a));
+    const record = (_id: string, a: number): number => {
+      calls.push(a);
+      return a;
+    };
+    for (let t = 0; t < 1.5; t += 0.1) fx.tick(0.1, record);
     expect(calls.length).toBe(3); // 0.5, 0.5, then the last 0.2 s
     expect(calls.reduce((a, b) => a + b, 0)).toBeCloseTo(12, 5);
   });

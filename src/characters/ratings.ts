@@ -1,5 +1,6 @@
 import { DEFENCE, dodgeCooldownFor } from '../combat/combatant';
 import type { FighterDef } from '../data/fighters/fighter-def';
+import { finalDefence, finalMaxSpeedMps, finalPower } from './final-stats';
 
 /**
  * Fighter ratings (owner, 12/11/2026: "view each fighter's HP, Speed, Power, Stamina, Defence and
@@ -13,6 +14,8 @@ import type { FighterDef } from '../data/fighters/fighter-def';
  * - Defence: damage taken (defence), plus a little for shrugging off knockback.
  * - Avoidance: how often it can dodge (lighter fighters dodge again sooner) and its hit-stun
  *   resistance.
+ * They read the base layer of the one stat pipeline (`final-stats.ts`, TD-074), so what the menu shows
+ * is what combat starts from.
  * Balance rule (checked by tests): every playable fighter's six ratings add up to the same total,
  * within a small tolerance; each fighter spends that budget differently.
  */
@@ -44,10 +47,10 @@ export function fighterRatings(def: FighterDef): FighterRatings {
   const dodgeCycleS = DEFENCE.dodgeDurationS + dodgeCooldownFor(s.massKg ?? 70);
   return {
     hp: scale(s.maxHp, 700, 1500),
-    speed: scale(def.movement.maxSpeedMps, 3.5, 5.7),
-    power: scale(s.power * ((m.punchDamage + m.kickDamage) / 2), 0.7, 1.5),
+    speed: scale(finalMaxSpeedMps(def, false), 3.5, 5.7),
+    power: scale(finalPower(def) * ((m.punchDamage + m.kickDamage) / 2), 0.7, 1.5),
     stamina: scale((s.maxStamina / 100) * (s.staminaRegenPerS / 30), 0.6, 1.4),
-    defence: scale(s.defence * (1 + s.knockbackResistance * 0.3), 0.7, 1.5),
+    defence: scale(finalDefence(def) * (1 + s.knockbackResistance * 0.3), 0.7, 1.5),
     avoidance: scale(1 / dodgeCycleS + (s.hitStunResistance ?? 0) * 0.5, 0.6, 2.2),
   };
 }
