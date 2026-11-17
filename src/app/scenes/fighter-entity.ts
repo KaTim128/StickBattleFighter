@@ -174,6 +174,10 @@ export class FighterEntity {
   aiStuckS = 0;
   /** How an AI aims its Fire Beam: delayed and slew-limited (B4). */
   readonly aiBeam = new BeamTracker();
+  /** AI furniture throwing (B9): cooldown before another object, time spent heading for one, time held one. */
+  aiPropCooldownS = 0;
+  aiPropApproachS = 0;
+  aiHeldS = 0;
   aiLastPos: { x: number; y: number } | null = null;
   aiUnstick: { x: number; y: number; leftS: number } | null = null;
   /** Smoothed presentation values. */

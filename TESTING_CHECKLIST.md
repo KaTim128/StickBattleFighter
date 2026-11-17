@@ -496,3 +496,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Hits while getting up do not stun or re-knock-down
 - [x] Bloodfade bleeds without stunning (`shroud.test.ts`)
 - [ ] Owner check: stab-spamming a downed or recovering fighter in play
+
+## Titan grab, AI furniture, Rampage Mode (17/11/2026, Phase 1 B9)
+- [x] Grab: no direction reversals, no jump over 0.2 m per frame, never touching his body (`titan-grab.test.ts`)
+- [x] A 12 m/s shove moves Titan, the target stays held, the slam still lands
+- [x] AI decision rules (`prop-plan.test.ts`); a Hard Titan picks up and throws furniture in a long office fight (`ai-furniture.test.ts`)
+- [x] Rampage Mode damage taken is 1/1.4 (`rampage.test.ts`)
+- [ ] Owner check: how often the AI throws at each difficulty, and that carrying furniture feels fair to fight

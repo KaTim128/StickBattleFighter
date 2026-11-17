@@ -22,6 +22,8 @@ export const GROUP = { WORLD: 0x1, FIGHTER: 0x2, DEBRIS: 0x4, FURNITURE: 0x8 } a
 const groups = (member: number, filter: number): number => (member << 16) | filter;
 /** The most a fighter is pushed out of a solid in one step (never enough to cross a thin wall). */
 const MAX_DEPENETRATE_M = 0.35;
+/** Still this deep after the passes: the fighter is wedged and is placed at the nearest spot that fits, metres. */
+const WEDGED_M = 0.1;
 
 let RAPIER: Rapier | null = null;
 let initPromise: Promise<void> | null = null;
@@ -264,7 +266,32 @@ export class PhysicsWorld {
       if (into < 0) body.setLinvel({ x: v.x - into * nx, y: v.y - into * ny }, true);
       total += moved * scale;
     }
+    // Wedged in a gap narrower than its body (pushes just bounce between the two sides): no push can
+    // free it, so set it down at the nearest spot where it fits (found by the long soak).
+    const at = body.translation();
+    if (this.pushOut(at, radiusM, overFurniture) > WEDGED_M) {
+      const spot = this.nearestFitting(at, radiusM, overFurniture);
+      if (spot) {
+        total += Math.hypot(spot.x - at.x, spot.y - at.y);
+        body.setTranslation(spot, true);
+        body.setLinvel({ x: 0, y: 0 }, true);
+      }
+    }
     return total;
+  }
+
+  /** The nearest spot within 1.5 m where a circle fits clear of walls and planted furniture, or null. */
+  private nearestFitting(at: Vec2, radiusM: number, overFurniture: boolean): Vec2 | null {
+    for (let ring = 1; ring <= 6; ring++) {
+      const r = ring * 0.25;
+      const n = 8 + ring * 4;
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2;
+        const spot = { x: at.x + Math.cos(a) * r, y: at.y + Math.sin(a) * r };
+        if (this.pushOut(spot, radiusM, overFurniture) <= 0) return spot;
+      }
+    }
+    return null;
   }
 
   /** How deep a circle at `at` sits inside walls and planted furniture, metres (0 = clear). */
@@ -290,6 +317,8 @@ export class PhysicsWorld {
     this.push.x = 0;
     this.push.y = 0;
     let deepest = 0;
+    let deepX = 0;
+    let deepY = 0;
     this.world.intersectionsWithShape(
       at,
       0,
@@ -301,12 +330,22 @@ export class PhysicsWorld {
         const depth = Math.min(-contact.distance, MAX_DEPENETRATE_M);
         this.push.x += contact.normal1.x * depth;
         this.push.y += contact.normal1.y * depth;
-        deepest = Math.max(deepest, depth);
+        if (depth > deepest) {
+          deepest = depth;
+          deepX = contact.normal1.x;
+          deepY = contact.normal1.y;
+        }
         return true;
       },
       undefined,
       groups(0xffff, GROUP.WORLD | (overFurniture ? 0 : GROUP.FURNITURE)),
     );
+    // Wedged between two solids closer together than its body: their pushes point opposite ways and
+    // cancel, leaving it stuck inside both (found by the long soak). Use the deepest contact alone.
+    if (deepest > 0 && Math.hypot(this.push.x, this.push.y) < deepest * 0.5) {
+      this.push.x = deepX * deepest;
+      this.push.y = deepY * deepest;
+    }
     if (Math.hypot(this.push.x, this.push.y) < 1e-4) return 0;
     return deepest;
   }

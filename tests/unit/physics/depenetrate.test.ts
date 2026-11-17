@@ -68,4 +68,17 @@ describe('depenetrate: fighters never stay inside walls or planted furniture (B3
     expect(w.depenetrate(body, R, false)).toBe(0);
     w.dispose();
   });
+
+  it('sets a fighter wedged in a gap narrower than its body down where it fits', () => {
+    const w = new PhysicsWorld();
+    // Two walls 0.56 m apart: a 0.64 m body can never fit between them, and pushes only bounce.
+    w.addStaticBox({ position: { x: 0, y: 0 }, halfExtents: { x: 0.2, y: 1 } });
+    w.addStaticBox({ position: { x: 0.76, y: 0 }, halfExtents: { x: 0.2, y: 1 } });
+    settle(w);
+    const body = w.addCharacterBody({ position: { x: 0.38, y: 0 }, radiusM: R, massKg: 70 });
+    expect(w.solidOverlapM(body.translation(), R)).toBeGreaterThan(0.1);
+    w.depenetrate(body, R, false);
+    expect(w.solidOverlapM(body.translation(), R)).toBeLessThan(0.01); // out of the gap, clear of both
+    w.dispose();
+  });
 });

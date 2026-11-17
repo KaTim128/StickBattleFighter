@@ -44,7 +44,8 @@ Check this table before assigning work. No two active assignments may share a pa
 - **Verification:** typecheck clean, lint 0 errors, 565 unit and integration tests pass; `phase6`, `controls`, `fighter-controls` e2e pass on desktop. The interruption tests fail without the flag. Full e2e on CI.
 - **B5 done (TD-077):** hard cap of four with refusal before the ultimate is spent; new `staggersTargets` capability makes skeleton hits damage-only.
 - **B6 done (TD-078):** `noFlinch` stabs, no hit chain restarts a fall; stab damage +12% to keep the close-battle standard.
-- **Next:** B9 Titan grab, B10 ultimate costs and AI targeting, B11 jumping, B13 fifth abilities and loadout, B14 loadout UI, B15 Shroud combo, B16 dodge, B17 fight length, B18 audio.
+- **B9 done (TD-079):** smooth grab, AI throws furniture, Rampage Mode defence +40%.
+- **Next:** B10 ultimate costs and AI targeting, B11 jumping, B13 fifth abilities and loadout, B14 loadout UI, B15 Shroud combo, B16 dodge, B17 fight length, B18 audio.
 
 ## Completed work
 

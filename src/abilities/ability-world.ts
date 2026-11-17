@@ -252,6 +252,14 @@ const norm = (v: Vec2): Vec2 => {
   return l > 1e-6 ? { x: v.x / l, y: v.y / l } : { x: 1, y: 0 };
 };
 
+/** Gap kept between a grabber and the target it holds, metres (they must not touch). */
+const GRAB_HOLD_GAP_M = 0.12;
+/** Within this of the hold point the held target is simply left still, metres. */
+const GRAB_SETTLE_M = 0.02;
+/** The fastest a held target is carried to its hold point, and how hard it is pulled in per second of distance. */
+const GRAB_MAX_SPEED_MPS = 14;
+const GRAB_GAIN_PER_S = 16;
+
 export class AbilityWorld {
   readonly projectiles: Projectile[] = [];
   readonly beams: Beam[] = [];
@@ -909,16 +917,18 @@ export class AbilityWorld {
     const caster = host.fighters().find((f) => f.id === a.casterId);
     if (!target || !caster?.hittable) return true; // the grabber fell: the target drops
     // Keep the target held just in front of the caster, rising overhead.
-    const hold = {
-      x: caster.x + a.dir.x * (caster.radiusM + target.radiusM),
-      y: caster.y + a.dir.y * (caster.radiusM + target.radiusM),
-    };
+    // A small gap off the grabber's body, so the two circles never touch: held exactly at the sum of
+    // the radii they pushed each other apart every step and the target jittered (master plan B9).
+    const gapM = caster.radiusM + target.radiusM + GRAB_HOLD_GAP_M;
+    const hold = { x: caster.x + a.dir.x * gapM, y: caster.y + a.dir.y * gapM };
     const lift = d.liftM * Math.min(1, a.ageS / d.liftS);
-    host.drive(
-      a.targetId,
-      { x: (hold.x - target.x) / Math.max(dtS, 1e-3), y: (hold.y - target.y) / Math.max(dtS, 1e-3) },
-      lift,
-    );
+    // Close the distance smoothly: a speed that eases off near the hold point and never exceeds the cap.
+    const dx = hold.x - target.x;
+    const dy = hold.y - target.y;
+    const dist = Math.hypot(dx, dy);
+    const speed =
+      dist < GRAB_SETTLE_M ? 0 : Math.min(GRAB_MAX_SPEED_MPS, dist / Math.max(dtS, 1e-3), dist * GRAB_GAIN_PER_S);
+    host.drive(a.targetId, dist > 1e-6 ? { x: (dx / dist) * speed, y: (dy / dist) * speed } : { x: 0, y: 0 }, lift);
     if (a.ageS < d.liftS) return false;
     // The slam: down in front, with the full payload and a dust blast.
     this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });

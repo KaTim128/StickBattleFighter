@@ -37,6 +37,8 @@ export interface Difficulty {
    * than `reactionS` at every level: a beam is never a perfect lock, even on Expert.
    */
   readonly beamReadS: number;
+  /** Chance per second, when it sees a chance, that it goes for a piece of furniture to throw (B9). */
+  readonly propThrowPerS: number;
   /** Saves escapes and finishers for the moment they matter, instead of using them at once. */
   readonly cooldownPlanning: boolean;
   /** Watches the player's habits (rushing in, keeping away) and adjusts its approach. */
@@ -58,6 +60,7 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     predictLead: 0,
     beamTrackRadPerS: 0.8,
     beamReadS: 0.7,
+    propThrowPerS: 0.1,
     cooldownPlanning: false,
     adapts: false,
   },
@@ -75,6 +78,7 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     predictLead: 0.3,
     beamTrackRadPerS: 1.3,
     beamReadS: 0.45,
+    propThrowPerS: 0.3,
     cooldownPlanning: false,
     adapts: false,
   },
@@ -92,6 +96,7 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     predictLead: 0.7,
     beamTrackRadPerS: 1.9,
     beamReadS: 0.3,
+    propThrowPerS: 0.6,
     cooldownPlanning: true,
     adapts: true,
   },
@@ -109,6 +114,7 @@ export const DIFFICULTIES: Readonly<Record<DifficultyId, Difficulty>> = {
     predictLead: 1,
     beamTrackRadPerS: 2.8,
     beamReadS: 0.2,
+    propThrowPerS: 0.9,
     cooldownPlanning: true,
     adapts: true,
   },

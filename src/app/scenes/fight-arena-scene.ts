@@ -9,6 +9,7 @@ import {
 } from '../../abilities/ability-def';
 import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
+import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { abilityPose, assaultPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
@@ -1133,12 +1134,8 @@ export class FightArenaScene implements ArenaScene {
       } else {
         const grab = this.pickupFor(f);
         if (grab && props && !f.airborne && !f.combo.attack && !f.caster?.cast) {
-          props.pickUp(grab, this.fighters.indexOf(f), this.holdPoint(f));
-          f.carrying = grab;
-          f.liftTotalS = THROWING.liftTimeFor(grab.kind.massKg);
-          f.liftS = f.liftTotalS;
+          this.liftProp(f, grab);
           f.interactTracking = false; // this press was the pickup, not a throw
-          this.characterSound(f, 'jump', 0.5);
         } else if (edge.orJump) {
           jump = true;
         }
@@ -1154,6 +1151,85 @@ export class FightArenaScene implements ArenaScene {
     }
     if (f.carrying && props) props.carry(f.carrying, this.holdPoint(f));
     return jump;
+  }
+
+  /** Lift a prop overhead (the player's pickup press and the AI's pickup share this). */
+  private liftProp(f: FighterEntity, grab: ArenaProp): void {
+    this.props?.pickUp(grab, this.fighters.indexOf(f), this.holdPoint(f));
+    f.carrying = grab;
+    f.liftTotalS = THROWING.liftTimeFor(grab.kind.massKg);
+    f.liftS = f.liftTotalS;
+    this.characterSound(f, 'jump', 0.5);
+  }
+
+  /**
+   * An AI fighter's furniture play (master plan B9): when it sees a chance it goes for a liftable
+   * object near it, carries it, and throws it at the target from a distance, through the same lift
+   * and throw code the player uses. Returns a move toward the object while it heads for one.
+   */
+  private aiProps(
+    f: FighterEntity,
+    target: FighterEntity,
+    sees: boolean,
+    stepS: number,
+    diff: Difficulty,
+  ): { approach: { x: number; y: number } | null; carrying: boolean } {
+    const props = this.props;
+    if (!props) return { approach: null, carrying: false };
+    const c = f.combatant;
+    f.aiPropCooldownS = Math.max(0, f.aiPropCooldownS - stepS);
+    f.aiPropApproachS = Math.max(0, f.aiPropApproachS - stepS);
+    if (f.carrying && (f.carrying.broken || !c.canAct)) this.dropCarried(f, 0); // hit while carrying: it falls
+    if (f.carrying) {
+      f.aiHeldS += stepS;
+      props.carry(f.carrying, this.holdPoint(f));
+    } else f.aiHeldS = 0;
+    const free = c.canAct && !f.combo.attack && !f.caster?.cast && !f.airborne;
+    const lift = f.def.objects;
+    const cand = f.carrying
+      ? null
+      : props.pickupCandidate(f.x, f.y, f.aim, PROP_SEEK_M, 99, lift.maxLiftKg, lift.liftsFurniture === true);
+    let propDist: number | null = null;
+    let at = { x: 0, y: 0 };
+    if (cand) {
+      const r = cand.rect;
+      propDist = Math.hypot(Math.max(r.x0 - f.x, 0, f.x - r.x1), Math.max(r.y0 - f.y, 0, f.y - r.y1));
+      at = { x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 };
+    }
+    const action = decideProp({
+      carrying: f.carrying !== null,
+      carryingReady: f.liftS <= 0,
+      heldS: f.aiHeldS,
+      free,
+      targetDistM: sees ? Math.hypot(target.x - f.x, target.y - f.y) : null,
+      targetAhead: true, // a throw turns to the target before it leaves the hands
+      propDistM: propDist,
+      reachM: THROWING.reachM + f.def.body.footRadiusM,
+      cooldownS: f.aiPropCooldownS,
+      // Only draw from the shared random stream when a pickup is actually possible, so fights with no
+      // furniture in play are not perturbed by this feature.
+      roll: cand && sees && free && f.aiPropCooldownS === 0 ? this.rng() : 1,
+      appetitePerS: diff.propThrowPerS,
+      dtS: stepS,
+      throwRangeM: THROWING.aimRangeM,
+    });
+    if (action === 'throw') {
+      if (sees) this.throwCarried(f);
+      else this.dropCarried(f, 0.8);
+      f.aiPropCooldownS = 6;
+    } else if (action === 'pickup' && cand) {
+      this.liftProp(f, cand);
+    } else if (action === 'approach') {
+      f.aiPropApproachS = 2.5;
+    }
+    // Heading for an object it has decided on.
+    if (f.aiPropApproachS > 0 && cand && !f.carrying) {
+      const dx = at.x - f.x;
+      const dy = at.y - f.y;
+      const d = Math.hypot(dx, dy) || 1;
+      return { approach: { x: dx / d, y: dy / d }, carrying: false };
+    }
+    return { approach: null, carrying: f.carrying !== null };
   }
 
   /** Where a carried object rides: over the head, a touch in front so it draws over the fighter. */
@@ -1824,6 +1900,21 @@ export class FightArenaScene implements ArenaScene {
       move = { x: u.x, y: u.y };
       u.leftS -= stepS;
       if (u.leftS <= 0) f.aiUnstick = null;
+    }
+    // Furniture (B9): heading for an object overrides the walk; a carrying AI does not also attack.
+    const propPlay = this.aiProps(f, p, sees, stepS, diff);
+    if (propPlay.approach && !f.aiUnstick) move = propPlay.approach;
+    if (propPlay.carrying && f.carrying) {
+      f.sprinting = false;
+      // The same rules as the player's hands-full step: rooted while heaving it up, slowed once it is overhead.
+      if (f.liftS > 0) {
+        f.liftS = Math.max(0, f.liftS - stepS);
+        this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
+        return;
+      }
+      const slow = THROWING.carrySpeedFactor(f.carrying.kind.massKg);
+      this.stepFighter(f, stepS, { x: move.x * slow, y: move.y * slow }, false);
+      return;
     }
     if (out.ability && this.abilities) {
       const started = this.abilities.tryCast(f, out.ability.slot, out.ability.at) === null;

@@ -60,7 +60,10 @@ describe('fighter AI opponent', { timeout: 60_000 }, () => {
         const heavyId = scene.dummyFighter.def.starters.heavy;
         const caster = scene.dummyFighter.caster!;
         let t = 0;
-        run(45, () => {
+        // 75 s, not 45: measured over every difficulty and two starting distances, Titan's first Crushing
+        // Strike (a close, narrow-band ability) came anywhere from 1 s to 60 s in, so 45 s was a coin toss
+        // that any change to a fight's course could tip (17/11/2026). The rule is that the whole kit is used.
+        run(75, () => {
           t += 1 / 60;
           const ab = caster.cast?.def.id;
           if (ab) seen.add(`ability:${ab}`);
