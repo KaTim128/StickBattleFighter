@@ -103,18 +103,17 @@ describe('rebinding and conflicts', () => {
   });
 });
 
-describe('settings persistence', () => {
-  it('saves and restores volumes and bindings between sessions', () => {
+describe('general settings persistence', () => {
+  it('saves and restores volumes between sessions', () => {
     const storage = new MemoryStorage();
     const a = new SettingsState(storage);
-    a.update({ musicVolume: 0.25, sfxVolume: 0.6, bindings: rebind(a.bindings, 'jump', 'KeyC').bindings });
+    a.update({ musicVolume: 0.25, sfxVolume: 0.6 });
     const b = new SettingsState(storage);
     expect(b.current.musicVolume).toBe(0.25);
     expect(b.current.sfxVolume).toBe(0.6);
-    expect(b.bindings.jump).toBe('KeyC');
   });
 
-  it('falls back to defaults for missing, corrupt or clashing saved data', () => {
+  it('falls back to defaults for missing or corrupt saved data', () => {
     expect(loadSettings(null)).toEqual(DEFAULT_SETTINGS);
     const s = new MemoryStorage();
     s.setItem(SETTINGS_STORAGE_KEY, '{not json');
@@ -123,7 +122,8 @@ describe('settings persistence', () => {
     const got = loadSettings(s);
     expect(got.musicVolume).toBe(1);
     expect(got.sfxVolume).toBe(DEFAULT_SETTINGS.sfxVolume);
-    expect(got.bindings).toEqual(DEFAULT_BINDINGS); // jump on W would clash with moving up
+    // Key layouts are per fighter now (17/11/2026): bindings saved with the general settings are ignored.
+    expect(got).not.toHaveProperty('bindings');
     expect(sanitiseBindings({ jump: 'KeyC', bogus: 'KeyV' }).jump).toBe('KeyC');
   });
 

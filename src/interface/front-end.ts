@@ -14,9 +14,9 @@ import { quitGame } from './quit-game';
  * The game's front end (owner, 13/11/2026: "Main Menu, Player Identification and Interface
  * Redesign"; "Stickman Selection Screen and Unique 2.5D Fighter Stances"). Original design.
  *
- * - Title: the logo top left, the menu down the left (Story Mode, locked; Game Modes; Settings;
+ * - Title: the logo top left, the menu down the left (Game Modes; Practice; Settings;
  *   Quit Game; Admin Panel only for the admin name), the fighters striking their stances on the right.
- * - Name: before Story Mode or Game Modes the player registers a name (10 characters at most).
+ * - Name: before Game Modes or Practice the player registers a name (10 characters at most).
  * - Game Modes: Tournament, and 3 vs 3 (shown, coming soon).
  * - Fighter select: the selected fighter large in its select stance, its name, title, story and
  *   style, six stats, four abilities and its ultimate beside it; the roster below; the tournament's
@@ -78,6 +78,8 @@ export interface FrontEndOptions {
   /** The screen shown now (the music is lowered on fighter select). */
   onScreen?(screen: FrontScreen): void;
   openSettings(): void;
+  /** Open one fighter's own key layout (Phase 1 A3): from Practice and Fighter Selection. */
+  openFighterControls(fighterId: string): void;
   openAdmin(): void;
   startTournament(setup: TournamentSetup): void;
   startPractice(setup: PracticeSetup): void;
@@ -212,7 +214,7 @@ export class FrontEnd {
     this.toastTimer = window.setTimeout(() => this.toast.classList.remove('show'), 2600);
   }
 
-  /** Story Mode and Game Modes need a registered name first. */
+  /** Game Modes and Practice need a registered name first. */
   private needName(then: FrontScreen): boolean {
     if (this.o.playerName()) return false;
     this.afterName = then;
@@ -250,10 +252,7 @@ export class FrontEnd {
       items.push(b);
       return b;
     };
-    const story = item('story', 'Story Mode', () => this.say('Story Mode is locked. It arrives in a later update.'));
-    story.classList.add('locked');
-    story.setAttribute('aria-disabled', 'true');
-    story.append(el('span', 'fe-lock', 'LOCKED'));
+    // Game Modes is the first button, above Practice (owner, master plan 16/11/2026: Story Mode removed).
     const modes = item('modes', 'Game Modes', () => {
       if (!this.needName('modes')) this.show('modes');
     });
@@ -495,7 +494,10 @@ export class FrontEnd {
     );
     sec.append(list);
     const row = el('div', 'fe-row');
-    row.append(button('fe-back', 'Back', () => this.show('title')));
+    row.append(
+      button('fe-back', 'Back', () => this.show('title')),
+      button('fe-keys', 'Change Fighter Keybinds', () => this.o.openFighterControls(this.choice.fighter)),
+    );
     sec.append(row);
   }
 
@@ -634,6 +636,7 @@ export class FrontEnd {
     const actions = el('div', 'fe-sel-actions');
     actions.append(
       button('fe-back', 'Back', () => this.back()),
+      button('fe-keys', 'Change Fighter Keybinds', () => this.o.openFighterControls(this.choice.fighter)),
       this.selectFor === 'tournament'
         ? button('fe-go fe-fight', 'FIGHT', () => this.o.startTournament({ ...this.choice }))
         : button('fe-go fe-fight fe-enter', 'ENTER', () =>

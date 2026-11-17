@@ -423,6 +423,22 @@ function screenDoc(): Document {
   return topWindow().document;
 }
 
+type KeyboardLock = { lock?: (keys?: string[]) => Promise<void>; unlock?: () => void };
+
+/**
+ * In fullscreen a browser normally takes Escape to leave it. Where the Keyboard Lock API exists
+ * (Chromium) the game claims Escape, so it reaches the game and opens Settings (owner, master plan
+ * 16/11/2026); the browser's own way out is then holding Escape. Browsers without it keep their
+ * behaviour: a page cannot stop them.
+ */
+function lockEscape(top: Window): void {
+  try {
+    void (top.navigator as Navigator & { keyboard?: KeyboardLock }).keyboard?.lock?.(['Escape'])?.catch(() => {});
+  } catch {
+    /* not supported here: carry on */
+  }
+}
+
 export function enterFullscreen(): void {
   const top = topWindow();
   const doc = top.document;
@@ -433,11 +449,13 @@ export function enterFullscreen(): void {
   };
   if (doc.fullscreenElement) {
     void Promise.resolve(lock()).catch(() => {});
+    lockEscape(top);
     return;
   }
   try {
     if (el.requestFullscreen)
       el.requestFullscreen({ navigationUI: 'hide' })
+        .then(() => lockEscape(top))
         .then(lock)
         .catch(() => {
           /* not allowed here (desktop, or no tap): carry on in the page */
@@ -450,6 +468,11 @@ export function enterFullscreen(): void {
 
 export function exitFullscreen(): void {
   const doc = screenDoc();
+  try {
+    (topWindow().navigator as Navigator & { keyboard?: KeyboardLock }).keyboard?.unlock?.();
+  } catch {
+    /* nothing to release */
+  }
   if (doc.fullscreenElement) void doc.exitFullscreen().catch(() => {});
 }
 

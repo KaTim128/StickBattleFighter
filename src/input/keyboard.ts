@@ -1,4 +1,5 @@
 import { actionsFor, type BindAction, type Bindings, DEFAULT_BINDINGS, mouseCode } from './bindings';
+import { HOLDABLE, type HoldRules } from './fighter-controls';
 import type { PlayerIntents, Vec2 } from './intents';
 import { isTypingTarget } from './typing';
 
@@ -30,6 +31,8 @@ export function moveFromActions(held: Iterable<BindAction>): Vec2 {
 export interface DesktopInputOptions {
   /** The live bindings (read on every event, so a rebind applies at once). */
   bindings?: () => Bindings;
+  /** Actions set to Hold: they fire only after the key has been held this many seconds (owner, 16/11/2026). */
+  holds?: () => HoldRules;
   /** While true (e.g. the settings screen is open) the game ignores desktop input. */
   paused?: () => boolean;
 }
@@ -40,6 +43,8 @@ export interface DesktopInputOptions {
  */
 export class DesktopInput {
   private readonly heldCodes = new Set<string>();
+  /** Hold actions waiting for their time: code → seconds held so far and the actions it will fire. */
+  private readonly pendingHolds = new Map<string, { heldS: number; needS: number; actions: BindAction[] }>();
 
   constructor(
     private readonly intents: PlayerIntents,
@@ -59,57 +64,90 @@ export class DesktopInput {
     if (this.options.paused?.()) return;
     if (this.heldCodes.has(code)) return; // key repeat
     this.heldCodes.add(code);
-    const i = this.intents;
+    const holds = this.options.holds?.() ?? {};
+    const waiting: BindAction[] = [];
+    let needS = 0;
     for (const action of actionsFor(this.bindings, code)) {
-      switch (action) {
-        case 'jump':
-          i.pressJump();
-          break;
-        case 'attack':
-          i.meleePress();
-          break;
-        case 'dodge':
-          i.pressDodge();
-          break;
-        case 'grab':
-          i.interactPress();
-          break;
-        case 'tag':
-          i.pressTag();
-          break;
-        case 'ability1':
-          i.pressAbility('a1');
-          break;
-        case 'ability2':
-          i.pressAbility('a2');
-          break;
-        case 'ability3':
-          i.pressAbility('a3');
-          break;
-        case 'ability4':
-          i.pressAbility('a4');
-          break;
-        case 'ultimate':
-          i.pressAbility('ult');
-          break;
-        case 'heavyAttack':
-          i.pressHeavy();
-          break;
-        case 'beamLeft':
-          i.beamTurnLeft = true;
-          break;
-        case 'beamRight':
-          i.beamTurnRight = true;
-          break;
-        default:
-          break;
-      }
+      const hold = holds[action];
+      if (hold !== undefined && HOLDABLE.has(action)) {
+        waiting.push(action);
+        needS = Math.max(needS, hold);
+      } else this.fire(action);
     }
+    if (waiting.length > 0) this.pendingHolds.set(code, { heldS: 0, needS, actions: waiting });
     this.sync();
+  }
+
+  /**
+   * Time passes: a key held long enough fires its Hold actions (once). Called every frame by the
+   * game; a key let go early fires nothing.
+   */
+  update(dtS: number): void {
+    if (this.options.paused?.() || this.pendingHolds.size === 0) return;
+    for (const [code, h] of this.pendingHolds) {
+      h.heldS += dtS;
+      if (h.heldS < h.needS) continue;
+      this.pendingHolds.delete(code);
+      for (const action of h.actions) this.fire(action);
+    }
+  }
+
+  /** How far a hold action has been held, 0..1 (for a progress indicator), or null when not held. */
+  holdProgress(action: BindAction): number | null {
+    for (const h of this.pendingHolds.values()) if (h.actions.includes(action)) return Math.min(1, h.heldS / h.needS);
+    return null;
+  }
+
+  private fire(action: BindAction): void {
+    const i = this.intents;
+    switch (action) {
+      case 'jump':
+        i.pressJump();
+        break;
+      case 'attack':
+        i.meleePress();
+        break;
+      case 'dodge':
+        i.pressDodge();
+        break;
+      case 'grab':
+        i.interactPress();
+        break;
+      case 'tag':
+        i.pressTag();
+        break;
+      case 'ability1':
+        i.pressAbility('a1');
+        break;
+      case 'ability2':
+        i.pressAbility('a2');
+        break;
+      case 'ability3':
+        i.pressAbility('a3');
+        break;
+      case 'ability4':
+        i.pressAbility('a4');
+        break;
+      case 'ultimate':
+        i.pressAbility('ult');
+        break;
+      case 'heavyAttack':
+        i.pressHeavy();
+        break;
+      case 'beamLeft':
+        i.beamTurnLeft = true;
+        break;
+      case 'beamRight':
+        i.beamTurnRight = true;
+        break;
+      default:
+        break;
+    }
   }
 
   up(code: string): void {
     if (!this.heldCodes.delete(code)) return;
+    this.pendingHolds.delete(code); // let go before the hold time: nothing fires
     for (const action of actionsFor(this.bindings, code)) {
       if (action === 'attack') this.intents.meleeRelease();
       if (action === 'beamLeft') this.intents.beamTurnLeft = false;
@@ -123,6 +161,7 @@ export class DesktopInput {
   releaseAll(): void {
     for (const code of [...this.heldCodes]) this.up(code);
     this.heldCodes.clear();
+    this.pendingHolds.clear();
     this.sync();
   }
 

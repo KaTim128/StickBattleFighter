@@ -16,7 +16,11 @@ test('admin panel: pick Titan and the training yard, play, then leave the game b
   await openAdminPanel(page);
   const menu = page.locator('.main-menu');
   await expect(menu).toBeVisible();
-  await expect(menu.locator('[data-fighter]')).toHaveCount(4); // Inferno, Titan, Necro and Shroud (summons are never in the menu)
+  // The Admin Panel lists every character (owner, master plan 16/11/2026): the four fighters first,
+  // then the skeleton warrior and the training dummy.
+  await expect(menu.locator('[data-fighter]')).toHaveCount(6);
+  for (const id of ['inferno', 'rampage', 'necro', 'shroud', 'skeleton-warrior', 'training-dummy'])
+    await expect(menu.locator(`[data-fighter="${id}"]`)).toHaveCount(1);
   await menu.locator('[data-fighter="rampage"]').click();
   await menu.locator('.mm-d-select').click(); // a card opens the details; Select picks the fighter
   await expect(menu.locator('[data-fighter="rampage"]')).toHaveClass(/selected/);
@@ -29,7 +33,7 @@ test('admin panel: pick Titan and the training yard, play, then leave the game b
   await page.locator('.settings-button').click();
   await page.locator('.settings-leave').click();
   await expect(page.locator('.front-end [data-screen="title"]')).toBeVisible(); // Leave goes to the title screen
-  await expect(page.locator('.settings-panel')).toBeHidden();
+  await expect(page.locator('.settings-panel:not(.fighter-controls)')).toBeHidden();
   expect(errors).toEqual([]);
 });
 

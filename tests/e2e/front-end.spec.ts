@@ -28,22 +28,23 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   const front = page.locator('.front-end');
   const title = front.locator('[data-screen="title"]');
   await expect(title).toBeVisible();
-  // Only Story Mode, Game Modes, Settings and Quit Game; no Start, no Admin Panel for players.
-  await expect(title.locator('.fe-item')).toHaveText([/Story Mode/, 'Game Modes', 'Practice', 'Settings', 'Quit Game']);
-  await expect(title.locator('.fe-item-story')).toHaveClass(/locked/);
+  // Game Modes first, above Practice; no Story Mode (owner, 16/11/2026); no Admin Panel for players.
+  await expect(title.locator('.fe-item')).toHaveText(['Game Modes', 'Practice', 'Settings', 'Quit Game']);
+  await expect(title.locator('[data-nav="story"]')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText(/story mode/i);
   await expect(page.locator('.ability-bar')).toBeHidden();
   expect((await debug(page)).menuMusicPlaying).toBe(true); // menu music on the title screen
   const clicks = (await debug(page)).uiClicks;
-  await title.locator('.fe-item-story').click({ force: true }); // locked (aria-disabled) but still explains itself
-  await expect(front.locator('.fe-toast')).toHaveText(/locked/i);
-  expect((await debug(page)).uiClicks).toBe(clicks + 1); // one click sound per press
+  await title.locator('[data-nav="settings"]').click(); // one click sound per press
+  expect((await debug(page)).uiClicks).toBe(clicks + 1);
+  await page.locator('.settings-panel:not(.fighter-controls) .settings-close').click();
   // The owner's title art is the menu, covering the screen; the buttons sit on its painted plates.
   await expect(title.locator('.fe-art')).toHaveCSS('background-image', /title-menu/);
   const art = (await title.locator('.fe-art').boundingBox())!;
   const vp = page.viewportSize()!;
   expect(art.width).toBeGreaterThanOrEqual(vp.width - 1);
   expect(art.height).toBeGreaterThanOrEqual(vp.height - 1);
-  for (const id of ['story', 'modes', 'settings', 'quit']) {
+  for (const id of ['modes', 'practice', 'settings', 'quit']) {
     const b = (await title.locator(`[data-nav="${id}"]`).boundingBox())!;
     expect(b.y, id).toBeGreaterThanOrEqual(0); // never cropped off the screen
     expect(b.y + b.height, id).toBeLessThanOrEqual(vp.height);
@@ -122,7 +123,7 @@ test('Settings from the title, change the name there; Quit says goodbye; the adm
   await expect(title.locator('[data-nav="admin"]')).toHaveCount(0);
   // Settings from the menu, and the gear on top, are the same panel.
   await title.locator('[data-nav="settings"]').click();
-  const panel = page.locator('.settings-panel');
+  const panel = page.locator('.settings-panel:not(.fighter-controls)');
   await expect(panel).toBeVisible();
   await panel.locator('[data-tab="profile"]').click();
   await expect(panel.locator('.settings-name-input')).toHaveValue('Katim');

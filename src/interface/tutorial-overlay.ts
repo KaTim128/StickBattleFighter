@@ -16,7 +16,7 @@ export class TutorialOverlay {
   constructor(
     parent: HTMLElement,
     private readonly keys: () => Readonly<Record<string, string>>,
-    private readonly actions: { skip(): void; openZone(): void; menu(): void },
+    private readonly actions: { skip(): void; openZone(): void; menu(): void; controls(): void },
   ) {
     this.root = document.createElement('div');
     this.root.className = 'tutorial-card';
@@ -25,13 +25,14 @@ export class TutorialOverlay {
       <div class="tut-head"><span class="tut-count"></span><span class="tut-title"></span></div>
       <p class="tut-text"></p>
       <div class="tut-track"><div class="tut-bar"></div></div>
-      <div class="tut-actions"><button type="button" class="tut-skip">Skip tutorial</button></div>`;
+      <div class="tut-actions"><button type="button" class="tut-keys">Change Fighter Keybinds</button><button type="button" class="tut-skip">Skip tutorial</button></div>`;
     parent.appendChild(this.root);
     this.count = this.root.querySelector('.tut-count')!;
     this.title = this.root.querySelector('.tut-title')!;
     this.text = this.root.querySelector('.tut-text')!;
     this.bar = this.root.querySelector('.tut-bar')!;
     this.root.querySelector('.tut-skip')!.addEventListener('click', () => this.actions.skip());
+    this.root.querySelector('.tut-keys')!.addEventListener('click', () => this.actions.controls());
   }
 
   update(run: TutorialRun): void {
@@ -46,6 +47,7 @@ export class TutorialOverlay {
       const actions = this.root.querySelector('.tut-actions')!;
       actions.replaceChildren();
       for (const [cls, label, fn] of [
+        ['tut-keys', 'Change Fighter Keybinds', () => this.actions.controls()],
         ['tut-open', 'Open Zone', () => this.actions.openZone()],
         ['tut-menu', 'Main menu', () => this.actions.menu()],
       ] as const) {

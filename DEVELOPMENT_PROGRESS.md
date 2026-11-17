@@ -21,6 +21,16 @@ Check this table before assigning work. No two active assignments may share a pa
 |---|---|---|---|---|---|
 | *(none)* | | | | | |
 
+## Phase 1 Batch A (17/11/2026, implementation model)
+
+- **A1 housekeeping:** Story Mode removed from Game Modes; Admin Panel lists every character via `adminCharacters(lib)` (Players menu uses `playableFighters(lib)`).
+- **A2 CI:** `.github/workflows/ci.yml` split into static, unit, build and an e2e matrix (project x 2 shards, 25 min each) so no job nears its timeout.
+- **A3 input redesign:** per-fighter controls (`src/input/fighter-controls.ts`), tap/hold actions (`keyboard.ts`), `FighterControlsPanel`, General Settings reduced to Audio and Profile, "Change Fighter Keybinds" buttons, Esc via Keyboard Lock.
+- **Tests:** `npm run typecheck` clean; `npm run lint` 0 errors (1 existing warning); `npx vitest run` 514 passed; Playwright front-end, menu, controls, fighter-controls, tournament green on desktop and mobile (see the final full run in the commit).
+- **Test changes, explained:** `controls.spec.ts` no longer drives a Controls tab in Settings (moved by design to Fighter Controls, covered by `fighter-controls.spec.ts`); other specs scope `.settings-panel:not(.fighter-controls)` because both panels share styling classes. No assertion was loosened.
+- **Limitation:** Esc capture depends on browser support for Keyboard Lock; checked in Chromium only.
+- **Next:** Phase 1 Batch B (`IMPLEMENTATION_PLAN.md` §1), status-effect registry first.
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

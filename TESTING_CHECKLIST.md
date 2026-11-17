@@ -449,3 +449,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Every pairing of the four fighters, 90 s watched fight: no AI idle over 1.5 s outside a Punch Clash (`tests/integration/ai/engagement.test.ts`; 6 of 10 failed before the fix, up to 8.4 s idle)
 - [x] Blinded AI does not track a circling player, keeps moving, tracks again after (`blindness.test.ts`)
 - [x] Blinded player: no lock-on, no ability aim help, Bloodfade finds no one, faces the way it walks; help returns after (`blindness.test.ts`)
+
+## Per-fighter controls and Settings split (17/11/2026, Phase 1 A3)
+- [x] Rebind, clash refusal, tap/hold, per-fighter independence, persistence and reset (`fighter-controls.spec.ts`, `fighter-controls.test.ts`)
+- [x] General Settings has only Audio and Profile; no Fullscreen, Fire Beam or touch-size controls (`fighter-controls.spec.ts`, `controls.spec.ts`)
+- [x] In a fight, Esc opens Settings and "Change Fighter Keybinds" opens the fighter being played
+- [x] Story Mode gone; Admin lists all characters (`roster.test.ts`, `admin-roster.test.ts`, `menu.spec.ts`)
+- [ ] Owner check: Esc behaviour in other browsers (Keyboard Lock support varies) and Hold controls on a real keyboard

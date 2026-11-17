@@ -58,6 +58,10 @@ Phase 0 changed documents only. The last code state (`e0a78ae`, AI fixes rebased
 
 Phase 0 planned and self-audited by the planning/review model (see the self-audit in `DEVELOPMENT_PROGRESS.md`).
 
+## Progress (17/11/2026)
+
+Phase 0 approved (TD-072). Phase 1 **Batch A done** (A1 housekeeping, A2 CI split, A3 per-fighter controls). Batch B (B1 to B18) is next.
+
 ## Exact next action
 
-After approval, the implementation model starts **Phase 1 Batch A**, in order A1 → A2 → A3 (`IMPLEMENTATION_PLAN.md` §1).
+Start **Phase 1 Batch B** with B1, the status-effect registry (`IMPLEMENTATION_PLAN.md` §1); stop at the end of Phase 1 for the owner's consolidated review.

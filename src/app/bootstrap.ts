@@ -1,5 +1,6 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
+import { ABILITY_KITS } from '../abilities/kits';
 import { isAdminName } from '../admin/local-access';
 import { AmbiencePlayer } from '../audio/ambience';
 import { AudioClip, MusicLoop, musicFor } from '../audio/music';
@@ -10,7 +11,8 @@ import { BUILT_IN_LIBRARY, DEFAULT_CAST, withEntries } from '../characters/libra
 import { loadCharacter } from '../characters/load';
 import { withOverrides } from '../characters/overrides';
 import { resolveCharacter } from '../characters/resolve';
-import type { CharacterLibrary } from '../characters/schema';
+import { adminCharacters, playableFighters } from '../characters/roster';
+import type { CharacterDefinition, CharacterLibrary } from '../characters/schema';
 import { FpsMeter } from '../core/fps-meter';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
@@ -24,6 +26,7 @@ import { BATTLE_MUSIC, FIGHT_COUNTDOWN, MENU_MUSIC, UI_CLICK } from '../data/aud
 import { SELECT_STANCES } from '../data/presentation/select-stances';
 import { codeLabel } from '../input/bindings';
 import { onDebugImpact, onDebugToggle, onFirstInput, onToggleDummyAttacks, onToggleMute } from '../input/debug-keys';
+import { FighterControlsStore } from '../input/fighter-controls';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
 import { preventPageZoom } from '../input/no-zoom';
@@ -35,6 +38,7 @@ import { BlindVeil } from '../interface/blind-veil';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { FightIntro } from '../interface/fight-intro';
+import { FighterControlsPanel } from '../interface/fighter-controls';
 import { fighterSheet } from '../interface/fighter-sheet';
 import { FrontEnd } from '../interface/front-end';
 import { keepLandscape, showHomeScreenHint } from '../interface/landscape';
@@ -187,19 +191,24 @@ const MENU_ARENAS = [
 ] as const;
 
 /** Playable fighters for the main menu: every built-in fighter made from a template. */
+function toMenuFighter(c: CharacterDefinition): MenuFighter {
+  const head = tunedLibrary().effects[c.profiles.effects]?.head;
+  return {
+    id: c.id,
+    name: c.displayName,
+    blurb: c.description,
+    portrait: head === 'flame' || head === 'brute' ? head : 'round',
+    colour: c.rig.colour,
+  };
+}
+
 function menuFighters(): MenuFighter[] {
-  return Object.values(tunedLibrary().characters)
-    .filter((c) => c.template !== undefined && c.capabilities.isPlayable && c.characterType === 'fighter')
-    .map((c) => {
-      const head = tunedLibrary().effects[c.profiles.effects]?.head;
-      return {
-        id: c.id,
-        name: c.displayName,
-        blurb: c.description,
-        portrait: head === 'flame' || head === 'brute' ? head : 'round',
-        colour: c.rig.colour,
-      };
-    });
+  return playableFighters(tunedLibrary()).map(toMenuFighter);
+}
+
+/** The Admin Panel lists every character, skeleton variants and the training dummy included. */
+function adminFighters(): MenuFighter[] {
+  return adminCharacters(tunedLibrary()).map(toMenuFighter);
 }
 
 /** Opponents for the menu (owner, 13/11/2026): the training dummy first (the default), then every playable fighter. */
@@ -247,16 +256,24 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
 
   const intents = new PlayerIntents();
   // Settings (owner, 11/11/2026): saved in this browser; bindings apply the moment they change.
-  const settings = new SettingsState(browserStorage());
+  const controlsStore = new FighterControlsStore(browserStorage());
+  const settings = new SettingsState(browserStorage(), controlsStore);
   // Overlays that pause the fight (Settings, the main menu): the game ignores input while any is open.
   const pausedBy = new Set<string>();
   // The player's registered name (owner, 13/11/2026): their identity on screen; display only.
   let playerName = loadPlayerName();
+  // The fighter this page plays has its own key layout, saved for the player's profile (Phase 1 A3).
+  settings.activate(playerName, params.get('character') ?? DEFAULT_CAST.player);
   const blindVeil = new BlindVeil(document.body);
   const visionVeil = new VisionVeil(document.body);
   const aimHint = new AimHint(document.body);
   const fightIntro = new FightIntro(document.body);
-  const desktop = new DesktopInput(intents, { bindings: () => settings.bindings, paused: () => pausedBy.size > 0 });
+  let lastControlsMs = performance.now();
+  const desktop = new DesktopInput(intents, {
+    bindings: () => settings.bindings,
+    holds: () => settings.holds,
+    paused: () => pausedBy.size > 0,
+  });
   attachKeyboard(window, desktop);
   attachMouse(container, desktop, intents);
   attachTouchControls(document.body, intents);
@@ -487,6 +504,17 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       if (scene instanceof EngineCheckScene) debug.crate = scene.state.crate;
       if (scene instanceof FightArenaScene) {
         debug.player = scene.player;
+        {
+          // Hold actions need real time; and in a tag fight each teammate has their own keys.
+          const now = performance.now();
+          desktop.update(Math.min(0.1, (now - lastControlsMs) / 1000));
+          lastControlsMs = now;
+          const playing = scene.playerFighter.def.id;
+          if (playing !== settings.activeFighter) {
+            desktop.releaseAll();
+            settings.activate(playerName, playing);
+          }
+        }
         showUtilityAction(document.body, debug.player.utility);
         showDodgeReady(document.body, debug.player.dodgeReady);
         showStickAiming(document.body, debug.player.beamAiming);
@@ -632,7 +660,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   };
   const menu = new MainMenu(
     document.body,
-    menuFighters(),
+    adminFighters(),
     MENU_ARENAS,
     menuOpponents(),
     Object.values(DIFFICULTIES).map((d) => ({ id: d.id, name: d.label })),
@@ -708,13 +736,38 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     menu.setOpen(false);
     front.setOpen(true, 'title');
   };
+  // Fighter Controls (Phase 1 A3): one fighter's own keys, from Fighter Selection, Practice, the
+  // Tutorial and in-game Settings. The fighter being played applies live; others are just saved.
+  const fighterControls = new FighterControlsPanel(
+    document.body,
+    {
+      get: (id) => (id === settings.activeFighter ? settings.controls : controlsStore.get(playerName, id)),
+      save: (id, c) =>
+        id === settings.activeFighter ? settings.setControls(c) : void controlsStore.set(playerName, id, c),
+      reset: (id) =>
+        id === settings.activeFighter ? settings.resetControls() : void controlsStore.reset(playerName, id),
+    },
+    (open) => setPaused('fighter-controls', open),
+  );
+  const openFighterControls = (id: string): void => {
+    const def = tunedLibrary().characters[id];
+    const kitId = def?.abilityKit ? ABILITY_KITS[def.abilityKit] : undefined;
+    const hasBeam = kitId
+      ? Object.values(kitId).some((a) => (a as { delivery?: { type?: string } }).delivery?.type === 'beam')
+      : false;
+    fighterControls.open({ id, name: def?.displayName ?? id, hasBeam });
+  };
+  const openActiveFighterControls = (): void => {
+    const id = settings.activeFighter;
+    if (id) openFighterControls(id);
+  };
   const settingsPanel = new SettingsPanel(
     document.body,
     settings,
     (open) => setPaused('settings', open),
     {
       leave: () => leave(),
-      fullscreen: () => goFullscreen(),
+      fighterControls: () => openActiveFighterControls(),
     },
     () => {
       // Escape while aiming cancels the aim (owner, 12/11/2026) rather than opening the settings.
@@ -755,6 +808,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
     onOpenChange: (open) => setPaused('front', open),
     openSettings: () => settingsPanel.setOpen(true),
+    openFighterControls: (id) => openFighterControls(id),
     openAdmin: () => {
       if (!isAdminName(playerName)) return;
       front.setOpen(false);
@@ -908,6 +962,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         front.openSelect('practice');
       },
       menu: () => front.setOpen(true, 'title'),
+      controls: () => openActiveFighterControls(),
     });
     let last = { x: f.x, y: f.y, hits: f.hits };
     let ultReady = false;
@@ -978,7 +1033,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // All in one GPU read-back, once the page is idle, so the first moments of a fight never stall.
   const drawPortraits = async (): Promise<void> => {
     try {
-      const fighters = menuFighters();
+      const fighters = adminFighters(); // every card in the Admin Panel needs its portrait
       const defs = fighters.map((f) => resolveCharacter(f.id, tunedLibrary()));
       if (scene instanceof FightArenaScene) defs.push(scene.playerFighter.def, scene.dummyFighter.def);
       const urls = await renderPortraits(app, defs);

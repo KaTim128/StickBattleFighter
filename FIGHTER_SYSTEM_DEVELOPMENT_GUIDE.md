@@ -155,3 +155,7 @@ See `AUDIO_ASSET_CATALOG.md`:
 | A status effect | `tests/unit/combat/combatant*`, the fighters that apply it |
 | AI | `tests/integration/scenes/ai-opponent.test.ts`, `tests/integration/ai/*`, `tests/unit/ai/*` |
 | UI | `tests/e2e/front-end.spec.ts`, `menu.spec.ts`, `phase6.spec.ts` |
+
+## Per-fighter controls (17/11/2026)
+
+Key layouts belong to the fighter, not the player: `FighterControlsStore` keeps `{bindings, holds}` per profile and fighter id, and `SettingsState.activate(profile, fighterId)` makes one live. A new fighter needs no controls work: it starts from `DEFAULT_CONTROLS` and the Fighter Controls panel lists its actions (the Fire Beam keys only when the fighter has a beam). Hold rules apply only to actions in `HOLDABLE`.

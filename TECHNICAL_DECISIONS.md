@@ -597,3 +597,14 @@ Installed (see `package.json`): pixi.js 8.22, @dimforge/rapier2d 0.21 (TD-023); 
 **Trade-offs.** A separate scene duplicates some set-up (physics, views, camera), which shared helpers keep small.
 **Status.** ACCEPTED.
 
+### TD-072: Phase 0 approved; recommended answers to the Phase 1 open questions adopted — ACCEPTED (owner, 17/11/2026)
+**Context.** Phase 0 listed open questions OQ-P0-1, 2, 4, 6 and 8 as needed before Phase 1, each with a recommendation. The owner replied "Ok start" after the recommendations were presented, without choosing otherwise. This is recorded as approval of Phase 0 and of those recommendations. It was an inference from a short reply, so the owner can overrule any item.
+**Decision.**
+- OQ-P0-1: Inferno's blue-flame transformation is built as his fifth normal ability. Eruption stays his ultimate.
+- OQ-P0-2: bleeding becomes a ×1.1 damage-taken effect for 6 s, refreshed on reapplication and never stacking. It replaces the damage over time.
+- OQ-P0-4: phone play is kept; new screens are designed for desktop first.
+- OQ-P0-6: Pixabay is still unreachable. Phase 1 audio removes sound reuse with distinct synthesised recipes and records the gap in `AUDIO_ASSET_CATALOG.md`. No Pixabay sourcing is claimed.
+- OQ-P0-8: Shroud's ultimate follows the master plan (4 s, whole arena dark for opponents, spectators unaffected, +17% speed).
+**Still open:** OQ-P0-3 (Vexoris, Phase 3), OQ-P0-5 (Parkour, Phase 4), OQ-P0-7 (ambience licence, Phase 2).
+**Status.** ACCEPTED.
+

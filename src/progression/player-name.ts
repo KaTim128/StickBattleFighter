@@ -1,5 +1,5 @@
 /**
- * The player's name (owner, 13/11/2026): registered before Story Mode or Game Modes, at most 10
+ * The player's name (owner, 13/11/2026): registered before Game Modes or Practice, at most 10
  * characters (an emoji counts as one), any letters, numbers, symbols or emojis (owner, 13/11/2026:
  * "remove restrictive character validation"), kept in this browser and changeable in Settings. It is the player's identity on
  * screen (HUD, tournament draw, fighter select) next to the fighter's own name. Display only:

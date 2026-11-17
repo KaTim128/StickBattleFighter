@@ -1,4 +1,5 @@
-import { type Bindings, DEFAULT_BINDINGS, sanitiseBindings } from './bindings';
+import type { Bindings } from './bindings';
+import { DEFAULT_CONTROLS, type FighterControls, type FighterControlsStore, type HoldRules } from './fighter-controls';
 
 /**
  * Player settings kept in this browser between sessions (owner, 11/11/2026; REQ-CTL-15).
@@ -9,25 +10,27 @@ export interface PlayerSettings {
   musicVolume: number;
   /** 0..1 */
   sfxVolume: number;
-  bindings: Bindings;
-  /** Size of the touch combat buttons, 0.8..1.3 (owner, 13/11/2026: mobile control configuration). */
+  /**
+   * Size of the touch combat buttons, 0.8..1.3. Not in General Settings any more (owner, master plan
+   * 16/11/2026); the saved value and default stay.
+   */
   touchScale: number;
 }
 
 export const TOUCH_SCALE_RANGE = { min: 0.8, max: 1.3 } as const;
 
 /**
- * v2 (owner, 12/11/2026): the default layout changed (J attack, K ultimate, L dodge, F ability 3,
- * no launch key), so key layouts saved under v1 are not carried over; volumes are.
+ * General settings only (volumes, touch size). Key layouts used to live here (v3 and older); from
+ * 17/11/2026 each fighter has its own (`FighterControlsStore`), so any `bindings` saved here are
+ * ignored and the layouts start from the defaults.
  */
 export const SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v3';
-/** Older layouts (v2: before the Heavy Attack on K and the ultimate on I): volumes carried over, keys reset. */
+/** Older settings (v2): volumes carried over. */
 const OLD_SETTINGS_STORAGE_KEY = 'stickman-arena.settings.v2';
 
 export const DEFAULT_SETTINGS: PlayerSettings = {
   musicVolume: 0.8,
   sfxVolume: 0.8,
-  bindings: DEFAULT_BINDINGS,
   touchScale: 1,
 };
 
@@ -45,7 +48,7 @@ export function loadSettings(storage: SettingsStorage | null): PlayerSettings {
     else {
       const old = storage?.getItem(OLD_SETTINGS_STORAGE_KEY);
       const parsed: unknown = old ? JSON.parse(old) : null;
-      if (parsed && typeof parsed === 'object') raw = { ...parsed, bindings: null };
+      if (parsed && typeof parsed === 'object') raw = parsed;
     }
   } catch (error) {
     console.warn('[settings] saved settings unreadable, using defaults', error);
@@ -55,7 +58,6 @@ export function loadSettings(storage: SettingsStorage | null): PlayerSettings {
   return {
     musicVolume: volume(r.musicVolume, DEFAULT_SETTINGS.musicVolume),
     sfxVolume: volume(r.sfxVolume, DEFAULT_SETTINGS.sfxVolume),
-    bindings: sanitiseBindings(r.bindings),
     touchScale:
       typeof r.touchScale === 'number' && Number.isFinite(r.touchScale)
         ? Math.min(TOUCH_SCALE_RANGE.max, Math.max(TOUCH_SCALE_RANGE.min, r.touchScale))
@@ -73,12 +75,22 @@ export function saveSettings(storage: SettingsStorage | null, settings: PlayerSe
   }
 }
 
-/** A live settings holder: input and audio read it; the settings screen changes and saves it. */
+/**
+ * A live settings holder: input and audio read it; the settings screens change and save it. It also
+ * holds the **active fighter's controls** (the fighter this page plays), loaded from the per-fighter
+ * store for the player's profile.
+ */
 export class SettingsState {
   private value: PlayerSettings;
+  private controlsValue: FighterControls = DEFAULT_CONTROLS;
+  private profile: string | null = null;
+  private fighterId: string | null = null;
   private readonly listeners = new Set<(s: PlayerSettings) => void>();
 
-  constructor(private readonly storage: SettingsStorage | null) {
+  constructor(
+    private readonly storage: SettingsStorage | null,
+    private readonly controlsStore: FighterControlsStore | null = null,
+  ) {
     this.value = loadSettings(storage);
   }
 
@@ -86,13 +98,51 @@ export class SettingsState {
     return this.value;
   }
 
+  /** Which fighter's controls are live (null before a fighter is chosen: the defaults). */
+  get activeFighter(): string | null {
+    return this.fighterId;
+  }
+
+  /** Make this profile's controls for this fighter the live ones. */
+  activate(profile: string | null, fighterId: string): void {
+    this.profile = profile;
+    this.fighterId = fighterId;
+    this.controlsValue = this.controlsStore?.get(profile, fighterId) ?? DEFAULT_CONTROLS;
+    this.notify();
+  }
+
+  get controls(): FighterControls {
+    return this.controlsValue;
+  }
+
   get bindings(): Bindings {
-    return this.value.bindings;
+    return this.controlsValue.bindings;
+  }
+
+  get holds(): HoldRules {
+    return this.controlsValue.holds;
+  }
+
+  /** Save the active fighter's controls (only that fighter's). */
+  setControls(controls: FighterControls): void {
+    this.controlsValue = controls;
+    if (this.fighterId) this.controlsStore?.set(this.profile, this.fighterId, controls);
+    this.notify();
+  }
+
+  resetControls(): void {
+    this.controlsValue = DEFAULT_CONTROLS;
+    if (this.fighterId) this.controlsStore?.reset(this.profile, this.fighterId);
+    this.notify();
   }
 
   update(patch: Partial<PlayerSettings>): void {
     this.value = { ...this.value, ...patch };
     saveSettings(this.storage, this.value);
+    this.notify();
+  }
+
+  private notify(): void {
     for (const l of this.listeners) l(this.value);
   }
 
