@@ -22,6 +22,8 @@ export const VISION: Readonly<Record<Gait, Vision>> = {
   tiptoe: { rangeM: 8, halfAngle: 1.2 },
   run: { rangeM: 7, halfAngle: 0.7 },
 };
+/** Peeking out of a hiding place makes the player this many times easier to notice. */
+export const PEEK_GIVEAWAY = 3;
 /** Anything this close is sensed whichever way he faces (he feels it, hears it breathe). */
 export const CLOSE_SENSE_M = 1.2;
 
@@ -41,6 +43,8 @@ export interface BodyView {
   readonly crouching: boolean;
   /** The hiding place the player is in, or null. */
   readonly hiding: HideSpot | null;
+  /** The player is peeking out of their hiding place: movement at the opening gives them away (owner, 18/11/2026). */
+  readonly peeking?: boolean;
 }
 
 const wrap = (a: number): number => {
@@ -81,7 +85,7 @@ export function sightRate(world: HouseWorld, eyes: Eyes, body: BodyView): number
   const skip = body.hiding ? new Set<Rect>([body.hiding.rect]) : undefined;
   if (!coversPoint(world, eyes, body.floor, body, skip)) return 0;
   // Exposure already weighs distance and the side he looks from; in the open distance is weighed here.
-  if (body.hiding) return exposure(body.hiding, eyes) * 1.2;
+  if (body.hiding) return exposure(body.hiding, eyes) * 1.2 * (body.peeking ? PEEK_GIVEAWAY : 1);
   const d = Math.hypot(body.x - eyes.x, body.y - eyes.y);
   const distance = d < 2.5 ? 2.4 : d < 5 ? 1.5 : d < 8 ? 0.8 : 0.4;
   return distance * (body.crouching ? 0.6 : 1);

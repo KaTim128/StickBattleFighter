@@ -261,9 +261,12 @@ export class HideSeekScene implements GameScene {
     );
     const at = iso(h.x, h.y, h.z);
     hv.view.root.position.set(at.x, at.y);
+    // A hidden player sees him only through the little they see when peeking, never by his being close.
     const seen =
       this.visibility.canSee(g.viewer(), h.floor, h) ||
-      (h.floor === g.player.floor && Math.hypot(h.x - g.player.x, h.y - g.player.y) < 1.5);
+      (g.player.hidingIn === null &&
+        h.floor === g.player.floor &&
+        Math.hypot(h.x - g.player.x, h.y - g.player.y) < 1.5);
     hv.view.root.visible = seen && view.floors[h.floor].container.visible;
   }
 
@@ -365,7 +368,7 @@ export class HideSeekScene implements GameScene {
       const shown =
         o.mode === 'carried' ||
         (o.floor === p.floor && this.visibility.canSee(g.viewer(), o.floor, { x: o.x, y: o.y })) ||
-        (o.floor === p.floor && Math.hypot(o.x - p.x, o.y - p.y) < 1.2);
+        (p.hidingIn === null && o.floor === p.floor && Math.hypot(o.x - p.x, o.y - p.y) < 1.2);
       pv.g.visible = shown && view.floors[o.floor].container.visible;
     }
   }

@@ -430,7 +430,11 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
       [s.bottomFloor, 0],
       [s.topFloor, -s.riseM],
     ] as const) {
-      for (const t of drawStairs(s, zBase)) {
+      const treads = drawStairs(s, zBase);
+      // Upstairs only the top steps going down are drawn: the rest are far below the floor, in the dark pit (drawn deeper
+      // they floated over the floor in front of the stairwell).
+      const shown = floor === s.topFloor ? treads.slice(Math.floor(treads.length * 0.55)) : treads;
+      for (const t of treads.filter((x) => shown.includes(x))) {
         const node = bake(t.g);
         floors[floor]!.actors.add(node, frontY(t.rect, zBase));
         nodes.push({ node, floor, room: null, kind: 'stairs', id: s.id, rect: t.rect });

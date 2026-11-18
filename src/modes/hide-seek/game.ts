@@ -63,6 +63,8 @@ export interface PlayerState extends Placed {
   peekY: number;
   /** The hiding place the player is in (furniture id), or null. */
   hidingIn: string | null;
+  /** The peek key is held (while hiding it shows a little of the room, but gives the player away). */
+  peeking: boolean;
   /** The thrown-object id being carried, or null. */
   carrying: string | null;
   /** The way the player last headed, a unit vector in the world (the direction of a throw). */
@@ -120,6 +122,7 @@ export class HideSeekGame {
       peekX: 0,
       peekY: 0,
       hidingIn: null,
+      peeking: false,
       carrying: null,
       dirX: 1,
       dirY: 0,
@@ -176,6 +179,7 @@ export class HideSeekGame {
         x: p.x,
         y: p.y,
         crouching: p.crouching,
+        peeking: p.peeking && p.hidingIn !== null,
         hiding: this.spots.find((s) => s.id === p.hidingIn) ?? null,
       },
       events: heard,
@@ -255,6 +259,7 @@ export class HideSeekGame {
   /** Lean the view toward where the player pushes while peek is held, never through a wall. */
   private stepPeek(dtS: number, input: PlayerInput): void {
     const p = this.player;
+    p.peeking = input.peek;
     const m = Math.hypot(input.move.x, input.move.y);
     let gx = 0;
     let gy = 0;
@@ -293,7 +298,7 @@ export class HideSeekGame {
       y: p.y + p.peekY,
       onStairs: p.onStairs,
       stairT: t,
-      ...(spot ? { viewM: spot.spec.viewM } : {}),
+      ...(spot ? { viewM: spot.spec.viewM, hiddenView: p.peeking ? ('peek' as const) : ('blind' as const) } : {}),
     };
   }
 

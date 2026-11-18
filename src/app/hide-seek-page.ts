@@ -140,6 +140,7 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       hud.setBubbles(scene.hideBubbles());
       hud.update({
         killProgress: g.round.killProgress,
+        hiddenView: g.player.hidingIn ? (g.player.peeking ? 'peek' : 'blind') : null,
         survivedS: g.round.survivedS,
         phase: g.round.phase,
         prepLeftS: g.round.prepLeftS,

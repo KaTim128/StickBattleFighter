@@ -841,3 +841,6 @@ Done: the player cannot leave the house, outdoor hiding places and throwables re
 ### 18/11/2026 Stairs against the wall, tighter hall (TD-108)
 Done: hall 5 to 4 m wide, stairs along the east wall and clear of all doors, furniture rearranged, new stair and hall tests. Tests: 604 unit tests pass.
 
+
+### 18/11/2026 Hiding view and peek risk (TD-109)
+Done: blind view while hidden, a small dim peek circle, 3x detection while peeking from a hiding place; 5 new tests.

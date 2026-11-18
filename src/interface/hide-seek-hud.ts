@@ -15,6 +15,8 @@ export interface HideSeekHudState {
   readonly posture: string;
   /** 0..1 through the killing animation (a red flash builds), 1 on Game Over. */
   readonly killProgress: number;
+  /** While hiding: nothing visible (`blind`) or only a small circle round the hiding place (`peek`); null otherwise. */
+  readonly hiddenView: 'blind' | 'peek' | null;
   /** Seconds of the hunt survived, for the result text. */
   readonly survivedS: number;
 }
@@ -48,6 +50,7 @@ export class HideSeekHud {
   private readonly promptEl = document.createElement('div');
   private readonly flash = document.createElement('div');
   private readonly vignette = document.createElement('div');
+  private readonly mask = document.createElement('div');
   private readonly bubbleLayer = document.createElement('div');
   private readonly bubbles = new Map<string, HTMLElement>();
   private readonly result = document.createElement('div');
@@ -75,6 +78,7 @@ export class HideSeekHud {
     hint.className = 'hs-hint';
     hint.textContent = `WASD move · ${keys.run} run · ${keys.crouch} crouch · ${keys.act} act · hold ${keys.peek} to peek`;
     this.vignette.className = 'hs-vignette';
+    this.mask.className = 'hs-mask';
     this.bubbleLayer.className = 'hs-bubbles';
     this.flash.className = 'hs-flash';
     this.result.className = 'hs-result';
@@ -95,6 +99,7 @@ export class HideSeekHud {
     this.result.append(this.resultTitle, this.resultText, buttons);
     this.root.append(
       this.vignette,
+      this.mask,
       this.bubbleLayer,
       this.flash,
       this.banner,
@@ -149,6 +154,7 @@ export class HideSeekHud {
       this.clock.textContent = clockText(s.survivalLeftS);
       this.clock.dataset.mode = 'hunt';
     }
+    this.mask.dataset.view = s.hiddenView ?? '';
     this.flash.style.opacity = String(Math.min(0.85, s.killProgress * 0.85));
     const over = s.phase === 'victory' || s.phase === 'gameover';
     this.result.hidden = !over;

@@ -16,6 +16,8 @@ import type { HouseWorld, Point } from './world';
 export const VIEW_DISTANCE_M = 17;
 /** How dim a remembered (explored but not currently visible) room is. */
 export const MEMORY_LIGHT = 0;
+/** How lit the room looks to someone peeking out of a hiding place (they see only a little of it, dimly). */
+export const PEEK_ROOM_LIGHT = 0.42;
 /** The most light a room other than yours can have: a glimpse through an open doorway (owner, 18/11/2026). */
 export const DOORWAY_GLIMPSE = 0.45;
 /** Seconds to fade fully in or out. */
@@ -35,6 +37,11 @@ export interface Viewer {
   readonly stairT: number;
   /** How far the eyes can see, metres (a hiding place narrows it). Default: the full view distance. */
   readonly viewM?: number;
+  /**
+   * Hiding (owner, 18/11/2026): `blind` sees nothing at all; `peek` sees only a small, dim area round the hiding
+   * place (as far as `viewM`), never the rest of the room, other rooms or anything beyond.
+   */
+  readonly hiddenView?: 'blind' | 'peek';
 }
 
 interface Target {
@@ -108,6 +115,14 @@ export class Visibility {
    * is lit or occupied)? Used for the hunter: he is drawn only when the player could see him.
    */
   canSee(viewer: Viewer, floor: FloorIndex, p: Point): boolean {
+    if (viewer.hiddenView === 'blind') return false;
+    if (viewer.hiddenView === 'peek') {
+      return (
+        floor === viewer.floor &&
+        Math.hypot(p.x - viewer.x, p.y - viewer.y) <= reach(viewer) &&
+        this.world.lineOfSight(floor, viewer, p, { ignoreFurniture: true })
+      );
+    }
     if (floor !== viewer.floor && !this.seesOtherFloor(viewer, floor)) return false;
     const d = Math.hypot(p.x - viewer.x, p.y - viewer.y);
     if (d > reach(viewer)) return false;
@@ -166,7 +181,34 @@ export class Visibility {
   }
 
   // ---------------------------------------------------------------- the computation
+  /** What a hidden player sees: nothing (blind), or only the little round the hiding place (peeking). */
+  private recomputeHidden(viewer: Viewer): void {
+    const here = this.world.roomAt(viewer.floor, viewer.x, viewer.y);
+    this.viewerRoom = here?.id ?? null;
+    this.roomGoal.clear();
+    this.objGoal.clear();
+    this.floorGoal = [0, 0];
+    this.floorGoal[viewer.floor] = 1;
+    const peek = viewer.hiddenView === 'peek';
+    for (const room of this.world.house.rooms) {
+      if (room.floor !== viewer.floor) continue;
+      this.roomGoal.set(room.id, peek && room.id === here?.id ? PEEK_ROOM_LIGHT * room.light : 0);
+    }
+    for (const o of this.objects) {
+      if (o.floor !== viewer.floor) continue;
+      const near =
+        peek &&
+        Math.hypot(o.at.x - viewer.x, o.at.y - viewer.y) <= reach(viewer) + 0.6 &&
+        this.objectSeen(viewer, o, o.floor);
+      this.objGoal.set(o.id, near ? 0.8 : 0);
+    }
+  }
+
   private recompute(viewer: Viewer): void {
+    if (viewer.hiddenView) {
+      this.recomputeHidden(viewer);
+      return;
+    }
     const world = this.world;
     const here = world.roomAt(viewer.floor, viewer.x, viewer.y);
     this.viewerRoom = here?.id ?? null;

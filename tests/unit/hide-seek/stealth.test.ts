@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HOUSE_PLAN } from '../../../src/data/arenas/house';
 import { HIDDEN_PEEK_M, HideSeekGame, NO_INPUT } from '../../../src/modes/hide-seek/game';
 import { exitPoint, exposure, hideSpots } from '../../../src/modes/hide-seek/hiding';
+import { sightRate } from '../../../src/modes/hide-seek/perception';
 import { THROW_RANGE_M } from '../../../src/modes/hide-seek/props';
 import { VIEW_DISTANCE_M, Visibility } from '../../../src/modes/hide-seek/visibility';
 import { HouseWorld } from '../../../src/modes/hide-seek/world';
@@ -217,5 +218,86 @@ describe('throwable distractions (section E)', () => {
     expect(g.prompt()).toBe('Throw');
     press(g);
     expect(g.world.isOpen('d-kitchen-living')).toBe(false);
+  });
+});
+
+describe('hiding blinds the player; peeking shows a little but gives them away (owner, 18/11/2026)', () => {
+  const setup = () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const spot = g.spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 1)!;
+    const out = exitPoint(g.world, spot);
+    g.player.floor = spot.floor;
+    g.player.x = out.x;
+    g.player.y = out.y;
+    g.step(STEP, { ...NO_INPUT, interactPress: true });
+    expect(g.player.hidingIn).toBe(spot.id);
+    const vis = new Visibility(g.world);
+    return { g, spot, vis };
+  };
+
+  it('while hidden and not peeking the player sees nothing: no room, no furniture, no hunter', () => {
+    const { g, vis } = setup();
+    const v = g.viewer();
+    expect(v.hiddenView).toBe('blind');
+    vis.settle(v);
+    for (const r of g.house.rooms) expect(vis.roomLight(r.id), r.id).toBe(0);
+    for (const f of g.house.furniture.filter((x) => x.floor === 1)) expect(vis.objectAlpha(f.id), f.id).toBe(0);
+    // A hunter standing right in front of the opening is not seen.
+    expect(vis.canSee(v, g.player.floor, { x: g.player.x, y: g.player.y + 1 })).toBe(false);
+  });
+
+  it('peeking shows only a small dim area round the hiding place, not the whole room', () => {
+    const { g, spot, vis } = setup();
+    g.step(STEP, { ...NO_INPUT, peek: true });
+    const v = g.viewer();
+    expect(v.hiddenView).toBe('peek');
+    vis.settle(v);
+    const room = g.world.roomAt(spot.floor, spot.spec.at.x, spot.spec.at.y)!;
+    expect(vis.roomLight(room.id)).toBeGreaterThan(0.1);
+    expect(vis.roomLight(room.id)).toBeLessThan(0.6); // dim, not the lit room
+    // Something close is seen; something across the room is not; other rooms are black.
+    const near = { x: v.x + spot.spec.viewM * 0.5, y: v.y };
+    const far = { x: v.x + 9, y: v.y };
+    expect(vis.canSee(v, v.floor, far)).toBe(false);
+    expect(vis.canSee(v, v.floor, near) || vis.canSee(v, v.floor, { x: v.x, y: v.y + 0.5 })).toBe(true);
+    for (const r of g.house.rooms.filter((r) => r.id !== room.id)) expect(vis.roomLight(r.id), r.id).toBe(0);
+  });
+
+  it('leaving the hiding place gives the normal view back', () => {
+    const { g } = setup();
+    g.step(STEP, { ...NO_INPUT, interactPress: true });
+    expect(g.player.hidingIn).toBeNull();
+    expect(g.viewer().hiddenView).toBeUndefined();
+  });
+
+  it('Shroud notices a peeking player several times faster than a still, hidden one', () => {
+    const { g, spot } = setup();
+    const eyes = {
+      floor: spot.floor,
+      x: spot.spec.at.x,
+      y: spot.spec.at.y + 2.2,
+      facing: -Math.PI / 2,
+      gait: 'walk' as const,
+    };
+    const body = (peeking: boolean) => ({
+      floor: spot.floor,
+      x: spot.spec.at.x,
+      y: spot.spec.at.y,
+      crouching: false,
+      hiding: spot,
+      peeking,
+    });
+    const still = sightRate(g.world, eyes, body(false));
+    const peeking = sightRate(g.world, eyes, body(true));
+    expect(still).toBeGreaterThan(0);
+    expect(peeking).toBeGreaterThanOrEqual(still * 2.5);
+  });
+
+  it('peeking while NOT hiding still does not change what Shroud notices (the old rule stands)', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const eyes = { floor: 0 as const, x: 14, y: 17.5, facing: -Math.PI / 2, gait: 'walk' as const };
+    const a = sightRate(g.world, eyes, { floor: 0, x: 14, y: 15, crouching: false, hiding: null, peeking: false });
+    const b = sightRate(g.world, eyes, { floor: 0, x: 14, y: 15, crouching: false, hiding: null, peeking: true });
+    expect(b).toBe(a);
   });
 });
