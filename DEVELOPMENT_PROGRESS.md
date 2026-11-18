@@ -786,3 +786,6 @@ Coyote time and sprint momentum in jumps (TD-084). Gate: lint no errors (1 warni
 
 ### 18/11/2026 Phase 1 Batch B: B13 fifth abilities and loadout (engine side)
 Fifth ability per fighter, `applyLoadout`, fight option `loadouts`, AI tactics for the fifth (TD-085). Gate: lint no errors, typecheck clean, 633 tests pass. Not done in B13: the player-facing loadout screen and saving the choice (B14). Next: B14 ability information and loadout screen.
+
+### 18/11/2026 Phase 1 Batch B: B14 loadout screen
+Loadout store, sheet with the alternative, Equip/Swap and drag and drop, carried into the fight (TD-086). Gate: lint no errors, typecheck clean, 641 unit/integration tests, front-end e2e passes on desktop and phone. Open: HUD cast-name notice and info control. Next: B15 Shroud five-hit combo, then B16 dodge, B17 fight length, B18 audio.

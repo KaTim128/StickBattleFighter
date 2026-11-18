@@ -1,4 +1,5 @@
 import type { AbilityDef, AbilitySlot } from '../abilities/ability-def';
+import { applyLoadout, DEFAULT_LOADOUT, type Loadout } from '../abilities/loadout';
 import { type FighterRatings, fighterRatings } from '../characters/ratings';
 import { BLEED } from '../combat/status-effects';
 import type { FighterDef } from '../data/fighters/fighter-def';
@@ -19,6 +20,11 @@ export interface SheetAbility {
   /** Label and value pairs: Damage, Cooldown, Stamina, Range, effects. */
   readonly stats: readonly { readonly label: string; readonly value: string }[];
   readonly howTo: string;
+  /**
+   * The unequipped fifth ability (master plan B14): an available alternative to the ability in the same
+   * `slot`, never locked. Absent on everything equipped.
+   */
+  readonly alternative?: true;
 }
 
 export interface FighterSheet {
@@ -190,29 +196,31 @@ function heavyEntry(def: FighterDef, device: Device, keys: Bindings): SheetAbili
   };
 }
 
-export function fighterSheet(def: FighterDef, device: Device, keys: Bindings): FighterSheet {
-  const kit = def.abilities;
+export function fighterSheet(
+  def: FighterDef,
+  device: Device,
+  keys: Bindings,
+  loadout: Loadout = DEFAULT_LOADOUT,
+): FighterSheet {
+  const base = def.abilities;
+  const kit = base ? applyLoadout(base, loadout) : null;
   const abilities: SheetAbility[] = [comboEntry(def, device, keys)];
   const heavy = heavyEntry(def, device, keys);
   if (heavy) abilities.push(heavy);
   if (kit) {
-    for (const slot of ['a1', 'a2', 'a3', 'a4', 'ult'] as const) {
-      const a = kit[slot];
-      abilities.push({
-        slot,
-        key:
-          device === 'touch'
-            ? slot === 'ult'
-              ? 'ULT'
-              : `Button ${slot.slice(1)}`
-            : codeLabel(keys[SLOT_ACTION[slot]]),
-        name: a.name,
-        icon: a.icon ?? null,
-        description: a.description ?? '',
-        stats: abilityStats(a),
-        howTo: howTo(a, device, keys),
-      });
-    }
+    const entry = (a: AbilityDef, slot: AbilitySlot, alternative = false): SheetAbility => ({
+      slot,
+      key:
+        device === 'touch' ? (slot === 'ult' ? 'ULT' : `Button ${slot.slice(1)}`) : codeLabel(keys[SLOT_ACTION[slot]]),
+      name: a.name,
+      icon: a.icon ?? null,
+      description: a.description ?? '',
+      stats: abilityStats(a),
+      howTo: howTo(a, device, keys),
+      ...(alternative ? { alternative: true as const } : {}),
+    });
+    for (const slot of ['a1', 'a2', 'a3', 'a4', 'ult'] as const) abilities.push(entry(kit[slot], slot));
+    if (kit.a5) abilities.push(entry(kit.a5, kit.a5.slot, true));
   }
   return { ratings: fighterRatings(def), abilities };
 }

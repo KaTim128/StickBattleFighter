@@ -91,7 +91,8 @@ test('title → name → Game Modes → fighter select → tournament, with the 
     await expect(select.locator('.fe-sel-name')).toHaveText(shown);
     await expect(select.locator('.fe-sel-title')).toHaveText(new RegExp(titleText, 'i'));
     await expect(select.locator('.fe-stat')).toHaveCount(6);
-    await expect(select.locator('.fe-ab')).toHaveCount(5); // four abilities and the ultimate
+    await expect(select.locator('.fe-ab')).toHaveCount(6); // four abilities, the ultimate and the fifth as an alternative (B14)
+    await expect(select.locator('.fe-ab.fe-alt')).toHaveCount(1);
     await expect(select.locator('.fe-ab.fe-ult .fe-ab-desc')).not.toBeEmpty();
     await expect(select.locator(`.fe-model[data-model="${id}"].ready`)).toBeVisible({ timeout: 30_000 });
   }
@@ -254,4 +255,55 @@ test('3 vs 3: pick three from the pool of five, fight, tag in a teammate, leave 
   await page.locator('.settings-leave').click();
   await expect(front.locator('[data-screen="title"]')).toBeVisible(); // Leave: the main menu
   expect(errors).toEqual([]);
+});
+
+test('loadout (B14): the fifth ability is an available alternative; Equip swaps it in, drag and drop works, and it is saved', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(120_000);
+  const errors = await launch(page);
+  await page.evaluate(() => localStorage.setItem('stickman-arena.player-name.v1', 'Katim'));
+  await page.reload();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  const front = page.locator('.front-end');
+  await front.locator('[data-screen="title"] [data-nav="modes"]').click();
+  await front.locator('[data-screen="modes"] [data-gm="tournament"]').click();
+  const select = front.locator('[data-screen="select"]');
+  await select.locator('.fe-tile[data-fighter="rampage"]').click();
+  // Four equipped, the ultimate, and one alternative that is never locked.
+  await expect(select.locator('.fe-ab')).toHaveCount(6);
+  const alt = select.locator('.fe-ab.fe-alt');
+  await expect(alt).toHaveCount(1);
+  await expect(alt).toContainText('Bastion Anchor');
+  await expect(alt).not.toHaveClass(/locked/);
+  await expect(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)')).toContainText('Crushing Strike');
+  // Equip with the button.
+  await alt.locator('.fe-ab-swap').click();
+  await expect(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)')).toContainText('Bastion Anchor');
+  await expect(select.locator('.fe-ab.fe-alt')).toContainText('Crushing Strike');
+  expect(await page.evaluate(() => localStorage.getItem('stickman-arena.loadouts'))).toContain('"useFifth":true');
+  // Drag the benched one back onto its slot (a touch screen has no native drag: it uses the button).
+  if (testInfo.project.name === 'desktop-chromium')
+    await select.locator('.fe-ab.fe-alt').dragTo(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)'));
+  else await select.locator('.fe-ab.fe-alt .fe-ab-swap').click();
+  await expect(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)')).toContainText('Crushing Strike');
+  expect(errors).toEqual([]);
+});
+
+test('loadout (B14): the abilities equipped on fighter select are the ones on the fight bar', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.addInitScript(() => {
+    sessionStorage.setItem('stickman-arena.no-shell', '1');
+    localStorage.setItem('stickman-arena.player-name.v1', 'Katim');
+    localStorage.setItem('stickman-arena.loadouts', JSON.stringify({ Katim: { rampage: { useFifth: true } } }));
+  });
+  await page.goto('/?mute&play&character=rampage');
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  await expect(page.locator('.ability-slot[data-slot="a3"]').first()).toHaveAttribute(
+    'data-ability',
+    'Bastion Anchor',
+    {
+      timeout: 30_000,
+    },
+  );
 });

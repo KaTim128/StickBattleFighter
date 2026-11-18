@@ -1,4 +1,5 @@
 import titleArt from '../../assets/ui/title-menu.webp?url';
+import type { Loadout } from '../abilities/loadout';
 import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
 import { draftPool } from '../modes/team/team-battle';
 import type { NameCheck } from '../progression/player-name';
@@ -71,6 +72,9 @@ export interface FrontEndOptions {
   readonly initial: TournamentSetup;
   presentation(fighterId: string): FighterPresentation | undefined;
   sheetFor(fighterId: string): FighterSheet | null;
+  /** Which four of the five abilities this fighter equips (master plan B14). */
+  loadoutFor(fighterId: string): Loadout;
+  setLoadout(fighterId: string, loadout: Loadout): void;
   playerName(): string | null;
   saveName(raw: string): NameCheck;
   isAdmin(): boolean;
@@ -537,16 +541,49 @@ export class FrontEnd {
       const abilities = el('div', 'fe-abilities');
       for (const a of sheet.abilities) {
         if (a.slot === 'combo' || a.slot === 'heavy') continue;
-        const row = el('div', `fe-ab${a.slot === 'ult' ? ' fe-ult' : ''}`);
+        const row = el('div', `fe-ab${a.slot === 'ult' ? ' fe-ult' : ''}${a.alternative ? ' fe-alt' : ''}`);
         row.dataset.ability = a.slot;
+        if (a.alternative) row.dataset.alternative = 'true';
+        // Equip / swap (master plan B14, owner 16/11/2026): drag the alternative onto the slot it takes (or
+        // the equipped ability onto it), or press Swap (the only way on a touch screen). Never locked.
+        if (a.slot !== 'ult') {
+          const swap = () => {
+            const now = this.o.loadoutFor(f.id);
+            this.o.setLoadout(f.id, { useFifth: !now.useFifth });
+            this.show('select');
+          };
+          const sameSlot = (other: HTMLElement) =>
+            other !== row && other.dataset.ability === a.slot && other.classList.contains('fe-ab');
+          row.draggable = true;
+          row.addEventListener('dragstart', (e) => {
+            e.dataTransfer?.setData('text/plain', a.slot);
+            row.classList.add('dragging');
+          });
+          row.addEventListener('dragend', () => row.classList.remove('dragging'));
+          row.addEventListener('dragover', (e) => {
+            if (document.querySelector('.fe-ab.dragging') && sameSlot(document.querySelector('.fe-ab.dragging')!))
+              e.preventDefault();
+          });
+          row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (document.querySelector('.fe-ab.dragging') && sameSlot(document.querySelector('.fe-ab.dragging')!))
+              swap();
+          });
+          if (sheet.abilities.some((o) => o !== a && o.slot === a.slot && o.alternative !== a.alternative)) {
+            const btn = button('fe-ab-swap', a.alternative ? 'Equip' : 'Swap out', swap);
+            btn.dataset.swap = a.alternative ? 'equip' : 'bench';
+            row.append(btn);
+          }
+        }
         const icon = el('span', 'fe-ab-icon');
         const svg = a.icon ? abilityIcon(a.icon) : null;
         if (svg) icon.innerHTML = svg;
         const words = el('div', 'fe-ab-words');
         const name = el('strong', 'fe-ab-name', a.name);
         if (a.slot === 'ult') name.prepend(el('span', 'fe-ab-tag', 'ULTIMATE'));
+        if (a.alternative) name.prepend(el('span', 'fe-ab-tag', 'ALTERNATIVE'));
         words.append(name, el('span', 'fe-ab-desc', a.description));
-        row.append(icon, words);
+        row.prepend(icon, words);
         abilities.append(row);
       }
       info.append(abilities);

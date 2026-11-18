@@ -523,3 +523,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Every kit has a fifth ability naming its slot; standard loadout unchanged; equipping benches exactly one ability (`loadout.test.ts`)
 - [x] Bastion Anchor, Soul Tether and Umbral Feint work in a fight through the normal ability button (`fifth-abilities.test.ts`)
 - [ ] Owner check: feel and balance of the three new abilities (greybox visuals and sounds until B18; B17 measures balance)
+- [x] Fighter select shows four equipped, the ultimate and one alternative; Equip, Swap and desktop drag and drop swap them and the choice is saved; the fight bar shows the equipped four (`front-end.spec.ts`, desktop and phone)
+- [ ] Owner check: loadout screen look and feel on a real phone; cast-name notice and a separate info control on the fight HUD still to build

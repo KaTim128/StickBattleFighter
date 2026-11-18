@@ -712,3 +712,8 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Trade-off.** Each fifth ability is an alternative to one specific ability rather than to any of the four. The loadout screen (B14) offers it as the alternative for that slot, never locked.
 **Limits.** The three new abilities reuse existing VFX, sound ids and icon fall-backs (greybox, labelled); unique audio is B18 and icons are task #51. Balance not yet measured (B17).
 **Status.** ACCEPTED. Persistence and the drag-and-drop screen are B14.
+
+### TD-086: Loadout screen and persistence (master plan B14) — ACCEPTED
+**Decision.** The fighter-select screen lists the four equipped abilities, the ultimate and the fifth as a dashed **ALTERNATIVE** row (never locked, never greyed out). **Equip / Swap out** buttons and desktop drag and drop (drag either row onto the other) swap them; a touch screen uses the buttons because it has no native drag. The choice is saved per profile and fighter in this browser (`LoadoutStore`, key `stickman-arena.loadouts`; a preference, nothing valuable, so no server) and bootstrap hands it to the fight as `cast.loadouts.player` (TD-085), so tournaments, Open Zone and the tutorial all use it. Details are generated from the ability data (`fighter-sheet.ts`: damage, burn, stun, blind, bleed, heals, buff numbers, range, cooldown, stamina, wind-up, how to use).
+**Limits.** The combat HUD already shows name, icon, key, cooldown and a name tooltip; the planned separate "info control that never casts" and a cast-name notice are not built yet (open for B14 follow-up or owner decision). AI opponents use the standard four.
+**Status.** ACCEPTED.

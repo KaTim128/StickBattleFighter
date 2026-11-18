@@ -1,6 +1,7 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
 import { ABILITY_KITS } from '../abilities/kits';
+import { LoadoutStore } from '../abilities/loadout-store';
 import { isAdminName } from '../admin/local-access';
 import { AmbiencePlayer } from '../audio/ambience';
 import { AudioClip, MusicLoop, musicFor } from '../audio/music';
@@ -257,6 +258,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const intents = new PlayerIntents();
   // Settings (owner, 11/11/2026): saved in this browser; bindings apply the moment they change.
   const controlsStore = new FighterControlsStore(browserStorage());
+  const loadoutStore = new LoadoutStore(browserStorage());
   const settings = new SettingsState(browserStorage(), controlsStore);
   // Overlays that pause the fight (Settings, the main menu): the game ignores input while any is open.
   const pausedBy = new Set<string>();
@@ -302,6 +304,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           params.has('overview'),
           {
             ...castFromParams(params),
+            // The four abilities the player equipped on fighter select (master plan B14).
+            loadouts: { player: loadoutStore.get(playerName, params.get('character') ?? DEFAULT_CAST.player) },
             difficulty: params.get('difficulty') ?? undefined,
             // A tournament match ends; `watch` is an AI battle the player watches (owner, 13/11/2026).
             match:
@@ -696,7 +700,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     (id) => {
       // The details screen: ratings and abilities for this device, with the player's own keys.
       const def = loadCharacter(id, tunedLibrary()).def;
-      return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings);
+      return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings, loadoutStore.get(playerName, id));
     },
   );
   // Admin fighter settings on each fighter's page (owner, 13/11/2026): edits apply at once to the
@@ -793,8 +797,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     presentation: (id) => SELECT_STANCES[id],
     sheetFor: (id) => {
       const def = loadCharacter(id, tunedLibrary()).def;
-      return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings);
+      return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings, loadoutStore.get(playerName, id));
     },
+    loadoutFor: (id) => loadoutStore.get(playerName, id),
+    setLoadout: (id, loadout) => void loadoutStore.set(playerName, id, loadout),
     playerName: () => playerName,
     saveName: (raw) => {
       const r = savePlayerName(raw);
