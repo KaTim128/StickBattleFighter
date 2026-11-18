@@ -1,6 +1,14 @@
 import type { GameEvent } from './game';
-import type { HideSpot } from './hiding';
+import { exitPoint, type HideSpot } from './hiding';
 import type { FloorIndex, HouseDef } from './house-types';
+import {
+  ACTION_DURATION_S,
+  ACTION_LOUDNESS,
+  actionFor,
+  type HunterActionKind,
+  lookBoost,
+  NOISE_AT,
+} from './hunter-actions';
 import { ALARMING, type BodyView, type Eyes, type Gait, heardStrength, SUSPICIOUS, sightRate } from './perception';
 import { BODY_RADIUS_M, type HouseWorld, type Placed, type Point, type Waypoint } from './world';
 
@@ -12,7 +20,7 @@ import { BODY_RADIUS_M, type HouseWorld, type Placed, type Point, type Waypoint 
  */
 export type HunterMode = 'patrol' | 'investigate' | 'search' | 'chase';
 
-export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 3.0, tiptoe: 1.3, run: 4.2 };
+export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 3.3, tiptoe: 1.4, run: 4.2 };
 /** How loud his own steps are (the player hears him coming, positionally; P2-5). */
 export const HUNTER_STEP_LOUDNESS: Readonly<Record<Gait, number>> = { walk: 0.4, tiptoe: 0.1, run: 0.85 };
 
@@ -39,6 +47,19 @@ interface Goal {
   readonly spot?: HideSpot;
   /** The point he looks at once there (a hiding place, a sound). */
   readonly look?: Point;
+  /** At a hiding place: check it properly (open it, kneel to look) rather than glance at it. */
+  readonly thorough?: boolean;
+}
+
+/** What he is doing with his body right now when it is not walking: opening, kneeling, listening. */
+export interface ActiveAction {
+  readonly kind: HunterActionKind;
+  elapsedS: number;
+  readonly durS: number;
+  /** The hiding place it is aimed at, if any. */
+  readonly spot: HideSpot | null;
+  /** Its noise has been made. */
+  noised: boolean;
 }
 
 export interface HunterContext {
@@ -52,6 +73,8 @@ export interface HunterContext {
   openDoor(id: string): void;
   /** He steps: the game turns it into a positional sound. */
   step(at: Point, floor: FloorIndex, gait: Gait): void;
+  /** He makes a noise while searching (a door creaking open, a lid, a knife scraping): the game makes it positional. */
+  noise(at: Point, floor: FloorIndex, loudness: number, detail: string): void;
 }
 
 export class Hunter implements Placed {
@@ -83,10 +106,20 @@ export class Hunter implements Placed {
   private replans = 0;
   private stepM = 0;
   private scanPhase = 0;
+  /** What he is doing with his body (null while he walks or simply stands). */
+  action: ActiveAction | null = null;
+  /** Hiding places he has reason to suspect (he heard someone get in or out), by when. */
+  private readonly suspects = new Map<string, number>();
+  /** Hiding places he means to look at again, by when (he did not quite trust the first look). */
+  private readonly rechecks = new Map<string, number>();
+  /** Seconds until he next stops to listen or drags his knife along a wall. */
+  private beatS = 6;
+  /** Seconds he listens harder for (hearing is keener right after he has stood still to listen). */
+  private attentiveS = 0;
 
   constructor(
     private readonly house: HouseDef,
-    private readonly rng: () => number = () => 0.5,
+    private readonly rng: () => number = seeded(20261118),
   ) {
     this.floor = house.hunterStart.floor;
     this.x = house.hunterStart.x;
@@ -121,6 +154,11 @@ export class Hunter implements Placed {
     this.replans = 0;
     this.stepM = 0;
     this.scanPhase = 0;
+    this.action = null;
+    this.suspects.clear();
+    this.rechecks.clear();
+    this.beatS = 6;
+    this.attentiveS = 0;
   }
 
   eyes(): Eyes {
@@ -130,7 +168,7 @@ export class Hunter implements Placed {
   /** One step of thinking and moving. Returns true when he has caught the player. */
   step(dtS: number, ctx: HunterContext): boolean {
     this.hear(ctx);
-    const rate = sightRate(ctx.world, this.eyes(), ctx.body);
+    const rate = sightRate(ctx.world, this.eyes(), ctx.body) * this.lookBoostNow();
     this.see(dtS, rate, ctx);
     this.decide(ctx);
     this.act(dtS, ctx);
@@ -140,12 +178,16 @@ export class Hunter implements Placed {
   // ------------------------------------------------------------------ senses
   private hear(ctx: HunterContext): void {
     for (const e of ctx.events) {
-      const strength = heardStrength(ctx.world, this, { ...e.at, floor: e.floor, loudness: e.loudness });
+      const keen = this.attentiveS > 0 ? 1.5 : 1;
+      const strength = heardStrength(ctx.world, this, { ...e.at, floor: e.floor, loudness: e.loudness }) * keen;
       if (strength < SUSPICIOUS) continue;
+      // Someone getting in or out of a hiding place: that place is now a suspect, and he will check it properly.
+      if ((e.kind === 'hide-enter' || e.kind === 'hide-exit') && e.id) this.suspects.set(e.id, ctx.timeS);
       // Never drop a sure sighting for a noise; otherwise only a louder sound than the one he follows.
       if (this.mode === 'chase' && this.unseenS < LOSE_SIGHT_S) continue;
       if (strength <= this.soundStrength && this.mode === 'investigate') continue;
       this.soundStrength = strength;
+      this.action = null;
       this.lastKnown = { floor: e.floor, x: e.at.x, y: e.at.y, sure: false };
       this.setGoal({ kind: 'sound', to: { floor: e.floor, x: e.at.x, y: e.at.y }, look: e.at }, ctx);
       this.mode = 'investigate';
@@ -170,6 +212,7 @@ export class Hunter implements Placed {
   private decide(ctx: HunterContext): void {
     if (this.awareness >= 1) {
       if (this.mode !== 'chase') this.goal = null;
+      this.action = null;
       this.mode = 'chase';
       this.gait = 'run';
       return;
@@ -184,15 +227,29 @@ export class Hunter implements Placed {
       }
       return;
     }
-    if (this.awareness >= SUSPECT && this.lastKnown?.sure) {
-      // He senses something at that spot: stop, look, creep closer.
+    // What he is looking into is what he suspects: carry on looking (that is how he finds them), do not break off.
+    const a = this.action;
+    const last = this.lastKnown;
+    const lookingAtIt =
+      a?.spot &&
+      last &&
+      Math.hypot(last.x - a.spot.spec.at.x, last.y - a.spot.spec.at.y) < 1.8 &&
+      last.floor === a.spot.floor;
+    if (this.awareness >= SUSPECT && last?.sure && !lookingAtIt) {
+      // He senses something at that spot: break off whatever he is doing, look, creep closer.
+      this.action = null;
       this.mode = 'investigate';
       this.gait = 'tiptoe';
-      this.setGoal({ kind: 'sound', to: this.lastKnown, look: this.lastKnown }, ctx);
+      this.setGoal({ kind: 'sound', to: last, look: last }, ctx);
     }
   }
 
   private act(dtS: number, ctx: HunterContext): void {
+    this.attentiveS = Math.max(0, this.attentiveS - dtS);
+    if (this.action) {
+      this.runAction(dtS, ctx);
+      return;
+    }
     if (this.dwellS > 0) {
       this.dwell(dtS);
       return;
@@ -202,7 +259,68 @@ export class Hunter implements Placed {
       if (this.goal) this.onArrive(ctx);
       else this.pickGoal(ctx);
     }
-    if (this.goal) this.follow(dtS, ctx);
+    if (this.goal && this.mode !== 'chase') this.maybeBeat(dtS, ctx);
+    if (this.goal && !this.action) this.follow(dtS, ctx);
+  }
+
+  /** Now and then, while he searches, he stops to listen or drags his knife along a wall: never at a predictable time. */
+  private maybeBeat(dtS: number, ctx: HunterContext): void {
+    if (this.mode === 'patrol' || this.goal?.kind === 'spot') return;
+    this.beatS -= dtS;
+    if (this.beatS > 0) return;
+    this.beatS = 7 + this.rng() * 10;
+    const r = this.rng();
+    if (r < 0.4) this.beginAction('listen', null, ctx);
+    else if (r < 0.75 && this.nearWall(ctx)) this.beginAction('knife-scrape', null, ctx);
+  }
+
+  /** Is there a wall (or something solid) within arm's reach beside him? */
+  private nearWall(ctx: HunterContext): boolean {
+    return [
+      [0.8, 0],
+      [-0.8, 0],
+      [0, 0.8],
+      [0, -0.8],
+    ].some(([dx, dy]) => !ctx.world.fits(this.floor, this.x + dx!, this.y + dy!, 0.25));
+  }
+
+  // ------------------------------------------------------------------ body actions
+  private beginAction(kind: HunterActionKind, spot: HideSpot | null, ctx: HunterContext): void {
+    this.action = { kind, elapsedS: 0, durS: ACTION_DURATION_S[kind] * (0.9 + this.rng() * 0.25), spot, noised: false };
+    this.dwellAt = spot ? spot.spec.at : null;
+    void ctx;
+  }
+
+  private runAction(dtS: number, ctx: HunterContext): void {
+    const a = this.action;
+    if (!a) return;
+    a.elapsedS += dtS;
+    const progress = Math.min(1, a.elapsedS / a.durS);
+    // He turns to face what he is looking at; listening, he turns his head slowly about.
+    if (a.spot) this.turnToward(Math.atan2(a.spot.spec.at.y - this.y, a.spot.spec.at.x - this.x), dtS, TURN_RAD_S);
+    else if (a.kind === 'listen') this.facing += dtS * 0.5;
+    // The noise of the thing he does, once, at its moment.
+    const at = NOISE_AT[a.kind];
+    if (!a.noised && at !== undefined && progress >= at) {
+      a.noised = true;
+      const where = a.spot ? { x: a.spot.spec.at.x, y: a.spot.spec.at.y } : { x: this.x, y: this.y };
+      ctx.noise(where, this.floor, ACTION_LOUDNESS[a.kind] ?? 0.2, a.kind);
+    }
+    if (progress < 1) return;
+    this.action = null;
+    if (a.kind === 'listen') this.attentiveS = 6;
+    // A good hiding place he cannot quite dismiss: he may come back to it in a few seconds.
+    if (a.spot && a.kind !== 'glance' && a.spot.spec.concealment >= 0.85 && this.rng() < 0.3)
+      this.rechecks.set(a.spot.id, ctx.timeS + 8 + this.rng() * 8);
+    else if (a.spot) this.rechecks.delete(a.spot.id);
+    // After checking somewhere he sometimes stops dead to listen.
+    if (a.spot && this.rng() < 0.25) this.beginAction('listen', null, ctx);
+  }
+
+  /** How much faster he notices the player now: when his eyes are right at the open door or under the bed. */
+  private lookBoostNow(): number {
+    const a = this.action;
+    return a?.spot ? lookBoost(a.kind, Math.min(1, a.elapsedS / a.durS)) : 1;
   }
 
   private chase(dtS: number, ctx: HunterContext): void {
@@ -252,8 +370,12 @@ export class Hunter implements Placed {
         this.startDwell(DWELL_S, null);
         break;
       case 'spot':
-        if (g.spot) this.inspected.set(g.spot.id, ctx.timeS);
-        this.startDwell(INSPECT_S, g.look ?? null);
+        if (g.spot) {
+          this.inspected.set(g.spot.id, ctx.timeS);
+          this.suspects.delete(g.spot.id);
+          // Thorough: open it, kneel and look. Otherwise a glance: someone good at hiding can slip past.
+          this.beginAction(actionFor(g.spot.spec.kind, g.thorough ?? true), g.spot, ctx);
+        } else this.startDwell(INSPECT_S, g.look ?? null);
         break;
       case 'chase':
         // At the place he last saw them and nothing there: search around it.
@@ -307,27 +429,43 @@ export class Hunter implements Placed {
     this.gait = 'walk';
   }
 
-  /** A hiding place he has not looked in lately: those near where the player was last known come first. */
+  /**
+   * The hiding place to check next. Places near where the player was last known come first, and so do places he
+   * heard someone use or means to look at again; the rest are checked as he goes through their room. How closely
+   * he checks varies: an obvious suspect is always opened, a quiet corner often only glanced at.
+   */
   private nextSpot(ctx: HunterContext): Goal | null {
     const here = ctx.world.roomAt(this.floor, this.x, this.y);
     const last = this.lastKnown;
-    let best: { spot: HideSpot; cost: number } | null = null;
+    let best: { spot: HideSpot; cost: number; thorough: boolean } | null = null;
     for (const s of ctx.spots) {
-      if (ctx.timeS - (this.inspected.get(s.id) ?? -1e9) < FORGET_S) continue;
+      const suspect = ctx.timeS - (this.suspects.get(s.id) ?? -1e9) < 25;
+      const dueAt = this.rechecks.get(s.id);
+      const due = dueAt !== undefined && ctx.timeS >= dueAt;
+      if (!suspect && !due && ctx.timeS - (this.inspected.get(s.id) ?? -1e9) < FORGET_S) continue;
       const room = ctx.world.roomAt(s.floor, s.spec.at.x, s.spec.at.y);
       const nearLast =
         last && last.floor === s.floor && Math.hypot(s.spec.at.x - last.x, s.spec.at.y - last.y) < SPOT_NEAR_LAST_M;
       const inHere = s.floor === this.floor && room?.id === here?.id;
-      // Only places beside him or near where the player vanished: the rest come with their room.
-      if (!nearLast && !inHere) continue;
-      if (inHere && !this.searched.has(room?.id ?? '') && !nearLast) continue;
+      // Only places beside him or near where the player vanished (or that he has reason to suspect): the rest come with their room.
+      if (!nearLast && !inHere && !suspect && !due) continue;
+      if (inHere && !this.searched.has(room?.id ?? '') && !nearLast && !suspect && !due) continue;
       const d = (s.floor === this.floor ? 0 : 20) + Math.hypot(s.spec.at.x - this.x, s.spec.at.y - this.y);
-      const cost = d - (nearLast ? 6 : 0);
-      if (!best || cost < best.cost) best = { spot: s, cost };
+      const cost = d - (nearLast ? 6 : 0) - (suspect ? 30 : 0) - (due ? 15 : 0) + this.rng() * 2.5;
+      if (best && cost >= best.cost) continue;
+      const p = 0.5 + (nearLast ? 0.3 : 0) + (s.spec.concealment >= 0.85 ? 0.15 : 0) + (suspect || due ? 1 : 0);
+      best = { spot: s, cost, thorough: this.rng() < p };
     }
     if (!best) return null;
-    const front = standPoint(best.spot);
-    return { kind: 'spot', to: { floor: best.spot.floor, ...front }, spot: best.spot, look: best.spot.spec.at };
+    // He stands where a person would step out of it: in front of the opening, on free floor.
+    const front = exitPoint(ctx.world, best.spot);
+    return {
+      kind: 'spot',
+      to: { floor: best.spot.floor, ...front },
+      spot: best.spot,
+      look: best.spot.spec.at,
+      thorough: best.thorough,
+    };
   }
 
   /** The room he has not searched lately that is cheapest to reach, preferring those near the last known spot. */
@@ -447,12 +585,6 @@ export class Hunter implements Placed {
   }
 }
 
-/** Where he stands to look into a hiding place: in front of its opening. */
-function standPoint(spot: HideSpot): Point {
-  const o = { n: { x: 0, y: -1 }, s: { x: 0, y: 1 }, e: { x: 1, y: 0 }, w: { x: -1, y: 0 } }[spot.spec.opensToward];
-  return { x: spot.spec.at.x + o.x * 1.1, y: spot.spec.at.y + o.y * 1.1 };
-}
-
 /** The nearest point to `p` where he can stand (the middle of a room can be under a table). */
 function openSpotNear(world: HouseWorld, floor: FloorIndex, p: Point): Point {
   if (world.fits(floor, p.x, p.y, 0.4)) return p;
@@ -463,4 +595,16 @@ function openSpotNear(world: HouseWorld, floor: FloorIndex, p: Point): Point {
         return q;
     }
   return p;
+}
+
+/** A small seeded generator (deterministic, so tests and replays see the same hunter). */
+export function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }

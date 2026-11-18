@@ -99,6 +99,9 @@ export class HideSeekAudio {
       case 'pickup':
         this.thud(sp, 220, 0.05);
         break;
+      case 'inspect':
+        this.inspect(sp, e.detail ?? '');
+        break;
     }
   }
 
@@ -211,6 +214,34 @@ export class HideSeekAudio {
   private creak(sp: Spatial, gain: number): void {
     this.tone(sp, 'sawtooth', 150 + this.rand() * 40, 95, 0.55, gain * 0.25);
     this.burst(sp, { durS: 0.5, freq: 900, q: 6, type: 'bandpass', gain: gain * 0.18 });
+  }
+
+  /** The sounds of the hunter's search: he opens a cupboard, lifts a lid, drags a curtain, shakes a bush, drags his knife. */
+  private inspect(sp: Spatial, what: string): void {
+    switch (what) {
+      case 'open-door':
+        this.creak(sp, 0.9); // a long, slow door
+        this.thud(sp, 130, 0.12, 0.45);
+        break;
+      case 'lift-lid':
+        this.thud(sp, 150, 0.22);
+        this.creak(sp, 0.5);
+        break;
+      case 'pull-curtain':
+        this.burst(sp, { durS: 0.35, freq: 3200, q: 0.9, type: 'highpass', gain: 0.22 });
+        this.burst(sp, { durS: 0.2, freq: 5200, q: 4, type: 'bandpass', gain: 0.1, delayS: 0.08 }); // rings on the rail
+        break;
+      case 'part-bush':
+        this.burst(sp, { durS: 0.7, freq: 2600, q: 0.7, type: 'bandpass', gain: 0.3 });
+        break;
+      case 'knife-scrape':
+        this.burst(sp, { durS: 0.9, freq: 4200, q: 1.2, type: 'highpass', gain: 0.22 });
+        this.tone(sp, 'sawtooth', 2400, 1500, 0.8, 0.05);
+        break;
+      case 'look-under':
+        this.thud(sp, 120, 0.12); // a knee on the floorboards
+        break;
+    }
   }
 
   private shatter(sp: Spatial): void {

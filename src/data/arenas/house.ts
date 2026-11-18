@@ -334,10 +334,10 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('stove', 0, 22.6, 9.25, 23.6, 10.1, 0.95, 0x444a52),
   item('counter', 0, 23.7, 9.25, 24.8, 10.1, 0.9, WHITE),
   item('fridge', 0, 24.0, 12.6, 24.75, 13.8, 1.8, 0xc9ced3, { blocksSight: true }),
-  item('counter', 0, 20.5, 11.5, 23.5, 12.6, 0.9, WHITE),
+  item('counter', 0, 20.5, 11.5, 22.9, 12.6, 0.9, WHITE),
   item('cupboard', 0, 22.8, 13, 23.7, 13.8, 2.0, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('cupboard', 0.85, 0.3, 0.9, 23.25, 13.4, 'w'),
+    hide: hide('cupboard', 0.85, 0.3, 0.9, 23.25, 13.4, 'n'),
   }),
   // ---------------------------------------------------------------- Toilet
   item('toilet', 0, 10.3, 9.3, 11.0, 10.1, 0.45, WHITE),
@@ -377,7 +377,7 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   }),
   item('wardrobe', 1, 10.4, 16.3, 11.6, 17.4, 2.0, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('wardrobe', 0.9, 0.45, 0.9, 11, 17.0, 'e'),
+    hide: hide('wardrobe', 0.9, 0.45, 0.9, 11, 17.0, 's'),
   }),
   item('curtain', 1, 14.4, 20.55, 16.9, 20.85, 2.2, 0x6a7a8a, {
     hide: hide('curtain', 0.65, 0.3, 1.2, 15.6, 20.62, 'n'),

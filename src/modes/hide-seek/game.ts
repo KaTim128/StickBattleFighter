@@ -71,7 +71,7 @@ export interface PlayerState extends Placed {
 }
 
 export interface GameEvent {
-  readonly kind: 'door' | 'footstep' | 'hide-enter' | 'hide-exit' | 'impact' | 'pickup' | 'throw';
+  readonly kind: 'door' | 'footstep' | 'hide-enter' | 'hide-exit' | 'impact' | 'pickup' | 'throw' | 'inspect';
   /** The hiding place's kind or the thrown object's kind, for the sound. */
   readonly detail?: string;
   readonly at: Point;
@@ -177,6 +177,8 @@ export class HideSeekGame {
       openDoor: (id) => this.setDoor(id, true, 'hunter'),
       step: (at, floor, gait) =>
         this.events.push({ kind: 'footstep', at, floor, loudness: HUNTER_STEP_LOUDNESS[gait], by: 'hunter' }),
+      noise: (at, floor, loudness, detail) =>
+        this.events.push({ kind: 'inspect', at, floor, loudness, detail, by: 'hunter' }),
     });
     if (caught) this.round.catchPlayer();
   }

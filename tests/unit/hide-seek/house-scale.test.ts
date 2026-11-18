@@ -49,8 +49,9 @@ describe('the roomier house', () => {
     void circleHitsRect;
   });
 
-  it('the hunter searches the real house: both floors, rooms and hiding places', () => {
+  it('the hunter searches the real house in depth: several rooms and many hiding places, opened and looked into', () => {
     const g = new HideSeekGame();
+    const kinds = new Set<string>();
     const ctx = {
       world: g.world,
       spots: g.spots,
@@ -59,10 +60,14 @@ describe('the roomier house', () => {
       timeS: 0,
       openDoor: (id: string) => g.setDoor(id, true, 'hunter'),
       step: () => {},
+      noise: (_at: unknown, _floor: unknown, _loudness: number, detail: string) => kinds.add(detail),
     };
     for (let t = 0; t < 119; t += 1 / 30) g.hunter.step(1 / 30, { ...ctx, timeS: t });
-    expect(g.hunter.searched.size).toBeGreaterThan(4);
-    expect(g.hunter.inspected.size).toBeGreaterThan(2);
+    // Checking a place properly (opening it, kneeling to look) takes time, so he covers fewer rooms than a quick sweep
+    // would, but looks into many more places, in a variety of ways.
+    expect(g.hunter.searched.size).toBeGreaterThanOrEqual(4);
+    expect(g.hunter.inspected.size).toBeGreaterThanOrEqual(6);
+    expect(kinds.size).toBeGreaterThanOrEqual(3);
   });
 });
 

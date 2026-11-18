@@ -29,9 +29,17 @@ export function toward(from: Rect, to: Rect): Facing {
  * a free-standing piece.
  */
 export function wallSide(f: Rect, walls: readonly Rect[], tol = 0.7): Facing | null {
-  let best: { side: Facing; gap: number } | null = null;
+  const w0 = f.x1 - f.x0;
+  const d0 = f.y1 - f.y0;
+  // A long piece puts its back against the wall along its long side: in a corner the wall at its short end is the
+  // worse choice (a wardrobe 1.2 wide and 0.9 deep in a corner stands against the wall behind its width).
+  const elongated = Math.abs(w0 - d0) > 0.05;
+  const shortEnds: readonly Facing[] = !elongated ? [] : w0 > d0 ? ['e', 'w'] : ['n', 's'];
+  let best: { side: Facing; score: number } | null = null;
   const consider = (side: Facing, gap: number): void => {
-    if (gap >= -0.08 && gap <= tol && (!best || gap < best.gap)) best = { side, gap };
+    if (gap < -0.08 || gap > tol) return;
+    const score = gap + (shortEnds.includes(side) ? 0.5 : 0);
+    if (!best || score < best.score) best = { side, score };
   };
   for (const w of walls) {
     const overlapsX = w.x1 > f.x0 + 0.05 && w.x0 < f.x1 - 0.05;

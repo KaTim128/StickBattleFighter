@@ -105,3 +105,24 @@ describe.each([
     expect(frontVisible('w')).toBe(false);
   });
 });
+
+/** A cupboard's opening is its front: it opens away from the wall its back is against (owner, 18/11/2026). */
+describe.each([
+  ['the authored plan', HOUSE_PLAN],
+  ['the real, roomier house', HOUSE],
+])('openings face into the room in %s', (_name, house) => {
+  it('every wardrobe, cupboard, chest and shed cabinet against a wall opens away from it', () => {
+    const opposite = { n: 's', s: 'n', e: 'w', w: 'e' } as const;
+    const offenders: string[] = [];
+    for (const f of house.furniture) {
+      if (!f.hide || !['wardrobe', 'cupboard', 'chest', 'shed-cabinet'].includes(f.hide.kind)) continue;
+      const side = wallSide(
+        f,
+        house.walls.filter((w) => w.floor === f.floor),
+      );
+      if (side && f.hide.opensToward !== opposite[side])
+        offenders.push(`${f.id} (${f.hide.kind}) has its back to the ${side} but opens ${f.hide.opensToward}`);
+    }
+    expect(offenders).toEqual([]);
+  });
+});

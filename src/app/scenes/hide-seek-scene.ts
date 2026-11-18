@@ -1,4 +1,5 @@
 import { type Container, Graphics, type Renderer } from 'pixi.js';
+import type { Pose } from '../../animation/skeleton';
 import { loadCharacter } from '../../characters/load';
 import type { GameScene } from '../../core/scene';
 import { HOUSE, HOUSE_CAST } from '../../data/arenas/house';
@@ -6,6 +7,7 @@ import type { PlayerIntents } from '../../input/intents';
 import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
 import { hideCues } from '../../modes/hide-seek/hiding';
 import type { Rect } from '../../modes/hide-seek/house-types';
+import { actionPose, openAmount } from '../../modes/hide-seek/hunter-actions';
 import { visionPolygon } from '../../modes/hide-seek/perception';
 import { Visibility } from '../../modes/hide-seek/visibility';
 import type { Point } from '../../modes/hide-seek/world';
@@ -14,6 +16,7 @@ import { ActorView } from '../../rendering/actor-view';
 import { isLongPiece, personOrder } from '../../rendering/depth-sort';
 import { bakerFor, buildHouseView, type HouseView, isFrontWallOf } from '../../rendering/house-view';
 import { iso } from '../../rendering/projection';
+import { SpotEffects } from '../../rendering/spot-effects';
 import type { Viewport } from './arena-scene';
 
 /**
@@ -35,6 +38,8 @@ export class HideSeekScene implements GameScene {
   /** The hunter's vision cone, drawn on the ground of his floor: the very area his sight test uses. */
   private cone: Graphics | null = null;
   private hunterFloor: 0 | 1 = 0;
+  /** Cupboard doors, lids, curtains and bushes the hunter opens, drags and shakes. */
+  private spotFx: SpotEffects | null = null;
   /** The player's figure's opacity, eased: it fades as they crawl under cover. */
   private playerAlpha = 1;
   /** Heights of the hiding places (for the bubble anchors), by furniture id. */
@@ -77,6 +82,7 @@ export class HideSeekScene implements GameScene {
     const house = this.game.house;
     this.view = buildHouseView(house, this.game.world, this.renderer ? bakerFor(this.renderer) : undefined);
     for (const f of house.furniture) if (f.hide) this.spotTops.set(f.id, f.heightM);
+    this.spotFx = new SpotEffects(this.view, house);
     this.world = this.view.world;
     this.lit = this.view.nodes.map((n) => {
       const r = n.rect;
@@ -199,12 +205,22 @@ export class HideSeekScene implements GameScene {
     // Room visibility and lighting: what the eyes can see from where they are (body plus any peek).
     this.renderProps(view);
     this.renderHunter(view, frameDtS);
+    const act = g.hunter.action;
+    this.spotFx?.update(
+      frameDtS,
+      act?.spot ? { spotId: act.spot.id, amount: openAmount(act.kind, Math.min(1, act.elapsedS / act.durS)) } : null,
+    );
     const eyes = g.viewer();
     this.visibility.update(frameDtS, eyes);
     this.fadeFrontWalls(view);
     this.applyVisibility();
     for (const f of view.floors) f.actors.update();
-    this.sortLongPieces(player.view.root.zIndex);
+    const people = [{ x: p.x, y: p.y, floor: p.floor, z: player.view.root.zIndex }];
+    const hv = this.hunterView;
+    if (hv?.view.root.visible)
+      people.push({ x: g.hunter.x, y: g.hunter.y, floor: g.hunter.floor, z: hv.view.root.zIndex });
+    this.sortLongPieces(people);
+    this.spotFx?.syncDepth();
     view.fader.update([{ node: player.view.root, depth: () => player.view.root.zIndex }], frameDtS);
 
     // The camera glides after the player.
@@ -237,11 +253,19 @@ export class HideSeekScene implements GameScene {
     const moved = Math.hypot(h.x - this.lastHunter.x, h.y - this.lastHunter.y);
     this.lastHunter = { x: h.x, y: h.y };
     const facing: 1 | -1 = Math.cos(h.facing) - Math.sin(h.facing) >= 0 ? 1 : -1;
+    // His body: a search action (opening a door, kneeling to look under a bed...) or, at the catch, the strike.
+    let pose: Pose | undefined;
+    if (g.round.phase === 'killing' || g.round.phase === 'gameover') {
+      pose = actionPose('strike', Math.min(1, g.round.killProgress * 1.5));
+    } else if (h.action) {
+      pose = actionPose(h.action.kind, Math.min(1, h.action.elapsedS / h.action.durS));
+    }
     hv.draw(
       frameDtS,
       { speedMps: moved / Math.max(frameDtS, 1e-3), running: h.gait === 'run', crouching: false },
       facing,
       0,
+      pose,
     );
     const at = iso(h.x, h.y, h.z);
     hv.view.root.position.set(at.x, at.y);
@@ -260,14 +284,25 @@ export class HideSeekScene implements GameScene {
   }
 
   /** The throwable objects: on the floor, carried over the player's head, or flying in an arc. */
-  /** Put long furniture in front of or behind the player by where the player stands against its footprint. */
-  private sortLongPieces(playerZ: number): void {
-    const p = this.game.player;
+  /**
+   * Put long furniture in front of or behind each person (the player and the hunter) by where they stand against
+   * its footprint. A piece in front of one and behind another is put between them.
+   */
+  private sortLongPieces(people: readonly { x: number; y: number; floor: number; z: number }[]): void {
     for (const n of this.lit) {
-      if (!n.long || n.floor !== p.floor) continue;
-      const order = personOrder(n.long, p);
-      if (order === 'in-front') n.node.zIndex = playerZ - 0.5;
-      else if (order === 'behind') n.node.zIndex = playerZ + 0.5;
+      if (!n.long) continue;
+      let below = Number.POSITIVE_INFINITY; // the piece must draw before (under) this
+      let above = Number.NEGATIVE_INFINITY; // and after (over) this
+      for (const who of people) {
+        if (who.floor !== n.floor) continue;
+        const order = personOrder(n.long, who);
+        if (order === 'in-front') below = Math.min(below, who.z);
+        else if (order === 'behind') above = Math.max(above, who.z);
+      }
+      if (below === Number.POSITIVE_INFINITY && above === Number.NEGATIVE_INFINITY) continue;
+      if (below !== Number.POSITIVE_INFINITY && above !== Number.NEGATIVE_INFINITY)
+        n.node.zIndex = above < below ? (above + below) / 2 : below - 0.5;
+      else n.node.zIndex = below !== Number.POSITIVE_INFINITY ? below - 0.5 : above + 0.5;
     }
   }
 
@@ -294,6 +329,7 @@ export class HideSeekScene implements GameScene {
     this.visibility.reset();
     this.visibility.settle(this.game.viewer());
     this.playerAlpha = 1;
+    this.spotFx?.reset();
     if (this.player) this.player.view.root.rotation = 0;
     const p = this.game.player;
     const at = iso(p.x, p.y, p.z);
@@ -389,6 +425,7 @@ export class HideSeekScene implements GameScene {
     this.view = null;
     this.player = null;
     this.hunterView = null;
+    this.spotFx = null;
     this.cone = null;
     this.world = null;
   }

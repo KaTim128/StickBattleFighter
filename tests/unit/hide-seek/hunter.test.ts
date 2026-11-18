@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { HOUSE_PLAN } from '../../../src/data/arenas/house';
 import { HideSeekGame, NO_INPUT, type PlayerInput } from '../../../src/modes/hide-seek/game';
+import { exitPoint } from '../../../src/modes/hide-seek/hiding';
+import { Hunter, seeded } from '../../../src/modes/hide-seek/hunter';
+import { ACTION_DURATION_S } from '../../../src/modes/hide-seek/hunter-actions';
 import { heardStrength, sightRate, visionPolygon } from '../../../src/modes/hide-seek/perception';
 
 const DT = 1 / 30;
@@ -27,6 +30,7 @@ function scout(g: HideSeekGame, seconds: number): void {
     timeS: 0,
     openDoor: (id: string) => g.setDoor(id, true, 'hunter'),
     step: () => {},
+    noise: () => {},
   };
   for (let t = 0; t < seconds; t += DT) g.hunter.step(DT, { ...ctx, timeS: t });
 }
@@ -117,6 +121,7 @@ describe('hunter behaviour', () => {
       timeS: g.timeS,
       openDoor: () => {},
       step: () => {},
+      noise: () => {},
     };
     g.hunter.step(DT, ctx);
     expect(g.hunter.mode).toBe('investigate');
@@ -143,6 +148,7 @@ describe('hunter behaviour', () => {
       timeS: g.timeS,
       openDoor: () => {},
       step: () => {},
+      noise: () => {},
     });
     expect(g.hunter.mode).toBe(before);
   });
@@ -180,6 +186,7 @@ describe('hunter behaviour', () => {
         timeS: 0,
         openDoor: () => {},
         step: () => {},
+        noise: () => {},
       });
     expect(g.hunter.awareness).toBeLessThan(1);
   });
@@ -204,5 +211,152 @@ describe('hunter behaviour', () => {
     expect(g.hunter.awareness).toBe(0);
     expect(g.hunter.searched.size).toBe(0);
     expect(g.round.phase).toBe('prep');
+  });
+});
+
+describe('how he searches a hiding place (owner, 18/11/2026)', () => {
+  /** Drive the hunter alone, like `scout`, recording what he does with his body. */
+  function watch(rng: () => number, seconds = 119) {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const h = new Hunter(HOUSE_PLAN, rng);
+    const kinds = new Set<string>();
+    const noises: string[] = [];
+    const ctx = {
+      world: g.world,
+      spots: g.spots,
+      body: { floor: 1 as const, x: -50, y: -50, crouching: false, hiding: null },
+      events: [] as never[],
+      timeS: 0,
+      openDoor: (id: string) => g.setDoor(id, true, 'hunter'),
+      step: () => {},
+      noise: (_a: unknown, _f: unknown, _l: number, d: string) => noises.push(d),
+    };
+    for (let t = 0; t < seconds; t += DT) {
+      h.step(DT, { ...ctx, timeS: t });
+      if (h.action) kinds.add(h.action.kind);
+    }
+    return { kinds, noises, h };
+  }
+
+  it('opens cupboards, lifts lids and kneels to look under beds when he is thorough', () => {
+    const { kinds, noises } = watch(() => 0.05);
+    expect(kinds.has('open-door')).toBe(true);
+    expect(kinds.has('lift-lid') || kinds.has('look-under')).toBe(true);
+    expect(noises).toContain('open-door'); // the door creaks as he opens it
+  });
+
+  it('only glances when he is not suspicious, so a good hiding place can slip past', () => {
+    const { kinds, noises } = watch(() => 0.99);
+    expect(kinds.has('glance')).toBe(true);
+    expect(kinds.has('open-door')).toBe(false);
+    expect(noises).not.toContain('open-door');
+  });
+
+  it('varies what he does, but identically for the same seed', () => {
+    const a = watch(seeded(1));
+    const b = watch(seeded(1));
+    const c = watch(seeded(2));
+    expect([...a.kinds]).toEqual([...b.kinds]);
+    expect(a.noises).toEqual(b.noises);
+    expect(a.kinds.size).toBeGreaterThanOrEqual(3);
+    expect(JSON.stringify(a.noises) === JSON.stringify(c.noises) && a.noises.length > 3).toBe(false);
+  });
+
+  it('listens with his head cocked now and then, and drags his knife along a wall', () => {
+    // Over several different hunters (seeds), since when exactly he does either is left to chance.
+    const kinds = new Set<string>();
+    for (const seed of [3, 7, 11, 19]) for (const k of watch(seeded(seed), 240).kinds) kinds.add(k);
+    expect(kinds.has('listen')).toBe(true);
+    expect(kinds.has('knife-scrape')).toBe(true);
+  });
+
+  it('opens the place he heard someone use, properly, even if he would otherwise only glance', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const h = new Hunter(HOUSE_PLAN, () => 0.99);
+    const spot = g.spots.find((s) => s.floor === 0 && s.spec.kind === 'cupboard')!;
+    h.floor = 0;
+    h.x = spot.spec.at.x + 3;
+    h.y = spot.spec.at.y + 2;
+    const ctx = (events: never[]) => ({
+      world: g.world,
+      spots: g.spots,
+      body: { floor: 1 as const, x: -50, y: -50, crouching: false, hiding: null },
+      events,
+      timeS: 0,
+      openDoor: () => {},
+      step: () => {},
+      noise: () => {},
+    });
+    // He hears a creak from that cupboard (someone got into it).
+    h.step(
+      DT,
+      ctx([
+        { kind: 'hide-enter', at: spot.spec.at, floor: 0, loudness: 0.9, id: spot.id, detail: 'cupboard' },
+      ] as never[]),
+    );
+    let first: string | null = null;
+    for (let t = 0; t < 60 && !first; t += DT) {
+      h.step(DT, { ...ctx([]), timeS: t });
+      if (h.action?.spot?.id === spot.id) first = h.action.kind;
+    }
+    expect(first).toBe('open-door');
+  });
+
+  it('finds a player in a cupboard he opens, but not one he merely glances at', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const spot = g.spots.find((s) => s.spec.kind === 'wardrobe')!;
+    const mk = (kind: 'open-door' | 'glance') => {
+      const h = new Hunter(HOUSE_PLAN);
+      const out = exitPoint(g.world, spot);
+      h.floor = spot.floor;
+      h.x = out.x;
+      h.y = out.y;
+      h.facing = Math.atan2(spot.spec.at.y - out.y, spot.spec.at.x - out.x);
+      const ctx = {
+        world: g.world,
+        spots: g.spots,
+        body: { floor: spot.floor, x: spot.spec.at.x, y: spot.spec.at.y, crouching: false, hiding: spot },
+        events: [] as never[],
+        timeS: 0,
+        openDoor: () => {},
+        step: () => {},
+        noise: () => {},
+      };
+      (h as unknown as { beginAction(k: string, s: unknown, c: unknown): void }).beginAction(kind, spot, ctx);
+      let peak = 0;
+      // Only while the action lasts (then he would walk on): the look is what finds, or does not.
+      for (let t = 0; t < ACTION_DURATION_S[kind] * 1.25 + 0.1; t += DT) {
+        h.step(DT, { ...ctx, timeS: t });
+        peak = Math.max(peak, h.awareness);
+      }
+      return peak;
+    };
+    expect(mk('open-door')).toBeGreaterThanOrEqual(1);
+    expect(mk('glance')).toBeLessThan(1);
+  });
+
+  it('drops what he is doing the moment he sees the player in the open', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const h = new Hunter(HOUSE_PLAN);
+    const spot = g.spots[0]!;
+    h.floor = 0;
+    h.x = 14;
+    h.y = 17.5;
+    h.facing = -Math.PI / 2;
+    (h as unknown as { beginAction(k: string, s: unknown, c: unknown): void }).beginAction('look-under', spot, {});
+    expect(h.action).not.toBeNull();
+    const ctx = {
+      world: g.world,
+      spots: g.spots,
+      body: { floor: 0 as const, x: 14, y: 16.2, crouching: false, hiding: null },
+      events: [] as never[],
+      timeS: 0,
+      openDoor: () => {},
+      step: () => {},
+      noise: () => {},
+    };
+    for (let t = 0; t < 2 && h.mode !== 'chase'; t += DT) h.step(DT, ctx);
+    expect(h.mode).toBe('chase');
+    expect(h.action).toBeNull();
   });
 });

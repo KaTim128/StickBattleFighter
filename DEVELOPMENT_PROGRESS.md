@@ -826,3 +826,6 @@ Done: armchairs and sofa closer to the table, a better-made bed (blanket under t
 ### 18/11/2026 Bigger house, doors, four-legged beds (TD-102)
 Done: rooms scaled 1.9 with furniture at its natural size, doors two thirds as wide, about 40 more pieces and nine more hiding places (36), beds on four legs with clearance and a fully hidden player. Known limits: the stairs are now wide (scaled with the rooms); the hunter was sped up and not human-tested.
 
+### 18/11/2026 Hunter search animations (TD-103)
+Done: ten keyframed search actions, doors/lids/curtains/bushes that react, thorough-versus-glance checking driven by suspicion, listening and knife-scrape beats, rechecks, positional noises, the strike at the catch; fixed the long-furniture depth order against the hunter. Known limits: wardrobe doors whose front faces away from the camera cannot show opening; the hunter's difficulty is untested by a person.
+
