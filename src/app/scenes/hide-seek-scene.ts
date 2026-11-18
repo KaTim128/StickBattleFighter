@@ -12,7 +12,7 @@ import { Visibility } from '../../modes/hide-seek/visibility';
 import type { Point } from '../../modes/hide-seek/world';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
 import { ActorView } from '../../rendering/actor-view';
-import { isLongPiece, personOrder } from '../../rendering/depth-sort';
+import { isLongPiece, longPieceKey, personOrder } from '../../rendering/depth-sort';
 import { bakerFor, buildHouseView, type HouseView, isFrontWallOf } from '../../rendering/house-view';
 import { iso } from '../../rendering/projection';
 import { SpotEffects } from '../../rendering/spot-effects';
@@ -304,10 +304,7 @@ export class HideSeekScene implements GameScene {
         if (order === 'in-front') below = Math.min(below, who.z);
         else if (order === 'behind') above = Math.max(above, who.z);
       }
-      if (below === Number.POSITIVE_INFINITY && above === Number.NEGATIVE_INFINITY) continue;
-      if (below !== Number.POSITIVE_INFINITY && above !== Number.NEGATIVE_INFINITY)
-        n.node.zIndex = above < below ? (above + below) / 2 : below - 0.5;
-      else n.node.zIndex = below !== Number.POSITIVE_INFINITY ? below - 0.5 : above + 0.5;
+      n.node.zIndex = longPieceKey(n.node.zIndex, below, above);
     }
   }
 

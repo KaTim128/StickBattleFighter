@@ -565,4 +565,4 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Shroud's senses (TD-110): knows nothing at the start; no sight through walls, shut doors or the fridge; forgets after 22 s (`hunter.test.ts`); walker never snags on furniture corners (`world.test.ts`)
 - [x] Settings gear at the top right, panel opens, canvas fills the window with no scrolling, front door stays locked (`hide-seek.spec.ts`)
 - [ ] Owner check on the phone: the house is compact, the stairs climb smoothly and look solid, the gear is top right, fullscreen starts on the first tap (play `?mode=hide-seek`)
-
+- [x] No floating furniture: a long piece only moves under or over a nearby person as needed (`depth-sort.test.ts`); no floating wall at the head of the stairs, only the hall's back wall behind the flight is drawn low (`stair-barrier.test.ts`)

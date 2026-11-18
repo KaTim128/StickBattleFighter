@@ -18,3 +18,19 @@ export function personOrder(piece: Rect, person: { x: number; y: number }): 'in-
 /** Pieces shorter than this keep the usual nearest-corner sort (it is exact for something small). */
 export const LONG_PIECE_M = 1.6;
 export const isLongPiece = (r: Rect): boolean => Math.max(r.x1 - r.x0, r.y1 - r.y0) >= LONG_PIECE_M;
+
+/**
+ * The draw key a long piece needs given its own key and the people around it: under everyone it stands behind, over
+ * everyone it stands in front of, otherwise unchanged. It only ever moves the way a person needs it to move: setting
+ * it outright put a dining table drawn after a person in another room, in front of every wall between them (owner,
+ * 18/11/2026: "a floating table").
+ */
+export function longPieceKey(natural: number, below: number, above: number): number {
+  const hasBelow = below !== Number.POSITIVE_INFINITY;
+  const hasAbove = above !== Number.NEGATIVE_INFINITY;
+  if (hasBelow && hasAbove && above >= below) return below - 0.5; // conflicting people: the nearer one wins
+  let key = natural;
+  if (hasBelow && key >= below) key = hasAbove ? (above + below) / 2 : below - 0.5;
+  if (hasAbove && key <= above) key = hasBelow ? (above + below) / 2 : above + 0.5;
+  return key;
+}

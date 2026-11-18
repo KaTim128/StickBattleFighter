@@ -54,8 +54,40 @@ const LEDGE_M = 0.35;
 /** The wall block that fills the space behind the top step is exactly this tall (house.ts), so it is drawn as stair wood. */
 const STAIR_BLOCK_M = 3;
 
-/** The ground floor's walls are this tall: the block under the landing is drawn as a piece of wall. */
-const WALL_DRAW_M = 2.6;
+/**
+ * The stretch of wall a flight runs up toward (the flight climbs through the ceiling there) is drawn as a low ledge:
+ * at full height it stood at the head of the stairs like a floating slab (owner, 18/11/2026). The rest of the wall
+ * keeps its height. Collision is untouched: this only changes the drawing.
+ */
+export function splitBehindStairs(w: WallDef, house: HouseDef): { wall: WallDef; low: boolean }[] {
+  if (w.kind !== 'wall' || w.x1 - w.x0 < w.y1 - w.y0) return [{ wall: w, low: false }];
+  for (const s of house.stairs) {
+    const r = s.ramp;
+    if (w.floor !== s.bottomFloor || s.rises !== 'n' || w.y1 > r.y0 || r.y0 - w.y1 > 2.5) continue;
+    // The low stretch runs between the walls meeting it on each side of the flight (the room's corners), and takes in
+    // any leftover narrower than a sliver, so no piece of wall stands up on its own as a post.
+    const meeting = house.walls.filter(
+      (v) =>
+        v !== w &&
+        v.kind === 'wall' &&
+        v.floor === w.floor &&
+        v.y1 - v.y0 > v.x1 - v.x0 &&
+        v.y0 <= w.y1 + 0.05 &&
+        v.y1 >= w.y0 - 0.05,
+    );
+    let a = Math.max(w.x0, ...meeting.filter((v) => v.x1 <= r.x0).map((v) => v.x1));
+    let b = Math.min(w.x1, ...meeting.filter((v) => v.x0 >= r.x1).map((v) => v.x0));
+    if (a - w.x0 < 0.6) a = w.x0;
+    if (w.x1 - b < 0.6) b = w.x1;
+    if (b <= a) continue;
+    const out: { wall: WallDef; low: boolean }[] = [];
+    if (a > w.x0) out.push({ wall: { ...w, x1: a }, low: false });
+    out.push({ wall: { ...w, x0: a, x1: b }, low: true });
+    if (b < w.x1) out.push({ wall: { ...w, x0: b }, low: false });
+    return out;
+  }
+  return [{ wall: w, low: false }];
+}
 
 /** Draw key for a rail beside a flight, or the block at its head, on its lower floor: just behind its highest tread. */
 function stairRailKey(w: WallDef, house: HouseDef): number | null {
@@ -396,8 +428,7 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
     const inside = onBuilding(w, building);
     const front = inside === 'front';
     const block = w.heightM === STAIR_BLOCK_M;
-    // The block under the landing reads as the end of the hall's wall (plaster, wall height), not a crate by the stairs.
-    const heightM = w.kind === 'wall' && front ? LEDGE_M : block ? WALL_DRAW_M : w.heightM;
+    const heightM = w.kind === 'wall' && front ? LEDGE_M : w.heightM;
     const exterior = w.kind === 'wall' && inside !== null;
     const outbuilding =
       w.kind === 'wall' && inside === null && !insideRect(building, (w.x0 + w.x1) / 2, (w.y0 + w.y1) / 2);
@@ -412,7 +443,13 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
     // The railing round the stairwell upstairs is collision only: drawn, it cut across the steps going down (owner,
     // 18/11/2026: "remove the barrier going through the stairs"). It still stops anyone stepping into the opening.
     if (house.stairs.some((s) => w.kind === 'rail' && w.floor === s.topFloor && w.floor !== s.bottomFloor)) continue;
-    for (const c of wallChunks(w, heightM, colour, exterior || outbuilding)) {
+    // The block under the landing only stops anyone walking into the gap behind the top step; drawn, it stood over
+    // the arriving steps like a floating wall (owner, 18/11/2026), so it is collision only too.
+    if (block) continue;
+    const chunks = splitBehindStairs(w, house).flatMap((piece) =>
+      wallChunks(piece.wall, piece.low ? LEDGE_M : heightM, colour, exterior || outbuilding),
+    );
+    for (const c of chunks) {
       const node = bake(c.g);
       // A rail beside a flight stands behind its treads on the camera's side (the treads rise above it), so it is drawn
       // before every tread; sorted by its own corner it cut across the upper steps (owner, 18/11/2026: "distorted").
