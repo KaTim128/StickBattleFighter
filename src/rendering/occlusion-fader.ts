@@ -1,4 +1,5 @@
 import type { Container } from 'pixi.js';
+import { isBehindViewer } from './wall-occlusion';
 
 /**
  * Dynamic wall transparency (owner request 11/11/2026): any wall section,
@@ -10,8 +11,6 @@ import type { Container } from 'pixi.js';
  * works for moving furniture too. Presentation only.
  */
 export const OCCLUDED_ALPHA = 0.3;
-/** How far past the viewer's position a wall must start before it counts as in front of it, metres. */
-const BEHIND_M = 0.3;
 /** Seconds to fade fully in or out. */
 export const FADE_S = 0.2;
 
@@ -115,7 +114,7 @@ export class OcclusionFader {
         const b = placed(node, local);
         for (const v of boxes) {
           // A wall behind the viewer (north or west of it) cannot hide it, whatever its depth key says.
-          if (t.rect && v.at && isBehind(t.rect, v.at)) continue;
+          if (t.rect && v.at && isBehindViewer(t.rect, v.at)) continue;
           if (depth > v.depth && overlaps(b, v.box)) {
             blocking = true;
             break;
@@ -128,12 +127,6 @@ export class OcclusionFader {
       node.alpha = a < goal ? Math.min(goal, a + step) : Math.max(goal, a - step);
     }
   }
-}
-
-/** A wall piece behind the viewer: running north-south and lying west of it, or east-west and lying north of it. */
-function isBehind(r: NonNullable<FadeTarget['rect']>, at: { x: number; y: number }): boolean {
-  const alongX = r.x1 - r.x0 >= r.y1 - r.y0;
-  return alongX ? r.y1 <= at.y + BEHIND_M : r.x1 <= at.x + BEHIND_M;
 }
 
 /** A node's local box moved to where it stands in its parent (scale and pivot included; rotation ignored). */

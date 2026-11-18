@@ -59,14 +59,17 @@ const STAIR_BLOCK_M = 3;
  * nearest the back wall), so every tread draws in front of it. Null for other walls. The treads' own keys are lowered
  * by their height, so an ordinary wall key would put the upper steps behind the wall (owner, 18/11/2026: "the back
  * wall should stay at the back behind the stairs").
+ * Only the pieces that stand behind the flight get it: given a chunk's `rect`, the rest of a long back wall keeps its
+ * own key (owner, 20/11/2026: the whole north wall had this key and drew over anyone standing along it).
  */
-export function flightBackKey(w: WallDef, house: HouseDef): number | null {
+export function flightBackKey(w: WallDef, house: HouseDef, piece?: { x0: number; x1: number }): number | null {
   if (w.kind !== 'wall') return null;
   for (const s of house.stairs) {
     const r = s.ramp;
     if (w.floor !== s.bottomFloor || s.rises !== 'n') continue;
     const behind = w.y1 <= r.y0 + 0.05 && r.y0 - w.y1 <= 2.5;
-    const overlaps = w.x0 < r.x1 && w.x1 > r.x0;
+    const span = piece ?? w;
+    const overlaps = span.x0 < r.x1 && span.x1 > r.x0;
     if (behind && overlaps) return iso(r.x1, r.y0, s.riseM).y - 1;
   }
   return null;
@@ -433,7 +436,7 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
       // A rail beside a flight stands behind its treads on the camera's side (the treads rise above it), so it is drawn
       // before every tread; sorted by its own corner it cut across the upper steps (owner, 18/11/2026: "distorted").
       const behindStairs = stairRailKey(w, house);
-      layer.actors.add(node, flightBackKey(w, house) ?? behindStairs ?? frontY(c.rect));
+      layer.actors.add(node, flightBackKey(w, house, c.rect) ?? behindStairs ?? frontY(c.rect));
       // The stairs' rails and the block under their landing are part of the staircase: always opaque (owner, 18/11/2026).
       const fades = wallFades(w);
       nodes.push({ node, floor: w.floor, room: null, kind: 'wall', id: `wall-${w.x0}-${w.y0}`, rect: c.rect, fades });

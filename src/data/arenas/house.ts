@@ -175,7 +175,8 @@ const wallsUpper: WallDef[] = [
   ]),
   // The stairwell's railing upstairs (open at the top, where the stairs arrive)
   seg(1, STAIR_X0 - 0.15, STAIR_TOP_Y, STAIR_X0, STAIR_BOTTOM_Y + 0.5, 'rail'),
-  seg(1, STAIR_X1, STAIR_TOP_Y, STAIR_X1 + 0.15, STAIR_BOTTOM_Y + 0.5, 'rail'),
+  // (No rail on the east side: the outer wall stands 0.3 m beyond the stairs, too narrow for anyone to stand in, and a rail
+  // there overlapped where the ground-floor lane lets a body walk, so a climber was left stuck inside it at the top.)
   seg(1, STAIR_X0, STAIR_BOTTOM_Y + 0.35, STAIR_X1, STAIR_BOTTOM_Y + 0.5, 'rail'),
 ];
 

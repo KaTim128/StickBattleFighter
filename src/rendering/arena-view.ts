@@ -7,6 +7,7 @@ import { face, faceQuad, isoBlock, shade } from './iso-draw';
 import { drawPrism } from './prism';
 import { FLOOR_MATRIX, iso } from './projection';
 import { buildPropView, propFootOffset } from './prop-view';
+import type { WallRect } from './wall-occlusion';
 import { YSortLayer } from './y-sort-layer';
 
 export interface ArenaView {
@@ -24,6 +25,8 @@ export interface ArenaView {
   readonly walls: readonly (readonly Container[])[];
   /** Interior wall sections and door sections that can stand in front of a fighter (wall transparency). */
   readonly occluders: Container[];
+  /** Each occluder's footprint (wall blocks), or null (door sections): the shared wall rules need to know where it stands. */
+  readonly occluderRects: readonly (WallRect | null)[];
   destroy(): void;
 }
 
@@ -75,11 +78,11 @@ function wallColour(arena: ArenaLayout, r: Rect): number {
  * fighters beside it still depth-sort correctly. Each block is drawn as a prism
  * on its own footprint, so a turned wall shows its sloping face.
  */
-function wallBlocks(r: Rect, top: number, front: number): { node: Container; footOffset: number }[] {
+function wallBlocks(r: Rect, top: number, front: number): { node: Container; footOffset: number; rect: WallRect }[] {
   const alongY = r.y1 - r.y0 >= r.x1 - r.x0;
   const length = alongY ? r.y1 - r.y0 : r.x1 - r.x0;
   const n = Math.max(1, Math.ceil(length / WALL_CHUNK_M - 1e-6));
-  const blocks: { node: Container; footOffset: number }[] = [];
+  const blocks: { node: Container; footOffset: number; rect: WallRect }[] = [];
   for (let i = 0; i < n; i++) {
     const a0 = (alongY ? r.y0 : r.x0) + (length * i) / n;
     const a1 = (alongY ? r.y0 : r.x0) + (length * (i + 1)) / n;
@@ -122,7 +125,16 @@ function wallBlocks(r: Rect, top: number, front: number): { node: Container; foo
     c.addChild(g);
     const at = iso(centre.x, centre.y);
     c.position.set(at.x, at.y);
-    blocks.push({ node: c, footOffset: Math.max(...rel.map((p) => p.y)) });
+    blocks.push({
+      node: c,
+      footOffset: Math.max(...rel.map((p) => p.y)),
+      rect: {
+        x0: Math.min(...corners.map((p) => p.x)),
+        y0: Math.min(...corners.map((p) => p.y)),
+        x1: Math.max(...corners.map((p) => p.x)),
+        y1: Math.max(...corners.map((p) => p.y)),
+      },
+    });
   }
   return blocks;
 }
@@ -228,12 +240,14 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   });
 
   const occluders: Container[] = [];
+  const occluderRects: (WallRect | null)[] = [];
   const wallNodes: Container[][] = [];
   for (const r of arena.interiorWalls ?? []) {
     const nodes: Container[] = [];
     for (const b of wallBlocks(r, 0xf4f0ea, r.colour ?? wallColour(arena, r))) {
       actors.add(b.node, b.footOffset);
       occluders.push(b.node);
+      occluderRects.push(b.rect);
       nodes.push(b.node);
     }
     wallNodes.push(nodes);
@@ -247,6 +261,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     for (const part of view.parts) {
       actors.add(part.node, part.footOffset);
       occluders.push(part.node);
+      occluderRects.push(null);
     }
   }
 
@@ -259,6 +274,7 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     propCount: arena.props.length,
     props,
     occluders,
+    occluderRects,
     destroy() {
       for (const d of doors.values()) d.destroy();
       actors.destroy();

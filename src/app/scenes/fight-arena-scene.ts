@@ -57,7 +57,7 @@ import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { COUNTDOWN_WORDS_S } from '../../data/audio/music';
 import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
 import { THROWING } from '../../data/combat/throwing';
-import type { Material } from '../../data/objects/props';
+import { footprint, type Material } from '../../data/objects/props';
 import type { ArenaProp } from '../../environment/arena-props';
 import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
@@ -74,6 +74,7 @@ import { ISO_C, ISO_T, iso, isoBounds, isoToWorld, screenSideToWorld } from '../
 import { tallestPropM } from '../../rendering/prop-view';
 import type { DodgeLook } from '../../rendering/stickman-view';
 import { drawWallDamage } from '../../rendering/wall-damage';
+import { BackWallDepth, type WallRect } from '../../rendering/wall-occlusion';
 import {
   AbilityVfx,
   type AuraFx,
@@ -289,6 +290,9 @@ export type IntroPhase = 'lead-in' | 'three' | 'two' | 'one' | 'fight';
 const RELAX_AFTER_S = 3;
 /** Approximate height of a fighter's head top above its feet (for bars and callouts). */
 const HEAD_TOP_M = 1.75;
+/** Props that are walls in all but name: the shared wall-occlusion rules apply to them. */
+const WALL_LIKE_PROPS: ReadonlySet<string> = new Set(['cubicle-panel', 'glass-partition']);
+
 /** After a teleport the body fades back in over this long, seconds. */
 const TELEPORT_APPEAR_S = 0.3;
 /** The top of a fighter's head over its feet (big fighters are drawn bigger: rig.scale). */
@@ -328,6 +332,8 @@ export class FightArenaScene implements ArenaScene {
   private vfx: AbilityVfx | null = null;
   /** Fades walls and tall props that stand in front of a fighter (owner, 11/11/2026). */
   occlusion: OcclusionFader | null = null;
+  private readonly backWalls = new BackWallDepth();
+  private wallPieces: { node: Container; rect: WallRect }[] = [];
   /** A match that ends (Tournament mode), or null for open practice. */
   readonly match: { readonly spectate: boolean } | null;
   /** The match's result once decided: who won and when (simulation time). */
@@ -843,8 +849,24 @@ export class FightArenaScene implements ArenaScene {
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
     this.occlusion = new OcclusionFader();
-    for (const node of this.view.occluders) this.occlusion.add(node);
-    for (const node of this.view.props.values()) this.occlusion.add(node);
+    this.view.occluders.forEach((node, i) =>
+      this.occlusion?.add(node, undefined, this.view?.occluderRects[i] ?? undefined),
+    );
+    this.wallPieces = this.view.occluders.flatMap((node, i) => {
+      const rect = this.view?.occluderRects[i];
+      return rect ? [{ node, rect }] : [];
+    });
+    for (const [i, node] of this.view.props) {
+      const p = arena.props[i];
+      // Wall-like props (cubicle and glass partitions) follow the same shared rules as the walls: behind a fighter
+      // they stay solid and behind him; in front of him they may fade.
+      if (p && WALL_LIKE_PROPS.has(p.kind)) {
+        const { w, d } = footprint(p);
+        const rect = { x0: p.x - w / 2, y0: p.y - d / 2, x1: p.x + w / 2, y1: p.y + d / 2 };
+        this.occlusion.add(node, undefined, rect);
+        this.wallPieces.push({ node, rect });
+      } else this.occlusion.add(node);
+    }
     this.vfx = new AbilityVfx();
     this.vfx.attach(this.view.floor, this.view.world, this.view.actors.container);
     this.overlay = new Container();
@@ -2673,10 +2695,16 @@ export class FightArenaScene implements ArenaScene {
     this.renderWalls();
     this.renderFireLight();
     this.renderAbilityFx(frameDtS);
+    // Walls behind a fighter never fade and stay behind them in depth; only walls in front fade (shared rules).
+    this.backWalls.apply(
+      this.view.actors,
+      this.wallPieces.filter((w) => !w.node.destroyed && w.node.visible),
+      this.fighters.flatMap((f) => (f.view ? [{ x: f.x, y: f.y, z: f.view.root.zIndex }] : [])),
+    );
     this.view.actors.update();
     // Keep both fighters visible: fade whatever stands in front of them.
     const viewers = this.fighters.flatMap((f) =>
-      f.view ? [{ node: f.view.root, depth: () => f.view?.root.zIndex ?? 0 }] : [],
+      f.view ? [{ node: f.view.root, depth: () => f.view?.root.zIndex ?? 0, at: { x: f.x, y: f.y } }] : [],
     );
     this.occlusion?.update(viewers, frameDtS);
 

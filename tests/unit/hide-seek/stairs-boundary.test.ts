@@ -52,4 +52,45 @@ describe('the staircase and the house boundary hold whichever way a body walks a
         expect(world.stairAt(p), `floor ${floor} from x=${x.toFixed(1)}`).toBeNull();
       }
   });
+
+  /** Owner, 20/11/2026: going down the stairs and pressing a direction must never leave the player stuck in the wall. */
+  it('a body on the stairs is never inside a wall, on either floor, whichever way it pushes, at any point of the flight', () => {
+    const offenders = new Set<string>();
+    for (const [downSteps, label] of [
+      [10, 'top'],
+      [40, 'upper'],
+      [70, 'middle'],
+      [100, 'lower'],
+      [130, 'foot'],
+    ] as const)
+      for (let deg = 0; deg < 360; deg += 15) {
+        for (const start of [1, 0] as const) {
+          const p = {
+            floor: start as 0 | 1,
+            x: (r.x0 + r.x1) / 2,
+            y: start === 1 ? r.y0 - 0.4 : r.y1 + 0.6,
+            z: 0,
+            onStairs: null as string | null,
+          };
+          // Down (or up) the flight along its middle, then push away at `deg`.
+          for (let i = 0; i < downSteps; i++) {
+            world.move(p as never, 0, start === 1 ? 0.04 : -0.04);
+            world.updateStairs(p as never);
+          }
+          const dx = Math.cos((deg * Math.PI) / 180) * 0.05;
+          const dy = Math.sin((deg * Math.PI) / 180) * 0.05;
+          for (let i = 0; i < 200; i++) {
+            world.move(p as never, dx, dy);
+            world.updateStairs(p as never);
+            if (!world.fits(p.floor, p.x, p.y)) {
+              offenders.add(
+                `${label} start f${start} @${deg}: f${p.floor} (${p.x.toFixed(2)},${p.y.toFixed(2)}) z${p.z.toFixed(2)}`,
+              );
+              break;
+            }
+          }
+        }
+      }
+    expect([...offenders].slice(0, 8)).toEqual([]);
+  });
 });

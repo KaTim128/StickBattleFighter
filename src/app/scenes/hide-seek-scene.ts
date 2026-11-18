@@ -18,6 +18,7 @@ import { bakerFor, buildHouseView, type HouseView, isFrontWallOf } from '../../r
 import { KillEffects } from '../../rendering/kill-effects';
 import { iso } from '../../rendering/projection';
 import { SpotEffects } from '../../rendering/spot-effects';
+import { BackWallDepth } from '../../rendering/wall-occlusion';
 import type { YSortLayer } from '../../rendering/y-sort-layer';
 import type { Viewport } from './arena-scene';
 
@@ -51,8 +52,7 @@ export class HideSeekScene implements GameScene {
   private fadedRoom: string | null | undefined;
   /** The see-through front walls pushed behind the room's furniture, and the layer each is sorted in. */
   private readonly liftedWalls = new Map<Container, YSortLayer>();
-  /** Wall pieces behind the player whose depth is held back this frame (see `sortBackWalls`), with their layer. */
-  private readonly backWalls = new Map<Container, YSortLayer>();
+  private readonly backWalls = new BackWallDepth();
   private lastHunter = { x: 0, y: 0 };
   private cam = { x: 0, y: 0 };
   /** The camera's push-in during the execution (1 = normal), eased, and the clock for its shake. */
@@ -398,27 +398,19 @@ export class HideSeekScene implements GameScene {
     }
   }
 
-  /**
-   * The walls behind the player (a long wall's north or west run) never fade (owner, 20/11/2026), so they must also
-   * never be drawn over him: each such piece is held just behind the player in depth. A piece is behind when it runs
-   * north-south and lies west of him, or runs east-west and lies north of him; anything else may be in front.
-   */
+  /** The walls behind the player stay solid and are held behind him in depth (shared rule, `wall-occlusion.ts`). */
   private sortBackWalls(view: HouseView, p: { x: number; y: number; floor: 0 | 1 }): void {
-    for (const [node, layer] of this.backWalls) layer.setBias(node, 0);
-    this.backWalls.clear();
-    const playerZ = this.player?.view.root.zIndex ?? 0;
-    const layer = view.floors[p.floor].actors;
-    for (const n of view.nodes) {
-      if (n.kind !== 'wall' || n.fades === false || n.floor !== p.floor || this.liftedWalls.has(n.node)) continue;
-      const r = n.rect;
-      const alongX = r.x1 - r.x0 >= r.y1 - r.y0;
-      const behind = alongX ? r.y1 <= p.y + 0.3 : r.x1 <= p.x + 0.3;
-      if (!behind) continue;
-      const key = layer.keyOf(n.node);
-      if (key < playerZ) continue;
-      layer.setBias(n.node, playerZ - 0.01 - key);
-      this.backWalls.set(n.node, layer);
-    }
+    const z = this.player?.view.root.zIndex ?? 0;
+    const pieces = view.nodes.filter((n) => n.kind === 'wall' && n.fades !== false && n.floor === p.floor) as {
+      node: Container;
+      rect: Rect;
+    }[];
+    this.backWalls.apply(
+      view.floors[p.floor].actors,
+      pieces,
+      [{ x: p.x, y: p.y, z }],
+      new Set(this.liftedWalls.keys()),
+    );
   }
 
   /** Everything back to the start of a round: the game, the lighting memory and the hunter's picture. */

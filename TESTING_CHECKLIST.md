@@ -595,3 +595,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Death Mark: red sigil on the enemy, he crouches and creeps for 5 s; a hit on him or any attack of his breaks it; if it holds his eyes glow red and his next hit does triple, then the glow goes.
 - [ ] No ability's cooldown ticks while it is still running (dash, beam, buff, stalk); the ultimate does not recharge until its effect ends.
 - [ ] In the house, walking along the north and west walls never fades them, and the player is always drawn in front of them.
+
+## Shared wall occlusion and the stair fix (20/11/2026)
+- [ ] In the house and in each arena, walking along a north or west wall never fades it and never draws it over the player or furniture beside it.
+- [ ] A wall or partition between the camera and the player (south or east of him) still fades.
+- [ ] Going down the stairs and pushing any direction never leaves the player stuck or under the floor.
