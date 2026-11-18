@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js';
+import type { Loadout } from '../../../src/abilities/loadout';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { seededRandom } from '../../../src/combat/combatant';
 import { SceneManager } from '../../../src/core/scene';
@@ -29,14 +30,20 @@ export interface FightStats {
 }
 
 /** Plays one fight between two AI fighters to its end and measures it. Deterministic for a seed. */
-export async function measureFight(a: string, b: string, seed: number, difficulty = 'hard'): Promise<FightStats> {
+export async function measureFight(
+  a: string,
+  b: string,
+  seed: number,
+  difficulty = 'hard',
+  loadouts?: { player?: Loadout; opponent?: Loadout },
+): Promise<FightStats> {
   const scene = new FightArenaScene(
     OFFICE,
     new Container(),
     new PlayerIntents(),
     () => ({ width: 1280, height: 720 }),
     false,
-    { player: a, opponent: b, match: { spectate: true }, difficulty },
+    { player: a, opponent: b, match: { spectate: true }, difficulty, ...(loadouts ? { loadouts } : {}) },
   );
   // The scene's private random source, replaced so repeated fights differ but stay repeatable.
   (scene as unknown as { rng: () => number }).rng = seededRandom(seed);
