@@ -31,6 +31,8 @@ export interface Viewer {
   /** On the stairs: which, and how far up (0 to 1). Reveals the other floor. */
   readonly onStairs: string | null;
   readonly stairT: number;
+  /** How far the eyes can see, metres (a hiding place narrows it). Default: the full view distance. */
+  readonly viewM?: number;
 }
 
 interface Target {
@@ -106,7 +108,7 @@ export class Visibility {
   canSee(viewer: Viewer, floor: FloorIndex, p: Point): boolean {
     if (floor !== viewer.floor && !this.seesOtherFloor(viewer, floor)) return false;
     const d = Math.hypot(p.x - viewer.x, p.y - viewer.y);
-    if (d > VIEW_DISTANCE_M) return false;
+    if (d > reach(viewer)) return false;
     const room = this.world.roomAt(floor, p.x, p.y);
     if (!room) return false;
     if (floor === viewer.floor && room.id === this.viewerRoom) return true;
@@ -214,9 +216,9 @@ export class Visibility {
       for (let x = r.x0 + SAMPLE_M / 2; x < r.x1; x += SAMPLE_M) {
         total++;
         const d = Math.hypot(x - viewer.x, y - viewer.y);
-        if (d > VIEW_DISTANCE_M) continue;
+        if (d > reach(viewer)) continue;
         if (this.world.lineOfSight(floor, viewer, { x, y }, { ignoreFurniture: true }))
-          seen += 1 - (d / VIEW_DISTANCE_M) * 0.5;
+          seen += 1 - (d / reach(viewer)) * 0.5;
       }
     return total === 0 ? 0 : Math.min(1, seen / total);
   }
@@ -227,7 +229,7 @@ export class Visibility {
     const pts: Point[] = [o.at, { x: r.x0, y: r.y0 }, { x: r.x1, y: r.y0 }, { x: r.x1, y: r.y1 }, { x: r.x0, y: r.y1 }];
     const skip = new Set<Rect>([r]);
     for (const p of pts) {
-      if (Math.hypot(p.x - viewer.x, p.y - viewer.y) > VIEW_DISTANCE_M) continue;
+      if (Math.hypot(p.x - viewer.x, p.y - viewer.y) > reach(viewer)) continue;
       // Pull the target point a little off the object so the object does not block the sightline to itself.
       const dx = viewer.x - p.x;
       const dy = viewer.y - p.y;
@@ -244,6 +246,8 @@ export class Visibility {
     return room ? this.roomLight(room.id) : 0;
   }
 }
+
+const reach = (v: Viewer): number => Math.min(VIEW_DISTANCE_M, v.viewM ?? VIEW_DISTANCE_M);
 
 const centre = (r: Rect): Point => ({ x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 });
 

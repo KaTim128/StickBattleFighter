@@ -543,7 +543,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] 6. Visibility blocked by walls and shut doors (`world.test.ts`)
 - [x] 7. Doorway peeking and camera behaviour (`visibility.test.ts`); independence from the hunter checked in P2-4
 - [ ] 8. Throwable distractions and sound detection (P2-3, P2-4)
-- [ ] 9. Hiding entry and exit sounds (P2-3)
+- [x] 9. Hiding entry and exit noises are events with loudness by kind (`stealth.test.ts`); the sounds themselves: P2-5
 - [ ] 10. Shroud's vision radius and obstacle detection (P2-4)
 - [ ] 11. Shroud navigation across both floors and outdoors (routing done in `world.test.ts`; the hunter P2-4)
 - [ ] 12. Room searches and hiding inspections (P2-4)

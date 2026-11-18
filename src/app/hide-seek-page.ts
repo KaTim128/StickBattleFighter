@@ -84,13 +84,18 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       last = now;
       scenes.render(alpha, dt);
       const g = scene.game;
-      const door = g.doorNear();
       hud.update({
         phase: g.round.phase,
         prepLeftS: g.round.prepLeftS,
         survivalLeftS: g.round.survivalLeftS,
-        prompt: door ? (door.open ? 'Close the door' : 'Open the door') : null,
-        posture: g.player.crouching ? 'Crouching' : g.player.posture === 'run' ? 'Running' : '',
+        prompt: g.prompt(),
+        posture: g.player.hidingIn
+          ? 'Hiding'
+          : g.player.crouching
+            ? 'Crouching'
+            : g.player.posture === 'run'
+              ? 'Running'
+              : '',
       });
       Object.assign(debug, {
         phase: g.round.phase,

@@ -1,4 +1,4 @@
-import type { Container } from 'pixi.js';
+import { type Container, Graphics } from 'pixi.js';
 import { loadCharacter } from '../../characters/load';
 import type { GameScene } from '../../core/scene';
 import { HOUSE, HOUSE_CAST } from '../../data/arenas/house';
@@ -41,6 +41,8 @@ export class HideSeekScene implements GameScene {
   private doorStates = new Map<string, boolean>();
   /** The last floor the player's figure was added to. */
   private playerFloor: 0 | 1 = 0;
+  /** The throwable objects' pictures, by id, and the floor each sits on. */
+  private readonly propViews = new Map<string, { g: Graphics; floor: 0 | 1 }>();
 
   constructor(
     private readonly parent: Container,
@@ -79,6 +81,15 @@ export class HideSeekScene implements GameScene {
     this.parent.addChild(this.view.world);
     // The player is the standard training dummy (section: "the standard dummy training character").
     const dummy = loadCharacter(HOUSE_CAST.player).def;
+    for (const o of this.game.props) {
+      const g = new Graphics();
+      const colour = o.kind === 'bottle' ? 0x4a9a5a : o.kind === 'can' ? 0xb0b6bd : 0xd04a4a;
+      g.ellipse(0, 0.02, 0.12, 0.05).fill({ color: 0x000000, alpha: 0.35 });
+      if (o.kind === 'toy') g.roundRect(-0.09, -0.16, 0.18, 0.16, 0.03).fill(colour);
+      else g.roundRect(-0.05, -0.26, 0.1, 0.26, 0.03).fill(colour);
+      this.view.floors[o.floor].actors.add(g, 0);
+      this.propViews.set(o.id, { g, floor: o.floor });
+    }
     this.player = new ActorView(dummy);
     this.view.floors[0].actors.add(this.player.view.root, 0);
     const p = this.game.player;
@@ -127,11 +138,19 @@ export class HideSeekScene implements GameScene {
       view.floors[p.floor].actors.add(player.view.root, 0);
       this.playerFloor = p.floor;
     }
-    player.draw(frameDtS, { speedMps: p.speedMps, running: p.posture === 'run', crouching: p.crouching }, p.facing, 0);
+    player.draw(
+      frameDtS,
+      { speedMps: p.speedMps, running: p.posture === 'run', crouching: p.crouching || p.posture === 'hidden' },
+      p.facing,
+      0,
+    );
+    // Hiding: the figure is half hidden inside the place.
+    player.view.root.alpha = p.hidingIn ? 0.4 : 1;
     const at = iso(p.x, p.y, p.z);
     player.view.root.position.set(at.x, at.y);
 
     // Room visibility and lighting: what the eyes can see from where they are (body plus any peek).
+    this.renderProps(view);
     const eyes = g.viewer();
     this.visibility.update(frameDtS, eyes);
     this.applyVisibility();
@@ -149,6 +168,31 @@ export class HideSeekScene implements GameScene {
     const scale = Math.min(width, height) / VIEW_SHORT_SIDE_M;
     view.world.scale.set(scale);
     view.world.position.set(width / 2 - this.cam.x * scale, height / 2 - this.cam.y * scale);
+  }
+
+  /** The throwable objects: on the floor, carried over the player's head, or flying in an arc. */
+  private renderProps(view: HouseView): void {
+    const g = this.game;
+    const p = g.player;
+    for (const o of g.props) {
+      const pv = this.propViews.get(o.id);
+      if (!pv) continue;
+      if (pv.floor !== o.floor) {
+        view.floors[pv.floor].actors.remove(pv.g);
+        view.floors[o.floor].actors.add(pv.g, 0);
+        pv.floor = o.floor;
+      }
+      let z = 0.35; // lying on a surface
+      if (o.mode === 'carried') z = 1.55;
+      else if (o.mode === 'flying') z = 1.2 + Math.sin(Math.min(1, o.flownM / 8) * Math.PI) * 0.5;
+      const at = iso(o.x, o.y, z);
+      pv.g.position.set(at.x, at.y);
+      const shown =
+        o.mode === 'carried' ||
+        (o.floor === p.floor && this.visibility.canSee(g.viewer(), o.floor, { x: o.x, y: o.y })) ||
+        (o.floor === p.floor && Math.hypot(o.x - p.x, o.y - p.y) < 1.2);
+      pv.g.visible = shown && view.floors[o.floor].container.visible;
+    }
   }
 
   /** Light every drawn thing by how visible its room is: a tint (darkness) and hidden when black. */

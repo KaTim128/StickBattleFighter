@@ -308,9 +308,6 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('floor-lamp', 0, 10.5, 20.2, 11, 20.7, 1.6, 0xe8d28a),
   item('bookshelf', 0, 17.4, 14.25, 19.8, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
   item('bookshelf', 0, 22.3, 14.25, 24.5, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
-  item('curtain', 0, 12, 20.55, 14.6, 20.85, 2.2, 0x7a5a6a, {
-    hide: hide('curtain', 0.65, 0.3, 1.2, 13.3, 20.62, 'n'),
-  }),
   item('curtain', 0, 19, 20.55, 21.6, 20.85, 2.2, 0x7a5a6a, {
     hide: hide('curtain', 0.65, 0.3, 1.2, 20.3, 20.62, 'n'),
   }),
@@ -342,7 +339,7 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
     hide: hide('cupboard', 0.85, 0.3, 0.9, 29.6, 19.8, 'w'),
   }),
   // ---------------------------------------------------------------- Bedroom 1
-  item('bed', 1, 10.4, 9.4, 12.6, 11.8, 0.55, 0x8a8aa0, { hide: hide('under-bed', 0.75, 0.4, 1.3, 11.5, 10.6, 's') }),
+  item('bed', 1, 10.4, 9.4, 12.6, 11.8, 0.55, 0x8a8aa0, { hide: hide('under-bed', 0.75, 0.4, 1.3, 11.5, 11.2, 's') }),
   item('nightstand', 1, 12.7, 9.4, 13.3, 10.0, 0.5, WOOD),
   item('wardrobe', 1, 14.6, 9.3, 15.8, 10.2, 2.0, DARK_WOOD, {
     blocksSight: true,

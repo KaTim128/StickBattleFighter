@@ -1,5 +1,7 @@
 import { HOUSE } from '../../data/arenas/house';
+import { exitPoint, type HideSpot, hideSpots, nearestHideSpot } from './hiding';
 import type { HouseDef } from './house-types';
+import { flyStep, IMPACT_LOUDNESS, initialProps, launch, PICKUP_REACH_M, type PropState } from './props';
 import { Round } from './rules';
 import type { Viewer } from './visibility';
 import { BODY_RADIUS_M, HouseWorld, type Placed, type Point } from './world';
@@ -17,6 +19,8 @@ export const DOOR_REACH_M = 1.3;
 /** The most a peek leans the view away from the body, metres. */
 export const PEEK_M = 0.9;
 const PEEK_RATE = 7;
+/** The small lean allowed from inside a hiding place (limited camera movement). */
+export const HIDDEN_PEEK_M = 0.35;
 
 export type Posture = 'walk' | 'run' | 'crouch' | 'hidden';
 
@@ -56,10 +60,19 @@ export interface PlayerState extends Placed {
    */
   peekX: number;
   peekY: number;
+  /** The hiding place the player is in (furniture id), or null. */
+  hidingIn: string | null;
+  /** The thrown-object id being carried, or null. */
+  carrying: string | null;
+  /** The way the player last headed, a unit vector in the world (the direction of a throw). */
+  dirX: number;
+  dirY: number;
 }
 
 export interface GameEvent {
-  readonly kind: 'door' | 'footstep';
+  readonly kind: 'door' | 'footstep' | 'hide-enter' | 'hide-exit' | 'impact' | 'pickup' | 'throw';
+  /** The hiding place's kind or the thrown object's kind, for the sound. */
+  readonly detail?: string;
   readonly at: Point;
   readonly floor: 0 | 1;
   /** Loudness 0..1 (footsteps follow the posture; a door depends on whether it is an outside door). */
@@ -73,11 +86,16 @@ export class HideSeekGame {
   readonly round = new Round();
   readonly player: PlayerState;
   private events: GameEvent[] = [];
+  readonly spots: readonly HideSpot[];
+  /** The throwable objects and where they are. */
+  props: PropState[];
   /** The sim clock, seconds. */
   timeS = 0;
 
   constructor(readonly house: HouseDef = HOUSE) {
     this.world = new HouseWorld(house);
+    this.spots = hideSpots(house);
+    this.props = initialProps(house.throwables);
     this.player = this.freshPlayer();
   }
 
@@ -96,6 +114,10 @@ export class HideSeekGame {
       stepM: 0,
       peekX: 0,
       peekY: 0,
+      hidingIn: null,
+      carrying: null,
+      dirX: 1,
+      dirY: 0,
     };
   }
 
@@ -103,6 +125,7 @@ export class HideSeekGame {
   restart(): void {
     for (const d of this.house.doors) this.world.setDoor(d.id, d.open);
     Object.assign(this.player, this.freshPlayer());
+    this.props = initialProps(this.house.throwables);
     this.round.reset();
     this.events = [];
     this.timeS = 0;
@@ -125,13 +148,27 @@ export class HideSeekGame {
       return;
     }
     this.stepPlayer(dtS, input);
+    this.stepProps(dtS);
   }
 
   private stepPlayer(dtS: number, input: PlayerInput): void {
     const p = this.player;
+    if (p.hidingIn) {
+      // Hidden: the body is still (it can lean the view a little and step out).
+      this.stepPeek(dtS, input);
+      p.posture = 'hidden';
+      p.speedMps = 0;
+      if (input.interactPress) this.interact();
+      return;
+    }
     if (input.crouchPress) p.crouching = !p.crouching;
     this.stepPeek(dtS, input);
     const wants = Math.hypot(input.move.x, input.move.y) > 0.05 && !input.peek;
+    if (wants) {
+      const m = Math.hypot(input.move.x, input.move.y);
+      p.dirX = input.move.x / m;
+      p.dirY = input.move.y / m;
+    }
     p.posture = p.crouching ? 'crouch' : input.run && wants ? 'run' : 'walk';
     if (input.interactPress) this.interact();
     if (!wants) {
@@ -169,8 +206,9 @@ export class HideSeekGame {
     let gx = 0;
     let gy = 0;
     if (input.peek && m > 0.05) {
-      gx = (input.move.x / m) * PEEK_M;
-      gy = (input.move.y / m) * PEEK_M;
+      const reach = p.hidingIn ? HIDDEN_PEEK_M : PEEK_M;
+      gx = (input.move.x / m) * reach;
+      gy = (input.move.y / m) * reach;
       // Shorten the lean until the view origin has a clear line from the body (no leaning through a wall).
       for (
         let k = 0;
@@ -195,7 +233,15 @@ export class HideSeekGame {
     const p = this.player;
     const stair = p.onStairs ? this.house.stairs.find((s) => s.id === p.onStairs) : undefined;
     const t = stair ? Math.min(1, Math.max(0, this.world.rampT(stair, p.x, p.y))) : 0;
-    return { floor: p.floor, x: p.x + p.peekX, y: p.y + p.peekY, onStairs: p.onStairs, stairT: t };
+    const spot = p.hidingIn ? this.spots.find((s) => s.id === p.hidingIn) : undefined;
+    return {
+      floor: p.floor,
+      x: p.x + p.peekX,
+      y: p.y + p.peekY,
+      onStairs: p.onStairs,
+      stairT: t,
+      ...(spot ? { viewM: spot.spec.viewM } : {}),
+    };
   }
 
   /** The nearest door within reach on the player's floor. */
@@ -212,9 +258,130 @@ export class HideSeekGame {
     return best ? { id: best.id, open: best.open } : null;
   }
 
+  /**
+   * The interact key does the most specific thing at hand: leave the hiding place; throw what is
+   * carried; pick up something close; get into a hiding place; open or close a door.
+   */
   private interact(): void {
+    const p = this.player;
+    if (p.hidingIn) {
+      this.leaveHiding();
+      return;
+    }
+    if (p.carrying) {
+      this.throwCarried();
+      return;
+    }
+    const prop = this.propNear();
+    if (prop) {
+      this.pickUp(prop);
+      return;
+    }
+    const spot = nearestHideSpot(this.spots, p.floor, p);
+    if (spot) {
+      this.enterHiding(spot);
+      return;
+    }
     const door = this.doorNear();
     if (door) this.setDoor(door.id, !door.open);
+  }
+
+  /** What pressing interact would do now, as words for the prompt (null when nothing). */
+  prompt(): string | null {
+    const p = this.player;
+    if (p.hidingIn) return 'Leave the hiding place';
+    if (p.carrying) return 'Throw';
+    const prop = this.propNear();
+    if (prop) return `Pick up the ${prop.kind}`;
+    const spot = nearestHideSpot(this.spots, p.floor, p);
+    if (spot) return `Hide (${HIDE_NAMES[spot.spec.kind]})`;
+    const door = this.doorNear();
+    return door ? (door.open ? 'Close the door' : 'Open the door') : null;
+  }
+
+  private propNear(): PropState | null {
+    const p = this.player;
+    let best: { prop: PropState; d: number } | null = null;
+    for (const o of this.props) {
+      if (o.mode !== 'rest' || o.floor !== p.floor) continue;
+      const d = Math.hypot(o.x - p.x, o.y - p.y);
+      if (d <= PICKUP_REACH_M && (!best || d < best.d)) best = { prop: o, d };
+    }
+    return best?.prop ?? null;
+  }
+
+  private pickUp(o: PropState): void {
+    const p = this.player;
+    o.mode = 'carried';
+    p.carrying = o.id;
+    this.events.push({ kind: 'pickup', at: { x: p.x, y: p.y }, floor: p.floor, loudness: 0.1, detail: o.kind });
+  }
+
+  private throwCarried(): void {
+    const p = this.player;
+    const o = this.props.find((x) => x.id === p.carrying);
+    p.carrying = null;
+    if (!o) return;
+    launch(o, { x: p.x + p.dirX * 0.4, y: p.y + p.dirY * 0.4 }, { x: p.dirX, y: p.dirY });
+    this.events.push({ kind: 'throw', at: { x: p.x, y: p.y }, floor: p.floor, loudness: 0.15, detail: o.kind });
+  }
+
+  private stepProps(dtS: number): void {
+    const p = this.player;
+    for (const o of this.props) {
+      if (o.mode === 'carried') {
+        o.x = p.x;
+        o.y = p.y;
+        o.floor = p.floor;
+      } else if (o.mode === 'flying') {
+        const landed = flyStep(this.world, o, dtS);
+        if (landed)
+          this.events.push({
+            kind: 'impact',
+            at: landed,
+            floor: o.floor,
+            loudness: IMPACT_LOUDNESS[o.kind],
+            detail: o.kind,
+          });
+      }
+    }
+  }
+
+  private enterHiding(spot: HideSpot): void {
+    const p = this.player;
+    p.hidingIn = spot.id;
+    p.x = spot.spec.at.x;
+    p.y = spot.spec.at.y;
+    p.crouching = false;
+    p.posture = 'hidden';
+    p.speedMps = 0;
+    this.events.push({
+      kind: 'hide-enter',
+      at: { x: p.x, y: p.y },
+      floor: p.floor,
+      loudness: spot.spec.noise,
+      detail: spot.spec.kind,
+      id: spot.id,
+    });
+  }
+
+  private leaveHiding(): void {
+    const p = this.player;
+    const spot = this.spots.find((s) => s.id === p.hidingIn);
+    p.hidingIn = null;
+    p.posture = 'walk';
+    if (!spot) return;
+    const out = exitPoint(this.world, spot);
+    p.x = out.x;
+    p.y = out.y;
+    this.events.push({
+      kind: 'hide-exit',
+      at: { x: spot.spec.at.x, y: spot.spec.at.y },
+      floor: p.floor,
+      loudness: spot.spec.noise,
+      detail: spot.spec.kind,
+      id: spot.id,
+    });
   }
 
   /** Open or close a door and make the noise of it. */
@@ -235,3 +402,18 @@ export class HideSeekGame {
 
 /** How loud each posture's footsteps are, 0..1 (running carries, crouching hardly does; section D). */
 export const FOOTSTEP_LOUDNESS: Readonly<Record<Posture, number>> = { run: 0.9, walk: 0.45, crouch: 0.12, hidden: 0 };
+
+/** Names of the hiding places for the prompt. */
+const HIDE_NAMES: Readonly<Record<HideSpot['spec']['kind'], string>> = {
+  'under-bed': 'under the bed',
+  wardrobe: 'in the wardrobe',
+  cupboard: 'in the cupboard',
+  chest: 'in the chest',
+  box: 'in the box',
+  'behind-sofa': 'behind the sofa',
+  curtain: 'behind the curtain',
+  'shower-curtain': 'behind the shower curtain',
+  bush: 'in the bush',
+  'under-table': 'under the table',
+  'shed-cabinet': 'in the cabinet',
+};

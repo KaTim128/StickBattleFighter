@@ -84,3 +84,50 @@ test('room visibility: only the lit room shows at the start; upstairs is hidden 
   await expect.poll(() => vis('living'), { timeout: 10_000 }).toBeLessThan(0.05); // fades out
   expect(errors).toEqual([]);
 });
+
+test('hiding and throwing: G gets into a hiding place and out, picks up a bottle and throws it', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
+  const errors = await open(page);
+  type P = { floor: number; x: number; y: number; hidingIn: string | null; carrying: string | null };
+  type Scene = { __hideSeek: { game: { player: P; prompt(): string | null; props: { id: string; mode: string }[] } } };
+  const player = () => page.evaluate(() => ({ ...(window as unknown as Scene).__hideSeek.game.player }));
+  const put = (floor: number, x: number, y: number) =>
+    page.evaluate(
+      ([f, px, py]) => {
+        const p = (window as unknown as Scene).__hideSeek.game.player;
+        p.floor = f as number;
+        p.x = px as number;
+        p.y = py as number;
+      },
+      [floor, x, y],
+    );
+  // The sofa's hiding place (living room): stand beside it and hide.
+  await put(0, 15, 17.8);
+  await expect.poll(() => page.evaluate(() => (window as unknown as Scene).__hideSeek.game.prompt())).toContain('Hide');
+  await expect(page.locator('.hs-prompt')).toContainText('Hide');
+  await page.keyboard.press('KeyG');
+  await expect.poll(async () => (await player()).hidingIn).not.toBeNull();
+  await expect(page.locator('.hs-status')).toHaveText('Hiding');
+  await page.keyboard.press('KeyG');
+  await expect.poll(async () => (await player()).hidingIn).toBeNull();
+  // The bottle on the side table.
+  await put(0, 18.1, 17.8);
+  await expect(page.locator('.hs-prompt')).toContainText('Pick up the bottle');
+  await page.keyboard.press('KeyG');
+  await expect.poll(async () => (await player()).carrying).toBe('t1');
+  await expect(page.locator('.hs-prompt')).toContainText('Throw');
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(300);
+  await page.keyboard.up('KeyD');
+  await page.keyboard.press('KeyG');
+  await expect
+    .poll(
+      () => page.evaluate(() => (window as unknown as Scene).__hideSeek.game.props.find((p) => p.id === 't1')?.mode),
+      { timeout: 15_000 },
+    )
+    .toBe('rest');
+  expect((await player()).carrying).toBeNull();
+  expect(errors).toEqual([]);
+});
