@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CLIMBING,
-  collapseLieS,
-  fallDamage,
-  firmHoldS,
-  landingKind,
-  supportUnder,
-} from '../../../src/physics/climbing';
+import { CLIMBING, canGrab, firmHoldS, landingKind, supportUnder } from '../../../src/physics/climbing';
 
 /** Owner, 13/11/2026: traversal across neighbouring tops and landings by the real drop. */
 describe('traversal support', () => {
@@ -42,23 +35,54 @@ describe('traversal support', () => {
 });
 
 describe('landings by the real drop', () => {
-  it('a jump on flat ground is a knee bend; walking off tall furniture a firm squat; a jump off it a collapse', () => {
+  it('a jump on flat ground is a knee bend; any longer drop a firm squat; never a collapse', () => {
     expect(landingKind(1.06)).toBe('soft'); // Inferno's highest jump
     expect(landingKind(2)).toBe('firm'); // walking off a bookshelf
-    expect(landingKind(2.1)).toBe('firm'); // walking off the tallest locker
-    expect(landingKind(3.06)).toBe('collapse'); // jumping off a bookshelf
+    expect(landingKind(3.06)).toBe('firm'); // jumping off a bookshelf: a squat, not a collapse (owner, 20/11/2026)
+    expect(landingKind(30)).toBe('firm');
   });
 
-  it('walking off the tallest climbable furniture never hurts; any fall that hurts is a collapse', () => {
-    expect(fallDamage(2.1, 140)).toBe(0);
-    expect(CLIMBING.collapseDropM).toBeLessThanOrEqual(CLIMBING.safeDropM);
-    expect(fallDamage(CLIMBING.safeDropM + 0.5, 70)).toBeGreaterThan(0);
-  });
-
-  it('bigger drops hold longer and lie longer', () => {
+  it('bigger drops hold a little longer, up to the maximum', () => {
     expect(firmHoldS(1)).toBe(0);
     expect(firmHoldS(2)).toBeGreaterThan(firmHoldS(1.5));
-    expect(collapseLieS(4)).toBeGreaterThan(collapseLieS(2.6));
-    expect(collapseLieS(30)).toBe(CLIMBING.collapseLieMaxS);
+    expect(firmHoldS(30)).toBe(CLIMBING.firmHoldMaxS);
+  });
+});
+
+/** Owner, 20/11/2026: only a real, long jump whose head meets the edge grabs; landing on a platform never hangs. */
+describe('ledge grabs', () => {
+  // A 2 m shelf, 0.45 m deep, seen from the west side.
+  const shelf = { x0: 1, y0: 0, x1: 3, y1: 0.45, topM: 2 };
+  const base = { radiusM: 0.3, floorM: 0, peakM: 1.06, scale: 1, takeoffM: 0 };
+  const at = { x: 0.6, y: 0.2 }; // against the shelf's west side
+  const push = { x: 1, y: 0 };
+
+  it('grabs when a long jump brings the head level with the edge and the feet are still below the top', () => {
+    // Feet 0.9 m up: the head (1.6 m above them) is at 2.5 m, 0.5 m above the edge: too high. Feet 0.6: head 2.2.
+    expect(canGrab(shelf, at, push, { ...base, heightM: 0.6 })).toBe(true);
+  });
+
+  it('never grabs with the feet level with or above the top: the fighter lands instead', () => {
+    expect(canGrab(shelf, at, push, { ...base, heightM: 1.9 })).toBe(false);
+    expect(canGrab(shelf, at, push, { ...base, heightM: 2.2 })).toBe(false);
+  });
+
+  it('never grabs when the head is still well below the edge, or has passed far above it', () => {
+    expect(canGrab(shelf, at, push, { ...base, heightM: 0.1 })).toBe(false); // short hop: no real jump
+    expect(canGrab(shelf, at, push, { ...base, heightM: 0.3 })).toBe(false); // head at 1.9 but the jump has barely begun
+    expect(canGrab(shelf, at, push, { ...base, heightM: 1.0 })).toBe(false); // head at 2.6, over the edge by 0.6
+  });
+
+  it('a jump from one platform to another of similar height lands, it does not hang', () => {
+    // Standing on a 1.2 m platform and jumping at a 1.5 m one: the top is within the jump's reach.
+    const low = { x0: 1, y0: 0, x1: 3, y1: 0.45, topM: 1.5 };
+    const body = { ...base, floorM: 1.2, takeoffM: 1.2, peakM: 1.06 };
+    for (const heightM of [1.3, 1.6, 2, 2.2])
+      expect(canGrab(low, at, push, { ...body, heightM }), `at ${heightM}`).toBe(false);
+  });
+
+  it('needs the player to be pushing at the edge, close to it', () => {
+    expect(canGrab(shelf, at, { x: -1, y: 0 }, { ...base, heightM: 0.6 })).toBe(false);
+    expect(canGrab(shelf, { x: -1, y: 0.2 }, push, { ...base, heightM: 0.6 })).toBe(false);
   });
 });

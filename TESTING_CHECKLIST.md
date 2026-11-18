@@ -600,3 +600,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] In the house and in each arena, walking along a north or west wall never fades it and never draws it over the player or furniture beside it.
 - [ ] A wall or partition between the camera and the player (south or east of him) still fades.
 - [ ] Going down the stairs and pushing any direction never leaves the player stuck or under the floor.
+
+## Falls and ledge grabs (20/11/2026)
+- [ ] Falling or jumping off any furniture never reduces health; every landing plays a squat or knee bend and the fighter can act again at once.
+- [ ] Jumping from one piece of furniture to another lands on it with no hanging and no pulling up with Space.
+- [ ] A long jump that brings the head level with a high edge (a bookshelf from the floor) still grabs it, and Space pulls up.

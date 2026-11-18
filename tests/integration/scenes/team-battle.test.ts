@@ -78,13 +78,13 @@ describe('3 vs 3 tag team', () => {
     for (let k = 0; k < 2; k++) {
       const f = scene.dummyFighter;
       f.combatant.hp = 1;
-      f.combatant.takeFall(5);
+      f.combatant.takeUnguardedDamage(5);
       run(TEAM.koSwapDelayS + 0.5);
       expect(results).toEqual([]); // the next one came in
       expect(scene.dummyFighter).not.toBe(f);
     }
     scene.dummyFighter.combatant.hp = 1;
-    scene.dummyFighter.combatant.takeFall(5);
+    scene.dummyFighter.combatant.takeUnguardedDamage(5);
     run(4, () => results.length > 0);
     expect(results).toEqual(['player']);
     expect(scene.teamHud?.opponent.every((m) => m.ko)).toBe(true);

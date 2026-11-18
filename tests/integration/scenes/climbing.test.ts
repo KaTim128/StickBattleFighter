@@ -6,7 +6,6 @@ import { SceneManager } from '../../../src/core/scene';
 import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
-import { fallDamage } from '../../../src/physics/climbing';
 import { initPhysics } from '../../../src/physics/physics-world';
 
 const STEP = 1 / 60;
@@ -163,13 +162,6 @@ describe('furniture climbing', () => {
     scenes.clear();
   });
 
-  it('fall damage grows with the drop and with body weight', () => {
-    expect(fallDamage(1, 70)).toBe(0);
-    expect(fallDamage(2.5, 70)).toBeGreaterThan(fallDamage(2, 70));
-    expect(fallDamage(2.5, 140)).toBeGreaterThan(fallDamage(2.5, 70) * 1.5);
-    expect(fallDamage(2.5, 60)).toBeLessThan(fallDamage(2.5, 70));
-  });
-
   /** Climb onto the bookshelf (2 m) from beside it; returns the fighter standing on its top. */
   const onShelf = async (id: string) => {
     const t = await setup(id, { x: 18.2, y: 3 });
@@ -199,32 +191,87 @@ describe('furniture climbing', () => {
     }
   });
 
-  it('jumping off a bookshelf falls further: damage once by the real drop, a collapse, then a get-up', async () => {
-    const jumpOff = async (id: string) => {
+  it('jumping off a bookshelf never hurts and never knocks anyone flat: a firm landing squat (owner, 20/11/2026)', async () => {
+    for (const id of ['inferno', 'rampage']) {
       const { intents, scenes, runUntil, run, p } = await onShelf(id);
       const before = hp(p);
       intents.setMove('t', { x: 0, y: 1 });
       intents.pressJump();
       runUntil(() => p.y > 3.6 && !p.airborne, 3);
       intents.setMove('t', { x: 0, y: 0 });
-      const lost = before - hp(p);
       run(STEP * 2);
-      expect(p.combatant.state).toBe('knockdown'); // flat on the floor
+      expect(hp(p), `${id} lost health in a fall`).toBe(before);
+      expect(p.combatant.state).not.toBe('knockdown');
+      expect(p.combatant.state).not.toBe('gettingUp');
       expect(p.combatant.state).not.toBe('stunned');
-      runUntil(() => p.combatant.state === 'gettingUp', 2);
-      expect(p.combatant.state).toBe('gettingUp');
-      expect(p.combatant.canAct).toBe(false); // no acting until up
-      runUntil(() => p.combatant.canAct, 2);
-      expect(hp(p)).toBe(before - lost); // damaged once only
+      expect(p.landHoldS).toBeGreaterThan(0); // the firm squat
+      run(0.6);
+      expect(p.combatant.canAct).toBe(true);
       scenes.clear();
-      return lost;
-    };
-    // Damage follows the real fall: Inferno jumps higher off the shelf (a 3.1 m drop) than Titan
-    // (2.4 m), so he lands harder; for the same drop a heavier body hurts more (unit test above).
-    const inferno = await jumpOff('inferno');
-    const titan = await jumpOff('rampage');
-    expect(inferno).toBeGreaterThan(titan);
-    expect(titan).toBeGreaterThan(0);
+    }
+  });
+
+  it('jumping across a gap from one bookshelf top to the next lands on it: no hanging, no pulling up with Space', async () => {
+    const t = await setup('inferno', { x: 18.2, y: 3 }, [
+      { kind: 'bookshelf', x: 20, y: 3 },
+      { kind: 'bookshelf', x: 22.9, y: 3 },
+    ]);
+    t.jumpRight();
+    t.runUntil(() => t.p.climb !== null, 1.2);
+    t.intents.setMove('t', { x: 0, y: 0 });
+    for (let i = 0; i < 14 && t.p.climb; i++) t.pull();
+    t.run(0.3);
+    expect(t.p.hop.heightM).toBeCloseTo(2, 2); // on the first top
+    // Walk to its right edge, then jump across the gap toward the second.
+    t.intents.setMove('t', { x: 1, y: 0 });
+    t.runUntil(() => t.p.x > 20.6, 1.5);
+    t.intents.pressJump();
+    let hung = false;
+    for (let i = 0; i < 150; i++) {
+      t.run(STEP);
+      if (t.p.climb !== null) hung = true;
+    }
+    t.intents.setMove('t', { x: 0, y: 0 });
+    t.runUntil(() => !t.p.airborne, 2);
+    expect(hung, 'hung from the edge of the next shelf after a jump across').toBe(false);
+    expect(t.p.climb).toBeNull();
+    t.scenes.clear();
+  });
+
+  /** Owner, 20/11/2026: jumping between furniture lands; only a real long jump at an edge hangs. */
+  it('jumping from one desk to a neighbouring one lands on it: no hanging, no pulling up with Space', async () => {
+    const t = await setup('inferno', { x: 8.6, y: 3 }, [
+      { kind: 'desk', x: 10, y: 3 },
+      { kind: 'desk', x: 11.8, y: 3 },
+    ]);
+    t.jumpRight();
+    t.runUntil(() => t.p.x > 9.7, 1.5);
+    t.intents.setMove('t', { x: 0, y: 0 });
+    t.runUntil(() => !t.p.airborne, 1.5);
+    t.run(0.3);
+    expect(t.p.hop.heightM).toBeCloseTo(0.75, 2); // standing on the first desk
+    let hung = false;
+    for (let k = 0; k < 4; k++) {
+      // Jump toward the next desk, then land: every time it is a landing.
+      t.intents.setMove('t', { x: 1, y: 0 });
+      t.intents.pressJump();
+      for (let i = 0; i < 90; i++) {
+        t.run(STEP);
+        if (t.p.climb !== null) hung = true;
+      }
+      t.intents.setMove('t', { x: 0, y: 0 });
+      t.runUntil(() => !t.p.airborne, 1.5);
+      t.intents.setMove('t', { x: -1, y: 0 });
+      t.intents.pressJump();
+      for (let i = 0; i < 90; i++) {
+        t.run(STEP);
+        if (t.p.climb !== null) hung = true;
+      }
+      t.intents.setMove('t', { x: 0, y: 0 });
+      t.runUntil(() => !t.p.airborne, 1.5);
+    }
+    expect(hung).toBe(false);
+    t.scenes.clear();
   });
 
   it('walks along neighbouring bookshelves across a small gap without dropping or hanging (owner, 13/11/2026)', async () => {

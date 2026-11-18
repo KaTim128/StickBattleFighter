@@ -4,14 +4,14 @@
  *
  * - A fighter can land on any CLIMBABLE prop (its data says so: desks, tables, cabinets,
  *   counters, shelves) whose top it reaches in the air; it then stands on that top.
- * - A top too high to land on but within reach of the hands is GRABBED: the fighter hangs from
- *   the edge and pulls up with repeated presses of Jump. A hit while climbing knocks it off.
- * - Landing from high enough hurts: more for a longer drop and for a heavier body.
+ * - A top too high to land on is GRABBED only by a real, long jump whose HEAD reaches the platform's edge, about
+ *   halfway against its side (owner, 20/11/2026); the fighter then hangs and pulls up with repeated presses of Jump. A
+ *   hit while climbing knocks it off. Jumping onto or between platforms never hangs: it lands.
+ * - Falling never hurts (owner, 20/11/2026): a landing is only an animation, a knee bend or a firm squat.
  *
  * Owner, 13/11/2026 (traversal, falling and recovery): walking along neighbouring tops steps over a
  * small gap or a small height difference instead of dropping and hanging; every landing reacts to
- * the real drop (a knee bend, a firm squat, or a collapse and get-up); walking off the tallest
- * furniture is safe, while jumping from it and falling further hurts, once per fall.
+ * the real drop (a knee bend, or a firm squat).
  */
 
 /** A climbable top: its footprint (axis-aligned, metres) and height. */
@@ -28,6 +28,18 @@ export const CLIMBING = {
   stepUpM: 0.15,
   /** How far above the fighter's own height (feet) the hands reach, per metre of fighter scale. */
   reachM: 1.85,
+  /** Where the head is, above the feet, per metre of fighter scale (a grab happens when it meets the edge)... */
+  headM: 1.6,
+  /** ...but a giant's head is counted no higher than this above his feet (a 2 m shelf is waist-high to him). */
+  headMaxM: 2,
+  /** The head must be at least this far below the edge... */
+  headBelowEdgeM: 0.45,
+  /** ...and no further above it than this (about halfway up the platform's side, the edge at the head). */
+  headAboveEdgeM: 0.3,
+  /** The feet must still be this far below the top: with them level or above it, the fighter lands instead. */
+  feetBelowTopM: 0.25,
+  /** A grab needs a real jump: the body must have risen this far above where it took off (or half the jump's peak, if less). */
+  minRiseM: 0.35,
   /** How close to the edge (beyond the body radius) a fighter must be to grab it. */
   grabGapM: 0.15,
   /** Each Jump press pulls this much of the way up; idle hands slip back slowly. */
@@ -35,33 +47,15 @@ export const CLIMBING = {
   slipPerS: 0.08,
   /** Hanging: the feet sit this far below the top (per metre of fighter scale). */
   hangDepthM: 1.8,
-  /**
-   * Drops shorter than this never hurt: walking off the tallest climbable furniture (a 2.1 m locker,
-   * a 2 m bookshelf) is safe; jumping off one adds the jump's height and does hurt.
-   */
-  safeDropM: 2.2,
-  /**
-   * A drop this long or longer knocks the fighter flat (a collapse, then a get-up): every fall that
-   * hurts, so the damage and the body impact always go together.
-   */
-  collapseDropM: 2.2,
-  /** Below this a landing is only a knee bend; from here up to the collapse, a firm squat that holds briefly. */
+  /** Below this a landing is only a knee bend; from here, a firm squat that holds briefly. */
   firmDropM: 1.4,
-  /** The firm squat holds the fighter this long at the firm height, up to `firmHoldMaxS` just short of a collapse. */
+  /** The firm squat holds the fighter this long at the firm height, up to `firmHoldMaxS` for a long drop. */
   firmHoldMinS: 0.12,
   firmHoldMaxS: 0.32,
-  /** How long a collapsed fighter lies before getting up: base plus per metre over the collapse height. */
-  collapseLieS: 0.55,
-  collapseLiePerM: 0.25,
-  collapseLieMaxS: 1.2,
   /** Walking on a top, the feet still find a neighbouring top this far out (spans a small gap). */
   gapSupportM: 0.25,
   /** ...and step onto (or down to) a neighbour no more than this much higher or lower without a jump. */
   stepHeightM: 0.4,
-  /** Damage per metre of drop beyond the safe height, for a 70 kg fighter. */
-  damagePerM: 70,
-  /** Weight scaling: heavier bodies land harder (mass / 70 kg, to this power). */
-  massExponent: 0.8,
   /** Above the floor this high, a fighter no longer bumps into furniture lower than its feet. */
   overFurnitureM: 0.3,
 } as const;
@@ -95,16 +89,23 @@ export function distanceTo(s: ClimbSurface, x: number, y: number): number {
 
 /**
  * Can a fighter in the air, `heightM` up and pushing in direction `move`, grab this surface's edge?
- * Only when the top is too high to land on from this jump and within reach of the hands.
+ * Only after a real jump, with the feet below the top and the head at its edge (see `CLIMBING`).
  */
 export function canGrab(
   s: ClimbSurface,
   at: { x: number; y: number },
   move: { x: number; y: number },
-  body: { radiusM: number; heightM: number; floorM: number; peakM: number; scale: number },
+  body: { radiusM: number; heightM: number; floorM: number; peakM: number; scale: number; takeoffM: number },
 ): boolean {
   if (s.topM <= body.floorM + body.peakM + CLIMBING.stepUpM) return false; // just jump onto it
-  if (s.topM > body.heightM + CLIMBING.reachM * body.scale) return false; // out of reach
+  // Only a real, long jump grabs: a short hop beside a platform just bumps it.
+  if (body.heightM - body.takeoffM < Math.min(CLIMBING.minRiseM, body.peakM * 0.5)) return false;
+  // The feet are still below the top (level with it or above, the fighter lands on it, never hangs)...
+  if (body.heightM > s.topM - CLIMBING.feetBelowTopM) return false;
+  // ...and the head has reached the edge: about halfway against the side of the platform.
+  const head = body.heightM + Math.min(CLIMBING.headM * body.scale, CLIMBING.headMaxM);
+  if (head < s.topM - CLIMBING.headBelowEdgeM) return false;
+  if (head > s.topM + CLIMBING.headAboveEdgeM) return false;
   if (distanceTo(s, at.x, at.y) > body.radiusM + CLIMBING.grabGapM) return false;
   // Pushing towards it.
   const cx = Math.min(s.x1, Math.max(s.x0, at.x));
@@ -143,31 +144,19 @@ export function supportUnder(
   return best;
 }
 
-/** How a fighter lands after a drop: a knee bend, a firm squat, or a collapse. */
-export type LandingKind = 'soft' | 'firm' | 'collapse';
+/** How a fighter lands after a drop: a knee bend, or a firm squat (never a collapse, never damage). */
+export type LandingKind = 'soft' | 'firm';
 
 export function landingKind(dropM: number): LandingKind {
-  if (dropM >= CLIMBING.collapseDropM) return 'collapse';
   return dropM >= CLIMBING.firmDropM ? 'firm' : 'soft';
 }
 
-/** Seconds a firm squat holds the fighter (0 for a knee bend). */
+/** Seconds a firm squat holds the fighter (0 for a knee bend): longer for a longer drop, up to the maximum. */
 export function firmHoldS(dropM: number): number {
   if (landingKind(dropM) !== 'firm') return 0;
-  const k = (dropM - CLIMBING.firmDropM) / (CLIMBING.collapseDropM - CLIMBING.firmDropM);
+  const k = Math.min(1, (dropM - CLIMBING.firmDropM) / FIRM_RANGE_M);
   return CLIMBING.firmHoldMinS + (CLIMBING.firmHoldMaxS - CLIMBING.firmHoldMinS) * k;
 }
 
-/** Seconds a collapsed fighter lies on the floor before getting up. */
-export function collapseLieS(dropM: number): number {
-  return Math.min(
-    CLIMBING.collapseLieMaxS,
-    CLIMBING.collapseLieS + Math.max(0, dropM - CLIMBING.collapseDropM) * CLIMBING.collapseLiePerM,
-  );
-}
-
-/** Damage for landing after a drop of `dropM`, by body mass. */
-export function fallDamage(dropM: number, massKg: number): number {
-  if (dropM <= CLIMBING.safeDropM) return 0;
-  return Math.round((dropM - CLIMBING.safeDropM) * CLIMBING.damagePerM * (massKg / 70) ** CLIMBING.massExponent);
-}
+/** The drop over which a firm squat grows from its shortest hold to its longest. */
+const FIRM_RANGE_M = 0.8;

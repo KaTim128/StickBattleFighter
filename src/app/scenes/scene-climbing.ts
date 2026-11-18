@@ -5,7 +5,6 @@ import {
   type ClimbSurface,
   canGrab,
   distanceTo,
-  fallDamage,
   jumpPeakM,
   type LandingKind,
   landingKind,
@@ -15,7 +14,7 @@ import type { PhysicsWorld } from '../../physics/physics-world';
 import type { FighterEntity } from './fighter-entity';
 
 /**
- * Standing on furniture, ledge grabs and fall damage in the fight scene (owner, 12/11/2026). The
+ * Standing on furniture, ledge grabs and landings in the fight scene (owner, 12/11/2026; no fall damage since 20/11/2026). The
  * rules live in `src/physics/climbing.ts`; this keeps them in step with the props and bodies.
  */
 export class SceneClimbing {
@@ -28,8 +27,8 @@ export class SceneClimbing {
     private readonly props: ArenaProps | null,
     private readonly physics: PhysicsWorld,
     private readonly hooks: {
-      /** Every landing after a fall or jump, by the real drop (damage 0 below the safe height). */
-      onLand(f: FighterEntity, landing: { dropM: number; kind: LandingKind; damage: number }): void;
+      /** Every landing after a fall or jump, by the real drop (an animation only: falling never hurts). */
+      onLand(f: FighterEntity, landing: { dropM: number; kind: LandingKind }): void;
       /** A climb finished, or was knocked off. */
       onClimb(f: FighterEntity, event: 'grab' | 'pull' | 'top' | 'knocked'): void;
     },
@@ -142,6 +141,7 @@ export class SceneClimbing {
       floorM: f.hop.floorM ?? 0,
       peakM: peak,
       scale: f.def.sizeScale ?? 1,
+      takeoffM: f.takeoffM,
     };
     for (const s of this.tops) {
       if (!canGrab(s, f, move, body)) continue;
@@ -191,7 +191,7 @@ export class SceneClimbing {
     }
   }
 
-  /** After the hop step: track the fall and hurt a hard landing. */
+  /** After the hop step: track the fall and play the landing (no damage). */
   land(f: FighterEntity, wasAirborne: boolean): void {
     if (f.airborne) {
       f.fallPeakM = Math.max(f.fallPeakM, f.hop.heightM);
@@ -200,9 +200,10 @@ export class SceneClimbing {
     if (wasAirborne) {
       // The real drop: from the highest point of this fall to what the feet land on (once per fall).
       const dropM = Math.max(0, f.fallPeakM - (f.hop.floorM ?? 0));
-      this.hooks.onLand(f, { dropM, kind: landingKind(dropM), damage: fallDamage(dropM, f.def.body.massKg) });
+      this.hooks.onLand(f, { dropM, kind: landingKind(dropM) });
     }
     f.fallPeakM = f.hop.heightM;
+    f.takeoffM = f.hop.heightM; // where the next jump starts from
   }
 }
 

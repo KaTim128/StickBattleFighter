@@ -964,3 +964,13 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 - *The void.* Cause found by a sweep of pushes at every angle from every point of the flight (`stairs-boundary.test.ts`): the ground-floor lane lets a body stand up to 38.68 m, but the upper floor had a rail from 38.75 m, so a climber pushing up-and-right crossed the floor change inside that rail and was stuck at z -0.35, apparently under the floor. The upper east rail is removed (the outer wall stands 0.3 m past the stairs, too narrow for anyone, so it was redundant).
 **Not verified.** The fight arenas were checked by one screenshot (the office) and the existing suites, not by playing every arena; the greybox arenas (training yard) have pillars and no walls of this kind.
 **Status.** ACCEPTED, owner to review in play.
+
+### TD-119: No fall damage; ledge grabs only for a real long jump at an edge (owner 20/11/2026) — ACCEPTED
+**Owner requests.** Remove all fall damage and use a proper landing animation; stop the automatic hang after jumping from one platform to another: hang only on a sufficiently long jump whose head meets the platform's edge about halfway, and land safely otherwise.
+**Cause of the hang.** Over a gap between two platforms the fighter's "floor" falls back to the real floor, so the next platform's top counted as "too high to land on" and the old test grabbed it whenever the hands could reach it, even from above it.
+**Decisions.**
+- *Damage.* `fallDamage`, the damage constants and `Combatant.collapse` are gone. A landing is an animation only: a knee bend, or a firm squat that holds a little longer for a longer drop (`landingKind`, `firmHoldS`). The old knock-flat collapse and its face-down get-up are removed with it. The no-flinch damage helper (formerly `takeFall`) is `takeUnguardedDamage`, used only by tests.
+- *Grab rule* (`canGrab`): all of: the top is too high to land on from the platform it took off from; a real jump (the body has risen 0.35 m above its take-off height, or half the jump's peak if less: `takeoffM` on the fighter); the feet are still 0.25 m below the top (level or above, it lands); the head (1.6 m above the feet, at most 2 m for giants) is between 0.45 m below and 0.3 m above the edge; close to the edge and pushing at it. Everything else lands.
+**Tests.** `climbing-rules.test.ts` (grab bands, similar-height platforms), `climbing.test.ts` (a jump between bookshelf tops across a gap lands without hanging; it hung before the fix; jumping off a shelf costs no health and no knock-down).
+**Not verified:** the feel across every arena and fighter; the AI uses the same rule.
+**Status.** ACCEPTED, owner to review in play.

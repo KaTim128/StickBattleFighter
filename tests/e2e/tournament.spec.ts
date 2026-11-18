@@ -14,11 +14,13 @@ async function knockOutOpponent(page: Page): Promise<void> {
   await page.evaluate(() => {
     const s = (
       window as unknown as {
-        __stickmanDebug: { sceneRef: { dummyFighter: { combatant: { hp: number; takeFall(d: number): void } } } };
+        __stickmanDebug: {
+          sceneRef: { dummyFighter: { combatant: { hp: number; takeUnguardedDamage(d: number): void } } };
+        };
       }
     ).__stickmanDebug.sceneRef;
     s.dummyFighter.combatant.hp = 1;
-    s.dummyFighter.combatant.takeFall(5);
+    s.dummyFighter.combatant.takeUnguardedDamage(5);
   });
 }
 

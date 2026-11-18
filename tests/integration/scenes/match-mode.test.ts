@@ -101,7 +101,7 @@ describe('match mode', () => {
     const { scene, scenes, results, runUntil } = await setup(false);
     runUntil(() => false, 4); // past the intro
     scene.dummyFighter.combatant.hp = 1;
-    scene.dummyFighter.combatant.takeFall(5);
+    scene.dummyFighter.combatant.takeUnguardedDamage(5);
     runUntil(() => results.length > 0, 5);
     expect(results).toEqual(['player']);
     runUntil(() => false, 8);

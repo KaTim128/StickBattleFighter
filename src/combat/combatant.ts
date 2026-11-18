@@ -383,10 +383,10 @@ export class Combatant {
   }
 
   /**
-   * Fall damage (owner, 12/11/2026, by height and weight). Ignores guard and dodge (nobody blocks
-   * the floor). Can KO. The landing's reaction (squat or collapse) is decided by the drop, not here.
+   * Damage that ignores guard and dodge and flinches nobody (a test or debug hit, a scripted KO). Falling never hurts
+   * (owner, 20/11/2026): nothing in the game calls this for a landing. Can KO.
    */
-  takeFall(damage: number): void {
+  takeUnguardedDamage(damage: number): void {
     if (this.isKo || damage <= 0) return;
     this.hp = Math.max(0, this.hp - damage);
     this.guardUp = false;
@@ -397,20 +397,6 @@ export class Combatant {
       this.knockdownS = 0;
       this.getUpS = 0;
     }
-  }
-
-  /**
-   * A body-slam landing from a big fall (owner, 13/11/2026): flat on the floor for `lieS`, then the
-   * usual animated get-up; no acting until it finishes. Never dizzy (no stun).
-   */
-  collapse(lieS: number): void {
-    if (this.isKo) return;
-    this.guardUp = false;
-    this.stunS = 0;
-    this.dodgeS = 0;
-    this.downS = 0;
-    this.getUpS = 0;
-    this.knockdownS = Math.max(this.knockdownS, lieS);
   }
 
   /** Fall at once, as at a KO (a summoned minion whose time is up crumbles). */
