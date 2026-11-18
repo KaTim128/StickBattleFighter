@@ -12,7 +12,7 @@ const hook = (page: Page) => page.evaluate(() => (window as DebugWindow).__stick
 
 test('Punch Clash: mashing J fills the power bar live; the winner breaks through', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/?scene=training-yard&playerAt=17.95,13');
@@ -21,8 +21,9 @@ test('Punch Clash: mashing J fills the power bar live; the winner breaks through
   await expect(page.locator('.clash-hud')).toBeVisible();
   await expect(page.locator('.clash-prompt')).toContainText(/GET READY|MASH/);
 
-  // Mash until the clash ends (about 4.4 s).
-  const end = Date.now() + 9000;
+  // Mash until the clash ends (about 4.4 s of game time; a slow software-rendered CI browser runs at well under
+  // real time, so the deadline is generous).
+  const end = Date.now() + 25_000;
   let sawPower = false;
   let sawBanner = false;
   const bannerShown = () => page.locator('.clash-banner').isVisible();

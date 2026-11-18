@@ -72,6 +72,7 @@ test('touch: six combat buttons (MELEE, A1–A4, ULT; owner 12/11/2026); A1 cast
 test('aimed leap (desktop, Eruption on R): R aims in a crouch, W moves the spot, R again launches the leap there', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   const errors: string[] = [];
   await open(page, errors, '14,13', true);
@@ -93,7 +94,7 @@ test('aimed leap (desktop, Eruption on R): R aims in a crouch, W moves the spot,
   await page.screenshot({ path: testInfo.outputPath('ult-aiming.png') });
   await page.keyboard.press('KeyR');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
-  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull(); // headroom for a slow software-rendered browser
+  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 40_000 }).toBeNull(); // Eruption takes about 2.5 s of game time and a slow software-rendered browser runs well under real time
   expect((await hook(page)).player.y).toBeLessThan(before.player.y - 1); // landed up the screen, where aimed
   expect(errors).toEqual([]);
 });
@@ -101,6 +102,7 @@ test('aimed leap (desktop, Eruption on R): R aims in a crouch, W moves the spot,
 test('aimed leap (touch, owner 12/11/2026; Eruption on A4): tap it, the joystick moves the target, ✕ cancels, tap again jumps', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   test.skip(testInfo.project.name !== 'mobile-chromium', 'touch test');
   const errors: string[] = [];
   // A spot with clear floor straight up the screen (the 2.5D view, TD-045): no pillar in the leap's way.
@@ -141,7 +143,7 @@ test('aimed leap (touch, owner 12/11/2026; Eruption on A4): tap it, the joystick
   expect(Math.hypot(mid.x - start.x, mid.y - start.y)).toBeLessThan(0.1);
   await ult.tap();
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
-  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull();
+  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 40_000 }).toBeNull();
   // Pushed up → jumped up the screen: in the 2.5D view screen y follows x + y (TD-045).
   const end = (await hook(page)).player;
   expect(end.x + end.y).toBeLessThan(start.x + start.y - 1.5);

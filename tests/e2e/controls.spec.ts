@@ -85,6 +85,7 @@ test('the dodge (L) always goes straight back from the facing, even with a movem
 test('Eruption on the keyboard (owner, 12/11/2026; Inferno fifth ability on R since 17/11/2026): R aims with WASD and on-screen help; Esc cancels; R again jumps', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   const errors: string[] = [];
   // Clear floor straight up the screen (a pillar stands just up-screen of the default start, which
   // rightly cuts the leap short), and the dummy out of lock-on range (REQ-CTL-22).
@@ -128,7 +129,7 @@ test('Eruption on the keyboard (owner, 12/11/2026; Inferno fifth ability on R si
   await page.keyboard.press('KeyR');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
   await expect(hint).toBeHidden();
-  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull();
+  await expect.poll(async () => (await hook(page)).player.ability, { timeout: 40_000 }).toBeNull();
   const end = await hook(page);
   expect(end.player.x + end.player.y).toBeLessThan(start.player.x + start.player.y - 1.5); // landed up the screen
   expect(errors).toEqual([]);
