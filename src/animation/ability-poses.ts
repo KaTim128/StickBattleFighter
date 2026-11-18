@@ -265,13 +265,13 @@ const SHAPES: Record<string, CastShape> = {
   },
   // Toxic Jar: the jar hand wound back and high behind the head, then thrown overhead.
   toxicJar: {
-    windup: { lean: deg(8), head: deg(-4), armFront: limb(168, 70), armBack: limb(40, 40), legFront: limb(20, -20) },
+    windup: { lean: deg(10), head: deg(-4), armBack: limb(168, 70), armFront: limb(40, 40), legFront: limb(20, -20) },
     release: {
-      lean: deg(-22),
+      lean: deg(-24),
       head: deg(10),
-      armFront: limb(100, 10),
-      armBack: limb(-20, 40),
-      legFront: limb(40, -30),
+      armBack: limb(100, 10),
+      armFront: limb(-20, 40),
+      legFront: limb(42, -32),
     },
     settle: 0.5,
   },

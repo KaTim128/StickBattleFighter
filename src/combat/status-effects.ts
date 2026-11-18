@@ -7,7 +7,7 @@
 
 import { Toxicity } from './toxicity';
 
-export type StatusId = 'burn' | 'bleed' | 'blind' | 'decay' | 'dark' | 'toxicity';
+export type StatusId = 'burn' | 'bleed' | 'blind' | 'decay' | 'dark' | 'toxicity' | 'fog';
 
 /** How a new application meets one already running. */
 export type StatusStacking =
@@ -54,6 +54,8 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   blind: { stacking: 'strongest', tickIntervalS: 0 },
   decay: { stacking: 'strongest', tickIntervalS: 0 },
   dark: { stacking: 'strongest', tickIntervalS: 0 },
+  // Vexoris's Plague Bloom fog: renewed every step while inside it, so it lapses a moment after leaving.
+  fog: { stacking: 'strongest', tickIntervalS: 0 },
   // Poison keeps its own meter (`Toxicity`); this entry only names it for the registry's indicators.
   toxicity: { stacking: 'stack', tickIntervalS: 0 },
 };

@@ -615,3 +615,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ### Vexoris karate and jar smash (20/11/2026)
 - [ ] Tapping J chains knife-hand, backfist and kicks with green wisps on the limbs and a coat flare; no jar appears.
 - [ ] Heavy (K): he reaches behind into the coat, a glowing jar appears in the rear hand, the swing smashes it on the foe with glass shards, a green splash and a lingering mist.
+
+### Vexoris abilities rework (20/11/2026, TD-121)
+- [ ] F plants a visible landmine; it stays until an enemy steps on it, then bursts with damage, poison and a gas cloud; two at a time.
+- [ ] E throws a visible tumbling jar after an arm-back wind-up (jar in hand); it shatters with glass and green liquid, damage and poison.
+- [ ] I makes a 10 s green fog: enemies inside see only about 3 m through a green haze, move slower, take slow chip damage and get one poison stack after 3 s; Vexoris sees clearly in green.

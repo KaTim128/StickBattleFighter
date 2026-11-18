@@ -125,8 +125,10 @@ export interface PlayerState {
   darkS: number;
   /** How far the player can see in that darkness, metres (Infinity when not in the dark). */
   sightM: number;
-  /** Seconds of the player's own Hunting Frenzy left: they see the dark like night vision. */
+  /** Seconds of the player's own Hunting Frenzy left, or while they stand in their own poison fog: night vision. */
   nightVisionS: number;
+  /** Poison fog on the player (an enemy's Plague Bloom): above 0 while they stand in it. */
+  fogS: number;
   /** Seconds of Curse of Decay left on the player. */
   decayS: number;
   /** The player's beam is pouring: the touch joystick aims it instead of moving. */
@@ -735,7 +737,16 @@ export class FightArenaScene implements ArenaScene {
       blindS: f.combatant.blindLeftS,
       darkS: f.combatant.darkLeftS,
       sightM: f.combatant.sightM,
-      nightVisionS: f.buff?.darkensFoes ? f.buff.leftS : 0,
+      nightVisionS: f.buff?.darkensFoes
+        ? f.buff.leftS
+        : // Vexoris is immune to his own fog and sees clearly through it, tinted green.
+          (this.abilities?.world.clouds.some(
+              (c) =>
+                c.fog && c.casterId === f.name && c.ageS >= c.armS && Math.hypot(f.x - c.x, f.y - c.y) <= c.radiusM,
+            ) ?? false)
+          ? 1
+          : 0,
+      fogS: f.combatant.fogLeftS,
       decayS: f.combatant.decayLeftS,
       beamAiming: this.abilities?.world.beams.some((b) => b.casterId === f.name) ?? false,
       utility: f.carrying ? 'throw' : this.pickupFor(f) ? 'pickup' : 'jump',
@@ -3165,10 +3176,14 @@ export class FightArenaScene implements ArenaScene {
       const total = attack ? attack.windupS + attack.activeS + attack.recoveryS : 1;
       const tWind = attack ? attack.windupS / total : 1;
       const p = f.combo.progress;
+      const cast = f.caster?.cast;
       f.view.jar =
         attack?.id === 'jar-smash' && p > tWind * 0.4 && p < tWind + (attack.activeS / total) * 0.4
           ? Math.min(1, (p - tWind * 0.4) / (tWind * 0.3))
-          : 0;
+          : // Toxic Jar (spell): the jar is in the throwing hand for the whole wind-up and leaves it at the throw.
+            cast?.def.id === 'toxicJar' && cast.phase === 'windup'
+            ? Math.min(1, cast.t / 0.12)
+            : 0;
     }
     if (f.scriptedAttack) {
       const sa = f.scriptedAttack;

@@ -46,50 +46,64 @@ export const VEXORIS_KIT: AbilityKit = {
       hitFlash: 0x7dff3a,
     },
   },
-  // A2 (E): Toxic Jar. He lobs his signature glass jar; it shatters where it lands (on a foe or the ground) into a
-  // poison cloud. Each target is poisoned once by one jar, never again by staying in the cloud.
+  // A2 (E): Toxic Jar. A poison spell: he winds his arm back and hurls a glass jar of glowing poison. It tumbles
+  // through the air and shatters on whoever it meets (or on the ground where it lands): damage, glass and green
+  // liquid everywhere, one stack of poison, and a thin lingering mist that poisons nobody twice.
   a2: {
     id: 'toxicJar',
     name: 'Toxic Jar',
     label: 'JAR',
     description:
-      'Throws his glass poison jar. It shatters into a green cloud for 4 seconds; each enemy it touches is poisoned once.',
+      'Throws a glass jar of poison. It shatters on impact: damage and one stack of poison to whoever it hits, with a small splash where it lands.',
     icon: 'toxic-jar',
     slot: 'a2',
     staminaCost: 28,
     cooldownS: 9,
-    castS: 0.3,
+    castS: 0.34,
     recoveryS: 0.3,
     aimRangeM: 9,
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 16,
-      knockbackMps: 0.5,
+      damage: 26,
+      knockbackMps: 1.2,
       heavy: false,
-      strength: 150,
+      strength: 220,
       noFlinch: true,
       poison: 1,
       impact: 'knuckle-light',
     },
-    delivery: { type: 'projectile', speedMps: 11, radiusM: 0.35, maxRangeM: 9, cloud: { radiusM: 2, lifeS: 4 } },
+    delivery: { type: 'projectile', speedMps: 12, radiusM: 0.35, maxRangeM: 9, cloud: { radiusM: 1.3, lifeS: 1.8 } },
     vfx: 'toxic-jar',
     sfx: { cast: 'jar-lift', release: 'jar-throw', impact: 'jar-shatter' },
     look: {
       palette: TOXIN,
-      flight: { trailPerS: 40, sparksPerS: 0, shimmer: false },
-      impact: { flashM: 0.6, sparks: 10, motes: 30, ringM: 1.2, smoke: 8, groundFire: false, smokeColour: 0x2a6a10 },
+      flight: { trailPerS: 26, sparksPerS: 0, shimmer: false, jar: true },
+      impact: {
+        flashM: 0.7,
+        sparks: 8,
+        motes: 22,
+        ringM: 1.3,
+        smoke: 6,
+        groundFire: false,
+        smokeColour: 0x2a6a10,
+        shards: 18,
+        splash: { count: 26, colour: 0x5fe02a },
+        mist: 8,
+        shake: 0.12,
+      },
       hitFlash: 0x7dff3a,
     },
   },
-  // A3 (F): Chemical Trap. A canister set where he aims: after a short arming it spews a toxic cloud for 8 seconds.
-  // Anyone entering is poisoned once. Area denial that never traps or stuns anyone.
+  // A3 (F): Chemical Trap. A landmine: he sets it on the floor where he aims, where everyone can see it. It arms
+  // after a moment and lies in wait for 40 seconds; the first enemy to step on it sets it off, a burst of damage and
+  // a toxic cloud that lingers for 5 seconds and poisons each enemy in it once. He keeps two mines out at a time.
   a3: {
     id: 'chemicalTrap',
     name: 'Chemical Trap',
-    label: 'TRAP',
+    label: 'MINE',
     description:
-      'Sets a pressurised canister where he aims. After a moment it vents toxic gas for 8 seconds; each enemy who walks in is poisoned once.',
+      'Plants a visible landmine where he aims. When an enemy steps on it, it explodes in a burst of damage and a toxic cloud that poisons everyone in it. Two mines at a time.',
     icon: 'chemical-trap',
     slot: 'a3',
     staminaCost: 30,
@@ -100,20 +114,35 @@ export const VEXORIS_KIT: AbilityKit = {
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 10,
-      knockbackMps: 0,
+      damage: 30,
+      knockbackMps: 3,
       heavy: false,
-      strength: 100,
+      strength: 300,
       noFlinch: true,
       poison: 1,
       impact: 'knuckle-light',
     },
-    delivery: { type: 'cloud', radiusM: 1.7, lifeS: 8, armS: 0.6 },
+    delivery: {
+      type: 'cloud',
+      radiusM: 2,
+      lifeS: 5,
+      armS: 0.9,
+      mine: { triggerRadiusM: 0.7, waitS: 40, maxPerCaster: 2 },
+    },
     vfx: 'chemical-trap',
     sfx: { cast: 'jar-lift', release: 'trap-set', impact: 'trap-vent' },
     look: {
       palette: TOXIN,
-      impact: { flashM: 0.4, sparks: 4, motes: 26, ringM: 1.4, smoke: 10, groundFire: false, smokeColour: 0x2a6a10 },
+      impact: {
+        flashM: 1.1,
+        sparks: 16,
+        motes: 36,
+        ringM: 2.2,
+        smoke: 14,
+        groundFire: false,
+        smokeColour: 0x2a6a10,
+        shake: 0.3,
+      },
       hitFlash: 0x7dff3a,
     },
   },
@@ -179,15 +208,15 @@ export const VEXORIS_KIT: AbilityKit = {
       aura: 'quiet',
     },
   },
-  // ULT (I): Plague Bloom. He vents his whole supply: a wide green ring warns the floor for a full second, then a huge
-  // toxic bloom bursts out. Its strength is spread poison (two stacks), not damage; the warning and long recovery are
-  // the counterplay.
+  // ULT (I): Plague Bloom. He vents his whole supply into a huge poison fog that fills the area around him for 10
+  // seconds. Enemies inside see only a few metres through a green haze, are slowed, take slow chip damage, and
+  // earn one stack of poison after three seconds in it. He is immune and sees clearly through it, tinted green.
   ult: {
     id: 'plagueBloom',
     name: 'Plague Bloom',
     label: 'ULT',
     description:
-      'Vents all his concentrated poison: after a clear one-second warning, a huge toxic bloom bursts around him. Everyone caught takes little damage but two stacks of poison.',
+      'Vents a huge poison fog for 10 seconds. Enemies inside see only a few metres through the green haze, move slower and take slow chip damage; after 3 seconds inside they gain a stack of poison. He sees clearly through it.',
     icon: 'plague-bloom',
     slot: 'ult',
     staminaCost: 0,
@@ -198,15 +227,20 @@ export const VEXORIS_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: false,
     payload: {
-      damage: 28,
-      knockbackMps: 2,
+      damage: 0,
+      knockbackMps: 0,
       heavy: false,
-      strength: 300,
+      strength: 0,
       noFlinch: true,
-      poison: 2,
-      impact: 'knuckle-light',
+      poison: 1,
     },
-    delivery: { type: 'nova', radiusM: 5, telegraphS: 1 },
+    delivery: {
+      type: 'cloud',
+      radiusM: 5.5,
+      lifeS: 10,
+      armS: 0.8,
+      fog: { sightM: 3, speedFactor: 0.8, chipDps: 3, stackAfterS: 3 },
+    },
     vfx: 'plague-bloom',
     sfx: { cast: 'bloom-build', release: 'bloom-vent', impact: 'bloom-burst' },
     look: {
@@ -220,7 +254,7 @@ export const VEXORIS_KIT: AbilityKit = {
         smoke: 18,
         groundFire: false,
         smokeColour: 0x2a6a10,
-        shake: 0.35,
+        shake: 0.3,
       },
       hitFlash: 0x7dff3a,
     },

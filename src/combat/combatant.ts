@@ -458,6 +458,17 @@ export class Combatant {
     this.status.apply('dark', seconds, { sightM });
   }
 
+  /** Choked by a poison fog (Plague Bloom): renewed every step it stands in it, so it ends a moment after leaving. */
+  fog(chipDps: number, speedFactor: number, sightM: number): void {
+    if (this.koAgeS >= 0) return;
+    this.status.apply('fog', 0.35, { dps: chipDps, speedFactor, sightM });
+  }
+
+  /** Seconds of fog left on it (presentation: the green haze over the view). */
+  get fogLeftS(): number {
+    return this.status.leftS('fog');
+  }
+
   /** Blind for `seconds` (a longer blind replaces a shorter one; never stacks). */
   blind(seconds: number): void {
     if (this.koAgeS >= 0) return;

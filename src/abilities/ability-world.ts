@@ -104,6 +104,11 @@ export interface AbilityHost {
   teleport?(casterId: string, to: Vec2): Vec2 | null;
   /** Keep a fighter helpless for this long (seized by a grab). Optional. */
   hold?(targetId: string, seconds: number): void;
+  /**
+   * Choke a fighter standing in a fog this step (Plague Bloom): short sight, slowed, chip damage, and `stack` = true
+   * the one time it earns a stack of poison. Optional.
+   */
+  fogFighter?(targetId: string, fog: { sightM: number; speedFactor: number; chipDps: number; stack: boolean }): void;
   emit(fx: AbilityFx): void;
 }
 
@@ -156,10 +161,15 @@ export interface Cloud {
   readonly y: number;
   readonly radiusM: number;
   readonly lifeS: number;
-  readonly armS: number;
+  armS: number;
   ageS: number;
   /** Fighters already hit by this cloud. */
   readonly hit: Set<string>;
+  /** A landmine that has not gone off yet (Chemical Trap): drawn as a mine, no gas, no effect. */
+  mine?: NonNullable<CloudSpec['mine']> & { dormantS: number };
+  /** A fog (Plague Bloom): its per-fighter seconds spent inside, and its rules. */
+  fog?: NonNullable<CloudSpec['fog']>;
+  readonly dwellS: Map<string, number>;
 }
 
 /** A Death Mark in progress (see `MarkDelivery`). */
@@ -1330,7 +1340,26 @@ export class AbilityWorld {
       armS: spec.armS ?? 0,
       ageS: 0,
       hit: new Set(alreadyHitId ? [alreadyHitId] : []),
+      dwellS: new Map(),
+      ...(spec.fog ? { fog: spec.fog } : {}),
+      ...(spec.mine ? { mine: { ...spec.mine, dormantS: 0 } } : {}),
     });
+    if (spec.mine) {
+      // A caster keeps only so many mines out: the oldest is taken up.
+      const own = this.clouds.filter((c) => c.casterId === casterId && c.mine);
+      for (const old of own.slice(0, Math.max(0, own.length - spec.mine.maxPerCaster)))
+        this.clouds.splice(this.clouds.indexOf(old), 1);
+      host.emit({
+        kind: 'release',
+        ability: def.id,
+        look: def.look,
+        vfx: 'mine-set',
+        sfx: def.sfx.release,
+        x: at.x,
+        y: at.y,
+      });
+      return;
+    }
     host.emit({
       kind: 'impact',
       ability: def.id,
@@ -1375,19 +1404,69 @@ export class AbilityWorld {
   private updateClouds(dtS: number, host: AbilityHost): void {
     for (let i = this.clouds.length - 1; i >= 0; i--) {
       const c = this.clouds[i]!;
+      if (c.mine) {
+        // Dormant: nobody has stepped on it yet. It waits, arms, then goes off under the first enemy to come close.
+        c.mine.dormantS += dtS;
+        if (c.mine.dormantS >= c.mine.waitS) {
+          this.clouds.splice(i, 1);
+          continue;
+        }
+        if (c.mine.dormantS < c.armS) continue;
+        const foot = host
+          .fighters()
+          .find(
+            (f) =>
+              f.hittable &&
+              !this.friendly(f, c.casterId, host) &&
+              Math.hypot(f.x - c.x, f.y - c.y) <= c.mine!.triggerRadiusM + f.radiusM,
+          );
+        if (!foot) continue;
+        c.mine = undefined;
+        c.armS = 0;
+        c.ageS = 0;
+        host.emit({
+          kind: 'impact',
+          ability: c.def.id,
+          look: c.def.look,
+          vfx: c.def.vfx,
+          sfx: c.def.sfx.impact,
+          x: c.x,
+          y: c.y,
+          radiusM: c.radiusM * 0.6,
+        });
+        continue;
+      }
       c.ageS += dtS;
       if (c.ageS >= c.lifeS) {
         this.clouds.splice(i, 1);
         continue;
       }
       if (c.ageS < c.armS) continue;
+      if (c.fog) this.updateFog(c, c.fog, dtS, host);
       for (const f of host.fighters()) {
+        if (c.fog) break; // a fog never bursts on anyone; it chokes (see `updateFog`)
         if (c.hit.has(f.id) || this.friendly(f, c.casterId, host) || !f.hittable) continue;
         if (Math.hypot(f.x - c.x, f.y - c.y) > c.radiusM + f.radiusM) continue;
         // Dodged (not landed): it can still catch them once the dodge ends, while they stand in it.
         if (this.hit(host, c.casterId, f.id, c.def.payload, norm({ x: f.x - c.x, y: f.y - c.y }), c.def.look?.hitFlash))
           c.hit.add(f.id);
       }
+    }
+  }
+
+  /** Choking fog: while inside, an enemy sees little, moves slowly and takes chip damage; three seconds in, one stack. */
+  private updateFog(c: Cloud, fog: NonNullable<Cloud['fog']>, dtS: number, host: AbilityHost): void {
+    for (const f of host.fighters()) {
+      if (this.friendly(f, c.casterId, host) || !f.hittable) continue;
+      if (Math.hypot(f.x - c.x, f.y - c.y) > c.radiusM + f.radiusM * 0.5) {
+        c.dwellS.delete(f.id);
+        continue;
+      }
+      const inside = (c.dwellS.get(f.id) ?? 0) + dtS;
+      c.dwellS.set(f.id, inside);
+      const stack = inside >= fog.stackAfterS && !c.hit.has(f.id);
+      if (stack) c.hit.add(f.id);
+      host.fogFighter?.(f.id, { sightM: fog.sightM, speedFactor: fog.speedFactor, chipDps: fog.chipDps, stack });
     }
   }
 

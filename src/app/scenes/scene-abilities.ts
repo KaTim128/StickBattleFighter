@@ -247,6 +247,13 @@ export class SceneAbilities implements AbilityHost {
     return landed;
   }
 
+  fogFighter(targetId: string, fog: { sightM: number; speedFactor: number; chipDps: number; stack: boolean }): void {
+    const t = this.byName(targetId);
+    if (!t || t.combatant.isKo) return;
+    t.combatant.fog(fog.chipDps, fog.speedFactor, fog.sightM);
+    if (fog.stack) t.combatant.poison(1);
+  }
+
   teleport(casterId: string, to: Vec2): Vec2 | null {
     const f = this.byName(casterId);
     return f ? this.teleportSource(f, to) : null;

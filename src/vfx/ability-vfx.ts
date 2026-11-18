@@ -39,6 +39,8 @@ export interface ImpactBurst {
   readonly shards?: number;
   readonly splash?: { readonly count: number; readonly colour: number };
   readonly mist?: number;
+  /** Shards fly in every direction (a jar landing on the ground) instead of along the blow. */
+  readonly all?: boolean;
 }
 
 /** Points that burn while a fighter attacks (fists and feet), world x, y and height. */
@@ -489,8 +491,10 @@ export class AbilityVfx {
   /** Gas rolling off a cloud: soft puffs across its disc that drift up and fade, thicker while it is fresh. */
   private cloudPuffs(c: Cloud, dtS: number): void {
     const pal = c.def.look?.palette ?? FIRE;
+    if (c.mine) return; // a mine lying dormant gives off nothing
     const fresh = 1 - c.ageS / c.lifeS;
-    const n = this.count((10 + c.radiusM * 8) * (0.4 + 0.6 * fresh) * dtS);
+    const fog = c.fog !== undefined;
+    const n = this.count((fog ? 5 + c.radiusM * 5 : 10 + c.radiusM * 8) * (0.4 + 0.6 * fresh) * dtS);
     for (let i = 0; i < n; i++) {
       const p = this.free();
       if (!p) break;
@@ -502,13 +506,13 @@ export class AbilityVfx {
         colour: this.rand() < 0.5 ? pal.hot : pal.bright,
         x: c.x + Math.cos(ang) * rad,
         y: c.y + Math.sin(ang) * rad,
-        z: 0.05 + this.rand() * 0.25,
-        vx: (this.rand() - 0.5) * 0.4,
-        vy: (this.rand() - 0.5) * 0.4,
+        z: 0.05 + this.rand() * (fog ? 1.4 : 0.25),
+        vx: (this.rand() - 0.5) * (fog ? 0.7 : 0.4),
+        vy: (this.rand() - 0.5) * (fog ? 0.7 : 0.4),
         vz: 0.25 + this.rand() * 0.4,
         ageS: 0,
-        lifeS: 0.9 + this.rand() * 0.8,
-        size: 0.16 + this.rand() * 0.14,
+        lifeS: (fog ? 1.6 : 0.9) + this.rand() * 0.8,
+        size: fog ? 0.45 + this.rand() * 0.4 : 0.16 + this.rand() * 0.14,
         pal,
       });
     }
@@ -523,7 +527,7 @@ export class AbilityVfx {
     for (let n = 0; n < (hit.shards ?? 0); n++) {
       const p = this.free();
       if (!p) break;
-      const a = base + (this.rand() - 0.5) * 2.6;
+      const a = hit.all ? this.rand() * Math.PI * 2 : base + (this.rand() - 0.5) * 2.6;
       const sp = 2.5 + this.rand() * 4.5;
       Object.assign(p, {
         live: true,
@@ -672,6 +676,20 @@ export class AbilityVfx {
       });
     }
     this.emitAt(fx.x, fx.y, z, im.motes, big ? 5 : 3, big ? 0.8 : 0.5, big ? 0.17 : 0.12, pal);
+    if (im.shards || im.splash || im.mist)
+      this.jarSmash({
+        x: fx.x,
+        y: fx.y,
+        dir: { x: 1, y: 0 },
+        sparks: 0,
+        speedMps: 0,
+        colour: pal.bright,
+        burstM: 0,
+        all: true,
+        ...(im.shards ? { shards: im.shards } : {}),
+        ...(im.splash ? { splash: im.splash } : {}),
+        ...(im.mist ? { mist: im.mist } : {}),
+      });
     this.rings.push({
       colour: pal.bright,
       x: fx.x,
@@ -1131,7 +1149,25 @@ export class AbilityVfx {
     // Toxic clouds: a pool of green on the floor that thins as it fades, and a ring while a trap is arming.
     for (const c of input.clouds ?? []) {
       const pal = c.def.look?.palette ?? FIRE;
+      if (c.mine) {
+        this.landmine(f, g, c, t);
+        continue;
+      }
       const life = Math.min(1, (1 - c.ageS / c.lifeS) * 3);
+      if (c.fog) {
+        // A thick bank of poison fog: a wide green pool with a drifting, pulsing edge.
+        const rise = Math.min(1, c.ageS / 0.8);
+        const rad = c.radiusM * rise;
+        f.circle(c.x, c.y, rad).fill({ color: pal.deep, alpha: 0.4 * life });
+        f.circle(c.x, c.y, rad * 0.8).fill({ color: pal.hot, alpha: 0.3 * life });
+        f.circle(c.x, c.y, rad * 0.5).fill({ color: pal.bright, alpha: 0.16 * life });
+        f.circle(c.x, c.y, rad * (0.97 + 0.03 * Math.sin(t * 2.2))).stroke({
+          width: 0.12,
+          color: pal.bright,
+          alpha: 0.4 * life,
+        });
+        continue;
+      }
       const swell = Math.min(1, c.ageS / 0.35);
       f.circle(c.x, c.y, c.radiusM * swell).fill({ color: pal.deep, alpha: 0.3 * life });
       f.circle(c.x, c.y, c.radiusM * 0.7 * swell).fill({ color: pal.hot, alpha: 0.22 * life });
@@ -1413,6 +1449,88 @@ export class AbilityVfx {
     }
   }
 
+  /**
+   * A landmine on the floor (Chemical Trap): a flat olive disc with a dark rim, a raised pressure plate, three trigger
+   * prongs and a blinking light (red while arming, a steady green pulse once live). The trigger ring is faint on the
+   * floor so everyone, friend or foe, can see exactly where it will go off.
+   */
+  private landmine(f: Graphics, g: Graphics, c: Cloud, t: number): void {
+    const m = c.mine;
+    if (!m) return;
+    const live = m.dormantS >= c.armS;
+    const pal = c.def.look?.palette ?? FIRE;
+    const drop = Math.min(1, m.dormantS / 0.25);
+    f.circle(c.x, c.y, 0.36).fill({ color: 0x000000, alpha: 0.3 * drop });
+    f.circle(c.x, c.y, 0.32).fill(0x2f3822);
+    f.circle(c.x, c.y, 0.32).stroke({ width: 0.04, color: 0x10160b, alpha: 1 });
+    f.circle(c.x, c.y, 0.2).fill(0x56633a);
+    f.circle(c.x, c.y, 0.2).stroke({ width: 0.025, color: 0x1c240f, alpha: 1 });
+    // Hazard ticks around the rim.
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      f.moveTo(c.x + Math.cos(a) * 0.24, c.y + Math.sin(a) * 0.24)
+        .lineTo(c.x + Math.cos(a) * 0.3, c.y + Math.sin(a) * 0.3)
+        .stroke({ width: 0.03, color: i % 2 === 0 ? 0xd8c63a : 0x10160b, alpha: 1 });
+    }
+    if (live) f.circle(c.x, c.y, m.triggerRadiusM).stroke({ width: 0.025, color: pal.bright, alpha: 0.28 });
+    // The raised plate and prongs stand a little above the floor; the light blinks on top.
+    const top = iso(c.x, c.y, 0.07);
+    g.ellipse(top.x, top.y, 0.15, 0.15 * ISO_T + 0.02).fill({ color: 0x6f7f4a, alpha: 1 });
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + 0.5;
+      const q = iso(c.x + Math.cos(a) * 0.13, c.y + Math.sin(a) * 0.13, 0.1);
+      g.circle(q.x, q.y, 0.025).fill(0xc9d1b0);
+    }
+    const blink = live ? 0.55 + 0.45 * Math.sin(t * 5) : Math.sin(t * 14) > 0 ? 1 : 0.15;
+    const light = live ? pal.bright : 0xff4a3a;
+    g.circle(top.x, top.y - 0.03, 0.075).fill({ color: light, alpha: 0.28 * blink });
+    g.circle(top.x, top.y - 0.03, 0.04).fill({ color: light, alpha: blink });
+  }
+
+  /** A thrown poison jar: a glass jar with glowing liquid and a metal lid, tumbling end over end, glowing green. */
+  private flyingJar(g: Graphics, c: { x: number; y: number }, p: Projectile, pal: Palette, t: number): void {
+    const spin = t * 14 + p.x * 3 + p.y * 2;
+    const r = 0.17;
+    const rot = (x: number, y: number) => ({
+      x: c.x + x * Math.cos(spin) - y * Math.sin(spin),
+      y: c.y + x * Math.sin(spin) + y * Math.cos(spin),
+    });
+    g.circle(c.x, c.y, r * 3.2).fill({ color: pal.bright, alpha: 0.18 });
+    g.circle(c.x, c.y, r * 2.1).fill({ color: pal.hot, alpha: 0.25 });
+    const body = [rot(-r, -r * 0.95), rot(r, -r * 0.95), rot(r, r * 0.95), rot(-r, r * 0.95)].flatMap((q) => [
+      q.x,
+      q.y,
+    ]);
+    g.poly(body).fill(0x14210c);
+    const liquid = [
+      rot(-r * 0.8, -r * 0.55),
+      rot(r * 0.8, -r * 0.55),
+      rot(r * 0.8, r * 0.8),
+      rot(-r * 0.8, r * 0.8),
+    ].flatMap((q) => [q.x, q.y]);
+    g.poly(liquid).fill({ color: 0x5fe02a, alpha: 0.95 });
+    const glint = [
+      rot(-r * 0.55, -r * 0.4),
+      rot(-r * 0.15, -r * 0.4),
+      rot(-r * 0.15, r * 0.5),
+      rot(-r * 0.55, r * 0.5),
+    ].flatMap((q) => [q.x, q.y]);
+    g.poly(glint).fill({ color: 0xc8ffa0, alpha: 0.8 });
+    const lid = [
+      rot(-r * 0.7, -r * 1.45),
+      rot(r * 0.7, -r * 1.45),
+      rot(r * 0.7, -r * 0.95),
+      rot(-r * 0.7, -r * 0.95),
+    ].flatMap((q) => [q.x, q.y]);
+    g.poly(lid).fill(0x4b4d57);
+    // A fading smear along the throw.
+    p.trail.forEach((q, i) => {
+      const k = (i + 1) / (p.trail.length + 1);
+      const d = iso(q.x, q.y, BOLT_HEIGHT_M);
+      g.circle(d.x, d.y, r * 0.8 * k).fill({ color: pal.hot, alpha: 0.3 * k });
+    });
+  }
+
   /** A magic projectile in flight: a shadow, a tapering tail of flame streaming behind, and the core. */
   private magicProjectile(f: Graphics, g: Graphics, p: Projectile, look: MagicLook, t: number): void {
     const P = iso;
@@ -1420,6 +1538,10 @@ export class AbilityVfx {
     const radius = p.def.delivery.type === 'projectile' ? p.def.delivery.radiusM : 0.3;
     f.circle(p.x, p.y, radius * 0.9).fill({ color: 0x000000, alpha: 0.25 });
     const c = P(p.x, p.y, BOLT_HEIGHT_M);
+    if (look.flight?.jar) {
+      this.flyingJar(g, c, p, pal, t);
+      return;
+    }
     const tail = P(p.x - p.dir.x * 1.3, p.y - p.dir.y * 1.3, BOLT_HEIGHT_M + 0.1);
     const len = Math.hypot(tail.x - c.x, tail.y - c.y) || 1;
     const nx = -(tail.y - c.y) / len;

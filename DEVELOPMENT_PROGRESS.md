@@ -863,3 +863,6 @@ Done: blind view while hidden, a small dim peek circle, 3x detection while peeki
 
 ## 20/11/2026: Vexoris karate taps and jar-smash heavy
 Done: separate tap karate and heavy jar smash (see TD-120 addendum). Gate: biome (fixed an old forEach lint error), typecheck, full vitest 952 + 3 new passing. Next: Vexoris ability rework (landmine Chemical Trap, thrown-jar Toxic Jar, 10 s fog ultimate).
+
+## 20/11/2026: Vexoris abilities rework (TD-121)
+Done: landmine Chemical Trap, thrown-jar Toxic Jar, 10 s poison-fog Plague Bloom with enemy haze and Vexoris green sight. Gate: biome, typecheck, vitest 964 passed. Screenshots checked: jar throw and shatter, planted mine, fog bank, Vexoris green view, forced haze overlay. Next: deploy, owner review, then Arcstrike.

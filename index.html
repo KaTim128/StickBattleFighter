@@ -66,6 +66,15 @@
         transition: opacity 0.2s linear;
       }
       .night-vision.on { display: block; }
+      /* Poison fog (Vexoris's Plague Bloom): a green haze, clear only in a small circle round the player. */
+      .fog-veil {
+        position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 5; display: none;
+        backdrop-filter: blur(1.5px) saturate(0.85);
+        background: radial-gradient(circle var(--r, 110px) at var(--x, 50%) var(--y, 50%),
+          rgba(120, 200, 70, 0.1) 0, rgba(95, 175, 55, 0.35) 55%, rgba(55, 120, 35, 0.68) 88%, rgba(40, 95, 28, 0.8) 100%);
+        transition: opacity 0.25s linear;
+      }
+      .fog-veil.on { display: block; }
       /* Fire Beam on touch (owner, 12/11/2026): the joystick aims the beam while it pours. */
       body.aiming .joystick, .joystick.aiming { border-color: rgba(255, 140, 40, 0.95); box-shadow: 0 0 14px rgba(255, 110, 20, 0.6); }
       body.aiming .joystick::after, .joystick.aiming::after {

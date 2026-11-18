@@ -108,6 +108,21 @@ export interface CloudSpec {
   readonly lifeS: number;
   /** Seconds before it starts to take effect (a trap arming); it is drawn from the start. */
   readonly armS?: number;
+  /**
+   * A landmine (Chemical Trap): the cloud lies dormant, drawn as a mine on the floor, until an enemy steps within
+   * `triggerRadiusM` of it (after `armS`); then it bursts and the cloud begins. It is removed after `waitS` unused.
+   */
+  readonly mine?: { readonly triggerRadiusM: number; readonly waitS: number; readonly maxPerCaster: number };
+  /**
+   * A choking fog (Plague Bloom): every enemy inside sees only `sightM`, is slowed to `speedFactor`, takes `chipDps`
+   * damage per second and, after `stackAfterS` seconds inside, one stack of poison. The caster is immune and sees clearly.
+   */
+  readonly fog?: {
+    readonly sightM: number;
+    readonly speedFactor: number;
+    readonly chipDps: number;
+    readonly stackAfterS: number;
+  };
 }
 
 /** A cloud or hazard placed where the caster aims (within range, short of walls): Chemical Trap. */
@@ -387,7 +402,13 @@ export interface MagicLook {
     readonly coreMaxM: number;
   };
   /** In flight: a streaming trail of element particles and sparks; heat shimmer around the core. */
-  readonly flight?: { readonly trailPerS: number; readonly sparksPerS: number; readonly shimmer: boolean };
+  readonly flight?: {
+    readonly trailPerS: number;
+    readonly sparksPerS: number;
+    readonly shimmer: boolean;
+    /** Drawn as a tumbling glass jar of glowing liquid instead of a streaming bolt (Vexoris's Toxic Jar). */
+    readonly jar?: boolean;
+  };
   /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
   readonly impact?: {
     readonly flashM: number;
@@ -402,6 +423,10 @@ export interface MagicLook {
     readonly smokeColour?: number;
     /** Camera shake (trauma 0..1) on contact; default: only wide blasts (radius 2 m or more) shake. */
     readonly shake?: number;
+    /** A smashed jar: pale glass shards thrown all round, green liquid droplets, a floor stain, a lingering mist. */
+    readonly shards?: number;
+    readonly splash?: { readonly count: number; readonly colour: number };
+    readonly mist?: number;
   };
   /** The target's body flashes this colour on contact (white for the Fireball). */
   readonly hitFlash?: number;
