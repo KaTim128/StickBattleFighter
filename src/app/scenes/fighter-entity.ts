@@ -92,6 +92,8 @@ export class FighterEntity {
   dustSounded = false;
   /** A timed self-buff (Rampage Mode): speed and durability, with seconds left. */
   buff: (import('../../abilities/ability-def').BuffEffect & { leftS: number }) | null = null;
+  /** The ability that started the buff: its cooldown (or the ultimate's recharge) waits until the buff ends. */
+  buffSourceId: string | null = null;
   /** Consecutive landed hits (PRS-4 combo counter) and when the last one landed (sim seconds). */
   comboCount = 0;
   lastLandS = -99;
@@ -149,6 +151,9 @@ export class FighterEntity {
   liftTotalS = 0;
   /** Presentation: how far into the arms-up carry pose (0..1), and time left in a throw follow-through. */
   carryWeight = 0;
+  /** 0..1 how far into the stalking crouch (Death Mark), and how brightly the eyes glow once it is charged. */
+  stalkAmount = 0;
+  eyeGlowAmount = 0;
   /** Presentation: how much bigger it is drawn right now (eases to a buff's sizeFactor and back). */
   growth = 1;
   /** Presentation: how strongly magic glows on it (0..1), and how far a held staff follows a swing. */

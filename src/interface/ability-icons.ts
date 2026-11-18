@@ -237,11 +237,11 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     swirl('#e8dcff', 0.35),
     `<path d="M12 33 C14 18 22 40 26 24 C28 14 34 20 35 15" stroke="#c9a6ff" stroke-width="3.2" fill="none" stroke-linecap="round" filter="url(#gl)"/><path d="M12 33 C14 18 22 40 26 24 C28 14 34 20 35 15" stroke="#fbf6ff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".85"/><circle cx="11" cy="34" r="7.5" fill="url(#sl)" stroke="#1a0826" stroke-width="1.4" filter="url(#gl)"/><circle cx="36" cy="14" r="6" fill="none" stroke="#e8dcff" stroke-width="2.4" filter="url(#gl)"/><circle cx="36" cy="14" r="2.4" fill="#fbf6ff"/><ellipse cx="8.5" cy="30.5" rx="2.8" ry="1.8" fill="#fff" opacity=".7"/>`,
   ),
-  // Umbral Feint (Shroud, B13): the masked hunter and a fading afterimage as he slips aside, knife trailing.
-  'umbral-feint': icon(
-    'shade',
-    rays(26, 22, 12, '#d8d0ff', 0.14),
-    `<g opacity=".4" filter="url(#bl)">${MASKED(15, 26, 1.25)}</g><g opacity=".7">${MASKED(21, 25, 1.3)}</g>${MASKED(29, 24, 1.4)}<path d="M8 40 C16 34 28 36 42 30" stroke="#ec2a34" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".85"/>`,
+  // Death Mark (Shroud, 20/11/2026): a red sigil, a ringed eye with a blade through it, over the masked hunter.
+  'death-mark': icon(
+    'blood',
+    rays(24, 22, 14, '#ffd0c8', 0.18),
+    `<g opacity=".85">${MASKED(24, 30, 1.1)}</g><g filter="url(#gl)" fill="none" stroke-linecap="round"><circle cx="24" cy="15" r="9" stroke="#fff0ee" stroke-width="3.4"/><path d="M24 4 L24 26 M16 9 L32 21 M32 9 L16 21" stroke="#fff0ee" stroke-width="2.6"/></g><g fill="none" stroke-linecap="round"><circle cx="24" cy="15" r="9" stroke="#ec2a34" stroke-width="1.8"/><path d="M24 4 L24 26 M16 9 L32 21 M32 9 L16 21" stroke="#ec2a34" stroke-width="1.4"/></g>`,
   ),
   // Rending Flurry: three crossing slashes of blood.
   'rending-flurry': icon(

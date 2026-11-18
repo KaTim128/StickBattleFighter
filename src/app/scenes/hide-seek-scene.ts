@@ -51,6 +51,8 @@ export class HideSeekScene implements GameScene {
   private fadedRoom: string | null | undefined;
   /** The see-through front walls pushed behind the room's furniture, and the layer each is sorted in. */
   private readonly liftedWalls = new Map<Container, YSortLayer>();
+  /** Wall pieces behind the player whose depth is held back this frame (see `sortBackWalls`), with their layer. */
+  private readonly backWalls = new Map<Container, YSortLayer>();
   private lastHunter = { x: 0, y: 0 };
   private cam = { x: 0, y: 0 };
   /** The camera's push-in during the execution (1 = normal), eased, and the clock for its shake. */
@@ -247,6 +249,7 @@ export class HideSeekScene implements GameScene {
     const eyes = g.viewer();
     this.visibility.update(frameDtS, eyes);
     this.fadeFrontWalls(view);
+    this.sortBackWalls(view, p);
     this.applyVisibility();
     for (const f of view.floors) f.actors.update();
     const people = [{ x: p.x, y: p.y, floor: p.floor, z: player.view.root.zIndex }];
@@ -255,7 +258,10 @@ export class HideSeekScene implements GameScene {
       people.push({ x: g.hunter.x, y: g.hunter.y, floor: g.hunter.floor, z: hv.view.root.zIndex });
     this.sortLongPieces(people);
     this.spotFx?.syncDepth();
-    view.fader.update([{ node: player.view.root, depth: () => player.view.root.zIndex }], frameDtS);
+    view.fader.update(
+      [{ node: player.view.root, depth: () => player.view.root.zIndex, at: { x: p.x, y: p.y } }],
+      frameDtS,
+    );
 
     // The camera glides after the player. In the execution it frames the two of them, pushes in and shakes at each blow.
     const lean = kill ? iso(kill.focus.x, kill.focus.y, 0.5) : iso(p.x + p.peekX, p.y + p.peekY, p.z);
@@ -382,12 +388,36 @@ export class HideSeekScene implements GameScene {
     // 20/11/2026: walls must not veil furniture or whoever stands on it); it keeps its place against other walls.
     for (const [node, layer] of this.liftedWalls) layer.setBias(node, 0);
     this.liftedWalls.clear();
+    this.backWalls.clear();
     if (room) {
       const layer = view.floors[room.floor].actors;
       for (const node of set) {
         layer.setBias(node, -FRONT_WALL_DROP);
         this.liftedWalls.set(node, layer);
       }
+    }
+  }
+
+  /**
+   * The walls behind the player (a long wall's north or west run) never fade (owner, 20/11/2026), so they must also
+   * never be drawn over him: each such piece is held just behind the player in depth. A piece is behind when it runs
+   * north-south and lies west of him, or runs east-west and lies north of him; anything else may be in front.
+   */
+  private sortBackWalls(view: HouseView, p: { x: number; y: number; floor: 0 | 1 }): void {
+    for (const [node, layer] of this.backWalls) layer.setBias(node, 0);
+    this.backWalls.clear();
+    const playerZ = this.player?.view.root.zIndex ?? 0;
+    const layer = view.floors[p.floor].actors;
+    for (const n of view.nodes) {
+      if (n.kind !== 'wall' || n.fades === false || n.floor !== p.floor || this.liftedWalls.has(n.node)) continue;
+      const r = n.rect;
+      const alongX = r.x1 - r.x0 >= r.y1 - r.y0;
+      const behind = alongX ? r.y1 <= p.y + 0.3 : r.x1 <= p.x + 0.3;
+      if (!behind) continue;
+      const key = layer.keyOf(n.node);
+      if (key < playerZ) continue;
+      layer.setBias(n.node, playerZ - 0.01 - key);
+      this.backWalls.set(n.node, layer);
     }
   }
 

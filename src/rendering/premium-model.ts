@@ -283,6 +283,8 @@ export interface PremiumDrawState {
   readonly headRadius: number;
   /** 0..1 how fast it moves (a flame crest streams back). */
   readonly motion: number;
+  /** 0..1 red glow in a mask's eyes (Shroud's charged Death Mark). */
+  readonly eyeGlow?: number;
   /** A temporary tint over the whole body (a fury buff flushing red), 0..1. */
   readonly tint?: { readonly colour: number; readonly k: number };
   /** Draws the fighter's own head style (skins with `head: 'own'`), after the body, before the near arm. */
@@ -1240,7 +1242,7 @@ export class PremiumModel {
       oval(g, oc, 0.3, 1, r * 0.6, r * 0.38, this.c(0x060408));
       return;
     }
-    this.maskInHood(g, h, r, w);
+    this.maskInHood(g, fire, h, r, w);
   }
 
   /**
@@ -1249,7 +1251,7 @@ export class PremiumModel {
    * the hood's shadow falling across its top; the mask fills it and bulges outward, shaded from its
    * lit crown to a dark rim, with a highlight on the brow and cheek. Tipped down a little.
    */
-  private maskInHood(g: Graphics, h: Point, r: number, w: number): void {
+  private maskInHood(g: Graphics, fire: Graphics, h: Point, r: number, w: number): void {
     // Owner, 13/11/2026 (later): the mask sits inside the hood, never past its front edge, so the
     // opening is set back from the hood's front (about 0.95 r) and the mask fills it within the lip.
     const oc = { x: h.x + 0.36 * r, y: h.y + 0.14 * r };
@@ -1288,26 +1290,27 @@ export class PremiumModel {
     // is foreshortened (the mask curves away) and mirrored.
     const k0 = 1.15;
     for (const [dx, k, dir] of [
-      [-0.07, 1, 1],
-      [0.42, 0.74, -1],
+      [-0.12, 1, 1],
+      [0.46, 0.74, -1],
     ] as const) {
       const cx = mc.x + dx * r;
       const cy = mc.y - r * 0.08;
       const kk = k * k0;
-      const half = r * 0.22 * kk;
+      // Owner, 20/11/2026: slimmer eyes with a clear gap between them (they were running together).
+      const half = r * 0.22 * 0.7 * kk;
       const inner = cx + dir * half;
       const outer = cx - dir * half;
+      // Owner, 20/11/2026: the eyes are sharp, narrow slits, rectangular and slanted (a parallelogram with hard
+      // corners), the inner end low by the nose so the mask scowls, not rounded almonds.
       const hole = [
         outer,
-        cy - r * 0.1 * kk,
-        cx - dir * half * 0.2,
-        cy - r * 0.12 * kk,
-        inner,
-        cy + r * 0.06 * kk,
-        cx,
+        cy - r * 0.13 * kk,
+        inner + dir * half * 0.12,
+        cy - r * 0.01 * kk,
+        inner + dir * half * 0.12,
         cy + r * 0.1 * kk,
-        outer + dir * half * 0.15,
-        cy + r * 0.04 * kk,
+        outer,
+        cy - r * 0.01 * kk,
       ];
       // A shadow round the hole gives the cut depth through the curved shell, then the hollow.
       g.poly(hole.map((v, i) => (i % 2 ? cy + (v - cy) * 1.35 : cx + (v - cx) * 1.15))).fill({
@@ -1315,12 +1318,22 @@ export class PremiumModel {
         alpha: 0.6,
       });
       g.poly(hole).fill(this.c(0x050506));
+      const glow = this.st.eyeGlow ?? 0;
+      if (glow > 0.01) {
+        // Death Mark charged (owner, 20/11/2026): the slits burn red.
+        g.poly(hole).fill({ color: 0xff1c1c, alpha: Math.min(1, glow) });
+        fire.poly(hole.map((v, i) => (i % 2 ? cy + (v - cy) * 2.2 : cx + (v - cx) * 1.7))).fill({
+          color: 0xff2a2a,
+          alpha: 0.4 * glow,
+        });
+      }
     }
     g.circle(mc.x + r * 0.3, mc.y + r * 0.16, r * 0.028).fill(0x2a2a30);
     g.circle(mc.x + r * 0.36, mc.y + r * 0.15, r * 0.024).fill(0x2a2a30);
-    g.moveTo(mc.x + r * 0.08, mc.y + r * 0.4)
-      .quadraticCurveTo(mc.x + r * 0.22, mc.y + r * 0.45, mc.x + r * 0.37, mc.y + r * 0.38)
-      .stroke({ width: r * 0.05, color: 0x1a1a1e, cap: 'round' });
+    // The mouth is one flat, straight, horizontal line (owner, 20/11/2026), not a smile.
+    g.moveTo(mc.x + r * 0.15, mc.y + r * 0.42)
+      .lineTo(mc.x + r * 0.37, mc.y + r * 0.42)
+      .stroke({ width: r * 0.05, color: 0x1a1a1e, cap: 'butt' });
   }
 
   /** A mannequin's head: a smooth egg with a seam round it and a soft highlight. */

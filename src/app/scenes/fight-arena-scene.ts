@@ -13,7 +13,7 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose, stalkPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -905,6 +905,7 @@ export class FightArenaScene implements ArenaScene {
         f.buff.leftS -= stepS;
         if (f.buff.leftS <= 0 || f.combatant.isKo) {
           f.buff = null;
+          f.buffSourceId = null;
           f.combatant.damageTakenScale = 1;
           if (f.caster) f.caster.cooldownScale = 1;
         }
@@ -1987,6 +1988,12 @@ export class FightArenaScene implements ArenaScene {
       this.stepFighter(f, stepS, { x: move.x * slow, y: move.y * slow }, false);
       return;
     }
+    // Stalking (Death Mark), the AI creeps in and holds every attack until the mark is charged.
+    if (this.abilities?.world.markOf(f.name)?.phase === 'stalk') {
+      out.ability = null;
+      out.heavy = false;
+      out.melee = false;
+    }
     if (out.ability && this.abilities) {
       const started = this.abilities.tryCast(f, out.ability.slot, out.ability.at) === null;
       // A beam starts aimed where the AI last read the target, then swings no faster than its skill.
@@ -2162,11 +2169,20 @@ export class FightArenaScene implements ArenaScene {
       const isIdle = move.x === 0 && move.y === 0;
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
-      const sprinting = f.sprinting && !attack && !cast && c.state !== 'guarding' && (!air || f.airSprint);
+      const stalkDelivery = this.abilities?.world.markOf(f.name);
+      const stalking = stalkDelivery?.phase === 'stalk' && stalkDelivery.def.delivery.type === 'mark';
+      const sprinting = f.sprinting && !stalking && !attack && !cast && c.state !== 'guarding' && (!air || f.airSprint);
       next = stepVelocity(
         v,
         move,
-        { ...tuning, maxSpeedMps: finalMaxSpeedMps(f.def, sprinting, f.buff, c.status), decelMps2: decel },
+        {
+          ...tuning,
+          // Crouched and stalking, he creeps (Death Mark).
+          maxSpeedMps:
+            finalMaxSpeedMps(f.def, sprinting, f.buff, c.status) *
+            (stalking && stalkDelivery?.def.delivery.type === 'mark' ? stalkDelivery.def.delivery.moveFactor : 1),
+          decelMps2: decel,
+        },
         stepS,
       );
       if (f === this.playerFighter) {
@@ -2251,9 +2267,11 @@ export class FightArenaScene implements ArenaScene {
     const fromFront = !s.unblockable && (attacker.x - t.x) * target.aim.x + (attacker.y - t.y) * target.aim.y > 0;
     // Summoned skeletons only hurt: no flinch, push, interruption or freeze (master plan B5).
     const staggers = attacker.def.capabilities.staggersTargets !== false;
+    // A charged Death Mark triples the attacker's next landed blow (owner, 20/11/2026).
+    const markFactor = this.abilities?.world.markFactor(attacker.name) ?? 1;
     const result = target.combatant.receive(
       {
-        baseDamage: s.damage,
+        baseDamage: s.damage * markFactor,
         // Curse of Decay weakens everything the cursed fighter deals (owner, 12/11/2026).
         attackerPower: finalPower(attacker.def, attacker.combatant.status),
         heavy: s.heavy,
@@ -2275,6 +2293,11 @@ export class FightArenaScene implements ArenaScene {
 
     if (result.outcome === 'dodged') return false;
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
+    if (!guarded && this.abilities) {
+      // Being hit breaks a stalk; a landed blow spends a charged mark.
+      this.abilities.world.cancelStalk(target.name, this.abilities);
+      if (markFactor > 1) this.abilities.world.consumeMark(attacker.name, this.abilities);
+    }
     if (guarded)
       target.shieldS = SHIELD_FLARE_S; // the guard flares where it took the blow (PRS-5)
     else {
@@ -3056,6 +3079,10 @@ export class FightArenaScene implements ArenaScene {
       projectiles: world.projectiles,
       zones: world.zones,
       clouds: world.clouds,
+      marks: world.marks.flatMap((m) => {
+        const t = this.fighterByName(m.targetId);
+        return t ? [{ x: t.x, y: t.y, phase: m.phase, ageS: m.ageS }] : [];
+      }),
       telegraphs: world.telegraphs,
       fx,
       burning,
@@ -3154,6 +3181,12 @@ export class FightArenaScene implements ArenaScene {
           ? { index: assault.stab, last: assault.stab >= d.stabs - 1, ...slashLook }
           : null;
     } else f.view.slash = null;
+    // Death Mark: he sinks into a stalking crouch while it charges, and his eyes burn red once it is ready.
+    const mark = this.abilities?.world.markOf(f.name);
+    f.stalkAmount += ((mark?.phase === 'stalk' ? 1 : 0) - f.stalkAmount) * smoothing(10, frameDtS);
+    f.eyeGlowAmount += ((mark?.phase === 'ready' ? 1 : 0) - f.eyeGlowAmount) * smoothing(14, frameDtS);
+    if (f.stalkAmount > 0.01) pose = stalkPose(pose, f.stalkAmount);
+    f.view.eyeGlow = f.eyeGlowAmount;
 
     // Carrying overhead: arms up (blended); a throw whips them forward for a moment.
     const carryTarget = f.carrying ? this.liftProgress(f) : 0; // the arms rise with the lift

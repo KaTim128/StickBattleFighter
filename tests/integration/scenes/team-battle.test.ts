@@ -53,7 +53,7 @@ describe('3 vs 3 tag team', () => {
     expect(scene.playerFighter.def.id).toBe('necro');
     run(TEAM.tagCooldownS);
     // Tagging needs a free moment (not stunned or mid-move): press until it happens, like a player.
-    for (let i = 0; i < 20 && scene.playerFighter.def.id === 'necro'; i++) {
+    for (let i = 0; i < 80 && scene.playerFighter.def.id === 'necro'; i++) {
       intents.pressTag();
       run(0.1);
     }

@@ -255,11 +255,12 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-12), head: deg(8), armBack: limb(92, 8), armFront: limb(-10, 40), legFront: limb(26, -26) },
     settle: 0.4,
   },
-  // Umbral Feint (Shroud, B13): a low shadow-crouch, then a sudden twist away, knife arm trailing.
-  umbralFeint: {
-    windup: { lean: deg(-44), armFront: limb(25, 110), armBack: limb(15, 115), ...CROUCH },
-    release: { lean: deg(-26), armFront: limb(-30, 50), armBack: limb(-35, 45), legFront: limb(26, -30) },
-    settle: 0.35,
+  // Death Mark (Shroud, 20/11/2026): sinking low, the free hand sweeping out to paint the symbol on his prey, then
+  // settling into the stalking crouch (`stalkPose` holds it for the five seconds).
+  deathMark: {
+    windup: { lean: deg(-44), armFront: limb(30, 100), armBack: limb(20, 110), ...CROUCH },
+    release: { lean: deg(-50), head: deg(-6), armFront: limb(52, 60), armBack: limb(100, 20), ...CROUCH },
+    settle: 0.3,
   },
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
@@ -474,6 +475,22 @@ function flurryPose(base: Pose, a: AssaultState): Pose {
   const start = prev ? blendPose(prev, cock, 0.6) : cock;
   if (a.t < 0.55) return blendPose(start, strike, ease(a.t / 0.55));
   return strike;
+}
+
+/**
+ * The stalking crouch (Death Mark): low and forward, knife held low and ready, eyes on the prey. Blended in over the
+ * walk or idle, so he can creep but never stand tall.
+ */
+export function stalkPose(base: Pose, amount: number): Pose {
+  const crouch: Pose = {
+    ...base,
+    lean: deg(-52),
+    head: deg(-6),
+    armFront: limb(48, 60),
+    armBack: limb(-30, 55),
+    ...CROUCH,
+  };
+  return blendPose(base, crouch, Math.min(1, Math.max(0, amount)));
 }
 
 /** Abilities with an animation (tests check every kit ability has one). */

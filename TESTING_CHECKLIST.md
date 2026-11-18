@@ -589,3 +589,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] The hunt clock goes from 2:00 to 0:00 and the win comes at exactly 0:00.
 - [ ] With a bottle or can on the floor beside a hiding place, G hides (not picks up); carrying something, G still hides and the item is set down.
 - [ ] Rending Flurry: three quick slashes (two across, the last low-to-high), a red ribbon on each, the last the biggest, and a different sound for each.
+
+## Shroud mask, Death Mark, cooldown rule, back walls (20/11/2026)
+- [ ] The mask shows two slim, sharp slits with a clear gap, and a short flat mouth.
+- [ ] Death Mark: red sigil on the enemy, he crouches and creeps for 5 s; a hit on him or any attack of his breaks it; if it holds his eyes glow red and his next hit does triple, then the glow goes.
+- [ ] No ability's cooldown ticks while it is still running (dash, beam, buff, stalk); the ultimate does not recharge until its effect ends.
+- [ ] In the house, walking along the north and west walls never fades them, and the player is always drawn in front of them.

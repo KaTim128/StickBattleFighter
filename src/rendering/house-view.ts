@@ -437,7 +437,7 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
       // The stairs' rails and the block under their landing are part of the staircase: always opaque (owner, 18/11/2026).
       const fades = wallFades(w);
       nodes.push({ node, floor: w.floor, room: null, kind: 'wall', id: `wall-${w.x0}-${w.y0}`, rect: c.rect, fades });
-      if (fades) fader.add(node);
+      if (fades) fader.add(node, undefined, c.rect);
     }
   }
 

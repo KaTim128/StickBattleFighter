@@ -106,6 +106,13 @@ export interface AbilityVfxInput {
   readonly dust: readonly DustSource[];
   readonly projectiles: readonly Projectile[];
   readonly zones: readonly FireZone[];
+  /** Death Marks: a red sigil floats over the marked enemy (Shroud). */
+  readonly marks?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly phase: 'stalk' | 'ready';
+    readonly ageS: number;
+  }[];
   /** Lingering gas clouds (Vexoris). */
   readonly clouds?: readonly Cloud[];
   readonly telegraphs: readonly Telegraph[];
@@ -1015,6 +1022,28 @@ export class AbilityVfx {
       f.circle(tg.x, tg.y, tg.radiusM).fill({ color: FIRE.deep, alpha: 0.14 });
       f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: FIRE.hot, alpha: 0.22 });
       f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: FIRE.bright, alpha: pulse });
+    }
+
+    // Death Mark (owner, 20/11/2026): a red sigil, a ringed eye with a blade through it, turning slowly over the
+    // marked enemy's head while Shroud stalks, and a hard flickering pulse once the mark is charged.
+    for (const m of input.marks ?? []) {
+      const ready = m.phase === 'ready';
+      const pulse = ready ? 0.65 + 0.35 * Math.sin(t * 16) : 0.8 + 0.15 * Math.sin(t * 4);
+      const appear = Math.min(1, m.ageS / 0.25);
+      const c = P(m.x, m.y, 2.35 + 0.06 * Math.sin(t * 3));
+      const r = 0.3 * appear * (ready ? 1.12 : 1);
+      const spin = t * (ready ? 2.2 : 0.7);
+      g.circle(c.x, c.y, r * 1.35).fill({ color: 0xa30d16, alpha: 0.18 * pulse });
+      g.circle(c.x, c.y, r).stroke({ width: 0.035, color: 0xe5242e, alpha: pulse });
+      g.circle(c.x, c.y, r * 0.62).stroke({ width: 0.022, color: 0xff9a9a, alpha: 0.8 * pulse });
+      for (let i = 0; i < 3; i++) {
+        const a = spin + (i * Math.PI * 2) / 3;
+        g.moveTo(c.x + Math.cos(a) * r * 1.15, c.y + Math.sin(a) * r * 1.15)
+          .lineTo(c.x - Math.cos(a) * r * 1.15, c.y - Math.sin(a) * r * 1.15)
+          .stroke({ width: 0.03, color: 0xe5242e, alpha: pulse, cap: 'round' });
+      }
+      g.circle(c.x, c.y, r * 0.18).fill({ color: 0xff3a3a, alpha: pulse });
+      f.circle(m.x, m.y, 0.55 * appear).stroke({ width: 0.05, color: 0xe5242e, alpha: 0.55 * pulse });
     }
 
     // Toxic clouds: a pool of green on the floor that thins as it fades, and a ring while a trap is arming.

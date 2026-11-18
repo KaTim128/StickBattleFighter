@@ -94,7 +94,7 @@ export interface AbilityHost {
   /** Turn a caster to face a direction (it follows its steered beam). Optional. */
   face?(casterId: string, dir: Vec2): void;
   /** Start (or end, null) a timed self-buff on a caster. */
-  buff(casterId: string, buff: BuffEffect | null): void;
+  buff(casterId: string, buff: BuffEffect | null, abilityId?: string): void;
   /** Raise minions for the caster (summons, owner 12/11/2026). Optional (hosts without summons ignore it). */
   summon?(casterId: string, spec: SummonSpec): void;
   /**
@@ -162,6 +162,17 @@ export interface Cloud {
   readonly hit: Set<string>;
 }
 
+/** A Death Mark in progress (see `MarkDelivery`). */
+export interface DeathMark {
+  readonly casterId: string;
+  readonly targetId: string;
+  readonly def: AbilityDef;
+  /** Stalking (the charge) or ready (the next landed attack is multiplied). */
+  phase: 'stalk' | 'ready';
+  leftS: number;
+  ageS: number;
+}
+
 export interface Telegraph {
   readonly casterId: string;
   readonly def: AbilityDef;
@@ -210,6 +221,8 @@ interface PullAction {
   readonly kind: 'pull';
   readonly casterId: string;
   readonly targetId: string;
+  /** The ability that set this pull going (its cooldown waits for the pull to finish). */
+  readonly abilityId?: string;
   readonly speedMps: number;
   readonly stopM: number;
   ageS: number;
@@ -280,6 +293,7 @@ export class AbilityWorld {
   readonly beams: Beam[] = [];
   readonly zones: FireZone[] = [];
   readonly clouds: Cloud[] = [];
+  readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
   /** Grab outcomes by caster, kept until its next release (see grabOutcome). */
@@ -293,6 +307,75 @@ export class AbilityWorld {
     if (d.type !== 'leap') return 0;
     const u = Math.min(1, a.t / d.airS);
     return 4 * d.peakM * u * (1 - u);
+  }
+
+  /**
+   * The abilities of `casterId` that are still being executed past their cast: dashes, leaps, assaults, grabs, pulls,
+   * beams, rings still warming up, and a Death Mark being stalked or waiting to be spent. Their cooldowns and
+   * (for an ultimate) the meter's recharge must not start yet (owner, 20/11/2026).
+   */
+  executingIds(casterId: string): Set<string> {
+    const ids = new Set<string>();
+    for (const b of this.beams) if (b.casterId === casterId) ids.add(b.def.id);
+    for (const a of this.actions) {
+      if (a.casterId !== casterId) continue;
+      if (a.kind === 'pull') {
+        if (a.abilityId) ids.add(a.abilityId);
+      } else ids.add(a.def.id);
+    }
+    for (const t of this.telegraphs) if (t.casterId === casterId) ids.add(t.def.id);
+    for (const m of this.marks) if (m.casterId === casterId) ids.add(m.def.id);
+    return ids;
+  }
+
+  /** The caster's Death Mark, if it has one. */
+  markOf(casterId: string): DeathMark | null {
+    return this.marks.find((m) => m.casterId === casterId) ?? null;
+  }
+
+  /** The damage factor the caster's next landed attack gets (1 unless a Death Mark is ready). */
+  markFactor(casterId: string): number {
+    const m = this.markOf(casterId);
+    const d = m?.def.delivery;
+    return m?.phase === 'ready' && d?.type === 'mark' ? d.damageFactor : 1;
+  }
+
+  /** A hit on the caster, or an attack of its own, breaks a stalk in progress (not a ready mark). */
+  cancelStalk(casterId: string, host: AbilityHost): boolean {
+    const i = this.marks.findIndex((m) => m.casterId === casterId && m.phase === 'stalk');
+    if (i < 0) return false;
+    const m = this.marks[i]!;
+    this.marks.splice(i, 1);
+    const at = host.position(casterId);
+    host.emit({
+      kind: 'fizzle',
+      ability: m.def.id,
+      look: m.def.look,
+      vfx: 'death-mark-broken',
+      sfx: 'mark-break',
+      x: at.x,
+      y: at.y,
+    });
+    return true;
+  }
+
+  /** The ready mark is spent by a landed attack: the glow goes and the ability is finished. */
+  consumeMark(casterId: string, host: AbilityHost): void {
+    const i = this.marks.findIndex((m) => m.casterId === casterId && m.phase === 'ready');
+    if (i < 0) return;
+    const m = this.marks[i]!;
+    this.marks.splice(i, 1);
+    const at = host.position(casterId);
+    host.emit({
+      kind: 'impact',
+      ability: m.def.id,
+      look: m.def.look,
+      vfx: 'death-mark-spent',
+      sfx: 'mark-spent',
+      x: at.x,
+      y: at.y,
+      radiusM: 0.8,
+    });
   }
 
   /** Is this caster mid-dash or mid-leap (its body is driven by the world)? */
@@ -378,6 +461,26 @@ export class AbilityWorld {
         const block = host.blocked(at, end);
         const reach = block === null ? want : Math.max(0, want * block - 0.3);
         this.spawnCloud(casterId, def, { x: at.x + dir.x * reach, y: at.y + dir.y * reach }, d, host);
+        break;
+      }
+      case 'mark': {
+        // Mark the nearest enemy in range; nobody there: it fizzles and the cooldown begins.
+        const foe = this.nearestEnemy(casterId, at, Math.max(def.aimRangeM, 1), host);
+        this.marks.splice(0, this.marks.length, ...this.marks.filter((m) => m.casterId !== casterId));
+        if (!foe) {
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+          break;
+        }
+        this.marks.push({ casterId, targetId: foe.id, def, phase: 'stalk', leftS: d.stalkS, ageS: 0 });
+        host.emit({
+          kind: 'release',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.release,
+          x: foe.x,
+          y: foe.y,
+        });
         break;
       }
       case 'dash':
@@ -588,7 +691,7 @@ export class AbilityWorld {
       case 'buff':
         {
           const { type: _type, summon: _summon, shockwave: _shockwave, ...effect } = d;
-          host.buff(casterId, effect);
+          host.buff(casterId, effect, def.id);
         }
         if (d.summon) host.summon?.(casterId, d.summon);
         if (d.shockwave) {
@@ -648,6 +751,8 @@ export class AbilityWorld {
 
   /** The caster was interrupted or KO'd: stop its dash, leap or beam and any ring still warming up. */
   cancel(casterId: string, host: AbilityHost): void {
+    // Being hit or knocked out breaks a stalk (a mark already charged survives a flinch).
+    this.cancelStalk(casterId, host);
     for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
@@ -670,6 +775,7 @@ export class AbilityWorld {
     this.updateTelegraphs(dtS, host);
     this.updateZones(dtS, host);
     this.updateClouds(dtS, host);
+    this.updateMarks(dtS, host);
   }
 
   private updateProjectiles(dtS: number, host: AbilityHost): void {
@@ -686,7 +792,7 @@ export class AbilityWorld {
       for (const f of host.fighters()) {
         if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
-        if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash)) continue; // dodged: flies on
+        if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
         done = true;
         break;
@@ -877,6 +983,7 @@ export class AbilityWorld {
     payload: AbilityPayload,
     dir: Vec2,
     hitFlash?: number,
+    abilityId?: string,
   ): boolean {
     const landed = host.hitFighter(casterId, targetId, payload, dir, hitFlash);
     if (landed && payload.pull) {
@@ -888,6 +995,7 @@ export class AbilityWorld {
         kind: 'pull',
         casterId,
         targetId,
+        ...(abilityId ? { abilityId } : {}),
         speedMps: payload.pull.speedMps,
         stopM: payload.pull.stopM,
         ageS: 0,
@@ -1233,6 +1341,35 @@ export class AbilityWorld {
       y: at.y,
       radiusM: spec.radiusM * 0.5,
     });
+  }
+
+  private updateMarks(dtS: number, host: AbilityHost): void {
+    for (let i = this.marks.length - 1; i >= 0; i--) {
+      const m = this.marks[i]!;
+      const foe = host.fighters().find((f) => f.id === m.targetId);
+      const me = host.fighters().find((f) => f.id === m.casterId);
+      // The mark ends with either fighter down or gone.
+      if (!foe?.hittable || !me?.hittable) {
+        this.marks.splice(i, 1);
+        continue;
+      }
+      m.ageS += dtS;
+      if (m.phase !== 'stalk') continue;
+      m.leftS -= dtS;
+      if (m.leftS <= 0) {
+        m.phase = 'ready';
+        host.emit({
+          kind: 'impact',
+          ability: m.def.id,
+          look: m.def.look,
+          vfx: 'death-mark-ready',
+          sfx: 'mark-ready',
+          x: me.x,
+          y: me.y,
+          radiusM: 1,
+        });
+      }
+    }
   }
 
   private updateClouds(dtS: number, host: AbilityHost): void {

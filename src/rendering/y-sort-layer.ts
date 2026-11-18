@@ -22,6 +22,11 @@ export class YSortLayer {
     this.container.addChild(child);
   }
 
+  /** A child's own depth key, without any bias. */
+  keyOf(child: ContainerChild): number {
+    return child.y + (this.footOffsets.get(child) ?? 0);
+  }
+
   /** Moves a child's depth by `by` (0 clears it): a see-through wall is pushed behind the furniture in its room. */
   setBias(child: ContainerChild, by: number): void {
     if (by === 0) this.bias.delete(child);

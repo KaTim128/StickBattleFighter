@@ -118,7 +118,14 @@ export class SceneAbilities implements AbilityHost {
     // A channelled ability (Fire Beam) also ends when its caster is stunned, knocked down or grabbed
     // by anything, not only by a blow: it never pours through a hit reaction (master plan B4).
     if (caster.cast?.def.breaksOnHit && !f.combatant.canAct) this.interrupt(f, true);
-    const ev = caster.update(stepS, this.world.driving(f.name));
+    // A stalk (Death Mark) breaks when its caster attacks: a melee blow, or any ability but the mark itself.
+    const stalking = this.world.markOf(f.name)?.phase === 'stalk';
+    if (stalking && (f.combo.attack !== null || (caster.cast && caster.cast.def.delivery.type !== 'mark')))
+      this.world.cancelStalk(f.name, this);
+    // Cooldowns, and the ultimate's recharge, wait for everything an ability set going to finish (owner, 20/11/2026).
+    const ongoing = this.world.executingIds(f.name);
+    if (f.buff && f.buffSourceId) ongoing.add(f.buffSourceId);
+    const ev = caster.update(stepS, this.world.driving(f.name), ongoing);
     if (ev.released) {
       const def = ev.released;
       if (def.delivery.type === 'leap') f.combatant.grantInvulnerability(def.delivery.airS + 0.1); // airborne: untouchable
@@ -328,10 +335,11 @@ export class SceneAbilities implements AbilityHost {
     f.abilityLift = heightM;
   }
 
-  buff(casterId: string, buff: BuffEffect | null): void {
+  buff(casterId: string, buff: BuffEffect | null, abilityId?: string): void {
     const f = this.byName(casterId);
     if (!f) return;
     f.buff = buff ? { ...buff, leftS: buff.durationS } : null;
+    f.buffSourceId = buff ? (abilityId ?? null) : null;
     f.combatant.damageTakenScale = buff ? buff.damageTakenFactor : 1;
     // Rampage Mode: the other abilities come back 25% sooner while it lasts.
     if (f.caster) {

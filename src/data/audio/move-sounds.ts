@@ -244,21 +244,25 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('bandpass', 700, 200, 0.4, 0.55, 0.8, 0, { drive: 0.6 }),
     noise('highpass', 3000, undefined, 0.1, 0.3, 1, 0.02),
   ],
-  // Shroud: Stalker Lunge's rush and stabs, Umbral Feint's slip and cut.
+  // Shroud: Stalker Lunge's rush and stabs.
   'lunge-rush': [noise('bandpass', 1500, 4500, 0.24, 0.4, 1.4, 0, { attack: 0.06 }), tone('sine', 220, 120, 0.2, 0.18)],
   'lunge-stab': [
     tone('sine', 150, 55, 0.1, 0.6),
     noise('bandpass', 3600, 2200, 0.05, 0.5, 1.6),
     noise('lowpass', 900, 300, 0.12, 0.3, 1, 0.01),
   ],
-  'feint-slip': [
-    noise('bandpass', 900, 3000, 0.2, 0.3, 2, 0, { attack: 0.05 }),
-    tone('triangle', 600, 300, 0.2, 0.12),
-    noise('highpass', 6500, undefined, 0.05, 0.12, 1, 0.1),
+  // Death Mark (owner, 20/11/2026): a low whispered chant as he crouches, the red sigil burning onto the prey, a
+  // soft breath when the stalk holds and his eyes light, a dry snap when it breaks, and the spent charge's cut.
+  'mark-chant': [
+    noise('bandpass', 450, 900, 0.3, 0.2, 2, 0, { attack: 0.12, flutter: 14 }),
+    tone('sine', 90, 70, 0.3, 0.3),
   ],
-  'feint-cut': [
-    noise('bandpass', 3800, 1600, 0.1, 0.45, 1.6),
-    tone('sine', 175, 70, 0.1, 0.45),
-    noise('lowpass', 700, 250, 0.1, 0.22, 1, 0.02),
+  'mark-place': [noise('bandpass', 2200, 800, 0.22, 0.3, 1.2, 0, { attack: 0.02 }), tone('sine', 140, 55, 0.35, 0.4)],
+  'mark-ready': [tone('sine', 70, 55, 0.5, 0.45), noise('bandpass', 1200, 500, 0.4, 0.18, 1.4, 0.05, { attack: 0.1 })],
+  'mark-break': [noise('bandpass', 1800, 600, 0.12, 0.3, 1.5), tone('triangle', 200, 90, 0.14, 0.2)],
+  'mark-spent': [
+    noise('bandpass', 3000, 1200, 0.1, 0.45, 1.6),
+    tone('sine', 160, 50, 0.22, 0.55),
+    noise('lowpass', 800, 250, 0.2, 0.25, 1, 0.02),
   ],
 };

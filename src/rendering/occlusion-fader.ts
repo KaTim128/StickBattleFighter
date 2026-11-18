@@ -10,11 +10,19 @@ import type { Container } from 'pixi.js';
  * works for moving furniture too. Presentation only.
  */
 export const OCCLUDED_ALPHA = 0.3;
+/** How far past the viewer's position a wall must start before it counts as in front of it, metres. */
+const BEHIND_M = 0.3;
 /** Seconds to fade fully in or out. */
 export const FADE_S = 0.2;
 
 export interface FadeTarget {
   readonly node: Container;
+  /**
+   * Where a wall stands, in world metres. A wall that does not lie south or east of the viewer (the camera looks
+   * in from the south-east) can never be between the viewer and the camera, so it never fades (owner, 20/11/2026:
+   * the back walls stay solid when the player walks up to them).
+   */
+  readonly rect?: { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
   /** Its depth key (YSortLayer zIndex = feet y): larger draws in front. */
   depth(): number;
 }
@@ -22,6 +30,8 @@ export interface FadeTarget {
 export interface Viewer {
   readonly node: Container;
   depth(): number;
+  /** Where the viewer stands in the world, metres (lets walls behind it stay solid). */
+  readonly at?: { readonly x: number; readonly y: number };
 }
 
 interface Box {
@@ -60,8 +70,8 @@ export class OcclusionFader {
     this.forced = nodes;
   }
 
-  add(node: Container, occludedAlpha?: number): void {
-    this.targets.push({ node, depth: () => node.zIndex });
+  add(node: Container, occludedAlpha?: number, rect?: FadeTarget['rect']): void {
+    this.targets.push({ node, depth: () => node.zIndex, ...(rect ? { rect } : {}) });
     if (occludedAlpha !== undefined) this.own.set(node, occludedAlpha);
   }
 
@@ -87,6 +97,7 @@ export class OcclusionFader {
       .map((v) => ({
         box: grown(inset(placed(v.node, v.node.getLocalBounds()), 0.08), this.options.grow ?? 0),
         depth: v.depth(),
+        at: v.at,
       }));
     const step = dtS / FADE_S;
     for (const t of this.targets) {
@@ -103,6 +114,8 @@ export class OcclusionFader {
         }
         const b = placed(node, local);
         for (const v of boxes) {
+          // A wall behind the viewer (north or west of it) cannot hide it, whatever its depth key says.
+          if (t.rect && v.at && isBehind(t.rect, v.at)) continue;
           if (depth > v.depth && overlaps(b, v.box)) {
             blocking = true;
             break;
@@ -115,6 +128,12 @@ export class OcclusionFader {
       node.alpha = a < goal ? Math.min(goal, a + step) : Math.max(goal, a - step);
     }
   }
+}
+
+/** A wall piece behind the viewer: running north-south and lying west of it, or east-west and lying north of it. */
+function isBehind(r: NonNullable<FadeTarget['rect']>, at: { x: number; y: number }): boolean {
+  const alongX = r.x1 - r.x0 >= r.y1 - r.y0;
+  return alongX ? r.y1 <= at.y + BEHIND_M : r.x1 <= at.x + BEHIND_M;
 }
 
 /** A node's local box moved to where it stands in its parent (scale and pivot included; rotation ignored). */

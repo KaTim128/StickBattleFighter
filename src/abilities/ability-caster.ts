@@ -57,6 +57,11 @@ export interface AbilityHudState {
 
 export class AbilityCaster {
   private readonly cooldowns = new Map<AbilitySlot, number>();
+  /**
+   * Cooldowns waiting for their ability to finish (owner, 20/11/2026): one starts when the cast, and everything the
+   * cast set going (a dash, a beam, a buff, a stalk), has fully ended, never before. The value is the full cooldown.
+   */
+  private readonly pending = new Map<AbilitySlot, number>();
   /** New cooldowns of the non-ultimate abilities are multiplied by this (a buff; 1 normally). */
   cooldownScale = 1;
   private meterValue = 0;
@@ -70,8 +75,20 @@ export class AbilityCaster {
     return this.kit[slot];
   }
 
+  /** Seconds of cooldown left; while the ability is still being executed, its full cooldown, not yet running. */
   cooldown(slot: AbilitySlot): number {
-    return this.cooldowns.get(slot) ?? 0;
+    return this.pending.get(slot) ?? this.cooldowns.get(slot) ?? 0;
+  }
+
+  /** Is this slot's ability still being executed (its cooldown, and the ultimate's recharge, have not begun)? */
+  executing(slot: AbilitySlot): boolean {
+    return this.pending.has(slot);
+  }
+
+  /** The slot a kit ability sits in, by its id (or null). */
+  slotOf(abilityId: string): AbilitySlot | null {
+    for (const s of ABILITY_SLOTS) if (this.kit[s].id === abilityId) return s;
+    return null;
   }
 
   get meter(): number {
@@ -99,7 +116,7 @@ export class AbilityCaster {
     const def = this.kit[slot];
     if (this.active || !ctx.canAct) return 'busy';
     if (ctx.airborne) return 'airborne';
-    if (this.cooldown(slot) > 0) return 'cooldown';
+    if (this.pending.has(slot) || (this.cooldowns.get(slot) ?? 0) > 0) return 'cooldown';
     if (slot === 'ult') return this.meterFull ? null : 'meter';
     if (ctx.stamina < def.staminaCost) return 'stamina';
     return null;
@@ -109,7 +126,8 @@ export class AbilityCaster {
   start(slot: AbilitySlot): AbilityDef {
     const def = this.kit[slot];
     this.active = { def, phase: 'windup', t: 0 };
-    this.cooldowns.set(slot, def.cooldownS * (slot === 'ult' ? 1 : this.cooldownScale));
+    this.cooldowns.set(slot, 0);
+    this.pending.set(slot, def.cooldownS * (slot === 'ult' ? 1 : this.cooldownScale));
     if (slot === 'ult') this.meterValue = 0;
     return def;
   }
@@ -125,7 +143,12 @@ export class AbilityCaster {
 
   /** Cut the cooldowns already running on the non-ultimate abilities (a buff starting). */
   scaleCooldowns(factor: number): void {
-    for (const s of ABILITY_SLOTS) if (s !== 'ult') this.cooldowns.set(s, this.cooldown(s) * factor);
+    for (const s of ABILITY_SLOTS) {
+      if (s === 'ult') continue;
+      this.cooldowns.set(s, (this.cooldowns.get(s) ?? 0) * factor);
+      const waiting = this.pending.get(s);
+      if (waiting !== undefined) this.pending.set(s, waiting * factor);
+    }
   }
 
   /** Damage dealt or taken fills the ultimate meter. */
@@ -141,6 +164,7 @@ export class AbilityCaster {
 
   reset(): void {
     for (const s of ABILITY_SLOTS) this.cooldowns.set(s, 0);
+    this.pending.clear();
     this.cooldownScale = 1;
     this.meterValue = 0;
     this.active = null;
@@ -149,11 +173,20 @@ export class AbilityCaster {
   /**
    * @param driven the delivery is still carrying the caster (a charge that runs until a wall): the
    * recovery waits half-way, so the fighter cannot act mid-charge and still gets its full settle.
+   * @param ongoing ids of abilities whose delivery is still under way after the cast (a dash, a beam, an assault, a
+   * buff that has not run out, a mark being stalked): their cooldowns have not started.
    */
-  update(dtS: number, driven = false): CastEvents {
-    for (const s of ABILITY_SLOTS) this.cooldowns.set(s, Math.max(0, this.cooldown(s) - dtS));
-    // Passive charge only between ultimates' casts.
-    if (!(this.active && this.active.def.slot === 'ult')) {
+  update(dtS: number, driven = false, ongoing: ReadonlySet<string> | null = null): CastEvents {
+    // A cooldown (or the ultimate's recharge) begins once its ability has fully finished: no cast, nothing ongoing.
+    for (const [slot, full] of this.pending) {
+      const stillCasting = this.active?.def.slot === slot;
+      if (stillCasting || ongoing?.has(this.kit[slot].id)) continue;
+      this.pending.delete(slot);
+      this.cooldowns.set(slot, full);
+    }
+    for (const s of ABILITY_SLOTS) this.cooldowns.set(s, Math.max(0, (this.cooldowns.get(s) ?? 0) - dtS));
+    // The ultimate recharges only while it is not being executed.
+    if (!this.pending.has('ult')) {
       this.meterValue = Math.min(this.kit.charge.max, this.meterValue + this.kit.charge.perSecond * dtS);
     }
     const events: CastEvents = { released: null, ended: null };

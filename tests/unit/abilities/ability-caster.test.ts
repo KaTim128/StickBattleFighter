@@ -132,3 +132,62 @@ describe('Phase 8: complete animation set for the kit', () => {
     expect(abilityPose(base, leap, 'recovery', 0.5, true)).not.toEqual(abilityPose(base, leap, 'recovery', 0.5, false));
   });
 });
+
+/** Owner, 20/11/2026: a cooldown or an ultimate recharge starts only once the ability has fully finished. */
+describe('cooldowns and recharge wait for the ability to finish', () => {
+  const runWith = (c: AbilityCaster, s: number, ongoing: ReadonlySet<string>) => {
+    for (let i = 0; i < Math.round(s * 60); i++) c.update(1 / 60, false, ongoing);
+  };
+
+  it('a cooldown does not tick during the cast, and starts when the cast ends', () => {
+    const c = new AbilityCaster(INFERNO_KIT);
+    const full = INFERNO_KIT.a1.cooldownS;
+    c.start('a1');
+    expect(c.executing('a1')).toBe(true);
+    expect(c.check('a1', READY)).toBe('busy');
+    run(c, INFERNO_KIT.a1.castS + INFERNO_KIT.a1.recoveryS - 0.1);
+    expect(c.cooldown('a1')).toBe(full); // still casting: not a second of it spent
+    run(c, 0.2);
+    expect(c.executing('a1')).toBe(false);
+    run(c, 1);
+    expect(c.cooldown('a1')).toBeLessThan(full);
+    expect(c.cooldown('a1')).toBeGreaterThan(full - 1.5);
+  });
+
+  it('a cooldown also waits while the delivery goes on after the cast (a dash, a beam, a buff, a stalk)', () => {
+    const c = new AbilityCaster(INFERNO_KIT);
+    const full = INFERNO_KIT.a1.cooldownS;
+    c.start('a1');
+    const ongoing = new Set([INFERNO_KIT.a1.id]);
+    runWith(c, INFERNO_KIT.a1.castS + INFERNO_KIT.a1.recoveryS + 3, ongoing); // cast over, delivery still running
+    expect(c.cooldown('a1')).toBe(full);
+    expect(c.executing('a1')).toBe(true);
+    expect(c.check('a1', READY)).toBe('cooldown');
+    runWith(c, 0.5, new Set());
+    expect(c.executing('a1')).toBe(false);
+    expect(c.cooldown('a1')).toBeLessThan(full);
+  });
+
+  it('the ultimate does not recharge while it is being executed, only after it has fully finished', () => {
+    const c = new AbilityCaster(INFERNO_KIT);
+    c.fillMeter();
+    c.start('ult');
+    expect(c.meter).toBe(0);
+    const ongoing = new Set([INFERNO_KIT.ult.id]);
+    runWith(c, INFERNO_KIT.ult.castS + INFERNO_KIT.ult.recoveryS + 5, ongoing);
+    expect(c.meter).toBe(0); // the effect is still on: no recharge
+    runWith(c, 5, new Set());
+    expect(c.meter).toBeGreaterThan(0); // now it fills again
+  });
+
+  it('other abilities keep cooling down while one is being executed', () => {
+    const c = new AbilityCaster(INFERNO_KIT);
+    c.start('a1');
+    run(c, INFERNO_KIT.a1.castS + INFERNO_KIT.a1.recoveryS + 0.1);
+    c.start('a2');
+    const a1 = c.cooldown('a1');
+    run(c, 0.5);
+    expect(c.cooldown('a1')).toBeLessThan(a1);
+    expect(c.cooldown('a2')).toBeGreaterThan(INFERNO_KIT.a2.cooldownS - 1); // its own only starts when it ends
+  });
+});

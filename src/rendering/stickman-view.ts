@@ -107,6 +107,8 @@ export class StickmanView {
   tickSlash(dtS: number): void {
     this.slashClockS += dtS;
   }
+  /** 0..1 red glow in the eyes of a mask (Death Mark charged). */
+  eyeGlow = 0;
   private slashColours = { colour: 0xe5242e, edge: 0xff9a9a };
   /** 0..1 how fast the fighter is moving: the flames stream back. */
   motion = 0;
@@ -390,6 +392,7 @@ export class StickmanView {
         tint: this.rage > 0 && muscled ? { colour: BRUTE.rage, k: this.rage * 0.3 } : undefined,
         drawHead,
         bodyWidthK: 1 + 0.6 * this.turn,
+        eyeGlow: this.eyeGlow,
       });
     } else {
       for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);

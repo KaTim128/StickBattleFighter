@@ -196,8 +196,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   bastionAnchor: { role: 'buff', minM: 0, maxM: 2.4, weight: 1.2, when: { selfHpBelow: 0.7 } },
   // Soul Tether: reel in and drain a target that is too close or runs.
   soulTether: { role: 'control', minM: 2, maxM: 9, weight: 1.1 },
-  // Umbral Feint: slip into shadow just before closing in for the knife work.
-  umbralFeint: { role: 'buff', minM: 1.5, maxM: 6, weight: 1.1 },
+  // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
+  deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };
 
 const designCache = new Map<string, BrainDesign>();

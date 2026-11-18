@@ -274,6 +274,19 @@ export interface AssaultDelivery {
   readonly finalFactor?: number;
 }
 
+/**
+ * Death Mark (Shroud, owner 20/11/2026): the caster marks the nearest enemy and stalks it for `stalkS` seconds,
+ * crouched and slowed to `moveFactor`. A hit on the caster, or an attack of its own, breaks the stalk. If it
+ * holds, the caster's next landed attack deals `damageFactor` times its damage, then the mark is spent.
+ */
+export interface MarkDelivery {
+  readonly type: 'mark';
+  readonly stalkS: number;
+  readonly damageFactor: number;
+  /** Walking speed while stalking, as a fraction of normal. */
+  readonly moveFactor: number;
+}
+
 /** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */
 export interface StrikeDelivery {
   readonly type: 'strike';
@@ -344,6 +357,7 @@ export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon' | 'shockwave'>;
 export type Delivery =
   | ProjectileDelivery
   | CloudDelivery
+  | MarkDelivery
   | DashDelivery
   | NovaDelivery
   | LeapDelivery
