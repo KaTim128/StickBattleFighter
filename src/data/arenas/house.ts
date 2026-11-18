@@ -104,34 +104,34 @@ export const HOUSE_ROOMS: readonly RoomDef[] = [
   room('dining', 'Dining room', 0, 13, 9, 19, 14, 'room', 0.85),
   room('kitchen', 'Kitchen', 0, 19, 9, 25, 14, 'room', 0.9),
   room('living', 'Living room', 0, 10, 14, 25, 21, 'room', 0.9),
-  room('hall', 'Entrance hall', 0, 25, 9, 30, 21, 'hall', 0.75),
+  room('hall', 'Entrance hall', 0, 25, 9, 29, 21, 'hall', 0.75),
   // Upper floor
   room('bed1', 'Bedroom 1', 1, 10, 9, 16, 14, 'room', 0.8),
   room('bath1', 'Bathroom 1', 1, 16, 9, 19, 14, 'bathroom', 0.8),
   room('corridor', 'Upstairs corridor', 1, 10, 14, 25, 16, 'corridor', 0.6),
   room('bed2', 'Bedroom 2', 1, 10, 16, 19, 21, 'room', 0.8),
   room('bath2', 'Bathroom 2', 1, 19, 16, 23, 21, 'bathroom', 0.8),
-  room('uphall', 'Upstairs hallway', 1, 25, 9, 30, 21, 'hall', 0.65),
+  room('uphall', 'Upstairs hallway', 1, 25, 9, 29, 21, 'hall', 0.65),
   // The lot (ground level, outdoors)
   room('frontyard', 'Front yard', 0, 0, 21, 40, 30, 'yard', 0.35, true),
   room('backyard', 'Backyard', 0, 0, 0, 40, 9, 'yard', 0.3, true),
   room('westyard', 'West side yard', 0, 0, 9, 10, 21, 'yard', 0.3, true),
-  room('eastyard', 'East side yard', 0, 30, 9, 40, 21, 'yard', 0.3, true),
+  room('eastyard', 'East side yard', 0, 29, 9, 40, 21, 'yard', 0.3, true),
   room('shed', 'Shed', 0, 3, 2, 7, 6, 'shed', 0.4),
   room('street', 'Street', 0, 0, 30, 40, 34, 'yard', 0.25, true),
 ];
 
-const STAIR_X0 = 26;
-const STAIR_X1 = 28.4;
+const STAIR_X0 = 27.3;
+const STAIR_X1 = 28.7;
 const STAIR_TOP_Y = 10.5;
-const STAIR_BOTTOM_Y = 15;
+const STAIR_BOTTOM_Y = 14;
 
 const wallsGround: WallDef[] = [
   // Outer walls of the house (gaps: back door in the kitchen, front door in the hall)
-  ...wallH(0, 9, 10 - T / 2, 30 + T / 2, [[21.2, 22.4]]),
-  ...wallH(0, 21, 10 - T / 2, 30 + T / 2, [[26.4, 27.6]]),
+  ...wallH(0, 9, 10 - T / 2, 29 + T / 2, [[21.2, 22.4]]),
+  ...wallH(0, 21, 10 - T / 2, 29 + T / 2, [[26.4, 27.6]]),
   ...wallV(0, 10, 9, 21),
-  ...wallV(0, 30, 9, 21),
+  ...wallV(0, 29, 9, 21),
   // Interior
   ...wallH(0, 14, 10, 25, [
     [11, 12.2],
@@ -175,10 +175,10 @@ function fenceV(x: number, y0: number, y1: number): WallDef[] {
 }
 
 const wallsUpper: WallDef[] = [
-  ...wallH(1, 9, 10 - T / 2, 30 + T / 2),
-  ...wallH(1, 21, 10 - T / 2, 30 + T / 2),
+  ...wallH(1, 9, 10 - T / 2, 29 + T / 2),
+  ...wallH(1, 21, 10 - T / 2, 29 + T / 2),
   ...wallV(1, 10, 9, 21),
-  ...wallV(1, 30, 9, 21),
+  ...wallV(1, 29, 9, 21),
   // Corridor walls (doors into both bedrooms)
   ...wallH(1, 14, 10, 25, [[12, 13.2]]),
   ...wallH(1, 16, 10, 23, [[12, 13.2]]),
@@ -191,9 +191,9 @@ const wallsUpper: WallDef[] = [
   ...wallV(1, 25, 9, 14),
   ...wallV(1, 25, 16, 21),
   // The stairwell's railing upstairs (open at the top, where the stairs arrive)
-  seg(1, STAIR_X0 - 0.15, STAIR_TOP_Y, STAIR_X0, STAIR_BOTTOM_Y + 0.15, 'rail'),
-  seg(1, STAIR_X1, STAIR_TOP_Y, STAIR_X1 + 0.15, STAIR_BOTTOM_Y + 0.15, 'rail'),
-  seg(1, STAIR_X0, STAIR_BOTTOM_Y, STAIR_X1, STAIR_BOTTOM_Y + 0.15, 'rail'),
+  seg(1, STAIR_X0 - 0.15, STAIR_TOP_Y, STAIR_X0, STAIR_BOTTOM_Y + 0.5, 'rail'),
+  seg(1, STAIR_X1, STAIR_TOP_Y, STAIR_X1 + 0.15, STAIR_BOTTOM_Y + 0.5, 'rail'),
+  seg(1, STAIR_X0, STAIR_BOTTOM_Y + 0.35, STAIR_X1, STAIR_BOTTOM_Y + 0.5, 'rail'),
 ];
 
 export const HOUSE_WALLS: readonly WallDef[] = [...wallsGround, ...wallsUpper];
@@ -339,10 +339,9 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('toilet', 0, 10.3, 9.3, 11.0, 10.1, 0.45, WHITE),
   item('basin', 0, 11.7, 9.3, 12.5, 9.8, 0.85, WHITE),
   // ---------------------------------------------------------------- Entrance hall
-  item('side-table', 0, 29.2, 16, 29.75, 18, 0.8, WOOD),
-  item('cupboard', 0, 29.3, 19.2, 29.85, 20.4, 2.0, DARK_WOOD, {
+  item('cupboard', 0, 28.3, 19.2, 28.85, 20.4, 2.0, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('cupboard', 0.85, 0.3, 0.9, 29.6, 19.8, 'w'),
+    hide: hide('cupboard', 0.85, 0.3, 0.9, 28.6, 19.8, 'w'),
   }),
   // ---------------------------------------------------------------- Bedroom 1
   item('bed', 1, 11.4, 9.4, 13.6, 11.8, BED_TOP_M, 0x8a8aa0, {
@@ -381,25 +380,25 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('toilet', 1, 22.1, 16.3, 22.7, 17.1, 0.45, WHITE),
   item('basin', 1, 19.4, 16.3, 20.2, 16.8, 0.85, WHITE),
   // ---------------------------------------------------------------- Upstairs hall
-  item('cupboard', 1, 29.3, 17, 29.85, 18.4, 2.0, DARK_WOOD, {
+  item('cupboard', 1, 28.3, 17, 28.85, 18.4, 2.0, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('cupboard', 0.85, 0.3, 0.9, 29.65, 17.7, 'w'),
+    hide: hide('cupboard', 0.85, 0.3, 0.9, 28.65, 17.7, 'w'),
   }),
   // ---------------------------------------------------------------- Front yard
   item('lawn', 0, 0, 21, 40, 30, 0.02, 0x2a4a2c, { solid: false }),
   item('path', 0, 26.4, 21.1, 27.6, 30, 0.03, 0x6a6a64, { solid: false }),
   item('path', 0, 31, 21, 40, 30, 0.03, 0x4c4c50, { solid: false }),
-  item('bush', 0, 12, 21.5, 14.4, 22.9, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 13.2, 22.2, 's') }),
-  item('bush', 0, 16, 21.5, 18.4, 22.9, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 17.2, 22.2, 's') }),
-  item('bush', 0, 22.6, 21.5, 24.8, 22.9, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 23.7, 22.2, 's') }),
+  item('bush', 0, 12, 21.5, 14.4, 22.9, 1.1, 0x244a2a),
+  item('bush', 0, 16, 21.5, 18.4, 22.9, 1.1, 0x244a2a),
+  item('bush', 0, 22.6, 21.5, 24.8, 22.9, 1.1, 0x244a2a),
   item('tree', 0, 4, 24, 5, 25, 3.4, 0x4a3a2a, { blocksSight: false }),
   item('tree', 0, 18.5, 26, 19.5, 27, 3.4, 0x4a3a2a, { blocksSight: false }),
   item('car', 0, 32, 23, 37.5, 25.6, 1.4, 0x3a4a6a, { blocksSight: true }),
   item('bin', 0, 30.6, 21.7, 31.3, 22.4, 1.0, 0x2a2a2e),
   // ---------------------------------------------------------------- Backyard
   item('lawn', 0, 0, 0, 40, 9, 0.02, 0x233f26, { solid: false }),
-  item('bush', 0, 14, 7.2, 16.6, 8.5, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 15.3, 7.8, 'n') }),
-  item('bush', 0, 24, 7.2, 26.6, 8.5, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 25.3, 7.8, 'n') }),
+  item('bush', 0, 14, 7.2, 16.6, 8.5, 1.1, 0x244a2a),
+  item('bush', 0, 24, 7.2, 26.6, 8.5, 1.1, 0x244a2a),
   item('tree', 0, 34, 3, 35, 4, 3.6, 0x4a3a2a),
   item('garden-table', 0, 16, 3, 19, 5, 0.75, WOOD),
   item('chair', 0, 15.2, 3.6, 15.8, 4.2, 0.5, DARK_WOOD),
@@ -408,14 +407,13 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   // ---------------------------------------------------------------- Shed
   item('shed-cabinet', 0, 5.8, 2.3, 6.8, 3.2, 1.9, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('shed-cabinet', 0.85, 0.4, 0.8, 6.3, 2.8, 's'),
   }),
-  item('box', 0, 3.3, 2.3, 4.5, 3.4, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 3.9, 2.85, 's') }),
+  item('box', 0, 3.3, 2.3, 4.5, 3.4, 0.5, 0xb59a6a),
   // ---------------------------------------------------------------- Side yards
-  item('bush', 0, 2, 12, 3.4, 13.6, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 2.7, 12.8, 'e') }),
+  item('bush', 0, 2, 12, 3.4, 13.6, 1.1, 0x244a2a),
   item('tree', 0, 5, 16, 6, 17, 3.4, 0x4a3a2a),
   item('bench', 0, 33, 12, 34.8, 12.8, 0.5, DARK_WOOD),
-  item('bush', 0, 34, 16, 35.6, 17.6, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 34.8, 16.8, 'w') }),
+  item('bush', 0, 34, 16, 35.6, 17.6, 1.1, 0x244a2a),
   // ---------------------------------------------------------------- More furniture and hiding places (owner, 18/11/2026)
   item('bin', 0, 12.3, 12.6, 12.8, 13.1, 0.5, 0x4a5a4a),
   item('side-table', 0, 18.2, 9.3, 18.8, 9.9, 0.6, WOOD),
@@ -432,23 +430,21 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('nightstand', 1, 13.85, 9.4, 14.45, 10, 0.5, WOOD),
   item('bookshelf', 1, 16.6, 16.25, 18.4, 16.85, 2.0, DARK_WOOD, { blocksSight: true }),
   item('chest', 1, 11.5, 18.3, 12.9, 18.9, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 12.2, 18.6, 'n') }),
-  item('chest', 1, 28.6, 19, 29.8, 19.8, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 29.2, 19.4, 'w') }),
-  item('bush', 0, 7.5, 25, 9.9, 26.3, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 8.7, 25.65, 's') }),
-  item('bush', 0, 30, 7.2, 32.6, 8.5, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 31.3, 7.8, 'n') }),
-  item('bush', 0, 36, 12, 37.6, 13.6, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 36.8, 12.8, 'w') }),
+  item('chest', 1, 27.4, 20, 28.7, 20.7, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 28, 20.35, 'n') }),
+  item('bush', 0, 7.5, 25, 9.9, 26.3, 1.1, 0x244a2a),
+  item('bush', 0, 30, 7.2, 32.6, 8.5, 1.1, 0x244a2a),
+  item('bush', 0, 36, 12, 37.6, 13.6, 1.1, 0x244a2a),
   item('bench', 0, 28, 3, 29.8, 3.8, 0.5, DARK_WOOD),
   item('tree', 0, 30, 27, 31, 28, 3.4, 0x4a3a2a),
   item('tree', 0, 10, 5, 11, 6, 3.6, 0x4a3a2a),
   item('shelf', 0, 10.25, 11.3, 10.7, 12.5, 1.6, DARK_WOOD, { blocksSight: true }),
   item('bookshelf', 0, 14.2, 20.25, 15.8, 20.85, 2.0, DARK_WOOD, { blocksSight: true }),
   item('floor-lamp', 0, 23.5, 15.3, 24, 15.8, 1.6, 0xe8d28a),
-  item('floor-lamp', 0, 29.3, 10, 29.8, 10.5, 1.6, 0xe8d28a),
-  item('bin', 0, 29.35, 14.3, 29.8, 14.75, 0.5, 0x4a5a4a),
   item('shelf', 1, 15.45, 12.6, 15.85, 13.8, 1.6, DARK_WOOD, { blocksSight: true }),
   item('bin', 1, 18.4, 11.4, 18.8, 11.8, 0.5, 0x4a5a4a),
   item('floor-lamp', 1, 14.2, 19.5, 14.7, 20, 1.6, 0xe8d28a),
-  item('bench', 1, 26.3, 19.2, 28.1, 19.8, 0.5, DARK_WOOD),
-  item('floor-lamp', 1, 29.3, 15.2, 29.8, 15.7, 1.6, 0xe8d28a),
+  item('bench', 1, 25.6, 19.2, 27.2, 19.8, 0.5, DARK_WOOD),
+  item('floor-lamp', 1, 28.3, 15.8, 28.8, 16.3, 1.6, 0xe8d28a),
   item('bench', 0, 20, 22.8, 21.8, 23.6, 0.5, DARK_WOOD),
   item('tree', 0, 36, 5, 37, 6, 3.6, 0x4a3a2a),
   item('tree', 0, 1, 19, 2, 20, 3.4, 0x4a3a2a),
@@ -460,14 +456,12 @@ export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
   { id: 't2', kind: 'can', floor: 0, x: 21.5, y: 12.0 },
   { id: 't3', kind: 'toy', floor: 0, x: 16, y: 17.4 },
   { id: 't4', kind: 'bottle', floor: 0, x: 15, y: 11.8 },
-  { id: 't5', kind: 'can', floor: 0, x: 29.5, y: 17 },
+  { id: 't5', kind: 'can', floor: 0, x: 27.6, y: 17 },
   { id: 't6', kind: 'toy', floor: 1, x: 12, y: 15 },
   { id: 't7', kind: 'bottle', floor: 1, x: 14.6, y: 12.8 },
   { id: 't8', kind: 'can', floor: 1, x: 22.4, y: 18.3 },
-  { id: 't9', kind: 'toy', floor: 1, x: 27, y: 18 },
+  { id: 't9', kind: 'toy', floor: 1, x: 26.4, y: 19.5 },
   { id: 't10', kind: 'bottle', floor: 0, x: 8, y: 14 },
-  { id: 't11', kind: 'can', floor: 0, x: 20, y: 26 },
-  { id: 't12', kind: 'toy', floor: 0, x: 24, y: 6 },
 ];
 
 /** Who is in the house: the standard dummy as the player, the masked slasher as the one hunter (Phase 2). */

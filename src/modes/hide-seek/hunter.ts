@@ -473,6 +473,8 @@ export class Hunter implements Placed {
     const last = this.lastKnown;
     let best: { room: string; to: Waypoint; cost: number } | null = null;
     for (const r of this.house.rooms) {
+      // The player never goes outside, so he does not waste time searching the yards.
+      if (r.outdoors) continue;
       if (ctx.timeS - (this.searched.get(r.id) ?? -1e9) < FORGET_S) continue;
       const to = {
         floor: r.floor,

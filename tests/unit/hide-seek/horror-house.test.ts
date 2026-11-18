@@ -134,11 +134,11 @@ describe('hiding under a bed (owner, 18/11/2026): the whole body fits and is out
 });
 
 describe('the bigger house has more to hide in', () => {
-  it('has a fair number of hiding places (fewer after the rooms were reduced), spread over both floors and the garden', () => {
+  it('has a fair number of hiding places (fewer after the rooms were reduced), spread over both floors (none outdoors)', () => {
     const spots = HOUSE.furniture.filter((f) => f.hide);
-    expect(spots.length).toBeGreaterThanOrEqual(26);
-    expect(spots.filter((f) => f.floor === 1).length).toBeGreaterThanOrEqual(10);
-    expect(spots.filter((f) => f.floor === 0 && world(f)).length).toBeGreaterThanOrEqual(8);
+    expect(spots.length).toBeGreaterThanOrEqual(18);
+    expect(spots.filter((f) => f.floor === 1).length).toBeGreaterThanOrEqual(6);
+    expect(spots.filter((f) => f.floor === 0 && world(f)).length).toBe(0);
   });
 
   it('doors are two thirds of the width they were', () => {

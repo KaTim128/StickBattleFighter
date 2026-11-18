@@ -99,3 +99,26 @@ describe('player movement and stealth speeds (section D)', () => {
     expect(g.timeS).toBe(0);
   });
 });
+
+describe('the game is played inside the house (owner, 18/11/2026)', () => {
+  it('the player cannot walk out of the front door or leave the building', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    // Stand in the hall facing the front door (south wall, x 26.4 to 27.6) and walk straight out.
+    g.player.floor = 0;
+    g.player.x = 27;
+    g.player.y = 19;
+    walk(g, { x: 0, y: 1 }, 6);
+    expect(g.world.roomAt(0, g.player.x, g.player.y)?.outdoors).not.toBe(true);
+    expect(g.player.y).toBeLessThan(21);
+    // Through the back door too (kitchen, north wall x 21.2 to 22.4).
+    g.player.x = 21.8;
+    g.player.y = 10.5;
+    walk(g, { x: 0, y: -1 }, 6);
+    expect(g.world.roomAt(0, g.player.x, g.player.y)?.outdoors).not.toBe(true);
+  });
+
+  it('there are no hiding places outdoors, and the hunter does not search the yards', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    for (const s of g.spots) expect(g.world.roomAt(s.floor, s.spec.at.x, s.spec.at.y)?.outdoors, s.id).not.toBe(true);
+  });
+});

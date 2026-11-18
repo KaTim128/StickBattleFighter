@@ -856,3 +856,13 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Found by testing.** Moving a throwable next to a hiding place made the act key pick the object up instead of hiding (pickup has priority over hiding); the can now lies away from every exit.
 **Status.** ACCEPTED, owner to review in play.
 
+### TD-107: Indoors only, and thinner stairs (owner 18/11/2026) — ACCEPTED
+**Owner request.** The player must not be able to leave the house (outside is not a place to hide), and the stairs should be thinner, like a smaller house.
+**Decision.** A step that would take the player into a yard or onto the street is undone (axis by axis, so they slide along the door rather than stick): the front and back doors still open, but the player cannot pass. There are no hiding places outdoors any more (the bushes and the shed cabinet and box are decoration only), the two outdoor throwables were removed, and the hunter no longer searches the yards. Hiding places are now 20, all indoors. The staircase is 1.5 m wide (was 2.4) and 3.5 m long (was 4.5) in plan units, so a steeper, narrower flight; the upstairs rail at its foot moved back so a body can step off the bottom of the ramp. Tests: the player cannot walk out of the front or back door, no hiding place is outdoors, the stair tests follow the stairs' own size.
+**Status.** ACCEPTED, owner to review in play.
+
+### TD-108: Stairs against the wall, tighter hall (owner 18/11/2026) — ACCEPTED
+**Owner request.** The stairs should not stand in the middle: they should hug a wall, the hall should be tighter, and the stairs must not block or sit close to a door.
+**Decision.** The hall and the upstairs hallway are 4 m wide (were 5), the shared east wall moved in one metre (the side yard grew to meet it), and the stairs (1.4 m wide, 3.5 m long) run along that east wall, their outer rail against it. The kitchen door is now 2.3 m (plan) from the stairs and the front door and living-room arch are further. Furniture that stood on the east side of the hall, a lamp, a bin and a side table, was removed or moved; the upstairs cupboard, chest, bench, lamp and the downstairs cupboard were moved to fit; a floor chest now sits at the south end of the upstairs hallway. Tests: the stairs touch a wall, every door and arch is at least 0.6 m (plan; 1.0 m real) from them on both floors, and the hall is at most about three stair-widths wide; the stairs movement and visibility tests follow the stairs' own position.
+**Status.** ACCEPTED, owner to review in play.
+

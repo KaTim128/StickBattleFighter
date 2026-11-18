@@ -141,6 +141,12 @@ export class HideSeekGame {
     return this.events.splice(0, this.events.length);
   }
 
+  /** Is this body outside the house (in a yard or on the street)? The player may not go there. */
+  private outdoors(p: Placed): boolean {
+    const room = this.world.roomAt(p.floor, p.x, p.y);
+    return room === null || room.outdoors === true;
+  }
+
   /** The player's walking speed for a posture. */
   static speedFor(posture: Posture): number {
     return posture === 'run' ? RUN_MPS : posture === 'crouch' ? CROUCH_MPS : posture === 'hidden' ? 0 : WALK_MPS;
@@ -213,6 +219,21 @@ export class HideSeekGame {
     const fromX = p.x;
     const fromY = p.y;
     const r = this.world.move(p, dx, dy, BODY_RADIUS_M);
+    // The game is played inside the house (owner, 18/11/2026): a step that would take the player outdoors is undone.
+    if (this.outdoors(p)) {
+      p.x = fromX;
+      p.y = fromY;
+      this.world.move(p, dx, 0, BODY_RADIUS_M);
+      if (this.outdoors(p)) {
+        p.x = fromX;
+        p.y = fromY;
+        this.world.move(p, 0, dy, BODY_RADIUS_M);
+        if (this.outdoors(p)) {
+          p.x = fromX;
+          p.y = fromY;
+        }
+      }
+    }
     // A person opens a door by walking into it.
     if (r.pushedDoor) this.setDoor(r.pushedDoor, true);
     const moved = Math.hypot(p.x - fromX, p.y - fromY);

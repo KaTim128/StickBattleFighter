@@ -54,7 +54,7 @@ describe('the house data (Phase 2 section A)', () => {
       if (f.hide) expect(world.roomAt(f.floor, f.hide.at.x, f.hide.at.y), `${f.id} hide spot`).not.toBeNull();
     }
     const kinds = new Set(HOUSE_PLAN.furniture.flatMap((f) => (f.hide ? [f.hide.kind] : [])));
-    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'box', 'curtain', 'shower-curtain', 'bush'])
+    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain', 'shower-curtain'])
       expect(kinds.has(k as never), k).toBe(true);
   });
 
@@ -104,7 +104,8 @@ describe('movement, doors and stairs', () => {
 
   it('walking up the stairs lifts the body and puts it on the upper floor; walking down brings it back', () => {
     const w = new HouseWorld(HOUSE_PLAN);
-    const p = placed(0, 27.2, 16);
+    const r = HOUSE_PLAN.stairs[0]!.ramp;
+    const p = placed(0, (r.x0 + r.x1) / 2, r.y1 + 2);
     const zs: number[] = [];
     for (let i = 0; i < 140 && p.floor === 0; i++) {
       w.move(p, 0, -0.05);
@@ -118,17 +119,18 @@ describe('movement, doors and stairs', () => {
     expect(p.onStairs).toBeNull();
     for (let i = 0; i < 160 && p.floor === 1; i++) w.move(p, 0, 0.05);
     expect(p.floor).toBe(0);
-    expect(p.y).toBeGreaterThan(15);
+    expect(p.y).toBeGreaterThan(HOUSE_PLAN.stairs[0]!.ramp.y1);
     expect(p.z).toBe(0);
   });
 
   it('the ground floor stairs cannot be entered from the side', () => {
     const w = new HouseWorld(HOUSE_PLAN);
-    const p = placed(0, 29, 13); // beside the stairs, in the hall
-    for (let i = 0; i < 40; i++) w.move(p, -0.1, 0);
+    const r = HOUSE_PLAN.stairs[0]!.ramp;
+    const p = placed(0, r.x0 - 1, (r.y0 + r.y1) / 2); // beside the stairs, in the hall
+    for (let i = 0; i < 40; i++) w.move(p, 0.1, 0);
     expect(p.floor).toBe(0);
     expect(p.onStairs).toBeNull();
-    expect(p.x).toBeGreaterThan(28.5);
+    expect(p.x).toBeLessThan(r.x0);
   });
 });
 

@@ -4,6 +4,7 @@ import { HIDDEN_PEEK_M, HideSeekGame, NO_INPUT } from '../../../src/modes/hide-s
 import { exitPoint, exposure, hideSpots } from '../../../src/modes/hide-seek/hiding';
 import { THROW_RANGE_M } from '../../../src/modes/hide-seek/props';
 import { VIEW_DISTANCE_M, Visibility } from '../../../src/modes/hide-seek/visibility';
+import { HouseWorld } from '../../../src/modes/hide-seek/world';
 
 const STEP = 1 / 60;
 const press = (g: HideSeekGame) => g.step(STEP, { ...NO_INPUT, interactPress: true });
@@ -14,13 +15,16 @@ const idle = (g: HideSeekGame, seconds: number, extra: object = {}) => {
 describe('hiding places (sections B and F)', () => {
   const spots = hideSpots(HOUSE_PLAN);
 
-  it('there are hiding places of every kind the brief lists, on both floors and outdoors', () => {
+  it('there are hiding places of every kind the brief lists, on both floors (all indoors)', () => {
     const kinds = new Set(spots.map((s) => s.spec.kind));
-    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'box', 'curtain', 'shower-curtain', 'bush'])
+    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain', 'shower-curtain'])
       expect(kinds.has(k as never), k).toBe(true);
     expect(spots.some((s) => s.floor === 1)).toBe(true);
     expect(spots.some((s) => s.floor === 0)).toBe(true);
-    expect(spots.length).toBeGreaterThanOrEqual(20);
+    expect(spots.length).toBeGreaterThanOrEqual(18);
+    // The game is played inside the house: no hiding place is in a yard.
+    const w = new HouseWorld(HOUSE_PLAN);
+    for (const sp of spots) expect(w.roomAt(sp.floor, sp.spec.at.x, sp.spec.at.y)?.outdoors, sp.id).not.toBe(true);
   });
 
   it('every hiding place can be entered and left, and the way out is a free spot', () => {
@@ -61,7 +65,7 @@ describe('hiding places (sections B and F)', () => {
       expect(g.takeEvents().some((e) => e.kind === 'hide-exit' && e.loudness > 0)).toBe(true);
     }
     expect(noise.wardrobe).toBeGreaterThan(noise['shower-curtain']!);
-    expect(noise['under-bed']).toBeGreaterThan(noise.box!);
+    expect(noise['under-bed']).toBeGreaterThan(noise.curtain!);
     expect(new Set(Object.values(noise)).size).toBeGreaterThan(3); // different places, different noise
   });
 

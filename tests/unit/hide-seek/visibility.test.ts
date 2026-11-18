@@ -77,12 +77,14 @@ describe('room-based visibility (section C)', () => {
   it('on the stairs the other floor is revealed progressively; at the bottom it stays hidden', () => {
     const { world, vis } = setup();
     const s = HOUSE_PLAN.stairs[0]!;
-    const onRamp = (y: number): Viewer => ({ floor: 0, x: 27.2, y, onStairs: s.id, stairT: world.rampT(s, 27.2, y) });
-    vis.settle(onRamp(14.9));
+    const cx = (s.ramp.x0 + s.ramp.x1) / 2;
+    const bottom = s.ramp.y1;
+    const onRamp = (y: number): Viewer => ({ floor: 0, x: cx, y, onStairs: s.id, stairT: world.rampT(s, cx, y) });
+    vis.settle(onRamp(bottom - 0.1));
     expect(vis.floorOpacity(1)).toBeLessThan(0.05);
-    vis.settle(onRamp(12.6));
+    vis.settle(onRamp(bottom - 1.4));
     const mid = vis.floorOpacity(1);
-    vis.settle(onRamp(11));
+    vis.settle(onRamp(bottom - 3));
     const high = vis.floorOpacity(1);
     expect(high).toBeGreaterThan(mid);
     expect(high).toBeGreaterThan(0.6);
