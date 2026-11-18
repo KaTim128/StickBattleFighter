@@ -1,6 +1,5 @@
 import { writeFileSync } from 'node:fs';
 import { beforeAll, it } from 'vitest';
-import { ABILITY_KITS } from '../../../src/abilities/kits';
 import { equippedIds } from '../../../src/abilities/loadout';
 import { loadCharacter } from '../../../src/characters/load';
 import { initPhysics } from '../../../src/physics/physics-world';
