@@ -80,6 +80,8 @@ export class FighterEntity {
   } | null = null;
   /** A second jump is still available (capability canDoubleJump). */
   airJumpReady = false;
+  /** The jump began at a sprint, so the sprint speed carries through the air (B11). */
+  airSprint = false;
   /** Hit flash time left, seconds, and the colour it flashes (the striker's Effects Profile). */
   flashS = 0;
   flashColour = 0xffffff;

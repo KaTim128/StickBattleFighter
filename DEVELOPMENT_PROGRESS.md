@@ -780,3 +780,6 @@ Full list in spec §21. Still open:
 2. Owner playtest of Phase 5 and approval or changes to the provisional stats (OQ-05, TD-030).
 3. **Phase 6:** shared ability framework, three abilities and an ultimate for the greybox fighter, stamina costs and cooldowns (needs OQ-04).
 3. Owner: OQ-10 (performance targets), OQ-16 (art direction), when convenient.
+
+### 18/11/2026 Phase 1 Batch B: B11 movement stability
+Coyote time and sprint momentum in jumps (TD-084). Gate: lint no errors (1 warning, 1 info baseline), typecheck clean, 613 tests pass. Next: B13 fifth ability per fighter and four-of-five loadout.

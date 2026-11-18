@@ -517,3 +517,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] AI target choice rules and stickiness (`target-choice.test.ts`); a Titan AI clears skeletons on top of it while Necro is far, and goes for Necro when he is close (fails without the wiring)
 - [x] Hunting Frenzy: 4 s, +17% speed, enemy sees 1 m; spectators are never darkened (`shroud.test.ts`, `vision-veil.test.ts`)
 - [ ] Owner check: Hunting Frenzy as the player being darkened (the whole screen near black except around your fighter), and Shroud's feel at the new crit values
+- [x] Coyote time: a jump just after stepping off a ledge works, never twice (`coyote.test.ts`, `coyote-jump.test.ts`)
+- [x] A sprinting jump keeps sprint speed in the air (`coyote-jump.test.ts`)
+- [ ] Owner check: running jumps and ledge jumps feel natural; report any remaining "floating"

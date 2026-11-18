@@ -698,3 +698,9 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Result (final configuration, same 72 fights).** Titan 63% (14, 14 and 17 of 24 wins against Inferno, Necro and Shroud). The probe is noisy by about 6 to 10 points.
 **Test changes.** `rampage.test.ts` and `fourth-abilities.test.ts` checked Titan's damage against fixed numbers (over 200, over 140, over 100); they now compare against his kit's own listed damage, so later tuning does not break them. The rule being tested is unchanged.
 **Status.** ACCEPTED; B17 re-measures all four fighters together.
+
+### TD-084: Movement stability: coyote time and running-jump momentum (master plan B11) — ACCEPTED
+**Context.** Jumps felt unforgiving off edges, and a sprinting jump lost speed in the air (measured 7.61 m/s on the ground, 5.25 m/s airborne), which broke "run and jump together".
+**Decision.** (1) Coyote time: a fighter that has just walked off a ledge (not rising) may still start a ground jump for 0.12 s (`COYOTE_S`, `canStartJump` in `movement.ts`); a jump never starts twice. (2) A jump begun while sprinting sets `airSprint`, so the sprint speed cap holds in the air until landing. Pure rules are unit-tested; the scene behaviour is tested in `coyote-jump.test.ts`.
+**Alternatives.** Raising the walking cap in the air (rejected: would speed up falls from ledges); jump buffering (the one-step queued edge already exists).
+**Status.** ACCEPTED. The "floating" report could not be reproduced beyond this; open for owner feel feedback.

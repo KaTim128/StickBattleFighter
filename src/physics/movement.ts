@@ -49,17 +49,39 @@ export interface HopState {
    * furniture). 0 or absent = the floor. Stepping off a higher surface starts a fall.
    */
   floorM?: number;
+  /** Seconds of coyote time left while falling (see `COYOTE_S`); absent when grounded or not yet started. */
+  coyoteS?: number;
 }
 
 export function isAirborne(hop: HopState): boolean {
   return hop.heightM > (hop.floorM ?? 0) + 1e-4 || hop.verticalSpeedMps > 0;
 }
 
-/** One fixed step of the jump hop. A jump only starts from something to stand on. */
+/**
+ * Coyote time (master plan Phase 1 B11): a jump still registers for this long after the fighter steps
+ * off an edge (a furniture top, a ledge), so running off and jumping in the same breath works. It is
+ * granted only when the fall begins from walking off, never while rising from a jump or a knock-up and
+ * never after a jump, so it cannot become a double jump.
+ */
+export const COYOTE_S = 0.12;
+
+/**
+ * Whether a jump may start from this state: standing on something, or just stepped off it. `coyoteS`
+ * is absent on the very first airborne step of a fall that began by walking off (a full window), and
+ * counts down after that; it is 0 once a jump has been used or the fighter was launched upward.
+ */
+export function canStartJump(hop: HopState): boolean {
+  if (!isAirborne(hop)) return true;
+  if (hop.verticalSpeedMps > 0) return false;
+  return hop.coyoteS === undefined || hop.coyoteS > 0;
+}
+
+/** One fixed step of the jump hop. A jump only starts from something to stand on (or just stepped off it). */
 export function stepHop(hop: HopState, jumpPressed: boolean, tuning: HopTuning, stepS: number): HopState {
   let { heightM, verticalSpeedMps } = hop;
   const floorM = hop.floorM ?? 0;
-  if (jumpPressed && !isAirborne(hop)) verticalSpeedMps = tuning.jumpSpeedMps;
+  const start = jumpPressed && canStartJump(hop);
+  if (start) verticalSpeedMps = tuning.jumpSpeedMps;
   if (heightM > floorM || verticalSpeedMps > 0) {
     verticalSpeedMps -= tuning.hopGravityMps2 * stepS;
     heightM += verticalSpeedMps * stepS;
@@ -68,5 +90,17 @@ export function stepHop(hop: HopState, jumpPressed: boolean, tuning: HopTuning, 
       verticalSpeedMps = 0;
     }
   } else heightM = floorM;
-  return floorM > 0 ? { heightM, verticalSpeedMps, floorM } : { heightM, verticalSpeedMps };
+  const next: HopState = floorM > 0 ? { heightM, verticalSpeedMps, floorM } : { heightM, verticalSpeedMps };
+  if (isAirborne(next)) {
+    // The window opens on the first step of a fall that began by walking off; a jump or an upward launch
+    // spends it, and it then counts down.
+    next.coyoteS = start
+      ? 0
+      : hop.coyoteS === undefined
+        ? hop.verticalSpeedMps > 0
+          ? 0
+          : Math.max(0, COYOTE_S - stepS)
+        : Math.max(0, hop.coyoteS - stepS);
+  }
+  return next;
 }

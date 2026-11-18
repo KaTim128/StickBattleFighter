@@ -64,7 +64,7 @@ import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
 import type { HudFighter, TopHudState } from '../../interface/top-hud';
 import { collapseLieS, firmHoldS } from '../../physics/climbing';
-import { stepHop, stepVelocity } from '../../physics/movement';
+import { canStartJump, stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
 import { type ArenaView, buildArenaView } from '../../rendering/arena-view';
 import { DebrisView } from '../../rendering/debris-view';
@@ -2118,7 +2118,7 @@ export class FightArenaScene implements ArenaScene {
       const isIdle = move.x === 0 && move.y === 0;
       const decel =
         f.knockFlightS > 0 ? KNOCK_FLIGHT_DECEL : isIdle ? (idleDecel ?? tuning.decelMps2) : tuning.decelMps2;
-      const sprinting = f.sprinting && !attack && !cast && c.state !== 'guarding' && !air;
+      const sprinting = f.sprinting && !attack && !cast && c.state !== 'guarding' && (!air || f.airSprint);
       next = stepVelocity(
         v,
         move,
@@ -2136,9 +2136,12 @@ export class FightArenaScene implements ArenaScene {
     }
     body.setLinvel(next, true);
 
-    if (jump && !air) {
+    if (jump && canStartJump(f.hop)) {
+      // From the ground, or just after stepping off an edge (coyote time, B11).
       f.jumps++;
       f.airJumpReady = f.def.capabilities.canDoubleJump;
+      // B11: a running jump keeps its sprint speed in the air (momentum), until landing.
+      f.airSprint = f.sprinting && !attack && !cast && c.state !== 'guarding';
       this.characterSound(f, 'jump', 0.7);
     } else if (jump && air && f.airJumpReady) {
       // Double jump (capability): a second, slightly smaller push in the air.
@@ -2152,6 +2155,7 @@ export class FightArenaScene implements ArenaScene {
     if (air && !f.airborne) {
       f.combo.landed();
       f.airJumpReady = false;
+      f.airSprint = false;
       this.characterSound(f, 'land', 0.6);
     }
 
