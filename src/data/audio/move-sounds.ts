@@ -265,4 +265,42 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sine', 160, 50, 0.22, 0.55),
     noise('lowpass', 800, 250, 0.2, 0.25, 1, 0.02),
   ],
+  // ---- Vexoris (TD-114): gas, glass and liquid, all low and breathy: no whistles.
+  'venom-hiss': [
+    noise('bandpass', 1800, 900, 0.34, 0.4, 0.8, 0, { attack: 0.03 }),
+    noise('lowpass', 700, 300, 0.3, 0.2, 1, 0.04),
+  ],
+  'venom-spray-burst': [
+    noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),
+    noise('lowpass', 1200, 400, 0.26, 0.25, 1, 0.02),
+  ],
+  'vapor-dash': [noise('bandpass', 900, 1700, 0.26, 0.4, 0.9, 0, { attack: 0.03 }), tone('sine', 90, 120, 0.2, 0.3)],
+  'vapor-hit': [noise('bandpass', 1500, 700, 0.16, 0.3, 1), tone('sine', 110, 70, 0.14, 0.25)],
+  'filter-seal': [tone('sine', 70, 60, 0.3, 0.4), noise('bandpass', 600, 400, 0.2, 0.3, 1.4, 0.05)],
+  'filter-lock': [tone('sine', 140, 110, 0.18, 0.3), noise('lowpass', 800, 300, 0.12, 0.25)],
+  'bloom-vent': [
+    noise('bandpass', 500, 1500, 0.8, 0.3, 0.9, 0, { attack: 0.5, flutter: 6 }),
+    tone('sine', 50, 45, 0.7, 0.4),
+  ],
+  'toxin-splat': [noise('lowpass', 1400, 400, 0.14, 0.45, 0.8), tone('sine', 130, 60, 0.12, 0.35)],
+  'jar-lift': [noise('bandpass', 700, 500, 0.18, 0.2, 1.2, 0, { attack: 0.06 }), tone('sine', 110, 90, 0.2, 0.2)],
+  'jar-throw': [noise('bandpass', 1100, 700, 0.22, 0.32, 0.9, 0, { attack: 0.04 })],
+  'jar-shatter': [
+    noise('bandpass', 2600, 1400, 0.1, 0.5, 1.2),
+    noise('lowpass', 1500, 300, 0.4, 0.35, 0.8, 0.03),
+    tone('sine', 120, 55, 0.2, 0.4),
+  ],
+  'trap-set': [tone('sine', 150, 70, 0.16, 0.45), noise('lowpass', 900, 300, 0.12, 0.3)],
+  'trap-vent': [noise('bandpass', 1500, 800, 0.7, 0.35, 0.8, 0, { attack: 0.08 }), tone('sine', 80, 60, 0.5, 0.2)],
+  'vapor-puff': [noise('bandpass', 1300, 600, 0.3, 0.38, 0.8, 0, { attack: 0.02 }), tone('sine', 100, 70, 0.18, 0.25)],
+  'filter-hum': [tone('sine', 90, 100, 0.5, 0.3), noise('bandpass', 800, 800, 0.4, 0.14, 1.4, 0, { attack: 0.15 })],
+  'bloom-build': [
+    tone('sine', 55, 48, 0.7, 0.5),
+    noise('bandpass', 600, 1200, 0.7, 0.25, 1, 0, { attack: 0.4, flutter: 8 }),
+  ],
+  'bloom-burst': [
+    tone('sine', 70, 38, 0.8, 0.7),
+    noise('bandpass', 1600, 500, 0.9, 0.5, 0.7, 0, { attack: 0.02 }),
+    noise('lowpass', 900, 200, 0.7, 0.35, 1, 0.05),
+  ],
 };

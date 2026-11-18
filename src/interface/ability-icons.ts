@@ -7,7 +7,7 @@
  * deliberate shape. Original artwork; one per icon id (`AbilityDef.icon`, `AbilityKit.comboIcon`,
  * `AbilityKit.heavyIcon`).
  */
-type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue';
+type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -18,6 +18,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   shade: ['#b9bfcc', '#383a48', '#060609'],
   decay: ['#e2f7b8', '#4f7a1c', '#0f1608'],
   blue: ['#d8f0ff', '#1f6fe8', '#020a22'],
+  toxin: ['#e8ffc8', '#2f8a12', '#06140a'],
 };
 
 const MATERIALS = `
@@ -254,6 +255,48 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'blood',
     rays(24, 22, 16, '#ffd0c8', 0.24),
     `${MASKED(24, 25, 1.35)}<g fill="#7a0a10" stroke="#3a0306" stroke-width=".6"><path d="M9 30 C9 33 11 34 11 34 C11 34 13 33 13 30 C13 28 11 26 11 26 C11 26 9 28 9 30 Z"/><path d="M35 36 C35 39 37 40 37 40 C37 40 39 39 39 36 C39 34 37 32 37 32 C37 32 35 34 35 36 Z"/></g>`,
+  ),
+  // ---------------- Vexoris (toxic green) ----------------
+  // Karate combo: a gloved fist and a kick leaving green streaks.
+  'karate-combo': icon(
+    'toxin',
+    rays(26, 24, 12, '#d8ffb0', 0.16),
+    `<path d="M6 34 C12 20 26 14 42 18" stroke="#7dff3a" stroke-width="4.5" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".9"/>${fist(24, 26, 1)}`,
+  ),
+  'axe-kick': icon(
+    'toxin',
+    rays(26, 20, 14, '#d8ffb0', 0.2),
+    `<path d="M14 6 C26 10 30 24 28 38" stroke="#7dff3a" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".85"/><path d="M26 36 L40 36 L38 42 L22 42 Z" fill="url(#gr)" stroke="#17181d" stroke-width="1.6" filter="url(#ds)"/>`,
+  ),
+  'venom-spray': icon(
+    'toxin',
+    rays(10, 26, 12, '#d8ffb0', 0.2),
+    `<g filter="url(#gl)" fill="#7dff3a"><circle cx="22" cy="20" r="3.4" opacity=".9"/><circle cx="30" cy="26" r="4.4" opacity=".8"/><circle cx="26" cy="33" r="3" opacity=".9"/><circle cx="37" cy="22" r="3.2" opacity=".7"/><circle cx="38" cy="32" r="4" opacity=".6"/></g><rect x="5" y="22" width="11" height="8" rx="3" fill="url(#gr)" stroke="#17181d" stroke-width="1.4"/><path d="M16 26 H22" stroke="#b9bfcc" stroke-width="2.4" stroke-linecap="round"/>`,
+  ),
+  'toxic-jar': icon(
+    'toxin',
+    rays(24, 28, 12, '#d8ffb0', 0.18),
+    `<g filter="url(#ds)"><path d="M17 14 H31 V18 C35 21 36 27 36 33 C36 40 31 43 24 43 C17 43 12 40 12 33 C12 27 13 21 17 18 Z" fill="url(#dc)" stroke="#16200a" stroke-width="1.6"/><rect x="16" y="9" width="16" height="6" rx="2" fill="#4b4d57" stroke="#17181d" stroke-width="1.4"/><path d="M17 24 C17 30 19 36 22 40" stroke="#fff" stroke-width="2" fill="none" opacity=".5" stroke-linecap="round"/></g>`,
+  ),
+  'chemical-trap': icon(
+    'toxin',
+    rays(24, 30, 12, '#d8ffb0', 0.2),
+    `<ellipse cx="24" cy="38" rx="17" ry="5" fill="#7dff3a" opacity=".35" filter="url(#bl)"/><g filter="url(#ds)"><rect x="17" y="22" width="14" height="17" rx="5" fill="url(#gr)" stroke="#17181d" stroke-width="1.6"/><rect x="21" y="17" width="6" height="6" rx="2" fill="#4b4d57" stroke="#17181d" stroke-width="1.3"/><path d="M20 30 H28 M20 34 H28" stroke="#7dff3a" stroke-width="2.2" stroke-linecap="round"/></g><g fill="#7dff3a" filter="url(#gl)" opacity=".8"><circle cx="14" cy="26" r="3"/><circle cx="34" cy="22" r="3.6"/><circle cx="38" cy="32" r="2.6"/></g>`,
+  ),
+  'vapor-step': icon(
+    'toxin',
+    rays(14, 26, 10, '#d8ffb0', 0.14),
+    `<g opacity=".5" filter="url(#bl)"><circle cx="12" cy="28" r="9" fill="#9ab87a"/><circle cx="22" cy="24" r="7" fill="#9ab87a"/></g><path d="M6 36 C18 30 30 26 42 14" stroke="#7dff3a" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".85"/><g filter="url(#ds)"><circle cx="34" cy="17" r="4.2" fill="#2e3226" stroke="#0b0e07" stroke-width="1.4"/><circle cx="32.8" cy="16" r="1.4" fill="#7dff3a"/><circle cx="36.4" cy="16.2" r="1.2" fill="#7dff3a"/></g>`,
+  ),
+  'hardened-filter': icon(
+    'toxin',
+    rays(24, 24, 14, '#d8ffb0', 0.2),
+    `<g filter="url(#ds)"><circle cx="24" cy="25" r="13" fill="#2e3226" stroke="#0b0e07" stroke-width="2"/><circle cx="19" cy="22" r="4" fill="#0d1a06" stroke="#3a3d34" stroke-width="1.4"/><circle cx="29" cy="22" r="4" fill="#0d1a06" stroke="#3a3d34" stroke-width="1.4"/><circle cx="19" cy="22" r="2.2" fill="#7dff3a" filter="url(#gl)"/><circle cx="29" cy="22" r="2.2" fill="#7dff3a" filter="url(#gl)"/><rect x="19" y="29" width="10" height="9" rx="4" fill="url(#gr)" stroke="#17181d" stroke-width="1.4"/></g><circle cx="24" cy="25" r="19" fill="none" stroke="#7dff3a" stroke-width="1.6" opacity=".6"/>`,
+  ),
+  'plague-bloom': icon(
+    'toxin',
+    rays(24, 24, 18, '#e8ffc8', 0.3),
+    `<g filter="url(#gl)" fill="#7dff3a"><circle cx="24" cy="24" r="6" opacity=".95"/><circle cx="14" cy="18" r="6" opacity=".7"/><circle cx="34" cy="18" r="6" opacity=".7"/><circle cx="12" cy="31" r="5" opacity=".6"/><circle cx="36" cy="31" r="5" opacity=".6"/><circle cx="24" cy="38" r="6" opacity=".7"/><circle cx="24" cy="10" r="4.5" opacity=".6"/></g><circle cx="24" cy="24" r="3" fill="#e8ffc8"/>`,
   ),
   // Shroud's combo: a knife mid-slash leaving a red arc.
   'knife-slash': icon(

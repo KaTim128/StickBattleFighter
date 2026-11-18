@@ -60,7 +60,7 @@ export interface PremiumSkin {
   readonly fire: { readonly core: boolean; readonly veins: boolean; readonly fists: boolean };
   /** A long garment from the waist over both legs: a robe, or a cloak with a tattered hem. */
   readonly garment?: {
-    readonly hem: 'robe' | 'tattered';
+    readonly hem: 'robe' | 'tattered' | 'coat';
     readonly trim?: number;
     /** The cloth's own colours (base, lit, shade); default: the skin's. */
     readonly cloth?: readonly [number, number, number];
@@ -235,6 +235,8 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
       belt: true,
     },
     fire: { core: false, veins: true, fists: false },
+    // The long dark green coat to the shins (owner, 20/11/2026), trimmed in a dull toxic green.
+    garment: { hem: 'coat', trim: 0x4a7a22, cloth: [0x233a1e, 0x3e5c32, 0x101a0d] },
     head: 'gasmask',
   },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
@@ -414,8 +416,15 @@ export class PremiumModel {
     this.lx = -0.55 * st.facing;
     this.ly = -0.83;
     this.arm(g, fire, s.armBack, true);
+    const coated = this.skin.garment?.hem === 'coat';
+    // An open coat wraps the legs: its back tail and lining first (behind both legs), the front panels and belt last.
+    if (coated) this.coatBack(g, s);
     this.leg(g, fire, s.legBack, true);
-    if (this.skin.garment) {
+    if (coated) {
+      this.leg(g, fire, s.legFront, false);
+      this.torso(g, fire, s);
+      this.coatFront(g, s);
+    } else if (this.skin.garment) {
       // A long garment hangs over both legs, under the torso.
       this.leg(g, fire, s.legFront, false);
       this.garment(g, s);
@@ -784,6 +793,162 @@ export class PremiumModel {
    * A long garment from the waist over both legs, swaying with them: a robe to the ankles with a
    * trimmed hem, or a cloak whose hem hangs in ragged tatters. Folds run down from the waist.
    */
+  /** Shared measurements of the coat for both halves (so the two always agree). */
+  private coatFrame(s: Skel) {
+    const w = this.st.w * (this.st.bodyWidthK ?? 1);
+    const shin = (leg: readonly Point[], k: number) => lerp(leg[1]!, leg[2]!, k);
+    // The coat hangs nearly straight: its hem follows only part of each leg's reach, so a wide stance steps out of it.
+    const hangs = (leg: readonly Point[]) => {
+      const p = shin(leg, 0.9);
+      return { x: s.pelvis.x + (p.x - s.pelvis.x) * 0.55, y: p.y };
+    };
+    const hemF = hangs(s.legFront);
+    const hemB = hangs(s.legBack);
+    const motion = this.st.motion;
+    const t = this.st.t;
+    // A tailored trench: it hangs straight down, and trails back only a little with speed and the stride's swing.
+    const trail = w * (0.12 + 0.9 * motion) + Math.sin(t * 7) * w * 0.1 * (0.3 + motion);
+    const sway = (i: number) => Math.sin(t * 6 + i * 1.7) * w * 0.07 * (0.4 + motion);
+    return { w, waist: s.pelvis, hemF, hemB, hemY: Math.max(hemF.y, hemB.y) + w * 0.12, trail, sway };
+  }
+
+  /**
+   * The coat's back half (Vexoris, owner 20/11/2026): the back tail and a dark lining, drawn BEHIND both legs so they
+   * stand inside the coat's volume. It hangs straight from the waist to the shins and trails with the stride.
+   */
+  private coatBack(g: Graphics, s: Skel): void {
+    const { w, waist, hemF, hemB, hemY, trail, sway } = this.coatFrame(s);
+    const gm = this.skin.garment!;
+    const [cloth, , clothShade] = gm.cloth ?? [this.P.skin, this.P.skinLit, this.P.skinShade];
+    const top = waist.y - w * 0.4;
+    const front = Math.max(hemF.x, hemB.x) + w * 0.5;
+    const back = Math.min(hemF.x, hemB.x) - w * 0.7 - trail;
+    const shape = (grow: number): number[] => {
+      const pts = [
+        waist.x - w * 0.95 - grow,
+        top - grow,
+        waist.x + w * 0.9 + grow,
+        top - grow,
+        front + grow,
+        hemY - w * 0.2,
+      ];
+      for (let i = 1; i < 5; i++) pts.push(front + ((back - front) * i) / 5, hemY + sway(i) + grow);
+      pts.push(back - grow, hemY - w * 0.25 + sway(5));
+      return pts;
+    };
+    g.poly(shape(w * 0.22)).fill(this.c(this.P.outline));
+    g.poly(shape(0)).fill(this.c(cloth));
+    // The lining inside: the darkest tone, filling the interior the legs stand in.
+    const lining = [
+      waist.x - w * 0.8,
+      top + w * 0.2,
+      waist.x + w * 0.75,
+      top + w * 0.2,
+      front - w * 0.15,
+      hemY - w * 0.3,
+      back + w * 0.3,
+      hemY - w * 0.3,
+    ];
+    g.poly(lining).fill({ color: this.c(clothShade), alpha: 0.95 });
+    // A vertical fold or two on the lining, for depth.
+    for (const k of [0.3, 0.62]) {
+      const x0 = waist.x - w * 0.6 + w * 1.2 * k;
+      const x1 = back + w * 0.4 + (front - back - w * 0.6) * k;
+      g.moveTo(x0, top + w * 0.5)
+        .lineTo(x1, hemY - w * 0.35)
+        .stroke({ width: w * 0.07, color: this.c(this.P.outline), alpha: 0.5, cap: 'round' });
+    }
+  }
+
+  /**
+   * The coat's front half: a waist belt that seals the hips, and two narrow open panels, one over the back leg's rear
+   * edge and one over the lead leg's front edge. The centre front stays open, so the lead leg steps out of the slit.
+   * Each panel's hem follows its own leg, so the coat parts with every stride, punch and kick.
+   */
+  private coatFront(g: Graphics, s: Skel): void {
+    const { w, waist, hemF, hemB, hemY, trail, sway } = this.coatFrame(s);
+    const gm = this.skin.garment!;
+    const [cloth, clothLit, clothShade] = gm.cloth ?? [this.P.skin, this.P.skinLit, this.P.skinShade];
+    const top = waist.y - w * 0.4;
+    const lightRight = this.lx > 0;
+    const panel = (x0: number, x1: number, h0: number, h1: number, hy: number, lit: boolean) => {
+      // A straight, slightly tapered drape: top edge at the waist, hem tracking the leg.
+      const pts = (grow: number): number[] => [
+        x0 - grow,
+        top - grow,
+        x1 + grow,
+        top - grow,
+        h1 + grow,
+        hy - w * 0.05,
+        h1 + grow * 0.5,
+        hy + w * 0.08 + grow,
+        h0 - grow * 0.5,
+        hy + w * 0.08 + grow,
+        h0 - grow,
+        hy - w * 0.05,
+      ];
+      g.poly(pts(w * 0.2)).fill(this.c(this.P.outline));
+      g.poly(pts(0)).fill(this.c(cloth));
+      // The edge facing the opening catches the light; the outer edge falls into shade.
+      const inner = x1 === Math.max(x0, x1) && lit;
+      g.moveTo(inner ? x1 - w * 0.06 : x0 + w * 0.06, top + w * 0.3)
+        .lineTo(inner ? h1 - w * 0.06 : h0 + w * 0.06, hy - w * 0.1)
+        .stroke({ width: w * 0.12, color: this.c(clothLit), alpha: 0.6, cap: 'round' });
+      g.moveTo((x0 + x1) / 2, top + w * 0.5)
+        .lineTo((h0 + h1) / 2, hy - w * 0.15)
+        .stroke({ width: w * 0.07, color: this.c(clothShade), alpha: 0.85, cap: 'round' });
+      // A trimmed hem.
+      if (gm.trim !== undefined)
+        g.moveTo(h0, hy + w * 0.05)
+          .lineTo(h1, hy + w * 0.05)
+          .stroke({ width: w * 0.1, color: this.c(gm.trim), alpha: 0.75, cap: 'round' });
+    };
+    // The rear panel: over the back leg's rear edge, trailing a little.
+    panel(
+      waist.x - w * 1.0,
+      waist.x - w * 0.15,
+      hemB.x - w * 1.0 - trail,
+      hemB.x + w * 0.1,
+      Math.min(hemB.y + w * 0.16, hemY) + sway(1),
+      !lightRight,
+    );
+    // The front lapel: ahead of the lead leg's front edge, which steps out of the open centre.
+    panel(
+      waist.x + w * 0.22,
+      waist.x + w * 0.98,
+      hemF.x + w * 0.2,
+      hemF.x + w * 1.0,
+      Math.min(hemF.y + w * 0.16, hemY) + sway(3),
+      lightRight,
+    );
+    // The belt: a dark band across the hips with a buckle, so no gap shows where the coat meets the torso.
+    const belt = [
+      waist.x - w * 1.05,
+      top + w * 0.05,
+      waist.x + w * 1.0,
+      top + w * 0.05,
+      waist.x + w * 1.0,
+      top + w * 0.62,
+      waist.x - w * 1.05,
+      top + w * 0.62,
+    ];
+    g.poly(
+      belt.map((v, i) =>
+        i % 2 ? v + (v > top + w * 0.3 ? w * 0.1 : -w * 0.1) : v + (v > waist.x ? w * 0.1 : -w * 0.1),
+      ),
+    ).fill(this.c(this.P.outline));
+    g.poly(belt).fill(this.c(this.P.armour));
+    g.moveTo(waist.x - w * 0.95, top + w * 0.13)
+      .lineTo(waist.x + w * 0.9, top + w * 0.13)
+      .stroke({ width: w * 0.08, color: this.c(this.P.armourLit), alpha: 0.7, cap: 'round' });
+    g.roundRect(waist.x + w * 0.35, top + w * 0.1, w * 0.4, w * 0.45, w * 0.06).fill(this.c(this.P.skinShade));
+    g.roundRect(waist.x + w * 0.4, top + w * 0.16, w * 0.3, w * 0.33, w * 0.05).stroke({
+      width: w * 0.05,
+      color: this.c(this.P.rim),
+      alpha: 0.7,
+    });
+  }
+
   private garment(g: Graphics, s: Skel): void {
     const w = this.st.w * (this.st.bodyWidthK ?? 1);
     const gm = this.skin.garment!;
@@ -1285,18 +1450,14 @@ export class PremiumModel {
     // Specular highlights: a glint across the brow and a softer one on the cheek, where it curves out.
     oval(g, { x: mc.x + r * 0.1, y: mc.y - r * 0.3 }, 1, -MASK_TILT, r * 0.16, r * 0.05, 0xffffff, 0.85);
     oval(g, { x: mc.x + r * 0.3, y: mc.y + r * 0.22 }, 1, -MASK_TILT, r * 0.08, r * 0.045, 0xffffff, 0.5);
-    // Eye openings after the owner's reference (13/11/2026): large, dark, hollow almond holes,
-    // pointed and dipped low at the inner corner by the nose, so the blank face scowls. The far one
-    // is foreshortened (the mask curves away) and mirrored.
+    // Eye opening after the owner's reference (13/11/2026), as a sharp slanted slit (20/11/2026), pointed and dipped low
+    // at the inner corner by the nose, so the blank face scowls. A profile shows ONE eye: the far one is not drawn.
     const k0 = 1.15;
-    for (const [dx, k, dir] of [
-      [-0.12, 1, 1],
-      [0.46, 0.74, -1],
-    ] as const) {
+    for (const [dx, k, dir] of [[0.12, 1, 1]] as const) {
       const cx = mc.x + dx * r;
       const cy = mc.y - r * 0.08;
       const kk = k * k0;
-      // Owner, 20/11/2026: slimmer eyes with a clear gap between them (they were running together).
+      // Owner, 20/11/2026: a slim slit.
       const half = r * 0.22 * 0.7 * kk;
       const inner = cx + dir * half;
       const outer = cx - dir * half;
@@ -1407,11 +1568,8 @@ export class PremiumModel {
         .lineTo(fc.x + r * 0.28, fc.y + r * k)
         .stroke({ width: r * 0.045, color: this.c(this.P.skinShade), alpha: 0.9, cap: 'round' });
     }
-    // The lenses: two round glass eyes, the near one full and the far one foreshortened (a profile view).
-    for (const [dx, k] of [
-      [0.52, 0.34],
-      [0.04, 0.3],
-    ] as const) {
+    // The lens: a profile view shows ONE eye, the one nearer the camera (owner, 20/11/2026: the far eye is gone).
+    for (const [dx, k] of [[0.42, 0.36]] as const) {
       const lc = { x: h.x + r * dx, y: h.y - r * 0.12 };
       oval(g, lc, 1, 0, r * k * 0.8 + w * 0.12, r * k + w * 0.12, this.c(this.P.outline));
       oval(g, lc, 1, 0, r * k * 0.8, r * k, this.c(0x3a3d34)); // the rim

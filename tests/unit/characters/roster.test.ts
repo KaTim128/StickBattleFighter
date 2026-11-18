@@ -9,15 +9,15 @@ describe('roster', () => {
       playableFighters(BUILT_IN_LIBRARY)
         .map((c) => c.id)
         .sort(),
-    ).toEqual(['inferno', 'necro', 'rampage', 'shroud']);
+    ).toEqual(['inferno', 'necro', 'rampage', 'shroud', 'vexoris']);
   });
 
   it('the Admin Panel sees every character: the fighters, the skeleton variant and the training dummy', () => {
     const ids = adminCharacters(BUILT_IN_LIBRARY).map((c) => c.id);
-    for (const id of ['inferno', 'necro', 'rampage', 'shroud', 'skeleton-warrior', 'training-dummy'])
+    for (const id of ['inferno', 'necro', 'rampage', 'shroud', 'vexoris', 'skeleton-warrior', 'training-dummy'])
       expect(ids).toContain(id);
     expect(ids).not.toContain('base-stickman'); // the shared template is not a fighter
-    expect(ids.slice(0, 4).sort()).toEqual(['inferno', 'necro', 'rampage', 'shroud']); // the main roster first
+    expect(ids.slice(0, 5).sort()).toEqual(['inferno', 'necro', 'rampage', 'shroud', 'vexoris']); // the main roster first
     expect(new Set(ids).size).toBe(ids.length);
   });
 

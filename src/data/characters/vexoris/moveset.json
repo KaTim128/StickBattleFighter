@@ -1,14 +1,16 @@
 {
   "id": "vexoris-moveset",
   "starters": {
-    "tap": "gloved-jab",
-    "air-tap": "boot-stomp",
-    "heavy": "canister-bash"
+    "tap": "karate-jab",
+    "tap-forward": "front-kick",
+    "air-tap": "jumping-front-kick",
+    "falling-tap": "boot-stomp",
+    "heavy": "axe-kick"
   },
   "moves": [
     {
-      "id": "gloved-jab",
-      "displayName": "Gloved jab",
+      "id": "karate-jab",
+      "displayName": "Karate jab",
       "animationState": "Jab",
       "category": "punch",
       "heavy": false,
@@ -31,13 +33,13 @@
       "zoomPunch": 0.013,
       "requires": ["canPunch"],
       "next": {
-        "tap": "rifle-butt"
+        "tap": "reverse-punch"
       }
     },
     {
-      "id": "rifle-butt",
-      "displayName": "Rifle butt",
-      "animationState": "Hook",
+      "id": "reverse-punch",
+      "displayName": "Reverse punch",
+      "animationState": "StraightPunch",
       "category": "punch",
       "heavy": false,
       "aerial": false,
@@ -59,70 +61,120 @@
       "zoomPunch": 0.013,
       "requires": ["canPunch", "canUseCombos"],
       "next": {
-        "tap": "knee-drive"
+        "tap": "roundhouse-kick"
       }
     },
     {
-      "id": "knee-drive",
-      "displayName": "Rising knee",
-      "animationState": "Uppercut",
-      "category": "punch",
+      "id": "roundhouse-kick",
+      "displayName": "Roundhouse kick",
+      "animationState": "RoundhouseKick",
+      "category": "kick",
       "heavy": false,
       "aerial": false,
-      "startupS": 0.08,
-      "activeS": 0.07,
-      "recoveryS": 0.2,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
       "cancelAt": 0.3,
       "hitbox": {
-        "reachM": 1.0,
+        "reachM": 1.15,
         "radiusM": 0.5
       },
       "damage": 13,
-      "strength": 280,
-      "knockbackMps": 1.6,
+      "strength": 300,
+      "knockbackMps": 2.0,
       "lungeMps": 1.0,
       "moveFactor": 0.4,
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canPunch", "canUseCombos"],
+      "requires": ["canKick", "canUseCombos"],
       "next": {
-        "tap": "jar-splash"
+        "tap": "spinning-hook-kick"
       }
     },
     {
-      "id": "jar-splash",
-      "displayName": "Poison splash (finisher)",
-      "animationState": "HeavyPunch",
-      "category": "punch",
+      "id": "spinning-hook-kick",
+      "displayName": "Spinning hook kick (poison splash)",
+      "animationState": "SpinningKick",
+      "category": "kick",
       "heavy": true,
       "aerial": false,
-      "startupS": 0.14,
-      "activeS": 0.08,
-      "recoveryS": 0.34,
+      "startupS": 0.16,
+      "activeS": 0.09,
+      "recoveryS": 0.36,
       "cancelAt": 1,
       "hitbox": {
         "reachM": 1.25,
         "radiusM": 0.5
       },
       "damage": 14,
-      "strength": 380,
+      "strength": 400,
       "knockbackMps": 3.0,
       "lungeMps": 1.0,
       "moveFactor": 0.4,
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canPunch", "canUseCombos"],
+      "requires": ["canKick", "canUseCombos"],
       "status": {
         "poison": 1
       }
     },
     {
+      "id": "front-kick",
+      "displayName": "Front kick",
+      "animationState": "FrontKick",
+      "category": "kick",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.07,
+      "recoveryS": 0.24,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.2,
+        "radiusM": 0.5
+      },
+      "damage": 13,
+      "strength": 300,
+      "knockbackMps": 2.2,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canKick"]
+    },
+    {
+      "id": "jumping-front-kick",
+      "displayName": "Jumping front kick",
+      "animationState": "JumpingFrontKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.09,
+      "activeS": 0.12,
+      "recoveryS": 0.3,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.1,
+        "radiusM": 0.5
+      },
+      "damage": 22,
+      "strength": 520,
+      "knockbackMps": 3.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.03,
+      "requires": ["canUseAerialKicks"]
+    },
+    {
       "id": "boot-stomp",
       "displayName": "Boot stomp",
       "animationState": "DownwardAerialKick",
-      "category": "punch",
+      "category": "kick",
       "heavy": true,
       "aerial": true,
       "startupS": 0.07,
@@ -141,13 +193,13 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canUseAerialPunches"]
+      "requires": ["canUseAerialKicks"]
     },
     {
-      "id": "canister-bash",
-      "displayName": "Canister bash",
-      "animationState": "HeavyAttack",
-      "category": "punch",
+      "id": "axe-kick",
+      "displayName": "Axe kick",
+      "animationState": "AxeKick",
+      "category": "kick",
       "heavy": true,
       "aerial": false,
       "startupS": 0.3,
@@ -158,15 +210,15 @@
         "reachM": 1.2,
         "radiusM": 0.5
       },
-      "damage": 36,
-      "strength": 760,
+      "damage": 34,
+      "strength": 740,
       "knockbackMps": 4.5,
       "lungeMps": 1.0,
       "moveFactor": 0.4,
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canPunch"]
+      "requires": ["canKick"]
     }
   ]
 }

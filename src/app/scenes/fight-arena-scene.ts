@@ -1925,6 +1925,7 @@ export class FightArenaScene implements ArenaScene {
             helpless: pc === 'stunned' || p.combatant.blinded || p.landHoldS > 0,
             attacking: p.combo.attack !== null || (p.caster?.cast ?? null) !== null,
             cursed: p.combatant.decayLeftS > 0,
+            toxicity: p.combatant.toxicityStacks,
           }
         : null,
       meleeReachM: AI_MELEE_REACH_M * (f.def.sizeScale ?? 1),

@@ -47,6 +47,8 @@ export interface BrainView {
     /** Swinging or casting at the moment. */
     readonly attacking: boolean;
     readonly cursed: boolean;
+    /** Toxicity stacks it carries (Vexoris's poison). */
+    readonly toxicity: number;
   } | null;
   readonly meleeReachM: number;
   readonly canClimb: boolean;
@@ -453,6 +455,7 @@ export class FighterBrain {
       if (when) {
         if (when.targetHpBelow !== undefined && unmet(t.hpFrac < when.targetHpBelow, 1.6)) continue;
         if (when.selfHpBelow !== undefined && unmet(v.self.hpFrac < when.selfHpBelow, 1.5)) continue;
+        if (when.toxicityBelow !== undefined && unmet(t.toxicity < when.toxicityBelow, 1.6)) continue;
         if (when.targetCursed !== undefined && unmet(t.cursed === when.targetCursed, 1.8)) continue;
         if (when.targetHelpless !== undefined && unmet(t.helpless, 2)) continue;
         if (when.targetAttacking !== undefined && unmet(t.attacking, 3)) continue;

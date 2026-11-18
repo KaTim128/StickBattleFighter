@@ -605,3 +605,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Falling or jumping off any furniture never reduces health; every landing plays a squat or knee bend and the fighter can act again at once.
 - [ ] Jumping from one piece of furniture to another lands on it with no hanging and no pulling up with Space.
 - [ ] A long jump that brings the head level with a high edge (a bookshelf from the floor) still grabs it, and Space pulls up.
+
+## Vexoris (20/11/2026)
+- [ ] Vexoris appears on the select screen, in Practice, Tournament and the Admin Panel, with his stance and five abilities (four equipped).
+- [ ] The four-hit karate string: only a landed fourth hit adds a poison stack; a missed or interrupted string never splashes.
+- [ ] Toxic Jar and Chemical Trap clouds poison each enemy once, however long it stands in them; the slow never exceeds 10% and poison never stuns.
+- [ ] Plague Bloom shows its one-second warning ring before bursting.

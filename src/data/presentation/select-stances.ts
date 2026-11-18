@@ -92,6 +92,22 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   },
   // Crouched and hunched, coiled to pounce: knees deep, back curled over, the knife held low and
   // forward, the empty hand trailing behind for balance.
+  // Vexoris: a threatening chemical soldier, one hand lifting the glowing poison jar, the other hand low and open,
+  // ready to strike; feet planted in a karate stance.
+  vexoris: {
+    title: 'The Chemist of War',
+    style: 'Poison specialist: builds toxicity, area denial and a karate string with a poison splash',
+    pelvis: 0.84,
+    leadFoot: 0.38,
+    rearFoot: -0.34,
+    lean: -6,
+    head: 4,
+    front: { x: 0.5, y: -0.18 },
+    back: { x: 0.34, y: 0.5 },
+    turn: 0.6,
+    scale: 1,
+    breath: { lean: 1, pelvis: 0.008, hands: 0.025 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

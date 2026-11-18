@@ -15,6 +15,7 @@ const AI: Record<string, string> = {
   'rampage-kit': 'rampage-ai',
   'necro-kit': 'necro-ai',
   'shroud-kit': 'shroud-ai',
+  'vexoris-kit': 'vexoris-ai',
 };
 
 describe('five abilities, four equipped, any one on the bench (master plan B13, B14)', () => {

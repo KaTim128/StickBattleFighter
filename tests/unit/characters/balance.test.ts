@@ -26,13 +26,21 @@ describe('fighter balance (owner, 12/11/2026: no fighter objectively stronger on
     for (const t of totals) expect(Math.abs(t - mean) / mean).toBeLessThan(0.03);
   });
 
-  it('but each spends it differently: every fighter is best at something and weak at something', () => {
+  it('but each spends it differently: every fighter is among the best two at something and among the weakest two at something', () => {
+    // There are only six stats, so with a growing roster (sixteen are planned) one fighter cannot lead each; "best at
+    // something" became "top two" when the fifth fighter arrived (owner order TD-114, 20/11/2026).
     for (const { id, r } of ratings) {
       const others = ratings.filter((o) => o.id !== id);
-      const best = RATING_KEYS.some((k) => others.every((o) => r[k] > o.r[k]));
-      const worst = RATING_KEYS.some((k) => others.every((o) => r[k] < o.r[k]));
-      expect(best, `${id} leads in some stat`).toBe(true);
-      expect(worst, `${id} trails in some stat`).toBe(true);
+      const rankFromTop = (k: (typeof RATING_KEYS)[number]) => others.filter((o) => o.r[k] >= r[k]).length;
+      const rankFromBottom = (k: (typeof RATING_KEYS)[number]) => others.filter((o) => o.r[k] <= r[k]).length;
+      expect(
+        RATING_KEYS.some((k) => rankFromTop(k) <= 1),
+        `${id} is top two in some stat`,
+      ).toBe(true);
+      expect(
+        RATING_KEYS.some((k) => rankFromBottom(k) <= 1),
+        `${id} is bottom two in some stat`,
+      ).toBe(true);
     }
   });
 

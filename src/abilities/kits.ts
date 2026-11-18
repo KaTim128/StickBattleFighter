@@ -2,6 +2,7 @@ import { INFERNO_KIT } from '../data/abilities/inferno';
 import { NECRO_KIT } from '../data/abilities/necro';
 import { RAMPAGE_KIT } from '../data/abilities/rampage';
 import { SHROUD_KIT } from '../data/abilities/shroud';
+import { VEXORIS_KIT } from '../data/abilities/vexoris';
 import type { AbilityKit } from './ability-def';
 
 /** Ability kits by id: a Character Definition's `abilityKit` names one (TD-039). */
@@ -10,4 +11,5 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'rampage-kit': RAMPAGE_KIT,
   'necro-kit': NECRO_KIT,
   'shroud-kit': SHROUD_KIT,
+  'vexoris-kit': VEXORIS_KIT,
 };

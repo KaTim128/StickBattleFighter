@@ -255,6 +255,59 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-12), head: deg(8), armBack: limb(92, 8), armFront: limb(-10, 40), legFront: limb(26, -26) },
     settle: 0.4,
   },
+  // ---- Vexoris (TD-114): a soldier's drills, not a mage's gestures.
+  // Venom Spray: the rear hand steadies the tank hose at the hip, the lead hand brings the nozzle up, then both arms
+  // sweep out in one long spray.
+  venomSpray: {
+    windup: { lean: deg(-8), head: deg(4), armFront: limb(40, 80), armBack: limb(20, 90), legFront: limb(30, -30) },
+    release: { lean: deg(-16), head: deg(6), armFront: limb(92, 6), armBack: limb(84, 14), legFront: limb(36, -26) },
+    settle: 0.5,
+  },
+  // Toxic Jar: the jar hand wound back and high behind the head, then thrown overhead.
+  toxicJar: {
+    windup: { lean: deg(8), head: deg(-4), armFront: limb(168, 70), armBack: limb(40, 40), legFront: limb(20, -20) },
+    release: {
+      lean: deg(-22),
+      head: deg(10),
+      armFront: limb(100, 10),
+      armBack: limb(-20, 40),
+      legFront: limb(40, -30),
+    },
+    settle: 0.5,
+  },
+  // Chemical Trap: a low crouch, the canister placed ahead with a flat hand.
+  chemicalTrap: {
+    windup: { lean: deg(-30), armFront: limb(30, 90), armBack: limb(10, 80), ...CROUCH },
+    release: { lean: deg(-38), armFront: limb(60, 8), armBack: limb(-30, 50), ...CROUCH },
+    settle: 0.4,
+  },
+  // Vapor Step: weight sinks back onto the rear leg with the arms crossed, then a lunge forward through the smoke.
+  vaporStep: {
+    windup: { lean: deg(10), armFront: limb(30, 120), armBack: limb(30, 120), legBack: limb(-30, -40) },
+    release: {
+      lean: deg(-28),
+      head: deg(10),
+      armFront: limb(-40, 40),
+      armBack: limb(-50, 40),
+      legFront: limb(48, -40),
+      legBack: limb(-40, -20),
+    },
+    run: { lean: deg(-30), armFront: limb(-30, 50), armBack: limb(-40, 50) },
+    settle: 0.4,
+  },
+  // Hardened Filter: both hands to the mask, checking the seal, then a braced guard.
+  hardenedFilter: {
+    windup: { lean: deg(-4), head: deg(6), armFront: limb(120, 120), armBack: limb(110, 120) },
+    release: { lean: deg(-10), armFront: limb(70, 100), armBack: limb(60, 100), legFront: limb(34, -34) },
+    settle: 0.4,
+  },
+  // Plague Bloom: arms drawn up and in over the chest as the poison gathers, then flung wide to vent it all.
+  plagueBloom: {
+    windup: { lean: deg(8), head: deg(-6), armFront: limb(120, 100), armBack: limb(120, 100), ...CROUCH },
+    tremble: deg(3),
+    release: { lean: deg(-6), head: deg(8), armFront: limb(80, 6), armBack: limb(-80, 6), legFront: limb(30, -30) },
+    settle: 0.6,
+  },
   // Death Mark (Shroud, 20/11/2026): sinking low, the free hand sweeping out to paint the symbol on his prey, then
   // settling into the stalking crouch (`stalkPose` holds it for the five seconds).
   deathMark: {

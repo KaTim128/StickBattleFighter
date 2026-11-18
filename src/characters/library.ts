@@ -44,6 +44,13 @@ import skeletonStats from '../data/characters/skeleton-warrior/stats.json';
 import dummyAi from '../data/characters/training-dummy/ai.json';
 import dummyCharacter from '../data/characters/training-dummy/character.json';
 import dummyStats from '../data/characters/training-dummy/stats.json';
+import vexorisAi from '../data/characters/vexoris/ai.json';
+import vexorisAnimation from '../data/characters/vexoris/animation-profile.json';
+import vexorisAudio from '../data/characters/vexoris/audio.json';
+import vexorisCharacter from '../data/characters/vexoris/character.json';
+import vexorisEffects from '../data/characters/vexoris/effects.json';
+import vexorisMoveset from '../data/characters/vexoris/moveset.json';
+import vexorisStats from '../data/characters/vexoris/stats.json';
 import type {
   AiProfile,
   AnimationProfile,
@@ -71,6 +78,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     rampageCharacter,
     necroCharacter,
     shroudCharacter,
+    vexorisCharacter,
     skeletonCharacter,
     dummyCharacter,
   ]),
@@ -83,6 +91,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     rampageAnimation,
     necroAnimation,
     shroudAnimation,
+    vexorisAnimation,
   ]),
   moveset: byId<MovesetProfile>([
     baseMoveset,
@@ -90,6 +99,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     rampageMoveset,
     necroMoveset,
     shroudMoveset,
+    vexorisMoveset,
     skeletonMoveset,
   ]),
   stats: byId<StatsProfile>([
@@ -98,6 +108,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     rampageStats,
     necroStats,
     shroudStats,
+    vexorisStats,
     skeletonStats,
     dummyStats,
   ]),
@@ -107,10 +118,11 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     rampageEffects,
     necroEffects,
     shroudEffects,
+    vexorisEffects,
     skeletonEffects,
   ]),
-  audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio, necroAudio, shroudAudio]),
-  ai: byId<AiProfile>([defaultAi, dummyAi, skeletonAi, infernoAi, rampageAi, necroAi, shroudAi]),
+  audio: byId<AudioProfile>([defaultAudio, infernoAudio, rampageAudio, necroAudio, shroudAudio, vexorisAudio]),
+  ai: byId<AiProfile>([defaultAi, dummyAi, skeletonAi, infernoAi, rampageAi, necroAi, shroudAi, vexorisAi]),
 };
 
 /** Who fights by default (the player's fighter and the Practice opponent). */

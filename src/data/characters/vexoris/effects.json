@@ -12,6 +12,6 @@
   "flashColour": "#7dff3a",
   "shakeScale": 1,
   "hitstopScale": 1,
-  "head": "mask",
+  "head": "round",
   "body": "soldier"
 }

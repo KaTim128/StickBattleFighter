@@ -32,6 +32,8 @@ export interface AbilityTactic {
   readonly when?: {
     readonly targetHpBelow?: number;
     readonly selfHpBelow?: number;
+    /** Only while the target carries fewer than this many toxicity stacks (Vexoris does not pile on a poisoned foe). */
+    readonly toxicityBelow?: number;
     readonly targetCursed?: boolean;
     readonly targetHelpless?: boolean;
     readonly targetAttacking?: boolean;
@@ -85,6 +87,30 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a2', 'a4'],
       ['a1', 'a2'],
       ['ult', 'a4'],
+    ],
+  },
+  // Vexoris: a poison specialist. Keeps mid range, builds toxicity with sprays and jars, sets traps in his way, steps
+  // out through smoke when pressed and finishes the karate string with its poison splash. The tactics only spend an
+  // ability on a target that can still use the stack (see `toxicityAbove`).
+  'vexoris-ai': {
+    style: 'Poison specialist: builds toxicity at mid range, area denial, karate string up close, smoke to reposition.',
+    preferredRangeM: [1.8, 4],
+    movement: 'circle',
+    meleeBias: 0.75,
+    heavyBias: 0.2,
+    defence: 'dodge',
+    retreatBelowHp: 0.3,
+    hitAndRunS: 0.8,
+    tactics: {
+      a1: { role: 'poke', minM: 0, maxM: 3, weight: 1.2, when: { toxicityBelow: 20 } },
+      a2: { role: 'zone', minM: 3, maxM: 9, weight: 1.2, when: { toxicityBelow: 20 } },
+      a3: { role: 'zone', minM: 2.5, maxM: 6, weight: 1, when: { toxicityBelow: 15 } },
+      a4: { role: 'gapClose', minM: 0, maxM: 4, weight: 0.9 },
+      ult: { role: 'burst', minM: 0, maxM: 4.5, weight: 1.3, when: { toxicityBelow: 12 } },
+    },
+    combos: [
+      ['a1', 'a4'],
+      ['a2', 'a3'],
     ],
   },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
@@ -196,6 +222,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   bastionAnchor: { role: 'buff', minM: 0, maxM: 2.4, weight: 1.2, when: { selfHpBelow: 0.7 } },
   // Soul Tether: reel in and drain a target that is too close or runs.
   soulTether: { role: 'control', minM: 2, maxM: 9, weight: 1.1 },
+  // Hardened Filter: brace when hurt and someone is on him.
+  hardenedFilter: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.7 } },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
   deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };
