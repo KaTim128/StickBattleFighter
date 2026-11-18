@@ -167,6 +167,41 @@ export const SHROUD_KIT: AbilityKit = {
       hitFlash: 0xff5a5a,
     },
   },
+  // A5 (master plan B13): Umbral Feint. He slips into shadow for 3 s: 30% faster, a little harder to
+  // hurt, his knife quicker and every cut bleeding. The alternative to Stalker Lunge (it takes the a2
+  // slot when equipped). Reuses the Hunting Frenzy look (greybox).
+  a5: {
+    id: 'umbralFeint',
+    name: 'Umbral Feint',
+    label: 'FEINT',
+    description:
+      'Slips into shadow for 3 seconds: 30% faster, 15% harder to hurt, quicker with the knife, and every cut bleeds.',
+    icon: 'umbral-feint',
+    slot: 'a2',
+    staminaCost: 25,
+    cooldownS: 14,
+    castS: 0.2,
+    recoveryS: 0.2,
+    aimRangeM: 0,
+    moveFactor: 0.5,
+    interruptible: true,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: {
+      type: 'buff',
+      durationS: 3,
+      speedFactor: 1.3,
+      damageTakenFactor: 0.85,
+      attackSpeedFactor: 1.2,
+      meleeBleed: true,
+    },
+    vfx: 'hunting-frenzy',
+    sfx: { cast: 'frenzy-build', release: 'frenzy-snap', impact: 'frenzy-snap' },
+    look: {
+      palette: { deep: 0x0a0a14, hot: 0x2a2540, bright: 0x6a5f94, core: 0xdcd6f2 },
+      impact: { flashM: 0.5, sparks: 8, motes: 20, ringM: 1.4, smoke: 8, groundFire: false, smokeColour: 0x14121c },
+      aura: 'quiet',
+    },
+  },
   // ULT (I): Hunting Frenzy. He hunches lower, shaking, then snaps into a frenzy for 8 s: 25% faster,
   // knife strikes 40% quicker and 10% deadlier, every cut bleeding, wrapped in a red aura. As it
   // snaps a light bulb bursts and the lights go out on the opponent: for those 8 s it sees only a

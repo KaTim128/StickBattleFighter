@@ -157,6 +157,44 @@ export const NECRO_KIT: AbilityKit = {
       hitFlash: 0xd9c2ff,
     },
   },
+  // A5 (master plan B13): Soul Tether. A slow bolt of bound souls: it drains life (80% flows back to
+  // Necro) and drags the target part of the way in, to 3.5 m, so he can keep his distance. The
+  // alternative to Grave Chains (it takes the a4 slot when equipped). Reuses the Soul Drain look (greybox).
+  a5: {
+    id: 'soulTether',
+    name: 'Soul Tether',
+    label: 'TETHER',
+    description:
+      'A bolt of bound souls that drains life, returning 80% of it to Necro, and reels the target in to a safe 3.5 metres.',
+    icon: 'soul-tether',
+    slot: 'a4',
+    staminaCost: 25,
+    cooldownS: 11,
+    castS: 0.4,
+    recoveryS: 0.3,
+    aimRangeM: 9,
+    moveFactor: 0.3,
+    interruptible: true,
+    payload: {
+      damage: 50,
+      knockbackMps: 0,
+      heavy: false,
+      strength: 150,
+      impact: 'knuckle-light',
+      lifesteal: 0.8,
+      pull: { speedMps: 7, stopM: 3.5 },
+    },
+    delivery: { type: 'projectile', speedMps: 12, radiusM: 0.3, maxRangeM: 9 },
+    vfx: 'soul-drain',
+    sfx: { cast: 'soul-gather', release: 'soul-cast', impact: 'soul-drain-hit' },
+    look: {
+      palette: SOUL,
+      charge: { gatherRadiusM: 0.9, motesPerS: 45, coreMaxM: 0.2 },
+      flight: { trailPerS: 100, sparksPerS: 26, shimmer: true },
+      impact: { flashM: 0.8, sparks: 22, motes: 30, ringM: 1, smoke: 8, groundFire: false, smokeColour: 0x3a2850 },
+      hitFlash: 0xd9c8ff,
+    },
+  },
   // ULTIMATE: Undead Army (owner, 12/11/2026, replacing Death's Dominion). He rises off the ground
   // with his free arm raised and four skeleton warriors claw up at random spots around the enemy.
   // They fight for 10 s (owner, SUP-24: the timer is back), then crumble; they also fall with him.

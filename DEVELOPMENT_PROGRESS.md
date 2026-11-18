@@ -783,3 +783,6 @@ Full list in spec §21. Still open:
 
 ### 18/11/2026 Phase 1 Batch B: B11 movement stability
 Coyote time and sprint momentum in jumps (TD-084). Gate: lint no errors (1 warning, 1 info baseline), typecheck clean, 613 tests pass. Next: B13 fifth ability per fighter and four-of-five loadout.
+
+### 18/11/2026 Phase 1 Batch B: B13 fifth abilities and loadout (engine side)
+Fifth ability per fighter, `applyLoadout`, fight option `loadouts`, AI tactics for the fifth (TD-085). Gate: lint no errors, typecheck clean, 633 tests pass. Not done in B13: the player-facing loadout screen and saving the choice (B14). Next: B14 ability information and loadout screen.

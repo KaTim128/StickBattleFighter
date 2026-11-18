@@ -185,6 +185,42 @@ export const GENERIC_DESIGN: BrainDesign = {
   combos: [],
 };
 
-export function brainDesignFor(aiProfileId: string): BrainDesign {
-  return BRAIN_DESIGNS[aiProfileId] ?? GENERIC_DESIGN;
+/**
+ * How the AI uses the fifth abilities (master plan B13) when one is equipped in place of the usual
+ * ability in its slot, keyed by ability id. Anything not listed keeps its slot's tactic.
+ */
+export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
+  // Eruption: a leap onto a hurt or helpless target at mid range.
+  eruption: { role: 'burst', minM: 1.5, maxM: 6, weight: 1, when: { targetHpBelow: 0.7 } },
+  // Bastion Anchor: brace when hurt and someone is on top of him.
+  bastionAnchor: { role: 'buff', minM: 0, maxM: 2.4, weight: 1.2, when: { selfHpBelow: 0.7 } },
+  // Soul Tether: reel in and drain a target that is too close or runs.
+  soulTether: { role: 'control', minM: 2, maxM: 9, weight: 1.1 },
+  // Umbral Feint: slip into shadow just before closing in for the knife work.
+  umbralFeint: { role: 'buff', minM: 1.5, maxM: 6, weight: 1.1 },
+};
+
+const designCache = new Map<string, BrainDesign>();
+
+/**
+ * The brain design for a fighter. With a kit, the tactics follow the abilities equipped in the
+ * fight (a fifth ability in a slot brings its own tactic); results are cached per combination.
+ */
+export function brainDesignFor(
+  aiProfileId: string,
+  equipped?: Readonly<Record<AbilitySlot, { readonly id: string }>> | null,
+): BrainDesign {
+  const base = BRAIN_DESIGNS[aiProfileId] ?? GENERIC_DESIGN;
+  if (!equipped) return base;
+  const swaps = (Object.keys(base.tactics) as AbilitySlot[]).filter((slot) => ALTERNATE_TACTICS[equipped[slot].id]);
+  if (swaps.length === 0) return base;
+  const key = `${aiProfileId}:${swaps.map((slot) => `${slot}=${equipped[slot].id}`).join(',')}`;
+  let design = designCache.get(key);
+  if (!design) {
+    const tactics = { ...base.tactics };
+    for (const slot of swaps) tactics[slot] = ALTERNATE_TACTICS[equipped[slot].id] as AbilityTactic;
+    design = { ...base, tactics };
+    designCache.set(key, design);
+  }
+  return design;
 }

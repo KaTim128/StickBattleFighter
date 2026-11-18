@@ -242,6 +242,25 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-18), armFront: limb(-40, 40), armBack: limb(-50, 40), legFront: limb(30, -40) },
     settle: 0.5,
   },
+  // Bastion Anchor (Titan, B13): feet planted wide and low, fists drawn in, then both arms thrust down and
+  // out as he braces.
+  bastionAnchor: {
+    windup: { lean: deg(-8), armFront: limb(40, 120), armBack: limb(35, 120), ...CROUCH },
+    release: { lean: deg(8), armFront: limb(-15, 30), armBack: limb(-25, 30), legFront: limb(40, -50) },
+    settle: 0.5,
+  },
+  // Soul Tether (Necro, B13): the free hand reaches out and hooks back, the staff held low.
+  soulTether: {
+    windup: { lean: deg(4), armBack: limb(110, 50), armFront: limb(50, 95) },
+    release: { lean: deg(-12), head: deg(8), armBack: limb(92, 8), armFront: limb(-10, 40), legFront: limb(26, -26) },
+    settle: 0.4,
+  },
+  // Umbral Feint (Shroud, B13): a low shadow-crouch, then a sudden twist away, knife arm trailing.
+  umbralFeint: {
+    windup: { lean: deg(-44), armFront: limb(25, 110), armBack: limb(15, 115), ...CROUCH },
+    release: { lean: deg(-26), armFront: limb(-30, 50), armBack: limb(-35, 45), legFront: limb(26, -30) },
+    settle: 0.35,
+  },
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.

@@ -7,6 +7,7 @@ import {
   type Burn,
   type MagicLook,
 } from '../../abilities/ability-def';
+import { applyLoadout, type Loadout } from '../../abilities/loadout';
 import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
@@ -293,6 +294,12 @@ const TELEPORT_APPEAR_S = 0.3;
 /** The top of a fighter's head over its feet (big fighters are drawn bigger: rig.scale). */
 const headTop = (f: FighterEntity): number => HEAD_TOP_M * (f.def.sizeScale ?? 1);
 
+/** A loaded character with its ability loadout applied (the equipped four of the five). */
+function withLoadout(c: LoadedCharacter, loadout: Loadout | undefined): LoadedCharacter {
+  if (!loadout || !c.def.abilities) return c;
+  return { ...c, def: { ...c.def, abilities: applyLoadout(c.def.abilities, loadout) } };
+}
+
 /**
  * Plays any arena layout (training yard, office, ...): the player and the
  * training dummy (two FighterEntities on one combat engine), props,
@@ -396,6 +403,8 @@ export class FightArenaScene implements ArenaScene {
       opponent?: string;
       library?: CharacterLibrary;
       difficulty?: string;
+      /** Which four of the five abilities each side equips (master plan B13); absent = the standard four. */
+      loadouts?: { player?: Loadout; opponent?: Loadout };
       /** A match that ends (Tournament): no respawns, a time limit; `spectate` has the AI play both sides. */
       match?: { spectate: boolean };
       /**
@@ -409,8 +418,11 @@ export class FightArenaScene implements ArenaScene {
     this.match = cast.match ?? null;
     this.difficulty = difficultyFor(cast.difficulty);
     this.library = cast.library;
-    const player = loadCharacter(cast.player ?? DEFAULT_CAST.player, cast.library);
-    const opponent = loadCharacter(cast.opponent ?? DEFAULT_CAST.opponent, cast.library);
+    const player = withLoadout(loadCharacter(cast.player ?? DEFAULT_CAST.player, cast.library), cast.loadouts?.player);
+    const opponent = withLoadout(
+      loadCharacter(cast.opponent ?? DEFAULT_CAST.opponent, cast.library),
+      cast.loadouts?.opponent,
+    );
     this.characters = { player, opponent };
     this.playerFighter = new FighterEntity('player', player.def, arena.playerStart, true);
     this.dummyFighter = new FighterEntity('dummy', opponent.def, arena.dummyStart, false);
@@ -1878,7 +1890,7 @@ export class FightArenaScene implements ArenaScene {
       canClimb: f.def.capabilities.canJump,
       abilities,
       profile: f.def.ai,
-      design: brainDesignFor(f.def.ai.id),
+      design: brainDesignFor(f.def.ai.id, f.def.abilities),
       difficulty: diff,
       route: f.aiRoute,
       random: () => this.rng(),

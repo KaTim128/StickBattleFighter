@@ -170,6 +170,42 @@ export const RAMPAGE_KIT: AbilityKit = {
       hitFlash: 0xffffff,
     },
   },
+  // A5 (master plan B13): Bastion Anchor. He plants his feet and braces: for 5 s he takes half damage
+  // but is slow, and the stamp shoves back anyone close. The defensive alternative to Crushing Strike
+  // (it takes the a3 slot when equipped). Reuses the Rampage Mode look until it gets its own (greybox).
+  a5: {
+    id: 'bastionAnchor',
+    name: 'Bastion Anchor',
+    label: 'ANCHOR',
+    description:
+      'Plants his feet and braces for 5 seconds: he takes half damage but moves slowly, and the stamp shoves back anyone close.',
+    icon: 'bastion-anchor',
+    slot: 'a3',
+    staminaCost: 30,
+    cooldownS: 18,
+    castS: 0.5,
+    recoveryS: 0.3,
+    aimRangeM: 0,
+    moveFactor: 0,
+    interruptible: true,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: {
+      type: 'buff',
+      durationS: 5,
+      speedFactor: 0.6,
+      damageTakenFactor: 0.5,
+      shockwave: {
+        radiusM: 2,
+        payload: { damage: 20, knockbackMps: 8, heavy: false, strength: 300, impact: 'knuckle-heavy' },
+      },
+    },
+    vfx: 'rampage-mode',
+    sfx: { cast: 'rampage-grunt', release: 'heavy-whoosh', impact: 'crushing-impact' },
+    look: {
+      palette: DUST,
+      impact: { flashM: 1, sparks: 20, motes: 30, ringM: 2, smoke: 10, groundFire: false, smokeColour: 0x8a7a66 },
+    },
+  },
   // ULT: Rampage Mode. A bellowing roar, then 8 s faster (+15%) and tougher (defence +25%: 20% less damage taken, owner 18/11/2026),
   // wrapped in a red rage aura with steam pouring off him.
   ult: {

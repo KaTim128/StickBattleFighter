@@ -520,3 +520,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Coyote time: a jump just after stepping off a ledge works, never twice (`coyote.test.ts`, `coyote-jump.test.ts`)
 - [x] A sprinting jump keeps sprint speed in the air (`coyote-jump.test.ts`)
 - [ ] Owner check: running jumps and ledge jumps feel natural; report any remaining "floating"
+- [x] Every kit has a fifth ability naming its slot; standard loadout unchanged; equipping benches exactly one ability (`loadout.test.ts`)
+- [x] Bastion Anchor, Soul Tether and Umbral Feint work in a fight through the normal ability button (`fifth-abilities.test.ts`)
+- [ ] Owner check: feel and balance of the three new abilities (greybox visuals and sounds until B18; B17 measures balance)
