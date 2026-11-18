@@ -56,9 +56,9 @@ test('WASD walks, Space crouches (slower), and the countdown runs in game time',
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   const errors = await open(page);
   const start = await dbg(page);
-  await page.keyboard.down('KeyD');
-  await expect.poll(async () => (await dbg(page)).x - start.x, { timeout: 20_000 }).toBeGreaterThan(1.5);
-  await page.keyboard.up('KeyD');
+  await page.keyboard.down('KeyW'); // north along the hall: the player starts just inside the front door
+  await expect.poll(async () => start.y - (await dbg(page)).y, { timeout: 20_000 }).toBeGreaterThan(1.5);
+  await page.keyboard.up('KeyW');
   await page.keyboard.press('Space');
   await expect(page.locator('.hs-status')).toHaveText('Crouching');
   await page.keyboard.press('Space');
@@ -93,9 +93,9 @@ test('room visibility: only the lit room shows at the start; upstairs is hidden 
   type Scene = { __hideSeek: { visibility: Vis; game: { player: { floor: number; x: number; y: number } } } };
   const vis = (id: string) => page.evaluate((r) => (window as unknown as Scene).__hideSeek.visibility.roomLight(r), id);
   const upstairs = () => page.evaluate(() => (window as unknown as Scene).__hideSeek.visibility.floorOpacity(1));
-  await expect.poll(() => vis('living')).toBeGreaterThan(0.9);
+  await expect.poll(() => vis('hall')).toBeGreaterThan(0.9); // the player starts in the entrance hall
   expect(await vis('bed1')).toBe(0);
-  expect(await vis('toilet')).toBe(0);
+  expect(await vis('frontyard')).toBe(0);
   expect(await upstairs()).toBeLessThan(0.05);
   await page.evaluate(
     ({ x, y }) => {
@@ -255,5 +255,59 @@ test('a floating HIDE bubble marks hiding places near the player, brighter when 
     )
     .toBe(true);
   await expect(page.locator('.hs-bubble')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('the game starts inside the house by the front door, with the Settings gear at the top right and no way out', async ({
+  page,
+}) => {
+  const errors = await open(page);
+  type Scene = {
+    __hideSeek: {
+      game: {
+        player: { floor: number; x: number; y: number };
+        world: { roomAt(f: number, x: number, y: number): { id: string; outdoors?: boolean } | null };
+        setDoor(id: string, open: boolean): void;
+      };
+    };
+  };
+  const room = await page.evaluate(() => {
+    const g = (window as unknown as Scene).__hideSeek.game;
+    return g.world.roomAt(g.player.floor, g.player.x, g.player.y)?.id;
+  });
+  expect(room).toBe('hall');
+  // The gear sits at the top right, as in every other mode, and opens the same Settings panel.
+  const gear = page.locator('.settings-button');
+  await expect(gear).toBeVisible();
+  const box = (await gear.boundingBox())!;
+  const view = page.viewportSize()!;
+  expect(box.x + box.width).toBeGreaterThan(view.width - 60);
+  expect(box.y).toBeLessThan(40);
+  await gear.click();
+  await expect(page.locator('.settings-panel')).toBeVisible();
+  await page.locator('.settings-close').click();
+  await expect(page.locator('.settings-panel')).toBeHidden();
+  // No page scrolling and the canvas fills the window: no black borders or gaps.
+  const fit = await page.evaluate(() => {
+    const c = document.querySelector('canvas')!.getBoundingClientRect();
+    const el = document.scrollingElement!;
+    return {
+      w: Math.abs(c.width - window.innerWidth),
+      h: Math.abs(c.height - window.innerHeight),
+      scrollX: el.scrollWidth - el.clientWidth,
+      scrollY: el.scrollHeight - el.clientHeight,
+    };
+  });
+  expect(fit.w).toBeLessThan(2);
+  expect(fit.h).toBeLessThan(2);
+  expect(fit.scrollX).toBeLessThanOrEqual(0);
+  expect(fit.scrollY).toBeLessThanOrEqual(0);
+  // The front door is locked: forcing it open does nothing.
+  const doorOpen = await page.evaluate(() => {
+    const g = (window as unknown as Scene).__hideSeek.game;
+    g.setDoor('d-front', true);
+    return (g as unknown as { world: { isOpen(id: string): boolean } }).world.isOpen('d-front');
+  });
+  expect(doorOpen).toBe(false);
   expect(errors).toEqual([]);
 });

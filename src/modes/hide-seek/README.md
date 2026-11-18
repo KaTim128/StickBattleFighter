@@ -3,3 +3,4 @@
 **Key interfaces:** `HideSeekGame` (state and fixed step), `HouseWorld` (rooms, doors, walls, stairs, sight, sound, routes), `Round` (20 s preparation, 2 minute hunt, kill, result), `Visibility` (room lighting), `hiding`, `props`, `perception` (what the hunter sees and hears), `Hunter` (patrol, investigate, search, chase), `scaleHouse` (the house is the authored plan made roomier).
 **Rules:** the hunter reads the player's body only, never the peeking view; shared code names no character (ids live in `src/data/arenas/house.ts`).
 `hunter-actions.ts`: the hunter's search animations as pure keyframed poses (open a door, kneel and look under, lift a lid, pull a curtain, listen, strike) with their durations, noises and look windows.
+`house-validate.ts`: `validateHouse(house)` returns the problems in any layout (overlaps, locked-only exit, furniture clearances, starts, reachability, hiding-place exits); run it over every new house in tests.

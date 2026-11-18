@@ -32,7 +32,7 @@ import { FighterControlsStore } from '../input/fighter-controls';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
 import { preventPageZoom } from '../input/no-zoom';
-import { SettingsState } from '../input/settings-store';
+import { browserStorage, SettingsState } from '../input/settings-store';
 import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
 import { AimHint } from '../interface/aim-hint';
@@ -1112,14 +1112,5 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           ? `Stickman Arena · character "${scene.characters.player.report.id}" is invalid (using the Base Stickman): ${scene.characters.player.report.errors[0] ?? ''}`
           : `Stickman Arena · ${scene.arena.name}${scene.arena.greybox ? ' (greybox)' : ''} · ${scene.playerFighter.def.displayName} · ${controlsHint()}`
         : 'Stickman Arena · 2D engine check · renderer ✓ physics ✓';
-  }
-}
-
-/** Local storage, or null where the browser refuses it (settings then last for this session only). */
-function browserStorage(): Storage | null {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
   }
 }

@@ -18,11 +18,11 @@ describe('hiding places (sections B and F)', () => {
 
   it('there are hiding places of every kind the brief lists, on both floors (all indoors)', () => {
     const kinds = new Set(spots.map((s) => s.spec.kind));
-    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain', 'shower-curtain'])
+    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain'])
       expect(kinds.has(k as never), k).toBe(true);
     expect(spots.some((s) => s.floor === 1)).toBe(true);
     expect(spots.some((s) => s.floor === 0)).toBe(true);
-    expect(spots.length).toBeGreaterThanOrEqual(18);
+    expect(spots.length).toBeGreaterThanOrEqual(15); // a smaller house (owner, 18/11/2026)
     // The game is played inside the house: no hiding place is in a yard.
     const w = new HouseWorld(HOUSE_PLAN);
     for (const sp of spots) expect(w.roomAt(sp.floor, sp.spec.at.x, sp.spec.at.y)?.outdoors, sp.id).not.toBe(true);
@@ -65,7 +65,7 @@ describe('hiding places (sections B and F)', () => {
       press(g);
       expect(g.takeEvents().some((e) => e.kind === 'hide-exit' && e.loudness > 0)).toBe(true);
     }
-    expect(noise.wardrobe).toBeGreaterThan(noise['shower-curtain']!);
+    expect(noise.wardrobe).toBeGreaterThan(noise.curtain!);
     expect(noise['under-bed']).toBeGreaterThan(noise.curtain!);
     expect(new Set(Object.values(noise)).size).toBeGreaterThan(3); // different places, different noise
   });
@@ -134,8 +134,8 @@ describe('throwable distractions (section E)', () => {
   /** The player standing by the bottle on the living-room side table. */
   const nearBottle = () => {
     const g = new HideSeekGame(HOUSE_PLAN);
-    g.player.x = 18.1;
-    g.player.y = 17.8;
+    g.player.x = 20.6;
+    g.player.y = 17.9;
     return g;
   };
 
@@ -167,14 +167,14 @@ describe('throwable distractions (section E)', () => {
     expect(impact.loudness).toBeGreaterThan(0.8);
     // It flew into the hall (through the wide arch) and stopped within its range.
     expect(g.world.roomAt(0, impact.at.x, impact.at.y)?.id).toBe('hall');
-    expect(impact.at.x - 18.1).toBeLessThanOrEqual(THROW_RANGE_M + 1.5);
+    expect(impact.at.x - 20.6).toBeLessThanOrEqual(THROW_RANGE_M + 1.5);
     expect(g.props.find((p) => p.id === 't1')!.mode).toBe('rest');
     // A toy is quieter.
     const toy = new HideSeekGame(HOUSE_PLAN);
-    toy.player.x = 16;
-    toy.player.y = 17.9;
-    toy.props.find((p) => p.id === 't3')!.x = 16;
-    toy.props.find((p) => p.id === 't3')!.y = 18.0;
+    toy.player.x = 18.6;
+    toy.player.y = 15.4;
+    toy.props.find((p) => p.id === 't3')!.x = 18.6;
+    toy.props.find((p) => p.id === 't3')!.y = 15.3;
     press(toy);
     idle(toy, 0.2, { move: { x: -1, y: 0 } });
     toy.takeEvents();
@@ -188,12 +188,12 @@ describe('throwable distractions (section E)', () => {
   it('a thrown object stops at a wall, never through it', () => {
     const g = nearBottle();
     press(g);
-    idle(g, 0.2, { move: { x: 0, y: -1 } }); // north, toward the bookshelf and the wall at y=14
+    idle(g, 0.2, { move: { x: 0, y: -1 } }); // north, toward the wall at y=14
     press(g);
     idle(g, 2);
     const o = g.props.find((p) => p.id === 't1')!;
     expect(o.mode).toBe('rest');
-    expect(o.y).toBeGreaterThan(14.85); // short of the bookshelf
+    expect(o.y).toBeGreaterThan(14.1); // short of the wall
     expect(g.world.roomAt(0, o.x, o.y)?.id).toBe('living');
   });
 
@@ -207,13 +207,13 @@ describe('throwable distractions (section E)', () => {
     expect(g.player.carrying).toBeNull();
     const back = g.props.find((p) => p.id === 't1')!;
     expect(back.mode).toBe('rest');
-    expect(back.x).toBe(18.1);
+    expect(back.x).toBe(20.6);
   });
 
   it('while carrying, interact throws instead of opening a door or hiding', () => {
     const g = nearBottle();
     press(g);
-    g.player.x = 21;
+    g.player.x = 16.8;
     g.player.y = 14.9; // next to the kitchen door
     expect(g.prompt()).toBe('Throw');
     press(g);
@@ -295,9 +295,9 @@ describe('hiding blinds the player; peeking shows a little but gives them away (
 
   it('peeking while NOT hiding still does not change what Shroud notices (the old rule stands)', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
-    const eyes = { floor: 0 as const, x: 14, y: 17.5, facing: -Math.PI / 2, gait: 'walk' as const };
-    const a = sightRate(g.world, eyes, { floor: 0, x: 14, y: 15, crouching: false, hiding: null, peeking: false });
-    const b = sightRate(g.world, eyes, { floor: 0, x: 14, y: 15, crouching: false, hiding: null, peeking: true });
+    const eyes = { floor: 0 as const, x: 22.8, y: 19.5, facing: -Math.PI / 2, gait: 'walk' as const };
+    const a = sightRate(g.world, eyes, { floor: 0, x: 22.8, y: 17, crouching: false, hiding: null, peeking: false });
+    const b = sightRate(g.world, eyes, { floor: 0, x: 22.8, y: 17, crouching: false, hiding: null, peeking: true });
     expect(b).toBe(a);
   });
 });

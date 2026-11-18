@@ -32,6 +32,8 @@ export interface HouseNodeRef {
   readonly id: string;
   /** The footprint in world metres (for visibility tests). */
   readonly rect: Rect;
+  /** False for pieces that must stay fully opaque whatever stands behind them (stair rails and the block). */
+  readonly fades?: boolean;
 }
 
 export interface DoorNode {
@@ -51,6 +53,26 @@ const WALL_CHUNK_M = 0.5;
 const LEDGE_M = 0.35;
 /** The wall block that fills the space behind the top step is exactly this tall (house.ts), so it is drawn as stair wood. */
 const STAIR_BLOCK_M = 3;
+
+/** The ground floor's walls are this tall: the block under the landing is drawn as a piece of wall. */
+const WALL_DRAW_M = 2.6;
+
+/** Draw key for a rail beside a flight, or the block at its head, on its lower floor: just behind its highest tread. */
+function stairRailKey(w: WallDef, house: HouseDef): number | null {
+  if (wallFades(w)) return null; // only the staircase's own rails and the block under its landing
+  for (const s of house.stairs) {
+    const r = s.ramp;
+    if (w.floor !== s.bottomFloor || s.rises !== 'n') continue;
+    const beside = w.y1 > r.y0 && w.y0 < r.y1 && (Math.abs(w.x1 - r.x0) < 0.3 || Math.abs(w.x0 - r.x1) < 0.3);
+    const atHead = Math.abs(w.y1 - r.y0) < 0.3 && w.x1 > r.x0 && w.x0 < r.x1;
+    if (beside || atHead) return iso(r.x1, r.y0, s.riseM).y - 0.05;
+  }
+  return null;
+}
+
+/** The staircase's own barriers (its rails and the block under the landing) stay fully opaque whatever is behind them. */
+export const wallFades = (w: { kind: string; heightM: number }): boolean =>
+  w.kind !== 'rail' && w.heightM !== STAIR_BLOCK_M;
 /** Furniture this tall can hide a person standing behind it, so it fades (gently: a sofa never needs to). */
 const FURNITURE_FADE_M = 1.3;
 const FURNITURE_FADE_ALPHA = 0.3;
@@ -147,10 +169,10 @@ function wallChunks(w: WallDef, heightM: number, colour: number, exterior: boole
   return out;
 }
 
-function drawStairs(s: StairDef, zBase: number): { g: Graphics; rect: Rect }[] {
+function drawStairs(s: StairDef, zBase: number, thin = false): { g: Graphics; rect: Rect; sortY: number }[] {
   const r = s.ramp;
   const n = 15;
-  const out: { g: Graphics; rect: Rect }[] = [];
+  const out: { g: Graphics; rect: Rect; sortY: number }[] = [];
   for (let i = 0; i < n; i++) {
     const t0 = i / n;
     const t1 = (i + 1) / n;
@@ -169,12 +191,17 @@ function drawStairs(s: StairDef, zBase: number): { g: Graphics; rect: Rect }[] {
         rect = { y0: r.y0, y1: r.y1, x0: r.x0 + (r.x1 - r.x0) * t0, x1: r.x0 + (r.x1 - r.x0) * t1 };
     }
     const g = new Graphics();
-    isoBlock(g, rect.x0, rect.y0, rect.x1, rect.y1, zBase, zBase + s.riseM * t1, {
+    // Seen from the upper floor only the treads show, going down into the opening: drawn as solid columns down to the
+    // lower floor they hung below the upper floor's edge (owner, 18/11/2026: "distorted and broken").
+    const top = zBase + s.riseM * t1;
+    isoBlock(g, rect.x0, rect.y0, rect.x1, rect.y1, thin ? Math.max(zBase, top - 0.22) : zBase, top, {
       colour: i % 2 ? 0x4e3b29 : 0x58442f,
       top: 0x6b5238,
       edge: 0.3,
     });
-    out.push({ g, rect });
+    // A person standing on a tread must be drawn over it: sort by the tread's back edge at its top, not its near corner.
+    const zTop = zBase + s.riseM * t1;
+    out.push({ g, rect, sortY: s.rises === 'n' ? iso(rect.x1, rect.y0, zTop).y : frontY(rect, zBase) });
   }
   return out;
 }
@@ -368,25 +395,33 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
     // The walls on the building's outline: the south and east ones face the camera, so they stand low.
     const inside = onBuilding(w, building);
     const front = inside === 'front';
-    const heightM = w.kind === 'wall' && front ? LEDGE_M : w.heightM;
+    const block = w.heightM === STAIR_BLOCK_M;
+    // The block under the landing reads as the end of the hall's wall (plaster, wall height), not a crate by the stairs.
+    const heightM = w.kind === 'wall' && front ? LEDGE_M : block ? WALL_DRAW_M : w.heightM;
     const exterior = w.kind === 'wall' && inside !== null;
     const outbuilding =
       w.kind === 'wall' && inside === null && !insideRect(building, (w.x0 + w.x1) / 2, (w.y0 + w.y1) / 2);
     const colour =
-      w.heightM === STAIR_BLOCK_M
-        ? 0x4e3b29 // the block under the stairs' landing is wood like the stairs
-        : w.kind === 'fence'
-          ? 0x6f695c
-          : w.kind === 'rail'
-            ? 0x4a3a2a
-            : exterior || outbuilding
-              ? BRICK_AGED
-              : PLASTER_AGED;
+      w.kind === 'fence'
+        ? 0x6f695c
+        : w.kind === 'rail'
+          ? 0x4a3a2a
+          : exterior || outbuilding
+            ? BRICK_AGED
+            : PLASTER_AGED;
+    // The railing round the stairwell upstairs is collision only: drawn, it cut across the steps going down (owner,
+    // 18/11/2026: "remove the barrier going through the stairs"). It still stops anyone stepping into the opening.
+    if (house.stairs.some((s) => w.kind === 'rail' && w.floor === s.topFloor && w.floor !== s.bottomFloor)) continue;
     for (const c of wallChunks(w, heightM, colour, exterior || outbuilding)) {
       const node = bake(c.g);
-      layer.actors.add(node, frontY(c.rect));
-      nodes.push({ node, floor: w.floor, room: null, kind: 'wall', id: `wall-${w.x0}-${w.y0}`, rect: c.rect });
-      fader.add(node);
+      // A rail beside a flight stands behind its treads on the camera's side (the treads rise above it), so it is drawn
+      // before every tread; sorted by its own corner it cut across the upper steps (owner, 18/11/2026: "distorted").
+      const behindStairs = stairRailKey(w, house);
+      layer.actors.add(node, behindStairs ?? frontY(c.rect));
+      // The stairs' rails and the block under their landing are part of the staircase: always opaque (owner, 18/11/2026).
+      const fades = wallFades(w);
+      nodes.push({ node, floor: w.floor, room: null, kind: 'wall', id: `wall-${w.x0}-${w.y0}`, rect: c.rect, fades });
+      if (fades) fader.add(node);
     }
   }
 
@@ -430,13 +465,13 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
       [s.bottomFloor, 0],
       [s.topFloor, -s.riseM],
     ] as const) {
-      const treads = drawStairs(s, zBase);
+      const treads = drawStairs(s, zBase, floor === s.topFloor);
       // Upstairs only the top steps going down are drawn: the rest are far below the floor, in the dark pit (drawn deeper
       // they floated over the floor in front of the stairwell).
       const shown = floor === s.topFloor ? treads.slice(Math.floor(treads.length * 0.55)) : treads;
       for (const t of treads.filter((x) => shown.includes(x))) {
         const node = bake(t.g);
-        floors[floor]!.actors.add(node, frontY(t.rect, zBase));
+        floors[floor]!.actors.add(node, t.sortY);
         nodes.push({ node, floor, room: null, kind: 'stairs', id: s.id, rect: t.rect });
       }
     }

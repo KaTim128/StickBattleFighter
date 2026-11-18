@@ -560,4 +560,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Hunter search animations and behaviour (TD-103): pose tests (`hunter-actions.test.ts`), thorough vs glance, suspicion from sounds, listening, knife scrape, determinism, finds a player in a cupboard he opens (`hunter.test.ts`)
 - [ ] Owner check: the hunter opens cupboards, kneels under beds, lifts lids, listens and scrapes his knife, and feels threatening but fair (play `?mode=hide-seek`)
 - [x] Under-sofa hiding, Shroud faster than a runner, no cone shown (TD-104): `horror-house.test.ts`, `stealth.test.ts`
+- [x] Compact house (TD-110): rooms and the single locked front door, no corridor, player spawns in the hall by the front door, hunter starts inside (`world.test.ts`, `game.test.ts`, `house-validate.test.ts`)
+- [x] Stairs (TD-110): smooth climb and descent with no teleport and continuous height (`world.test.ts`); barrier rails and landing block never fade (`stair-barrier.test.ts`)
+- [x] Shroud's senses (TD-110): knows nothing at the start; no sight through walls, shut doors or the fridge; forgets after 22 s (`hunter.test.ts`); walker never snags on furniture corners (`world.test.ts`)
+- [x] Settings gear at the top right, panel opens, canvas fills the window with no scrolling, front door stays locked (`hide-seek.spec.ts`)
+- [ ] Owner check on the phone: the house is compact, the stairs climb smoothly and look solid, the gear is top right, fullscreen starts on the first tap (play `?mode=hide-seek`)
 

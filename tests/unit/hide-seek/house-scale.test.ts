@@ -38,7 +38,7 @@ describe('the roomier house', () => {
   });
 
   it('every room can be walked to from the player start, upstairs included', () => {
-    for (const r of HOUSE.rooms) {
+    for (const r of HOUSE.rooms.filter((x) => !x.outdoors)) {
       const at = { floor: r.floor, x: (r.rect.x0 + r.rect.x1) / 2, y: (r.rect.y0 + r.rect.y1) / 2 };
       // The middle of a room may be under a table; find any free point in it.
       let spot = at;

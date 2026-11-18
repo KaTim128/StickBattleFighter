@@ -99,25 +99,20 @@ const room = (
 });
 
 export const HOUSE_ROOMS: readonly RoomDef[] = [
-  // Ground floor
-  room('toilet', 'Toilet', 0, 10, 9, 13, 14, 'bathroom', 0.8),
-  room('dining', 'Dining room', 0, 13, 9, 19, 14, 'room', 0.85),
-  room('kitchen', 'Kitchen', 0, 19, 9, 25, 14, 'room', 0.9),
-  room('living', 'Living room', 0, 10, 14, 25, 21, 'room', 0.9),
+  // Ground floor: a compact home, entered through the hall (owner, 18/11/2026: smaller, no long corridor)
+  room('kitchen', 'Kitchen', 0, 15, 9, 20, 14, 'room', 0.9),
+  room('dining', 'Dining room', 0, 20, 9, 25, 14, 'room', 0.85),
+  room('living', 'Living room', 0, 15, 14, 25, 21, 'room', 0.9),
   room('hall', 'Entrance hall', 0, 25, 9, 29, 21, 'hall', 0.75),
-  // Upper floor
-  room('bed1', 'Bedroom 1', 1, 10, 9, 16, 14, 'room', 0.8),
-  room('bath1', 'Bathroom 1', 1, 16, 9, 19, 14, 'bathroom', 0.8),
-  room('corridor', 'Upstairs corridor', 1, 10, 14, 25, 16, 'corridor', 0.6),
-  room('bed2', 'Bedroom 2', 1, 10, 16, 19, 21, 'room', 0.8),
-  room('bath2', 'Bathroom 2', 1, 19, 16, 23, 21, 'bathroom', 0.8),
+  // Upper floor: the landing and two bedrooms off it
+  room('bed1', 'Bedroom 1', 1, 15, 9, 25, 15, 'room', 0.8),
+  room('bed2', 'Bedroom 2', 1, 15, 15, 25, 21, 'room', 0.8),
   room('uphall', 'Upstairs hallway', 1, 25, 9, 29, 21, 'hall', 0.65),
-  // The lot (ground level, outdoors)
+  // The lot (ground level, outdoors, scenery only: nobody can get out to it)
   room('frontyard', 'Front yard', 0, 0, 21, 40, 30, 'yard', 0.35, true),
   room('backyard', 'Backyard', 0, 0, 0, 40, 9, 'yard', 0.3, true),
-  room('westyard', 'West side yard', 0, 0, 9, 10, 21, 'yard', 0.3, true),
+  room('westyard', 'West side yard', 0, 0, 9, 15, 21, 'yard', 0.3, true),
   room('eastyard', 'East side yard', 0, 29, 9, 40, 21, 'yard', 0.3, true),
-  room('shed', 'Shed', 0, 3, 2, 7, 6, 'shed', 0.4),
   room('street', 'Street', 0, 0, 30, 40, 34, 'yard', 0.25, true),
 ];
 
@@ -127,36 +122,28 @@ const STAIR_TOP_Y = 10.3;
 const STAIR_BOTTOM_Y = 13.8;
 
 const wallsGround: WallDef[] = [
-  // Outer walls of the house (gaps: back door in the kitchen, front door in the hall)
-  ...wallH(0, 9, 10 - T / 2, 29 + T / 2, [[21.2, 22.4]]),
-  ...wallH(0, 21, 10 - T / 2, 29 + T / 2, [[26.4, 27.6]]),
-  ...wallV(0, 10, 9, 21),
+  // Outer walls (the one gap is the front door, which is locked)
+  ...wallH(0, 9, 15 - T / 2, 29 + T / 2),
+  ...wallH(0, 21, 15 - T / 2, 29 + T / 2, [[26.4, 27.6]]),
+  ...wallV(0, 15, 9, 21),
   ...wallV(0, 29, 9, 21),
-  // Interior
-  ...wallH(0, 14, 10, 25, [
-    [11, 12.2],
-    [14, 17],
-    [20.2, 21.8],
+  // Interior: kitchen and dining above the living room, the hall on the east
+  ...wallH(0, 14, 15, 25, [
+    [16, 17.6],
+    [22, 24.5],
   ]),
-  ...wallV(0, 13, 9, 14),
-  ...wallV(0, 19, 9, 14, [[11.6, 13.4]]),
+  ...wallV(0, 20, 9, 14, [[11.0, 13.0]]),
   ...wallV(0, 25, 9, 21, [
     [10.2, 11.8],
     [15.5, 19.5],
   ]),
-  // Staircase rails (ground): both sides and the top end
+  // Staircase rail (ground, west side only: the wall is right there on the east)
   seg(0, STAIR_X0 - 0.15, STAIR_TOP_Y, STAIR_X0, STAIR_BOTTOM_Y, 'rail'),
-  // (No rail on the east side: the wall is right there, and a rail's end would trap a player pushing up and to the right.)
   // Under the landing: the stairs run right up to the back wall, with no empty floor behind the top step.
   { ...seg(0, STAIR_X0 - 0.15, 9.1, STAIR_X1 + 0.15, STAIR_TOP_Y), heightM: 3 },
-  // The shed (door on the south side)
-  ...wallH(0, 2, 3, 7),
-  ...wallH(0, 6, 3, 7, [[4.4, 5.6]]),
-  ...wallV(0, 3, 2, 6),
-  ...wallV(0, 7, 2, 6),
-  // The fence round the lot (a low picket fence: you can see through it); a gate in the south fence
+  // The fence round the lot (a low picket fence, scenery)
   ...fenceH(0, 0, 40),
-  ...fenceH(0, 30, 40, [[24.5, 27.5]]),
+  ...fenceH(0, 30, 40),
   ...fenceV(0, 0, 30),
   ...fenceV(40, 0, 30),
 ];
@@ -176,21 +163,16 @@ function fenceV(x: number, y0: number, y1: number): WallDef[] {
 }
 
 const wallsUpper: WallDef[] = [
-  ...wallH(1, 9, 10 - T / 2, 29 + T / 2),
-  ...wallH(1, 21, 10 - T / 2, 29 + T / 2),
-  ...wallV(1, 10, 9, 21),
+  ...wallH(1, 9, 15 - T / 2, 29 + T / 2),
+  ...wallH(1, 21, 15 - T / 2, 29 + T / 2),
+  ...wallV(1, 15, 9, 21),
   ...wallV(1, 29, 9, 21),
-  // Corridor walls (doors into both bedrooms)
-  ...wallH(1, 14, 10, 25, [[12, 13.2]]),
-  ...wallH(1, 16, 10, 23, [[12, 13.2]]),
-  // The storage space and the landing nook are walled solid now (they are no longer rooms).
-  ...wallH(1, 16, 23, 25),
-  ...wallV(1, 16, 9, 14, [[10.5, 11.7]]),
-  ...wallV(1, 19, 9, 14),
-  ...wallV(1, 19, 16, 21, [[17.4, 18.6]]),
-  ...wallV(1, 23, 16, 21),
-  ...wallV(1, 25, 9, 14),
-  ...wallV(1, 25, 16, 21),
+  // Bedrooms: one wall between them, one wall to the landing with a door into each
+  ...wallH(1, 15, 15, 25),
+  ...wallV(1, 25, 9, 21, [
+    [10.3, 11.7],
+    [16.5, 17.9],
+  ]),
   // The stairwell's railing upstairs (open at the top, where the stairs arrive)
   seg(1, STAIR_X0 - 0.15, STAIR_TOP_Y, STAIR_X0, STAIR_BOTTOM_Y + 0.5, 'rail'),
   seg(1, STAIR_X1, STAIR_TOP_Y, STAIR_X1 + 0.15, STAIR_BOTTOM_Y + 0.5, 'rail'),
@@ -221,21 +203,15 @@ const gapH = (y: number, x0: number, x1: number): Rect => ({ x0, y0: y - T / 2, 
 const gapV = (x: number, y0: number, y1: number): Rect => ({ x0: x - T / 2, y0, x1: x + T / 2, y1 });
 
 export const HOUSE_DOORS: readonly DoorDef[] = [
-  door('d-toilet', 0, 'door', gapH(14, 11, 12.2), 'toilet', 'living', false),
-  door('a-dining-living', 0, 'arch', gapH(14, 14, 17), 'dining', 'living', true),
-  door('d-kitchen-living', 0, 'door', gapH(14, 20.2, 21.8), 'kitchen', 'living', false),
-  door('a-dining-kitchen', 0, 'arch', gapV(19, 11.6, 13.4), 'dining', 'kitchen', true),
-  door('d-kitchen-hall', 0, 'door', gapV(25, 10.2, 11.8), 'kitchen', 'hall', false),
+  door('d-kitchen-living', 0, 'door', gapH(14, 16, 17.6), 'kitchen', 'living', false),
+  door('a-kitchen-dining', 0, 'arch', gapV(20, 11.0, 13.0), 'kitchen', 'dining', true),
+  door('a-dining-living', 0, 'arch', gapH(14, 22, 24.5), 'dining', 'living', true),
+  door('d-dining-hall', 0, 'door', gapV(25, 10.2, 11.8), 'dining', 'hall', false),
   door('a-living-hall', 0, 'arch', gapV(25, 15.5, 19.5), 'living', 'hall', true),
-  door('d-front', 0, 'door', gapH(21, 26.4, 27.6), 'hall', 'frontyard', false, true),
-  door('d-back', 0, 'door', gapH(9, 21.2, 22.4), 'kitchen', 'backyard', false, true),
-  door('d-shed', 0, 'door', gapH(6, 4.4, 5.6), 'shed', 'backyard', false, true),
-  door('gate', 0, 'gate', gapH(30, 24.5, 27.5), 'frontyard', 'street', true, true),
-  door('d-bed1', 1, 'door', gapH(14, 12, 13.2), 'bed1', 'corridor', false),
-  door('d-bed2', 1, 'door', gapH(16, 12, 13.2), 'bed2', 'corridor', false),
-  door('d-bath1', 1, 'door', gapV(16, 10.5, 11.7), 'bed1', 'bath1', false),
-  door('d-bath2', 1, 'door', gapV(19, 17.4, 18.6), 'bed2', 'bath2', false),
-  door('a-corridor-uphall', 1, 'arch', gapV(25, 14, 16), 'corridor', 'uphall', true),
+  // The front door is part of the house but locked for good: nobody leaves (owner, 18/11/2026).
+  { ...door('d-front', 0, 'door', gapH(21, 26.4, 27.6), 'hall', 'frontyard', false, true), locked: true },
+  door('d-bed1', 1, 'door', gapV(25, 10.3, 11.7), 'bed1', 'uphall', false),
+  door('d-bed2', 1, 'door', gapV(25, 16.5, 17.9), 'bed2', 'uphall', false),
 ];
 
 export const HOUSE_STAIRS: readonly StairDef[] = [
@@ -297,172 +273,115 @@ const WHITE = 0xd9d6cf;
 
 export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   // ---------------------------------------------------------------- Living room
-  item('rug', 0, 13, 15.5, 20, 19.5, 0.02, 0x7a3a3a, { solid: false }),
-  item('sofa', 0, 14.2, 17.9, 17, 19.1, 0.9, FABRIC, { hide: hide('under-sofa', 0.9, 0.4, 1.3, 15.6, 18.5, 'n') }),
-  item('armchair', 0, 12.85, 16, 14.1, 17.4, 0.9, FABRIC),
-  item('armchair', 0, 17.1, 16, 18.35, 17.4, 0.9, FABRIC),
-  item('coffee-table', 0, 14.2, 16.2, 17, 17.4, 0.45, WOOD),
-  item('tv-console', 0, 10.25, 16, 11, 18.5, 0.6, DARK_WOOD),
-  item('side-table', 0, 17.8, 18.4, 18.5, 19.1, 0.55, WOOD),
-  item('floor-lamp', 0, 19.3, 17.9, 19.8, 18.4, 1.6, 0xe8d28a),
-  item('floor-lamp', 0, 10.5, 20.2, 11, 20.7, 1.6, 0xe8d28a),
-  item('bookshelf', 0, 17.4, 14.25, 19.8, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
-  item('bookshelf', 0, 22.3, 14.25, 24.5, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
-  item('cupboard', 0, 10.25, 18.75, 10.95, 20.05, 1.9, DARK_WOOD, {
+  item('rug', 0, 16.6, 15.5, 21.6, 19.5, 0.02, 0x7a3a3a, { solid: false }),
+  item('sofa', 0, 17.3, 18.0, 20.0, 19.2, 0.9, FABRIC, { hide: hide('under-sofa', 0.9, 0.4, 1.3, 18.65, 18.6, 'n') }),
+  item('armchair', 0, 15.35, 16.1, 16.5, 17.5, 0.9, FABRIC),
+  item('armchair', 0, 20.9, 16.1, 22.05, 17.5, 0.9, FABRIC),
+  item('coffee-table', 0, 17.3, 16.3, 20.1, 17.5, 0.45, WOOD),
+  item('side-table', 0, 21.0, 18.6, 21.7, 19.3, 0.55, WOOD),
+  item('floor-lamp', 0, 22.6, 15.3, 23.1, 15.8, 1.6, 0xe8d28a),
+  item('bookshelf', 0, 18.2, 14.25, 20.4, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
+  item('cupboard', 0, 15.3, 19.1, 16.0, 20.4, 1.9, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('cupboard', 0.85, 0.3, 0.9, 10.6, 19.4, 'e'),
+    hide: hide('cupboard', 0.85, 0.3, 0.9, 15.65, 19.75, 'e'),
   }),
-  item('chest', 0, 23, 20.05, 24.4, 20.8, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 23.7, 20.4, 'n') }),
+  item('chest', 0, 23, 20.05, 24.4, 20.75, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 23.7, 20.4, 'n') }),
   item('curtain', 0, 19, 20.55, 21.6, 20.85, 2.2, 0x7a5a6a, {
     hide: hide('curtain', 0.65, 0.3, 1.2, 20.3, 20.62, 'n'),
   }),
-  // ---------------------------------------------------------------- Dining room
-  item('dining-table', 0, 14.9, 10.8, 17.1, 12.6, 0.75, WOOD, {
-    hide: hide('under-table', 0.45, 0.25, 1.8, 16, 11.7, 's'),
-  }),
-  item('chair', 0, 14.2, 11.4, 14.8, 12, 0.5, DARK_WOOD),
-  item('chair', 0, 17.2, 11.4, 17.8, 12, 0.5, DARK_WOOD),
-  item('cupboard', 0, 13.3, 9.3, 14.6, 9.9, 1.0, DARK_WOOD, {
-    hide: hide('cupboard', 0.8, 0.3, 0.9, 13.95, 9.62, 's'),
-  }),
   // ---------------------------------------------------------------- Kitchen
-  item('sink', 0, 19.3, 9.25, 20.4, 10.1, 0.95, 0xaab4bc),
-  item('counter', 0, 20.5, 9.25, 21.0, 10.1, 0.9, WHITE),
-  item('stove', 0, 22.6, 9.25, 23.6, 10.1, 0.95, 0x444a52),
-  item('counter', 0, 23.7, 9.25, 24.8, 10.1, 0.9, WHITE),
-  item('fridge', 0, 24.0, 12.6, 24.75, 13.8, 1.8, 0xc9ced3, { blocksSight: true }),
-  item('counter', 0, 20.5, 11.5, 22.9, 12.6, 0.9, WHITE),
-  item('cupboard', 0, 22.8, 13, 23.7, 13.8, 2.0, DARK_WOOD, {
-    blocksSight: true,
-    hide: hide('cupboard', 0.85, 0.3, 0.9, 23.25, 13.4, 'n'),
+  item('sink', 0, 15.3, 9.25, 16.4, 10.1, 0.95, 0xaab4bc),
+  item('stove', 0, 17.4, 9.25, 18.4, 10.1, 0.95, 0x444a52),
+  item('fridge', 0, 18.7, 9.25, 19.45, 10.0, 1.8, 0xc9ced3, { blocksSight: true }),
+  item('counter', 0, 16.8, 11.7, 18.4, 12.6, 0.9, WHITE),
+  item('chair', 0, 16.9, 10.75, 17.5, 11.25, 0.5, DARK_WOOD),
+  item('chair', 0, 17.7, 10.75, 18.3, 11.25, 0.5, DARK_WOOD),
+  // ---------------------------------------------------------------- Dining room
+  item('dining-table', 0, 22.4, 11.0, 23.9, 12.6, 0.75, WOOD, {
+    hide: hide('under-table', 0.45, 0.25, 1.8, 23.15, 11.8, 's'),
   }),
-  // ---------------------------------------------------------------- Toilet
-  item('toilet', 0, 10.3, 9.3, 11.0, 10.1, 0.45, WHITE),
-  item('basin', 0, 11.7, 9.3, 12.5, 9.8, 0.85, WHITE),
+  item('chair', 0, 21.3, 11.4, 21.9, 12.0, 0.5, DARK_WOOD),
+  item('chair', 0, 21.3, 12.2, 21.9, 12.8, 0.5, DARK_WOOD),
+  item('cupboard', 0, 21.9, 9.3, 23.2, 9.9, 1.0, DARK_WOOD),
+  item('side-table', 0, 24.1, 9.3, 24.7, 9.9, 0.6, WOOD),
   // ---------------------------------------------------------------- Entrance hall
   item('cupboard', 0, 28.3, 19.2, 28.85, 20.4, 2.0, DARK_WOOD, {
     blocksSight: true,
     hide: hide('cupboard', 0.85, 0.3, 0.9, 28.6, 19.8, 'w'),
   }),
   // ---------------------------------------------------------------- Bedroom 1
-  item('bed', 1, 11.4, 9.4, 13.6, 11.8, BED_TOP_M, 0x8a8aa0, {
-    hide: hide('under-bed', 0.9, 0.4, 1.3, 12.5, 10.6, 's'),
+  item('bed', 1, 16.4, 9.4, 18.6, 11.8, BED_TOP_M, 0x8a8aa0, {
+    hide: hide('under-bed', 0.9, 0.4, 1.3, 17.5, 10.6, 's'),
   }),
-  item('nightstand', 1, 10.4, 9.4, 11, 10, 0.5, WOOD),
-  item('wardrobe', 1, 14.6, 9.3, 15.8, 10.2, 2.0, DARK_WOOD, {
+  item('nightstand', 1, 15.35, 9.4, 15.95, 10, 0.5, WOOD),
+  item('wardrobe', 1, 20.6, 9.3, 21.8, 10.2, 2.0, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('wardrobe', 0.9, 0.45, 0.9, 15.2, 9.9, 's'),
+    hide: hide('wardrobe', 0.9, 0.45, 0.9, 21.2, 9.9, 's'),
   }),
-  item('desk', 1, 10.4, 12.6, 11.6, 13.8, 0.75, WOOD),
-  // ---------------------------------------------------------------- Bathroom 1
-  item('bathtub', 1, 17.05, 9.3, 18.8, 10.4, 0.6, WHITE),
-  item('shower-curtain', 1, 17.05, 10.4, 18.8, 10.6, 2.0, 0x9ab8c8, {
-    hide: hide('shower-curtain', 0.7, 0.25, 1.0, 17.9, 10.0, 's'),
-  }),
-  item('toilet', 1, 18.2, 12.6, 18.8, 13.4, 0.45, WHITE),
-  item('basin', 1, 16.3, 12.8, 17.1, 13.5, 0.85, WHITE),
+  item('desk', 1, 15.4, 12.8, 16.6, 14.0, 0.75, WOOD),
+  item('chest', 1, 19.0, 14.1, 20.4, 14.7, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 19.7, 14.4, 'n') }),
+  item('shelf', 1, 24.35, 12.6, 24.75, 13.8, 1.6, DARK_WOOD, { blocksSight: true }),
+  item('floor-lamp', 1, 23.3, 9.4, 23.8, 9.9, 1.6, 0xe8d28a),
   // ---------------------------------------------------------------- Bedroom 2
-  item('bed', 1, 11.4, 19.2, 13.9, 20.8, BED_TOP_M, 0x8aa08a, {
-    hide: hide('under-bed', 0.9, 0.4, 1.3, 12.65, 20.0, 'n'),
+  item('bed', 1, 16.4, 19.2, 18.9, 20.8, BED_TOP_M, 0x8aa08a, {
+    hide: hide('under-bed', 0.9, 0.4, 1.3, 17.65, 20.0, 'n'),
   }),
-  item('wardrobe', 1, 10.4, 16.3, 11.6, 17.4, 2.0, DARK_WOOD, {
+  item('nightstand', 1, 15.35, 20.2, 15.95, 20.8, 0.5, WOOD),
+  item('wardrobe', 1, 15.4, 15.3, 16.6, 16.4, 2.0, DARK_WOOD, {
     blocksSight: true,
-    hide: hide('wardrobe', 0.9, 0.45, 0.9, 11, 17.0, 's'),
+    hide: hide('wardrobe', 0.9, 0.45, 0.9, 16, 16.1, 's'),
   }),
-  item('curtain', 1, 14.4, 20.55, 16.9, 20.85, 2.2, 0x6a7a8a, {
-    hide: hide('curtain', 0.65, 0.3, 1.2, 15.6, 20.62, 'n'),
+  item('curtain', 1, 20.0, 20.55, 22.5, 20.85, 2.2, 0x6a7a8a, {
+    hide: hide('curtain', 0.65, 0.3, 1.2, 21.25, 20.62, 'n'),
   }),
-  item('nightstand', 1, 10.4, 20.2, 11, 20.8, 0.5, WOOD),
-  // ---------------------------------------------------------------- Bathroom 2
-  item('bathtub', 1, 19.3, 19.5, 22.7, 20.6, 0.6, WHITE),
-  item('shower-curtain', 1, 19.3, 19.3, 22.7, 19.5, 2.0, 0xc8b89a, {
-    hide: hide('shower-curtain', 0.7, 0.25, 1.0, 21, 20.1, 'n'),
-  }),
-  item('toilet', 1, 22.1, 16.3, 22.7, 17.1, 0.45, WHITE),
-  item('basin', 1, 19.4, 16.3, 20.2, 16.8, 0.85, WHITE),
+  item('chest', 1, 19.4, 15.3, 20.8, 15.9, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 20.1, 15.6, 's') }),
+  item('bookshelf', 1, 22.6, 15.2, 24.4, 15.8, 2.0, DARK_WOOD, { blocksSight: true }),
+  item('floor-lamp', 1, 23.5, 19.5, 24.0, 20.0, 1.6, 0xe8d28a),
   // ---------------------------------------------------------------- Upstairs hall
   item('cupboard', 1, 28.3, 17, 28.85, 18.4, 2.0, DARK_WOOD, {
     blocksSight: true,
     hide: hide('cupboard', 0.85, 0.3, 0.9, 28.65, 17.7, 'w'),
   }),
-  // ---------------------------------------------------------------- Front yard
+  item('chest', 1, 27.4, 20, 28.7, 20.7, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 28, 20.35, 'n') }),
+  item('bench', 1, 25.6, 19.2, 27.2, 19.8, 0.5, DARK_WOOD),
+  item('floor-lamp', 1, 28.3, 15.8, 28.8, 16.3, 1.6, 0xe8d28a),
+  // ---------------------------------------------------------------- The lot (scenery behind the fence: the house cannot be left)
   item('lawn', 0, 0, 21, 40, 30, 0.02, 0x2a4a2c, { solid: false }),
   item('path', 0, 26.4, 21.1, 27.6, 30, 0.03, 0x6a6a64, { solid: false }),
   item('path', 0, 31, 21, 40, 30, 0.03, 0x4c4c50, { solid: false }),
-  item('bush', 0, 12, 21.5, 14.4, 22.9, 1.1, 0x244a2a),
   item('bush', 0, 16, 21.5, 18.4, 22.9, 1.1, 0x244a2a),
   item('bush', 0, 22.6, 21.5, 24.8, 22.9, 1.1, 0x244a2a),
   item('tree', 0, 4, 24, 5, 25, 3.4, 0x4a3a2a, { blocksSight: false }),
   item('tree', 0, 18.5, 26, 19.5, 27, 3.4, 0x4a3a2a, { blocksSight: false }),
   item('car', 0, 32, 23, 37.5, 25.6, 1.4, 0x3a4a6a, { blocksSight: true }),
   item('bin', 0, 30.6, 21.7, 31.3, 22.4, 1.0, 0x2a2a2e),
-  // ---------------------------------------------------------------- Backyard
   item('lawn', 0, 0, 0, 40, 9, 0.02, 0x233f26, { solid: false }),
-  item('bush', 0, 14, 7.2, 16.6, 8.5, 1.1, 0x244a2a),
+  item('bush', 0, 17, 7.2, 19.6, 8.5, 1.1, 0x244a2a),
   item('bush', 0, 24, 7.2, 26.6, 8.5, 1.1, 0x244a2a),
   item('tree', 0, 34, 3, 35, 4, 3.6, 0x4a3a2a),
   item('garden-table', 0, 16, 3, 19, 5, 0.75, WOOD),
   item('chair', 0, 15.2, 3.6, 15.8, 4.2, 0.5, DARK_WOOD),
   item('chair', 0, 19.2, 3.6, 19.8, 4.2, 0.5, DARK_WOOD),
   item('barbecue', 0, 22, 4, 23.2, 5, 1.0, 0x2a2a2e),
-  // ---------------------------------------------------------------- Shed
-  item('shed-cabinet', 0, 5.8, 2.3, 6.8, 3.2, 1.9, DARK_WOOD, {
-    blocksSight: true,
-  }),
-  item('box', 0, 3.3, 2.3, 4.5, 3.4, 0.5, 0xb59a6a),
-  // ---------------------------------------------------------------- Side yards
   item('bush', 0, 2, 12, 3.4, 13.6, 1.1, 0x244a2a),
   item('tree', 0, 5, 16, 6, 17, 3.4, 0x4a3a2a),
   item('bench', 0, 33, 12, 34.8, 12.8, 0.5, DARK_WOOD),
   item('bush', 0, 34, 16, 35.6, 17.6, 1.1, 0x244a2a),
-  // ---------------------------------------------------------------- More furniture and hiding places (owner, 18/11/2026)
-  item('bin', 0, 12.3, 12.6, 12.8, 13.1, 0.5, 0x4a5a4a),
-  item('side-table', 0, 18.2, 9.3, 18.8, 9.9, 0.6, WOOD),
-  item('chair', 0, 20.8, 10.9, 21.4, 11.4, 0.5, DARK_WOOD),
-  item('chair', 0, 22, 10.9, 22.6, 11.4, 0.5, DARK_WOOD),
-  item('bookshelf', 0, 12.4, 14.25, 13.6, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
-  item('sofa', 0, 21, 18.7, 23.4, 19.7, 0.9, FABRIC),
-  item('coffee-table', 0, 21.4, 17.3, 22.9, 18.2, 0.45, WOOD),
-  item('cupboard', 0, 11.8, 20.1, 13, 20.8, 1.9, DARK_WOOD, {
-    blocksSight: true,
-    hide: hide('cupboard', 0.85, 0.3, 0.9, 12.4, 20.45, 'n'),
-  }),
-  item('chest', 1, 12.6, 12, 13.8, 12.6, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 13.2, 12.3, 's') }),
-  item('nightstand', 1, 13.85, 9.4, 14.45, 10, 0.5, WOOD),
-  item('bookshelf', 1, 16.6, 16.25, 18.4, 16.85, 2.0, DARK_WOOD, { blocksSight: true }),
-  item('chest', 1, 11.5, 18.3, 12.9, 18.9, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 12.2, 18.6, 'n') }),
-  item('chest', 1, 27.4, 20, 28.7, 20.7, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 28, 20.35, 'n') }),
-  item('bush', 0, 7.5, 25, 9.9, 26.3, 1.1, 0x244a2a),
   item('bush', 0, 30, 7.2, 32.6, 8.5, 1.1, 0x244a2a),
-  item('bush', 0, 36, 12, 37.6, 13.6, 1.1, 0x244a2a),
-  item('bench', 0, 28, 3, 29.8, 3.8, 0.5, DARK_WOOD),
   item('tree', 0, 30, 27, 31, 28, 3.4, 0x4a3a2a),
   item('tree', 0, 10, 5, 11, 6, 3.6, 0x4a3a2a),
-  item('shelf', 0, 10.25, 11.3, 10.7, 12.5, 1.6, DARK_WOOD, { blocksSight: true }),
-  item('bookshelf', 0, 14.2, 20.25, 15.8, 20.85, 2.0, DARK_WOOD, { blocksSight: true }),
-  item('floor-lamp', 0, 23.5, 15.3, 24, 15.8, 1.6, 0xe8d28a),
-  item('shelf', 1, 15.45, 12.6, 15.85, 13.8, 1.6, DARK_WOOD, { blocksSight: true }),
-  item('bin', 1, 18.4, 11.4, 18.8, 11.8, 0.5, 0x4a5a4a),
-  item('floor-lamp', 1, 14.2, 19.5, 14.7, 20, 1.6, 0xe8d28a),
-  item('bench', 1, 25.6, 19.2, 27.2, 19.8, 0.5, DARK_WOOD),
-  item('floor-lamp', 1, 28.3, 15.8, 28.8, 16.3, 1.6, 0xe8d28a),
-  item('bench', 0, 20, 22.8, 21.8, 23.6, 0.5, DARK_WOOD),
-  item('tree', 0, 36, 5, 37, 6, 3.6, 0x4a3a2a),
-  item('tree', 0, 1, 19, 2, 20, 3.4, 0x4a3a2a),
-  item('bin', 0, 36.5, 19, 37.2, 19.7, 1, 0x4a5a4a),
 ];
 
 export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
-  { id: 't1', kind: 'bottle', floor: 0, x: 18.1, y: 18.7 },
-  { id: 't2', kind: 'can', floor: 0, x: 21.5, y: 12.0 },
-  { id: 't3', kind: 'toy', floor: 0, x: 16, y: 17.4 },
-  { id: 't4', kind: 'bottle', floor: 0, x: 15, y: 11.8 },
+  { id: 't1', kind: 'bottle', floor: 0, x: 20.6, y: 17.9 },
+  { id: 't2', kind: 'can', floor: 0, x: 18.9, y: 13.1 },
+  { id: 't3', kind: 'toy', floor: 0, x: 18.6, y: 15.2 },
+  { id: 't4', kind: 'bottle', floor: 0, x: 17.6, y: 12.2 },
   { id: 't5', kind: 'can', floor: 0, x: 27.6, y: 17 },
-  { id: 't6', kind: 'toy', floor: 1, x: 12, y: 15 },
-  { id: 't7', kind: 'bottle', floor: 1, x: 14.6, y: 12.8 },
+  { id: 't6', kind: 'toy', floor: 1, x: 17, y: 13.2 },
+  { id: 't7', kind: 'bottle', floor: 1, x: 21.6, y: 13.0 },
   { id: 't8', kind: 'can', floor: 1, x: 22.4, y: 18.3 },
-  { id: 't9', kind: 'toy', floor: 1, x: 26.4, y: 19.5 },
-  { id: 't10', kind: 'bottle', floor: 0, x: 8, y: 14 },
+  { id: 't9', kind: 'toy', floor: 1, x: 26.4, y: 15.5 },
 ];
 
 /** Who is in the house: the standard dummy as the player, the masked slasher as the one hunter (Phase 2). */
@@ -480,17 +399,22 @@ export const HOUSE_PLAN: HouseDef = {
   stairs: HOUSE_STAIRS,
   furniture: HOUSE_FURNITURE,
   throwables: HOUSE_THROWABLES,
-  playerStart: { floor: 0, x: 14, y: 15 },
-  hunterStart: { floor: 0, x: 26, y: 32 },
+  playerStart: { floor: 0, x: 26.8, y: 18.9 }, // in the hall, just inside the front door
+  hunterStart: { floor: 0, x: 19, y: 12.4 }, // inside, in the kitchen: out of sight of the hall and far from the front door
+
   patrol: [
-    { floor: 0, x: 26, y: 24 },
-    { floor: 0, x: 27.5, y: 19 },
-    { floor: 0, x: 20.6, y: 16.6 },
+    { floor: 0, x: 22.8, y: 17.6 },
+    { floor: 0, x: 23.3, y: 10.5 },
+    { floor: 0, x: 18.9, y: 11.3 },
+    { floor: 0, x: 18.2, y: 15.45 },
+    // Upstairs too, so no floor is a safe haven (he climbs the stairs on his rounds).
+    { floor: 1, x: 21.4, y: 12.4 },
+    { floor: 1, x: 21, y: 17.6 },
   ],
 };
 
 /** The rooms are made this much roomier than the authored plan (owner, 18/11/2026: a bigger, bungalow-sized house). */
-export const HOUSE_SCALE = 1.6;
+export const HOUSE_SCALE = 1.35;
 /** Furniture keeps closer to its natural size, so the bigger rooms have space for more of it. */
 export const FURNITURE_SCALE = 1.45;
 /** Doors are two thirds as wide as they were (owner, 18/11/2026). */

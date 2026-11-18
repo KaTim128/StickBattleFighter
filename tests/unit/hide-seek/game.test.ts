@@ -19,9 +19,9 @@ describe('player movement and stealth speeds (section D)', () => {
     const dist = (mode: 'walk' | 'run' | 'crouch') => {
       const g = new HideSeekGame(HOUSE_PLAN);
       if (mode === 'crouch') g.step(STEP, { ...NO_INPUT, crouchPress: true });
-      const x0 = g.player.x;
-      walk(g, { x: 1, y: 0 }, 0.5, { run: mode === 'run' });
-      return (g.player.x - x0) / 0.5;
+      const y0 = g.player.y;
+      walk(g, { x: 0, y: -1 }, 0.5, { run: mode === 'run' }); // north along the hall
+      return (y0 - g.player.y) / 0.5;
     };
     expect(dist('walk')).toBeCloseTo(WALK_MPS, 1);
     expect(dist('run')).toBeCloseTo(RUN_MPS, 1);
@@ -34,7 +34,7 @@ describe('player movement and stealth speeds (section D)', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
     g.step(STEP, { ...NO_INPUT, crouchPress: true });
     expect(g.player.crouching).toBe(true);
-    walk(g, { x: 1, y: 0 }, 0.2, { run: true });
+    walk(g, { x: 0, y: -1 }, 0.2, { run: true });
     expect(g.player.posture).toBe('crouch');
     g.step(STEP, { ...NO_INPUT, crouchPress: true });
     expect(g.player.crouching).toBe(false);
@@ -46,7 +46,7 @@ describe('player movement and stealth speeds (section D)', () => {
     const loudest = (run: boolean, crouch: boolean) => {
       const g = new HideSeekGame(HOUSE_PLAN);
       if (crouch) g.step(STEP, { ...NO_INPUT, crouchPress: true });
-      walk(g, { x: 1, y: 0 }, 2, { run });
+      walk(g, { x: 0, y: -1 }, 2, { run });
       const steps = g.takeEvents().filter((e) => e.kind === 'footstep');
       return { n: steps.length, loud: Math.max(0, ...steps.map((e) => e.loudness)) };
     };
@@ -60,14 +60,14 @@ describe('player movement and stealth speeds (section D)', () => {
 
   it('opens a shut door by walking into it, and the interact key toggles a nearby door', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
-    // The kitchen door to the living room (x 20.2 to 21.8, y=14): walk into it from the living room.
-    g.player.x = 21;
+    // The kitchen door to the living room (x 16 to 17.6, y=14): walk into it from the living room.
+    g.player.x = 16.8;
     g.player.y = 15;
     walk(g, { x: 0, y: -1 }, 1);
     expect(g.world.isOpen('d-kitchen-living')).toBe(true);
     expect(g.takeEvents().some((e) => e.kind === 'door' && e.open === true)).toBe(true);
     // Close it with the interact key (the player stands next to it).
-    g.player.x = 21;
+    g.player.x = 16.8;
     g.player.y = 14.9;
     expect(g.doorNear()?.id).toBe('d-kitchen-living');
     g.step(STEP, { ...NO_INPUT, interactPress: true });
@@ -84,7 +84,7 @@ describe('player movement and stealth speeds (section D)', () => {
 
   it('restart puts everything back', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
-    g.player.x = 21;
+    g.player.x = 16.8;
     g.player.y = 15;
     walk(g, { x: 0, y: -1 }, 3);
     expect(g.world.isOpen('d-kitchen-living')).toBe(true);
@@ -105,16 +105,28 @@ describe('the game is played inside the house (owner, 18/11/2026)', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
     // Stand in the hall facing the front door (south wall, x 26.4 to 27.6) and walk straight out.
     g.player.floor = 0;
+    g.player.floor = 0;
     g.player.x = 27;
     g.player.y = 19;
     walk(g, { x: 0, y: 1 }, 6);
     expect(g.world.roomAt(0, g.player.x, g.player.y)?.outdoors).not.toBe(true);
     expect(g.player.y).toBeLessThan(21);
-    // Through the back door too (kitchen, north wall x 21.2 to 22.4).
-    g.player.x = 21.8;
-    g.player.y = 10.5;
-    walk(g, { x: 0, y: -1 }, 6);
-    expect(g.world.roomAt(0, g.player.x, g.player.y)?.outdoors).not.toBe(true);
+    // The front door is locked for good: no prompt, and the interact key does nothing to it.
+    expect(g.doorNear()).toBeNull();
+    g.step(STEP, { ...NO_INPUT, interactPress: true });
+    expect(g.world.isOpen('d-front')).toBe(false);
+    expect(g.takeEvents().some((e) => e.kind === 'door')).toBe(false);
+  });
+
+  it('the player starts in the hall, just inside the front door, and the hunter starts inside the house', () => {
+    const g = new HideSeekGame(HOUSE);
+    const door = g.world.door('d-front')!.rect;
+    const p = g.player;
+    expect(g.world.roomAt(p.floor, p.x, p.y)?.id).toBe('hall');
+    expect(Math.hypot(p.x - (door.x0 + door.x1) / 2, p.y - door.y0)).toBeLessThan(5);
+    const h = g.hunter;
+    expect(g.world.roomAt(h.floor, h.x, h.y)?.outdoors).not.toBe(true);
+    expect(Math.hypot(h.x - p.x, h.y - p.y)).toBeGreaterThan(8); // not on top of the player
   });
 
   it('there are no hiding places outdoors, and the hunter does not search the yards', () => {

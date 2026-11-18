@@ -35,8 +35,8 @@ export interface Waypoint {
   readonly stairs?: 'up' | 'down';
 }
 
-const POP_UP = 0.9;
-const POP_DOWN = 0.08;
+const POP_UP = 0.88; // before the wall block at the ramp's head stops a body (its radius keeps it short of t = 1)
+const POP_DOWN = 0.03;
 
 export const insideRect = (r: Rect, x: number, y: number): boolean => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
 export const rectArea = (r: Rect): number => (r.x1 - r.x0) * (r.y1 - r.y0);
@@ -103,7 +103,7 @@ export class HouseWorld {
   /** Set a door open or shut; returns whether anything changed. Arches never close. */
   setDoor(id: string, open: boolean): boolean {
     const d = this.house.doors.find((x) => x.id === id);
-    if (!d || d.kind === 'arch' || this.open.get(id) === open) return false;
+    if (!d || d.kind === 'arch' || d.locked || this.open.get(id) === open) return false;
     this.open.set(id, open);
     return true;
   }
@@ -205,7 +205,7 @@ export class HouseWorld {
   }
 
   private doorAt(floor: FloorIndex, x: number, y: number, radius: number): string | null {
-    for (const d of this.closedDoors(floor)) if (circleHitsRect(x, y, radius + 0.05, d.rect)) return d.id;
+    for (const d of this.closedDoors(floor)) if (!d.locked && circleHitsRect(x, y, radius + 0.05, d.rect)) return d.id;
     return null;
   }
 
@@ -262,20 +262,14 @@ export class HouseWorld {
     const t = Math.min(1, Math.max(0, this.rampT(s, p.x, p.y)));
     p.onStairs = s.id;
     p.z = s.riseM * t - (p.floor === s.topFloor ? s.riseM : 0);
+    // The floor changes where the ramp's height meets the other floor's (z is continuous across it),
+    // so the body keeps its place and climbs smoothly: nothing is teleported.
     if (p.floor === s.bottomFloor && t >= POP_UP) {
-      const e = this.rampExit(s, true);
       p.floor = s.topFloor;
-      p.x = e.x;
-      p.y = e.y;
-      p.z = 0;
-      p.onStairs = null;
+      p.z = s.riseM * t - s.riseM;
     } else if (p.floor === s.topFloor && t <= POP_DOWN) {
-      const e = this.rampExit(s, false);
       p.floor = s.bottomFloor;
-      p.x = e.x;
-      p.y = e.y;
-      p.z = 0;
-      p.onStairs = null;
+      p.z = s.riseM * t;
     }
   }
 
@@ -319,7 +313,18 @@ export class HouseWorld {
 
   /** A route between two spots on one floor (shut doors do not block it: a person opens them). */
   pathOnFloor(floor: FloorIndex, from: Point, to: Point): Point[] | null {
-    return this.navs[floor].path(from, to);
+    // A shortcut is only taken where a whole body fits all along it: the grid alone lets a line clip a corner
+    // (a lamp, a table edge) and the walker then snags there for good.
+    const doors = new Set<Rect>(this.doorsBy[floor].map((d) => d.rect));
+    const walkable = (a: Point, b: Point): boolean => {
+      const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.1));
+      for (let i = 1; i < n; i++) {
+        const t = i / n;
+        if (!this.fits(floor, a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, BODY_RADIUS_M + 0.02, doors)) return false;
+      }
+      return true;
+    };
+    return this.navs[floor].path(from, to, walkable);
   }
 
   /**

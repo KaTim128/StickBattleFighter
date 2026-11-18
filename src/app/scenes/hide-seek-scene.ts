@@ -61,6 +61,8 @@ export class HideSeekScene implements GameScene {
   private doorStates = new Map<string, boolean>();
   /** The last floor the player's figure was added to. */
   private playerFloor: 0 | 1 = 0;
+  /** True while the figure is drawn over both floors: climbing the ramp, below the upper floor's railing. */
+  private playerOnRamp = false;
   /** The throwable objects' pictures, by id, and the floor each sits on. */
   private readonly propViews = new Map<string, { g: Graphics; floor: 0 | 1 }>();
 
@@ -170,7 +172,23 @@ export class HideSeekScene implements GameScene {
     }
 
     // The player's figure stands on the floor it is on.
-    if (p.floor !== this.playerFloor) {
+    // Climbing from below the upper floor's solid railing and landing would draw over the figure (the upper floor is
+    // 3 m higher on the screen), so for the climb it is drawn above both floors; the railing itself stays opaque.
+    const onRamp = p.floor === 0 && p.onStairs !== null && p.z > 0.8;
+    if (onRamp !== this.playerOnRamp) {
+      const root = player.view.root;
+      if (onRamp) {
+        view.floors[this.playerFloor].actors.remove(root);
+        view.world.addChild(root);
+        root.zIndex = 0;
+      } else {
+        view.world.removeChild(root);
+        view.floors[p.floor].actors.add(root, 0);
+        this.playerFloor = p.floor;
+      }
+      this.playerOnRamp = onRamp;
+    }
+    if (!onRamp && p.floor !== this.playerFloor) {
       view.floors[this.playerFloor].actors.remove(player.view.root);
       view.floors[p.floor].actors.add(player.view.root, 0);
       this.playerFloor = p.floor;
@@ -305,7 +323,12 @@ export class HideSeekScene implements GameScene {
     const set = new Set<Container>();
     if (room && !room.outdoors)
       for (const n of view.nodes)
-        if ((n.kind === 'wall' || n.kind === 'door') && n.floor === room.floor && isFrontWallOf(room.rect, n.rect))
+        if (
+          (n.kind === 'wall' || n.kind === 'door') &&
+          n.fades !== false &&
+          n.floor === room.floor &&
+          isFrontWallOf(room.rect, n.rect)
+        )
           set.add(n.node);
     view.fader.setForced(set);
   }

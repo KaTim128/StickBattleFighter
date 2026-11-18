@@ -50,6 +50,8 @@ export interface DoorDef {
   readonly open: boolean;
   /** An outside door (front, back, gate): louder to open. */
   readonly exterior?: boolean;
+  /** Never opens (the front door: the player cannot leave the house, owner 18/11/2026). */
+  readonly locked?: boolean;
 }
 
 export type HideKind =

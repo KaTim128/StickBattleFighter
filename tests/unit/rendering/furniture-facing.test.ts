@@ -52,7 +52,7 @@ describe.each([
     const k = house.widthM / HOUSE_PLAN.widthM;
     const chairs = house.furniture.filter((f) => {
       const c = mid(f);
-      return f.kind === 'chair' && f.floor === 0 && c.x > 20 * k && c.x < 24 * k && c.y > 10 * k && c.y < 12 * k;
+      return f.kind === 'chair' && f.floor === 0 && c.x > 16.5 * k && c.x < 19 * k && c.y > 10 * k && c.y < 12 * k;
     });
     expect(chairs.length).toBeGreaterThanOrEqual(2);
     // They sit on the island's north side, so they look south at it.

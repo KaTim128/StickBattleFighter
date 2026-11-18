@@ -9,26 +9,29 @@ describe('the house data (Phase 2 section A)', () => {
 
   it('has the rooms the brief asks for on both floors', () => {
     const names = HOUSE_PLAN.rooms.map((r) => r.id);
-    for (const id of ['living', 'dining', 'kitchen', 'toilet', 'hall', 'bed1', 'bed2', 'bath1', 'bath2', 'uphall'])
-      expect(names, id).toContain(id);
-    expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && r.kind === 'bathroom')).toHaveLength(2);
+    // A compact home (owner, 18/11/2026): four rooms downstairs, two bedrooms and the landing upstairs.
+    for (const id of ['living', 'dining', 'kitchen', 'hall', 'bed1', 'bed2', 'uphall']) expect(names, id).toContain(id);
+    expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && !r.outdoors)).toHaveLength(3);
     expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && r.id.startsWith('bed'))).toHaveLength(2);
-    for (const id of ['frontyard', 'backyard', 'shed']) expect(names).toContain(id);
+    expect(names).not.toContain('corridor'); // no long corridor
   });
 
-  it('has a front entrance, a back entrance and a staircase', () => {
+  it('has one front door, locked for good, no other way out, and a staircase', () => {
     expect(world.door('d-front')?.exterior).toBe(true);
-    expect(world.door('d-back')?.exterior).toBe(true);
+    expect(world.door('d-front')?.locked).toBe(true);
+    expect(HOUSE_PLAN.doors.filter((d) => d.exterior)).toHaveLength(1);
+    expect(world.setDoor('d-front', true)).toBe(false);
+    expect(world.isOpen('d-front')).toBe(false);
     expect(HOUSE_PLAN.stairs).toHaveLength(1);
   });
 
-  it('rooms on one floor never overlap, except the shed standing in the backyard', () => {
+  it('rooms on one floor never overlap', () => {
     for (const a of HOUSE_PLAN.rooms)
       for (const b of HOUSE_PLAN.rooms) {
         if (a.id >= b.id || a.floor !== b.floor) continue;
         const ox = Math.min(a.rect.x1, b.rect.x1) - Math.max(a.rect.x0, b.rect.x0);
         const oy = Math.min(a.rect.y1, b.rect.y1) - Math.max(a.rect.y0, b.rect.y0);
-        if (ox > 0 && oy > 0) expect([a.id, b.id].sort(), `${a.id} overlaps ${b.id}`).toEqual(['backyard', 'shed']);
+        expect(ox > 0 && oy > 0, `${a.id} overlaps ${b.id}`).toBe(false);
       }
   });
 
@@ -54,14 +57,17 @@ describe('the house data (Phase 2 section A)', () => {
       if (f.hide) expect(world.roomAt(f.floor, f.hide.at.x, f.hide.at.y), `${f.id} hide spot`).not.toBeNull();
     }
     const kinds = new Set(HOUSE_PLAN.furniture.flatMap((f) => (f.hide ? [f.hide.kind] : [])));
-    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain', 'shower-curtain'])
+    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain'])
       expect(kinds.has(k as never), k).toBe(true);
   });
 
   it('the start spots are free, and the player starts inside the house', () => {
     const p = HOUSE_PLAN.playerStart;
     expect(world.fits(p.floor, p.x, p.y)).toBe(true);
-    expect(world.roomAt(p.floor, p.x, p.y)?.id).toBe('living');
+    // Inside the hall, just by the front door (owner, 18/11/2026).
+    expect(world.roomAt(p.floor, p.x, p.y)?.id).toBe('hall');
+    const door = world.door('d-front')!.rect;
+    expect(Math.hypot(p.x - (door.x0 + door.x1) / 2, p.y - door.y0)).toBeLessThan(4);
     const h = HOUSE_PLAN.hunterStart;
     expect(world.fits(h.floor, h.x, h.y)).toBe(true);
     for (const w of HOUSE_PLAN.patrol) expect(world.fits(w.floor, w.x, w.y), `${w.x},${w.y}`).toBe(true);
@@ -78,24 +84,24 @@ describe('the house data (Phase 2 section A)', () => {
 describe('movement, doors and stairs', () => {
   it('walls and shut doors stop a body; opening a door lets it through', () => {
     const w = new HouseWorld(HOUSE_PLAN);
-    // The kitchen door (x=25, y 10.2 to 11.8), shut at the start.
+    // The dining-room door to the hall (x=25, y 10.2 to 11.8), shut at the start.
     const p = placed(0, 24.3, 11);
     let pushed: string | null = null;
     for (let i = 0; i < 30; i++) pushed = w.move(p, 0.05, 0).pushedDoor ?? pushed;
     expect(p.x).toBeLessThan(25);
-    expect(pushed).toBe('d-kitchen-hall');
-    expect(w.setDoor('d-kitchen-hall', true)).toBe(true);
+    expect(pushed).toBe('d-dining-hall');
+    expect(w.setDoor('d-dining-hall', true)).toBe(true);
     for (let i = 0; i < 30; i++) w.move(p, 0.05, 0);
     expect(p.x).toBeGreaterThan(25.5);
     // Arches are always open and never close.
-    expect(w.setDoor('a-dining-kitchen', false)).toBe(false);
-    expect(w.isOpen('a-dining-kitchen')).toBe(true);
+    expect(w.setDoor('a-kitchen-dining', false)).toBe(false);
+    expect(w.isOpen('a-kitchen-dining')).toBe(true);
   });
 
   it('a body cannot walk through a wall or leave the lot', () => {
     const w = new HouseWorld(HOUSE_PLAN);
-    const p = placed(0, 12, 15);
-    for (let i = 0; i < 60; i++) w.move(p, 0, -0.1); // north into the wall line y=14 (a gap sits at x 14 to 17)
+    const p = placed(0, 24.8, 16); // in the living room, by the east wall
+    for (let i = 0; i < 60; i++) w.move(p, 0, -0.1); // north into the wall line y=14 (the arch is at x 22 to 24.5)
     expect(p.y).toBeGreaterThan(14.2);
     const q = placed(0, 2, 2);
     for (let i = 0; i < 80; i++) w.move(q, -0.1, 0);
@@ -113,13 +119,25 @@ describe('movement, doors and stairs', () => {
     }
     expect(p.floor).toBe(1);
     expect(Math.max(...zs)).toBeGreaterThan(2.5); // it really climbed
-    const climb = zs.slice(0, -1); // the last sample is the step onto the landing (height above that floor: 0)
-    expect(climb.every((z, i) => i === 0 || z >= climb[i - 1]! - 1e-9)).toBe(true); // steadily
-    expect(p.y).toBeLessThan(10.5); // standing on the landing above the top step
+    // Smooth: the floor changes in place (no teleport) and the height above sea level never jumps.
+    const climb = zs.slice(0, -1);
+    const stepY = p.y;
+    expect(zs.at(-1)! - climb.at(-1)!).toBeLessThan(0.2);
+    expect(p.onStairs).not.toBeNull(); // still on the ramp when the floor changes
+    let prevAbs = HOUSE_PLAN.stairs[0]!.riseM + p.z;
+    for (let i = 0; i < 40 && p.onStairs; i++) {
+      w.move(p, 0, -0.05);
+      const abs = HOUSE_PLAN.stairs[0]!.riseM + p.z;
+      expect(Math.abs(abs - prevAbs)).toBeLessThan(0.2);
+      prevAbs = abs;
+    }
+    expect(p.y).toBeLessThan(stepY);
     expect(p.onStairs).toBeNull();
+    expect(p.z).toBe(0);
     for (let i = 0; i < 160 && p.floor === 1; i++) w.move(p, 0, 0.05);
     expect(p.floor).toBe(0);
-    expect(p.y).toBeGreaterThan(HOUSE_PLAN.stairs[0]!.ramp.y1);
+    for (let i = 0; i < 20 && p.onStairs; i++) w.move(p, 0, 0.05);
+    expect(p.y).toBeGreaterThanOrEqual(HOUSE_PLAN.stairs[0]!.ramp.y1 - 0.01);
     expect(p.z).toBe(0);
   });
 
@@ -138,13 +156,13 @@ describe('sight, sound and rooms', () => {
   const w = new HouseWorld(HOUSE_PLAN);
 
   it('sees through an open arch, not through a wall or a shut door', () => {
-    // Living room to dining room through the arch (x 14 to 17 at y=14).
-    expect(w.lineOfSight(0, { x: 15.5, y: 16 }, { x: 15.5, y: 12 })).toBe(true);
+    // Living room to dining room through the arch (x 22 to 24.5 at y=14).
+    expect(w.lineOfSight(0, { x: 23.2, y: 16 }, { x: 23.2, y: 12.4 })).toBe(true);
     // Through the wall beside the arch.
-    expect(w.lineOfSight(0, { x: 12.8, y: 16 }, { x: 12.8, y: 12 })).toBe(false);
+    expect(w.lineOfSight(0, { x: 21, y: 16 }, { x: 21, y: 12.4 })).toBe(false);
     // Through the shut kitchen door, then open.
-    const a = { x: 21, y: 16 };
-    const b = { x: 21, y: 12 };
+    const a = { x: 16.8, y: 16 };
+    const b = { x: 16.8, y: 12 };
     expect(w.lineOfSight(0, a, b)).toBe(false);
     const w2 = new HouseWorld(HOUSE_PLAN);
     w2.setDoor('d-kitchen-living', true);
@@ -152,53 +170,77 @@ describe('sight, sound and rooms', () => {
   });
 
   it('tall furniture blocks sight; low furniture does not', () => {
-    // The kitchen fridge (x 24.0 to 24.75, y 12.6 to 13.8) blocks; the coffee table does not.
-    expect(w.lineOfSight(0, { x: 23.5, y: 13.2 }, { x: 24.9, y: 13.2 })).toBe(false);
-    expect(w.lineOfSight(0, { x: 14, y: 16.8 }, { x: 17.5, y: 16.8 })).toBe(true);
+    // The kitchen fridge (x 19.5 to 20.25, y 9.25 to 10) blocks; the coffee table does not.
+    expect(w.lineOfSight(0, { x: 19.1, y: 9.6 }, { x: 20.7, y: 9.6 })).toBe(false);
+    expect(w.lineOfSight(0, { x: 16.7, y: 16.9 }, { x: 20.6, y: 16.9 })).toBe(true);
   });
 
   it('walls quieten a sound, shut doors even more, open doors not at all', () => {
     const closed = new HouseWorld(HOUSE_PLAN);
     const open = new HouseWorld(HOUSE_PLAN);
     open.setDoor('d-kitchen-living', true);
-    const a = { x: 21, y: 16 };
-    const b = { x: 21, y: 12 };
+    const a = { x: 16.8, y: 16 };
+    const b = { x: 16.8, y: 12 };
     expect(open.soundTransmission(0, a, b)).toBe(1);
     expect(closed.soundTransmission(0, a, b)).toBeLessThan(0.5);
-    expect(closed.soundTransmission(0, { x: 12.8, y: 16 }, { x: 12.8, y: 12 })).toBeLessThan(0.5);
-    expect(closed.soundTransmission(0, { x: 15.5, y: 16 }, { x: 15.5, y: 12 })).toBe(1);
+    expect(closed.soundTransmission(0, { x: 21, y: 16 }, { x: 21, y: 12.4 })).toBeLessThan(0.5);
+    expect(closed.soundTransmission(0, { x: 23.2, y: 16 }, { x: 23.2, y: 12.4 })).toBe(1);
   });
 
   it('finds the room under a point, and the neighbours of a room', () => {
-    expect(w.roomAt(0, 15, 11)?.id).toBe('dining');
-    expect(w.roomAt(1, 12, 11)?.id).toBe('bed1');
-    expect(w.roomAt(0, 5, 4)?.id).toBe('shed');
-    expect(w.roomAt(0, 5, 8)?.id).toBe('backyard');
-    expect(w.neighbours('dining').sort()).toEqual(['kitchen', 'living']);
+    expect(w.roomAt(0, 23, 11)?.id).toBe('dining');
+    expect(w.roomAt(1, 17, 11)?.id).toBe('bed1');
+    expect(w.roomAt(0, 5, 4)?.id).toBe('backyard');
+    expect(w.neighbours('dining').sort()).toEqual(['hall', 'kitchen', 'living']);
     expect(w.neighbours('hall')).toContain('uphall'); // the stairs
-    expect(w.neighbours('frontyard')).toContain('street');
   });
 });
 
 describe('routing across floors', () => {
   const w = new HouseWorld(HOUSE_PLAN);
 
-  /** A free spot well inside a room. */
+  /** A free spot well inside a room: the free point nearest its middle (corners can be pockets behind furniture). */
   function spotIn(roomId: string): { floor: 0 | 1; x: number; y: number } {
     const r = w.room(roomId)!;
+    const cx = (r.rect.x0 + r.rect.x1) / 2;
+    const cy = (r.rect.y0 + r.rect.y1) / 2;
+    let best: { floor: 0 | 1; x: number; y: number; d: number } | null = null;
     for (let y = r.rect.y0 + 0.6; y < r.rect.y1 - 0.5; y += 0.3)
-      for (let x = r.rect.x0 + 0.6; x < r.rect.x1 - 0.5; x += 0.3)
-        if (w.fits(r.floor, x, y, 0.4) && insideRect(r.rect, x, y)) return { floor: r.floor, x, y };
-    throw new Error(`no free spot in ${roomId}`);
+      for (let x = r.rect.x0 + 0.6; x < r.rect.x1 - 0.5; x += 0.3) {
+        const d = Math.hypot(x - cx, y - cy);
+        if (w.fits(r.floor, x, y, 0.4) && insideRect(r.rect, x, y) && (!best || d < best.d))
+          best = { floor: r.floor, x, y, d };
+      }
+    if (!best) throw new Error(`no free spot in ${roomId}`);
+    return { floor: best.floor, x: best.x, y: best.y };
   }
 
   it('every room can be reached from the player start, upstairs included', () => {
     const from = HOUSE_PLAN.playerStart;
-    for (const room of HOUSE_PLAN.rooms) {
+    for (const room of HOUSE_PLAN.rooms.filter((r) => !r.outdoors)) {
       const to = spotIn(room.id);
       const route = w.route(from, to);
       expect(route, `route to ${room.id}`).not.toBeNull();
     }
+  });
+
+  it('a walker following a route never snags on a corner of furniture (the lamp by the dining arch)', () => {
+    // The grid alone let a straight shortcut clip the lamp's corner by a hand's breadth: a whole body then stuck there.
+    const from = { floor: 0 as const, x: 23.4, y: 15.2 };
+    const to = { floor: 0 as const, x: 22.8, y: 17.6 };
+    const route = w.route(from, to)!;
+    const p = placed(0, from.x, from.y);
+    let i = 0;
+    for (let step = 0; step < 400 && i < route.length; step++) {
+      const wp = route[i]!;
+      const d = Math.hypot(wp.x - p.x, wp.y - p.y);
+      if (d < 0.1) {
+        i++;
+        continue;
+      }
+      w.move(p, ((wp.x - p.x) / d) * 0.05, ((wp.y - p.y) / d) * 0.05);
+    }
+    expect(i).toBe(route.length);
   });
 
   it('a route to another floor climbs the stairs exactly once', () => {
@@ -212,7 +254,7 @@ describe('routing across floors', () => {
 
   it('a body can actually walk a cross-floor route, opening doors as it goes', () => {
     const world = new HouseWorld(HOUSE_PLAN);
-    const target = spotIn('bath2');
+    const target = { floor: 1 as const, x: 21, y: 17.6 }; // mid-bedroom, through its door
     const route = world.route(HOUSE_PLAN.playerStart, target)!;
     const p = placed(HOUSE_PLAN.playerStart.floor, HOUSE_PLAN.playerStart.x, HOUSE_PLAN.playerStart.y);
     let i = 0;

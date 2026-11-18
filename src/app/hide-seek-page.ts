@@ -7,8 +7,11 @@ import { SceneManager } from '../core/scene';
 import { AMBIENCES } from '../data/audio/ambiences';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
+import { browserStorage, SettingsState } from '../input/settings-store';
 import { attachTouchControls } from '../input/touch-controls';
 import { HideSeekHud } from '../interface/hide-seek-hud';
+import { keepFullscreen } from '../interface/main-menu';
+import { SettingsPanel } from '../interface/settings-panel';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
 import { HideSeekScene } from './scenes/hide-seek-scene';
@@ -45,7 +48,10 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
 
   const intents = new PlayerIntents();
   intents.screenToWorld = (v) => screenDirToWorld(v.x, v.y);
-  const desktop = new DesktopInput(intents);
+  // Settings (top-right gear, Esc) pause the round exactly as in the fights.
+  const settings = new SettingsState(browserStorage());
+  let paused = false;
+  const desktop = new DesktopInput(intents, { paused: () => paused });
   attachKeyboard(window, desktop);
   attachMouse(container, desktop, intents);
   attachTouchControls(document.body, intents);
@@ -71,6 +77,16 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
     }
   };
   for (const ev of ['keydown', 'pointerdown'] as const) window.addEventListener(ev, startAudio, { once: true });
+
+  const applyAudio = (): void => {
+    ambience.setVolume(settings.current.musicVolume);
+    sound.setVolume(settings.current.sfxVolume);
+  };
+  applyAudio();
+  settings.onChange(applyAudio);
+  // Fullscreen from the first tap, click or key, like every other mode (REQ-UI-39); automated
+  // browsers stay windowed unless a test asks (`?fullscreen`) so screenshots keep the page size.
+  if (navigator.webdriver !== true || params.has('fullscreen')) keepFullscreen();
 
   const leaveToMenu = (): void => {
     const url = new URL(window.location.href);
@@ -102,6 +118,15 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       menu: leaveToMenu,
     },
   );
+  new SettingsPanel(
+    document.body,
+    settings,
+    (open) => {
+      paused = open;
+      if (open) for (const k of ['sprint', 'peek'] as const) intents[k] = false;
+    },
+    { leave: leaveToMenu },
+  );
   let lastMode = 'patrol';
   let lastPhase = 'prep';
 
@@ -117,7 +142,9 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
   window.__hideSeekDebug = debug;
   let last: number | null = null;
   const loop = new GameLoop({
-    update: (stepS) => scenes.update(stepS),
+    update: (stepS) => {
+      if (!paused) scenes.update(stepS);
+    },
     render: (alpha) => {
       const now = performance.now();
       const dt = last === null ? 0 : Math.min(0.1, (now - last) / 1000) * loop.timeScale;

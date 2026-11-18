@@ -142,10 +142,11 @@ export class Visibility {
     if (!viewer.onStairs) return 0;
     const s = this.world.house.stairs.find((x) => x.id === viewer.onStairs);
     if (!s) return 0;
-    // On the lower floor's side climbing up, the upper floor appears as the top nears; descending, the lower.
+    // The floor you are leaving stays fully lit for the climb; the other one only appears in the last steps, as you
+    // reach it (owner, 18/11/2026: the stairs must not go dark until the top), so the two floors never blend mid-flight.
     const nearTop = viewer.stairT;
     const toward = floor === s.topFloor ? nearTop : 1 - nearTop;
-    return smooth(0.3, 0.8, toward);
+    return smooth(0.75, 0.88, toward);
   }
 
   /** Recompute sightlines (a few times a second) and ease every light toward its goal. */

@@ -32,6 +32,8 @@ const CATCH_HIDDEN_M = 1.8;
 const SUSPECT = 0.3;
 const AWARENESS_DECAY_S = 0.3;
 const LOSE_SIGHT_S = 1.4;
+/** Without a fresh sight or sound he forgets where the player was and searches blind (owner, 18/11/2026). */
+const MEMORY_S = 22;
 const DWELL_S = 0.7;
 const INSPECT_S = 1.1;
 /** A room or hiding place he checked is not checked again for this long, seconds. */
@@ -89,7 +91,7 @@ export class Hunter implements Placed {
   /** 0..1 how sure he is something is there (1 = he has the player). */
   awareness = 0;
   /** Where he last saw or heard the player, and how sure that is. */
-  lastKnown: { floor: FloorIndex; x: number; y: number; sure: boolean } | null = null;
+  lastKnown: { floor: FloorIndex; x: number; y: number; sure: boolean; atS: number } | null = null;
   readonly searched = new Map<string, number>();
   readonly inspected = new Map<string, number>();
 
@@ -170,6 +172,7 @@ export class Hunter implements Placed {
     this.hear(ctx);
     const rate = sightRate(ctx.world, this.eyes(), ctx.body) * this.lookBoostNow();
     this.see(dtS, rate, ctx);
+    if (this.lastKnown && this.mode !== 'chase' && ctx.timeS - this.lastKnown.atS > MEMORY_S) this.lastKnown = null;
     this.decide(ctx);
     this.act(dtS, ctx);
     return this.caught(rate, ctx);
@@ -188,7 +191,7 @@ export class Hunter implements Placed {
       if (strength <= this.soundStrength && this.mode === 'investigate') continue;
       this.soundStrength = strength;
       this.action = null;
-      this.lastKnown = { floor: e.floor, x: e.at.x, y: e.at.y, sure: false };
+      this.lastKnown = { floor: e.floor, x: e.at.x, y: e.at.y, sure: false, atS: ctx.timeS };
       this.setGoal({ kind: 'sound', to: { floor: e.floor, x: e.at.x, y: e.at.y }, look: e.at }, ctx);
       this.mode = 'investigate';
       // A loud sound is walked to; a faint one is crept toward.
@@ -201,7 +204,7 @@ export class Hunter implements Placed {
       this.awareness = Math.min(1, this.awareness + rate * dtS);
       this.unseenS = 0;
       if (this.awareness >= SUSPECT)
-        this.lastKnown = { floor: ctx.body.floor, x: ctx.body.x, y: ctx.body.y, sure: true };
+        this.lastKnown = { floor: ctx.body.floor, x: ctx.body.x, y: ctx.body.y, sure: true, atS: ctx.timeS };
     } else {
       this.unseenS += dtS;
       this.awareness = Math.max(this.mode === 'chase' ? 0.6 : 0, this.awareness - AWARENESS_DECAY_S * dtS);

@@ -844,3 +844,11 @@ Done: hall 5 to 4 m wide, stairs along the east wall and clear of all doors, fur
 
 ### 18/11/2026 Hiding view and peek risk (TD-109)
 Done: blind view while hidden, a small dim peek circle, 3x detection while peeking from a hiding place; 5 new tests.
+
+### 18/11/2026 Compact house, smooth stairs, Shroud's memory, settings and fullscreen (TD-110)
+- **Changed.** `src/data/arenas/house.ts` (compact plan, `HOUSE_SCALE` 1.35, locked front door, indoor starts, upstairs patrol), `house-types.ts`/`world.ts`/`game.ts` (locked doors, floor change in place, nav shortcuts need a body's width), `ai/nav-grid.ts` (`lineOk`), `hunter.ts` (22 s memory), `rendering/house-view.ts` (tread sort, `wallFades`), `app/scenes/hide-seek-scene.ts` (figure over both floors while climbing, no fading of stair barrier), `app/hide-seek-page.ts` (settings gear, fullscreen, pause), `input/settings-store.ts` (`browserStorage`), new `modes/hide-seek/house-validate.ts`.
+- **Tests.** New: `house-validate.test.ts`, `stair-barrier.test.ts`, AI knowledge tests, stairs continuity, snag regression, e2e for the gear, fit and locked door. Old layout tests were moved to the new coordinates (not loosened: the hiding-place minimum is now 15 and the furniture minimum 60 because the owner asked for a much smaller house).
+- **Commands.** `npx biome check --write .`, `npm run lint` (baseline: 1 warning, 1 info), `npm run typecheck`, `npx vitest run`, `npm run build`, `npx playwright test tests/e2e/hide-seek.spec.ts --trace off`.
+- **Known issues.** See TD-110 (diagonal screen "up" vs the stairs' foot). Phone check by the owner pending.
+- **Next.** Owner reviews the compact house on the phone; Phase 2 review; no Phase 3 without approval.
+

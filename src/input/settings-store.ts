@@ -151,3 +151,12 @@ export class SettingsState {
     return () => this.listeners.delete(listener);
   }
 }
+
+/** Local storage, or null where the browser refuses it (settings then last for this session only). */
+export function browserStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}

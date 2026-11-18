@@ -307,7 +307,7 @@ export class HideSeekGame {
     const p = this.player;
     let best: { id: string; open: boolean; d: number } | null = null;
     for (const d of this.house.doors) {
-      if (d.floor !== p.floor || d.kind === 'arch') continue;
+      if (d.floor !== p.floor || d.kind === 'arch' || d.locked) continue;
       const cx = (d.rect.x0 + d.rect.x1) / 2;
       const cy = (d.rect.y0 + d.rect.y1) / 2;
       const dist = Math.hypot(cx - p.x, cy - p.y);

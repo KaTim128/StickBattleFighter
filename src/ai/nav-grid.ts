@@ -73,9 +73,10 @@ export class NavGrid {
 
   /**
    * A* from `from` to `to`: the waypoints to walk (cell centres, shortened wherever a straight line
-   * is clear), ending at `to`. Null when no route exists.
+   * is clear, and `lineOk` agrees: a body wider than a cell must not clip a corner the cells miss), ending at `to`.
+   * Null when no route exists.
    */
-  path(from: Point, to: Point): Point[] | null {
+  path(from: Point, to: Point, lineOk: (a: Point, b: Point) => boolean = () => true): Point[] | null {
     const start = this.nearestOpen(from);
     const goal = this.nearestOpen(to);
     if (!start || !goal) return null;
@@ -162,7 +163,7 @@ export class NavGrid {
     let anchor: Point = from;
     for (let i = 0; i < cells.length; i++) {
       const next = cells[i + 1];
-      if (next && this.clearLine(anchor, next)) continue;
+      if (next && this.clearLine(anchor, next) && lineOk(anchor, next)) continue;
       out.push(cells[i]!);
       anchor = cells[i]!;
     }
