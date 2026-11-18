@@ -792,3 +792,6 @@ Loadout store, sheet with the alternative, Equip/Swap and drag and drop, carried
 
 ### 18/11/2026 Phase 1 Batch B: B15 Shroud five-hit combo
 TD-087. Next: B16 dodge responsiveness.
+
+### 18/11/2026 Phase 1 Batch B: B16 dodge responsiveness
+Input buffer added (TD-088); the other dodge rules reviewed unchanged. Next: B17 fight length baseline and tuning, then B18 audio.

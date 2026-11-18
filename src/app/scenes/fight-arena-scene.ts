@@ -1077,7 +1077,9 @@ export class FightArenaScene implements ArenaScene {
 
     // Dodge (right click / flick / DODGE): a quick invulnerable back-step, cancelling an attack (not
     // an ability already cast).
-    if (this.intents.consumeDodge() && !air && !f.caster?.cast && f.landHoldS === 0 && c.tryDodge()) {
+    // A press that comes a touch early is buffered and fires the moment it can (B16).
+    if (this.intents.bufferedDodge(stepS) && !air && !f.caster?.cast && f.landHoldS === 0 && c.tryDodge()) {
+      this.intents.clearDodgeBuffer();
       f.combo.interrupt();
       this.startBackDodge(f);
     }

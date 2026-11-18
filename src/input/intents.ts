@@ -18,6 +18,9 @@ export function clampToUnit(v: Vec2): Vec2 {
 const MAX_QUEUED_MELEE_EDGES = 6;
 
 /** Which ability button was pressed (the same ids as the ability framework's slots). */
+/** How long a dodge pressed too early is remembered, seconds (master plan B16). */
+export const DODGE_BUFFER_S = 0.18;
+
 export type AbilityPress = 'a1' | 'a2' | 'a3' | 'a4' | 'ult';
 
 export class PlayerIntents {
@@ -195,6 +198,7 @@ export class PlayerIntents {
 
   // ---- Dodge (right click, double-tap or joystick flick; REQ-CTL-12).
   private dodgeQueued = false;
+  private dodgeBufferS = 0;
 
   pressDodge(): void {
     this.dodgeQueued = true;
@@ -203,7 +207,26 @@ export class PlayerIntents {
   consumeDodge(): boolean {
     const queued = this.dodgeQueued;
     this.dodgeQueued = false;
+    this.dodgeBufferS = 0;
     return queued;
+  }
+
+  /**
+   * Input buffer (master plan B16): a dodge pressed a moment too early (still recovering, the
+   * cooldown almost over, stamina about to be enough) is remembered for `DODGE_BUFFER_S` and tried
+   * every step, so it fires as soon as it can instead of being dropped. Call once per step; it is
+   * true while a press is waiting. `clearDodgeBuffer` ends the wait once the dodge has started.
+   */
+  bufferedDodge(stepS: number): boolean {
+    if (this.dodgeQueued) {
+      this.dodgeQueued = false;
+      this.dodgeBufferS = DODGE_BUFFER_S;
+    } else this.dodgeBufferS = Math.max(0, this.dodgeBufferS - stepS);
+    return this.dodgeBufferS > 0;
+  }
+
+  clearDodgeBuffer(): void {
+    this.dodgeBufferS = 0;
   }
 
   // ---- Tag (3 vs 3, owner 13/11/2026): swap in the next teammate.
@@ -252,6 +275,7 @@ export class PlayerIntents {
     this.meleeDown = false;
     this.meleeEdges.length = 0;
     this.dodgeQueued = false;
+    this.dodgeBufferS = 0;
     this.aimCancelQueued = false;
     this.heavyQueued = false;
     this.beamTurnLeft = false;

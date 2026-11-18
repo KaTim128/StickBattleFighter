@@ -527,3 +527,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Owner check: loadout screen look and feel on a real phone; cast-name notice and a separate info control on the fight HUD still to build
 - [x] Shroud's string is five distinct cuts ending in the knockdown finisher; the four cuts never knock down and the target is free after them (`shroud.test.ts`)
 - [ ] Owner check: the two new knife animations (rising cut, cross slash) read well in play
+- [x] A dodge pressed just before the cooldown ends still happens; one pressed long before does not; one press = one dodge (`dodge-buffer.test.ts`)
+- [ ] Owner check: dodge feel on desktop and phone; swing direction commitment (B16 tail) if it still feels wrong
