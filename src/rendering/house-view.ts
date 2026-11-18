@@ -52,6 +52,8 @@ const LEDGE_M = 0.35;
 /** Furniture this tall can hide a person standing behind it, so it fades (gently: a sofa never needs to). */
 const FURNITURE_FADE_M = 1.3;
 const FURNITURE_FADE_ALPHA = 0.3;
+/** Doors stay easy to find while they fade (owner, 18/11/2026): a see-through wall goes to 14%, a door only to half. */
+const DOOR_FADE_ALPHA = 0.5;
 const WOOD_FLOOR = 0x7a5f44;
 const TILE = 0x8a9090;
 const BATH_TILE = 0x7c9096;
@@ -414,7 +416,7 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
     node.setOpen(world.isOpen(d.id));
     doors.set(d.id, node);
     floors[d.floor]!.actors.add(g, frontY(d.rect));
-    fader.add(g);
+    fader.add(g, DOOR_FADE_ALPHA);
     nodes.push({ node: g, floor: d.floor, room: null, kind: 'door', id: d.id, rect: d.rect });
   }
 
