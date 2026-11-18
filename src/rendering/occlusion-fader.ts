@@ -46,6 +46,7 @@ export class OcclusionFader {
   private frame = 0;
   private readonly exempt = new Set<Container>();
   private readonly own = new Map<Container, number>();
+  private forced: ReadonlySet<Container> = new Set();
 
   /** Never fade this node (e.g. an object carried overhead: it belongs to the fighter). */
   setExempt(node: Container, exempt: boolean): void {
@@ -54,6 +55,11 @@ export class OcclusionFader {
   }
 
   /** `occludedAlpha` overrides how see-through this one gets (tall furniture fades less than a wall). */
+  /** These nodes are see-through whatever stands behind them (the front walls of the room the player is in). */
+  setForced(nodes: ReadonlySet<Container>): void {
+    this.forced = nodes;
+  }
+
   add(node: Container, occludedAlpha?: number): void {
     this.targets.push({ node, depth: () => node.zIndex });
     if (occludedAlpha !== undefined) this.own.set(node, occludedAlpha);
@@ -86,8 +92,8 @@ export class OcclusionFader {
     for (const t of this.targets) {
       const node = t.node;
       if (!node.visible || node.destroyed) continue;
-      let blocking = false;
-      if (boxes.length > 0 && !this.exempt.has(node)) {
+      let blocking = this.forced.has(node);
+      if (!blocking && boxes.length > 0 && !this.exempt.has(node)) {
         const depth = t.depth();
         let local = this.shapes.get(node);
         if (!local || refresh) {

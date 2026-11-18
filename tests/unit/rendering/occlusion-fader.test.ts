@@ -47,3 +47,18 @@ describe('occlusion fader', () => {
     expect(wall2.alpha).toBe(1);
   });
 });
+
+describe('forced fading', () => {
+  it('makes the chosen nodes see-through even with nothing behind them, and restores them', () => {
+    const fader = new OcclusionFader({ occludedAlpha: 0.14 });
+    const wall = box(0, 0, 4, 4, 10);
+    const person = box(50, 50, 1, 2, 5);
+    fader.add(wall);
+    fader.setForced(new Set([wall]));
+    for (let i = 0; i < 30; i++) fader.update([{ node: person, depth: () => person.zIndex }], 0.05);
+    expect(wall.alpha).toBeCloseTo(0.14, 2);
+    fader.setForced(new Set());
+    for (let i = 0; i < 30; i++) fader.update([{ node: person, depth: () => person.zIndex }], 0.05);
+    expect(wall.alpha).toBe(1);
+  });
+});

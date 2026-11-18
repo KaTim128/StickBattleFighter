@@ -5,12 +5,14 @@ import { HOUSE, HOUSE_CAST } from '../../data/arenas/house';
 import type { PlayerIntents } from '../../input/intents';
 import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
 import { hideCues } from '../../modes/hide-seek/hiding';
+import type { Rect } from '../../modes/hide-seek/house-types';
 import { visionPolygon } from '../../modes/hide-seek/perception';
 import { Visibility } from '../../modes/hide-seek/visibility';
 import type { Point } from '../../modes/hide-seek/world';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
 import { ActorView } from '../../rendering/actor-view';
-import { bakerFor, buildHouseView, type HouseView } from '../../rendering/house-view';
+import { isLongPiece, personOrder } from '../../rendering/depth-sort';
+import { bakerFor, buildHouseView, type HouseView, isFrontWallOf } from '../../rendering/house-view';
 import { iso } from '../../rendering/projection';
 import type { Viewport } from './arena-scene';
 
@@ -35,6 +37,8 @@ export class HideSeekScene implements GameScene {
   private hunterFloor: 0 | 1 = 0;
   /** Heights of the hiding places (for the bubble anchors), by furniture id. */
   private readonly spotTops = new Map<string, number>();
+  /** The room whose front walls are currently see-through. */
+  private fadedRoom: string | null | undefined;
   private lastHunter = { x: 0, y: 0 };
   private cam = { x: 0, y: 0 };
   /** Room visibility and lighting (section C); drives which things are drawn and how bright. */
@@ -47,6 +51,8 @@ export class HideSeekScene implements GameScene {
     room: string | null;
     probes: readonly [Point, Point] | null;
     centre: Point;
+    /** A long piece of furniture, whose draw order against the player needs the footprint, not one corner. */
+    long: Rect | null;
   }[] = [];
   private doorStates = new Map<string, boolean>();
   /** The last floor the player's figure was added to. */
@@ -88,7 +94,16 @@ export class HideSeekScene implements GameScene {
                 { x: r.x1 + 0.4, y: cy },
               ]
           : null;
-      return { node: n.node, floor: n.floor, kind: n.kind, id: n.id, room: n.room, probes, centre: { x: cx, y: cy } };
+      return {
+        node: n.node,
+        floor: n.floor,
+        kind: n.kind,
+        id: n.id,
+        room: n.room,
+        probes,
+        centre: { x: cx, y: cy },
+        long: n.kind === 'furniture' && isLongPiece(r) ? r : null,
+      };
     });
     this.parent.addChild(this.view.world);
     // The player is the standard training dummy (section: "the standard dummy training character").
@@ -176,8 +191,10 @@ export class HideSeekScene implements GameScene {
     this.renderHunter(view, frameDtS);
     const eyes = g.viewer();
     this.visibility.update(frameDtS, eyes);
+    this.fadeFrontWalls(view);
     this.applyVisibility();
     for (const f of view.floors) f.actors.update();
+    this.sortLongPieces(player.view.root.zIndex);
     view.fader.update([{ node: player.view.root, depth: () => player.view.root.zIndex }], frameDtS);
 
     // The camera glides after the player.
@@ -233,6 +250,34 @@ export class HideSeekScene implements GameScene {
   }
 
   /** The throwable objects: on the floor, carried over the player's head, or flying in an arc. */
+  /** Put long furniture in front of or behind the player by where the player stands against its footprint. */
+  private sortLongPieces(playerZ: number): void {
+    const p = this.game.player;
+    for (const n of this.lit) {
+      if (!n.long || n.floor !== p.floor) continue;
+      const order = personOrder(n.long, p);
+      if (order === 'in-front') n.node.zIndex = playerZ - 0.5;
+      else if (order === 'behind') n.node.zIndex = playerZ + 0.5;
+    }
+  }
+
+  /**
+   * While the player is in a room, that room's south and east walls (and their doors) face the camera and would
+   * hide the room, so they are see-through (owner, 18/11/2026). Recomputed only when the occupied room changes.
+   */
+  private fadeFrontWalls(view: HouseView): void {
+    const id = this.visibility.occupiedRoom;
+    if (id === this.fadedRoom) return;
+    this.fadedRoom = id;
+    const room = id ? this.game.world.room(id) : undefined;
+    const set = new Set<Container>();
+    if (room && !room.outdoors)
+      for (const n of view.nodes)
+        if ((n.kind === 'wall' || n.kind === 'door') && n.floor === room.floor && isFrontWallOf(room.rect, n.rect))
+          set.add(n.node);
+    view.fader.setForced(set);
+  }
+
   /** Everything back to the start of a round: the game, the lighting memory and the hunter's picture. */
   restart(): void {
     this.game.restart();

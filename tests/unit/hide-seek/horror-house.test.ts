@@ -4,7 +4,7 @@ import { HOUSE, HOUSE_PLAN } from '../../../src/data/arenas/house';
 import { HideSeekGame } from '../../../src/modes/hide-seek/game';
 import { HIDE_CUE_M, hideCues } from '../../../src/modes/hide-seek/hiding';
 import { hash2 } from '../../../src/rendering/house-furniture';
-import { buildingBounds, onBuilding } from '../../../src/rendering/house-view';
+import { buildingBounds, isFrontWallOf, onBuilding } from '../../../src/rendering/house-view';
 
 describe('floating HIDE bubbles (owner, 18/11/2026)', () => {
   const g = new HideSeekGame(HOUSE_PLAN);
@@ -76,5 +76,27 @@ describe('the flickering lamps', () => {
   it('is deterministic, and the wear hash is stable', () => {
     expect(lampLevel(12.3, 0.4)).toBe(lampLevel(12.3, 0.4));
     expect(hash2(3, 4)).toBe(hash2(3, 4));
+  });
+});
+
+describe('the front walls of the occupied room are see-through (owner, 18/11/2026)', () => {
+  const kitchen = HOUSE_PLAN.rooms.find((r) => r.id === 'kitchen')!.rect;
+  const walls = HOUSE_PLAN.walls.filter((w) => w.floor === 0);
+
+  it("picks the room's south and east walls and no others", () => {
+    const front = walls.filter((w) => isFrontWallOf(kitchen, w));
+    expect(front.length).toBeGreaterThan(1);
+    for (const w of front) {
+      const south = Math.abs((w.y0 + w.y1) / 2 - kitchen.y1) <= 0.45 && w.x1 - w.x0 >= w.y1 - w.y0;
+      const east = Math.abs((w.x0 + w.x1) / 2 - kitchen.x1) <= 0.45 && w.x1 - w.x0 < w.y1 - w.y0;
+      expect(south || east).toBe(true);
+    }
+    // The north wall (y = 9) and the west wall (x = 19) are behind the room: they stay solid.
+    expect(walls.some((w) => !isFrontWallOf(kitchen, w) && Math.abs((w.y0 + w.y1) / 2 - kitchen.y0) < 0.2)).toBe(true);
+    expect(
+      walls
+        .filter((w) => isFrontWallOf(kitchen, w))
+        .every((w) => (w.y0 + w.y1) / 2 > kitchen.y0 + 1 || (w.x0 + w.x1) / 2 > kitchen.x0 + 1),
+    ).toBe(true);
   });
 });

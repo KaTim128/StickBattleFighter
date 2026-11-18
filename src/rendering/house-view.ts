@@ -246,6 +246,18 @@ export function bakerFor(renderer: Renderer): Baker {
 /** Without a renderer (tests) a piece stays as drawn. */
 const noBake: Baker = (g) => g;
 
+/**
+ * Is this wall (or door) one of the room's two walls that face the camera, the south and the east ones? These stand
+ * between the camera and everything in the room, so they go see-through while the player is inside it.
+ */
+export function isFrontWallOf(room: Rect, wall: Rect, tol = 0.45): boolean {
+  const cx = (wall.x0 + wall.x1) / 2;
+  const cy = (wall.y0 + wall.y1) / 2;
+  const alongX = wall.x1 - wall.x0 >= wall.y1 - wall.y0;
+  if (alongX) return Math.abs(cy - room.y1) <= tol && cx >= room.x0 - tol && cx <= room.x1 + tol;
+  return Math.abs(cx - room.x1) <= tol && cy >= room.y0 - tol && cy <= room.y1 + tol;
+}
+
 /** The building's outline: every indoor room (not the yards or the shed) on both floors. */
 export function buildingBounds(house: HouseDef): Rect {
   const rooms = house.rooms.filter((r) => !r.outdoors && r.kind !== 'shed');

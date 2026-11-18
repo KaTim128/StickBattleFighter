@@ -347,8 +347,8 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
     hide: hide('cupboard', 0.85, 0.3, 0.9, 29.6, 19.8, 'w'),
   }),
   // ---------------------------------------------------------------- Bedroom 1
-  item('bed', 1, 10.4, 9.4, 12.6, 11.8, 0.55, 0x8a8aa0, { hide: hide('under-bed', 0.75, 0.4, 1.3, 11.5, 11.2, 's') }),
-  item('nightstand', 1, 12.85, 9.4, 13.45, 10.0, 0.5, WOOD),
+  item('bed', 1, 11.4, 9.4, 13.6, 11.8, 0.55, 0x8a8aa0, { hide: hide('under-bed', 0.75, 0.4, 1.3, 12.5, 11.2, 's') }),
+  item('nightstand', 1, 10.4, 9.4, 11, 10, 0.5, WOOD),
   item('wardrobe', 1, 14.6, 9.3, 15.8, 10.2, 2.0, DARK_WOOD, {
     blocksSight: true,
     hide: hide('wardrobe', 0.9, 0.45, 0.9, 15.2, 9.9, 's'),
@@ -368,15 +368,15 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('box', 1, 19.4, 12.6, 20.6, 13.8, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 20, 13.2, 'e') }),
   item('box', 1, 23.4, 12.4, 24.6, 13.6, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 24, 13, 'w') }),
   // ---------------------------------------------------------------- Bedroom 2
-  item('bed', 1, 10.4, 19.2, 12.9, 20.8, 0.55, 0x8aa08a, { hide: hide('under-bed', 0.75, 0.4, 1.3, 11.6, 20.0, 'n') }),
+  item('bed', 1, 11.4, 19.2, 13.9, 20.8, 0.55, 0x8aa08a, { hide: hide('under-bed', 0.75, 0.4, 1.3, 12.6, 20.0, 'n') }),
   item('wardrobe', 1, 10.4, 16.3, 11.6, 17.4, 2.0, DARK_WOOD, {
     blocksSight: true,
     hide: hide('wardrobe', 0.9, 0.45, 0.9, 11, 17.0, 'e'),
   }),
-  item('curtain', 1, 13.5, 20.55, 16, 20.85, 2.2, 0x6a7a8a, {
-    hide: hide('curtain', 0.65, 0.3, 1.2, 14.7, 20.62, 'n'),
+  item('curtain', 1, 14.4, 20.55, 16.9, 20.85, 2.2, 0x6a7a8a, {
+    hide: hide('curtain', 0.65, 0.3, 1.2, 15.6, 20.62, 'n'),
   }),
-  item('nightstand', 1, 13.15, 19.3, 13.75, 19.9, 0.5, WOOD),
+  item('nightstand', 1, 10.4, 20.2, 11, 20.8, 0.5, WOOD),
   // ---------------------------------------------------------------- Bathroom 2
   item('bathtub', 1, 19.3, 19.5, 22.7, 20.6, 0.6, WHITE),
   item('shower-curtain', 1, 19.3, 19.3, 22.7, 19.5, 2.0, 0xc8b89a, {

@@ -556,3 +556,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Nightmare House art pass (TD-102): HIDE bubbles near hiding places (`horror-house.test.ts`, `hide-seek.spec.ts`); walls and furniture in front of the player fade (`occlusion-fader.test.ts`); lamp flicker deterministic and bounded
 - [ ] Owner check: furniture looks modelled (not blocks), the house feels eerie yet readable, the player is never hidden by a wall (run `?mode=hide-seek`)
 - [x] Furniture facing (TD-102): sofa shorter, at and facing the coffee table; armchairs, dining chairs, beds and storage oriented from the layout (`furniture-facing.test.ts`)
+- [x] Front walls of the occupied room see-through (`horror-house.test.ts`, `occlusion-fader.test.ts`); long furniture never hides the player in front of it (`depth-sort.test.ts`)
+
