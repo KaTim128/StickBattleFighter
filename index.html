@@ -874,7 +874,24 @@
       .fe-team-hint { opacity: 0.8; font-size: 12px; text-align: center; max-width: 520px; }
       html.short .fe-team-tile { width: 62px; }
       html.short .fe-team-slot { width: 34px; height: 34px; }
-    </style>
+          /* ---------------- Hide and Seek Nightmare (Phase 2) ---------------- */
+      body.hide-seek { background: #07080b; }
+      body.hide-seek .touch-controls button, body.hide-seek .ability-bar { display: none; }
+      body.hide-seek .touch-controls { display: block; }
+      .hs-hud { position: fixed; inset: 0; z-index: 9; pointer-events: none; font: 700 14px system-ui, sans-serif; color: #e9e4dc; }
+      .hs-banner { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); padding: 6px 18px; border-radius: 999px; background: rgba(10, 6, 8, 0.78); border: 1px solid rgba(190, 40, 40, 0.7); letter-spacing: 0.14em; font-weight: 900; }
+      .hs-banner[hidden] { display: none; }
+      .hs-clock { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); font: 900 38px Impact, 'Arial Black', system-ui, sans-serif; letter-spacing: 0.06em; text-shadow: 0 2px 8px #000; }
+      .hs-clock[data-mode='prep'] { color: #ffd24a; }
+      .hs-clock[data-mode='hunt'] { color: #ff6a5a; }
+      .hs-status { position: absolute; top: 108px; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: 0.8; letter-spacing: 0.1em; text-transform: uppercase; }
+      .hs-prompt { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); padding: 6px 14px; border-radius: 8px; background: rgba(10, 12, 17, 0.85); border: 1px solid rgba(255, 220, 160, 0.6); }
+      .hs-prompt[hidden] { display: none; }
+      .hs-hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 11px; opacity: 0.6; white-space: nowrap; }
+      .hs-touch { display: none; position: absolute; right: 14px; bottom: 14px; gap: 10px; flex-wrap: wrap; width: 190px; justify-content: flex-end; pointer-events: auto; }
+      body.touch-mode .hs-touch { display: flex; }
+      .hs-btn { width: 84px; height: 62px; border-radius: 14px; border: 1px solid rgba(255, 220, 160, 0.7); background: rgba(10, 12, 17, 0.8); color: #ffe9c4; font: 800 12px system-ui, sans-serif; letter-spacing: 0.08em; touch-action: none; }
+</style>
   </head>
   <body>
     <div id="app"></div>

@@ -133,6 +133,7 @@ export class DesktopInput {
         break;
       case 'heavyAttack':
         i.pressHeavy();
+        i.peek = true;
         break;
       case 'beamLeft':
         i.beamTurnLeft = true;
@@ -153,6 +154,7 @@ export class DesktopInput {
       if (action === 'beamLeft') this.intents.beamTurnLeft = false;
       if (action === 'beamRight') this.intents.beamTurnRight = false;
       if (action === 'grab') this.intents.interactRelease();
+      if (action === 'heavyAttack') this.intents.peek = false;
     }
     this.sync();
   }

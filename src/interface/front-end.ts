@@ -88,6 +88,8 @@ export interface FrontEndOptions {
   startPractice(setup: PracticeSetup): void;
   startTeam(setup: TeamSetup): void;
   startTutorial(fighter: string): void;
+  /** Hide and Seek Nightmare (Phase 2): its own page. */
+  startHideSeek(): void;
 }
 
 export class FrontEnd {
@@ -354,6 +356,13 @@ export class FrontEnd {
       this.picks = [];
       this.show('team');
     });
+    card(
+      'hide-seek',
+      'Hide and Seek Nightmare',
+      'Hide in a dark two-storey house for two minutes while Shroud hunts you. No fighting: stay quiet.',
+      false,
+      () => this.o.startHideSeek(),
+    );
     sec.append(list);
     const row = el('div', 'fe-row');
     row.append(button('fe-back', 'Back', () => this.show('title')));

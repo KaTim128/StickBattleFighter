@@ -807,3 +807,6 @@ CI browser jobs were red since B10 (read on 18/11/2026). Fixed Eruption's aimed 
 
 ### 18/11/2026 Owner feedback batch (loadout swap, details board, ability balance)
 Done: swap any ability (TD-092), details only on a closable board, one balance pass (TD-093), CI browser fixes (TD-091, deadlines). Open: Necro's Soul Drain dominates his kit (owner decision on blind or lifesteal), Pages deploy blocked by a repo setting (owner must enable Pages with source GitHub Actions), HUD cast-name notice and info control, premium icons (#51). Phase 1 awaits owner review; no Phase 2 without approval.
+
+### 18/11/2026 Phase 2 started (owner approved; no further balancing)
+P2-1 done: house data, two-floor world, stairs, doors, routing, rules, player movement, the isometric house view, the mode page and the Game Modes entry (TD-095, TD-096). Next: P2-2 room visibility, lighting and peeking.

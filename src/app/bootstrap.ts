@@ -850,6 +850,14 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       next.set('play', '');
       window.location.search = next.toString();
     },
+    startHideSeek: () => {
+      goFullscreen();
+      const next = new URLSearchParams();
+      next.set('mode', 'hide-seek');
+      if (params.has('mute')) next.set('mute', '');
+      next.set('play', '');
+      window.location.search = next.toString();
+    },
     startTeam: (setup) => goToTeamFight(setup.team, setup.arena, setup.difficulty),
     startTournament: (setup) => {
       goFullscreen();

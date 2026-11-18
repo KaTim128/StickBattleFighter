@@ -533,3 +533,22 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Owner check: fights feel longer yet still hit hard; AI dodge rate (1.5%) seems low?
 - [x] Every melee move and every ability, ultimate and fifth ability has its own sound; Shroud's five cuts sound different, once each, none on a whiff (`move-sounds.test.ts`, `shroud.test.ts`)
 - [ ] Owner check: listen to the synthesised attack sounds (all four fighters); say which should be replaced by recorded clips
+
+## Phase 2: Hide and Seek Nightmare (master plan section L; ticked when covered by a test)
+- [x] 1. Player movement; the exact 20 second countdown (`rules.test.ts`, `game.test.ts`, `hide-seek.spec.ts`)
+- [x] 2. Running, crouching (speeds and footstep loudness; `game.test.ts`). Hiding: P2-3
+- [ ] 3. Progressive room visibility (P2-2)
+- [ ] 4. Upstairs and downstairs visibility (P2-2)
+- [ ] 5. Direct sightlines through open doorways (sight rules done in `world.test.ts`; rendering P2-2)
+- [x] 6. Visibility blocked by walls and shut doors (`world.test.ts`)
+- [ ] 7. Doorway peeking and camera behaviour (P2-2)
+- [ ] 8. Throwable distractions and sound detection (P2-3, P2-4)
+- [ ] 9. Hiding entry and exit sounds (P2-3)
+- [ ] 10. Shroud's vision radius and obstacle detection (P2-4)
+- [ ] 11. Shroud navigation across both floors and outdoors (routing done in `world.test.ts`; the hunter P2-4)
+- [ ] 12. Room searches and hiding inspections (P2-4)
+- [ ] 13. Visual detection, sound investigation and pursuit (P2-4)
+- [ ] 14. Positional footsteps and horror audio (P2-5)
+- [ ] 15. Killing animation and Game Over (rules done; animation and screen P2-5)
+- [ ] 16. Two minute survival timer and Victory (rules done; screen P2-5)
+- [ ] 17. Restart and Return to Menu (state reset done; buttons P2-5)

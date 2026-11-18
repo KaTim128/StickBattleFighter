@@ -72,7 +72,8 @@ test('title → name → Game Modes → fighter select → tournament, with the 
   // Game Modes: Tournament and 3 vs 3 (coming soon), nothing else.
   const modes = front.locator('[data-screen="modes"]');
   await expect(modes).toBeVisible();
-  await expect(modes.locator('.fe-mode')).toHaveCount(2);
+  await expect(modes.locator('.fe-mode')).toHaveCount(3); // Tournament, Tag Team and Hide and Seek Nightmare (Phase 2)
+  await expect(modes.locator('[data-gm="hide-seek"]')).toContainText('Hide and Seek Nightmare');
   await expect(modes.locator('[data-gm="3v3"]')).not.toHaveClass(/locked/); // Tag Team is playable (owner, 13/11/2026)
   await expect(modes.locator('[data-gm="3v3"]')).toContainText('Tag Team'); // renamed from 3 vs 3 (owner)
   await expect(modes).not.toContainText(/3 vs 3/i);

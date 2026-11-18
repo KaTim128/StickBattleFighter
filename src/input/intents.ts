@@ -196,6 +196,9 @@ export class PlayerIntents {
   // ---- Sprint (hold Shift by default): faster running while held.
   sprint = false;
 
+  /** Peek (Hide and Seek): held with the heavy-attack key; the view leans, the body stays put. */
+  peek = false;
+
   // ---- Dodge (right click, double-tap or joystick flick; REQ-CTL-12).
   private dodgeQueued = false;
   private dodgeBufferS = 0;
@@ -281,6 +284,7 @@ export class PlayerIntents {
     this.beamTurnLeft = false;
     this.beamTurnRight = false;
     this.sprint = false;
+    this.peek = false;
     this.abilityQueue.length = 0;
   }
 }
