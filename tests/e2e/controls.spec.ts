@@ -89,7 +89,10 @@ test('Eruption on the keyboard (owner, 12/11/2026; Inferno fifth ability on R si
   // Clear floor straight up the screen (a pillar stands just up-screen of the default start, which
   // rightly cuts the leap short), and the dummy out of lock-on range (REQ-CTL-22).
   await page.addInitScript(() =>
-    localStorage.setItem('stickman-arena.loadouts', JSON.stringify({ '(guest)': { inferno: { useFifth: true } } })),
+    localStorage.setItem(
+      'stickman-arena.loadouts',
+      JSON.stringify({ '(guest)': { inferno: { equipped: ['fireball', 'flameDash', 'fireBeam', 'eruption'] } } }),
+    ),
   );
   await open(page, errors, 'scene=training-yard&playerAt=17,10&dummyAt=29,21');
   const hint = page.locator('.aim-hint');

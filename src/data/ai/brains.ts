@@ -204,21 +204,27 @@ const designCache = new Map<string, BrainDesign>();
 
 /**
  * The brain design for a fighter. With a kit, the tactics follow the abilities equipped in the
- * fight (a fifth ability in a slot brings its own tactic); results are cached per combination.
+ * fight: a fifth ability brings its own tactic, and an ability moved to another button keeps the
+ * tactic of the slot it started in (`homeSlot`). Results are cached per combination.
  */
 export function brainDesignFor(
   aiProfileId: string,
-  equipped?: Readonly<Record<AbilitySlot, { readonly id: string }>> | null,
+  equipped?: Readonly<Record<AbilitySlot, { readonly id: string; readonly homeSlot?: AbilitySlot }>> | null,
 ): BrainDesign {
   const base = BRAIN_DESIGNS[aiProfileId] ?? GENERIC_DESIGN;
   if (!equipped) return base;
-  const swaps = (Object.keys(base.tactics) as AbilitySlot[]).filter((slot) => ALTERNATE_TACTICS[equipped[slot].id]);
-  if (swaps.length === 0) return base;
-  const key = `${aiProfileId}:${swaps.map((slot) => `${slot}=${equipped[slot].id}`).join(',')}`;
+  const slots = Object.keys(base.tactics) as AbilitySlot[];
+  const tacticFor = (slot: AbilitySlot): AbilityTactic => {
+    const a = equipped[slot];
+    return ALTERNATE_TACTICS[a.id] ?? base.tactics[a.homeSlot ?? slot];
+  };
+  const changed = slots.filter((slot) => tacticFor(slot) !== base.tactics[slot]);
+  if (changed.length === 0) return base;
+  const key = `${aiProfileId}:${changed.map((slot) => `${slot}=${equipped[slot].id}`).join(',')}`;
   let design = designCache.get(key);
   if (!design) {
     const tactics = { ...base.tactics };
-    for (const slot of swaps) tactics[slot] = ALTERNATE_TACTICS[equipped[slot].id] as AbilityTactic;
+    for (const slot of changed) tactics[slot] = tacticFor(slot);
     design = { ...base, tactics };
     designCache.set(key, design);
   }

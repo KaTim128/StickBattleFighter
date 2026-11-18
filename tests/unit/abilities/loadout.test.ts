@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { ABILITY_KITS } from '../../../src/abilities/kits';
-import { applyLoadout, DEFAULT_LOADOUT, equippedAbilities } from '../../../src/abilities/loadout';
-import { ALTERNATE_TACTICS, brainDesignFor } from '../../../src/data/ai/brains';
+import {
+  applyLoadout,
+  DEFAULT_LOADOUT,
+  equippedIds,
+  loadoutAfterSwap,
+  NORMAL_SLOTS,
+  validLoadout,
+} from '../../../src/abilities/loadout';
+import { ALTERNATE_TACTICS, BRAIN_DESIGNS, brainDesignFor } from '../../../src/data/ai/brains';
 
 const AI: Record<string, string> = {
   'inferno-kit': 'inferno-ai',
@@ -10,41 +17,71 @@ const AI: Record<string, string> = {
   'shroud-kit': 'shroud-ai',
 };
 
-describe('five abilities, four equipped (master plan B13)', () => {
+describe('five abilities, four equipped, any one on the bench (master plan B13, B14)', () => {
   for (const [id, kit] of Object.entries(ABILITY_KITS)) {
-    it(`${id} has a fifth ability that names the slot it takes`, () => {
-      const fifth = kit.a5;
-      expect(fifth, 'a fifth ability').toBeDefined();
-      expect(['a1', 'a2', 'a3', 'a4']).toContain(fifth!.slot);
-      expect(new Set([kit.a1.id, kit.a2.id, kit.a3.id, kit.a4.id, fifth!.id]).size).toBe(5);
-    });
+    const fifth = kit.a5;
+    if (!fifth) continue;
 
     it(`${id}: the standard loadout is the four it always had`, () => {
       expect(applyLoadout(kit)).toBe(kit);
       expect(applyLoadout(kit, DEFAULT_LOADOUT)).toBe(kit);
+      expect(new Set([kit.a1.id, kit.a2.id, kit.a3.id, kit.a4.id, fifth.id]).size).toBe(5);
     });
 
-    it(`${id}: equipping the fifth benches exactly the ability in its slot, nothing else changes`, () => {
-      const fifth = kit.a5!;
-      const swapped = applyLoadout(kit, { useFifth: true });
-      const benched = kit[fifth.slot as 'a1'];
-      expect(swapped[fifth.slot as 'a1'].id).toBe(fifth.id);
-      expect(swapped.a5?.id).toBe(benched.id);
-      for (const s of ['a1', 'a2', 'a3', 'a4'] as const) if (s !== fifth.slot) expect(swapped[s]).toBe(kit[s]);
-      expect(swapped.ult).toBe(kit.ult);
-      expect(equippedAbilities(swapped).equipped.map((a) => a.slot)).toEqual(['a1', 'a2', 'a3', 'a4']);
-      // Swapping back restores the original four.
-      expect(applyLoadout(swapped, { useFifth: true }).a5?.id).toBe(fifth.id);
+    for (const slot of NORMAL_SLOTS) {
+      it(`${id}: the alternative can replace ${slot}, and that ability goes to the bench`, () => {
+        const swapped = applyLoadout(kit, loadoutAfterSwap(kit, slot));
+        const was = kit[slot];
+        expect(swapped[slot].id).toBe(fifth.id);
+        expect(swapped[slot].slot).toBe(slot); // it answers to the button it sits on
+        expect(swapped.a5?.id).toBe(was.id);
+        for (const other of NORMAL_SLOTS) if (other !== slot) expect(swapped[other]).toBe(kit[other]);
+        expect(swapped.ult).toBe(kit.ult);
+        expect(new Set([...equippedIds(swapped), swapped.a5?.id]).size).toBe(5);
+        // Swapping the same slot back restores the standard four.
+        const back = applyLoadout(swapped, loadoutAfterSwap(swapped, slot));
+        expect(equippedIds(back)).toEqual(equippedIds(kit));
+      });
+    }
+
+    it(`${id}: abilities can be chained from one swap to the next, ending with any one on the bench`, () => {
+      let now = kit;
+      for (const slot of ['a1', 'a3', 'a2'] as const) now = applyLoadout(now, loadoutAfterSwap(now, slot));
+      expect(equippedIds(now)).toHaveLength(4);
+      expect(new Set([...equippedIds(now), now.a5?.id]).size).toBe(5);
+      for (const slot of NORMAL_SLOTS) expect(now[slot].slot).toBe(slot);
     });
 
-    it(`${id}: the AI has a tactic for the fifth ability`, () => {
-      const fifth = kit.a5!;
+    it(`${id}: unusable saved loadouts leave the standard four`, () => {
+      const bad = [
+        { equipped: ['x', 'y', 'z', 'w'] },
+        { equipped: [kit.a1.id, kit.a1.id, kit.a2.id, kit.a3.id] },
+        { equipped: [kit.a1.id, kit.a2.id] },
+      ];
+      for (const l of bad) {
+        expect(validLoadout(kit, l)).toBe(false);
+        expect(applyLoadout(kit, l)).toBe(kit);
+      }
+    });
+
+    it(`${id}: the AI has a tactic for the fifth ability and moved abilities keep their own`, () => {
       expect(ALTERNATE_TACTICS[fifth.id]).toBeDefined();
-      const swapped = applyLoadout(kit, { useFifth: true });
-      const design = brainDesignFor(AI[id]!, swapped);
-      expect(design.tactics[fifth.slot as 'a1']).toBe(ALTERNATE_TACTICS[fifth.id]);
-      // With the standard four the original design is untouched.
-      expect(brainDesignFor(AI[id]!, kit)).toBe(brainDesignFor(AI[id]!));
+      const aiId = AI[id] as string;
+      const base = BRAIN_DESIGNS[aiId]!;
+      expect(brainDesignFor(aiId, kit)).toBe(brainDesignFor(aiId));
+      for (const slot of NORMAL_SLOTS) {
+        const swapped = applyLoadout(kit, loadoutAfterSwap(kit, slot));
+        expect(brainDesignFor(aiId, swapped).tactics[slot]).toBe(ALTERNATE_TACTICS[fifth.id]);
+      }
+      // Standard four on shuffled buttons: each ability still uses its own slot's tactic.
+      const shuffled = {
+        ...kit,
+        a1: { ...kit.a2, slot: 'a1' as const, homeSlot: 'a2' as const },
+        a2: { ...kit.a1, slot: 'a2' as const, homeSlot: 'a1' as const },
+      };
+      const design = brainDesignFor(aiId, shuffled);
+      expect(design.tactics.a1).toBe(base.tactics.a2);
+      expect(design.tactics.a2).toBe(base.tactics.a1);
     });
   }
 });

@@ -11,7 +11,7 @@ import { type Bindings, codeLabel, SLOT_ACTION } from '../input/bindings';
  * keys come from the player's own bindings). Pure: built from the fighter's data.
  */
 export interface SheetAbility {
-  readonly slot: AbilitySlot | 'combo' | 'heavy';
+  readonly slot: AbilitySlot | 'combo' | 'heavy' | 'alt';
   /** The key or button that uses it: "Q", "Left click", "ULT". */
   readonly key: string;
   readonly name: string;
@@ -208,10 +208,16 @@ export function fighterSheet(
   const heavy = heavyEntry(def, device, keys);
   if (heavy) abilities.push(heavy);
   if (kit) {
-    const entry = (a: AbilityDef, slot: AbilitySlot, alternative = false): SheetAbility => ({
+    const entry = (a: AbilityDef, slot: AbilitySlot | 'alt', alternative = false): SheetAbility => ({
       slot,
       key:
-        device === 'touch' ? (slot === 'ult' ? 'ULT' : `Button ${slot.slice(1)}`) : codeLabel(keys[SLOT_ACTION[slot]]),
+        slot === 'alt'
+          ? 'not equipped'
+          : device === 'touch'
+            ? slot === 'ult'
+              ? 'ULT'
+              : `Button ${slot.slice(1)}`
+            : codeLabel(keys[SLOT_ACTION[slot]]),
       name: a.name,
       icon: a.icon ?? null,
       description: a.description ?? '',
@@ -220,7 +226,7 @@ export function fighterSheet(
       ...(alternative ? { alternative: true as const } : {}),
     });
     for (const slot of ['a1', 'a2', 'a3', 'a4', 'ult'] as const) abilities.push(entry(kit[slot], slot));
-    if (kit.a5) abilities.push(entry(kit.a5, kit.a5.slot, true));
+    if (kit.a5) abilities.push(entry(kit.a5, 'alt', true));
   }
   return { ratings: fighterRatings(def), abilities };
 }

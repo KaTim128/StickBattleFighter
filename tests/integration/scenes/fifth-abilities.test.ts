@@ -1,6 +1,8 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { DEFAULT_LOADOUT, loadoutAfterSwap, type NormalSlot } from '../../../src/abilities/loadout';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
+import { loadCharacter } from '../../../src/characters/load';
 import { SceneManager } from '../../../src/core/scene';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
@@ -8,7 +10,12 @@ import { initPhysics } from '../../../src/physics/physics-world';
 
 const STEP = 1 / 60;
 
-async function setup(player: string, at: { x: number; y: number }, dummyAt: { x: number; y: number }, useFifth = true) {
+async function setup(
+  player: string,
+  at: { x: number; y: number },
+  dummyAt: { x: number; y: number },
+  swapSlot: NormalSlot | null = 'a3',
+) {
   const intents = new PlayerIntents();
   const scene = new FightArenaScene(
     { ...TRAINING_YARD, playerStart: at, dummyStart: dummyAt },
@@ -16,7 +23,12 @@ async function setup(player: string, at: { x: number; y: number }, dummyAt: { x:
     intents,
     () => ({ width: 1280, height: 720 }),
     false,
-    { player, loadouts: { player: { useFifth } } },
+    {
+      player,
+      loadouts: {
+        player: swapSlot ? loadoutAfterSwap(loadCharacter(player).def.abilities!, swapSlot) : DEFAULT_LOADOUT,
+      },
+    },
   );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
@@ -41,9 +53,17 @@ describe('fifth abilities in a fight (B13)', () => {
     expect(kit.a3.id).toBe('bastionAnchor');
     expect(kit.a5?.id).toBe('crushingStrike');
     a.scenes.clear();
-    const b = await setup('rampage', { x: 10, y: 13 }, { x: 20, y: 13 }, false);
+    const b = await setup('rampage', { x: 10, y: 13 }, { x: 20, y: 13 }, null);
     expect(b.scene.playerFighter.def.abilities!.a3.id).toBe('crushingStrike');
     b.scenes.clear();
+    // Any button will do: the alternative on the first button, Ground Smash benched, and the first key works.
+    const c = await setup('rampage', { x: 14, y: 13 }, { x: 15.2, y: 13 }, 'a1');
+    expect(c.scene.playerFighter.def.abilities!.a1.id).toBe('bastionAnchor');
+    expect(c.scene.playerFighter.def.abilities!.a5?.id).toBe('groundSmash');
+    c.intents.pressAbility('a1');
+    c.run(1.2);
+    expect(c.scene.playerFighter.buff?.damageTakenFactor).toBeCloseTo(0.5, 6);
+    c.scenes.clear();
   });
 
   it('Bastion Anchor: the pressed ability button braces Titan (slow, takes half damage) and shoves back anyone close', async () => {
@@ -62,7 +82,7 @@ describe('fifth abilities in a fight (B13)', () => {
   });
 
   it('Soul Tether: drains life back to Necro and reels the target in to 3.5 m', async () => {
-    const { intents, scene, scenes, run } = await setup('necro', { x: 8, y: 13 }, { x: 16, y: 13 });
+    const { intents, scene, scenes, run } = await setup('necro', { x: 8, y: 13 }, { x: 16, y: 13 }, 'a4');
     (scene.playerFighter.def.stats as { critChance: number }).critChance = 0;
     scene.playerFighter.combatant.hp = 500;
     intents.pressAbility('a4');
@@ -76,7 +96,7 @@ describe('fifth abilities in a fight (B13)', () => {
   });
 
   it('Umbral Feint: a short shadow buff, faster, harder to hurt, every cut bleeds', async () => {
-    const { intents, scene, scenes, run } = await setup('shroud', { x: 12, y: 13 }, { x: 15, y: 13 });
+    const { intents, scene, scenes, run } = await setup('shroud', { x: 12, y: 13 }, { x: 15, y: 13 }, 'a2');
     intents.pressAbility('a2');
     run(0.8);
     const b = scene.playerFighter.buff;

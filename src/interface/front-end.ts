@@ -1,12 +1,12 @@
 import titleArt from '../../assets/ui/title-menu.webp?url';
-import type { Loadout } from '../abilities/loadout';
+import type { NormalSlot } from '../abilities/loadout';
 import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
 import { draftPool } from '../modes/team/team-battle';
 import type { NameCheck } from '../progression/player-name';
 import { nameLength, PLAYER_NAME_MAX } from '../progression/player-name';
 import { abilityIcon } from './ability-icons';
 import { accentColour } from './accent-colour';
-import type { FighterSheet } from './fighter-sheet';
+import type { FighterSheet, SheetAbility } from './fighter-sheet';
 import type { MenuArena, MenuFighter, MenuOpponent } from './main-menu';
 import { TOURNAMENT_SIZES } from './main-menu';
 import { quitGame } from './quit-game';
@@ -72,9 +72,8 @@ export interface FrontEndOptions {
   readonly initial: TournamentSetup;
   presentation(fighterId: string): FighterPresentation | undefined;
   sheetFor(fighterId: string): FighterSheet | null;
-  /** Which four of the five abilities this fighter equips (master plan B14). */
-  loadoutFor(fighterId: string): Loadout;
-  setLoadout(fighterId: string, loadout: Loadout): void;
+  /** Put the fighter's alternative ability on the button `slot` (the ability there goes to the bench, master plan B14). */
+  swapAbility(fighterId: string, slot: NormalSlot): void;
   playerName(): string | null;
   saveName(raw: string): NameCheck;
   isAdmin(): boolean;
@@ -505,6 +504,121 @@ export class FrontEnd {
     sec.append(row);
   }
 
+  /**
+   * The fighter's abilities on the select screen (master plan B14, owner 18/11/2026): a short row for
+   * each (picture, name, key); the numbers and the how-to open on a board only when it is clicked, and
+   * the board closes again. The four equipped abilities and the ultimate come first, then the one on
+   * the bench as an available alternative (never locked). Any equipped ability can be swapped for the
+   * alternative, with its Swap button or by dragging the two onto each other.
+   */
+  private buildAbilityList(fighterId: string, sheet: FighterSheet): HTMLElement {
+    const list = el('div', 'fe-abilities');
+    const board = el('div', 'fe-ab-board');
+    board.hidden = true;
+    board.setAttribute('role', 'dialog');
+    board.setAttribute('aria-modal', 'false');
+    const closeBoard = () => {
+      board.hidden = true;
+      for (const r of list.querySelectorAll('.fe-ab.open')) r.classList.remove('open');
+      document.removeEventListener('keydown', onKey, true);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      closeBoard();
+    };
+    const openBoard = (a: SheetAbility, row: HTMLElement) => {
+      board.replaceChildren();
+      const head = el('div', 'fe-ab-board-head');
+      const pic = el('span', 'fe-ab-icon');
+      const svg = a.icon ? abilityIcon(a.icon) : null;
+      if (svg) pic.innerHTML = svg;
+      const title = el('strong', 'fe-ab-board-title', a.name);
+      if (a.slot === 'ult') title.prepend(el('span', 'fe-ab-tag', 'ULTIMATE'));
+      if (a.alternative) title.prepend(el('span', 'fe-ab-tag', 'ALTERNATIVE'));
+      const close = button('fe-ab-close', '✕', closeBoard);
+      close.setAttribute('aria-label', 'Close');
+      head.append(pic, title, close);
+      const dl = el('dl', 'fe-ab-stats');
+      for (const st of a.stats) dl.append(el('dt', '', st.label), el('dd', '', st.value));
+      const how = el('p', 'fe-ab-how');
+      how.append(el('strong', '', 'How to use: '), a.howTo);
+      board.append(head, el('p', 'fe-ab-board-desc', a.description), dl, how);
+      board.hidden = false;
+      for (const r of list.querySelectorAll('.fe-ab.open')) r.classList.remove('open');
+      row.classList.add('open');
+      document.addEventListener('keydown', onKey, true);
+    };
+
+    const normal = sheet.abilities.filter((a) => a.slot !== 'combo' && a.slot !== 'heavy');
+    const alternative = normal.find((a) => a.alternative);
+    const swapSlot = (slot: NormalSlot) => {
+      this.o.swapAbility(fighterId, slot);
+      this.show('select');
+    };
+    let dragging: SheetAbility | null = null;
+    for (const a of normal) {
+      const isNormal = a.slot !== 'ult' && !a.alternative;
+      const row = el('div', `fe-ab${a.slot === 'ult' ? ' fe-ult' : ''}${a.alternative ? ' fe-alt' : ''}`);
+      row.dataset.ability = a.alternative ? 'alt' : a.slot;
+      if (a.alternative) row.dataset.alternative = 'true';
+      row.tabIndex = 0;
+      row.setAttribute('role', 'button');
+      const icon = el('span', 'fe-ab-icon');
+      const svg = a.icon ? abilityIcon(a.icon) : null;
+      if (svg) icon.innerHTML = svg;
+      const name = el('strong', 'fe-ab-name', a.name);
+      if (a.slot === 'ult') name.prepend(el('span', 'fe-ab-tag', 'ULTIMATE'));
+      if (a.alternative) name.prepend(el('span', 'fe-ab-tag', 'ALTERNATIVE'));
+      const words = el('div', 'fe-ab-words');
+      words.append(name);
+      row.append(icon, words);
+      if (a.slot !== 'ult' && !a.alternative) row.append(el('kbd', 'fe-ab-key', a.key));
+      row.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.fe-ab-swap')) return;
+        openBoard(a, row);
+      });
+      row.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openBoard(a, row);
+        }
+      });
+      if (alternative && (isNormal || a.alternative)) {
+        // Swap is offered on every equipped ability, so the player chooses which one gives way; on the
+        // alternative it points the player at them.
+        if (isNormal) {
+          const btn = button('fe-ab-swap', `Swap for ${alternative.name}`, () => swapSlot(a.slot as NormalSlot));
+          btn.dataset.swap = a.slot;
+          row.append(btn);
+        } else {
+          row.append(el('span', 'fe-ab-hint', 'Swap it in for any ability above'));
+        }
+        row.draggable = true;
+        row.addEventListener('dragstart', (e) => {
+          dragging = a;
+          e.dataTransfer?.setData('text/plain', a.name);
+          row.classList.add('dragging');
+        });
+        row.addEventListener('dragend', () => {
+          dragging = null;
+          row.classList.remove('dragging');
+        });
+        row.addEventListener('dragover', (e) => {
+          if (dragging && Boolean(dragging.alternative) !== Boolean(a.alternative)) e.preventDefault();
+        });
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (!dragging || Boolean(dragging.alternative) === Boolean(a.alternative)) return;
+          swapSlot((a.alternative ? dragging.slot : a.slot) as NormalSlot);
+        });
+      }
+      list.append(row);
+    }
+    list.append(board);
+    return list;
+  }
+
   private buildSelect(sec: HTMLElement): void {
     const f = this.o.fighters.find((x) => x.id === this.choice.fighter) ?? this.o.fighters[0];
     if (!f) return;
@@ -538,55 +652,7 @@ export class FrontEnd {
         stats.append(row);
       }
       info.append(stats);
-      const abilities = el('div', 'fe-abilities');
-      for (const a of sheet.abilities) {
-        if (a.slot === 'combo' || a.slot === 'heavy') continue;
-        const row = el('div', `fe-ab${a.slot === 'ult' ? ' fe-ult' : ''}${a.alternative ? ' fe-alt' : ''}`);
-        row.dataset.ability = a.slot;
-        if (a.alternative) row.dataset.alternative = 'true';
-        // Equip / swap (master plan B14, owner 16/11/2026): drag the alternative onto the slot it takes (or
-        // the equipped ability onto it), or press Swap (the only way on a touch screen). Never locked.
-        if (a.slot !== 'ult') {
-          const swap = () => {
-            const now = this.o.loadoutFor(f.id);
-            this.o.setLoadout(f.id, { useFifth: !now.useFifth });
-            this.show('select');
-          };
-          const sameSlot = (other: HTMLElement) =>
-            other !== row && other.dataset.ability === a.slot && other.classList.contains('fe-ab');
-          row.draggable = true;
-          row.addEventListener('dragstart', (e) => {
-            e.dataTransfer?.setData('text/plain', a.slot);
-            row.classList.add('dragging');
-          });
-          row.addEventListener('dragend', () => row.classList.remove('dragging'));
-          row.addEventListener('dragover', (e) => {
-            if (document.querySelector('.fe-ab.dragging') && sameSlot(document.querySelector('.fe-ab.dragging')!))
-              e.preventDefault();
-          });
-          row.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (document.querySelector('.fe-ab.dragging') && sameSlot(document.querySelector('.fe-ab.dragging')!))
-              swap();
-          });
-          if (sheet.abilities.some((o) => o !== a && o.slot === a.slot && o.alternative !== a.alternative)) {
-            const btn = button('fe-ab-swap', a.alternative ? 'Equip' : 'Swap out', swap);
-            btn.dataset.swap = a.alternative ? 'equip' : 'bench';
-            row.append(btn);
-          }
-        }
-        const icon = el('span', 'fe-ab-icon');
-        const svg = a.icon ? abilityIcon(a.icon) : null;
-        if (svg) icon.innerHTML = svg;
-        const words = el('div', 'fe-ab-words');
-        const name = el('strong', 'fe-ab-name', a.name);
-        if (a.slot === 'ult') name.prepend(el('span', 'fe-ab-tag', 'ULTIMATE'));
-        if (a.alternative) name.prepend(el('span', 'fe-ab-tag', 'ALTERNATIVE'));
-        words.append(name, el('span', 'fe-ab-desc', a.description));
-        row.prepend(icon, words);
-        abilities.append(row);
-      }
-      info.append(abilities);
+      info.append(this.buildAbilityList(f.id, sheet));
     }
 
     const stage = el('div', 'fe-sel-stage');

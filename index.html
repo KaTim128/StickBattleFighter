@@ -731,7 +731,22 @@
       .fe-stat-fill { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--fighter, #ff8a3d) 65%, #000), var(--fighter, #ff8a3d)); animation: fe-fill 0.7s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: left; }
       @keyframes fe-fill { from { transform: scaleX(0); } }
       .fe-abilities { display: grid; gap: 6px; }
-      .fe-ab { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); }
+      .fe-abilities { position: relative; }
+      .fe-ab { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); cursor: pointer; }
+      .fe-ab:hover, .fe-ab:focus-visible, .fe-ab.open { background: rgba(255, 255, 255, 0.1); outline: none; }
+      .fe-ab-key { margin-left: auto; padding: 1px 6px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.3); font: 700 10px system-ui, sans-serif; opacity: 0.8; }
+      .fe-ab-hint { margin-left: auto; font-size: 10.5px; opacity: 0.65; text-align: right; }
+      .fe-ab-board { position: absolute; z-index: 5; inset: 0 0 auto 0; padding: 12px; border-radius: 12px; background: rgba(10, 12, 17, 0.98); border: 1px solid color-mix(in srgb, var(--fighter, #ff8a3d) 70%, transparent); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); max-height: 100%; overflow-y: auto; }
+      .fe-ab-board[hidden] { display: none; }
+      .fe-ab-board-head { display: flex; align-items: center; gap: 10px; }
+      .fe-ab-board-title { flex: 1; font-size: 15px; }
+      .fe-ab-close { width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.35); background: transparent; color: #fff; font-size: 14px; cursor: pointer; }
+      .fe-ab-close:hover, .fe-ab-close:focus-visible { background: rgba(255, 255, 255, 0.15); }
+      .fe-ab-board-desc { margin: 8px 0; font-size: 12.5px; opacity: 0.9; }
+      .fe-ab-stats { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 8px; font-size: 12px; }
+      .fe-ab-stats dt { opacity: 0.65; }
+      .fe-ab-stats dd { margin: 0; font-weight: 700; }
+      .fe-ab-how { margin: 0; font-size: 12px; opacity: 0.85; }
       .fe-ab.fe-ult { background: linear-gradient(90deg, color-mix(in srgb, var(--fighter, #ff8a3d) 22%, transparent), rgba(255, 255, 255, 0.04)); border: 1px solid color-mix(in srgb, var(--fighter, #ff8a3d) 55%, transparent); }
       .fe-ab-icon { flex: none; width: 30px; height: 30px; }
       .fe-ab-icon svg { width: 100%; height: 100%; }
@@ -743,7 +758,6 @@
       .fe-ab-swap { margin-left: auto; align-self: center; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--fighter, #ff8a3d); background: transparent; color: #fff; font: 800 11px system-ui, sans-serif; letter-spacing: 0.06em; cursor: pointer; }
       .fe-ab-swap:hover, .fe-ab-swap:focus-visible { background: var(--fighter, #ff8a3d); color: #120a04; }
       .fe-ab-tag { margin-right: 6px; padding: 1px 5px; border-radius: 4px; background: var(--fighter, #ff8a3d); color: #120a04; font: 900 9px system-ui, sans-serif; letter-spacing: 0.12em; vertical-align: middle; }
-      .fe-ab-desc { font-size: 11.5px; opacity: 0.8; }
       .fe-sel-stage { grid-area: stage; position: relative; min-height: 0; display: flex; justify-content: center; align-items: flex-end; }
       .fe-sel-stage .fe-model { height: 100%; max-width: 100%; }
       .fe-sel-glow { position: absolute; left: 50%; bottom: 0; width: 70%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--fighter, #ff8a3d) 35%, transparent), transparent 65%); pointer-events: none; }
@@ -780,7 +794,6 @@
       html.short .fe-ab { padding: 4px 6px; gap: 6px; }
       html.short .fe-ab-icon { width: 22px; height: 22px; }
       html.short .fe-ab-name { font-size: 11px; }
-      html.short .fe-ab-desc { font-size: 10px; line-height: 1.3; }
       html.short .fe-tile { width: 50px; }
       html.short .fe-tile-name { font-size: 8px; }
       html.short .fe-chip { padding: 3px 8px; font-size: 11px; }

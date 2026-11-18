@@ -1,6 +1,7 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
 import { ABILITY_KITS } from '../abilities/kits';
+import { applyLoadout, loadoutAfterSwap } from '../abilities/loadout';
 import { LoadoutStore } from '../abilities/loadout-store';
 import { isAdminName } from '../admin/local-access';
 import { AmbiencePlayer } from '../audio/ambience';
@@ -799,8 +800,12 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       const def = loadCharacter(id, tunedLibrary()).def;
       return fighterSheet(def, touchDevice ? 'touch' : 'desktop', settings.bindings, loadoutStore.get(playerName, id));
     },
-    loadoutFor: (id) => loadoutStore.get(playerName, id),
-    setLoadout: (id, loadout) => void loadoutStore.set(playerName, id, loadout),
+    swapAbility: (id, slot) => {
+      const kit = loadCharacter(id, tunedLibrary()).def.abilities;
+      if (!kit) return;
+      const now = applyLoadout(kit, loadoutStore.get(playerName, id));
+      loadoutStore.set(playerName, id, loadoutAfterSwap(now, slot));
+    },
     playerName: () => playerName,
     saveName: (raw) => {
       const r = savePlayerName(raw);

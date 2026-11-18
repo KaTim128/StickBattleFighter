@@ -15,7 +15,10 @@ async function open(page: Page, errors: string[], playerAt = '14,13', eruption =
   // Eruption is Inferno's fifth ability (B10, B13): equip it in place of Flame Detonation (slot a4).
   if (eruption)
     await page.addInitScript(() =>
-      localStorage.setItem('stickman-arena.loadouts', JSON.stringify({ '(guest)': { inferno: { useFifth: true } } })),
+      localStorage.setItem(
+        'stickman-arena.loadouts',
+        JSON.stringify({ '(guest)': { inferno: { equipped: ['fireball', 'flameDash', 'fireBeam', 'eruption'] } } }),
+      ),
     );
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));

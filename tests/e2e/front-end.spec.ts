@@ -93,7 +93,14 @@ test('title → name → Game Modes → fighter select → tournament, with the 
     await expect(select.locator('.fe-stat')).toHaveCount(6);
     await expect(select.locator('.fe-ab')).toHaveCount(6); // four abilities, the ultimate and the fifth as an alternative (B14)
     await expect(select.locator('.fe-ab.fe-alt')).toHaveCount(1);
-    await expect(select.locator('.fe-ab.fe-ult .fe-ab-desc')).not.toBeEmpty();
+    // Descriptions and numbers stay out of the list; clicking an ability opens a board that closes again (owner, 18/11/2026).
+    await expect(select.locator('.fe-ab-board')).toBeHidden();
+    await select.locator('.fe-ab.fe-ult').click();
+    await expect(select.locator('.fe-ab-board')).toBeVisible();
+    await expect(select.locator('.fe-ab-board .fe-ab-board-desc')).not.toBeEmpty();
+    await expect(select.locator('.fe-ab-board .fe-ab-stats dt').first()).toBeVisible();
+    await select.locator('.fe-ab-close').click();
+    await expect(select.locator('.fe-ab-board')).toBeHidden();
     await expect(select.locator(`.fe-model[data-model="${id}"].ready`)).toBeVisible({ timeout: 30_000 });
   }
   await select.locator('[data-size="4"]').click();
@@ -257,7 +264,7 @@ test('3 vs 3: pick three from the pool of five, fight, tag in a teammate, leave 
   expect(errors).toEqual([]);
 });
 
-test('loadout (B14): the fifth ability is an available alternative; Equip swaps it in, drag and drop works, and it is saved', async ({
+test('loadout (B14): the alternative can replace any of the four; swap buttons on all, drag and drop, a details board, and it is saved', async ({
   page,
 }, testInfo) => {
   test.setTimeout(120_000);
@@ -276,17 +283,36 @@ test('loadout (B14): the fifth ability is an available alternative; Equip swaps 
   await expect(alt).toHaveCount(1);
   await expect(alt).toContainText('Bastion Anchor');
   await expect(alt).not.toHaveClass(/locked/);
-  await expect(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)')).toContainText('Crushing Strike');
-  // Equip with the button.
-  await alt.locator('.fe-ab-swap').click();
-  await expect(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)')).toContainText('Bastion Anchor');
-  await expect(select.locator('.fe-ab.fe-alt')).toContainText('Crushing Strike');
-  expect(await page.evaluate(() => localStorage.getItem('stickman-arena.loadouts'))).toContain('"useFifth":true');
-  // Drag the benched one back onto its slot (a touch screen has no native drag: it uses the button).
-  if (testInfo.project.name === 'desktop-chromium')
-    await select.locator('.fe-ab.fe-alt').dragTo(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)'));
-  else await select.locator('.fe-ab.fe-alt .fe-ab-swap').click();
-  await expect(select.locator('.fe-ab[data-ability="a3"]:not(.fe-alt)')).toContainText('Crushing Strike');
+  // A swap button on every one of the four equipped abilities, so the player chooses which one gives way.
+  await expect(select.locator('.fe-ab-swap')).toHaveCount(4);
+  const slot = (n: number) => select.locator(`.fe-ab[data-ability="a${n}"]`);
+  await expect(slot(1)).toContainText('Ground Smash');
+  await expect(slot(3)).toContainText('Crushing Strike');
+  // Swap the alternative in for the first ability.
+  await slot(1).locator('.fe-ab-swap').click();
+  await expect(slot(1)).toContainText('Bastion Anchor');
+  await expect(slot(3)).toContainText('Crushing Strike');
+  await expect(alt).toContainText('Ground Smash');
+  expect(await page.evaluate(() => localStorage.getItem('stickman-arena.loadouts'))).toContain('bastionAnchor');
+  // And now the benched Ground Smash in for the third: any ability can go back.
+  await slot(3).locator('.fe-ab-swap').click();
+  await expect(slot(3)).toContainText('Ground Smash');
+  await expect(alt).toContainText('Crushing Strike');
+  // Drag the benched one onto the second ability (a touch screen has no native drag: it uses the button).
+  if (testInfo.project.name === 'desktop-chromium') await alt.dragTo(slot(2));
+  else await slot(2).locator('.fe-ab-swap').click();
+  await expect(slot(2)).toContainText('Crushing Strike');
+  await expect(alt).toContainText('Rampage Charge');
+  // Details only on click: a board with the numbers, which closes.
+  await expect(select.locator('.fe-ab-board')).toBeHidden();
+  await slot(2).click();
+  const board = select.locator('.fe-ab-board');
+  await expect(board).toBeVisible();
+  await expect(board).toContainText('Crushing Strike');
+  await expect(board.locator('.fe-ab-stats dt', { hasText: 'Damage' })).toBeVisible();
+  await expect(board.locator('.fe-ab-how')).toContainText('How to use');
+  await board.locator('.fe-ab-close').click();
+  await expect(board).toBeHidden();
   expect(errors).toEqual([]);
 });
 
@@ -295,7 +321,12 @@ test('loadout (B14): the abilities equipped on fighter select are the ones on th
   await page.addInitScript(() => {
     sessionStorage.setItem('stickman-arena.no-shell', '1');
     localStorage.setItem('stickman-arena.player-name.v1', 'Katim');
-    localStorage.setItem('stickman-arena.loadouts', JSON.stringify({ Katim: { rampage: { useFifth: true } } }));
+    localStorage.setItem(
+      'stickman-arena.loadouts',
+      JSON.stringify({
+        Katim: { rampage: { equipped: ['groundSmash', 'rampageCharge', 'bastionAnchor', 'grappleSlam'] } },
+      }),
+    );
   });
   await page.goto('/?mute&play&character=rampage');
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });

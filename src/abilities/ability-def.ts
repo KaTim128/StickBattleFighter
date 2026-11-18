@@ -386,6 +386,11 @@ export interface AbilityDef {
   /** Picture shown on the ability bar and touch buttons (src/interface/ability-icons.ts); falls back to the label. */
   readonly icon?: string;
   readonly slot: AbilitySlot;
+  /**
+   * Where this ability sits in its kit when it is moved to another button by the loadout (B14); the AI
+   * uses it to know how the ability is used. Absent on an ability on its own slot.
+   */
+  readonly homeSlot?: AbilitySlot;
   /** Stamina spent on cast (the ultimate uses its meter instead). */
   readonly staminaCost: number;
   readonly cooldownS: number;
@@ -428,8 +433,8 @@ export interface AbilityKit {
   readonly a3: AbilityDef;
   readonly a4: AbilityDef;
   /**
-   * An unequipped fifth normal ability (master plan B13: five abilities, four equipped). Its `slot`
-   * names the slot it takes when equipped; until the loadout screen exists it is not selectable.
+   * The fifth normal ability (master plan B13: five abilities, four equipped). In the kit as written it
+   * is the unequipped alternative; the loadout (`loadout.ts`) puts any of the five on the bench.
    */
   readonly a5?: AbilityDef;
   readonly ult: AbilityDef;
