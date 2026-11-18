@@ -60,3 +60,27 @@ test('the front end offers Hide and Seek Nightmare as a game mode', async ({ pag
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
   await expect(page.locator('.hs-clock')).toBeVisible();
 });
+
+test('room visibility: only the lit room shows at the start; upstairs is hidden until the stairs are climbed', async ({
+  page,
+}) => {
+  const errors = await open(page);
+  type Vis = { roomLight(id: string): number; floorOpacity(f: number): number };
+  type Scene = { __hideSeek: { visibility: Vis; game: { player: { floor: number; x: number; y: number } } } };
+  const vis = (id: string) => page.evaluate((r) => (window as unknown as Scene).__hideSeek.visibility.roomLight(r), id);
+  const upstairs = () => page.evaluate(() => (window as unknown as Scene).__hideSeek.visibility.floorOpacity(1));
+  await expect.poll(() => vis('living')).toBeGreaterThan(0.9);
+  expect(await vis('bed1')).toBe(0);
+  expect(await vis('toilet')).toBe(0);
+  expect(await upstairs()).toBeLessThan(0.05);
+  await page.evaluate(() => {
+    const g = (window as unknown as Scene).__hideSeek.game.player;
+    g.floor = 1;
+    g.x = 27;
+    g.y = 9.8;
+  });
+  await expect.poll(upstairs, { timeout: 10_000 }).toBeGreaterThan(0.9);
+  await expect.poll(() => vis('uphall'), { timeout: 10_000 }).toBeGreaterThan(0.9);
+  await expect.poll(() => vis('living'), { timeout: 10_000 }).toBeLessThan(0.05); // fades out
+  expect(errors).toEqual([]);
+});

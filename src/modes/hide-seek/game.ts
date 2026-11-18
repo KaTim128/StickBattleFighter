@@ -1,6 +1,7 @@
 import { HOUSE } from '../../data/arenas/house';
 import type { HouseDef } from './house-types';
 import { Round } from './rules';
+import type { Viewer } from './visibility';
 import { BODY_RADIUS_M, HouseWorld, type Placed, type Point } from './world';
 
 /**
@@ -13,6 +14,9 @@ export const RUN_MPS = 4.4;
 export const CROUCH_MPS = 1.2;
 /** How close a door has to be for the interact key to work on it, metres. */
 export const DOOR_REACH_M = 1.3;
+/** The most a peek leans the view away from the body, metres. */
+export const PEEK_M = 0.9;
+const PEEK_RATE = 7;
 
 export type Posture = 'walk' | 'run' | 'crouch' | 'hidden';
 
@@ -46,6 +50,12 @@ export interface PlayerState extends Placed {
   speedMps: number;
   /** Walked distance since the last footstep, metres. */
   stepM: number;
+  /**
+   * How far the view leans away from the body (peeking). Camera and visibility only: the hunter's
+   * senses read the body, never this (section C: peeking never reveals the player).
+   */
+  peekX: number;
+  peekY: number;
 }
 
 export interface GameEvent {
@@ -84,6 +94,8 @@ export class HideSeekGame {
       facing: 1,
       speedMps: 0,
       stepM: 0,
+      peekX: 0,
+      peekY: 0,
     };
   }
 
@@ -118,6 +130,7 @@ export class HideSeekGame {
   private stepPlayer(dtS: number, input: PlayerInput): void {
     const p = this.player;
     if (input.crouchPress) p.crouching = !p.crouching;
+    this.stepPeek(dtS, input);
     const wants = Math.hypot(input.move.x, input.move.y) > 0.05 && !input.peek;
     p.posture = p.crouching ? 'crouch' : input.run && wants ? 'run' : 'walk';
     if (input.interactPress) this.interact();
@@ -147,6 +160,42 @@ export class HideSeekGame {
         loudness: FOOTSTEP_LOUDNESS[p.posture],
       });
     }
+  }
+
+  /** Lean the view toward where the player pushes while peek is held, never through a wall. */
+  private stepPeek(dtS: number, input: PlayerInput): void {
+    const p = this.player;
+    const m = Math.hypot(input.move.x, input.move.y);
+    let gx = 0;
+    let gy = 0;
+    if (input.peek && m > 0.05) {
+      gx = (input.move.x / m) * PEEK_M;
+      gy = (input.move.y / m) * PEEK_M;
+      // Shorten the lean until the view origin has a clear line from the body (no leaning through a wall).
+      for (
+        let k = 0;
+        k < 6 && !this.world.lineOfSight(p.floor, p, { x: p.x + gx, y: p.y + gy }, { ignoreFurniture: true });
+        k++
+      ) {
+        gx *= 0.6;
+        gy *= 0.6;
+      }
+    }
+    const k = Math.min(1, dtS * PEEK_RATE);
+    p.peekX += (gx - p.peekX) * k;
+    p.peekY += (gy - p.peekY) * k;
+    if (Math.hypot(p.peekX, p.peekY) < 0.005 && gx === 0 && gy === 0) {
+      p.peekX = 0;
+      p.peekY = 0;
+    }
+  }
+
+  /** What the player's eyes see from: the body plus any peek lean. The visibility system reads this; the hunter never does. */
+  viewer(): Viewer {
+    const p = this.player;
+    const stair = p.onStairs ? this.house.stairs.find((s) => s.id === p.onStairs) : undefined;
+    const t = stair ? Math.min(1, Math.max(0, this.world.rampT(stair, p.x, p.y))) : 0;
+    return { floor: p.floor, x: p.x + p.peekX, y: p.y + p.peekY, onStairs: p.onStairs, stairT: t };
   }
 
   /** The nearest door within reach on the player's floor. */

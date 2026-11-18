@@ -4,6 +4,8 @@ import type { GameScene } from '../../core/scene';
 import { HOUSE, HOUSE_CAST } from '../../data/arenas/house';
 import type { PlayerIntents } from '../../input/intents';
 import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
+import { Visibility } from '../../modes/hide-seek/visibility';
+import type { Point } from '../../modes/hide-seek/world';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
 import { ActorView } from '../../rendering/actor-view';
 import { buildHouseView, type HouseView } from '../../rendering/house-view';
@@ -26,6 +28,16 @@ export class HideSeekScene implements GameScene {
   private view: HouseView | null = null;
   private player: ActorView | null = null;
   private cam = { x: 0, y: 0 };
+  /** Room visibility and lighting (section C); drives which things are drawn and how bright. */
+  readonly visibility: Visibility;
+  private lit: {
+    node: Container;
+    floor: 0 | 1;
+    kind: string;
+    id: string;
+    room: string | null;
+    probes: readonly [Point, Point] | null;
+  }[] = [];
   private doorStates = new Map<string, boolean>();
   /** The last floor the player's figure was added to. */
   private playerFloor: 0 | 1 = 0;
@@ -37,12 +49,33 @@ export class HideSeekScene implements GameScene {
     game: HideSeekGame = new HideSeekGame(HOUSE),
   ) {
     this.game = game;
+    this.visibility = new Visibility(game.world);
   }
 
   async load(): Promise<void> {
     const house = this.game.house;
     this.view = buildHouseView(house, this.game.world);
     this.world = this.view.world;
+    this.lit = this.view.nodes.map((n) => {
+      const r = n.rect;
+      const alongX = r.x1 - r.x0 >= r.y1 - r.y0;
+      const cx = (r.x0 + r.x1) / 2;
+      const cy = (r.y0 + r.y1) / 2;
+      // Walls, doors and stairs belong to the two spaces beside them: they show when either is lit.
+      const probes: readonly [Point, Point] | null =
+        n.room === null
+          ? alongX
+            ? [
+                { x: cx, y: r.y0 - 0.4 },
+                { x: cx, y: r.y1 + 0.4 },
+              ]
+            : [
+                { x: r.x0 - 0.4, y: cy },
+                { x: r.x1 + 0.4, y: cy },
+              ]
+          : null;
+      return { node: n.node, floor: n.floor, kind: n.kind, id: n.id, room: n.room, probes };
+    });
     this.parent.addChild(this.view.world);
     // The player is the standard training dummy (section: "the standard dummy training character").
     const dummy = loadCharacter(HOUSE_CAST.player).def;
@@ -51,6 +84,7 @@ export class HideSeekScene implements GameScene {
     const p = this.game.player;
     const at = iso(p.x, p.y, p.z);
     this.cam = { x: at.x, y: at.y - p.floor * FLOOR_HEIGHT_M };
+    this.visibility.settle(this.game.viewer());
   }
 
   /** The player's input this step, from the intents (movement is already a world direction). */
@@ -97,15 +131,17 @@ export class HideSeekScene implements GameScene {
     const at = iso(p.x, p.y, p.z);
     player.view.root.position.set(at.x, at.y);
 
-    // Only the floor the player is on is drawn for now (room visibility, P2-2, refines this).
-    view.floors[0].container.visible = p.floor === 0;
-    view.floors[1].container.visible = p.floor === 1;
+    // Room visibility and lighting: what the eyes can see from where they are (body plus any peek).
+    const eyes = g.viewer();
+    this.visibility.update(frameDtS, eyes);
+    this.applyVisibility();
     for (const f of view.floors) f.actors.update();
     view.fader.update([{ node: player.view.root, depth: () => player.view.root.zIndex }], frameDtS);
 
     // The camera glides after the player.
-    const goalX = at.x;
-    const goalY = at.y - p.floor * FLOOR_HEIGHT_M - 0.8;
+    const lean = iso(p.x + p.peekX, p.y + p.peekY, p.z);
+    const goalX = lean.x;
+    const goalY = lean.y - p.floor * FLOOR_HEIGHT_M - 0.8;
     const k = 1 - Math.exp(-CAMERA_RATE * frameDtS);
     this.cam.x += (goalX - this.cam.x) * k;
     this.cam.y += (goalY - this.cam.y) * k;
@@ -113,6 +149,30 @@ export class HideSeekScene implements GameScene {
     const scale = Math.min(width, height) / VIEW_SHORT_SIDE_M;
     view.world.scale.set(scale);
     view.world.position.set(width / 2 - this.cam.x * scale, height / 2 - this.cam.y * scale);
+  }
+
+  /** Light every drawn thing by how visible its room is: a tint (darkness) and hidden when black. */
+  private applyVisibility(): void {
+    const vis = this.visibility;
+    const view = this.view;
+    if (!view) return;
+    for (const f of [0, 1] as const) {
+      const o = vis.floorOpacity(f);
+      view.floors[f].container.visible = o > 0.01;
+      view.floors[f].container.alpha = Math.min(1, o);
+    }
+    for (const n of this.lit) {
+      let level: number;
+      if (n.kind === 'furniture') level = vis.objectAlpha(n.id);
+      else if (n.room !== null) level = vis.roomLight(n.room);
+      else if (n.probes) level = Math.max(vis.lightAt(n.floor, n.probes[0]), vis.lightAt(n.floor, n.probes[1]));
+      else level = 0;
+      n.node.visible = level > 0.02;
+      if (n.node.visible) {
+        const grey = Math.round(255 * (0.18 + 0.82 * Math.min(1, level)));
+        n.node.tint = (grey << 16) | (grey << 8) | grey;
+      }
+    }
   }
 
   unload(): void {

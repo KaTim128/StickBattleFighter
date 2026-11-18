@@ -537,11 +537,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ## Phase 2: Hide and Seek Nightmare (master plan section L; ticked when covered by a test)
 - [x] 1. Player movement; the exact 20 second countdown (`rules.test.ts`, `game.test.ts`, `hide-seek.spec.ts`)
 - [x] 2. Running, crouching (speeds and footstep loudness; `game.test.ts`). Hiding: P2-3
-- [ ] 3. Progressive room visibility (P2-2)
-- [ ] 4. Upstairs and downstairs visibility (P2-2)
-- [ ] 5. Direct sightlines through open doorways (sight rules done in `world.test.ts`; rendering P2-2)
+- [x] 3. Progressive room visibility (`visibility.test.ts`, `hide-seek.spec.ts`)
+- [x] 4. Upstairs and downstairs visibility (`visibility.test.ts`, `hide-seek.spec.ts`)
+- [x] 5. Direct sightlines through open doorways (`world.test.ts`, `visibility.test.ts`)
 - [x] 6. Visibility blocked by walls and shut doors (`world.test.ts`)
-- [ ] 7. Doorway peeking and camera behaviour (P2-2)
+- [x] 7. Doorway peeking and camera behaviour (`visibility.test.ts`); independence from the hunter checked in P2-4
 - [ ] 8. Throwable distractions and sound detection (P2-3, P2-4)
 - [ ] 9. Hiding entry and exit sounds (P2-3)
 - [ ] 10. Shroud's vision radius and obstacle detection (P2-4)

@@ -296,18 +296,17 @@ export function buildHouseView(house: HouseDef, world: HouseWorld): HouseView {
     floors[s.topFloor]!.ground.addChild(hole);
   }
   for (const f of house.furniture) {
-    if (f.kind !== 'rug' && f.kind !== 'lawn' && f.kind !== 'path') continue;
+    if (f.kind !== 'rug' && f.kind !== 'path') continue; // the yards' grass is their room floor
     const g = new Graphics().poly(poly(f)).fill(f.colour);
     floors[f.floor]!.ground.addChild(g);
-    if (f.kind !== 'lawn')
-      nodes.push({
-        node: g,
-        floor: f.floor,
-        room: world.roomAt(f.floor, (f.x0 + f.x1) / 2, (f.y0 + f.y1) / 2)?.id ?? null,
-        kind: 'floor',
-        id: f.id,
-        rect: f,
-      });
+    nodes.push({
+      node: g,
+      floor: f.floor,
+      room: world.roomAt(f.floor, (f.x0 + f.x1) / 2, (f.y0 + f.y1) / 2)?.id ?? null,
+      kind: 'floor',
+      id: f.id,
+      rect: f,
+    });
   }
 
   // ---- walls
