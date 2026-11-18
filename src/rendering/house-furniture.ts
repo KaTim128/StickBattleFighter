@@ -595,8 +595,6 @@ function chair(f: FurnitureDef, facing: Facing, B: Blk): void {
 /** Wardrobe, cupboard, shed cabinet: carcass, plinth, crown, panelled doors with handles (one a crack open). */
 function cabinet(g: Graphics, f: FurnitureDef, B: Blk, seed: number, facing: Facing): void {
   const c = f.colour;
-  const w = f.x1 - f.x0;
-  const d = f.y1 - f.y0;
   const h = f.heightM;
   B(f.x0, f.y0, f.x1, f.y1, 0.08, h, { colour: c });
   B(f.x0 + 0.03, f.y0 + 0.03, f.x1 - 0.03, f.y1 - 0.03, 0, 0.08, { colour: MOULD, noAo: true });
