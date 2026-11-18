@@ -170,7 +170,7 @@ export const RAMPAGE_KIT: AbilityKit = {
       hitFlash: 0xffffff,
     },
   },
-  // ULT: Rampage Mode. A bellowing roar, then 8 s faster (+15%) and tougher (defence +40%: about 29% less damage taken, B9),
+  // ULT: Rampage Mode. A bellowing roar, then 8 s faster (+15%) and tougher (defence +25%: 20% less damage taken, owner 18/11/2026),
   // wrapped in a red rage aura with steam pouring off him.
   ult: {
     id: 'rampageMode',
@@ -194,7 +194,7 @@ export const RAMPAGE_KIT: AbilityKit = {
       type: 'buff',
       durationS: 8,
       speedFactor: 1.15,
-      damageTakenFactor: 1 / 1.4, // master plan B9 (17/11/2026): defence 40% stronger, so 1/1.4 of the damage (was 0.85)
+      damageTakenFactor: 1 / 1.25, // owner 18/11/2026: defence 25% stronger (the master plan said 40%, B9; it was 0.85 before), so 1/1.25 of the damage
       cooldownFactor: 0.75,
       sizeFactor: 1.1,
       shockwave: {

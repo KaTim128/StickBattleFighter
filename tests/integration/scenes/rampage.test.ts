@@ -228,7 +228,7 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     intents.pressAbility('ult');
     run(K.ult.castS + 0.2);
     expect(scene.playerFighter.buff).not.toBeNull();
-    expect(scene.playerFighter.combatant.damageTakenScale).toBeCloseTo(1 / 1.4, 6); // defence +40% (master plan B9)
+    expect(scene.playerFighter.combatant.damageTakenScale).toBeCloseTo(1 / 1.25, 6); // defence +25% (owner 18/11/2026; the plan said 40%)
     intents.setMove('t', { x: 1, y: 0 });
     run(1.2);
     const buffed = scene.player.speed;
