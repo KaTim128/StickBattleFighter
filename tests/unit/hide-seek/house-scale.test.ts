@@ -105,3 +105,27 @@ describe.each([
         }
   });
 });
+
+/** Doors are never blocked (owner, 18/11/2026): a clear space on both sides of every door, wider than the door itself. */
+describe.each([
+  ['the authored plan', HOUSE_PLAN, 0.75],
+  ['the real, roomier house', HOUSE, 1.0],
+])('doorways stay clear in %s', (_name, house, depthM) => {
+  const solids = house.furniture.filter((f) => f.solid);
+
+  it('no solid furniture stands in front of a door, on either side', () => {
+    const offenders: string[] = [];
+    for (const d of house.doors) {
+      if (d.kind === 'gate') continue;
+      const horiz = d.rect.x1 - d.rect.x0 >= d.rect.y1 - d.rect.y0;
+      // The door's width, a hand either side of it, and `depthM` out from the wall on both sides.
+      const zone = horiz
+        ? { x0: d.rect.x0 - 0.1, x1: d.rect.x1 + 0.1, y0: d.rect.y0 - depthM, y1: d.rect.y1 + depthM }
+        : { x0: d.rect.x0 - depthM, x1: d.rect.x1 + depthM, y0: d.rect.y0 - 0.1, y1: d.rect.y1 + 0.1 };
+      for (const f of solids)
+        if (f.floor === d.floor && f.x0 < zone.x1 && f.x1 > zone.x0 && f.y0 < zone.y1 && f.y1 > zone.y0)
+          offenders.push(`${f.kind} ${f.id} blocks ${d.id}`);
+    }
+    expect(offenders).toEqual([]);
+  });
+});

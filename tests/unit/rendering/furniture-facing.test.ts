@@ -48,16 +48,15 @@ describe.each([
     for (const c of near) expect(face(c)).toBe(toward(c, table));
   });
 
-  it('kitchen chairs face the counter they are pulled up to', () => {
-    const chairs = house.furniture.filter(
-      (f) =>
-        f.kind === 'chair' &&
-        f.floor === 0 &&
-        mid(f).y > 12 * (house.widthM / HOUSE_PLAN.widthM) &&
-        mid(f).x > 20 * (house.widthM / HOUSE_PLAN.widthM),
-    );
+  it('kitchen chairs face the island they are pulled up to', () => {
+    const k = house.widthM / HOUSE_PLAN.widthM;
+    const chairs = house.furniture.filter((f) => {
+      const c = mid(f);
+      return f.kind === 'chair' && f.floor === 0 && c.x > 20 * k && c.x < 24 * k && c.y > 10 * k && c.y < 12 * k;
+    });
     expect(chairs.length).toBeGreaterThanOrEqual(2);
-    for (const c of chairs) expect(face(c)).toBe('n');
+    // They sit on the island's north side, so they look south at it.
+    for (const c of chairs) expect(face(c)).toBe('s');
   });
 
   it('every bed has its head to a wall, and storage stands with its back to one', () => {
