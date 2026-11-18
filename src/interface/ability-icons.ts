@@ -263,6 +263,12 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(26, 24, 12, '#d8ffb0', 0.16),
     `<path d="M6 34 C12 20 26 14 42 18" stroke="#7dff3a" stroke-width="4.5" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".9"/>${fist(24, 26, 1)}`,
   ),
+  // Back-pocket jar smash (heavy): a glowing jar mid-swing, shattering in a green burst.
+  'jar-smash': icon(
+    'toxin',
+    rays(30, 20, 14, '#d8ffb0', 0.22),
+    `<circle cx="30" cy="18" r="9" fill="#7dff3a" opacity=".5" filter="url(#bl)"/><path d="M8 8 C16 8 24 12 28 18" stroke="#7dff3a" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".8"/><g filter="url(#ds)"><path d="M26 14 L33 12 L35 19 L30 24 L26 22 Z" fill="url(#dc)" stroke="#16200a" stroke-width="1.4"/><rect x="28" y="8" width="7" height="4" rx="1.4" fill="#4b4d57" stroke="#17181d" stroke-width="1.1" transform="rotate(-18 31 10)"/></g><g fill="#e6fbea" stroke="#16200a" stroke-width=".6"><path d="M38 24 L43 22 L41 28 Z"/><path d="M33 30 L36 35 L30 34 Z"/><path d="M40 32 L44 36 L38 37 Z"/></g><g fill="#7dff3a" filter="url(#gl)"><circle cx="22" cy="32" r="2.4"/><circle cx="28" cy="38" r="3"/><circle cx="16" cy="38" r="2"/></g>`,
+  ),
   'axe-kick': icon(
     'toxin',
     rays(26, 20, 14, '#d8ffb0', 0.2),

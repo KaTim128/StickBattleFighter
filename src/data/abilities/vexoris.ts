@@ -12,7 +12,7 @@ const SMOKE = { deep: 0x1c2a14, hot: 0x4c6a34, bright: 0x9ab87a, core: 0xdde8cc 
 
 export const VEXORIS_KIT: AbilityKit = {
   comboIcon: 'karate-combo',
-  heavyIcon: 'axe-kick',
+  heavyIcon: 'jar-smash',
   // A1 (Q): Venom Spray. A short, wide blast of toxic spray from the tank on his back: modest damage, one stack.
   a1: {
     id: 'venomSpray',

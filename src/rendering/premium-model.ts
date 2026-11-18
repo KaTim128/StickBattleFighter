@@ -798,16 +798,21 @@ export class PremiumModel {
     const w = this.st.w * (this.st.bodyWidthK ?? 1);
     const shin = (leg: readonly Point[], k: number) => lerp(leg[1]!, leg[2]!, k);
     // The coat hangs nearly straight: its hem follows only part of each leg's reach, so a wide stance steps out of it.
+    // A kick throws a leg out and the panel over it flares with it, sharply (owner, 20/11/2026: snaps and flares in kicks).
     const hangs = (leg: readonly Point[]) => {
       const p = shin(leg, 0.9);
-      return { x: s.pelvis.x + (p.x - s.pelvis.x) * 0.55, y: p.y };
+      const reach = Math.abs(p.x - s.pelvis.x) / w;
+      const flare = Math.min(1, Math.max(0, (reach - 2.6) / 3.2));
+      return { x: s.pelvis.x + (p.x - s.pelvis.x) * (0.55 + 0.45 * flare), y: p.y };
     };
+    // A torso twist or lunge (the chest well ahead of the hips) whips the tails back.
+    const lunge = Math.min(1, Math.max(0, (s.chest.x - s.pelvis.x) / (w * 3)));
     const hemF = hangs(s.legFront);
     const hemB = hangs(s.legBack);
     const motion = this.st.motion;
     const t = this.st.t;
     // A tailored trench: it hangs straight down, and trails back only a little with speed and the stride's swing.
-    const trail = w * (0.12 + 0.9 * motion) + Math.sin(t * 7) * w * 0.1 * (0.3 + motion);
+    const trail = w * (0.12 + 0.9 * motion + 0.9 * lunge) + Math.sin(t * 7) * w * 0.1 * (0.3 + motion + lunge);
     const sway = (i: number) => Math.sin(t * 6 + i * 1.7) * w * 0.07 * (0.4 + motion);
     return { w, waist: s.pelvis, hemF, hemB, hemY: Math.max(hemF.y, hemB.y) + w * 0.12, trail, sway };
   }

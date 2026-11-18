@@ -50,7 +50,7 @@
     "canDisintegrate": true,
     "isPlayable": true,
     "canDoubleJump": false,
-    "usesElementalEffects": false,
+    "usesElementalEffects": true,
     "usesFireEffects": false,
     "usesElectricEffects": false,
     "usesIceEffects": false,

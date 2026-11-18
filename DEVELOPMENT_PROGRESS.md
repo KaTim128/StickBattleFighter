@@ -860,3 +860,6 @@ Done: blind view while hidden, a small dim peek circle, 3x detection while peeki
 - **Known issues.** Pacing and sounds not yet judged by the owner. The cause of the earlier fighter-outside-the-map report is still unknown (guard in place).
 - **Next.** Owner names the four fighters for the new Phase 3 order; Phase 2 review first.
 
+
+## 20/11/2026: Vexoris karate taps and jar-smash heavy
+Done: separate tap karate and heavy jar smash (see TD-120 addendum). Gate: biome (fixed an old forEach lint error), typecheck, full vitest 952 + 3 new passing. Next: Vexoris ability rework (landmine Chemical Trap, thrown-jar Toxic Jar, 10 s fog ultimate).

@@ -1,16 +1,16 @@
 {
   "id": "vexoris-moveset",
   "starters": {
-    "tap": "karate-jab",
+    "tap": "knife-hand",
     "tap-forward": "front-kick",
     "air-tap": "jumping-front-kick",
     "falling-tap": "boot-stomp",
-    "heavy": "axe-kick"
+    "heavy": "jar-smash"
   },
   "moves": [
     {
-      "id": "karate-jab",
-      "displayName": "Karate jab",
+      "id": "knife-hand",
+      "displayName": "Knife-hand chop",
       "animationState": "Jab",
       "category": "punch",
       "heavy": false,
@@ -33,27 +33,27 @@
       "zoomPunch": 0.013,
       "requires": ["canPunch"],
       "next": {
-        "tap": "reverse-punch"
+        "tap": "spinning-backfist"
       }
     },
     {
-      "id": "reverse-punch",
-      "displayName": "Reverse punch",
-      "animationState": "StraightPunch",
+      "id": "spinning-backfist",
+      "displayName": "Spinning backfist",
+      "animationState": "Hook",
       "category": "punch",
       "heavy": false,
       "aerial": false,
-      "startupS": 0.08,
+      "startupS": 0.1,
       "activeS": 0.07,
       "recoveryS": 0.2,
       "cancelAt": 0.3,
       "hitbox": {
-        "reachM": 1.05,
+        "reachM": 1.1,
         "radiusM": 0.5
       },
       "damage": 12,
-      "strength": 260,
-      "knockbackMps": 1.5,
+      "strength": 270,
+      "knockbackMps": 1.6,
       "lungeMps": 1.0,
       "moveFactor": 0.4,
       "impact": "knuckle-light",
@@ -61,13 +61,13 @@
       "zoomPunch": 0.013,
       "requires": ["canPunch", "canUseCombos"],
       "next": {
-        "tap": "roundhouse-kick"
+        "tap": "side-kick"
       }
     },
     {
-      "id": "roundhouse-kick",
-      "displayName": "Roundhouse kick",
-      "animationState": "RoundhouseKick",
+      "id": "side-kick",
+      "displayName": "Side kick",
+      "animationState": "SideKick",
       "category": "kick",
       "heavy": false,
       "aerial": false,
@@ -76,12 +76,12 @@
       "recoveryS": 0.22,
       "cancelAt": 0.3,
       "hitbox": {
-        "reachM": 1.15,
+        "reachM": 1.25,
         "radiusM": 0.5
       },
       "damage": 13,
-      "strength": 300,
-      "knockbackMps": 2.0,
+      "strength": 320,
+      "knockbackMps": 2.4,
       "lungeMps": 1.0,
       "moveFactor": 0.4,
       "impact": "knuckle-light",
@@ -89,27 +89,27 @@
       "zoomPunch": 0.013,
       "requires": ["canKick", "canUseCombos"],
       "next": {
-        "tap": "spinning-hook-kick"
+        "tap": "roundhouse-kick"
       }
     },
     {
-      "id": "spinning-hook-kick",
-      "displayName": "Spinning hook kick (poison splash)",
-      "animationState": "SpinningKick",
+      "id": "roundhouse-kick",
+      "displayName": "Roundhouse kick (poison splash)",
+      "animationState": "RoundhouseKick",
       "category": "kick",
       "heavy": true,
       "aerial": false,
       "startupS": 0.16,
       "activeS": 0.09,
-      "recoveryS": 0.36,
+      "recoveryS": 0.34,
       "cancelAt": 1,
       "hitbox": {
         "reachM": 1.25,
         "radiusM": 0.5
       },
       "damage": 14,
-      "strength": 400,
-      "knockbackMps": 3.0,
+      "strength": 420,
+      "knockbackMps": 3.2,
       "lungeMps": 1.0,
       "moveFactor": 0.4,
       "impact": "knuckle-heavy",
@@ -196,29 +196,34 @@
       "requires": ["canUseAerialKicks"]
     },
     {
-      "id": "axe-kick",
-      "displayName": "Axe kick",
-      "animationState": "AxeKick",
-      "category": "kick",
+      "id": "jar-smash",
+      "displayName": "Back-pocket jar smash",
+      "animationState": "HeavyAttack",
+      "category": "punch",
       "heavy": true,
       "aerial": false,
-      "startupS": 0.3,
-      "activeS": 0.08,
-      "recoveryS": 0.4,
+      "startupS": 0.46,
+      "activeS": 0.09,
+      "recoveryS": 0.42,
       "cancelAt": 1,
       "hitbox": {
-        "reachM": 1.2,
-        "radiusM": 0.5
+        "reachM": 1.25,
+        "radiusM": 0.55
       },
-      "damage": 34,
-      "strength": 740,
+      "damage": 36,
+      "strength": 760,
       "knockbackMps": 4.5,
       "lungeMps": 1.0,
       "moveFactor": 0.4,
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canKick"]
+      "requires": ["canPunch"],
+      "effect": "toxic-smash",
+      "status": {
+        "poison": 1
+      },
+      "sfx": "hit-vexoris-jar-smash"
     }
   ]
 }

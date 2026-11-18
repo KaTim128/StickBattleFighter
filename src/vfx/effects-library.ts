@@ -20,6 +20,19 @@ export interface EffectDef {
   /** Dust colours kicked up at each footfall (heavy fighters). */
   readonly stepDust?: readonly number[];
   readonly bodyEmbers?: boolean;
+  /** The colours of the limb particles (default fire); Vexoris's fists and feet trail toxic green. */
+  readonly limbPalette?: {
+    readonly deep: number;
+    readonly hot: number;
+    readonly bright: number;
+    readonly core: number;
+  };
+  /** Glass shards thrown off the contact (a smashed jar). */
+  readonly shards?: number;
+  /** Liquid droplets splashed from the contact, in this colour. */
+  readonly splash?: { readonly count: number; readonly colour: number };
+  /** Lingering vapour left around the contact point: puff count. */
+  readonly mist?: number;
 }
 
 export const EFFECTS: Readonly<Record<string, EffectDef>> = {
@@ -63,6 +76,20 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     embers: 50,
     ring: { sizeM: 1.4, colour: 0xffd23f },
     scorchM: 0.9,
+  },
+  // Vexoris (TD-114): toxic green. A small, sharp burst for karate strikes; the jar smash adds glass, a liquid splash, a
+  // ring on the floor and a lingering poison mist.
+  'toxin-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x153a08, hot: 0x3fae14, bright: 0x7dff3a, core: 0xe8ffc8 },
+  },
+  'toxic-hit': { sparks: { count: 11, speedMps: 5.5, colour: 0x7dff3a }, ring: { sizeM: 0.4, colour: 0x7dff3a } },
+  'toxic-smash': {
+    sparks: { count: 14, speedMps: 7, colour: 0xc8ffa0 },
+    ring: { sizeM: 0.95, colour: 0x7dff3a },
+    shards: 16,
+    splash: { count: 22, colour: 0x5fe02a },
+    mist: 12,
   },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },

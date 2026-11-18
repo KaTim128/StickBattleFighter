@@ -1,5 +1,11 @@
 {
   "id": "vexoris-animation",
   "extends": "style-taekwondo",
-  "states": {}
+  "states": {
+    "Jab": "vexoris.knife-hand",
+    "Hook": "vexoris.backfist",
+    "SideKick": "vexoris.side-kick",
+    "RoundhouseKick": "vexoris.roundhouse",
+    "HeavyAttack": "vexoris.jar-smash"
+  }
 }

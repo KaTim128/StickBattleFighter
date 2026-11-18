@@ -215,7 +215,7 @@ const colourOf = (hex: string): number => Number.parseInt(hex.replace('#', ''), 
 
 /** The non-elemental version of an effect (no embers or scorch) for fighters without elemental effects. */
 function withoutElements(e: EffectDef): EffectDef {
-  return { sparks: e.sparks, ring: e.ring };
+  return { sparks: e.sparks, ring: e.ring, shards: e.shards, splash: e.splash, mist: e.mist };
 }
 
 /** Crack lines drawn over a weakened wall block (deterministic per section, deeper at level 2). */
@@ -835,9 +835,9 @@ export class FightArenaScene implements ArenaScene {
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
     this.occlusion = new OcclusionFader();
-    this.view.occluders.forEach((node, i) =>
-      this.occlusion?.add(node, undefined, this.view?.occluderRects[i] ?? undefined),
-    );
+    this.view.occluders.forEach((node, i) => {
+      this.occlusion?.add(node, undefined, this.view?.occluderRects[i] ?? undefined);
+    });
     this.wallPieces = this.view.occluders.flatMap((node, i) => {
       const rect = this.view?.occluderRects[i];
       return rect ? [{ node, rect }] : [];
@@ -2482,6 +2482,9 @@ export class FightArenaScene implements ArenaScene {
       burstM: (e.ring?.sizeM ?? 0.3) * Math.sqrt(scale),
       embers: e.embers ? Math.round(e.embers * scale) : undefined,
       scorchM: e.scorchM,
+      shards: e.shards,
+      splash: e.splash,
+      mist: e.mist,
     });
   }
 
@@ -3157,6 +3160,16 @@ export class FightArenaScene implements ArenaScene {
     if (f.climb) pose = climbPose(f.climb.shown + (f.climb.stepUp?.t ?? 0), this.simTimeS);
     const attack = f.combo.attack;
     if (attack) pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
+    // The poison jar comes out of the coat pocket part-way through the heavy's wind-up and is gone at the smash.
+    {
+      const total = attack ? attack.windupS + attack.activeS + attack.recoveryS : 1;
+      const tWind = attack ? attack.windupS / total : 1;
+      const p = f.combo.progress;
+      f.view.jar =
+        attack?.id === 'jar-smash' && p > tWind * 0.4 && p < tWind + (attack.activeS / total) * 0.4
+          ? Math.min(1, (p - tWind * 0.4) / (tWind * 0.3))
+          : 0;
+    }
     if (f.scriptedAttack) {
       const sa = f.scriptedAttack;
       pose = strikePose(pose, sa.clip, Math.min(1, sa.t / attackDuration(sa.timing)), sa.timing);
@@ -3374,7 +3387,12 @@ export class FightArenaScene implements ArenaScene {
       // Strongest at the strike, gentler in the wind-up and recovery.
       const pr = attack ? f.combo.progress : 0.5;
       const strength = Math.max(0.25, 1 - Math.abs(pr - 0.4) * 1.6);
-      this.frameFlames.push({ points: limbs.map((p) => besideOnScreen(x, y, p.x, p.z)), strength });
+      this.frameFlames.push({
+        points: limbs.map((p) => besideOnScreen(x, y, p.x, p.z)),
+        // A toxic trail is a thin wisp, not a blaze: it must never hide the karate or the jar.
+        strength: trail.limbPalette ? strength * 0.3 : strength,
+        ...(trail.limbPalette ? { palette: trail.limbPalette } : {}),
+      });
     } else if (trail?.limbFlames && f.def.capabilities.usesFireEffects) {
       // A faint glow on the fists in the guard.
       const tips = f.view.limbTips();

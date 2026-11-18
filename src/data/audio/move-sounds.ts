@@ -270,6 +270,13 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('bandpass', 1800, 900, 0.34, 0.4, 0.8, 0, { attack: 0.03 }),
     noise('lowpass', 700, 300, 0.3, 0.2, 1, 0.04),
   ],
+  // The jar smashed on someone: glass cracking, a wet splash, a low thump and a hiss of vapour.
+  'hit-vexoris-jar-smash': [
+    noise('bandpass', 3200, 1800, 0.07, 0.5, 1.4),
+    noise('lowpass', 1500, 400, 0.22, 0.42, 0.8, 0.02),
+    tone('sine', 110, 50, 0.2, 0.55),
+    noise('bandpass', 1400, 700, 0.5, 0.18, 0.9, 0.1, { attack: 0.05 }),
+  ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),
     noise('lowpass', 1200, 400, 0.26, 0.25, 1, 0.02),

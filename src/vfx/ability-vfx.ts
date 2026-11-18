@@ -35,11 +35,17 @@ export interface ImpactBurst {
   readonly embers?: number;
   /** Leave a scorch mark on the floor, radius metres. */
   readonly scorchM?: number;
+  /** A smashed jar (Vexoris): glass shards, liquid droplets and lingering vapour at the contact. */
+  readonly shards?: number;
+  readonly splash?: { readonly count: number; readonly colour: number };
+  readonly mist?: number;
 }
 
 /** Points that burn while a fighter attacks (fists and feet), world x, y and height. */
 export interface LimbFlames {
   readonly points: readonly { readonly x: number; readonly y: number; readonly z: number }[];
+  /** Particle colours (default fire). */
+  readonly palette?: Palette;
   /** 0..1 how strongly (peaks at the strike). */
   readonly strength: number;
 }
@@ -177,6 +183,8 @@ interface Scorch {
   y: number;
   r: number;
   ageS: number;
+  /** Stain colour (default scorch black). */
+  colour?: number;
 }
 
 const MAX_PARTICLES = 480;
@@ -263,7 +271,7 @@ export class AbilityVfx {
     for (const lf of input.limbFlames ?? []) {
       for (const p of lf.points) {
         const n = this.rand() < 0.5 + lf.strength * 0.5 ? 1 + Math.round(lf.strength * 2) : 0;
-        this.emitAt(p.x, p.y, p.z, n, 0.4, 0.22 + lf.strength * 0.15, 0.06 + lf.strength * 0.04);
+        this.emitAt(p.x, p.y, p.z, n, 0.4, 0.22 + lf.strength * 0.15, 0.06 + lf.strength * 0.04, lf.palette);
       }
     }
     for (const p of input.projectiles) {
@@ -506,6 +514,79 @@ export class AbilityVfx {
     }
   }
 
+  /**
+   * A jar smashed on someone (Vexoris's heavy): pale glass shards flung out, green liquid droplets splashed wide, a
+   * stain on the floor, and a lingering poison mist that rolls up and hangs about the strike point.
+   */
+  private jarSmash(hit: ImpactBurst): void {
+    const base = Math.atan2(hit.dir.y, hit.dir.x);
+    for (let n = 0; n < (hit.shards ?? 0); n++) {
+      const p = this.free();
+      if (!p) break;
+      const a = base + (this.rand() - 0.5) * 2.6;
+      const sp = 2.5 + this.rand() * 4.5;
+      Object.assign(p, {
+        live: true,
+        kind: 'spark',
+        colour: this.rand() < 0.5 ? 0xe6fbea : 0xb8e8c8,
+        x: hit.x,
+        y: hit.y,
+        z: 0.9 + this.rand() * 0.5,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        vz: 1 + this.rand() * 3,
+        ageS: 0,
+        lifeS: 0.5 + this.rand() * 0.5,
+        size: 0.05 + this.rand() * 0.05,
+      });
+    }
+    for (let n = 0; n < (hit.splash?.count ?? 0); n++) {
+      const p = this.free();
+      if (!p) break;
+      const a = this.rand() * Math.PI * 2;
+      const sp = 1.2 + this.rand() * 3.2;
+      Object.assign(p, {
+        live: true,
+        kind: 'spark',
+        colour: hit.splash!.colour,
+        x: hit.x,
+        y: hit.y,
+        z: 0.8 + this.rand() * 0.6,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        vz: 0.5 + this.rand() * 2.5,
+        ageS: 0,
+        lifeS: 0.4 + this.rand() * 0.5,
+        size: 0.06 + this.rand() * 0.06,
+      });
+    }
+    if (hit.splash) {
+      this.scorches.push({ x: hit.x, y: hit.y, r: 0.55, ageS: 0, colour: hit.splash.colour });
+      if (this.scorches.length > 12) this.scorches.shift();
+    }
+    for (let n = 0; n < (hit.mist ?? 0); n++) {
+      const p = this.free();
+      if (!p) break;
+      const a = this.rand() * Math.PI * 2;
+      const r = this.rand() * 0.5;
+      Object.assign(p, {
+        live: true,
+        kind: 'smoke',
+        colour: this.rand() < 0.5 ? 0x4fd81c : 0x8bd44a,
+        x: hit.x + Math.cos(a) * r,
+        y: hit.y + Math.sin(a) * r,
+        z: 0.4 + this.rand() * 0.8,
+        vx: (this.rand() - 0.5) * 0.5,
+        vy: (this.rand() - 0.5) * 0.5,
+        vz: 0.15 + this.rand() * 0.35,
+        ageS: 0,
+        lifeS: 1.4 + this.rand() * 1.2,
+        size: 0.18 + this.rand() * 0.16,
+        pal: { deep: 0x153a08, hot: 0x3fae14, bright: 0x7dff3a, core: 0xe8ffc8 },
+      });
+    }
+  }
+
   /** Sparks thrown along the blow (a cone around its direction) and a quick burst ring at chest height. */
   private burst(hit: ImpactBurst): void {
     const base = Math.atan2(hit.dir.y, hit.dir.x);
@@ -540,6 +621,7 @@ export class AbilityVfx {
       lifeS: 0.16,
     });
     if (hit.embers) this.emitAt(hit.x, hit.y, 1.0, hit.embers, 3, 0.5, 0.11);
+    this.jarSmash(hit);
     if (hit.scorchM) {
       this.scorches.push({ x: hit.x, y: hit.y, r: hit.scorchM, ageS: 0 });
       if (this.scorches.length > 12) this.scorches.shift();
@@ -960,7 +1042,7 @@ export class AbilityVfx {
 
     for (const s of this.scorches) {
       const a = 0.32 * (1 - s.ageS / SCORCH_LIFE_S);
-      f.circle(s.x, s.y, s.r).fill({ color: 0x15100c, alpha: a });
+      f.circle(s.x, s.y, s.r).fill({ color: s.colour ?? 0x15100c, alpha: s.colour === undefined ? a : a * 1.3 });
     }
 
     // Death Eruption: spikes and hands up out of a violet-black stain, then back down.

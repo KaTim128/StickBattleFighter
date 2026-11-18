@@ -107,6 +107,11 @@ export class StickmanView {
   tickSlash(dtS: number): void {
     this.slashClockS += dtS;
   }
+  /**
+   * Vexoris's heavy swing (owner, 20/11/2026): 0..1 how much of the poison jar is in his rear hand (0 = none: it is
+   * drawn from his coat pocket as the wind-up goes on, and is gone at the smash).
+   */
+  jar = 0;
   /** 0..1 red glow in the eyes of a mask (Death Mark charged). */
   eyeGlow = 0;
   private slashColours = { colour: 0xe5242e, edge: 0xff9a9a };
@@ -411,6 +416,24 @@ export class StickmanView {
     if (this.dark > 0.01) this.drawDark(s);
   }
 
+  /** The poison jar in the rear hand: a small glass jar of glowing green liquid with a metal lid, the glow seen from afar. */
+  private drawJar(g: Graphics, s: ReturnType<typeof solveSkeleton>): void {
+    const [, elbow, hand] = s.armBack;
+    const fx = hand.x - elbow.x;
+    const fy = hand.y - elbow.y;
+    const len = Math.hypot(fx, fy) || 1;
+    // The jar sits in the fist, beyond the knuckles along the forearm.
+    const k = Math.min(1, this.jar);
+    const c = { x: hand.x + (fx / len) * 0.1, y: hand.y + (fy / len) * 0.1 };
+    const r = 0.11 * (0.6 + 0.4 * k);
+    g.circle(c.x, c.y, r * 2.4).fill({ color: 0x7dff3a, alpha: 0.16 * k });
+    g.roundRect(c.x - r, c.y - r * 0.95, r * 2, r * 1.9, r * 0.55).fill(0x14210c);
+    g.roundRect(c.x - r * 0.82, c.y - r * 0.8, r * 1.64, r * 1.6, r * 0.45).fill({ color: 0x5fe02a, alpha: 0.95 });
+    g.roundRect(c.x - r * 0.5, c.y - r * 0.55, r * 0.7, r * 0.9, r * 0.3).fill({ color: 0xc8ffa0, alpha: 0.8 });
+    g.roundRect(c.x - r * 0.7, c.y - r * 1.25, r * 1.4, r * 0.5, r * 0.15).fill(0x4b4d57);
+    g.roundRect(c.x - r * 0.7, c.y - r * 1.25, r * 1.4, r * 0.5, r * 0.15).stroke({ width: 0.012, color: 0x14210c });
+  }
+
   /**
    * The slash ribbon (Rending Flurry, owner 20/11/2026): while a slash runs, the blade's tip and a point near the
    * fist are recorded every frame; the ribbon between them follows the arm and fades in a fraction of a second.
@@ -418,6 +441,7 @@ export class StickmanView {
    */
   private drawSlash(s: ReturnType<typeof solveSkeleton>, t: number): void {
     const g = this.slashLayer.clear();
+    if (this.jar > 0.01) this.drawJar(g, s);
     const sl = this.slash;
     if (sl) {
       this.slashColours = { colour: sl.colour, edge: sl.edge };

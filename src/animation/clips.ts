@@ -22,6 +22,12 @@ export interface StrikeClip {
   readonly kind: 'strike';
   readonly chamber: Partial<Pose>;
   readonly strike: Partial<Pose>;
+  /**
+   * An optional first keyframe before the chamber (Vexoris's jar smash: the rear hand reaches behind into the coat
+   * pocket, then comes up into the cocked swing). The first part of the wind-up goes base -> prelude, the rest
+   * prelude -> chamber.
+   */
+  readonly prelude?: Partial<Pose>;
 }
 
 /** Built-in code-driven motions (the animator and reaction code implement them). */
@@ -58,7 +64,12 @@ export interface ProceduralClip {
 
 export type Clip = StrikeClip | ProceduralClip;
 
-const strike = (chamber: Partial<Pose>, hit: Partial<Pose>): StrikeClip => ({ kind: 'strike', chamber, strike: hit });
+const strike = (chamber: Partial<Pose>, hit: Partial<Pose>, prelude?: Partial<Pose>): StrikeClip => ({
+  kind: 'strike',
+  chamber,
+  strike: hit,
+  ...(prelude ? { prelude } : {}),
+});
 
 /** Keyframed strikes. */
 const STRIKES = {
@@ -98,6 +109,67 @@ const STRIKES = {
   'boxing.overhand': strike(
     { lean: deg(8), head: deg(-4), armBack: limb(160, 70), armFront: limb(70, 110) },
     { lean: deg(-40), head: deg(30), armBack: limb(105, 8), armFront: limb(25, 120), legBack: limb(-35, -10) },
+  ),
+
+  // ---- Vexoris (owner, 20/11/2026): sharp, angular karate: tight guard, snapping limbs, no flourishes. The tap string is
+  // a knife-hand chop, a spinning backfist, a side kick and a roundhouse; the heavy is the back-pocket jar smash.
+  'vexoris.knife-hand': strike(
+    { lean: deg(-8), head: deg(6), armFront: limb(112, 124), armBack: limb(52, 120), legFront: limb(30, -34) },
+    {
+      lean: deg(-26),
+      head: deg(10),
+      armFront: limb(96, 4),
+      armBack: limb(18, 138),
+      legFront: limb(40, -36),
+      legBack: limb(-28, -10),
+    },
+  ),
+  'vexoris.backfist': strike(
+    {
+      lean: deg(-34),
+      head: deg(28),
+      armFront: limb(-64, 96),
+      armBack: limb(34, 118),
+      legFront: limb(28, -44),
+      legBack: limb(-30, -30),
+    },
+    {
+      lean: deg(22),
+      head: deg(-16),
+      armFront: limb(102, 6),
+      armBack: limb(-54, 44),
+      legFront: limb(46, -50),
+      legBack: limb(-34, -18),
+    },
+  ),
+  'vexoris.side-kick': strike(
+    { lean: deg(22), head: deg(-4), legFront: limb(96, -138), armFront: limb(60, 104), armBack: limb(-6, 70) },
+    { lean: deg(42), head: deg(-20), legFront: limb(100, -2), armFront: limb(-4, 56), armBack: limb(-64, 40) },
+  ),
+  'vexoris.roundhouse': strike(
+    { lean: deg(12), legFront: limb(78, -138), armFront: limb(74, 100), armBack: limb(24, 112) },
+    { lean: deg(34), head: deg(-16), legFront: limb(116, -8), armFront: limb(-14, 66), armBack: limb(-66, 38) },
+  ),
+  // Heavy: the rear hand reaches behind into the coat pocket, comes up with the jar cocked high behind the head
+  // (the lead arm braces forward for balance), then swings the jar down and across in one wide arc.
+  'vexoris.jar-smash': strike(
+    {
+      lean: deg(14),
+      head: deg(-6),
+      armBack: limb(168, 62),
+      armFront: limb(76, 44),
+      legFront: limb(34, -30),
+      legBack: limb(-22, -22),
+    },
+    {
+      lean: deg(-44),
+      head: deg(22),
+      armBack: limb(104, 8),
+      armFront: limb(-22, 64),
+      legFront: limb(58, -64),
+      legBack: limb(-44, -18),
+    },
+    { lean: deg(-6), head: deg(4), armBack: limb(-78, 22), armFront: limb(60, 56), legFront: limb(30, -26) },
   ),
 
   // ---- Standard kicks (shared default: a plain, readable version of each).
@@ -462,6 +534,13 @@ export function strikePose(
   const tActive = timing.activeS / total;
   const chamber = { ...base, ...clip.chamber };
   const hit = { ...base, ...clip.strike };
+  if (clip.prelude && progress < tWind) {
+    const reach = { ...base, ...clip.prelude };
+    const split = tWind * 0.45;
+    return progress < split
+      ? blendPose(base, reach, ease(progress / split))
+      : blendPose(reach, chamber, ease((progress - split) / (tWind - split)));
+  }
   if (progress < tWind) return blendPose(base, chamber, ease(progress / tWind));
   if (progress < tWind + tActive) {
     // Full extension in the first 40% of the active window: a snap, then hold.

@@ -611,3 +611,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] The four-hit karate string: only a landed fourth hit adds a poison stack; a missed or interrupted string never splashes.
 - [ ] Toxic Jar and Chemical Trap clouds poison each enemy once, however long it stands in them; the slow never exceeds 10% and poison never stuns.
 - [ ] Plague Bloom shows its one-second warning ring before bursting.
+
+### Vexoris karate and jar smash (20/11/2026)
+- [ ] Tapping J chains knife-hand, backfist and kicks with green wisps on the limbs and a coat flare; no jar appears.
+- [ ] Heavy (K): he reaches behind into the coat, a glowing jar appears in the rear hand, the swing smashes it on the foe with glass shards, a green splash and a lingering mist.
