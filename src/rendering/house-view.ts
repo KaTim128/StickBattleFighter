@@ -55,38 +55,21 @@ const LEDGE_M = 0.35;
 const STAIR_BLOCK_M = 3;
 
 /**
- * The stretch of wall a flight runs up toward (the flight climbs through the ceiling there) is drawn as a low ledge:
- * at full height it stood at the head of the stairs like a floating slab (owner, 18/11/2026). The rest of the wall
- * keeps its height. Collision is untouched: this only changes the drawing.
+ * The draw key of a wall that stands behind a flight of stairs: just behind the flight's lowest tread (the one
+ * nearest the back wall), so every tread draws in front of it. Null for other walls. The treads' own keys are lowered
+ * by their height, so an ordinary wall key would put the upper steps behind the wall (owner, 18/11/2026: "the back
+ * wall should stay at the back behind the stairs").
  */
-export function splitBehindStairs(w: WallDef, house: HouseDef): { wall: WallDef; low: boolean }[] {
-  if (w.kind !== 'wall' || w.x1 - w.x0 < w.y1 - w.y0) return [{ wall: w, low: false }];
+export function flightBackKey(w: WallDef, house: HouseDef): number | null {
+  if (w.kind !== 'wall') return null;
   for (const s of house.stairs) {
     const r = s.ramp;
-    if (w.floor !== s.bottomFloor || s.rises !== 'n' || w.y1 > r.y0 || r.y0 - w.y1 > 2.5) continue;
-    // The low stretch runs between the walls meeting it on each side of the flight (the room's corners), and takes in
-    // any leftover narrower than a sliver, so no piece of wall stands up on its own as a post.
-    const meeting = house.walls.filter(
-      (v) =>
-        v !== w &&
-        v.kind === 'wall' &&
-        v.floor === w.floor &&
-        v.y1 - v.y0 > v.x1 - v.x0 &&
-        v.y0 <= w.y1 + 0.05 &&
-        v.y1 >= w.y0 - 0.05,
-    );
-    let a = Math.max(w.x0, ...meeting.filter((v) => v.x1 <= r.x0).map((v) => v.x1));
-    let b = Math.min(w.x1, ...meeting.filter((v) => v.x0 >= r.x1).map((v) => v.x0));
-    if (a - w.x0 < 0.6) a = w.x0;
-    if (w.x1 - b < 0.6) b = w.x1;
-    if (b <= a) continue;
-    const out: { wall: WallDef; low: boolean }[] = [];
-    if (a > w.x0) out.push({ wall: { ...w, x1: a }, low: false });
-    out.push({ wall: { ...w, x0: a, x1: b }, low: true });
-    if (b < w.x1) out.push({ wall: { ...w, x0: b }, low: false });
-    return out;
+    if (w.floor !== s.bottomFloor || s.rises !== 'n') continue;
+    const behind = w.y1 <= r.y0 + 0.05 && r.y0 - w.y1 <= 2.5;
+    const overlaps = w.x0 < r.x1 && w.x1 > r.x0;
+    if (behind && overlaps) return iso(r.x1, r.y0, s.riseM).y - 1;
   }
-  return [{ wall: w, low: false }];
+  return null;
 }
 
 /** Draw key for a rail beside a flight, or the block at its head, on its lower floor: just behind its highest tread. */
@@ -427,7 +410,6 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
     // The walls on the building's outline: the south and east ones face the camera, so they stand low.
     const inside = onBuilding(w, building);
     const front = inside === 'front';
-    const block = w.heightM === STAIR_BLOCK_M;
     const heightM = w.kind === 'wall' && front ? LEDGE_M : w.heightM;
     const exterior = w.kind === 'wall' && inside !== null;
     const outbuilding =
@@ -445,16 +427,13 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
     if (house.stairs.some((s) => w.kind === 'rail' && w.floor === s.topFloor && w.floor !== s.bottomFloor)) continue;
     // The block under the landing only stops anyone walking into the gap behind the top step; drawn, it stood over
     // the arriving steps like a floating wall (owner, 18/11/2026), so it is collision only too.
-    if (block) continue;
-    const chunks = splitBehindStairs(w, house).flatMap((piece) =>
-      wallChunks(piece.wall, piece.low ? LEDGE_M : heightM, colour, exterior || outbuilding),
-    );
-    for (const c of chunks) {
+    if (w.heightM === STAIR_BLOCK_M) continue;
+    for (const c of wallChunks(w, heightM, colour, exterior || outbuilding)) {
       const node = bake(c.g);
       // A rail beside a flight stands behind its treads on the camera's side (the treads rise above it), so it is drawn
       // before every tread; sorted by its own corner it cut across the upper steps (owner, 18/11/2026: "distorted").
       const behindStairs = stairRailKey(w, house);
-      layer.actors.add(node, behindStairs ?? frontY(c.rect));
+      layer.actors.add(node, flightBackKey(w, house) ?? behindStairs ?? frontY(c.rect));
       // The stairs' rails and the block under their landing are part of the staircase: always opaque (owner, 18/11/2026).
       const fades = wallFades(w);
       nodes.push({ node, floor: w.floor, room: null, kind: 'wall', id: `wall-${w.x0}-${w.y0}`, rect: c.rect, fades });

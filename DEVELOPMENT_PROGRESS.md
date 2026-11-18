@@ -852,3 +852,4 @@ Done: blind view while hidden, a small dim peek circle, 3x detection while peeki
 - **Known issues.** See TD-110 (diagonal screen "up" vs the stairs' foot). Phone check by the owner pending.
 - **Next.** Owner reviews the compact house on the phone; Phase 2 review; no Phase 3 without approval.
 - **Follow-up (same day).** Fixed the floating dining table (long-piece draw key only moves as far as a person needs) and the floating wall at the head of the stairs (landing block collision only; hall back wall behind the flight drawn as a low ledge). Browser screenshots checked at the start, mid-climb and the top.
+- **Leave fix.** Leave in the Hide and Seek Settings panel now opens the main menu's title (`?home`, as the fights do) instead of starting a practice fight. e2e test added.

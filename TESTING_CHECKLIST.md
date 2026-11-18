@@ -566,3 +566,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] Settings gear at the top right, panel opens, canvas fills the window with no scrolling, front door stays locked (`hide-seek.spec.ts`)
 - [ ] Owner check on the phone: the house is compact, the stairs climb smoothly and look solid, the gear is top right, fullscreen starts on the first tap (play `?mode=hide-seek`)
 - [x] No floating furniture: a long piece only moves under or over a nearby person as needed (`depth-sort.test.ts`); no floating wall at the head of the stairs, only the hall's back wall behind the flight is drawn low (`stair-barrier.test.ts`)
+- [x] Back wall full height and behind the whole flight (`stair-barrier.test.ts`)
+- [x] Settings Leave in Hide and Seek returns to the main menu title (`hide-seek.spec.ts`)

@@ -311,3 +311,13 @@ test('the game starts inside the house by the front door, with the Settings gear
   expect(doorOpen).toBe(false);
   expect(errors).toEqual([]);
 });
+
+test('Leave in the Settings panel goes back to the main menu, not into a fight', async ({ page }) => {
+  const errors = await open(page);
+  await page.locator('.settings-button').click();
+  await page.locator('.settings-leave').click();
+  await expect.poll(() => new URL(page.url()).searchParams.has('mode')).toBe(false);
+  await expect(page.locator('.front-end')).toBeVisible();
+  await expect(page.locator('.hs-clock')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

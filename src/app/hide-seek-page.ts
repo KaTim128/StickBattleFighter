@@ -88,9 +88,11 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
   // browsers stay windowed unless a test asks (`?fullscreen`) so screenshots keep the page size.
   if (navigator.webdriver !== true || params.has('fullscreen')) keepFullscreen();
 
+  // Leave goes to the main menu's title (`?home`, as the fights do); without it the page would start a practice fight.
   const leaveToMenu = (): void => {
     const url = new URL(window.location.href);
     url.searchParams.delete('mode');
+    url.searchParams.set('home', '');
     window.location.assign(url.toString());
   };
 
