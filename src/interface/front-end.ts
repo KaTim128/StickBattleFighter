@@ -588,7 +588,9 @@ export class FrontEnd {
         // Swap is offered on every equipped ability, so the player chooses which one gives way; on the
         // alternative it points the player at them.
         if (isNormal) {
-          const btn = button('fe-ab-swap', `Swap for ${alternative.name}`, () => swapSlot(a.slot as NormalSlot));
+          const btn = button('fe-ab-swap', 'Swap', () => swapSlot(a.slot as NormalSlot));
+          btn.title = `Swap ${a.name} for ${alternative.name}`;
+          btn.setAttribute('aria-label', btn.title);
           btn.dataset.swap = a.slot;
           row.append(btn);
         } else {
@@ -627,7 +629,11 @@ export class FrontEnd {
     head.append(el('h2', 'fe-h', this.selectFor === 'practice' ? 'OPEN ZONE' : 'SELECT YOUR FIGHTER'));
     const who = el('div', 'fe-who');
     who.append(el('span', 'fe-player-label', 'PLAYER'), el('strong', '', this.o.playerName() ?? 'Player'));
-    head.append(who);
+    // Keybinds for the fighter being looked at: in the header, tinted with that fighter's colour.
+    const keys = button('fe-keys fe-keys-head', '', () => this.o.openFighterControls(this.choice.fighter));
+    keys.append(el('span', 'fe-keys-icon', '⌨'), el('span', 'fe-keys-text', 'Fighter Keybinds'));
+    keys.title = `Change ${this.names.get(f.id) ?? f.name}'s keybinds`;
+    head.append(keys, who);
 
     // The information beside the fighter (owner: name and title, story and style, stats,
     // four abilities and the ultimate), updated the moment another fighter is picked.
@@ -739,7 +745,6 @@ export class FrontEnd {
     const actions = el('div', 'fe-sel-actions');
     actions.append(
       button('fe-back', 'Back', () => this.back()),
-      button('fe-keys', 'Change Fighter Keybinds', () => this.o.openFighterControls(this.choice.fighter)),
       this.selectFor === 'tournament'
         ? button('fe-go fe-fight', 'FIGHT', () => this.o.startTournament({ ...this.choice }))
         : button('fe-go fe-fight fe-enter', 'ENTER', () =>

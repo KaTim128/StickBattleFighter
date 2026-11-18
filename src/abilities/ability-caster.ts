@@ -35,6 +35,9 @@ export interface CastEvents {
 /** One ability slot as the HUD and tests see it. */
 export interface AbilitySlotState {
   readonly slot: AbilitySlot;
+  /** The ability's id and its one-line description (the HUD's info panel and cast notice). */
+  readonly id: string;
+  readonly description: string;
   readonly label: string;
   readonly name: string;
   readonly icon?: string;

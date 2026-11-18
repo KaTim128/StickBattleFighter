@@ -151,6 +151,8 @@ export class SceneAbilities implements AbilityHost {
       const def = caster.def(slot);
       return {
         slot,
+        id: def.id,
+        description: def.description ?? '',
         label: def.label,
         icon: def.icon,
         name: def.name,

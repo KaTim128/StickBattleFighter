@@ -149,3 +149,32 @@ test('aimed leap (touch, owner 12/11/2026; Eruption on A4): tap it, the joystick
   expect(end.x + end.y).toBeLessThan(start.x + start.y - 1.5);
   expect(errors).toEqual([]);
 });
+
+test('ability HUD (B14): a name notice appears when an ability is cast; the info button lists the abilities and never casts', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
+  const errors: string[] = [];
+  await open(page, errors);
+  const info = page.locator('.ability-info-button');
+  const panel = page.locator('.ability-info-panel');
+  await expect(info).toBeVisible();
+  await expect(panel).toBeHidden();
+  await info.click();
+  await expect(panel).toBeVisible();
+  await expect(panel.locator('.ability-info-row')).toHaveCount(5);
+  await expect(panel).toContainText('Fireball');
+  await expect(panel).toContainText('Blue Inferno');
+  await expect(panel.locator('.ability-info-row').first()).toContainText('[Q]');
+  // Reading the panel casts nothing and spends nothing.
+  const h = await hook(page);
+  expect(h.player.ability).toBeNull();
+  expect(h.abilities!.slots.every((s) => s.cooldownS === 0)).toBe(true);
+  await panel.locator('.ability-info-close').click();
+  await expect(panel).toBeHidden();
+  // Casting shows the ability's name for a moment.
+  await page.keyboard.press('KeyQ');
+  await expect(page.locator('.ability-notice')).toBeVisible();
+  await expect(page.locator('.ability-notice')).toHaveText('Fireball');
+  expect(errors).toEqual([]);
+});

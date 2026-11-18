@@ -225,6 +225,24 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     swirl('#9a9aae', 0.4),
     `${MASKED(22, 24, 1.25)}<g transform="translate(30 36) rotate(-62) scale(.55)" filter="url(#ds)">${KNIFE}</g>`,
   ),
+  // Bastion Anchor (Titan, B13): a heavy stone shield planted in cracked ground, braced against the push.
+  'bastion-anchor': icon(
+    'earth',
+    rays(24, 30, 14, '#fff6e0', 0.18),
+    `<path d="M0 38 H48 V48 H0 Z" fill="#2a1d10"/><path d="M6 38 L14 33 L20 39 L26 33 L32 39 L42 34" stroke="#f3e3c2" stroke-width="1.6" fill="none" opacity=".7"/><g filter="url(#ds)"><path d="M24 6 L39 11 C39 25 35 34 24 41 C13 34 9 25 9 11 Z" fill="url(#gr)" stroke="#17181d" stroke-width="1.8" stroke-linejoin="round"/><path d="M24 11 L34 14.5 C34 24 31 30 24 35 C17 30 14 24 14 14.5 Z" fill="none" stroke="#fff" stroke-width="1.2" opacity=".45"/><path d="M24 14 V32 M17 22 H31" stroke="#17181d" stroke-width="2.4" stroke-linecap="round" opacity=".7"/></g>`,
+  ),
+  // Soul Tether (Necro, B13): two bound souls joined by a looping, glowing cord.
+  'soul-tether': icon(
+    'soul',
+    swirl('#e8dcff', 0.35),
+    `<path d="M12 33 C14 18 22 40 26 24 C28 14 34 20 35 15" stroke="#c9a6ff" stroke-width="3.2" fill="none" stroke-linecap="round" filter="url(#gl)"/><path d="M12 33 C14 18 22 40 26 24 C28 14 34 20 35 15" stroke="#fbf6ff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".85"/><circle cx="11" cy="34" r="7.5" fill="url(#sl)" stroke="#1a0826" stroke-width="1.4" filter="url(#gl)"/><circle cx="36" cy="14" r="6" fill="none" stroke="#e8dcff" stroke-width="2.4" filter="url(#gl)"/><circle cx="36" cy="14" r="2.4" fill="#fbf6ff"/><ellipse cx="8.5" cy="30.5" rx="2.8" ry="1.8" fill="#fff" opacity=".7"/>`,
+  ),
+  // Umbral Feint (Shroud, B13): the masked hunter and a fading afterimage as he slips aside, knife trailing.
+  'umbral-feint': icon(
+    'shade',
+    rays(26, 22, 12, '#d8d0ff', 0.14),
+    `<g opacity=".4" filter="url(#bl)">${MASKED(15, 26, 1.25)}</g><g opacity=".7">${MASKED(21, 25, 1.3)}</g>${MASKED(29, 24, 1.4)}<path d="M8 40 C16 34 28 36 42 30" stroke="#ec2a34" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".85"/>`,
+  ),
   // Rending Flurry: three crossing slashes of blood.
   'rending-flurry': icon(
     'blood',
