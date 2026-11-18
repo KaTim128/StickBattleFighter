@@ -1,7 +1,7 @@
 import type { Container } from 'pixi.js';
 import { loadCharacter } from '../../characters/load';
 import type { GameScene } from '../../core/scene';
-import { HOUSE } from '../../data/arenas/house';
+import { HOUSE, HOUSE_CAST } from '../../data/arenas/house';
 import type { PlayerIntents } from '../../input/intents';
 import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
@@ -45,7 +45,7 @@ export class HideSeekScene implements GameScene {
     this.world = this.view.world;
     this.parent.addChild(this.view.world);
     // The player is the standard training dummy (section: "the standard dummy training character").
-    const dummy = loadCharacter('training-dummy').def;
+    const dummy = loadCharacter(HOUSE_CAST.player).def;
     this.player = new ActorView(dummy);
     this.view.floors[0].actors.add(this.player.view.root, 0);
     const p = this.game.player;

@@ -433,6 +433,9 @@ export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
   { id: 't12', kind: 'toy', floor: 0, x: 24, y: 6 },
 ];
 
+/** Who is in the house: the standard dummy as the player, the masked slasher as the one hunter (Phase 2). */
+export const HOUSE_CAST = { player: 'training-dummy', hunter: 'shroud' } as const;
+
 export const HOUSE: HouseDef = {
   id: 'house',
   name: 'The house',
