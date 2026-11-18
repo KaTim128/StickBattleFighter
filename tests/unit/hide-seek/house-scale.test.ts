@@ -65,3 +65,44 @@ describe('the roomier house', () => {
     expect(g.hunter.inspected.size).toBeGreaterThan(2);
   });
 });
+
+/** Furniture has its own space (owner, 18/11/2026): nothing is stacked inside, or jammed against, something else. */
+describe.each([
+  ['the authored plan', HOUSE_PLAN],
+  ['the real, roomier house', HOUSE],
+])('furniture spacing in %s', (_name, house) => {
+  const flat = new Set(['rug', 'lawn', 'path', 'curtain', 'shower-curtain']);
+  const pieces = house.furniture.filter((f) => !flat.has(f.kind));
+
+  it("no two pieces overlap or touch (a hand's breadth between them)", () => {
+    const k = house.widthM / HOUSE_PLAN.widthM;
+    for (let i = 0; i < pieces.length; i++)
+      for (let j = i + 1; j < pieces.length; j++) {
+        const a = pieces[i]!;
+        const b = pieces[j]!;
+        if (a.floor !== b.floor) continue;
+        const gap = Math.max(Math.max(a.x0 - b.x1, b.x0 - a.x1), Math.max(a.y0 - b.y1, b.y0 - a.y1));
+        expect(gap, `${a.id} and ${b.id}`).toBeGreaterThanOrEqual(0.09 * k);
+      }
+  });
+
+  it('no piece sits in a doorway or on the stairs', () => {
+    for (const f of pieces)
+      for (const d of house.doors.filter((x) => x.floor === f.floor)) {
+        const gap = Math.max(
+          Math.max(f.x0 - d.rect.x1, d.rect.x0 - f.x1),
+          Math.max(f.y0 - d.rect.y1, d.rect.y0 - f.y1),
+        );
+        expect(gap, `${f.id} and ${d.id}`).toBeGreaterThan(0);
+      }
+    for (const f of pieces)
+      for (const s of house.stairs)
+        if (f.floor === s.bottomFloor || f.floor === s.topFloor) {
+          const gap = Math.max(
+            Math.max(f.x0 - s.ramp.x1, s.ramp.x0 - f.x1),
+            Math.max(f.y0 - s.ramp.y1, s.ramp.y0 - f.y1),
+          );
+          expect(gap, `${f.id} and the stairs`).toBeGreaterThan(0);
+        }
+  });
+});

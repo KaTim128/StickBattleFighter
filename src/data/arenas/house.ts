@@ -299,16 +299,21 @@ const WHITE = 0xd9d6cf;
 export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   // ---------------------------------------------------------------- Living room
   item('rug', 0, 13, 15.5, 20, 19.5, 0.02, 0x7a3a3a, { solid: false }),
-  item('sofa', 0, 14.2, 18.2, 17, 19.4, 0.9, FABRIC, { hide: hide('behind-sofa', 0.8, 0.35, 1.6, 15.6, 20.2, 'w') }),
-  item('armchair', 0, 11.2, 16, 12.5, 17.4, 0.9, FABRIC),
-  item('armchair', 0, 19.2, 16, 20.5, 17.4, 0.9, FABRIC),
+  item('sofa', 0, 14.2, 17.9, 17, 19.1, 0.9, FABRIC, { hide: hide('behind-sofa', 0.8, 0.35, 1.6, 15.6, 20.2, 'w') }),
+  item('armchair', 0, 12.85, 16, 14.1, 17.4, 0.9, FABRIC),
+  item('armchair', 0, 17.1, 16, 18.35, 17.4, 0.9, FABRIC),
   item('coffee-table', 0, 14.2, 16.2, 17, 17.4, 0.45, WOOD),
   item('tv-console', 0, 10.25, 16, 11, 18.5, 0.6, DARK_WOOD),
   item('side-table', 0, 17.8, 18.4, 18.5, 19.1, 0.55, WOOD),
-  item('floor-lamp', 0, 23.4, 14.4, 23.9, 14.9, 1.6, 0xe8d28a),
+  item('floor-lamp', 0, 19.3, 17.9, 19.8, 18.4, 1.6, 0xe8d28a),
   item('floor-lamp', 0, 10.5, 20.2, 11, 20.7, 1.6, 0xe8d28a),
   item('bookshelf', 0, 17.4, 14.25, 19.8, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
   item('bookshelf', 0, 22.3, 14.25, 24.5, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
+  item('cupboard', 0, 10.25, 14.45, 10.95, 15.75, 1.9, DARK_WOOD, {
+    blocksSight: true,
+    hide: hide('cupboard', 0.85, 0.3, 0.9, 10.6, 15.1, 'e'),
+  }),
+  item('chest', 0, 23, 20.05, 24.4, 20.8, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 23.7, 20.4, 'n') }),
   item('curtain', 0, 19, 20.55, 21.6, 20.85, 2.2, 0x7a5a6a, {
     hide: hide('curtain', 0.65, 0.3, 1.2, 20.3, 20.62, 'n'),
   }),
@@ -318,12 +323,14 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   }),
   item('chair', 0, 14.2, 11.4, 14.8, 12, 0.5, DARK_WOOD),
   item('chair', 0, 17.2, 11.4, 17.8, 12, 0.5, DARK_WOOD),
-  item('cupboard', 0, 13.3, 9.3, 14.6, 9.9, 1.0, DARK_WOOD, { blocksSight: false }),
+  item('cupboard', 0, 13.3, 9.3, 14.6, 9.9, 1.0, DARK_WOOD, {
+    hide: hide('cupboard', 0.8, 0.3, 0.9, 13.95, 9.62, 's'),
+  }),
   // ---------------------------------------------------------------- Kitchen
-  item('counter', 0, 19.3, 9.25, 21.1, 10.1, 0.9, WHITE),
-  item('counter', 0, 22.5, 9.25, 24.7, 10.1, 0.9, WHITE),
-  item('stove', 0, 23.4, 9.3, 24.3, 10.0, 0.95, 0x444a52),
-  item('sink', 0, 19.6, 9.3, 20.5, 10.0, 0.95, 0xaab4bc),
+  item('sink', 0, 19.3, 9.25, 20.4, 10.1, 0.95, 0xaab4bc),
+  item('counter', 0, 20.5, 9.25, 22.3, 10.1, 0.9, WHITE),
+  item('stove', 0, 22.4, 9.25, 23.4, 10.1, 0.95, 0x444a52),
+  item('counter', 0, 23.5, 9.25, 24.8, 10.1, 0.9, WHITE),
   item('fridge', 0, 24.0, 12.6, 24.75, 13.8, 1.8, 0xc9ced3, { blocksSight: true }),
   item('counter', 0, 20.5, 11.5, 23.5, 12.6, 0.9, WHITE),
   item('cupboard', 0, 19.3, 12.8, 20.1, 13.8, 2.0, DARK_WOOD, {
@@ -341,7 +348,7 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   }),
   // ---------------------------------------------------------------- Bedroom 1
   item('bed', 1, 10.4, 9.4, 12.6, 11.8, 0.55, 0x8a8aa0, { hide: hide('under-bed', 0.75, 0.4, 1.3, 11.5, 11.2, 's') }),
-  item('nightstand', 1, 12.7, 9.4, 13.3, 10.0, 0.5, WOOD),
+  item('nightstand', 1, 12.85, 9.4, 13.45, 10.0, 0.5, WOOD),
   item('wardrobe', 1, 14.6, 9.3, 15.8, 10.2, 2.0, DARK_WOOD, {
     blocksSight: true,
     hide: hide('wardrobe', 0.9, 0.45, 0.9, 15.2, 9.9, 's'),
@@ -358,8 +365,8 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('shelf', 1, 19.3, 9.3, 20, 11.5, 1.8, DARK_WOOD, { blocksSight: true }),
   item('box', 1, 21, 11, 22.4, 12.4, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 21.7, 11.7, 'w') }),
   item('chest', 1, 23.3, 9.4, 24.7, 10.2, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 24, 9.8, 's') }),
-  item('box', 1, 19.4, 12.6, 20.6, 13.8, 0.5, 0xb59a6a),
-  item('box', 1, 23.4, 12.4, 24.6, 13.6, 0.5, 0xb59a6a),
+  item('box', 1, 19.4, 12.6, 20.6, 13.8, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 20, 13.2, 'e') }),
+  item('box', 1, 23.4, 12.4, 24.6, 13.6, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 24, 13, 'w') }),
   // ---------------------------------------------------------------- Bedroom 2
   item('bed', 1, 10.4, 19.2, 12.9, 20.8, 0.55, 0x8aa08a, { hide: hide('under-bed', 0.75, 0.4, 1.3, 11.6, 20.0, 'n') }),
   item('wardrobe', 1, 10.4, 16.3, 11.6, 17.4, 2.0, DARK_WOOD, {
@@ -369,7 +376,7 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('curtain', 1, 13.5, 20.55, 16, 20.85, 2.2, 0x6a7a8a, {
     hide: hide('curtain', 0.65, 0.3, 1.2, 14.7, 20.62, 'n'),
   }),
-  item('nightstand', 1, 13, 20.2, 13.6, 20.8, 0.5, WOOD),
+  item('nightstand', 1, 13.15, 19.3, 13.75, 19.9, 0.5, WOOD),
   // ---------------------------------------------------------------- Bathroom 2
   item('bathtub', 1, 19.3, 19.5, 22.7, 20.6, 0.6, WHITE),
   item('shower-curtain', 1, 19.3, 19.3, 22.7, 19.5, 2.0, 0xc8b89a, {

@@ -820,3 +820,6 @@ Done: Game Over and Victory screens with Restart and Return to Menu, the one-tim
 ### 18/11/2026 Nightmare House art pass (TD-102)
 Done: modelled and aged furniture (office style), aged walls and floors with horror dressing, dark cold lighting with falloff and flickering lamps, a vignette, stronger wall fading (walls, doors and tall furniture; player always clear), floating HIDE bubbles, and a fix for the wall classification after the house scale. Tests: 89 hide-seek and rendering unit tests, 14 browser tests. Known limits: no owner judgement of the look yet; windows only implied; lighting is a tint per object, not true shadows.
 
+### 18/11/2026 House follow-up (TD-102)
+Done: armchairs and sofa closer to the table, a better-made bed (blanket under the pillows), textured doors with frames and lintels, 27 hiding places (5 added), furniture fade limited to tall pieces. Tests: 99 hide-seek and rendering unit tests.
+

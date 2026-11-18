@@ -31,6 +31,11 @@ function scout(g: HideSeekGame, seconds: number): void {
   for (let t = 0; t < seconds; t += DT) g.hunter.step(DT, { ...ctx, timeS: t });
 }
 
+/** The upstairs wardrobe's id (ids are numbered in layout order, so look it up rather than name it). */
+function wardrobeId(g: HideSeekGame): string {
+  return g.spots.find((s) => s.floor === 1 && s.spec.kind === 'wardrobe')!.id;
+}
+
 function hide(g: HideSeekGame, id: string): void {
   const spot = g.spots.find((s) => s.id === id);
   if (!spot) throw new Error(`no spot ${id}`);
@@ -160,8 +165,8 @@ describe('hunter behaviour', () => {
 
   it('a well-hidden player survives the hunter standing in front of the hiding place for a moment', () => {
     const g = hunting({ floor: 1, x: 12, y: 15 });
-    hide(g, 'wardrobe-30');
-    const spot = g.spots.find((s) => s.id === 'wardrobe-30')!;
+    hide(g, wardrobeId(g));
+    const spot = g.spots.find((s) => s.id === wardrobeId(g))!;
     g.hunter.floor = 1;
     g.hunter.x = spot.spec.at.x;
     g.hunter.y = spot.spec.at.y + 1.1;

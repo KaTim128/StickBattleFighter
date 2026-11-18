@@ -665,24 +665,59 @@ function toilet(g: Graphics, f: FurnitureDef): void {
   g.ellipse(lid.x, lid.y, Math.min(w, d) * 0.36, Math.min(w, d) * 0.18).fill(0x3a3f40);
 }
 
-/** A bed with its head to `facing`'s back (a wall): headboard, mattress, pillows, a folded blanket and a stain. */
+/**
+ * A bed with its head to `facing`'s back (a wall): headboard, a sheeted mattress, two plump pillows at the head, and a
+ * blanket tucked in under the pillows, with a folded-back cuff, draped sides, wrinkles and an old stain.
+ */
 function bed(g: Graphics, f: FurnitureDef, B: Blk, seed: number, facing: Facing): void {
   const c = f.colour;
   const { R, L, D } = frameFor(f, facing);
+  const h = f.heightM;
   const parts: { r: readonly [number, number, number, number]; z0: number; z1: number; look: Look }[] = [];
   const add = (r: readonly [number, number, number, number], z0: number, z1: number, look: Look) =>
     parts.push({ r, z0, z1, look });
-  add(R(0, L, 0, D), 0, 0.22, { colour: 0x4a3a2a });
-  add(R(0, L, 0, 0.1), 0.22, f.heightM + 0.5, { colour: 0x4a3a2a });
-  add(R(0.06, L - 0.06, 0.1, D - 0.04), 0.22, f.heightM, { colour: 0xcfc9b8 });
-  add(R(0.06, L - 0.06, 0.1, D - 0.04), f.heightM, f.heightM + 0.04, { colour: shade(c, 0.9), noAo: true });
-  add(R(0.12, L / 2 - 0.04, 0.16, 0.6), f.heightM + 0.04, f.heightM + 0.17, { colour: 0xdcd6c4, noAo: true });
-  add(R(L / 2 + 0.04, L - 0.12, 0.16, 0.6), f.heightM + 0.04, f.heightM + 0.17, { colour: 0xd3cdbb, noAo: true });
-  add(R(0.08, L - 0.08, D * 0.62, D - 0.08), f.heightM + 0.04, f.heightM + 0.1, { colour: shade(c, 0.8), noAo: true });
+  const ph = Math.min(0.75, D * 0.2); // pillow depth
+  const blanketFrom = 0.14 + ph + 0.04; // the blanket starts where the pillows end: it is tucked in under them
+  add(R(0, L, 0, D), 0, 0.2, { colour: 0x4a3a2a });
+  add(R(0, L, 0, 0.12), 0.2, h + 0.55, { colour: 0x4a3a2a }); // headboard
+  add(R(0.04, L - 0.04, 0.02, 0.12), h + 0.2, h + 0.5, { colour: shade(0x4a3a2a, 1.15), noAo: true }); // its raised panel
+  add(R(0.04, L - 0.04, 0.12, D - 0.02), 0.2, h, { colour: 0xe6e0d0 }); // the mattress and its sheet
+  // Blanket: wider than the mattress so it drapes down the sides, a lighter cuff folded back at the top edge.
+  // A blanket with a colour of its own (burgundy or deep green), so it reads against the pale sheet and pillows.
+  const wool = [0x8a3a46, 0x3f6a58, 0x6a4a7a][seed % 3] ?? c;
+  add(R(-0.05, L + 0.05, blanketFrom, D + 0.03), h - 0.2, h + 0.07, { colour: shade(wool, 1.0) });
+  add(R(-0.05, L + 0.05, blanketFrom, blanketFrom + 0.24), h + 0.07, h + 0.12, {
+    colour: shade(wool, 1.3),
+    noAo: true,
+  });
+  // Two plump pillows with a gap between, lying on the sheet at the head.
+  const half = (L - 0.3) / 2;
+  add(R(0.1, 0.1 + half, 0.16, 0.16 + ph), h, h + 0.26, { colour: 0xf2ecdc, top: 0xfaf4e6, noAo: true });
+  add(R(0.2 + half, L - 0.1, 0.16, 0.16 + ph), h, h + 0.26, { colour: 0xeae4d4, top: 0xf6f0e2, noAo: true });
   drawSorted(B, parts);
-  const m = R(L * 0.2, L * 0.8, D * 0.3, D * 0.55);
-  const s = iso((m[0] + m[2]) / 2, (m[1] + m[3]) / 2, f.heightM + 0.05);
-  g.ellipse(s.x, s.y, 0.3 + 0.05 * (seed % 3), 0.11).fill({ color: 0x4a2a22, alpha: 0.35 });
+  // Details on the blanket's top: wrinkles from a lumpy sleeper, a dent in each pillow, an old stain.
+  const pt = (a: number, p: number, z: number) => {
+    const r = R(a, a, p, p);
+    return iso(r[0], r[1], z);
+  };
+  for (let i = 0; i < 5; i++) {
+    const a0 = L * (0.12 + 0.18 * i);
+    const p0 = blanketFrom + 0.3 + (D - blanketFrom - 0.5) * hash2(seed, i);
+    const s0 = pt(a0, p0, h + 0.075);
+    const s1 = pt(a0 + 0.35, p0 + 0.18, h + 0.075);
+    g.moveTo(s0.x, s0.y)
+      .lineTo(s1.x, s1.y)
+      .stroke({ width: 0.012, color: i % 2 ? 0x000000 : 0xffffff, alpha: i % 2 ? 0.2 : 0.13 });
+  }
+  for (const [a0, a1] of [
+    [0.1, 0.1 + half],
+    [0.2 + half, L - 0.1],
+  ] as const) {
+    const m = pt((a0 + a1) / 2, 0.16 + ph / 2, h + 0.26);
+    g.ellipse(m.x, m.y, (a1 - a0) * 0.22, 0.06).fill({ color: 0x000000, alpha: 0.12 });
+  }
+  const st = pt(L * 0.55, D * 0.62, h + 0.08);
+  g.ellipse(st.x, st.y, 0.3 + 0.05 * (seed % 3), 0.11).fill({ color: 0x3a1a14, alpha: 0.4 });
 }
 
 /** A hanging drape: folds as shaded vertical bands, ragged at the foot. */

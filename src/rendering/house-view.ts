@@ -1,6 +1,7 @@
 import { Container, Graphics, type Renderer, Sprite } from 'pixi.js';
 import type { FloorIndex, HouseDef, Rect, RoomDef, StairDef, WallDef } from '../modes/hide-seek/house-types';
 import { FLOOR_HEIGHT_M, type HouseWorld } from '../modes/hide-seek/world';
+import { drawDoorFrame, drawDoorLeaf } from './door-draw';
 import { BRICK_AGED, floorDecor, PLASTER_AGED, wallDetails } from './house-decor';
 import { aged, drawHouseFurniture } from './house-furniture';
 import { isoBlock, shade } from './iso-draw';
@@ -48,6 +49,9 @@ export interface HouseView {
 
 const WALL_CHUNK_M = 0.5;
 const LEDGE_M = 0.35;
+/** Furniture this tall can hide a person standing behind it, so it fades (gently: a sofa never needs to). */
+const FURNITURE_FADE_M = 1.3;
+const FURNITURE_FADE_ALPHA = 0.3;
 const WOOD_FLOOR = 0x7a5f44;
 const TILE = 0x8a9090;
 const BATH_TILE = 0x7c9096;
@@ -171,12 +175,17 @@ function drawStairs(s: StairDef, zBase: number): { g: Graphics; rect: Rect }[] {
   return out;
 }
 
-function doorNode(d: { rect: Rect; kind: string }, g: Graphics): DoorNode {
+function doorNode(
+  d: { id: string; rect: Rect; kind: string; exterior?: boolean },
+  g: Graphics,
+  lintel: boolean,
+): DoorNode {
   const r = d.rect;
   const horizontal = r.x1 - r.x0 >= r.y1 - r.y0;
+  let seed = 3;
+  for (let i = 0; i < d.id.length; i++) seed = (seed * 31 + d.id.charCodeAt(i)) % 9973;
   const draw = (open: boolean): void => {
     g.clear();
-    if (d.kind === 'arch') return;
     if (d.kind === 'gate') {
       // A low iron gate: swung wide when open.
       if (!open) isoBlock(g, r.x0, r.y0 - 0.02, r.x1, r.y1 + 0.02, 0, 1.2, { colour: 0x30343a, edge: 0.3 });
@@ -184,22 +193,14 @@ function doorNode(d: { rect: Rect; kind: string }, g: Graphics): DoorNode {
         isoBlock(g, r.x0, r.y0, r.x0 + 0.06, r.y0 + (r.x1 - r.x0), 0, 1.2, { colour: 0x30343a, edge: 0.3 });
       return;
     }
-    if (!open) {
-      isoBlock(g, r.x0, r.y0, r.x1, r.y1, 0, 2.1, { colour: 0x45331f, top: 0x56412b, edge: 0.4 });
-    } else if (horizontal) {
+    drawDoorFrame(g, r, lintel);
+    if (d.kind === 'arch') return;
+    const exterior = d.exterior === true;
+    if (!open) drawDoorLeaf(g, r, seed, exterior);
+    else if (horizontal)
       // Swung back against the wall on one side.
-      isoBlock(g, r.x0, r.y0, r.x0 + 0.07, r.y0 + (r.x1 - r.x0), 0, 2.1, {
-        colour: 0x45331f,
-        top: 0x56412b,
-        edge: 0.4,
-      });
-    } else {
-      isoBlock(g, r.x0, r.y0, r.x0 + (r.y1 - r.y0), r.y0 + 0.07, 0, 2.1, {
-        colour: 0x45331f,
-        top: 0x56412b,
-        edge: 0.4,
-      });
-    }
+      drawDoorLeaf(g, { x0: r.x0, y0: r.y0, x1: r.x0 + 0.07, y1: r.y0 + (r.x1 - r.x0) }, seed, exterior);
+    else drawDoorLeaf(g, { x0: r.x0, y0: r.y0, x1: r.x0 + (r.y1 - r.y0), y1: r.y0 + 0.07 }, seed, exterior);
   };
   draw(false);
   return { setOpen: draw };
@@ -389,14 +390,14 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
       id: f.id,
       rect: f,
     });
-    // Anything that could stand in front of a person fades: low things (a coffee table) never hide anyone.
-    if (f.heightM >= 0.8) fader.add(node);
+    // Tall pieces (a wardrobe, a bookshelf) fade when they stand in front of the player; low ones (a sofa) never hide anyone.
+    if (f.heightM >= FURNITURE_FADE_M) fader.add(node, FURNITURE_FADE_ALPHA);
   }
 
   // ---- doors
   for (const d of house.doors) {
     const g = new Graphics();
-    const node = doorNode(d, g);
+    const node = doorNode(d, g, onBuilding(d.rect, building) !== 'front');
     node.setOpen(world.isOpen(d.id));
     doors.set(d.id, node);
     floors[d.floor]!.actors.add(g, frontY(d.rect));

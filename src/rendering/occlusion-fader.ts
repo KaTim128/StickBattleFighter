@@ -45,6 +45,7 @@ export class OcclusionFader {
   private readonly shapes = new Map<Container, Box>();
   private frame = 0;
   private readonly exempt = new Set<Container>();
+  private readonly own = new Map<Container, number>();
 
   /** Never fade this node (e.g. an object carried overhead: it belongs to the fighter). */
   setExempt(node: Container, exempt: boolean): void {
@@ -52,8 +53,10 @@ export class OcclusionFader {
     else this.exempt.delete(node);
   }
 
-  add(node: Container): void {
+  /** `occludedAlpha` overrides how see-through this one gets (tall furniture fades less than a wall). */
+  add(node: Container, occludedAlpha?: number): void {
     this.targets.push({ node, depth: () => node.zIndex });
+    if (occludedAlpha !== undefined) this.own.set(node, occludedAlpha);
   }
 
   /** How many objects are currently faded (or fading) for visibility. */
@@ -100,7 +103,7 @@ export class OcclusionFader {
           }
         }
       }
-      const goal = blocking ? (this.options.occludedAlpha ?? OCCLUDED_ALPHA) : 1;
+      const goal = blocking ? (this.own.get(node) ?? this.options.occludedAlpha ?? OCCLUDED_ALPHA) : 1;
       const a = node.alpha;
       // Linear fade toward the goal: the whole way takes about FADE_S.
       node.alpha = a < goal ? Math.min(goal, a + step) : Math.max(goal, a - step);
