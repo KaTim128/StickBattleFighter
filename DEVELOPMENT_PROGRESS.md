@@ -817,3 +817,6 @@ Done: perception and hunter brain with search memory (TD-099), hunter figure and
 ### 18/11/2026 Phase 2 P2-5 (flow, result screens, kill animation, audio)
 Done: Game Over and Victory screens with Restart and Return to Menu, the one-time kill animation (collapse and red flash), restart resetting everything, procedural horror audio with positional sound and heartbeat (TD-101), checklist items 14 to 17 ticked. Tests: 97 hide-seek and audio unit tests, 12 hide-seek browser tests (desktop and phone). Known limits: sounds not auditioned by a human; the supplied ambience file unwired pending licence; the hunter is untuned by play; no windows or reference-level art. Phase 2 is ready for the owner's consolidated review; Phase 3 waits for approval.
 
+### 18/11/2026 Nightmare House art pass (TD-102)
+Done: modelled and aged furniture (office style), aged walls and floors with horror dressing, dark cold lighting with falloff and flickering lamps, a vignette, stronger wall fading (walls, doors and tall furniture; player always clear), floating HIDE bubbles, and a fix for the wall classification after the house scale. Tests: 89 hide-seek and rendering unit tests, 14 browser tests. Known limits: no owner judgement of the look yet; windows only implied; lighting is a tint per object, not true shadows.
+

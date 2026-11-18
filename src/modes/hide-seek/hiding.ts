@@ -80,3 +80,39 @@ export function exposure(spot: HideSpot, from: Point): number {
 
 /** Total hiding-place area is not used for gameplay; kept for the tests that check no place is a sliver. */
 export const spotArea = (s: HideSpot): number => rectArea(s.rect);
+
+/** A hiding place shows a floating HIDE bubble when the player is within this many metres (owner, 18/11/2026). */
+export const HIDE_CUE_M = 6;
+
+export interface HideCue {
+  readonly spot: HideSpot;
+  /** Metres from the player to the place (to its opening or inside point, whichever is nearer). */
+  readonly distM: number;
+  /** The interact key would hide the player here right now. */
+  readonly inReach: boolean;
+}
+
+/**
+ * The hiding places that should show a floating HIDE bubble: those near the player on their floor, the
+ * one the act key would use marked `inReach`. Nothing while the player is already hidden or carrying
+ * something (the act key then leaves or throws).
+ */
+export function hideCues(
+  spots: readonly HideSpot[],
+  floor: FloorIndex,
+  p: Point,
+  canHide: boolean,
+  maxM = HIDE_CUE_M,
+): HideCue[] {
+  if (!canHide) return [];
+  const reach = nearestHideSpot(spots, floor, p);
+  const out: HideCue[] = [];
+  for (const s of spots) {
+    if (s.floor !== floor) continue;
+    const dx = Math.max(s.rect.x0 - p.x, 0, p.x - s.rect.x1);
+    const dy = Math.max(s.rect.y0 - p.y, 0, p.y - s.rect.y1);
+    const distM = Math.min(Math.hypot(s.spec.at.x - p.x, s.spec.at.y - p.y), Math.hypot(dx, dy) + 0.35);
+    if (distM <= maxM) out.push({ spot: s, distM, inReach: reach?.id === s.id });
+  }
+  return out.sort((a, b) => a.distM - b.distM);
+}

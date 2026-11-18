@@ -51,7 +51,7 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
   attachTouchControls(document.body, intents);
 
   const scenes = new SceneManager({ onError: (name, error) => console.error(`[scene:${name}]`, error) });
-  const scene = new HideSeekScene(app.stage, intents, viewport);
+  const scene = new HideSeekScene(app.stage, intents, viewport, undefined, app.renderer);
   if (!(await scenes.switchTo(() => scene))) throw new Error('The Hide and Seek scene failed to load');
   window.__hideSeek = scene;
 
@@ -137,6 +137,7 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
         else if (g.round.phase === 'victory') audio.victory();
         lastPhase = g.round.phase;
       }
+      hud.setBubbles(scene.hideBubbles());
       hud.update({
         killProgress: g.round.killProgress,
         survivedS: g.round.survivedS,

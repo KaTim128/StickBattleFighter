@@ -31,7 +31,16 @@ interface Box {
   maxY: number;
 }
 
+export interface FaderOptions {
+  /** How see-through a blocking thing becomes (default OCCLUDED_ALPHA). */
+  readonly occludedAlpha?: number;
+  /** Grow the viewer's box by this many metres on each side, so things fade just before they hide it. */
+  readonly grow?: number;
+}
+
 export class OcclusionFader {
+  constructor(private readonly options: FaderOptions = {}) {}
+
   private readonly targets: FadeTarget[] = [];
   private readonly shapes = new Map<Container, Box>();
   private frame = 0;
@@ -66,7 +75,10 @@ export class OcclusionFader {
     // Shrink the fighter's box a little so a prop merely brushing its edge does not fade.
     const boxes = viewers
       .filter((v) => v.node.visible && v.node.alpha > 0.05)
-      .map((v) => ({ box: inset(placed(v.node, v.node.getLocalBounds()), 0.08), depth: v.depth() }));
+      .map((v) => ({
+        box: grown(inset(placed(v.node, v.node.getLocalBounds()), 0.08), this.options.grow ?? 0),
+        depth: v.depth(),
+      }));
     const step = dtS / FADE_S;
     for (const t of this.targets) {
       const node = t.node;
@@ -88,7 +100,7 @@ export class OcclusionFader {
           }
         }
       }
-      const goal = blocking ? OCCLUDED_ALPHA : 1;
+      const goal = blocking ? (this.options.occludedAlpha ?? OCCLUDED_ALPHA) : 1;
       const a = node.alpha;
       // Linear fade toward the goal: the whole way takes about FADE_S.
       node.alpha = a < goal ? Math.min(goal, a + step) : Math.max(goal, a - step);
@@ -113,6 +125,10 @@ function inset(b: Box, k: number): Box {
   const w = (b.maxX - b.minX) * k;
   const h = (b.maxY - b.minY) * k * 0.5;
   return { minX: b.minX + w, minY: b.minY + h, maxX: b.maxX - w, maxY: b.maxY - h };
+}
+
+function grown(b: Box, m: number): Box {
+  return { minX: b.minX - m, minY: b.minY - m, maxX: b.maxX + m, maxY: b.maxY + m };
 }
 
 function overlaps(a: Box, b: Box): boolean {

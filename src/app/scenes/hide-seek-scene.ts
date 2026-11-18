@@ -1,15 +1,16 @@
-import { type Container, Graphics } from 'pixi.js';
+import { type Container, Graphics, type Renderer } from 'pixi.js';
 import { loadCharacter } from '../../characters/load';
 import type { GameScene } from '../../core/scene';
 import { HOUSE, HOUSE_CAST } from '../../data/arenas/house';
 import type { PlayerIntents } from '../../input/intents';
 import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
+import { hideCues } from '../../modes/hide-seek/hiding';
 import { visionPolygon } from '../../modes/hide-seek/perception';
 import { Visibility } from '../../modes/hide-seek/visibility';
 import type { Point } from '../../modes/hide-seek/world';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
 import { ActorView } from '../../rendering/actor-view';
-import { buildHouseView, type HouseView } from '../../rendering/house-view';
+import { bakerFor, buildHouseView, type HouseView } from '../../rendering/house-view';
 import { iso } from '../../rendering/projection';
 import type { Viewport } from './arena-scene';
 
@@ -32,6 +33,8 @@ export class HideSeekScene implements GameScene {
   /** The hunter's vision cone, drawn on the ground of his floor: the very area his sight test uses. */
   private cone: Graphics | null = null;
   private hunterFloor: 0 | 1 = 0;
+  /** Heights of the hiding places (for the bubble anchors), by furniture id. */
+  private readonly spotTops = new Map<string, number>();
   private lastHunter = { x: 0, y: 0 };
   private cam = { x: 0, y: 0 };
   /** Room visibility and lighting (section C); drives which things are drawn and how bright. */
@@ -43,6 +46,7 @@ export class HideSeekScene implements GameScene {
     id: string;
     room: string | null;
     probes: readonly [Point, Point] | null;
+    centre: Point;
   }[] = [];
   private doorStates = new Map<string, boolean>();
   /** The last floor the player's figure was added to. */
@@ -55,6 +59,7 @@ export class HideSeekScene implements GameScene {
     private readonly intents: PlayerIntents,
     private readonly viewport: Viewport,
     game: HideSeekGame = new HideSeekGame(HOUSE),
+    private readonly renderer?: Renderer,
   ) {
     this.game = game;
     this.visibility = new Visibility(game.world);
@@ -62,7 +67,8 @@ export class HideSeekScene implements GameScene {
 
   async load(): Promise<void> {
     const house = this.game.house;
-    this.view = buildHouseView(house, this.game.world);
+    this.view = buildHouseView(house, this.game.world, this.renderer ? bakerFor(this.renderer) : undefined);
+    for (const f of house.furniture) if (f.hide) this.spotTops.set(f.id, f.heightM);
     this.world = this.view.world;
     this.lit = this.view.nodes.map((n) => {
       const r = n.rect;
@@ -82,7 +88,7 @@ export class HideSeekScene implements GameScene {
                 { x: r.x1 + 0.4, y: cy },
               ]
           : null;
-      return { node: n.node, floor: n.floor, kind: n.kind, id: n.id, room: n.room, probes };
+      return { node: n.node, floor: n.floor, kind: n.kind, id: n.id, room: n.room, probes, centre: { x: cx, y: cy } };
     });
     this.parent.addChild(this.view.world);
     // The player is the standard training dummy (section: "the standard dummy training character").
@@ -238,6 +244,32 @@ export class HideSeekScene implements GameScene {
     this.cam = { x: at.x, y: at.y - p.floor * FLOOR_HEIGHT_M };
   }
 
+  /**
+   * Where each floating HIDE bubble goes on the screen right now: the hiding places near the player that
+   * are lit and in view, the one the act key would use marked `inReach`.
+   */
+  hideBubbles(): { id: string; x: number; y: number; inReach: boolean }[] {
+    const view = this.view;
+    if (!view) return [];
+    const g = this.game;
+    const p = g.player;
+    const cues = hideCues(g.spots, p.floor, p, p.hidingIn === null && p.carrying === null);
+    const out: { id: string; x: number; y: number; inReach: boolean }[] = [];
+    for (const c of cues) {
+      if (this.visibility.objectAlpha(c.spot.id) < 0.3) continue; // in the dark: not seen yet
+      const top = (this.spotTops.get(c.spot.id) ?? 1) + 0.55;
+      const at = iso((c.spot.rect.x0 + c.spot.rect.x1) / 2, (c.spot.rect.y0 + c.spot.rect.y1) / 2, top);
+      const w = view.world;
+      out.push({
+        id: c.spot.id,
+        x: w.position.x + at.x * w.scale.x,
+        y: w.position.y + (at.y - p.floor * FLOOR_HEIGHT_M) * w.scale.y,
+        inReach: c.inReach,
+      });
+    }
+    return out;
+  }
+
   private renderProps(view: HouseView): void {
     const g = this.game;
     const p = g.player;
@@ -262,16 +294,24 @@ export class HideSeekScene implements GameScene {
     }
   }
 
-  /** Light every drawn thing by how visible its room is: a tint (darkness) and hidden when black. */
+  /**
+   * Light every drawn thing by how visible its room is, in a dark, cold, uneasy light (owner, 18/11/2026):
+   * the house is dim, the far corners of a room sink toward black, the lamps flicker now and then (more
+   * when the hunter is close), and a faint blue-green cast lies over everything. The player and the
+   * hunter are never tinted, so the player is always clear.
+   */
   private applyVisibility(): void {
     const vis = this.visibility;
     const view = this.view;
     if (!view) return;
+    const g = this.game;
+    const eye = g.viewer();
     for (const f of [0, 1] as const) {
       const o = vis.floorOpacity(f);
       view.floors[f].container.visible = o > 0.01;
       view.floors[f].container.alpha = Math.min(1, o);
     }
+    const lamp = lampLevel(g.timeS, Math.max(g.hunter.mode === 'chase' ? 1 : 0, g.hunter.awareness));
     for (const n of this.lit) {
       let level: number;
       if (n.kind === 'furniture') level = vis.objectAlpha(n.id);
@@ -279,10 +319,12 @@ export class HideSeekScene implements GameScene {
       else if (n.probes) level = Math.max(vis.lightAt(n.floor, n.probes[0]), vis.lightAt(n.floor, n.probes[1]));
       else level = 0;
       n.node.visible = level > 0.02;
-      if (n.node.visible) {
-        const grey = Math.round(255 * (0.18 + 0.82 * Math.min(1, level)));
-        n.node.tint = (grey << 16) | (grey << 8) | grey;
-      }
+      if (!n.node.visible) continue;
+      // The farther from the player, the darker, but never black inside the lit room.
+      const d = n.floor === eye.floor ? Math.hypot(n.centre.x - eye.x, n.centre.y - eye.y) : 8;
+      const fall = 1 - 0.55 * smoothstep(4, 15, d);
+      const b = (0.12 + 0.88 * Math.min(1, level)) * AMBIENT * lamp * fall;
+      n.node.tint = (Math.round(255 * b * 0.9) << 16) | (Math.round(255 * b * 0.98) << 8) | Math.round(255 * b * 1.06);
     }
   }
 
@@ -299,4 +341,27 @@ export class HideSeekScene implements GameScene {
     const p = this.game.player;
     return { floor: p.floor, x: p.x.toFixed(1), y: p.y.toFixed(1), phase: this.game.round.phase };
   }
+}
+
+/** The house's overall darkness: lit rooms are this bright at most. */
+const AMBIENT = 0.78;
+
+const smoothstep = (lo: number, hi: number, v: number): number => {
+  const t = Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * The lamps' brightness, 0..1 of full: steady, with brief dips every few seconds that come oftener and
+ * deeper as the hunter closes in (`threat` 0..1). A pure function of the game clock, so it never differs
+ * between frames and tests can check it.
+ */
+export function lampLevel(timeS: number, threat: number): number {
+  const period = 6.3 - threat * 3.2;
+  const phase = (timeS % period) / period;
+  const dipLen = 0.05 + threat * 0.05;
+  if (phase > dipLen) return 1;
+  // Inside a dip: a stutter between dark and half-lit.
+  const k = phase / dipLen;
+  return 0.45 + 0.35 * Math.abs(Math.sin(k * Math.PI * 3)) * (1 - threat * 0.5) - 0.25 * threat;
 }

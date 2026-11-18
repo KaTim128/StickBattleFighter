@@ -26,6 +26,15 @@ export interface HideSeekTouch {
   setPeek(down: boolean): void;
 }
 
+/** A floating HIDE bubble over a hiding place, in screen pixels. */
+export interface HideBubble {
+  readonly id: string;
+  readonly x: number;
+  readonly y: number;
+  /** The act key would hide the player here now: the bubble is bigger and brighter. */
+  readonly inReach: boolean;
+}
+
 export interface HideSeekActions {
   restart(): void;
   menu(): void;
@@ -38,6 +47,9 @@ export class HideSeekHud {
   private readonly status = document.createElement('div');
   private readonly promptEl = document.createElement('div');
   private readonly flash = document.createElement('div');
+  private readonly vignette = document.createElement('div');
+  private readonly bubbleLayer = document.createElement('div');
+  private readonly bubbles = new Map<string, HTMLElement>();
   private readonly result = document.createElement('div');
   private readonly resultTitle = document.createElement('div');
   private readonly resultText = document.createElement('div');
@@ -62,6 +74,8 @@ export class HideSeekHud {
     const hint = document.createElement('div');
     hint.className = 'hs-hint';
     hint.textContent = `WASD move · ${keys.run} run · ${keys.crouch} crouch · ${keys.act} act · hold ${keys.peek} to peek`;
+    this.vignette.className = 'hs-vignette';
+    this.bubbleLayer.className = 'hs-bubbles';
     this.flash.className = 'hs-flash';
     this.result.className = 'hs-result';
     this.result.hidden = true;
@@ -80,6 +94,8 @@ export class HideSeekHud {
     buttons.append(button('Restart', actions.restart), button('Return to Menu', actions.menu));
     this.result.append(this.resultTitle, this.resultText, buttons);
     this.root.append(
+      this.vignette,
+      this.bubbleLayer,
       this.flash,
       this.banner,
       this.clock,
@@ -147,6 +163,33 @@ export class HideSeekHud {
     this.status.textContent = s.posture;
     this.promptEl.hidden = s.prompt === null;
     if (s.prompt !== null) this.promptEl.textContent = `${this.keys.act}: ${s.prompt}`;
+  }
+
+  /** Show a floating HIDE bubble at each given spot and remove the rest. Pure DOM; never changes the game. */
+  setBubbles(list: readonly HideBubble[]): void {
+    const seen = new Set<string>();
+    for (const b of list) {
+      seen.add(b.id);
+      let el = this.bubbles.get(b.id);
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'hs-bubble';
+        el.dataset.spot = b.id;
+        const inner = document.createElement('div');
+        inner.className = 'hs-bubble-body';
+        inner.textContent = 'HIDE';
+        el.appendChild(inner);
+        this.bubbleLayer.appendChild(el);
+        this.bubbles.set(b.id, el);
+      }
+      el.style.transform = `translate(${Math.round(b.x)}px, ${Math.round(b.y)}px)`;
+      el.classList.toggle('near', b.inReach);
+    }
+    for (const [id, el] of this.bubbles)
+      if (!seen.has(id)) {
+        el.remove();
+        this.bubbles.delete(id);
+      }
   }
 
   destroy(): void {

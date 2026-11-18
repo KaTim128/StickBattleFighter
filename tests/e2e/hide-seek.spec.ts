@@ -178,3 +178,51 @@ test('a full round: caught shows Game Over once, Restart begins again, surviving
   await expect.poll(() => new URL(page.url()).searchParams.has('mode')).toBe(false);
   expect(errors).toEqual([]);
 });
+
+test('a floating HIDE bubble marks hiding places near the player, brighter when in reach, gone once hidden', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
+  const errors = await open(page);
+  type Scene = {
+    __hideSeek: {
+      visibility: { settle(v: unknown): void };
+      game: { viewer(): unknown; player: { floor: number; x: number; y: number; hidingIn: string | null } };
+    };
+  };
+  const put = (floor: number, x: number, y: number) =>
+    page.evaluate(
+      ([f, px, py]) => {
+        const s = (window as unknown as Scene).__hideSeek;
+        const p = s.game.player;
+        p.floor = f as number;
+        p.x = px as number;
+        p.y = py as number;
+        s.visibility.settle(s.game.viewer()); // the lighting catches up at once: no waiting on a fade
+      },
+      [floor, x, y],
+    );
+  // Beside the living room sofa: its hiding place is in reach.
+  await put(0, 15 * K, 17.8 * K);
+  await expect(page.locator('.hs-bubble.near .hs-bubble-body')).toHaveText('HIDE');
+  const bubble = page.locator('.hs-bubble.near .hs-bubble-body');
+  const box = await bubble.boundingBox();
+  expect(box).not.toBeNull();
+  // It floats on the screen, over the game, not in a corner.
+  expect(box!.x).toBeGreaterThan(50);
+  expect(box!.y).toBeGreaterThan(20);
+  // Far from every hiding place (the front yard): no bubble at all.
+  await put(0, 20 * K, 33 * K);
+  await expect(page.locator('.hs-bubble')).toHaveCount(0);
+  // Hide: the bubbles go.
+  await put(0, 15 * K, 17.8 * K);
+  await expect(page.locator('.hs-bubble.near')).toHaveCount(1);
+  await page.keyboard.press('KeyG');
+  await expect
+    .poll(
+      async () => (await page.evaluate(() => (window as unknown as Scene).__hideSeek.game.player.hidingIn)) !== null,
+    )
+    .toBe(true);
+  await expect(page.locator('.hs-bubble')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

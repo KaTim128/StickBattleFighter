@@ -553,3 +553,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] 16. Two minute survival timer and Victory (`rules.test.ts`, `hide-seek.spec.ts`)
 - [x] 17. Restart and Return to Menu (`hide-seek.spec.ts`: countdown restarts, kill count resets, menu leaves the mode)
 - [ ] Owner check: the house is bigger and bungalow-like, only the current room is visible (TD-100); the hunter and his cone are drawn when seen (run `?mode=hide-seek`)
+- [x] Nightmare House art pass (TD-102): HIDE bubbles near hiding places (`horror-house.test.ts`, `hide-seek.spec.ts`); walls and furniture in front of the player fade (`occlusion-fader.test.ts`); lamp flicker deterministic and bounded
+- [ ] Owner check: furniture looks modelled (not blocks), the house feels eerie yet readable, the player is never hidden by a wall (run `?mode=hide-seek`)
+- [x] Furniture facing (TD-102): sofa shorter, at and facing the coffee table; armchairs, dining chairs, beds and storage oriented from the layout (`furniture-facing.test.ts`)
