@@ -1,6 +1,7 @@
 import { HOUSE } from '../../data/arenas/house';
 import { exitPoint, type HideSpot, hideSpots, nearestHideSpot } from './hiding';
 import type { HouseDef } from './house-types';
+import { HUNTER_STEP_LOUDNESS, Hunter } from './hunter';
 import { flyStep, IMPACT_LOUDNESS, initialProps, launch, PICKUP_REACH_M, type PropState } from './props';
 import { Round } from './rules';
 import type { Viewer } from './visibility';
@@ -79,12 +80,15 @@ export interface GameEvent {
   readonly loudness: number;
   readonly id?: string;
   readonly open?: boolean;
+  /** Made by the hunter (he never hears himself). */
+  readonly by?: 'hunter';
 }
 
 export class HideSeekGame {
   readonly world: HouseWorld;
   readonly round = new Round();
   readonly player: PlayerState;
+  readonly hunter: Hunter;
   private events: GameEvent[] = [];
   readonly spots: readonly HideSpot[];
   /** The throwable objects and where they are. */
@@ -97,6 +101,7 @@ export class HideSeekGame {
     this.spots = hideSpots(house);
     this.props = initialProps(house.throwables);
     this.player = this.freshPlayer();
+    this.hunter = new Hunter(house);
   }
 
   private freshPlayer(): PlayerState {
@@ -127,6 +132,7 @@ export class HideSeekGame {
     Object.assign(this.player, this.freshPlayer());
     this.props = initialProps(this.house.throwables);
     this.round.reset();
+    this.hunter.reset();
     this.events = [];
     this.timeS = 0;
   }
@@ -147,8 +153,32 @@ export class HideSeekGame {
       this.player.speedMps = 0;
       return;
     }
+    const mark = this.events.length;
     this.stepPlayer(dtS, input);
     this.stepProps(dtS);
+    if (this.round.phase === 'hunt') this.stepHunter(dtS, this.events.slice(mark));
+  }
+
+  /** The hunter thinks and moves; he reads the player's body and the noises just made, never the peeking view. */
+  private stepHunter(dtS: number, heard: GameEvent[]): void {
+    const p = this.player;
+    const caught = this.hunter.step(dtS, {
+      world: this.world,
+      spots: this.spots,
+      body: {
+        floor: p.floor,
+        x: p.x,
+        y: p.y,
+        crouching: p.crouching,
+        hiding: this.spots.find((s) => s.id === p.hidingIn) ?? null,
+      },
+      events: heard,
+      timeS: this.timeS,
+      openDoor: (id) => this.setDoor(id, true, 'hunter'),
+      step: (at, floor, gait) =>
+        this.events.push({ kind: 'footstep', at, floor, loudness: HUNTER_STEP_LOUDNESS[gait], by: 'hunter' }),
+    });
+    if (caught) this.round.catchPlayer();
   }
 
   private stepPlayer(dtS: number, input: PlayerInput): void {
@@ -385,7 +415,7 @@ export class HideSeekGame {
   }
 
   /** Open or close a door and make the noise of it. */
-  setDoor(id: string, open: boolean): void {
+  setDoor(id: string, open: boolean, by?: 'hunter'): void {
     if (!this.world.setDoor(id, open)) return;
     const d = this.world.door(id);
     if (!d) return;
@@ -396,6 +426,7 @@ export class HideSeekGame {
       at: { x: (d.rect.x0 + d.rect.x1) / 2, y: (d.rect.y0 + d.rect.y1) / 2 },
       floor: d.floor,
       loudness: d.exterior ? 0.7 : 0.5,
+      ...(by ? { by } : {}),
     });
   }
 }

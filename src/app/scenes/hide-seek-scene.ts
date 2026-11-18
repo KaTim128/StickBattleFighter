@@ -4,6 +4,7 @@ import type { GameScene } from '../../core/scene';
 import { HOUSE, HOUSE_CAST } from '../../data/arenas/house';
 import type { PlayerIntents } from '../../input/intents';
 import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
+import { visionPolygon } from '../../modes/hide-seek/perception';
 import { Visibility } from '../../modes/hide-seek/visibility';
 import type { Point } from '../../modes/hide-seek/world';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
@@ -27,6 +28,11 @@ export class HideSeekScene implements GameScene {
   readonly game: HideSeekGame;
   private view: HouseView | null = null;
   private player: ActorView | null = null;
+  private hunterView: ActorView | null = null;
+  /** The hunter's vision cone, drawn on the ground of his floor: the very area his sight test uses. */
+  private cone: Graphics | null = null;
+  private hunterFloor: 0 | 1 = 0;
+  private lastHunter = { x: 0, y: 0 };
   private cam = { x: 0, y: 0 };
   /** Room visibility and lighting (section C); drives which things are drawn and how bright. */
   readonly visibility: Visibility;
@@ -92,6 +98,13 @@ export class HideSeekScene implements GameScene {
     }
     this.player = new ActorView(dummy);
     this.view.floors[0].actors.add(this.player.view.root, 0);
+    this.hunterView = new ActorView(loadCharacter(HOUSE_CAST.hunter).def);
+    const h = this.game.hunter;
+    this.hunterFloor = h.floor;
+    this.lastHunter = { x: h.x, y: h.y };
+    this.view.floors[h.floor].actors.add(this.hunterView.view.root, 0);
+    this.cone = new Graphics();
+    this.view.floors[h.floor].ground.addChild(this.cone);
     const p = this.game.player;
     const at = iso(p.x, p.y, p.z);
     this.cam = { x: at.x, y: at.y - p.floor * FLOOR_HEIGHT_M };
@@ -151,6 +164,7 @@ export class HideSeekScene implements GameScene {
 
     // Room visibility and lighting: what the eyes can see from where they are (body plus any peek).
     this.renderProps(view);
+    this.renderHunter(view, frameDtS);
     const eyes = g.viewer();
     this.visibility.update(frameDtS, eyes);
     this.applyVisibility();
@@ -168,6 +182,45 @@ export class HideSeekScene implements GameScene {
     const scale = Math.min(width, height) / VIEW_SHORT_SIDE_M;
     view.world.scale.set(scale);
     view.world.position.set(width / 2 - this.cam.x * scale, height / 2 - this.cam.y * scale);
+  }
+
+  /** The hunter: drawn only where the player could see him, with the cone of what he sees. */
+  private renderHunter(view: HouseView, frameDtS: number): void {
+    const hv = this.hunterView;
+    const cone = this.cone;
+    if (!hv || !cone) return;
+    const g = this.game;
+    const h = g.hunter;
+    if (h.floor !== this.hunterFloor) {
+      view.floors[this.hunterFloor].actors.remove(hv.view.root);
+      view.floors[this.hunterFloor].ground.removeChild(cone);
+      view.floors[h.floor].actors.add(hv.view.root, 0);
+      view.floors[h.floor].ground.addChild(cone);
+      this.hunterFloor = h.floor;
+    }
+    const moved = Math.hypot(h.x - this.lastHunter.x, h.y - this.lastHunter.y);
+    this.lastHunter = { x: h.x, y: h.y };
+    const facing: 1 | -1 = Math.cos(h.facing) - Math.sin(h.facing) >= 0 ? 1 : -1;
+    hv.draw(
+      frameDtS,
+      { speedMps: moved / Math.max(frameDtS, 1e-3), running: h.gait === 'run', crouching: false },
+      facing,
+      0,
+    );
+    const at = iso(h.x, h.y, h.z);
+    hv.view.root.position.set(at.x, at.y);
+    const seen =
+      this.visibility.canSee(g.viewer(), h.floor, h) ||
+      (h.floor === g.player.floor && Math.hypot(h.x - g.player.x, h.y - g.player.y) < 1.5);
+    hv.view.root.visible = seen && view.floors[h.floor].container.visible;
+    cone.clear();
+    if (seen && g.round.phase !== 'prep') {
+      const poly = visionPolygon(g.world, h.eyes());
+      const alert = h.mode === 'chase' ? 0.3 : 0.14 + h.awareness * 0.14;
+      cone
+        .poly(poly.flatMap((q) => [iso(q.x, q.y).x, iso(q.x, q.y).y]))
+        .fill({ color: h.mode === 'chase' ? 0xff3030 : 0xffd070, alpha: alert });
+    }
   }
 
   /** The throwable objects: on the floor, carried over the player's head, or flying in an arc. */
@@ -223,6 +276,8 @@ export class HideSeekScene implements GameScene {
     this.view?.destroy();
     this.view = null;
     this.player = null;
+    this.hunterView = null;
+    this.cone = null;
     this.world = null;
   }
 
