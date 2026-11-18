@@ -49,6 +49,8 @@ export interface HouseView {
 
 const WALL_CHUNK_M = 0.5;
 const LEDGE_M = 0.35;
+/** The wall block that fills the space behind the top step is exactly this tall (house.ts), so it is drawn as stair wood. */
+const STAIR_BLOCK_M = 3;
 /** Furniture this tall can hide a person standing behind it, so it fades (gently: a sofa never needs to). */
 const FURNITURE_FADE_M = 1.3;
 const FURNITURE_FADE_ALPHA = 0.3;
@@ -371,13 +373,15 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
     const outbuilding =
       w.kind === 'wall' && inside === null && !insideRect(building, (w.x0 + w.x1) / 2, (w.y0 + w.y1) / 2);
     const colour =
-      w.kind === 'fence'
-        ? 0x6f695c
-        : w.kind === 'rail'
-          ? 0x4a3a2a
-          : exterior || outbuilding
-            ? BRICK_AGED
-            : PLASTER_AGED;
+      w.heightM === STAIR_BLOCK_M
+        ? 0x4e3b29 // the block under the stairs' landing is wood like the stairs
+        : w.kind === 'fence'
+          ? 0x6f695c
+          : w.kind === 'rail'
+            ? 0x4a3a2a
+            : exterior || outbuilding
+              ? BRICK_AGED
+              : PLASTER_AGED;
     for (const c of wallChunks(w, heightM, colour, exterior || outbuilding)) {
       const node = bake(c.g);
       layer.actors.add(node, frontY(c.rect));
