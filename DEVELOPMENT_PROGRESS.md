@@ -813,3 +813,7 @@ P2-1 done: house data, two-floor world, stairs, doors, routing, rules, player mo
 
 ### 18/11/2026 Phase 2 P2-4 (hunter) and the roomier house
 Done: perception and hunter brain with search memory (TD-099), hunter figure and vision cone in the scene; owner feedback applied: house scaled 1.45 times, palette toward the reference, only the current room visible (TD-100). Tests: 71 hide-seek unit tests (hunter 14, house-scale 5). Known limits: no windows or reference-level art yet; hunter balance untested by a human; CI full run not yet read for the latest pushes. Next: P2-5 (Game Over and Victory screens with Restart and Menu, kill animation, restart resetting visibility, horror audio and positional footsteps, e2e for a full round), then owner review of Phase 2.
+
+### 18/11/2026 Phase 2 P2-5 (flow, result screens, kill animation, audio)
+Done: Game Over and Victory screens with Restart and Return to Menu, the one-time kill animation (collapse and red flash), restart resetting everything, procedural horror audio with positional sound and heartbeat (TD-101), checklist items 14 to 17 ticked. Tests: 97 hide-seek and audio unit tests, 12 hide-seek browser tests (desktop and phone). Known limits: sounds not auditioned by a human; the supplied ambience file unwired pending licence; the hunter is untuned by play; no windows or reference-level art. Phase 2 is ready for the owner's consolidated review; Phase 3 waits for approval.
+

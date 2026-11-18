@@ -1,6 +1,10 @@
 import type { Application } from 'pixi.js';
+import { AmbiencePlayer } from '../audio/ambience';
+import { HideSeekAudio } from '../audio/hide-seek-audio';
+import { SoundBoard } from '../audio/sound-board';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
+import { AMBIENCES } from '../data/audio/ambiences';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
 import { attachTouchControls } from '../input/touch-controls';
@@ -51,19 +55,55 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
   if (!(await scenes.switchTo(() => scene))) throw new Error('The Hide and Seek scene failed to load');
   window.__hideSeek = scene;
 
-  const hud = new HideSeekHud(document.body, {
-    setRun: (down) => {
-      intents.sprint = down;
+  // Sound: original and synthesised; a browser needs one tap or key before it may play (`&mute` silences it).
+  const sound = new SoundBoard();
+  sound.muted = params.has('mute');
+  const ambience = new AmbiencePlayer();
+  ambience.setMuted(sound.muted);
+  ambience.play(AMBIENCES['house-night']!);
+  const audio = new HideSeekAudio();
+  audio.muted = sound.muted;
+  const startAudio = (): void => {
+    sound.unlock();
+    if (sound.context && sound.musicBus) {
+      ambience.attach(sound.context, sound.musicBus);
+      audio.attach(sound.context, sound.musicBus);
+    }
+  };
+  for (const ev of ['keydown', 'pointerdown'] as const) window.addEventListener(ev, startAudio, { once: true });
+
+  const leaveToMenu = (): void => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('mode');
+    window.location.assign(url.toString());
+  };
+
+  const hud = new HideSeekHud(
+    document.body,
+    {
+      setRun: (down) => {
+        intents.sprint = down;
+      },
+      crouch: () => intents.pressJump(),
+      act: () => {
+        intents.interactPress();
+        intents.interactRelease();
+      },
+      setPeek: (down) => {
+        intents.peek = down;
+      },
     },
-    crouch: () => intents.pressJump(),
-    act: () => {
-      intents.interactPress();
-      intents.interactRelease();
+    {
+      restart: () => {
+        scene.restart();
+        lastMode = 'patrol';
+        for (const k of ['sprint', 'peek'] as const) intents[k] = false;
+      },
+      menu: leaveToMenu,
     },
-    setPeek: (down) => {
-      intents.peek = down;
-    },
-  });
+  );
+  let lastMode = 'patrol';
+  let lastPhase = 'prep';
 
   const debug: HideSeekDebug = {
     phase: 'prep',
@@ -84,7 +124,22 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       last = now;
       scenes.render(alpha, dt);
       const g = scene.game;
+      // Sound: what the player hears of every event, from where the body is; the heartbeat follows the hunter.
+      const body = { floor: g.player.floor, x: g.player.x, y: g.player.y };
+      for (const e of g.takeEvents()) audio.event(e, g.world, body);
+      const h = g.hunter;
+      const near = h.floor === body.floor ? Math.max(0, 1 - Math.hypot(h.x - body.x, h.y - body.y) / 12) : 0;
+      audio.update(dt, g.round.phase === 'hunt' ? Math.max(h.mode === 'chase' ? 1 : 0, h.awareness, near * 0.5) : 0);
+      if (h.mode === 'chase' && lastMode !== 'chase') audio.alert();
+      lastMode = h.mode;
+      if (g.round.phase !== lastPhase) {
+        if (g.round.phase === 'killing') audio.kill();
+        else if (g.round.phase === 'victory') audio.victory();
+        lastPhase = g.round.phase;
+      }
       hud.update({
+        killProgress: g.round.killProgress,
+        survivedS: g.round.survivedS,
         phase: g.round.phase,
         prepLeftS: g.round.prepLeftS,
         survivalLeftS: g.round.survivalLeftS,

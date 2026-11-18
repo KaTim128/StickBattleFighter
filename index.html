@@ -891,6 +891,15 @@
       .hs-touch { display: none; position: absolute; right: 14px; bottom: 14px; gap: 10px; flex-wrap: wrap; width: 190px; justify-content: flex-end; pointer-events: auto; }
       body.touch-mode .hs-touch { display: flex; }
       .hs-btn { width: 84px; height: 62px; border-radius: 14px; border: 1px solid rgba(255, 220, 160, 0.7); background: rgba(10, 12, 17, 0.8); color: #ffe9c4; font: 800 12px system-ui, sans-serif; letter-spacing: 0.08em; touch-action: none; }
+      .hs-flash { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at center, rgba(120, 0, 0, 0.2), rgba(150, 0, 0, 0.95)); }
+      .hs-result { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(4, 3, 5, 0.82); pointer-events: auto; }
+      .hs-result[hidden] { display: none; }
+      .hs-result-title { font: 900 56px Impact, 'Arial Black', system-ui, sans-serif; letter-spacing: 0.08em; color: #ff4a3a; text-shadow: 0 3px 14px #000; }
+      .hs-result[data-outcome='victory'] .hs-result-title { color: #8be08b; }
+      .hs-result-text { font-size: 15px; opacity: 0.85; }
+      .hs-result-buttons { display: flex; gap: 14px; margin-top: 10px; }
+      .hs-result-btn { min-width: 170px; padding: 12px 22px; border-radius: 12px; border: 1px solid rgba(255, 220, 160, 0.7); background: rgba(24, 18, 20, 0.95); color: #ffe9c4; font: 800 15px system-ui, sans-serif; letter-spacing: 0.08em; cursor: pointer; }
+      .hs-result-btn:hover { background: rgba(70, 24, 24, 0.95); }
 </style>
   </head>
   <body>

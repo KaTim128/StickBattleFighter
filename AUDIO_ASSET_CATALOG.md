@@ -196,3 +196,18 @@ It is not wired into the game. In Phase 2 it becomes the Hide and Seek bed, loop
 
 Verification (automated, `tests/unit/audio/move-sounds.test.ts`, `tests/integration/scenes/shroud.test.ts`): every melee move of the four fighters and the skeleton has its own existing sound; no two sounds are the same recipe; every ability (all five normal and the ultimate, per fighter) has its own release and its own impact sound and an existing cast sound; Shroud's five combo hits play five different sounds, each once as it lands, and a whiff plays none. **Not verified by ear:** nobody has listened to these in a browser in this session; judging how they sound is an owner check.
 Not yet covered: block and parry still use the shared guard sounds, and the cast sounds of several abilities of one fighter are still shared family sounds (`rampage-grunt`, `knife-draw`, `soul-gather`); status applications (bleed, burn, blind) have no sound of their own.
+
+## Hide and Seek Nightmare (Phase 2, master plan section J; 18/11/2026)
+All original and synthesised at runtime (`src/audio/hide-seek-audio.ts`, `src/data/audio/ambiences.ts`); no audio files are shipped for this mode.
+
+| Sound | Where | Notes |
+|---|---|---|
+| `house-night` ambience | `AMBIENCES['house-night']` (`AmbiencePlayer`) | brown-noise air, a beating 36 Hz drone, long reverb, rare creaks, thumps, knocks and ticks; no voices or music |
+| Footsteps (player, hunter) | `HideSeekAudio.event` | positional: pan from the screen side, level and muffling from the same wall, door and floor rule the hunter hears by; the hunter's steps are deeper and heavier; a crouching step is nearly inaudible |
+| Doors (open creak, close thud), hiding places (creak + thud by kind) | `event` | loudness comes from the game event |
+| Thrown objects | `event` | whoosh on throw; glass shatter, can clang or soft toy thud on landing |
+| Heartbeat tension | `update` | silent when calm; rate and level follow the hunter's awareness, chase and nearness |
+| Chase sting, kill shriek, victory tone | `alert`, `kill`, `victory` | once each per round |
+
+Candidate file: `docs/references/master-plan/darkne-scary-horror-atmosphere-620036.mp3` is NOT wired in. The owner must confirm its licence and source before it is used (register it in `assets/ASSET_REGISTER.md` first).
+Tests: `tests/unit/audio/hide-seek-audio.test.ts` (positional rules, heartbeat) and the ambience well-formedness test that covers every soundscape. The sounds themselves have not been listened to by a person (owner check).

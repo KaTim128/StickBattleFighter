@@ -237,10 +237,51 @@ const TUNNEL: AmbienceDef = {
   reactions: undefined,
 };
 
+/**
+ * THE HOUSE AT NIGHT (Hide and Seek, Phase 2 section J): a dark, heavy, uneasy bed made only of
+ * air, a deep beating drone and rare building noises, with a long reverb. Original and synthesised;
+ * the supplied candidate file `docs/references/master-plan/darkne-scary-horror-atmosphere-620036.mp3`
+ * is NOT used until the owner confirms its licence (AUDIO_ASSET_CATALOG.md).
+ */
+const HOUSE_NIGHT: AmbienceDef = {
+  id: 'house-night',
+  title: 'The house at night',
+  level: 0.85,
+  reverb: { seconds: 3.4, wet: 0.45 },
+  beds: [
+    {
+      kind: 'noise',
+      colour: 'brown',
+      filter: 'lowpass',
+      freqHz: 220,
+      gain: 0.34,
+      swell: { everyS: [7, 14], depth: 0.4 },
+    },
+    {
+      kind: 'noise',
+      colour: 'pink',
+      filter: 'bandpass',
+      freqHz: 700,
+      q: 0.8,
+      gain: 0.05,
+      swell: { everyS: [5, 11], depth: 0.5 },
+    },
+    { kind: 'hum', freqsHz: [36, 36.5], gain: 0.07 },
+    { kind: 'hum', freqsHz: [54, 55.2], gain: 0.025 },
+  ],
+  events: [
+    { id: 'creak', everyS: [6, 15], gain: 0.9 },
+    { id: 'thump', everyS: [10, 24], gain: 0.8 },
+    { id: 'knock', everyS: [16, 38], gain: 0.35 },
+    { id: 'tick', everyS: [9, 20], gain: 0.2 },
+  ],
+};
+
 export const MENU_AMBIENCE_ID = 'tunnel';
 
 export const AMBIENCES: Readonly<Record<string, AmbienceDef>> = {
   [OFFICE_EMPTY.id]: OFFICE_EMPTY,
   [COLOSSEUM.id]: COLOSSEUM,
   [TUNNEL.id]: TUNNEL,
+  [HOUSE_NIGHT.id]: HOUSE_NIGHT,
 };

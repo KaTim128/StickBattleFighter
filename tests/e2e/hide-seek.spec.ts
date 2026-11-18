@@ -135,3 +135,46 @@ test('hiding and throwing: G gets into a hiding place and out, picks up a bottle
   expect((await player()).carrying).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test('a full round: caught shows Game Over once, Restart begins again, surviving shows Victory, Menu leaves', async ({
+  page,
+}) => {
+  const errors = await open(page);
+  type G = {
+    round: { phase: string; killsStarted: number; update(s: number): void; catchPlayer(): boolean };
+    hunter: { mode: string; x: number; y: number };
+    step(dt: number, input: unknown): void;
+  };
+  type Scene = { __hideSeek: { game: G } };
+  const idle = { move: { x: 0, y: 0 }, run: false, crouchPress: false, interactPress: false, peek: false };
+  const phase = () => page.evaluate(() => (window as unknown as Scene).__hideSeek.game.round.phase);
+  // Skip the preparation, then the hunter catches the player.
+  await page.evaluate((i) => {
+    const g = (window as unknown as Scene).__hideSeek.game;
+    g.round.update(20.1);
+    g.round.catchPlayer();
+    g.round.catchPlayer(); // a second catch must not restart the animation
+    for (let k = 0; k < 120; k++) g.step(1 / 30, i);
+  }, idle);
+  await expect.poll(phase).toBe('gameover');
+  expect(await page.evaluate(() => (window as unknown as Scene).__hideSeek.game.round.killsStarted)).toBe(1);
+  await expect(page.locator('.hs-result-title')).toHaveText('GAME OVER');
+  await expect(page.getByRole('button', { name: 'Restart' })).toBeVisible();
+  // Restart: the countdown begins again and the screen goes.
+  await page.getByRole('button', { name: 'Restart' }).click();
+  await expect.poll(phase).toBe('prep');
+  await expect(page.locator('.hs-result')).toBeHidden();
+  expect(await page.evaluate(() => (window as unknown as Scene).__hideSeek.game.round.killsStarted)).toBe(0);
+  // Survive the whole hunt: Victory.
+  await page.evaluate(() => {
+    const g = (window as unknown as Scene).__hideSeek.game;
+    g.round.update(20.1);
+    g.round.update(120.1);
+  });
+  await expect.poll(phase).toBe('victory');
+  await expect(page.locator('.hs-result-title')).toHaveText('YOU SURVIVED');
+  // Return to Menu leaves the mode.
+  await page.getByRole('button', { name: 'Return to Menu' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.has('mode')).toBe(false);
+  expect(errors).toEqual([]);
+});

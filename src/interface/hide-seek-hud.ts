@@ -13,6 +13,10 @@ export interface HideSeekHudState {
   readonly prompt: string | null;
   /** Posture words for the status line: "Crouching", "Running", "Hiding". */
   readonly posture: string;
+  /** 0..1 through the killing animation (a red flash builds), 1 on Game Over. */
+  readonly killProgress: number;
+  /** Seconds of the hunt survived, for the result text. */
+  readonly survivedS: number;
 }
 
 export interface HideSeekTouch {
@@ -22,16 +26,26 @@ export interface HideSeekTouch {
   setPeek(down: boolean): void;
 }
 
+export interface HideSeekActions {
+  restart(): void;
+  menu(): void;
+}
+
 export class HideSeekHud {
   private readonly root = document.createElement('div');
   private readonly banner = document.createElement('div');
   private readonly clock = document.createElement('div');
   private readonly status = document.createElement('div');
   private readonly promptEl = document.createElement('div');
+  private readonly flash = document.createElement('div');
+  private readonly result = document.createElement('div');
+  private readonly resultTitle = document.createElement('div');
+  private readonly resultText = document.createElement('div');
 
   constructor(
     parent: HTMLElement,
     touch: HideSeekTouch,
+    actions: HideSeekActions,
     private readonly keys: { act: string; crouch: string; run: string; peek: string } = {
       act: 'G',
       crouch: 'Space',
@@ -48,7 +62,33 @@ export class HideSeekHud {
     const hint = document.createElement('div');
     hint.className = 'hs-hint';
     hint.textContent = `WASD move · ${keys.run} run · ${keys.crouch} crouch · ${keys.act} act · hold ${keys.peek} to peek`;
-    this.root.append(this.banner, this.clock, this.status, this.promptEl, hint, this.touchButtons(touch));
+    this.flash.className = 'hs-flash';
+    this.result.className = 'hs-result';
+    this.result.hidden = true;
+    this.resultTitle.className = 'hs-result-title';
+    this.resultText.className = 'hs-result-text';
+    const buttons = document.createElement('div');
+    buttons.className = 'hs-result-buttons';
+    const button = (label: string, run: () => void) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hs-result-btn';
+      b.textContent = label;
+      b.addEventListener('click', run);
+      return b;
+    };
+    buttons.append(button('Restart', actions.restart), button('Return to Menu', actions.menu));
+    this.result.append(this.resultTitle, this.resultText, buttons);
+    this.root.append(
+      this.flash,
+      this.banner,
+      this.clock,
+      this.status,
+      this.promptEl,
+      hint,
+      this.touchButtons(touch),
+      this.result,
+    );
     parent.appendChild(this.root);
   }
 
@@ -92,6 +132,17 @@ export class HideSeekHud {
       this.banner.textContent = 'SURVIVE';
       this.clock.textContent = clockText(s.survivalLeftS);
       this.clock.dataset.mode = 'hunt';
+    }
+    this.flash.style.opacity = String(Math.min(0.85, s.killProgress * 0.85));
+    const over = s.phase === 'victory' || s.phase === 'gameover';
+    this.result.hidden = !over;
+    if (over) {
+      const won = s.phase === 'victory';
+      this.result.dataset.outcome = won ? 'victory' : 'gameover';
+      this.resultTitle.textContent = won ? 'YOU SURVIVED' : 'GAME OVER';
+      this.resultText.textContent = won
+        ? 'The hunter never found you. Two minutes survived.'
+        : `The hunter caught you after ${clockText(s.survivedS)}.`;
     }
     this.status.textContent = s.posture;
     this.promptEl.hidden = s.prompt === null;

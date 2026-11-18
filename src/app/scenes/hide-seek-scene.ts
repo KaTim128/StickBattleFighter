@@ -159,6 +159,9 @@ export class HideSeekScene implements GameScene {
     );
     // Hiding: the figure is half hidden inside the place.
     player.view.root.alpha = p.hidingIn ? 0.4 : 1;
+    // The catch: the player collapses once, over the killing animation (the rules start it exactly once).
+    const kill = g.round.killProgress;
+    player.view.root.rotation = kill > 0 ? Math.min(1, kill * 2.2) * 1.45 * p.facing : 0;
     const at = iso(p.x, p.y, p.z);
     player.view.root.position.set(at.x, at.y);
 
@@ -216,7 +219,7 @@ export class HideSeekScene implements GameScene {
     cone.clear();
     if (seen && g.round.phase !== 'prep') {
       const poly = visionPolygon(g.world, h.eyes());
-      const alert = h.mode === 'chase' ? 0.3 : 0.14 + h.awareness * 0.14;
+      const alert = h.mode === 'chase' ? 0.42 : 0.26 + h.awareness * 0.16;
       cone
         .poly(poly.flatMap((q) => [iso(q.x, q.y).x, iso(q.x, q.y).y]))
         .fill({ color: h.mode === 'chase' ? 0xff3030 : 0xffd070, alpha: alert });
@@ -224,6 +227,17 @@ export class HideSeekScene implements GameScene {
   }
 
   /** The throwable objects: on the floor, carried over the player's head, or flying in an arc. */
+  /** Everything back to the start of a round: the game, the lighting memory and the hunter's picture. */
+  restart(): void {
+    this.game.restart();
+    this.visibility.reset();
+    this.visibility.settle(this.game.viewer());
+    if (this.player) this.player.view.root.rotation = 0;
+    const p = this.game.player;
+    const at = iso(p.x, p.y, p.z);
+    this.cam = { x: at.x, y: at.y - p.floor * FLOOR_HEIGHT_M };
+  }
+
   private renderProps(view: HouseView): void {
     const g = this.game;
     const p = g.player;
