@@ -224,3 +224,8 @@ Tests: `tests/unit/audio/hide-seek-audio.test.ts` (positional rules, heartbeat) 
 
 **Matching plan (unchanged):** section 4's search terms per fighter and move are the shortlist. Search only for the gaps listed in section 3 (the reused and generic sounds), not for every move. Existing synthesised sounds stay in place until a recorded clip is verified by ear in the browser.
 
+### Status update (19/11/2026, owner-supplied files)
+The owner supplied eight clips and the Hide and Seek background track; the Pixabay access problem above does not apply to them. They were processed with `scripts/audio/process-sfx.sh` and are listed in `assets/ASSET_REGISTER.md`.
+- **Wired:** Hide and Seek background music (`HIDE_SEEK_MUSIC`, replacing the synthesised house bed); door opening (`HOUSE_SFX.door`, the player's door and the hunter's); the hunter lifting a lid (`HOUSE_SFX.chest`); the catch (`HOUSE_SFX.blade`, under the synthesised shriek). Each recorded effect uses the same positional chain (gain, pan, muffle) as the synthesised one and falls back to it if the clip is not decoded.
+- **Not wired (owner decision):** footsteps (the file is one continuous walk with no gaps, so single steps cannot be cut out automatically); the three punch sounds for fighting (they need a mapping from each combo hit or heavy to a sound, and that changes the combat audio); the barrage clip (a future stickman ability, not Hide and Seek).
+

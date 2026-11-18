@@ -970,6 +970,7 @@ export class FightArenaScene implements ArenaScene {
       if (f.body && !f.climb) this.physics.depenetrate(f.body, f.def.body.footRadiusM, f.overFurniture);
       const p = f.body?.translation();
       if (p) Object.assign(f.curr, { x: p.x, y: p.y });
+      this.keepInsideMap(f);
       this.climbing?.afterPhysics(f);
     }
     for (const fl of flying) if (fl) this.wallImpact(fl.f, fl.v);
@@ -1676,6 +1677,19 @@ export class FightArenaScene implements ArenaScene {
    * is free nearby (the cast fizzles).
    */
   private teleportTo(f: FighterEntity, to: { x: number; y: number }): { x: number; y: number } | null {
+    const p = this.freeSpotNear(f, to);
+    if (!p) return null;
+    f.combo.interrupt();
+    f.placeAt(p);
+    f.appearS = TELEPORT_APPEAR_S;
+    return p;
+  }
+
+  /**
+   * The free spot nearest `to` that `f` can stand on: inside the map, not in a wall or furniture, not on another
+   * fighter. The one rule for where a body may be put (teleports, and putting back one that left the map).
+   */
+  private freeSpotNear(f: FighterEntity, to: { x: number; y: number }): { x: number; y: number } | null {
     const physics = this.physics;
     if (!physics) return null;
     const r = f.def.body.footRadiusM;
@@ -1697,13 +1711,26 @@ export class FightArenaScene implements ArenaScene {
           (o) => o !== f && !o.combatant.isKo && Math.hypot(o.x - p.x, o.y - p.y) < o.def.body.footRadiusM + r,
         );
         if (crowded) continue;
-        f.combo.interrupt();
-        f.placeAt(p);
-        f.appearS = TELEPORT_APPEAR_S;
         return p;
       }
     }
     return null;
+  }
+
+  /**
+   * A body is never outside the map (owner, 19/11/2026: a fighter ended up beyond the north wall). Walls stop
+   * ordinary movement, but a hard knock or a fast dash can pass through a thin one; a fighter found outside is put
+   * back on the nearest free spot inside (its spawn if there is none), at rest.
+   */
+  private keepInsideMap(f: FighterEntity): void {
+    const x = f.curr.x;
+    const y = f.curr.y;
+    // The centre past the map's edge. A body stands against a wall with its centre a foot's width inside, never past it.
+    const outside =
+      !Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > this.arena.widthM || y > this.arena.heightM;
+    if (!outside) return;
+    const to = Number.isFinite(x) && Number.isFinite(y) ? { x, y } : f.spawn;
+    f.placeAt(this.freeSpotNear(f, to) ?? f.spawn);
   }
 
   /** I / F / ULT: start aiming the leap, or launch it at the aimed spot (owner, 11/11/2026). */

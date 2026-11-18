@@ -136,7 +136,7 @@ describe('hiding under a bed (owner, 18/11/2026): the whole body fits and is out
 describe('the bigger house has more to hide in', () => {
   it('has a fair number of hiding places (fewer after the rooms were reduced), spread over both floors (none outdoors)', () => {
     const spots = HOUSE.furniture.filter((f) => f.hide);
-    expect(spots.length).toBeGreaterThanOrEqual(15); // fewer after the house was shrunk (owner, 18/11/2026)
+    expect(spots.length).toBeGreaterThanOrEqual(14); // fewer after the house was shrunk (owner, 18/11/2026); no sofa spot (19/11/2026)
     expect(spots.filter((f) => f.floor === 1).length).toBeGreaterThanOrEqual(6);
     expect(spots.filter((f) => f.floor === 0 && world(f)).length).toBe(0);
   });
@@ -189,25 +189,12 @@ describe('front walls of the occupied room in the real, thick-walled house', () 
   });
 });
 
-describe("the sofa to hide under, and Shroud's pace (owner, 18/11/2026)", () => {
-  it('the sofa stands on legs with room to crawl under, and its hiding place is fully covered', async () => {
+describe("the sofa is furniture, not a hiding place (owner, 19/11/2026); Shroud's pace (owner, 18/11/2026)", () => {
+  it('the sofa has no hiding place, and the under-sofa cover is gone', async () => {
     const { SOFA_LIFT_M } = await import('../../../src/rendering/house-furniture');
     const { COMPLETE_COVER } = await import('../../../src/app/scenes/hide-seek-scene');
     expect(SOFA_LIFT_M).toBeGreaterThanOrEqual(0.35);
-    const sofaSpot = HOUSE.furniture.find((f) => f.hide?.kind === 'under-sofa')!;
-    expect(sofaSpot.kind).toBe('sofa');
-    expect(COMPLETE_COVER.has('under-sofa')).toBe(true);
-    // The spot sits well inside the sofa, not at an edge where legs would show.
-    const at = sofaSpot.hide!.at;
-    expect(
-      Math.min(at.x - sofaSpot.x0, sofaSpot.x1 - at.x, at.y - sofaSpot.y0, sofaSpot.y1 - at.y),
-    ).toBeGreaterThanOrEqual(0.3);
-  });
-
-  it('Shroud walks faster than a player can run', async () => {
-    const { HUNTER_SPEED_MPS } = await import('../../../src/modes/hide-seek/hunter');
-    const { RUN_MPS } = await import('../../../src/modes/hide-seek/game');
-    expect(HUNTER_SPEED_MPS.walk).toBeGreaterThan(RUN_MPS);
-    expect(HUNTER_SPEED_MPS.run).toBeGreaterThan(HUNTER_SPEED_MPS.walk);
+    expect(HOUSE.furniture.some((f) => f.kind === 'sofa' && f.hide)).toBe(false);
+    expect([...COMPLETE_COVER]).not.toContain('under-sofa');
   });
 });

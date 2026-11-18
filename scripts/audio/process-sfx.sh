@@ -37,8 +37,9 @@ MANIFEST="$ROOT/assets/audio/sfx/SOURCES.tsv"
 [[ -f $MANIFEST ]] || printf 'file\tfighter\tability\tsource_url\tcreator\tlicence\tdownloaded\tedits\n' > "$MANIFEST"
 
 # Trim silence at both ends (-50 dB threshold), optional length cap, loudness to -16 LUFS / -1.5 dBTP.
-FILTERS="silenceremove=start_periods=1:start_threshold=-50dB:stop_periods=1:stop_threshold=-50dB:stop_duration=0.05"
-FILTERS="$FILTERS,areverse,silenceremove=start_periods=1:start_threshold=-50dB:stop_periods=1:stop_threshold=-50dB:stop_duration=0.05,areverse"
+# Leading silence, then (reversed) trailing silence. Only the ends are cut: gaps between sounds (footsteps) stay.
+FILTERS="silenceremove=start_periods=1:start_threshold=-50dB"
+FILTERS="$FILTERS,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse"
 [[ -n $MAX_S ]] && FILTERS="$FILTERS,atrim=0:$MAX_S"
 FILTERS="$FILTERS,volume=${GAIN}dB,loudnorm=I=-16:TP=-1.5:LRA=11"
 

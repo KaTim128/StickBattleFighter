@@ -61,7 +61,6 @@ export type HideKind =
   | 'chest'
   | 'box'
   | 'behind-sofa'
-  | 'under-sofa'
   | 'curtain'
   | 'shower-curtain'
   | 'bush'

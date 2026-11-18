@@ -1,10 +1,10 @@
 import type { Application } from 'pixi.js';
-import { AmbiencePlayer } from '../audio/ambience';
 import { HideSeekAudio } from '../audio/hide-seek-audio';
+import { AudioClip, MusicLoop } from '../audio/music';
 import { SoundBoard } from '../audio/sound-board';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
-import { AMBIENCES } from '../data/audio/ambiences';
+import { HIDE_SEEK_MUSIC } from '../data/audio/music';
 import { PlayerIntents } from '../input/intents';
 import { attachKeyboard, attachMouse, DesktopInput } from '../input/keyboard';
 import { browserStorage, SettingsState } from '../input/settings-store';
@@ -64,22 +64,22 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
   // Sound: original and synthesised; a browser needs one tap or key before it may play (`&mute` silences it).
   const sound = new SoundBoard();
   sound.muted = params.has('mute');
-  const ambience = new AmbiencePlayer();
-  ambience.setMuted(sound.muted);
-  ambience.play(AMBIENCES['house-night']!);
+  // The background is the supplied horror track (HIDE_SEEK_MUSIC), not the synthesised house bed.
+  const houseMusic = new MusicLoop(new AudioClip(HIDE_SEEK_MUSIC));
+  houseMusic.setMuted(sound.muted);
   const audio = new HideSeekAudio();
   audio.muted = sound.muted;
   const startAudio = (): void => {
     sound.unlock();
     if (sound.context && sound.musicBus) {
-      ambience.attach(sound.context, sound.musicBus);
+      houseMusic.start(sound.context, sound.musicBus);
       audio.attach(sound.context, sound.musicBus);
     }
   };
   for (const ev of ['keydown', 'pointerdown'] as const) window.addEventListener(ev, startAudio, { once: true });
 
   const applyAudio = (): void => {
-    ambience.setVolume(settings.current.musicVolume);
+    houseMusic.setVolume(settings.current.musicVolume);
     sound.setVolume(settings.current.sfxVolume);
   };
   applyAudio();
@@ -169,7 +169,7 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       hud.setBubbles(scene.hideBubbles());
       hud.update({
         killProgress: g.round.killProgress,
-        hiddenView: g.player.hidingIn ? (g.player.peeking ? 'peek' : 'blind') : null,
+        hiddenView: g.viewer().hiddenView ?? null,
         survivedS: g.round.survivedS,
         phase: g.round.phase,
         prepLeftS: g.round.prepLeftS,

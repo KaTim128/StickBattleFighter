@@ -12,6 +12,11 @@ import { BODY_RADIUS_M, HouseWorld, type Placed, type Point } from './world';
  * hunter, advanced by fixed steps from the player's input. Pure and deterministic; the scene only
  * reads it to draw, and tests drive it directly.
  */
+/** Hiding places with nothing to shut (under the table) leave the player's view as it is: no blind, no peek (owner, 19/11/2026). */
+export function blindsWhenHidden(spot: { spec: { kind: string } } | undefined): boolean {
+  return spot !== undefined && spot.spec.kind !== 'under-table';
+}
+
 export const WALK_MPS = 2.4;
 export const RUN_MPS = 4.4;
 export const CROUCH_MPS = 1.2;
@@ -259,7 +264,7 @@ export class HideSeekGame {
   /** Lean the view toward where the player pushes while peek is held, never through a wall. */
   private stepPeek(dtS: number, input: PlayerInput): void {
     const p = this.player;
-    p.peeking = input.peek;
+    p.peeking = input.peek && (!p.hidingIn || blindsWhenHidden(this.spots.find((s) => s.id === p.hidingIn)));
     const m = Math.hypot(input.move.x, input.move.y);
     let gx = 0;
     let gy = 0;
@@ -298,7 +303,10 @@ export class HideSeekGame {
       y: p.y + p.peekY,
       onStairs: p.onStairs,
       stairT: t,
-      ...(spot ? { viewM: spot.spec.viewM, hiddenView: p.peeking ? ('peek' as const) : ('blind' as const) } : {}),
+      // A hiding place with a door (or a lid, a curtain) blinds the player; one with no door, under the table, does not.
+      ...(spot && blindsWhenHidden(spot)
+        ? { viewM: spot.spec.viewM, hiddenView: p.peeking ? ('peek' as const) : ('blind' as const) }
+        : {}),
     };
   }
 
@@ -470,7 +478,6 @@ const HIDE_NAMES: Readonly<Record<HideSpot['spec']['kind'], string>> = {
   chest: 'in the chest',
   box: 'in the box',
   'behind-sofa': 'behind the sofa',
-  'under-sofa': 'under the sofa',
   curtain: 'behind the curtain',
   'shower-curtain': 'behind the shower curtain',
   bush: 'in the bush',

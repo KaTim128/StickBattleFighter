@@ -131,7 +131,7 @@ test('hiding and throwing: G gets into a hiding place and out, picks up a bottle
       [floor, x, y],
     );
   // The sofa's hiding place (living room): stand beside it and hide.
-  const sofa = await besideSpot(page, 'under-sofa');
+  const sofa = await besideSpot(page, 'under-table');
   await put(sofa.floor, sofa.x, sofa.y);
   await expect.poll(() => page.evaluate(() => (window as unknown as Scene).__hideSeek.game.prompt())).toContain('Hide');
   await expect(page.locator('.hs-prompt')).toContainText('Hide');
@@ -232,8 +232,8 @@ test('a floating HIDE bubble marks hiding places near the player, brighter when 
       },
       [floor, x, y],
     );
-  // Beside the living room sofa: its hiding place is in reach.
-  const beside = await besideSpot(page, 'under-sofa');
+  // Beside the dining table: its hiding place is in reach.
+  const beside = await besideSpot(page, 'under-table');
   await put(beside.floor, beside.x, beside.y);
   await expect(page.locator('.hs-bubble.near .hs-bubble-body')).toHaveText('HIDE');
   const bubble = page.locator('.hs-bubble.near .hs-bubble-body');

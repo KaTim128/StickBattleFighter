@@ -1,5 +1,7 @@
 import battleMp3 from '../../../assets/audio/music-battle-japanese-boss.mp3?url';
 import battleOgg from '../../../assets/audio/music-battle-japanese-boss.ogg?url';
+import houseMp3 from '../../../assets/audio/music-hide-seek-house.mp3?url';
+import houseOgg from '../../../assets/audio/music-hide-seek-house.ogg?url';
 import menuMp3 from '../../../assets/audio/music-menu-pulse-epic.mp3?url';
 import menuOgg from '../../../assets/audio/music-menu-pulse-epic.ogg?url';
 import countdownMp3 from '../../../assets/audio/sfx-countdown-fight.mp3?url';
@@ -52,3 +54,16 @@ export const MENU_MUSIC: AudioTrackDef = {
 
 /** The click on every interface button (owner, 13/11/2026; never on combat buttons). */
 export const UI_CLICK: AudioTrackDef = { ogg: clickOgg, mp3: clickMp3, level: 0.6 };
+
+/**
+ * The Hide and Seek background track (owner, 19/11/2026: the supplied "darkne scary horror atmosphere" track, Pixabay
+ * item 620036, is the background music). Its last 2 s are crossfaded into its start, so it loops with no step at the
+ * seam: the loop is the whole file, which is the track rotated so that its end meets its beginning. See
+ * assets/ASSET_REGISTER.md.
+ */
+export const HIDE_SEEK_MUSIC: AudioTrackDef = {
+  ogg: houseOgg,
+  mp3: houseMp3,
+  loop: { startS: 0, endS: 72.866939 },
+  level: 0.5,
+};

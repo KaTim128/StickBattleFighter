@@ -484,7 +484,9 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
       const treads = drawStairs(s, zBase, floor === s.topFloor);
       // Upstairs only the top steps going down are drawn: the rest are far below the floor, in the dark pit (drawn deeper
       // they floated over the floor in front of the stairwell).
-      const shown = floor === s.topFloor ? treads.slice(Math.floor(treads.length * 0.55)) : treads;
+      // Every tread shows: they are thin now, so the upper flight reads as the steps going down into the opening, and
+      // the figure on them is never over empty air (owner, 19/11/2026: "stuck between the stairs and the void").
+      const shown = treads;
       for (const t of treads.filter((x) => shown.includes(x))) {
         const node = bake(t.g);
         floors[floor]!.actors.add(node, t.sortY);

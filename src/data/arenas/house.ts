@@ -274,7 +274,7 @@ const WHITE = 0xd9d6cf;
 export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   // ---------------------------------------------------------------- Living room
   item('rug', 0, 16.6, 15.5, 21.6, 19.5, 0.02, 0x7a3a3a, { solid: false }),
-  item('sofa', 0, 17.3, 18.0, 20.0, 19.2, 0.9, FABRIC, { hide: hide('under-sofa', 0.9, 0.4, 1.3, 18.65, 18.6, 'n') }),
+  item('sofa', 0, 17.3, 18.0, 20.0, 19.2, 0.9, FABRIC),
   item('armchair', 0, 15.35, 16.1, 16.5, 17.5, 0.9, FABRIC),
   item('armchair', 0, 20.9, 16.1, 22.05, 17.5, 0.9, FABRIC),
   item('coffee-table', 0, 17.3, 16.3, 20.1, 17.5, 0.45, WOOD),

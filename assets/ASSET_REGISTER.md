@@ -17,4 +17,17 @@ Every runtime asset must be listed here before it is committed (`.claude/rules/a
 | `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`, `public/apple-touch-icon.png`, `public/manifest.webmanifest` | Home-screen app icon (Inferno's face and the logo, composed from the title art, with a maskable padded version) and web app manifest (full screen, landscape) | Interface | Derived from the owner-supplied title art (13/11/2026) | As the title art: **owner to confirm** | final | REQ-UI-31 | 13/11/2026 |
 
 ## Sound-effect sources (19/11/2026)
-No third-party sound effects are in the project yet. Each clip processed by `scripts/audio/process-sfx.sh` is recorded in `assets/audio/sfx/SOURCES.tsv` with its source URL, creator and licence, and needs its own entry here before it is committed.
+Each clip processed by `scripts/audio/process-sfx.sh` is recorded in `assets/audio/sfx/SOURCES.tsv`. The owner supplied these files; the source IDs come from the file names, so **the exact URLs and licences must be confirmed by the owner** before release (Pixabay: Pixabay Content License; Freesound: each sound's own Creative Commons licence, and any attribution it requires).
+
+| File | Use | Source (from file name) | Creator | Licence | Status |
+|---|---|---|---|---|---|
+| `assets/audio/sfx/hide-seek/door/sfx-door-open.{ogg,mp3}` | Hide and Seek: a door opening (5 s cut) | Freesound 74662 | freesound_community | CC, to confirm | In use |
+| `assets/audio/sfx/shroud/chest/sfx-chest-open.{ogg,mp3}` | Hide and Seek: the hunter lifts a lid (4 s cut) | Freesound 87569 | freesound_community | CC, to confirm | In use |
+| `assets/audio/sfx/shroud/blade-slash/sfx-sword-slash.{ogg,mp3}` | Hide and Seek: the catch | Pixabay 476148 | pixabay user, to confirm | Pixabay, to confirm | In use |
+| `assets/audio/sfx/hide-seek/footsteps/sfx-footsteps-concrete.{ogg,mp3}` | Footsteps: one continuous walk, not yet split into steps | Freesound 6265 | freesound_community | CC, to confirm | Processed, not wired |
+| `assets/audio/sfx/shared/punch-light/sfx-punch-fist.{ogg,mp3}` | Fighting: light punch | Freesound 7171 | freesound_community | CC, to confirm | Processed, not wired |
+| `assets/audio/sfx/shared/punch-light/sfx-punch-plain.{ogg,mp3}` | Fighting: light punch | Pixabay 140236 | universfield | Pixabay, to confirm | Processed, not wired |
+| `assets/audio/sfx/shared/punch-heavy/sfx-punch-power.{ogg,mp3}` | Fighting: heavy punch | Pixabay 192118 | universfield | Pixabay, to confirm | Processed, not wired |
+| `assets/audio/sfx/shared/punch-barrage/sfx-punch-barrage.{ogg,mp3}` | Future stickman ability, not Hide and Seek | Pixabay 542394 | chromascension | Pixabay, to confirm | Processed, not wired |
+
+The Hide and Seek background track is `assets/audio/music-hide-seek-house.{ogg,mp3}`: the owner's "darkne scary horror atmosphere" track (Pixabay 620036, the same file as `docs/references/master-plan/`), crossfaded at its loop point (last 2 s into its start), 72.87 s. Licence: Pixabay, to confirm.

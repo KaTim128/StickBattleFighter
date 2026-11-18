@@ -1,6 +1,8 @@
+import { HOUSE_SFX } from '../data/audio/house-sfx';
 import type { GameEvent } from '../modes/hide-seek/game';
 import { heardStrength } from '../modes/hide-seek/perception';
 import type { HouseWorld, Point } from '../modes/hide-seek/world';
+import { AudioClip } from './music';
 
 /**
  * Horror sound for Hide and Seek (Phase 2, master plan section J): positional footsteps, doors,
@@ -53,6 +55,12 @@ export class HideSeekAudio {
   private beatIn = 0;
   private tension = 0;
   private seed = 99;
+  /** Recorded effects, decoded on attach; a missing one falls back to the synthesised sound. */
+  private readonly clips = {
+    door: new AudioClip(HOUSE_SFX.door),
+    chest: new AudioClip(HOUSE_SFX.chest),
+    blade: new AudioClip(HOUSE_SFX.blade),
+  };
 
   attach(ctx: AudioContext, destination: AudioNode): void {
     if (this.ctx) return;
@@ -62,6 +70,31 @@ export class HideSeekAudio {
     const d = buffer.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = this.rand() * 2 - 1;
     this.noise = buffer;
+    for (const c of Object.values(this.clips)) void c.load(ctx);
+  }
+
+  /**
+   * Play a recorded effect through the same positional chain as the synthesised ones: loudness from `sp.gain`,
+   * the side from `sp.pan`, and a lowpass that closes as the sound is muffled by walls, doors and floors.
+   * Returns false (and the caller falls back to its synthesised sound) when the clip is not decoded yet.
+   */
+  private clip(key: keyof typeof this.clips, sp: Spatial, level: number): boolean {
+    const ctx = this.ctx;
+    const out = this.out;
+    const buffer = this.clips[key].ready;
+    if (!ctx || !out || !buffer) return false;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.value = Math.min(1, sp.gain) * level;
+    const pan = ctx.createStereoPanner();
+    pan.pan.value = sp.pan;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 9000 * (1 - 0.8 * sp.muffle);
+    src.connect(gain).connect(pan).connect(lp).connect(out);
+    src.start(ctx.currentTime + 0.005);
+    return true;
   }
 
   private rand(): number {
@@ -80,8 +113,9 @@ export class HideSeekAudio {
         this.step(sp, hunter ? 95 : 150, hunter ? 0.8 : 0.55, hunter ? 0.1 : 0.07);
         break;
       case 'door':
-        if (e.open) this.creak(sp, 0.55);
-        else this.thud(sp, 110, 0.16);
+        if (e.open) {
+          if (!this.clip('door', sp, 1)) this.creak(sp, 0.55);
+        } else this.thud(sp, 110, 0.16);
         break;
       case 'hide-enter':
       case 'hide-exit':
@@ -126,6 +160,14 @@ export class HideSeekAudio {
 
   /** The catch: a harsh descending shriek and a heavy hit. */
   kill(): void {
+    if (this.ctx && this.out && !this.muted && this.clips.blade.ready) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.clips.blade.ready;
+      const g = this.ctx.createGain();
+      g.gain.value = HOUSE_SFX.blade.level;
+      src.connect(g).connect(this.out);
+      src.start(this.ctx.currentTime + 0.005);
+    }
     this.sweep(900, 120, 0.9, 0.3, 'sawtooth');
     this.thud({ pan: 0, gain: 1, muffle: 0 }, 60, 0.5, 0.35);
   }
@@ -220,12 +262,16 @@ export class HideSeekAudio {
   private inspect(sp: Spatial, what: string): void {
     switch (what) {
       case 'open-door':
-        this.creak(sp, 0.9); // a long, slow door
-        this.thud(sp, 130, 0.12, 0.45);
+        if (!this.clip('door', sp, 1)) {
+          this.creak(sp, 0.9); // a long, slow door
+          this.thud(sp, 130, 0.12, 0.45);
+        }
         break;
       case 'lift-lid':
-        this.thud(sp, 150, 0.22);
-        this.creak(sp, 0.5);
+        if (!this.clip('chest', sp, 1)) {
+          this.thud(sp, 150, 0.22);
+          this.creak(sp, 0.5);
+        }
         break;
       case 'pull-curtain':
         this.burst(sp, { durS: 0.35, freq: 3200, q: 0.9, type: 'highpass', gain: 0.22 });

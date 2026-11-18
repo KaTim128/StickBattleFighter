@@ -62,11 +62,18 @@ describe('the roomier house', () => {
       step: () => {},
       noise: (_at: unknown, _floor: unknown, _loudness: number, detail: string) => kinds.add(detail),
     };
-    for (let t = 0; t < 119; t += 1 / 30) g.hunter.step(1 / 30, { ...ctx, timeS: t });
+    // Peak memory during the hunt: once he has looked everywhere he forgets and goes back to patrolling, which clears it.
+    let rooms = 0;
+    let places = 0;
+    for (let t = 0; t < 119; t += 1 / 30) {
+      g.hunter.step(1 / 30, { ...ctx, timeS: t });
+      rooms = Math.max(rooms, g.hunter.searched.size);
+      places = Math.max(places, g.hunter.inspected.size);
+    }
     // Checking a place properly (opening it, kneeling to look) takes time, so he covers fewer rooms than a quick sweep
     // would, but looks into many more places, in a variety of ways.
-    expect(g.hunter.searched.size).toBeGreaterThanOrEqual(4);
-    expect(g.hunter.inspected.size).toBeGreaterThanOrEqual(6);
+    expect(rooms).toBeGreaterThanOrEqual(4);
+    expect(places).toBeGreaterThanOrEqual(6);
     expect(kinds.size).toBeGreaterThanOrEqual(3);
   });
 });

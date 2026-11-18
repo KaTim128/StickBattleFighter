@@ -568,3 +568,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] No floating furniture: a long piece only moves under or over a nearby person as needed (`depth-sort.test.ts`); no floating wall at the head of the stairs, only the hall's back wall behind the flight is drawn low (`stair-barrier.test.ts`)
 - [x] Back wall full height and behind the whole flight (`stair-barrier.test.ts`)
 - [x] Settings Leave in Hide and Seek returns to the main menu title (`hide-seek.spec.ts`)
+- [x] Hide and Seek background music loops, and recorded door, chest and catch sounds are wired with the positional chain (`house-sfx.test.ts`; owner ear-check pending)
+- [ ] Owner check: the background track, the door, chest and catch sounds, and the figure on the upstairs stairs (play `?mode=hide-seek`)
+- [x] No sofa hiding place; under the table keeps the normal view and peeking does nothing (`stealth.test.ts`, `horror-house.test.ts`)
+- [x] A fighter put outside the map is put back inside, and one inside is left alone (`stay-inside-map.test.ts`)
+- [ ] Owner check: the fighter-outside-the-map bug does not come back (say which ability and where if it does)
+

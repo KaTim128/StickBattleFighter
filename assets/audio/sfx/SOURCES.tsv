@@ -1,0 +1,9 @@
+file	fighter	ability	source_url	creator	licence	downloaded	edits
+sfx-sword-slash	shroud	blade-slash	pixabay id 476148, sword-slash (from filename; URL to confirm)	pixabay user (from filename; to confirm)	Pixabay Content License (to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=3,gain=0dB
+sfx-punch-barrage	shared	punch-barrage	pixabay id 542394 (from filename; URL to confirm)	chromascension (from filename)	Pixabay Content License (to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=none,gain=0dB
+sfx-door-open	hide-seek	door	freesound id 74662 (from filename; URL to confirm)	freesound_community (from filename)	Freesound CC licence (check the sound page; to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=5,gain=0dB
+sfx-chest-open	shroud	chest	freesound id 87569 (from filename; URL to confirm)	freesound_community (from filename)	Freesound CC licence (check the sound page; to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=4,gain=0dB
+sfx-footsteps-concrete	hide-seek	footsteps	freesound id 6265 (from filename; URL to confirm)	freesound_community (from filename)	Freesound CC licence (check the sound page; to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=none,gain=0dB
+sfx-punch-fist	shared	punch-light	freesound id 7171 (from filename; URL to confirm)	freesound_community (from filename)	Freesound CC licence (check the sound page; to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=none,gain=0dB
+sfx-punch-power	shared	punch-heavy	pixabay id 192118 (from filename; URL to confirm)	universfield (from filename)	Pixabay Content License (to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=none,gain=0dB
+sfx-punch-plain	shared	punch-light	pixabay id 140236 (from filename; URL to confirm)	universfield (from filename)	Pixabay Content License (to confirm)	18/11/2026	trim-silence,loudnorm-16LUFS,max=none,gain=0dB

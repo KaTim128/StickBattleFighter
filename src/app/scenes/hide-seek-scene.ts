@@ -172,9 +172,10 @@ export class HideSeekScene implements GameScene {
     }
 
     // The player's figure stands on the floor it is on.
-    // Climbing from below the upper floor's solid railing and landing would draw over the figure (the upper floor is
-    // 3 m higher on the screen), so for the climb it is drawn above both floors; the railing itself stays opaque.
-    const onRamp = p.floor === 0 && p.onStairs !== null && p.z > 0.8;
+    // On the stairs the figure is drawn above both floors, so the stairs and the opening never cover it.
+    // Any time the body is on the ramp: upstairs it can be below the floor (inside the stairwell opening), where it
+    // would otherwise stand on the floor's edge over the void (owner, 19/11/2026: "stuck between the stairs and the void").
+    const onRamp = p.onStairs !== null;
     if (onRamp !== this.playerOnRamp) {
       const root = player.view.root;
       if (onRamp) {
@@ -443,15 +444,7 @@ export class HideSeekScene implements GameScene {
 }
 
 /** Hiding places that hide the whole body (the player's figure is not drawn at all while inside). */
-export const COMPLETE_COVER = new Set([
-  'under-bed',
-  'under-sofa',
-  'wardrobe',
-  'cupboard',
-  'chest',
-  'box',
-  'shed-cabinet',
-]);
+export const COMPLETE_COVER = new Set(['under-bed', 'wardrobe', 'cupboard', 'chest', 'box', 'shed-cabinet']);
 
 /** The house's overall darkness: lit rooms are this bright at most. */
 const AMBIENT = 0.78;

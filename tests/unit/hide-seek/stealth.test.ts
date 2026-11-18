@@ -18,11 +18,11 @@ describe('hiding places (sections B and F)', () => {
 
   it('there are hiding places of every kind the brief lists, on both floors (all indoors)', () => {
     const kinds = new Set(spots.map((s) => s.spec.kind));
-    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain'])
+    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain', 'under-table'])
       expect(kinds.has(k as never), k).toBe(true);
     expect(spots.some((s) => s.floor === 1)).toBe(true);
     expect(spots.some((s) => s.floor === 0)).toBe(true);
-    expect(spots.length).toBeGreaterThanOrEqual(15); // a smaller house (owner, 18/11/2026)
+    expect(spots.length).toBeGreaterThanOrEqual(14); // a smaller house (owner, 18/11/2026); the sofa is no longer one (19/11/2026)
     // The game is played inside the house: no hiding place is in a yard.
     const w = new HouseWorld(HOUSE_PLAN);
     for (const sp of spots) expect(w.roomAt(sp.floor, sp.spec.at.x, sp.spec.at.y)?.outdoors, sp.id).not.toBe(true);
@@ -117,7 +117,7 @@ describe('hiding places (sections B and F)', () => {
     expect(exposure(bed, { x: at.x, y: at.y + 7 })).toBeLessThan(front);
     // Better concealment, lower exposure.
     const wardrobe = spots.find((s) => s.spec.kind === 'wardrobe')!;
-    const sofa = spots.find((s) => s.spec.kind === 'under-sofa')!;
+    const sofa = spots.find((s) => s.spec.kind === 'under-table')!;
     const dir = { x: 0, y: 0 };
     const f = (s: typeof wardrobe) => {
       const o = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[s.spec.opensToward]!;
@@ -218,6 +218,35 @@ describe('throwable distractions (section E)', () => {
     expect(g.prompt()).toBe('Throw');
     press(g);
     expect(g.world.isOpen('d-kitchen-living')).toBe(false);
+  });
+});
+
+describe('under the table: no door, so no blind and no need to peek (owner, 19/11/2026)', () => {
+  it('hiding under the table keeps the normal view, and peeking changes nothing', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const table = g.spots.find((s) => s.spec.kind === 'under-table')!;
+    const out = exitPoint(g.world, table);
+    g.player.floor = table.floor;
+    g.player.x = out.x;
+    g.player.y = out.y;
+    press(g);
+    expect(g.player.hidingIn).toBe(table.id);
+    expect(g.viewer().hiddenView).toBeUndefined();
+    g.step(STEP, { ...NO_INPUT, peek: true });
+    expect(g.player.peeking).toBe(false);
+    expect(g.viewer().hiddenView).toBeUndefined();
+  });
+
+  it('a hiding place with a door still blinds the player, and the table is the only doorless one', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const wardrobe = g.spots.find((s) => s.spec.kind === 'wardrobe')!;
+    const out = exitPoint(g.world, wardrobe);
+    g.player.floor = wardrobe.floor;
+    g.player.x = out.x;
+    g.player.y = out.y;
+    press(g);
+    expect(g.viewer().hiddenView).toBe('blind');
+    expect(g.spots.filter((s) => s.spec.kind === 'under-table')).toHaveLength(1);
   });
 });
 

@@ -37,7 +37,6 @@ export const ACTION_DURATION_S: Readonly<Record<HunterActionKind, number>> = {
 /** The thorough way to check each kind of hiding place. */
 const THOROUGH: Readonly<Record<HideKind, HunterActionKind>> = {
   'under-bed': 'look-under',
-  'under-sofa': 'look-under',
   'under-table': 'look-under',
   wardrobe: 'open-door',
   cupboard: 'open-door',
