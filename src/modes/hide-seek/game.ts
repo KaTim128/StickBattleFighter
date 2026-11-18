@@ -485,6 +485,13 @@ export class HideSeekGame {
       this.leaveHiding();
       return;
     }
+    // A hiding place within reach always wins (owner, 20/11/2026): an item on the floor beside it, or one in the
+    // player's hands, never stops them getting in.
+    const spot = nearestHideSpot(this.spots, p.floor, p);
+    if (spot) {
+      this.enterHiding(spot);
+      return;
+    }
     if (p.carrying) {
       this.throwCarried();
       return;
@@ -492,11 +499,6 @@ export class HideSeekGame {
     const prop = this.propNear();
     if (prop) {
       this.pickUp(prop);
-      return;
-    }
-    const spot = nearestHideSpot(this.spots, p.floor, p);
-    if (spot) {
-      this.enterHiding(spot);
       return;
     }
     const door = this.doorNear();
@@ -507,11 +509,11 @@ export class HideSeekGame {
   prompt(): string | null {
     const p = this.player;
     if (p.hidingIn) return 'Leave the hiding place';
+    const spot = nearestHideSpot(this.spots, p.floor, p);
+    if (spot) return `Hide (${HIDE_NAMES[spot.spec.kind]})`;
     if (p.carrying) return 'Throw';
     const prop = this.propNear();
     if (prop) return `Pick up the ${prop.kind}`;
-    const spot = nearestHideSpot(this.spots, p.floor, p);
-    if (spot) return `Hide (${HIDE_NAMES[spot.spec.kind]})`;
     const door = this.doorNear();
     return door ? (door.open ? 'Close the door' : 'Open the door') : null;
   }
@@ -566,6 +568,16 @@ export class HideSeekGame {
 
   private enterHiding(spot: HideSpot): void {
     const p = this.player;
+    // Hands are emptied first: what was carried is set down at the way out, on free floor.
+    const held = p.carrying ? this.props.find((x) => x.id === p.carrying) : undefined;
+    if (held) {
+      const out = exitPoint(this.world, spot);
+      held.mode = 'rest';
+      held.x = out.x;
+      held.y = out.y;
+      held.floor = spot.floor;
+      p.carrying = null;
+    }
     p.hidingIn = spot.id;
     p.x = spot.spec.at.x;
     p.y = spot.spec.at.y;

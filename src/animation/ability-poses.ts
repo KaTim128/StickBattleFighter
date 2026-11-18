@@ -418,6 +418,27 @@ const STABS: readonly { cock: Partial<Pose>; strike: Partial<Pose> }[] = [
   },
 ];
 
+/**
+ * Rending Flurry (owner, 20/11/2026): three slashes that flow into one another. Two quick cuts across him (the first
+ * a flat sweep from behind, the second a diagonal chop back), then a harder upward slash that starts low by the hip
+ * and ends high above the shoulder. Arm angles are degrees from hanging straight down, forward is positive.
+ * `chain`: each slash starts where the last one ended, not back at its own wind-up, so the three read as one motion.
+ */
+const FLURRY: readonly { cock: Partial<Pose>; strike: Partial<Pose> }[] = [
+  {
+    cock: { lean: deg(-34), armFront: limb(-35, 70), armBack: limb(40, 60), legFront: limb(30, -40) },
+    strike: { lean: deg(-48), head: deg(-4), armFront: limb(98, 6), armBack: limb(-45, 40), legFront: limb(50, -50) },
+  },
+  {
+    cock: { lean: deg(-44), armFront: limb(125, 40), armBack: limb(-40, 50) },
+    strike: { lean: deg(-30), head: deg(4), armFront: limb(48, 8), armBack: limb(60, 30), legBack: limb(-40, -20) },
+  },
+  {
+    cock: { lean: deg(-52), head: deg(-6), armFront: limb(8, 25), armBack: limb(30, 50), ...CROUCH },
+    strike: { lean: deg(-18), head: deg(8), armFront: limb(172, 6), armBack: limb(-50, 40), legFront: limb(34, -30) },
+  },
+];
+
 /** The springing retreat: low and wary, knife held out toward the enemy he is leaving. */
 const RETREAT: Partial<Pose> = {
   lean: deg(-34),
@@ -429,9 +450,10 @@ const RETREAT: Partial<Pose> = {
 };
 
 /** Overlays a knife assault on the cast pose: each stab its own motion, then the backward spring. */
-export function assaultPose(base: Pose, a: AssaultState): Pose {
+export function assaultPose(base: Pose, a: AssaultState, abilityId?: string): Pose {
   if (a.phase === 'retreat') return blendPose(base, { ...base, ...RETREAT }, ease(a.t / 0.08));
   if (a.phase !== 'stab') return base;
+  if (abilityId === 'rendingFlurry') return flurryPose(base, a);
   const s = STABS[a.stab % STABS.length]!;
   const cock = { ...base, ...s.cock };
   const strike = { ...base, ...s.strike };
@@ -439,6 +461,19 @@ export function assaultPose(base: Pose, a: AssaultState): Pose {
   if (a.t < 0.35) return blendPose(cock, strike, ease(a.t / 0.35));
   if (a.t < 0.75) return strike;
   return blendPose(strike, cock, ease((a.t - 0.75) / 0.25) * 0.6);
+}
+
+/** One slash of the Flurry: snap through in the first 55% of its time, follow through, and flow into the next. */
+function flurryPose(base: Pose, a: AssaultState): Pose {
+  const i = Math.min(a.stab, FLURRY.length - 1);
+  const s = FLURRY[i]!;
+  const strike = { ...base, ...s.strike };
+  // Slashes after the first begin where the one before ended, bent half-way to their own wind-up.
+  const prev = i > 0 ? { ...base, ...FLURRY[i - 1]!.strike } : null;
+  const cock = { ...base, ...s.cock };
+  const start = prev ? blendPose(prev, cock, 0.6) : cock;
+  if (a.t < 0.55) return blendPose(start, strike, ease(a.t / 0.55));
+  return strike;
 }
 
 /** Abilities with an animation (tests check every kit ability has one). */

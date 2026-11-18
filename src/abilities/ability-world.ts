@@ -4,6 +4,7 @@ import {
   type BuffEffect,
   type Burn,
   beamRampFactor,
+  type CloudSpec,
   type MagicLook,
   payloadAt,
   type SummonSpec,
@@ -147,6 +148,20 @@ export interface FireZone {
   readonly burn: Burn;
 }
 
+/** A lingering gas cloud: each target is hit once while it is armed (see `CloudSpec`). */
+export interface Cloud {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly x: number;
+  readonly y: number;
+  readonly radiusM: number;
+  readonly lifeS: number;
+  readonly armS: number;
+  ageS: number;
+  /** Fighters already hit by this cloud. */
+  readonly hit: Set<string>;
+}
+
 export interface Telegraph {
   readonly casterId: string;
   readonly def: AbilityDef;
@@ -264,6 +279,7 @@ export class AbilityWorld {
   readonly projectiles: Projectile[] = [];
   readonly beams: Beam[] = [];
   readonly zones: FireZone[] = [];
+  readonly clouds: Cloud[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
   /** Grab outcomes by caster, kept until its next release (see grabOutcome). */
@@ -355,6 +371,15 @@ export class AbilityWorld {
           trail: [],
         });
         break;
+      case 'cloud': {
+        // Where it aims, within range and short of any wall in the way.
+        const want = Math.min(def.aimRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+        const end = { x: at.x + dir.x * want, y: at.y + dir.y * want };
+        const block = host.blocked(at, end);
+        const reach = block === null ? want : Math.max(0, want * block - 0.3);
+        this.spawnCloud(casterId, def, { x: at.x + dir.x * reach, y: at.y + dir.y * reach }, d, host);
+        break;
+      }
       case 'dash':
         this.actions.push({
           kind: 'dash',
@@ -644,6 +669,7 @@ export class AbilityWorld {
     this.updateActions(dtS, host);
     this.updateTelegraphs(dtS, host);
     this.updateZones(dtS, host);
+    this.updateClouds(dtS, host);
   }
 
   private updateProjectiles(dtS: number, host: AbilityHost): void {
@@ -661,7 +687,7 @@ export class AbilityWorld {
         if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash)) continue; // dodged: flies on
-        this.impact(p, f, host);
+        this.impact(p, f, host, f.id);
         done = true;
         break;
       }
@@ -690,7 +716,9 @@ export class AbilityWorld {
     }
   }
 
-  private impact(p: Projectile, at: Vec2, host: AbilityHost): void {
+  private impact(p: Projectile, at: Vec2, host: AbilityHost, hitId?: string): void {
+    const d = p.def.delivery;
+    if (d.type === 'projectile' && d.cloud) this.spawnCloud(p.casterId, p.def, at, d.cloud, host, hitId);
     host.emit({
       kind: 'impact',
       ability: p.def.id,
@@ -1080,7 +1108,15 @@ export class AbilityWorld {
     for (const f of host.fighters()) {
       if (this.friendly(f, a.casterId, host) || !f.hittable) continue;
       if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
-      if (this.hit(host, a.casterId, f.id, a.def.payload, a.dir, a.def.look?.hitFlash)) {
+      const last = a.stabs >= d.stabs && d.finalFactor !== undefined;
+      const payload = last
+        ? {
+            ...a.def.payload,
+            damage: Math.round(a.def.payload.damage * d.finalFactor!),
+            knockbackMps: a.def.payload.knockbackMps * d.finalFactor!,
+          }
+        : a.def.payload;
+      if (this.hit(host, a.casterId, f.id, payload, a.dir, a.def.look?.hitFlash)) {
         landed = true;
         host.emit({
           kind: 'impact',
@@ -1103,7 +1139,7 @@ export class AbilityWorld {
         ability: a.def.id,
         look: a.def.look,
         vfx: `${a.def.vfx}-whiff`,
-        sfx: a.def.sfx.release,
+        sfx: d.stabSfx?.[(a.stabs - 1) % d.stabSfx.length] ?? a.def.sfx.release,
         x: reach.x,
         y: reach.y,
       });
@@ -1165,6 +1201,57 @@ export class AbilityWorld {
       y: at.y,
       radiusM,
     });
+  }
+
+  /** Puts a cloud down. A fighter the shot already struck counts as hit by it (one application per target). */
+  private spawnCloud(
+    casterId: string,
+    def: AbilityDef,
+    at: Vec2,
+    spec: CloudSpec,
+    host: AbilityHost,
+    alreadyHitId?: string,
+  ): void {
+    this.clouds.push({
+      casterId,
+      def,
+      x: at.x,
+      y: at.y,
+      radiusM: spec.radiusM,
+      lifeS: spec.lifeS,
+      armS: spec.armS ?? 0,
+      ageS: 0,
+      hit: new Set(alreadyHitId ? [alreadyHitId] : []),
+    });
+    host.emit({
+      kind: 'impact',
+      ability: def.id,
+      look: def.look,
+      vfx: def.vfx,
+      sfx: def.sfx.impact,
+      x: at.x,
+      y: at.y,
+      radiusM: spec.radiusM * 0.5,
+    });
+  }
+
+  private updateClouds(dtS: number, host: AbilityHost): void {
+    for (let i = this.clouds.length - 1; i >= 0; i--) {
+      const c = this.clouds[i]!;
+      c.ageS += dtS;
+      if (c.ageS >= c.lifeS) {
+        this.clouds.splice(i, 1);
+        continue;
+      }
+      if (c.ageS < c.armS) continue;
+      for (const f of host.fighters()) {
+        if (c.hit.has(f.id) || this.friendly(f, c.casterId, host) || !f.hittable) continue;
+        if (Math.hypot(f.x - c.x, f.y - c.y) > c.radiusM + f.radiusM) continue;
+        // Dodged (not landed): it can still catch them once the dodge ends, while they stand in it.
+        if (this.hit(host, c.casterId, f.id, c.def.payload, norm({ x: f.x - c.x, y: f.y - c.y }), c.def.look?.hitFlash))
+          c.hit.add(f.id);
+      }
+    }
   }
 
   private updateZones(dtS: number, host: AbilityHost): void {

@@ -934,3 +934,14 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Implementation.** `Toxicity` is owned by `StatusEffects` (`status.toxicity`, status id `toxicity`), so the slow reaches every speed calculation through `status.speedFactor`, it is cleared on defeat and reset, and it never touches stun, attack speed, cooldowns or dodging. Hits apply it through `status.poison` in a moveset entry, `payload.poison` in an ability, and `Combatant.poison(stacks)`.
 **Alternatives.** Spec HP unscaled (poison is then about 1 % of health in a whole fight: pointless); a five-stack cap (the bands above five would never apply).
 **Status.** ACCEPTED as the spec's own proposal; the owner can change `POISON`. Vexoris himself (rig, animations, kit, AI) is not built yet.
+
+### TD-116: Nightmare House fixes and the Rending Flurry (owner 20/11/2026) — ACCEPTED
+**Owner requests.** (1) Walls must not draw over furniture or whoever stands on it. (2) The staircase and the house boundary must hold. (3) Every Hide and Seek round is exactly two minutes. (4) Floor items must not block hiding places. (5) Test it all. And: Rending Flurry as three fast red slashes, the last an upward sweep, each with its own sound.
+**Decisions.**
+- *Walls.* The see-through front walls of the room the player is in are drawn behind everything in that room (`YSortLayer.setBias`, a depth bias of 1,000,000 below), never over furniture or people. They keep their own depth against other rooms' walls.
+- *Stairs.* The collision was already sound (a sweep of 15 deg headings at run speed from every side, both floors, never leaves the rooms or enters a solid); `stairs-boundary.test.ts` now guards it. The owner's screenshot may be an older build; if it recurs it needs the exact position.
+- *Round length.* `SURVIVE_S` stays 120 s; the clock now ends on exactly 120 s (`huntS` snaps to it) at any step size.
+- *Hiding.* A hiding place in reach now beats throwing or picking up (`interact`, `prompt`); entering one while carrying sets the item down at the way out. Items on the floor never collide with the player.
+- *Rending Flurry.* Now an `assault` of three slashes 0.15 s apart (30, 30 and 44 damage, `finalFactor` 1.47; about 104 in all, a little under the old single 118 blow because three hits land more reliably, and the AI-battle balance test needed that), each with its own sound. Per-slash poses chain into one another (`ability-poses.ts`, `FLURRY`). The red ribbon (`look.slash`, drawn by `StickmanView.drawSlash`) follows the blade tip and the fist, runs on game time so it follows slow motion, and is wider and longer for the last slash.
+**Tests.** `stairs-boundary`, `hiding-access`, `rules` (exact two minutes), `rending-flurry`, the Shroud integration test. **Not verified:** the first two ribbons are hard to see through the hit bursts in slow motion; the owner should judge the feel at full speed.
+**Status.** ACCEPTED, owner to review in play.

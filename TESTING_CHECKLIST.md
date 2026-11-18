@@ -582,3 +582,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] He does not spot a player in plain view instantly; he is a little slower than before but still faster than a runner.
 - [ ] A hider he is sure of is grabbed by the neck and stabbed in the stomach (no walking at the table without grabbing).
 - [ ] No high-pitched whistle or shriek in the kill; opening a wardrobe, cupboard, chest or door plays a short creak-knock that ends with the animation; closing is one short clunk.
+
+## Nightmare House fixes and Rending Flurry (20/11/2026)
+- [ ] In every room the faded front walls never cover furniture or the player, including when standing on or beside furniture.
+- [ ] Running at the staircase from any side never gets onto the ramp except through its ends, and never leaves the house.
+- [ ] The hunt clock goes from 2:00 to 0:00 and the win comes at exactly 0:00.
+- [ ] With a bottle or can on the floor beside a hiding place, G hides (not picks up); carrying something, G still hides and the item is set down.
+- [ ] Rending Flurry: three quick slashes (two across, the last low-to-high), a red ribbon on each, the last the biggest, and a different sound for each.

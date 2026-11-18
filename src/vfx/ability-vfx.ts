@@ -1,6 +1,6 @@
 import { type Container, Graphics } from 'pixi.js';
 import type { MagicLook } from '../abilities/ability-def';
-import type { AbilityFx, Beam, FireZone, Projectile, Telegraph } from '../abilities/ability-world';
+import type { AbilityFx, Beam, Cloud, FireZone, Projectile, Telegraph } from '../abilities/ability-world';
 import { ISO_T, iso } from '../rendering/projection';
 
 /**
@@ -106,6 +106,8 @@ export interface AbilityVfxInput {
   readonly dust: readonly DustSource[];
   readonly projectiles: readonly Projectile[];
   readonly zones: readonly FireZone[];
+  /** Lingering gas clouds (Vexoris). */
+  readonly clouds?: readonly Cloud[];
   readonly telegraphs: readonly Telegraph[];
   readonly fx: readonly AbilityFx[];
   readonly burning: readonly BurningThing[];
@@ -346,6 +348,7 @@ export class AbilityVfx {
       }
     }
     for (const b of input.beams ?? []) this.beamParticles(b, dtS);
+    for (const c of input.clouds ?? []) this.cloudPuffs(c, dtS);
     for (const z of input.zones) if (this.rand() < 0.35) this.emitAt(z.x, z.y, 0.1, 1, 0.5, 0.25, 0.08);
     for (const b of input.burning)
       if (this.rand() < 0.5) this.emitAt(b.x, b.y, b.heightM * this.rand(), 1, 0.4, 0.25, 0.08);
@@ -465,6 +468,34 @@ export class AbilityVfx {
         break;
       default:
         break;
+    }
+  }
+
+  /** Gas rolling off a cloud: soft puffs across its disc that drift up and fade, thicker while it is fresh. */
+  private cloudPuffs(c: Cloud, dtS: number): void {
+    const pal = c.def.look?.palette ?? FIRE;
+    const fresh = 1 - c.ageS / c.lifeS;
+    const n = this.count((10 + c.radiusM * 8) * (0.4 + 0.6 * fresh) * dtS);
+    for (let i = 0; i < n; i++) {
+      const p = this.free();
+      if (!p) break;
+      const ang = this.rand() * Math.PI * 2;
+      const rad = Math.sqrt(this.rand()) * c.radiusM;
+      Object.assign(p, {
+        live: true,
+        kind: 'smoke',
+        colour: this.rand() < 0.5 ? pal.hot : pal.bright,
+        x: c.x + Math.cos(ang) * rad,
+        y: c.y + Math.sin(ang) * rad,
+        z: 0.05 + this.rand() * 0.25,
+        vx: (this.rand() - 0.5) * 0.4,
+        vy: (this.rand() - 0.5) * 0.4,
+        vz: 0.25 + this.rand() * 0.4,
+        ageS: 0,
+        lifeS: 0.9 + this.rand() * 0.8,
+        size: 0.16 + this.rand() * 0.14,
+        pal,
+      });
     }
   }
 
@@ -984,6 +1015,16 @@ export class AbilityVfx {
       f.circle(tg.x, tg.y, tg.radiusM).fill({ color: FIRE.deep, alpha: 0.14 });
       f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: FIRE.hot, alpha: 0.22 });
       f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: FIRE.bright, alpha: pulse });
+    }
+
+    // Toxic clouds: a pool of green on the floor that thins as it fades, and a ring while a trap is arming.
+    for (const c of input.clouds ?? []) {
+      const pal = c.def.look?.palette ?? FIRE;
+      const life = Math.min(1, (1 - c.ageS / c.lifeS) * 3);
+      const swell = Math.min(1, c.ageS / 0.35);
+      f.circle(c.x, c.y, c.radiusM * swell).fill({ color: pal.deep, alpha: 0.3 * life });
+      f.circle(c.x, c.y, c.radiusM * 0.7 * swell).fill({ color: pal.hot, alpha: 0.22 * life });
+      if (c.ageS < c.armS) f.circle(c.x, c.y, c.radiusM).stroke({ width: 0.06, color: pal.bright, alpha: 0.6 });
     }
 
     // Burning floor patches (Flame Dash trail).

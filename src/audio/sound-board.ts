@@ -475,6 +475,24 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.09, gain: 0.4, type: 'bandpass', freq: 2300, freqEnd: 4600, q: 2.4, delay: 0.08 } },
     { noise: { dur: 0.1, gain: 0.45, type: 'bandpass', freq: 2800, freqEnd: 5400, q: 2.4, delay: 0.16 } },
   ],
+  // Rending Flurry (owner, 20/11/2026): three slashes, one sound each, matching the blows. Airy cloth-and-blade swishes
+  // with a short wet bite on the end, rising a little in weight: two quick cuts, then a deeper, longer upward rip.
+  'flurry-draw': [
+    { noise: { dur: 0.09, gain: 0.2, type: 'bandpass', freq: 900, freqEnd: 1800, q: 0.9, attack: 0.02 } },
+  ],
+  'flurry-slash-1': [
+    { noise: { dur: 0.11, gain: 0.42, type: 'bandpass', freq: 1700, freqEnd: 3400, q: 1.4, attack: 0.015 } },
+    { noise: { dur: 0.05, gain: 0.35, type: 'lowpass', freq: 1500, freqEnd: 500, delay: 0.07 } },
+  ],
+  'flurry-slash-2': [
+    { noise: { dur: 0.11, gain: 0.42, type: 'bandpass', freq: 3000, freqEnd: 1500, q: 1.4, attack: 0.015 } },
+    { noise: { dur: 0.05, gain: 0.35, type: 'lowpass', freq: 1300, freqEnd: 450, delay: 0.07 } },
+  ],
+  'flurry-slash-3': [
+    { noise: { dur: 0.2, gain: 0.55, type: 'bandpass', freq: 800, freqEnd: 2800, q: 1.1, attack: 0.03 } },
+    { noise: { dur: 0.09, gain: 0.5, type: 'lowpass', freq: 1100, freqEnd: 300, delay: 0.14 } },
+    { tone: { wave: 'sine', f0: 120, f1: 55, dur: 0.16, gain: 0.5, delay: 0.14 } },
+  ],
   // The lunge: a low rush of dark cloth.
   'shade-rush': [
     { noise: { dur: 0.35, gain: 0.5, type: 'bandpass', freq: 300, freqEnd: 1200, q: 0.8, attack: 0.04, flutter: 18 } },

@@ -1,0 +1,66 @@
+{
+  "id": "vexoris",
+  "template": "base-stickman",
+  "displayName": "Vexoris",
+  "description": "Vexoris was a chemical-warfare specialist in a war nobody records any more. The gas mask never came off: his lungs would not take clean air again, and the greenish glass jar he carries is the last thing his unit made. In the arena he does not need to win each exchange. He needs only to touch you often enough, and let the poison do the rest.",
+  "characterType": "fighter",
+  "element": "poison",
+  "combatStyle": "chemical",
+  "profiles": {
+    "animation": "vexoris-animation",
+    "moveset": "vexoris-moveset",
+    "stats": "vexoris-stats",
+    "effects": "vexoris-effects",
+    "audio": "vexoris-audio",
+    "ai": "vexoris-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.07,
+      "headRadius": 0.15,
+      "upperArm": 0.29,
+      "foreArm": 0.27,
+      "thigh": 0.41,
+      "shin": 0.41
+    },
+    "colour": "#4a5330",
+    "colourBack": "#39422a",
+    "outline": "#0b0e07",
+    "limbWidthM": 0.082,
+    "outlineWidthM": 0.033,
+    "spine": 0.52
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "vexoris-kit"
+}

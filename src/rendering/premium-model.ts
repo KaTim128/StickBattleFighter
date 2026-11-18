@@ -69,7 +69,7 @@ export interface PremiumSkin {
    * The sculpted head (drawn here): a flame crest, a bald brawler, a hood with glowing eyes, a hood
    * and white mask, a mannequin egg; or 'own' (the view draws its head style).
    */
-  readonly head: 'crest' | 'brute' | 'cowl' | 'mask' | 'egg' | 'own';
+  readonly head: 'crest' | 'brute' | 'cowl' | 'mask' | 'egg' | 'gasmask' | 'own';
   /** A light panel slanting across the chest (owner, 13/11/2026, Titan: grey body, white chest). */
   readonly chestPanel?: number;
   /** A round ball at the pelvis, like the mannequin joints (Titan). */
@@ -204,6 +204,38 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     fire: { core: false, veins: true, fists: false },
     garment: { hem: 'tattered', trim: 0x8c1018 },
     head: 'mask',
+  },
+  // Chemical-warfare soldier (Vexoris, 19/11/2026, spec B1): a worn olive jacket and trousers, dark
+  // leather straps and pouches, gloves and boots, toxic-green glowing details, and a gas mask for a face.
+  soldier: {
+    palette: {
+      outline: 0x0b0e07,
+      skin: 0x4a5330,
+      skinLit: 0x76824a,
+      skinShade: 0x2c3319,
+      skinBack: 0x39422a,
+      rim: 0xb8f06a,
+      armour: 0x2e2a1f,
+      armourLit: 0x5a523b,
+      armourEdge: 0x0e0c07,
+      seam: 0x7dff3a,
+      lava: 0xd5ff9a,
+      glow: 0x4fd81c,
+      hand: 0x231f15,
+    },
+    bulk: 1.3,
+    muscle: 0.7,
+    gear: {
+      shoulder: 'guard',
+      bracers: true,
+      legs: 'trousers',
+      kneeGuards: true,
+      shinGuards: false,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'gasmask',
   },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
@@ -394,6 +426,7 @@ export class PremiumModel {
     if (hs === 'crest' || hs === 'brute') this.head(g, fire, s, hs);
     else if (hs === 'cowl' || hs === 'mask') this.hooded(g, fire, s, hs);
     else if (hs === 'egg') this.egg(g, s);
+    else if (hs === 'gasmask') this.gasMask(g, fire, s);
     else {
       this.neck(g, s);
       st.drawHead?.();
@@ -1312,6 +1345,92 @@ export class PremiumModel {
     g.moveTo(h.x - r * 0.75, h.y - r * 0.6)
       .quadraticCurveTo(h.x, h.y - r * 0.1, h.x + r * 0.85, h.y + r * 0.45)
       .stroke({ width: r * 0.05, color: this.c(this.P.skinShade), alpha: 0.9, cap: 'round' });
+  }
+
+  /**
+   * Vexoris's gas mask (spec B1: "the most recognisable feature"): an olive helmet, a dark rubber face
+   * with two round glowing lenses, a round breathing filter on the front with a corrugated tube that runs down
+   * to the chest rig, and a strap round the back of the head.
+   */
+  private gasMask(g: Graphics, fire: Graphics, s: Skel): void {
+    const r = this.st.headRadius * 1.1;
+    const w = this.st.w;
+    const h = s.head;
+    const seam = this.P.seam ?? 0x7dff3a;
+    this.neck(g, s);
+    // The corrugated breathing tube first, so the head sits over its root: from the filter down to the chest.
+    const root = { x: h.x + r * 0.92, y: h.y + r * 0.62 };
+    const mid = { x: h.x + r * 1.2, y: h.y + r * 1.9 };
+    const end = { x: h.x + r * 0.15, y: h.y + r * 2.6 };
+    g.moveTo(root.x, root.y)
+      .quadraticCurveTo(mid.x, mid.y, end.x, end.y)
+      .stroke({ width: w * 0.9, color: this.c(this.P.outline), cap: 'round' });
+    g.moveTo(root.x, root.y)
+      .quadraticCurveTo(mid.x, mid.y, end.x, end.y)
+      .stroke({ width: w * 0.62, color: this.c(this.P.armour), cap: 'round' });
+    for (let i = 1; i < 8; i++) {
+      const k = i / 8;
+      const x = (1 - k) * (1 - k) * root.x + 2 * k * (1 - k) * mid.x + k * k * end.x;
+      const y = (1 - k) * (1 - k) * root.y + 2 * k * (1 - k) * mid.y + k * k * end.y;
+      g.moveTo(x - w * 0.3, y - w * 0.12)
+        .lineTo(x + w * 0.3, y + w * 0.12)
+        .stroke({ width: w * 0.1, color: this.c(this.P.armourLit), alpha: 0.9, cap: 'round' });
+    }
+    // The head: dark rubber, shaded to the back.
+    oval(g, h, 1, 0, r * 1.02 + w * 0.2, r * 1.1 + w * 0.2, this.c(this.P.outline));
+    oval(g, h, 1, 0, r * 1.02, r * 1.1, this.c(0x1d1f1a));
+    oval(g, { x: h.x - this.lx * r * 0.2, y: h.y + r * 0.25 }, 1, 0, r * 0.85, r * 0.7, this.c(0x0f100d), 0.6);
+    // The snout: a rounded muzzle at the front.
+    oval(g, { x: h.x + r * 0.78, y: h.y + r * 0.42 }, 1, 0, r * 0.52, r * 0.46, this.c(this.P.outline));
+    oval(g, { x: h.x + r * 0.78, y: h.y + r * 0.42 }, 1, 0, r * 0.44, r * 0.38, this.c(0x2a2d26));
+    oval(g, { x: h.x + r * 0.7, y: h.y + r * 0.3 }, 1, 0, r * 0.2, r * 0.12, this.c(0x5a5f52), 0.8);
+    // The filter canister on the muzzle: an olive can with ridges and a green indicator.
+    const fc = { x: h.x + r * 1.02, y: h.y + r * 0.52 };
+    oval(g, fc, 1, 0, r * 0.32 + w * 0.12, r * 0.34 + w * 0.12, this.c(this.P.outline));
+    oval(g, fc, 1, 0, r * 0.32, r * 0.34, this.c(this.P.skin));
+    oval(g, { x: fc.x - r * 0.06, y: fc.y - r * 0.08 }, 1, 0, r * 0.18, r * 0.2, this.c(this.P.skinLit), 0.9);
+    for (const k of [-0.15, 0.02, 0.19]) {
+      g.moveTo(fc.x - r * 0.28, fc.y + r * k)
+        .lineTo(fc.x + r * 0.28, fc.y + r * k)
+        .stroke({ width: r * 0.045, color: this.c(this.P.skinShade), alpha: 0.9, cap: 'round' });
+    }
+    // The lenses: two round glass eyes, the near one full and the far one foreshortened (a profile view).
+    for (const [dx, k] of [
+      [0.52, 0.34],
+      [0.04, 0.3],
+    ] as const) {
+      const lc = { x: h.x + r * dx, y: h.y - r * 0.12 };
+      oval(g, lc, 1, 0, r * k * 0.8 + w * 0.12, r * k + w * 0.12, this.c(this.P.outline));
+      oval(g, lc, 1, 0, r * k * 0.8, r * k, this.c(0x3a3d34)); // the rim
+      oval(g, lc, 1, 0, r * k * 0.66, r * k * 0.84, this.c(0x0d1a06));
+      oval(g, lc, 1, 0, r * k * 0.52, r * k * 0.68, this.c(seam), 0.9);
+      oval(g, { x: lc.x - r * k * 0.08, y: lc.y - r * k * 0.2 }, 1, 0, r * k * 0.2, r * k * 0.26, 0xffffff, 0.8);
+      fire.circle(lc.x, lc.y, r * k * 1.15).fill({ color: seam, alpha: 0.12 });
+    }
+    // The helmet: an olive shell over the crown with a rolled brim, riveted.
+    const rim = [-1.05, -0.2, 1.0, -0.1];
+    const shell: number[] = [];
+    for (let i = 0; i <= 14; i++) {
+      const th = Math.PI + (i / 14) * Math.PI; // a half circle over the top
+      shell.push(h.x + Math.cos(th) * r * 1.12, h.y - r * 0.18 + Math.sin(th) * r * 1.2);
+    }
+    g.poly(shell).fill(this.c(this.P.outline));
+    const inner = shell.map((v, k) =>
+      k % 2 === 0 ? h.x + (v - h.x) * 0.94 : h.y - r * 0.18 + (v - (h.y - r * 0.18)) * 0.92,
+    );
+    g.poly(inner).fill(this.c(this.P.skin));
+    oval(g, { x: h.x + this.lx * r * 0.2, y: h.y - r * 0.85 }, 1, 0, r * 0.6, r * 0.24, this.c(this.P.skinLit), 0.85);
+    g.moveTo(h.x + r * rim[0]!, h.y + r * rim[1]!)
+      .lineTo(h.x + r * 1.16, h.y + r * rim[3]!)
+      .stroke({ width: r * 0.14, color: this.c(this.P.armourEdge), cap: 'round' });
+    g.moveTo(h.x - r * 1.0, h.y - r * 0.26)
+      .lineTo(h.x + r * 1.1, h.y - r * 0.18)
+      .stroke({ width: r * 0.06, color: this.c(this.P.rim), alpha: 0.55, cap: 'round' });
+    // The strap round the back of the head, with a buckle.
+    g.moveTo(h.x - r * 1.0, h.y + r * 0.05)
+      .lineTo(h.x - r * 0.1, h.y + r * 0.6)
+      .stroke({ width: r * 0.12, color: this.c(this.P.armour), cap: 'round' });
+    oval(g, { x: h.x - r * 0.7, y: h.y + r * 0.22 }, 1, 0, r * 0.08, r * 0.1, this.c(this.P.armourLit));
   }
 
   /** A crest of flame for hair: tongues swept back and up from the crown, streaming with speed. */

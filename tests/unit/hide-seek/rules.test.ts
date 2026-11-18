@@ -40,6 +40,42 @@ describe('round rules (section H)', () => {
     expect(r.killsStarted).toBe(0);
   });
 
+  /** Owner, 20/11/2026: every round is exactly two minutes of hunting, whatever the frame rate. */
+  it.each([
+    ['60 steps a second', 1 / 60],
+    ['30 steps a second', 1 / 30],
+    ['an uneven 17 ms step', 0.017],
+    ['a slow 100 ms step', 0.1],
+  ])('the hunt lasts exactly 120 seconds at %s: no win a step early, a win at the step that reaches it', (_n, dt) => {
+    const r = new Round();
+    let t = 0;
+    while (r.phase === 'prep') r.update(dt);
+    expect(r.survivalLeftS).toBeCloseTo(SURVIVE_S, 9);
+    expect(SURVIVE_S).toBe(120);
+    while (r.phase === 'hunt') {
+      const before = r.survivedS;
+      r.update(dt);
+      t += dt;
+      if (r.phase === 'hunt') expect(before + dt).toBeLessThan(SURVIVE_S + 1e-6);
+    }
+    expect(r.phase).toBe('victory');
+    // The step that ended it is the first to reach 120 s, and it ends within one step of 120 s.
+    expect(t).toBeGreaterThanOrEqual(SURVIVE_S - 1e-6);
+    expect(t).toBeLessThan(SURVIVE_S + dt + 1e-6);
+    expect(r.survivalLeftS).toBe(0);
+    expect(r.survivedS).toBe(SURVIVE_S);
+  });
+
+  it('a restart gives a fresh 120 second hunt', () => {
+    const r = new Round();
+    run(r, PREP_S + 100);
+    r.reset();
+    expect(r.phase).toBe('prep');
+    expect(r.survivalLeftS).toBe(SURVIVE_S);
+    run(r, PREP_S);
+    expect(r.survivalLeftS).toBeCloseTo(SURVIVE_S, 6);
+  });
+
   it('being caught starts the killing animation exactly once, then Game Over', () => {
     const r = new Round();
     run(r, PREP_S + 30);

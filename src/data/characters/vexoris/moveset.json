@@ -1,0 +1,172 @@
+{
+  "id": "vexoris-moveset",
+  "starters": {
+    "tap": "gloved-jab",
+    "air-tap": "boot-stomp",
+    "heavy": "canister-bash"
+  },
+  "moves": [
+    {
+      "id": "gloved-jab",
+      "displayName": "Gloved jab",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.08,
+      "activeS": 0.07,
+      "recoveryS": 0.2,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.5
+      },
+      "damage": 11,
+      "strength": 240,
+      "knockbackMps": 1.2,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch"],
+      "next": {
+        "tap": "rifle-butt"
+      }
+    },
+    {
+      "id": "rifle-butt",
+      "displayName": "Rifle butt",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.08,
+      "activeS": 0.07,
+      "recoveryS": 0.2,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.05,
+        "radiusM": 0.5
+      },
+      "damage": 12,
+      "strength": 260,
+      "knockbackMps": 1.5,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "knee-drive"
+      }
+    },
+    {
+      "id": "knee-drive",
+      "displayName": "Rising knee",
+      "animationState": "Uppercut",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.08,
+      "activeS": 0.07,
+      "recoveryS": 0.2,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.5
+      },
+      "damage": 13,
+      "strength": 280,
+      "knockbackMps": 1.6,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "jar-splash"
+      }
+    },
+    {
+      "id": "jar-splash",
+      "displayName": "Poison splash (finisher)",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.14,
+      "activeS": 0.08,
+      "recoveryS": 0.34,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.25,
+        "radiusM": 0.5
+      },
+      "damage": 14,
+      "strength": 380,
+      "knockbackMps": 3.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.03,
+      "requires": ["canPunch", "canUseCombos"],
+      "status": {
+        "poison": 1
+      }
+    },
+    {
+      "id": "boot-stomp",
+      "displayName": "Boot stomp",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.07,
+      "activeS": 0.14,
+      "recoveryS": 0.28,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.95,
+        "radiusM": 0.5
+      },
+      "damage": 30,
+      "strength": 700,
+      "knockbackMps": 4.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.03,
+      "requires": ["canUseAerialPunches"]
+    },
+    {
+      "id": "canister-bash",
+      "displayName": "Canister bash",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.3,
+      "activeS": 0.08,
+      "recoveryS": 0.4,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.2,
+        "radiusM": 0.5
+      },
+      "damage": 36,
+      "strength": 760,
+      "knockbackMps": 4.5,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.03,
+      "requires": ["canPunch"]
+    }
+  ]
+}

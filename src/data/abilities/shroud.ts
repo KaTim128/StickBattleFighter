@@ -133,8 +133,9 @@ export const SHROUD_KIT: AbilityKit = {
       impact: { flashM: 0.6, sparks: 0, motes: 26, ringM: 0.9, groundFire: false, smokeColour: 0x0b0b10 },
     },
   },
-  // A4 (R): Rending Flurry. A frenzied burst of three close slashes in one movement: heavy damage,
-  // a short stagger and deep bleeding.
+  // A4 (R): Rending Flurry (owner, 20/11/2026): three fast, aggressive slashes in a row. Two quick strikes across
+  // him, then a final, harder upward slash from low to high. Each is a real hit with its own sound and a red
+  // ribbon that follows the knife; the last is bigger. About 104 damage in all (30 + 30 + 44): a little under the old single 118 blow, because three separate hits land more reliably.
   a4: {
     id: 'rendingFlurry',
     name: 'Rending Flurry',
@@ -144,27 +145,38 @@ export const SHROUD_KIT: AbilityKit = {
     slot: 'a4',
     staminaCost: 32,
     cooldownS: 7,
-    castS: 0.22,
-    recoveryS: 0.4,
+    castS: 0.16,
+    recoveryS: 0.5,
     aimRangeM: 2.2,
     moveFactor: 0.3,
     interruptible: true,
     payload: {
-      damage: 118,
-      knockbackMps: 2,
+      damage: 30,
+      knockbackMps: 1.2,
       heavy: false,
       strength: 600,
       impact: 'knuckle-heavy',
       noFlinch: true,
       bleed: true,
     },
-    delivery: { type: 'strike', reachM: 1.15, radiusM: 0.6 },
+    delivery: {
+      type: 'assault',
+      approachSpeedMps: 7,
+      maxApproachS: 0.12,
+      reachM: 1.3,
+      radiusM: 0.65,
+      stabs: 3,
+      stabIntervalS: 0.15,
+      finalFactor: 1.47,
+      stabSfx: ['flurry-slash-1', 'flurry-slash-2', 'flurry-slash-3'],
+    },
     vfx: 'rending-flurry',
-    sfx: { cast: 'knife-draw', release: 'knife-flurry', impact: 'knife-slash-hit' },
+    sfx: { cast: 'knife-draw', release: 'flurry-draw', impact: 'knife-slash-hit' },
     look: {
       palette: BLOOD,
       impact: { flashM: 0.8, sparks: 26, motes: 26, ringM: 1, groundFire: false, smokeColour: 0x5a0408 },
       hitFlash: 0xff5a5a,
+      slash: { colour: 0xe5242e, edge: 0xff9a9a },
     },
   },
   // A5 (master plan B13): Umbral Feint. He slips into shadow for 3 s: 30% faster, a little harder to

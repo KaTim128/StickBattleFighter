@@ -67,6 +67,7 @@ export class Round {
       case 'hunt':
         this.huntS += dtS;
         if (this.huntS >= SURVIVE_S - 1e-9) {
+          this.huntS = SURVIVE_S; // exactly two minutes, not two minutes less a rounding error
           this.phase = 'victory';
           this.events.push('victory');
         }

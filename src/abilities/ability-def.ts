@@ -99,9 +99,27 @@ export function payloadAt(payload: AbilityPayload, distanceM: number, reachM: nu
   };
 }
 
+/**
+ * A lingering cloud (Vexoris, TD-115): the ability's payload lands on each fighter inside it ONCE per cloud (a fighter
+ * who stays, or leaves and returns, is not hit again), so a cloud can never apply poison every frame.
+ */
+export interface CloudSpec {
+  readonly radiusM: number;
+  readonly lifeS: number;
+  /** Seconds before it starts to take effect (a trap arming); it is drawn from the start. */
+  readonly armS?: number;
+}
+
+/** A cloud or hazard placed where the caster aims (within range, short of walls): Chemical Trap. */
+export interface CloudDelivery extends CloudSpec {
+  readonly type: 'cloud';
+}
+
 /** A shot that flies until it hits a fighter, a wall or solid furniture, or runs out of range. */
 export interface ProjectileDelivery {
   readonly type: 'projectile';
+  /** Shatters into a cloud where it lands (Toxic Jar). */
+  readonly cloud?: CloudSpec;
   readonly speedMps: number;
   readonly radiusM: number;
   readonly maxRangeM: number;
@@ -252,6 +270,8 @@ export interface AssaultDelivery {
   readonly retreat?: { readonly distanceM: number; readonly speedMps: number };
   /** A sound per stab (cycled), so each reads as its own blow; defaults to the impact sound. */
   readonly stabSfx?: readonly string[];
+  /** The last stab's damage and knockback are this many times the others' (a finishing slash). Default 1. */
+  readonly finalFactor?: number;
 }
 
 /** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */
@@ -323,6 +343,7 @@ export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon' | 'shockwave'>;
 
 export type Delivery =
   | ProjectileDelivery
+  | CloudDelivery
   | DashDelivery
   | NovaDelivery
   | LeapDelivery
@@ -376,6 +397,11 @@ export interface MagicLook {
    * (Necro's Death's Dominion, CHARACTER_STYLE_QA S7).
    */
   readonly aura?: 'full' | 'quiet';
+  /**
+   * A ribbon that follows a knife hand through each slash of an assault (Rending Flurry, owner 20/11/2026): the
+   * colours of its body and its hot edge. The last slash draws it wider and longer.
+   */
+  readonly slash?: { readonly colour: number; readonly edge: number };
 }
 
 export interface AbilityDef {

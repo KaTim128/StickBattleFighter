@@ -8,6 +8,8 @@ import { Container, type ContainerChild } from 'pixi.js';
 export class YSortLayer {
   readonly container = new Container();
   private readonly footOffsets = new Map<ContainerChild, number>();
+  /** Extra depth for a child (negative: drawn behind whatever it would cover); see `setBias`. */
+  private readonly bias = new Map<ContainerChild, number>();
 
   constructor() {
     this.container.label = 'y-sort-layer';
@@ -20,14 +22,21 @@ export class YSortLayer {
     this.container.addChild(child);
   }
 
+  /** Moves a child's depth by `by` (0 clears it): a see-through wall is pushed behind the furniture in its room. */
+  setBias(child: ContainerChild, by: number): void {
+    if (by === 0) this.bias.delete(child);
+    else this.bias.set(child, by);
+  }
+
   remove(child: ContainerChild): void {
     this.footOffsets.delete(child);
+    this.bias.delete(child);
     this.container.removeChild(child);
   }
 
   /** Call once per rendered frame after positions are updated. */
   update(): void {
-    for (const [child, foot] of this.footOffsets) child.zIndex = child.y + foot;
+    for (const [child, foot] of this.footOffsets) child.zIndex = child.y + foot + (this.bias.get(child) ?? 0);
   }
 
   destroy(): void {

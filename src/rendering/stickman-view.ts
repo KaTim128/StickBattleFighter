@@ -91,6 +91,23 @@ export class StickmanView {
   /** Stunned: stars circle the head (PRS-6). */
   stunned = false;
   private readonly status = new Graphics();
+  /** The red ribbon behind a slashing knife (Rending Flurry), drawn above the body. */
+  private readonly slashLayer = new Graphics();
+  /**
+   * Set while a slash combo is under way: which slash this is (0, 1, 2), whether it is the last, and its colours.
+   * The ribbon keeps fading after it is cleared to null.
+   */
+  slash: { readonly index: number; readonly last: boolean; readonly colour: number; readonly edge: number } | null =
+    null;
+  private readonly slashTrail: { x: number; y: number; ix: number; iy: number; t: number; k: number; last: boolean }[] =
+    [];
+  /** The ribbon's own clock, advanced in game time so it follows slow motion and pauses with the fight. */
+  private slashClockS = 0;
+  /** Advance the slash ribbon's clock by one frame of game time. */
+  tickSlash(dtS: number): void {
+    this.slashClockS += dtS;
+  }
+  private slashColours = { colour: 0xe5242e, edge: 0xff9a9a };
   /** 0..1 how fast the fighter is moving: the flames stream back. */
   motion = 0;
   private readonly t0 = typeof performance === 'undefined' ? 0 : performance.now();
@@ -122,7 +139,7 @@ export class StickmanView {
         )
       : null;
     this.fire.blendMode = 'add';
-    this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.burnMask);
+    this.figure.addChild(this.body, this.fire, this.fireCore, this.status, this.slashLayer, this.burnMask);
     const scaled = new Container();
     scaled.scale.set(size);
     scaled.addChild(this.shadow, this.trail, this.figure);
@@ -383,11 +400,61 @@ export class StickmanView {
     if (fiery && flame < 0.5) this.bodyTongues(s, t, w);
     this.drawStatus(s, t);
     if (this.held && flame < 0.01) this.drawHeld(g, s, o);
+    this.drawSlash(s, this.slashClockS);
     // Necro's violet magic belongs to the staff: other casters show their power through their VFX.
     if (this.magic > 0 && this.held === 'staff') this.drawMagic(s);
     if (this.blind > 0.01) this.drawBlind(s);
     if (this.decay > 0.01) this.drawDecay(s);
     if (this.dark > 0.01) this.drawDark(s);
+  }
+
+  /**
+   * The slash ribbon (Rending Flurry, owner 20/11/2026): while a slash runs, the blade's tip and a point near the
+   * fist are recorded every frame; the ribbon between them follows the arm and fades in a fraction of a second.
+   * Each slash is its own streak, and the last is wider, longer-lived and edged brighter.
+   */
+  private drawSlash(s: ReturnType<typeof solveSkeleton>, t: number): void {
+    const g = this.slashLayer.clear();
+    const sl = this.slash;
+    if (sl) {
+      this.slashColours = { colour: sl.colour, edge: sl.edge };
+      const [, elbow, hand] = s.armFront;
+      const fx = hand.x - elbow.x;
+      const fy = hand.y - elbow.y;
+      const len = Math.hypot(fx, fy) || 1;
+      const c = Math.cos(KNIFE_TILT_RAD);
+      const sn = Math.sin(KNIFE_TILT_RAD);
+      // The blade points up from the fist, cocked as in drawKnife.
+      const ux = (fx / len) * c + (fy / len) * sn;
+      const uy = (-fx / len) * sn + (fy / len) * c;
+      const tip = { x: hand.x + ux * 0.42, y: hand.y + uy * 0.42 };
+      const inner = { x: hand.x + ux * 0.08, y: hand.y + uy * 0.08 };
+      const prev = this.slashTrail[this.slashTrail.length - 1];
+      if (!prev || Math.hypot(prev.x - tip.x, prev.y - tip.y) > 0.01 || prev.k !== sl.index)
+        this.slashTrail.push({ x: tip.x, y: tip.y, ix: inner.x, iy: inner.y, t, k: sl.index, last: sl.last });
+    }
+    // Drop what has faded, and draw the rest as a ribbon of quads between consecutive samples of one slash.
+    const life = (p: { last: boolean }) => (p.last ? 0.45 : 0.3);
+    while (this.slashTrail.length > 0 && t - this.slashTrail[0]!.t > life(this.slashTrail[0]!)) this.slashTrail.shift();
+    const { colour, edge } = this.slashColours;
+    for (let i = 1; i < this.slashTrail.length; i++) {
+      const a = this.slashTrail[i - 1]!;
+      const b = this.slashTrail[i]!;
+      if (a.k !== b.k) continue;
+      const fade = Math.max(0, 1 - (t - b.t) / life(b));
+      const widen = b.last ? 1.6 : 1;
+      // The ribbon is widest at the tip and thinnest at the fist, so it reads as the blade's sweep.
+      const quad = [a.ix, a.iy, a.x, a.y, b.x, b.y, b.ix, b.iy];
+      g.poly(quad).fill({ color: colour, alpha: 0.78 * fade });
+      g.poly(quad).stroke({ width: 0.012 * widen, color: edge, alpha: 0.9 * fade });
+      g.moveTo(a.x, a.y)
+        .lineTo(b.x, b.y)
+        .stroke({ width: 0.05 * widen * fade + 0.01, color: edge, alpha: fade, cap: 'round' });
+      if (b.last)
+        g.moveTo(a.x, a.y)
+          .lineTo(b.x, b.y)
+          .stroke({ width: 0.13 * fade, color: colour, alpha: 0.35 * fade, cap: 'round' });
+    }
   }
 
   /**

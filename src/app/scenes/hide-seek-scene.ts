@@ -18,6 +18,7 @@ import { bakerFor, buildHouseView, type HouseView, isFrontWallOf } from '../../r
 import { KillEffects } from '../../rendering/kill-effects';
 import { iso } from '../../rendering/projection';
 import { SpotEffects } from '../../rendering/spot-effects';
+import type { YSortLayer } from '../../rendering/y-sort-layer';
 import type { Viewport } from './arena-scene';
 
 /**
@@ -28,6 +29,9 @@ import type { Viewport } from './arena-scene';
 /** How many metres of the short side of the screen the camera shows. */
 const VIEW_SHORT_SIDE_M = 14;
 const CAMERA_RATE = 5;
+
+/** How far a see-through front wall's depth key drops, so it draws behind everything standing in its room. */
+const FRONT_WALL_DROP = 1_000_000;
 
 export class HideSeekScene implements GameScene {
   readonly name = 'hide-seek';
@@ -45,6 +49,8 @@ export class HideSeekScene implements GameScene {
   private readonly spotTops = new Map<string, number>();
   /** The room whose front walls are currently see-through. */
   private fadedRoom: string | null | undefined;
+  /** The see-through front walls pushed behind the room's furniture, and the layer each is sorted in. */
+  private readonly liftedWalls = new Map<Container, YSortLayer>();
   private lastHunter = { x: 0, y: 0 };
   private cam = { x: 0, y: 0 };
   /** The camera's push-in during the execution (1 = normal), eased, and the clock for its shake. */
@@ -372,6 +378,17 @@ export class HideSeekScene implements GameScene {
         )
           set.add(n.node);
     view.fader.setForced(set);
+    // A see-through front wall is drawn behind the furniture and the people in its room, never over them (owner,
+    // 20/11/2026: walls must not veil furniture or whoever stands on it); it keeps its place against other walls.
+    for (const [node, layer] of this.liftedWalls) layer.setBias(node, 0);
+    this.liftedWalls.clear();
+    if (room) {
+      const layer = view.floors[room.floor].actors;
+      for (const node of set) {
+        layer.setBias(node, -FRONT_WALL_DROP);
+        this.liftedWalls.set(node, layer);
+      }
+    }
   }
 
   /** Everything back to the start of a round: the game, the lighting memory and the hunter's picture. */

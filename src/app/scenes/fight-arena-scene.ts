@@ -3055,6 +3055,7 @@ export class FightArenaScene implements ArenaScene {
       dust,
       projectiles: world.projectiles,
       zones: world.zones,
+      clouds: world.clouds,
       telegraphs: world.telegraphs,
       fx,
       burning,
@@ -3131,6 +3132,7 @@ export class FightArenaScene implements ArenaScene {
         false,
       );
     }
+    f.view.tickSlash(frameDtS);
     const cast = f.caster?.cast;
     if (cast && f.caster) {
       pose = abilityPose(
@@ -3143,8 +3145,15 @@ export class FightArenaScene implements ArenaScene {
         this.abilities?.world.grabOutcome(f.name),
       );
       const assault = this.abilities?.world.assaultOf(f.name);
-      if (assault) pose = assaultPose(pose, assault);
-    }
+      if (assault) pose = assaultPose(pose, assault, cast.def.id);
+      // A slashing knife leaves its red ribbon (Rending Flurry).
+      const slashLook = cast.def.look?.slash;
+      const d = cast.def.delivery;
+      f.view.slash =
+        assault?.phase === 'stab' && slashLook && d.type === 'assault'
+          ? { index: assault.stab, last: assault.stab >= d.stabs - 1, ...slashLook }
+          : null;
+    } else f.view.slash = null;
 
     // Carrying overhead: arms up (blended); a throw whips them forward for a moment.
     const carryTarget = f.carrying ? this.liftProgress(f) : 0; // the arms rise with the lift

@@ -219,11 +219,23 @@ describe('Shroud', () => {
     scenes.clear();
   });
 
-  it('Rending Flurry: heavy close damage, a stagger and deep bleeding', async () => {
-    const { intents, scene, scenes, run } = await setup({ x: 14, y: 13 }, { x: 15.2, y: 13 });
+  it('Rending Flurry (owner, 20/11/2026): three slashes, each its own hit, the last the hardest; about 104 in all, and it bleeds', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 14, y: 13 }, { x: 15.2, y: 13 });
+    (scene.playerFighter.def.stats as { critChance: number }).critChance = 0;
+    const hits: number[] = [];
+    let last = scene.dummy.hp;
     intents.pressAbility('a4');
-    run(0.5);
-    expect(1000 - scene.dummy.hp).toBeGreaterThan(90);
+    for (let i = 0; i < 90; i++) {
+      run(1 / 60);
+      if (scene.dummy.hp < last) hits.push(last - scene.dummy.hp);
+      last = scene.dummy.hp;
+    }
+    runUntil(() => false, 0.2);
+    expect(hits).toHaveLength(3);
+    expect(hits[2]!).toBeGreaterThan(hits[0]! * 1.3); // the final upward slash hits harder
+    const total = hits.reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThan(90);
+    expect(total).toBeLessThan(140);
     expect(scene.dummyFighter.combatant.bleeding).toBe(true);
     scenes.clear();
   });
