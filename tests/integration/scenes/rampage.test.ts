@@ -100,7 +100,7 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     const x0 = scene.dummy.x;
     intents.pressAbility('a1');
     run(K.a1.castS + 0.4);
-    expect(1000 - scene.dummy.hp).toBeGreaterThan(100);
+    expect(1000 - scene.dummy.hp).toBeGreaterThan(K.a1.payload.damage * 0.9);
     expect(['knockdown', 'gettingUp']).toContain(scene.dummy.state);
     run(0.4);
     expect(scene.dummy.x).toBeGreaterThan(x0 + 1); // thrown away from him
@@ -112,7 +112,7 @@ describe('Rampage (owner, 12/11/2026): the muscle-bound brawler', () => {
     const { intents, scene, scenes, run, runUntil } = await setup('rampage', { x: 18.1, y: 13 });
     intents.pressAbility('a3');
     runUntil(() => scene.dummy.hp < 1000, 1.5);
-    expect(1000 - scene.dummy.hp).toBeGreaterThan(200);
+    expect(1000 - scene.dummy.hp).toBeGreaterThan(K.a3.payload.damage); // hits harder than its listed damage (his power), whatever it is tuned to
     run(0.1);
     expect(scene.dummy.state).toBe('stunned');
     scenes.clear();

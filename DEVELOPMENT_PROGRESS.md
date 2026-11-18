@@ -46,7 +46,7 @@ Check this table before assigning work. No two active assignments may share a pa
 - **B6 done (TD-078):** `noFlinch` stabs, no hit chain restarts a fall; stab damage +12% to keep the close-battle standard.
 - **B9 done (TD-079):** smooth grab, AI throws furniture, Rampage Mode defence +40%.
 - **B10 part 1 (TD-080):** Blue Inferno ultimate, nerfed Eruption as a5, balanced by measurement. Looked at in a browser (before/during screenshots): dark navy skin, blue flame hair and sparks, new HUD icon; the soft aura ring on the floor under him stays orange (a separate layer) and is a polish item.
-- **B10 done (TD-080, TD-081).** Round-robin balance (72 fights, noisy): Shroud now about 50%; **Titan is dominant (72-92%) and untouched by every simple lever tried: carry into B17.**
+- **B10 done (TD-080, TD-081).** Round-robin balance (72 fights, noisy): Shroud now about 50%; Titan was dominant (72-92%); nerfed per TD-083 to about 63% (ability damage -30%, health 1160, heavy and finisher trimmed); B17 re-measures all four.
 - **Next:** B11 jumping, B13 fifth abilities and loadout, B14 loadout UI, B15 Shroud combo, B16 dodge, B17 fight length, B18 audio.
 
 ## Completed work

@@ -2,6 +2,7 @@ import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
+import { RAMPAGE_KIT } from '../../../src/data/abilities/rampage';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
@@ -80,7 +81,7 @@ describe('fourth abilities (R)', () => {
     const outcome = () => scene.abilities!.world.grabOutcome(scene.playerFighter.name);
     expect(outcome()?.state).toBe('hold'); // arms overhead while hoisting
     runUntil(() => scene.dummy.hp < 1000, 1.5);
-    expect(1000 - scene.dummy.hp).toBeGreaterThan(140);
+    expect(1000 - scene.dummy.hp).toBeGreaterThan(RAMPAGE_KIT.a4.payload.damage); // more than its listed damage (his power)
     expect(scene.dummyFighter.abilityLift).toBe(0); // back on the floor
     expect(outcome()?.state).toBe('slam'); // the caster drops into the slam (owner, 13/11/2026)
     runUntil(() => scene.dummy.state === 'knockdown', 0.5);
