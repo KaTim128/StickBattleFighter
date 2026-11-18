@@ -795,3 +795,6 @@ TD-087. Next: B16 dodge responsiveness.
 
 ### 18/11/2026 Phase 1 Batch B: B16 dodge responsiveness
 Input buffer added (TD-088); the other dodge rules reviewed unchanged. Next: B17 fight length baseline and tuning, then B18 audio.
+
+### 18/11/2026 Phase 1 Batch B: B17 longer fights
+Baseline recorded and tuned (TD-089): median +30%, mean +28%. Next: B18 unique audio (synthesised; Pixabay unreachable), then hand Phase 1 over for owner review.

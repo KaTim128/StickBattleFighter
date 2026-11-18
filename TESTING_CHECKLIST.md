@@ -529,3 +529,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Owner check: the two new knife animations (rising cut, cross slash) read well in play
 - [x] A dodge pressed just before the cooldown ends still happens; one pressed long before does not; one press = one dodge (`dodge-buffer.test.ts`)
 - [ ] Owner check: dodge feel on desktop and phone; swing direction commitment (B16 tail) if it still feels wrong
+- [x] Watched Hard AI fights are at least 15% longer (median) and 10% longer (mean) than the recorded baseline; no fighter wins over 80% or under 15% (`fight-length.test.ts`)
+- [ ] Owner check: fights feel longer yet still hit hard; AI dodge rate (1.5%) seems low?

@@ -137,7 +137,7 @@ describe('furniture climbing', () => {
     expect(p.airborne).toBe(true); // falling, not snapped down
     runUntil(() => !p.airborne, 2);
     expect(p.hop.heightM).toBe(0);
-    expect(before - hp(p)).toBeGreaterThanOrEqual(20); // the blow (a drop from this low is survivable unhurt)
+    expect(before - hp(p)).toBeGreaterThanOrEqual(Math.floor(20 / p.def.stats.defence)); // the blow (a drop from this low is survivable unhurt)
     scenes.clear();
   });
 
