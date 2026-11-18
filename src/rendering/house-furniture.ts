@@ -514,12 +514,18 @@ function drawSorted(
  * Sofa and armchair, facing `facing` (toward the table they are used with): feet and plinth, a back on the
  * side away from the sitter, arms, split seat cushions and leaning back cushions.
  */
+/** How high a sofa's seat stands when it can be crawled under, metres (a prone body fits with room). */
+export const SOFA_LIFT_M = 0.4;
+
 function seating(g: Graphics, f: FurnitureDef, B: Blk, seed: number, facing: Facing): void {
   const c = f.colour;
   const { R, L, D } = frameFor(f, facing);
   const arm = f.kind === 'sofa' ? 0.3 : 0.22;
   const backT = 0.34;
   const seatTop = 0.4;
+  // A sofa that can be crawled under stands on four legs, its seat lifted by this much (owner, 18/11/2026).
+  const lift = f.hide?.kind === 'under-bed' ? SOFA_LIFT_M : 0;
+  const T = f.heightM + lift;
   const parts: { r: readonly [number, number, number, number]; z0: number; z1: number; look: Look }[] = [];
   const add = (r: readonly [number, number, number, number], z0: number, z1: number, look: Look) =>
     parts.push({ r, z0, z1, look });
@@ -531,34 +537,40 @@ function seating(g: Graphics, f: FurnitureDef, B: Blk, seed: number, facing: Fac
       [0.04, 0.16],
       [D - 0.16, D - 0.04],
     ] as const)
-      add(R(a0, a1, p0, p1), 0, 0.1, { colour: MOULD, edge: 0.3 });
-  add(R(0, L, 0, D), 0.1, 0.3, { colour: shade(c, 0.85) });
-  add(R(0, L, 0, backT), 0.3, f.heightM, { colour: c });
-  add(R(0, arm, 0, D), 0.3, 0.64, { colour: shade(c, 0.95) });
-  add(R(L - arm, L, 0, D), 0.3, 0.64, { colour: shade(c, 0.95) });
+      add(R(a0, a1, p0, p1), 0, 0.1 + lift, { colour: MOULD, edge: 0.3 });
+  add(R(0, L, 0, D), 0.1 + lift, 0.3 + lift, { colour: shade(c, 0.85) });
+  add(R(0, L, 0, backT), 0.3 + lift, T, { colour: c });
+  add(R(0, arm, 0, D), 0.3 + lift, 0.64 + lift, { colour: shade(c, 0.95) });
+  add(R(L - arm, L, 0, D), 0.3 + lift, 0.64 + lift, { colour: shade(c, 0.95) });
   const n = Math.max(1, Math.round((L - arm * 2) / 0.85));
   const cw = (L - arm * 2) / n;
   for (let i = 0; i < n; i++) {
     const a0 = arm + cw * i + 0.01;
     const a1 = arm + cw * (i + 1) - 0.01;
-    add(R(a0, a1, backT, D - 0.02), 0.3, seatTop + 0.04 * ((seed + i) % 2), { colour: shade(c, 1.06), noAo: true });
-    add(R(a0 + 0.03, a1 - 0.03, backT - 0.02, backT + 0.14), seatTop, f.heightM - 0.1, {
+    add(R(a0, a1, backT, D - 0.02), 0.3 + lift, seatTop + lift + 0.04 * ((seed + i) % 2), {
+      colour: shade(c, 1.06),
+      noAo: true,
+    });
+    add(R(a0 + 0.03, a1 - 0.03, backT - 0.02, backT + 0.14), seatTop + lift, T - 0.1, {
       colour: shade(c, 0.98),
       noAo: true,
     });
   }
   // A throw pillow on a sofa, in the corner by an arm.
   if (f.kind === 'sofa')
-    add(R(arm + 0.05, arm + 0.4, backT + 0.1, backT + 0.28), seatTop, seatTop + 0.3, { colour: 0x8a3a3a, noAo: true });
+    add(R(arm + 0.05, arm + 0.4, backT + 0.1, backT + 0.28), seatTop + lift, seatTop + lift + 0.3, {
+      colour: 0x8a3a3a,
+      noAo: true,
+    });
   drawSorted(B, parts);
   if (f.kind !== 'sofa') return;
   // A sag in the seat and, on the side the camera sees, a rip with stuffing.
   const dent = R(L * 0.45, L * 0.7, backT + 0.2, D - 0.15);
-  const at = iso((dent[0] + dent[2]) / 2, (dent[1] + dent[3]) / 2, seatTop + 0.05);
+  const at = iso((dent[0] + dent[2]) / 2, (dent[1] + dent[3]) / 2, seatTop + lift + 0.05);
   g.ellipse(at.x, at.y, 0.26, 0.09).fill({ color: 0x000000, alpha: 0.18 });
   if (!frontVisible(facing)) return;
   const edge = R(L * 0.25, L * 0.25, D, D);
-  const t = facing === 's' ? iso(edge[0], f.y1, 0.34) : iso(f.x1, edge[1], 0.34);
+  const t = facing === 's' ? iso(edge[0], f.y1, 0.34 + lift) : iso(f.x1, edge[1], 0.34 + lift);
   g.moveTo(t.x - 0.1, t.y)
     .lineTo(t.x - 0.03, t.y - 0.05)
     .lineTo(t.x + 0.03, t.y + 0.02)

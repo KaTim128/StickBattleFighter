@@ -837,3 +837,11 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Cost.** Checking places properly takes time: in two minutes he searches about 4 rooms and 9 hiding places (up from more rooms, fewer places), so his walk speed rose to 3.3 m/s and the coverage test now measures rooms, places and variety of actions. Not yet play-tested for difficulty.
 **Status.** ACCEPTED, owner to review in play.
 
+### TD-104: Sofa to hide under, Shroud faster than a runner, his sight cone hidden (owner 18/11/2026) — ACCEPTED
+**Owner request.** Shroud should be faster than the player; the player must not see his vision cone; the player should be able to hide under the sofa.
+**Sofa.** The living-room sofa stands on four legs, its seat lifted 0.4 m (`SOFA_LIFT_M`), leaving a clear gap to crawl under. It is now the hiding place `under-sofa` (concealment 0.9, same full cover as under a bed: the figure is not drawn while inside), replacing the old "behind the sofa" place. Its look-under check is the kneeling action, and the prompt reads "Hide (under the sofa)". The old `behind-sofa` kind stays in the code only for the hunter's search tables.
+**Pace.** Shroud walks at 4.6 m/s and runs at 5.4 m/s; the player runs at 4.4 m/s (`RUN_MPS`), so a running player can no longer outpace him. A test requires his walk to beat the player's run and his run to beat his walk.
+**Cone.** His vision cone is no longer drawn on the floor. The player sees only the hunter's figure, when they could see him. The cone code still decides what he sees; only the picture is removed.
+**Tests changed.** The restart test now reaches the hunt by the round clock, since a motionless player is caught by the faster hunter within 25 s. Three tests that named the old sofa place now name the under-sofa place.
+**Status.** ACCEPTED, owner to review in play.
+

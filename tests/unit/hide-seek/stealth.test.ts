@@ -16,17 +16,7 @@ describe('hiding places (sections B and F)', () => {
 
   it('there are hiding places of every kind the brief lists, on both floors and outdoors', () => {
     const kinds = new Set(spots.map((s) => s.spec.kind));
-    for (const k of [
-      'under-bed',
-      'wardrobe',
-      'cupboard',
-      'chest',
-      'box',
-      'behind-sofa',
-      'curtain',
-      'shower-curtain',
-      'bush',
-    ])
+    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'box', 'curtain', 'shower-curtain', 'bush'])
       expect(kinds.has(k as never), k).toBe(true);
     expect(spots.some((s) => s.floor === 1)).toBe(true);
     expect(spots.some((s) => s.floor === 0)).toBe(true);
@@ -122,7 +112,7 @@ describe('hiding places (sections B and F)', () => {
     expect(exposure(bed, { x: at.x, y: at.y + 7 })).toBeLessThan(front);
     // Better concealment, lower exposure.
     const wardrobe = spots.find((s) => s.spec.kind === 'wardrobe')!;
-    const sofa = spots.find((s) => s.spec.kind === 'behind-sofa')!;
+    const sofa = spots.find((s) => s.spec.kind === 'under-sofa')!;
     const dir = { x: 0, y: 0 };
     const f = (s: typeof wardrobe) => {
       const o = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[s.spec.opensToward]!;

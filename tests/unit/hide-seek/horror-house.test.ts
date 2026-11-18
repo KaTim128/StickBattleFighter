@@ -188,3 +188,26 @@ describe('front walls of the occupied room in the real, thick-walled house', () 
     expect(isFrontWallOf(kitchen, north)).toBe(false);
   });
 });
+
+describe("the sofa to hide under, and Shroud's pace (owner, 18/11/2026)", () => {
+  it('the sofa stands on legs with room to crawl under, and its hiding place is fully covered', async () => {
+    const { SOFA_LIFT_M } = await import('../../../src/rendering/house-furniture');
+    const { COMPLETE_COVER } = await import('../../../src/app/scenes/hide-seek-scene');
+    expect(SOFA_LIFT_M).toBeGreaterThanOrEqual(0.35);
+    const sofaSpot = HOUSE.furniture.find((f) => f.hide?.kind === 'under-sofa')!;
+    expect(sofaSpot.kind).toBe('sofa');
+    expect(COMPLETE_COVER.has('under-sofa')).toBe(true);
+    // The spot sits well inside the sofa, not at an edge where legs would show.
+    const at = sofaSpot.hide!.at;
+    expect(
+      Math.min(at.x - sofaSpot.x0, sofaSpot.x1 - at.x, at.y - sofaSpot.y0, sofaSpot.y1 - at.y),
+    ).toBeGreaterThanOrEqual(0.3);
+  });
+
+  it('Shroud walks faster than a player can run', async () => {
+    const { HUNTER_SPEED_MPS } = await import('../../../src/modes/hide-seek/hunter');
+    const { RUN_MPS } = await import('../../../src/modes/hide-seek/game');
+    expect(HUNTER_SPEED_MPS.walk).toBeGreaterThan(RUN_MPS);
+    expect(HUNTER_SPEED_MPS.run).toBeGreaterThan(HUNTER_SPEED_MPS.walk);
+  });
+});

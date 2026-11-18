@@ -19,7 +19,6 @@ const HIDE_KINDS: HideKind[] = [
   'cupboard',
   'chest',
   'box',
-  'behind-sofa',
   'curtain',
   'shower-curtain',
   'bush',

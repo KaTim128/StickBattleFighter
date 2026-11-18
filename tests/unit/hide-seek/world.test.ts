@@ -66,17 +66,7 @@ describe('the house data (Phase 2 section A)', () => {
       if (f.hide) expect(world.roomAt(f.floor, f.hide.at.x, f.hide.at.y), `${f.id} hide spot`).not.toBeNull();
     }
     const kinds = new Set(HOUSE_PLAN.furniture.flatMap((f) => (f.hide ? [f.hide.kind] : [])));
-    for (const k of [
-      'under-bed',
-      'wardrobe',
-      'cupboard',
-      'chest',
-      'box',
-      'behind-sofa',
-      'curtain',
-      'shower-curtain',
-      'bush',
-    ])
+    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'box', 'curtain', 'shower-curtain', 'bush'])
       expect(kinds.has(k as never), k).toBe(true);
   });
 

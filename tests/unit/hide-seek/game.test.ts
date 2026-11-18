@@ -88,7 +88,8 @@ describe('player movement and stealth speeds (section D)', () => {
     g.player.y = 15;
     walk(g, { x: 0, y: -1 }, 3);
     expect(g.world.isOpen('d-kitchen-living')).toBe(true);
-    for (let i = 0; i < 60 * 25; i++) g.step(STEP, NO_INPUT);
+    // Reach the hunt by the round clock alone: a motionless player would be caught by the faster hunter in this time.
+    g.round.update(25);
     expect(g.round.phase).toBe('hunt');
     g.restart();
     expect(g.round.phase).toBe('prep');

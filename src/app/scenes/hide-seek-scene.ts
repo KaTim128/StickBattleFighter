@@ -8,7 +8,6 @@ import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
 import { hideCues } from '../../modes/hide-seek/hiding';
 import type { Rect } from '../../modes/hide-seek/house-types';
 import { actionPose, openAmount } from '../../modes/hide-seek/hunter-actions';
-import { visionPolygon } from '../../modes/hide-seek/perception';
 import { Visibility } from '../../modes/hide-seek/visibility';
 import type { Point } from '../../modes/hide-seek/world';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
@@ -35,8 +34,6 @@ export class HideSeekScene implements GameScene {
   private view: HouseView | null = null;
   private player: ActorView | null = null;
   private hunterView: ActorView | null = null;
-  /** The hunter's vision cone, drawn on the ground of his floor: the very area his sight test uses. */
-  private cone: Graphics | null = null;
   private hunterFloor: 0 | 1 = 0;
   /** Cupboard doors, lids, curtains and bushes the hunter opens, drags and shakes. */
   private spotFx: SpotEffects | null = null;
@@ -132,8 +129,6 @@ export class HideSeekScene implements GameScene {
     this.hunterFloor = h.floor;
     this.lastHunter = { x: h.x, y: h.y };
     this.view.floors[h.floor].actors.add(this.hunterView.view.root, 0);
-    this.cone = new Graphics();
-    this.view.floors[h.floor].ground.addChild(this.cone);
     const p = this.game.player;
     const at = iso(p.x, p.y, p.z);
     this.cam = { x: at.x, y: at.y - p.floor * FLOOR_HEIGHT_M };
@@ -236,18 +231,15 @@ export class HideSeekScene implements GameScene {
     view.world.position.set(width / 2 - this.cam.x * scale, height / 2 - this.cam.y * scale);
   }
 
-  /** The hunter: drawn only where the player could see him, with the cone of what he sees. */
+  /** The hunter: drawn only where the player could see him. His sight cone is never shown to the player (owner, 18/11/2026). */
   private renderHunter(view: HouseView, frameDtS: number): void {
     const hv = this.hunterView;
-    const cone = this.cone;
-    if (!hv || !cone) return;
+    if (!hv) return;
     const g = this.game;
     const h = g.hunter;
     if (h.floor !== this.hunterFloor) {
       view.floors[this.hunterFloor].actors.remove(hv.view.root);
-      view.floors[this.hunterFloor].ground.removeChild(cone);
       view.floors[h.floor].actors.add(hv.view.root, 0);
-      view.floors[h.floor].ground.addChild(cone);
       this.hunterFloor = h.floor;
     }
     const moved = Math.hypot(h.x - this.lastHunter.x, h.y - this.lastHunter.y);
@@ -273,14 +265,6 @@ export class HideSeekScene implements GameScene {
       this.visibility.canSee(g.viewer(), h.floor, h) ||
       (h.floor === g.player.floor && Math.hypot(h.x - g.player.x, h.y - g.player.y) < 1.5);
     hv.view.root.visible = seen && view.floors[h.floor].container.visible;
-    cone.clear();
-    if (seen && g.round.phase !== 'prep') {
-      const poly = visionPolygon(g.world, h.eyes());
-      const alert = h.mode === 'chase' ? 0.42 : 0.26 + h.awareness * 0.16;
-      cone
-        .poly(poly.flatMap((q) => [iso(q.x, q.y).x, iso(q.x, q.y).y]))
-        .fill({ color: h.mode === 'chase' ? 0xff3030 : 0xffd070, alpha: alert });
-    }
   }
 
   /** The throwable objects: on the floor, carried over the player's head, or flying in an arc. */
@@ -426,7 +410,6 @@ export class HideSeekScene implements GameScene {
     this.player = null;
     this.hunterView = null;
     this.spotFx = null;
-    this.cone = null;
     this.world = null;
   }
 
@@ -437,7 +420,15 @@ export class HideSeekScene implements GameScene {
 }
 
 /** Hiding places that hide the whole body (the player's figure is not drawn at all while inside). */
-export const COMPLETE_COVER = new Set(['under-bed', 'wardrobe', 'cupboard', 'chest', 'box', 'shed-cabinet']);
+export const COMPLETE_COVER = new Set([
+  'under-bed',
+  'under-sofa',
+  'wardrobe',
+  'cupboard',
+  'chest',
+  'box',
+  'shed-cabinet',
+]);
 
 /** The house's overall darkness: lit rooms are this bright at most. */
 const AMBIENT = 0.78;

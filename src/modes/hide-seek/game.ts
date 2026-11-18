@@ -444,6 +444,7 @@ const HIDE_NAMES: Readonly<Record<HideSpot['spec']['kind'], string>> = {
   chest: 'in the chest',
   box: 'in the box',
   'behind-sofa': 'behind the sofa',
+  'under-sofa': 'under the sofa',
   curtain: 'behind the curtain',
   'shower-curtain': 'behind the shower curtain',
   bush: 'in the bush',

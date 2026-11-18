@@ -20,7 +20,7 @@ import { BODY_RADIUS_M, type HouseWorld, type Placed, type Point, type Waypoint 
  */
 export type HunterMode = 'patrol' | 'investigate' | 'search' | 'chase';
 
-export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 3.3, tiptoe: 1.4, run: 4.2 };
+export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 4.6, tiptoe: 1.5, run: 5.4 };
 /** How loud his own steps are (the player hears him coming, positionally; P2-5). */
 export const HUNTER_STEP_LOUDNESS: Readonly<Record<Gait, number>> = { walk: 0.4, tiptoe: 0.1, run: 0.85 };
 

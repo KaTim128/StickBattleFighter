@@ -10,21 +10,26 @@ type W = Window & {
 const dbg = (page: Page) => page.evaluate(() => (window as W).__hideSeekDebug!);
 
 /** Where to stand to use a hiding place of `kind`: just outside the way into it. */
-async function besideSpot(page: Page, kind: string): Promise<{ floor: number; x: number; y: number }> {
-  return page.evaluate((k) => {
-    const g = (
-      window as unknown as {
-        __hideSeek: {
-          game: {
-            spots: { floor: number; spec: { kind: string; at: { x: number; y: number }; opensToward: string } }[];
+async function besideSpot(page: Page, kind: string, atX?: number): Promise<{ floor: number; x: number; y: number }> {
+  return page.evaluate(
+    ([k, ax]) => {
+      const g = (
+        window as unknown as {
+          __hideSeek: {
+            game: {
+              spots: { floor: number; spec: { kind: string; at: { x: number; y: number }; opensToward: string } }[];
+            };
           };
-        };
-      }
-    ).__hideSeek.game;
-    const s = g.spots.find((sp) => sp.spec.kind === k)!;
-    const d = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[s.spec.opensToward] as number[];
-    return { floor: s.floor, x: s.spec.at.x + d[0]! * 0.9, y: s.spec.at.y + d[1]! * 0.9 };
-  }, kind);
+        }
+      ).__hideSeek.game;
+      const s = g.spots.find(
+        (sp) => sp.spec.kind === k && (ax === undefined || (sp.floor === 0 && Math.abs(sp.spec.at.x - ax) < 0.01)),
+      )!;
+      const d = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[s.spec.opensToward] as number[];
+      return { floor: s.floor, x: s.spec.at.x + d[0]! * 0.9, y: s.spec.at.y + d[1]! * 0.9 };
+    },
+    [kind, atX] as const,
+  );
 }
 
 async function open(page: Page): Promise<string[]> {
@@ -126,7 +131,7 @@ test('hiding and throwing: G gets into a hiding place and out, picks up a bottle
       [floor, x, y],
     );
   // The sofa's hiding place (living room): stand beside it and hide.
-  const sofa = await besideSpot(page, 'behind-sofa');
+  const sofa = await besideSpot(page, 'under-sofa');
   await put(sofa.floor, sofa.x, sofa.y);
   await expect.poll(() => page.evaluate(() => (window as unknown as Scene).__hideSeek.game.prompt())).toContain('Hide');
   await expect(page.locator('.hs-prompt')).toContainText('Hide');
@@ -228,7 +233,7 @@ test('a floating HIDE bubble marks hiding places near the player, brighter when 
       [floor, x, y],
     );
   // Beside the living room sofa: its hiding place is in reach.
-  const beside = await besideSpot(page, 'behind-sofa');
+  const beside = await besideSpot(page, 'under-sofa');
   await put(beside.floor, beside.x, beside.y);
   await expect(page.locator('.hs-bubble.near .hs-bubble-body')).toHaveText('HIDE');
   const bubble = page.locator('.hs-bubble.near .hs-bubble-body');
