@@ -829,3 +829,6 @@ Done: rooms scaled 1.9 with furniture at its natural size, doors two thirds as w
 ### 18/11/2026 Hunter search animations (TD-103)
 Done: ten keyframed search actions, doors/lids/curtains/bushes that react, thorough-versus-glance checking driven by suspicion, listening and knife-scrape beats, rechecks, positional noises, the strike at the catch; fixed the long-furniture depth order against the hunter. Known limits: wardrobe doors whose front faces away from the camera cannot show opening; the hunter's difficulty is untested by a person.
 
+### 18/11/2026 House made smaller (TD-105)
+Done: `HOUSE_SCALE` 1.9 to 1.6. Tests: 599 unit tests pass.
+

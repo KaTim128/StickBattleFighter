@@ -845,3 +845,8 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Tests changed.** The restart test now reaches the hunt by the round clock, since a motionless player is caught by the faster hunter within 25 s. Three tests that named the old sofa place now name the under-sofa place.
 **Status.** ACCEPTED, owner to review in play.
 
+### TD-105: House made smaller (owner 18/11/2026) — ACCEPTED
+**Owner request.** The house is too large.
+**Decision.** `HOUSE_SCALE` reduced from 1.9 to 1.6 (still larger than the original plan at 1.0, and than the 1.45 first used). Furniture stays at `FURNITURE_SCALE` 1.45, so rooms have a little less floor and the furniture is less spread out. Doors, spacing, reachability and hunter search tests all still pass on the smaller house.
+**Status.** ACCEPTED, owner to review in play.
+

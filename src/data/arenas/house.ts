@@ -512,7 +512,7 @@ export const HOUSE_PLAN: HouseDef = {
 };
 
 /** The rooms are made this much roomier than the authored plan (owner, 18/11/2026: a bigger, bungalow-sized house). */
-export const HOUSE_SCALE = 1.9;
+export const HOUSE_SCALE = 1.6;
 /** Furniture keeps closer to its natural size, so the bigger rooms have space for more of it. */
 export const FURNITURE_SCALE = 1.45;
 /** Doors are two thirds as wide as they were (owner, 18/11/2026). */
