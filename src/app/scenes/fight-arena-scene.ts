@@ -2542,6 +2542,7 @@ export class FightArenaScene implements ArenaScene {
         connected = true;
         hitFighter = true;
         if (frenzy?.meleeBleed || a.bleed) target.combatant.bleed();
+        if (a.poison) target.combatant.poison(a.poison);
       }
     }
 

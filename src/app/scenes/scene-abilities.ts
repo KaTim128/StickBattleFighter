@@ -223,6 +223,8 @@ export class SceneAbilities implements AbilityHost {
     });
     // Shroud's knife: deep cuts bleed.
     if (landed && payload.bleed) target.combatant.bleed();
+    // Vexoris's poison: toxicity stacks.
+    if (landed && payload.poison) target.combatant.poison(payload.poison);
     // Soul Drain: the target is blinded for a while.
     if (landed && payload.blindS) target.combatant.blind(payload.blindS);
     // Curse of Decay: weaker blows and weaker defence for a while.

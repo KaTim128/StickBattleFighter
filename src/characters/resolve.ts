@@ -207,6 +207,7 @@ export function resolveMoves(
       sfx: m.sfx ?? null,
       burn: m.status?.burn ?? null,
       bleed: m.status?.bleed ?? false,
+      poison: m.status?.poison ?? 0,
       groundBounce: (m.groundBounce ?? false) && caps.canGroundBounce,
     };
   }

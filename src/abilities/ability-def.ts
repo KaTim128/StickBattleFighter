@@ -60,6 +60,8 @@ export interface AbilityPayload {
   readonly decay?: { readonly durationS: number; readonly attackFactor: number; readonly defenceFactor: number };
   /** Deep cuts: the target bleeds (takes 10% more damage for 6 s, `BLEED`; Shroud's knife). */
   readonly bleed?: boolean;
+  /** Toxicity stacks the target gets when it lands (Vexoris, TD-115). One application per target per hit event. */
+  readonly poison?: number;
   /**
    * Drags the target toward the caster when it lands (Grave Chains, owner 12/11/2026), at
    * `speedMps`, stopping `stopM` in front of the caster or at anything solid in the way.

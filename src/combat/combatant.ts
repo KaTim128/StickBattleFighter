@@ -289,6 +289,19 @@ export class Combatant {
     this.status.apply('bleed', BLEED.durationS, { damageTakenFactor: BLEED.damageTakenFactor });
   }
 
+  /**
+   * Poison (Vexoris, TD-115): adds toxicity stacks. One application is one call: the caller makes sure a
+   * single attack, cloud or hit event applies it once per target.
+   */
+  poison(stacks: number): void {
+    if (this.isKo) return;
+    this.status.toxicity.apply(stacks);
+  }
+
+  get toxicityStacks(): number {
+    return this.status.toxicity.stacks;
+  }
+
   get bleeding(): boolean {
     return this.status.has('bleed');
   }
@@ -470,6 +483,7 @@ export class Combatant {
     if (this.isKo) {
       this.status.clear('burn');
       this.status.clear('bleed');
+      this.status.clear('toxicity');
     }
     this.dotTaken = 0;
     this.status.tick(dtS, this.dotSink);
@@ -521,6 +535,7 @@ export class Combatant {
       this.getUpS = 0;
       this.status.clear('burn');
       this.status.clear('bleed');
+      this.status.clear('toxicity');
       if (id === 'burn') this.burnKo = true;
     }
     return damage;

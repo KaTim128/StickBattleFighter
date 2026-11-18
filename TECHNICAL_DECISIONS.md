@@ -911,7 +911,7 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 ### TD-112: Phase 3 reordered (owner 19/11/2026) — ACCEPTED
 **Owner request.** After Phase 2: four of the twelve new fighters first, then the Roman Colosseum, then the remaining eight fighters, and only then the rest of Phase 3 (UI redesign, tutorial) and Phase 4.
 **Decision.** The master plan's fixed order (spec section 20A) changes as above; the most recent explicit instruction wins. The four fighters were not named yet: the owner is asked (suggestion: Vexoris, Arcstrike, Kenshiro, Tidebreaker, for the widest spread of ability types). Nothing for Phase 3 starts before Phase 2 is reviewed and the owner approves.
-**Status.** ACCEPTED; the four to be named.
+**Status.** ACCEPTED; the four were named on 19/11/2026 (TD-114).
 
 
 ### TD-113: Shroud enters by the front door; less sudden, slower hunter; wooden furniture sounds cut to the animation (owner 19/11/2026) — ACCEPTED
@@ -922,3 +922,15 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 - *Sound.* The kill sounds keep only low thuds, noise bursts and the blade clip; the rising whistle, the shriek and the cry are removed. `HOUSE_SFX.woodOpen` (1.1 s) and `woodClose` (0.5 s) are short cuts from one cabinet recording (fades, loudness normalised) and replace the long door and chest clips for doors, wardrobes, cupboards and chests; the player's door shuts behind them on entering a hiding place.
 **Tests.** `game.test.ts` (entrance), `hunter.test.ts` (detection is gradual: awareness below 1 after 0.3 s, still chase within 5 s), `stealth.test.ts` (a hider under the table is grabbed), `house-sfx.test.ts` (cuts are short). **Honest note:** the stealth catch test also passes on the code before the hunter change, so it guards the behaviour but did not reproduce the owner's exact stuck case; the owner is asked to confirm in play.
 **Status.** ACCEPTED, owner to review in play.
+
+### TD-114: Phase 2 approved; first four new fighters (owner 19/11/2026) — ACCEPTED
+**Owner reply.** "Approved", to the request to name the four fighters (suggestion: Vexoris, Arcstrike, Kenshiro, Tidebreaker) and, with it, Phase 2 moves to Phase 3 as reordered in TD-112.
+**Decision.** Reading the reply as approval of that suggestion and of Phase 2: the first four new fighters are **Vexoris, Arcstrike, Kenshiro, Tidebreaker**, in that order (Vexoris first as the spec's fifth fighter). Then the Roman Colosseum, then the remaining eight (Aerion, Frostweld, Reson, Geargrind, Psion, Solstice, Quakor, Chronos), then the rest of Phase 3 and Phase 4. Vexoris still needs OQ-P0-3 (toxicity numbers) decided; the proposal in the spec is used unless the owner says otherwise.
+**Status.** ACCEPTED.
+
+### TD-115: Poison toxicity for Vexoris, and OQ-P0-3 resolved with the spec's own proposal (19/11/2026) — ACCEPTED
+**Context.** Spec B4 and B7 conflict: the table gives +1 stack for a completed combo, the text says a full combo applies five and "maximum five stacks", yet the slow bands go up to 25 stacks. Also the spec's poison damage is in "HP" (1 to 4 per tick) while fighters here have about 990 health.
+**Decision.** Toxicity is capped at **25 stacks** (the highest slow band); light hits 1 to 3 apply 0, the fourth hit's splash applies 1 (only when that hit lands, so a missed or interrupted combo never splashes); abilities apply 1 per hit or cloud event per target and the ultimate up to 2. Slow bands 1/5/15/20/25 stacks give 2/4/6/8/10 %, never more than 10 %. Poison damage is one sequence of ticks every 3 s climbing 1, 2, 3, 4 and then staying at 4; reapplying only adds stacks. Spec HP is scaled by `hpPerSpecHp` = 10 so the poison matters at 990 health. Everything is in `POISON` (`src/combat/toxicity.ts`) so the owner can change it without code changes elsewhere.
+**Implementation.** `Toxicity` is owned by `StatusEffects` (`status.toxicity`, status id `toxicity`), so the slow reaches every speed calculation through `status.speedFactor`, it is cleared on defeat and reset, and it never touches stun, attack speed, cooldowns or dodging. Hits apply it through `status.poison` in a moveset entry, `payload.poison` in an ability, and `Combatant.poison(stacks)`.
+**Alternatives.** Spec HP unscaled (poison is then about 1 % of health in a whole fight: pointless); a five-stack cap (the bands above five would never apply).
+**Status.** ACCEPTED as the spec's own proposal; the owner can change `POISON`. Vexoris himself (rig, animations, kit, AI) is not built yet.

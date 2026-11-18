@@ -155,6 +155,8 @@ export interface MoveDef {
     readonly burn?: { readonly dps: number; readonly durationS: number };
     /** The target bleeds (Shroud's knife). */
     readonly bleed?: boolean;
+    /** Toxicity stacks the target gets when this hit lands (Vexoris, TD-115); once per hit. */
+    readonly poison?: number;
   };
   /** The target bounces off the floor (downward kicks). */
   readonly groundBounce?: boolean;

@@ -5,7 +5,9 @@
  * its own status timer, so adding poison, a new slow or a new debuff is a definition, not new state.
  */
 
-export type StatusId = 'burn' | 'bleed' | 'blind' | 'decay' | 'dark';
+import { Toxicity } from './toxicity';
+
+export type StatusId = 'burn' | 'bleed' | 'blind' | 'decay' | 'dark' | 'toxicity';
 
 /** How a new application meets one already running. */
 export type StatusStacking =
@@ -52,6 +54,8 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   blind: { stacking: 'strongest', tickIntervalS: 0 },
   decay: { stacking: 'strongest', tickIntervalS: 0 },
   dark: { stacking: 'strongest', tickIntervalS: 0 },
+  // Poison keeps its own meter (`Toxicity`); this entry only names it for the registry's indicators.
+  toxicity: { stacking: 'stack', tickIntervalS: 0 },
 };
 
 interface Instance {
@@ -75,6 +79,8 @@ export class StatusEffects<Id extends string = StatusId> {
   private readonly list: Instance[] = [];
   private readonly immune = new Map<string, number>();
   private readonly endedIds: string[] = [];
+  /** Vexoris's poison (stacking toxicity, one damage sequence, a capped slow); see `toxicity.ts`. */
+  readonly toxicity = new Toxicity();
 
   constructor(private readonly defs: Readonly<Record<Id, StatusDef>> = STATUS_DEFS as Record<Id, StatusDef>) {}
 
@@ -119,6 +125,7 @@ export class StatusEffects<Id extends string = StatusId> {
   }
 
   has(id: Id): boolean {
+    if (id === 'toxicity') return this.toxicity.active;
     return this.find(id) !== undefined;
   }
 
@@ -128,12 +135,15 @@ export class StatusEffects<Id extends string = StatusId> {
   }
 
   stacks(id: Id): number {
+    if (id === 'toxicity') return this.toxicity.stacks;
     return this.find(id)?.stacks ?? 0;
   }
 
   /** The ids of every running effect (for indicators). */
   get active(): readonly string[] {
-    return this.list.map((i) => i.id);
+    const ids = this.list.map((i) => i.id);
+    if (this.toxicity.active) ids.push('toxicity');
+    return ids;
   }
 
   /** Effects that ran out during the last `tick` (the scene plays a fading effect once). */
@@ -156,7 +166,7 @@ export class StatusEffects<Id extends string = StatusId> {
   }
 
   get speedFactor(): number {
-    return this.product((i) => i.speedFactor ** i.stacks);
+    return this.product((i) => i.speedFactor ** i.stacks) * this.toxicity.speedFactor;
   }
 
   /** The smallest sight limit of any running effect (infinite when none limits it). */
@@ -168,6 +178,7 @@ export class StatusEffects<Id extends string = StatusId> {
 
   /** Cleanse one effect now. */
   clear(id: Id): void {
+    if (id === 'toxicity') this.toxicity.clear();
     const at = this.list.findIndex((i) => i.id === id);
     if (at >= 0) this.list.splice(at, 1);
   }
@@ -175,6 +186,7 @@ export class StatusEffects<Id extends string = StatusId> {
   /** Cleanse everything (KO respawn, Practice reset). Immunities stay unless `immunities` is set. */
   clearAll(immunities = false): void {
     this.list.length = 0;
+    this.toxicity.clear();
     this.endedIds.length = 0;
     if (immunities) this.immune.clear();
   }
@@ -196,6 +208,7 @@ export class StatusEffects<Id extends string = StatusId> {
    */
   tick(dtS: number, sink: DotSink): void {
     this.endedIds.length = 0;
+    this.toxicity.tick(dtS, (amount) => sink('toxicity', amount));
     for (const [id, left] of this.immune) {
       if (left - dtS <= 0) this.immune.delete(id);
       else this.immune.set(id, left - dtS);
