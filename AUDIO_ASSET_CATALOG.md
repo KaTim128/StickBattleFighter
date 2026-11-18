@@ -211,3 +211,16 @@ All original and synthesised at runtime (`src/audio/hide-seek-audio.ts`, `src/da
 
 Candidate file: `docs/references/master-plan/darkne-scary-horror-atmosphere-620036.mp3` is NOT wired in. The owner must confirm its licence and source before it is used (register it in `assets/ASSET_REGISTER.md` first).
 Tests: `tests/unit/audio/hide-seek-audio.test.ts` (positional rules, heartbeat) and the ambience well-formedness test that covers every soundscape. The sounds themselves have not been listened to by a person (owner check).
+
+## 9. Pixabay sound workflow: status (19/11/2026)
+
+**Built:** `scripts/audio/process-sfx.sh`. It takes one downloaded clip and writes `assets/audio/sfx/<fighter>/<ability>/sfx-<name>.{ogg,mp3}`, trimmed of leading and trailing silence (-50 dB), optionally capped in length, and loudness-normalised to -16 LUFS / -1.5 dBTP. It refuses to run without `--source-url`, `--creator` and `--licence`, and appends one row to `assets/audio/sfx/SOURCES.tsv` (the provenance record: file, fighter, ability, URL, creator, licence, date, edits). Tested on a synthesised tone padded with silence (2.30 s in, 0.40 s out, both formats written, refusal without a licence). The test files were removed; nothing is wired into the game.
+
+**Not done: downloading from Pixabay.** The sandbox could reach `pixabay.com` only after the session was moved to a personal environment that allows it (owner approval, 19/11/2026). Pixabay then served a Cloudflare "Just a moment..." bot challenge to every page, so no search, preview or download was possible. The challenge was not bypassed. Pixabay's terms and licence pages are behind the same challenge, so whether automated searching and bulk downloading are allowed could not be checked. No sound was downloaded, so no licence row exists yet.
+
+**Owner decision needed before any Pixabay sound is used:**
+1. Either confirm that automated Pixabay access is acceptable (after reading their terms yourself), or
+2. download the chosen clips by hand from Pixabay and send them, with each item's URL and creator name. The script then processes them and records the source. This is the route we recommend.
+
+**Matching plan (unchanged):** section 4's search terms per fighter and move are the shortlist. Search only for the gaps listed in section 3 (the reused and generic sounds), not for every move. Existing synthesised sounds stay in place until a recorded clip is verified by ear in the browser.
+
