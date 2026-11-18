@@ -182,6 +182,10 @@ export class FrontEnd {
   }
 
   show(screen: FrontScreen): void {
+    // Rebuilding the select screen (after a swap, say) must not throw the player back to the top of the
+    // ability info: remember where the info panel was scrolled and put it back.
+    const scrolled =
+      this.screen === screen ? (this.root.querySelector<HTMLElement>('.fe-sel-info')?.scrollTop ?? 0) : 0;
     this.screen = screen;
     for (const [s, sec] of this.screens) sec.hidden = s !== screen;
     const sec = this.screens.get(screen)!;
@@ -192,6 +196,10 @@ export class FrontEnd {
     else if (screen === 'practice') this.buildPractice(sec);
     else if (screen === 'team') this.buildTeam(sec);
     else this.buildSelect(sec);
+    if (scrolled > 0) {
+      const info = sec.querySelector<HTMLElement>('.fe-sel-info');
+      if (info) info.scrollTop = scrolled;
+    }
     this.root.dataset.screen = screen;
     this.o.onScreen?.(screen);
   }
