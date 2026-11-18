@@ -123,8 +123,8 @@ export const HOUSE_ROOMS: readonly RoomDef[] = [
 
 const STAIR_X0 = 27.3;
 const STAIR_X1 = 28.7;
-const STAIR_TOP_Y = 10.5;
-const STAIR_BOTTOM_Y = 14;
+const STAIR_TOP_Y = 10.3;
+const STAIR_BOTTOM_Y = 13.8;
 
 const wallsGround: WallDef[] = [
   // Outer walls of the house (gaps: back door in the kitchen, front door in the hall)
