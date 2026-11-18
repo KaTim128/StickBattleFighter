@@ -789,3 +789,6 @@ Fifth ability per fighter, `applyLoadout`, fight option `loadouts`, AI tactics f
 
 ### 18/11/2026 Phase 1 Batch B: B14 loadout screen
 Loadout store, sheet with the alternative, Equip/Swap and drag and drop, carried into the fight (TD-086). Gate: lint no errors, typecheck clean, 641 unit/integration tests, front-end e2e passes on desktop and phone. Open: HUD cast-name notice and info control. Next: B15 Shroud five-hit combo, then B16 dodge, B17 fight length, B18 audio.
+
+### 18/11/2026 Phase 1 Batch B: B15 Shroud five-hit combo
+TD-087. Next: B16 dodge responsiveness.

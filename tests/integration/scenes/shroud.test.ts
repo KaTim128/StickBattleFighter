@@ -52,18 +52,42 @@ describe('Shroud', () => {
     scenes.clear();
   });
 
-  it('knife combo: slash, backhand, then a lunging stab that knocks down', async () => {
+  it('knife combo (B15): five distinct cuts, the finisher only on a full chain, and it knocks down', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 15, y: 13 }, { x: 16.2, y: 13 });
     const seen: string[] = [];
-    for (let k = 0; k < 3; k++) {
+    for (let k = 0; k < 5; k++) {
       intents.pressMelee();
       runUntil(() => scene.player.attack !== null && !seen.includes(scene.player.attack), 1);
       if (scene.player.attack) seen.push(scene.player.attack);
       run(0.12);
     }
-    expect(seen).toEqual(['knife-slash', 'backhand-slash', 'lunging-stab']);
+    expect(seen).toEqual(['knife-slash', 'backhand-slash', 'rising-cut', 'cross-slash', 'lunging-stab']);
     runUntil(() => scene.dummy.state === 'knockdown' || scene.dummy.state === 'gettingUp', 2);
     expect(['knockdown', 'gettingUp']).toContain(scene.dummy.state);
+    scenes.clear();
+  });
+
+  it('B15: the four opening cuts never knock down or stun-lock; only the full chain ends in the knockdown finisher', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 15, y: 13 }, { x: 16.2, y: 13 });
+    const states = new Set<string>();
+    for (let k = 0; k < 4; k++) {
+      intents.pressMelee();
+      runUntil(() => scene.player.attack !== null, 1);
+      for (let i = 0; i < 20; i++) {
+        run(STEP);
+        states.add(scene.dummy.state);
+      }
+    }
+    run(1.5);
+    expect(states.has('knockdown')).toBe(false);
+    // A light cut flinches briefly but never locks: a moment after the last one it is free again.
+    expect(scene.dummy.state).toBe('free');
+    // Stopping after four: the chain lapses and the next press starts again with the first slash.
+    const seen: string[] = [];
+    intents.pressMelee();
+    runUntil(() => scene.player.attack !== null, 1);
+    if (scene.player.attack) seen.push(scene.player.attack);
+    expect(seen).toEqual(['knife-slash']);
     scenes.clear();
   });
 

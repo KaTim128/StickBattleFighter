@@ -525,3 +525,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Owner check: feel and balance of the three new abilities (greybox visuals and sounds until B18; B17 measures balance)
 - [x] Fighter select shows four equipped, the ultimate and one alternative; Equip, Swap and desktop drag and drop swap them and the choice is saved; the fight bar shows the equipped four (`front-end.spec.ts`, desktop and phone)
 - [ ] Owner check: loadout screen look and feel on a real phone; cast-name notice and a separate info control on the fight HUD still to build
+- [x] Shroud's string is five distinct cuts ending in the knockdown finisher; the four cuts never knock down and the target is free after them (`shroud.test.ts`)
+- [ ] Owner check: the two new knife animations (rising cut, cross slash) read well in play

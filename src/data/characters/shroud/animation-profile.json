@@ -4,6 +4,8 @@
   "states": {
     "Jab": "shroud.knife-slash",
     "Hook": "shroud.backhand-slash",
+    "Uppercut": "shroud.rising-cut",
+    "StraightPunch": "shroud.cross-slash",
     "HeavyPunch": "shroud.lunging-stab",
     "DownwardAerialKick": "shroud.knife-plunge",
     "ClashFinisher": "shroud.lunging-stab",

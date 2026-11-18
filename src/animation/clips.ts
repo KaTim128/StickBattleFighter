@@ -318,6 +318,27 @@ const STRIKES = {
     { lean: deg(-28), armFront: limb(130, 120), armBack: limb(30, 70), legFront: limb(36, -46) },
     { lean: deg(-20), armFront: limb(20, 20), armBack: limb(50, 80), legBack: limb(-30, -30) },
   ),
+  // The third and fourth cuts of the five-hit string (B15): a low rising cut, then a crossing slash.
+  'shroud.rising-cut': strike(
+    {
+      lean: deg(-34),
+      armFront: limb(-30, 60),
+      armBack: limb(30, 80),
+      legFront: limb(34, -56),
+      legBack: limb(-20, -50),
+    },
+    { lean: deg(-22), armFront: limb(130, 15), armBack: limb(-20, 60), legFront: limb(44, -46) },
+  ),
+  'shroud.cross-slash': strike(
+    { lean: deg(-24), armFront: limb(120, 130), armBack: limb(40, 80), legFront: limb(30, -50) },
+    {
+      lean: deg(-34),
+      armFront: limb(-20, 10),
+      armBack: limb(60, 70),
+      legFront: limb(50, -50),
+      legBack: limb(-36, -24),
+    },
+  ),
   'shroud.lunging-stab': strike(
     {
       lean: deg(-12),
