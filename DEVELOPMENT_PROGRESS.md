@@ -804,3 +804,6 @@ Per-move and per-ability sounds, synthesised (TD-090). All of B1 to B18 done; re
 
 ### 18/11/2026 CI fix
 CI browser jobs were red since B10 (read on 18/11/2026). Fixed Eruption's aimed leap on a normal slot and three stale browser tests (TD-091). Lesson: run the affected Playwright specs locally before pushing, not only unit tests.
+
+### 18/11/2026 Owner feedback batch (loadout swap, details board, ability balance)
+Done: swap any ability (TD-092), details only on a closable board, one balance pass (TD-093), CI browser fixes (TD-091, deadlines). Open: Necro's Soul Drain dominates his kit (owner decision on blind or lifesteal), Pages deploy blocked by a repo setting (owner must enable Pages with source GitHub Actions), HUD cast-name notice and info control, premium icons (#51). Phase 1 awaits owner review; no Phase 2 without approval.
