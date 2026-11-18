@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { HOUSE_PLAN } from '../../../src/data/arenas/house';
 import { HideSeekGame, NO_INPUT, type PlayerInput } from '../../../src/modes/hide-seek/game';
 import { heardStrength, sightRate, visionPolygon } from '../../../src/modes/hide-seek/perception';
 
@@ -10,10 +11,24 @@ function run(g: HideSeekGame, seconds: number, input: PlayerInput = NO_INPUT, un
 
 /** A game already in the hunt with the player standing at a spot. */
 function hunting(at: { floor: 0 | 1; x: number; y: number }): HideSeekGame {
-  const g = new HideSeekGame();
+  const g = new HideSeekGame(HOUSE_PLAN);
   Object.assign(g.player, { floor: at.floor, x: at.x, y: at.y });
   run(g, 20.2);
   return g;
+}
+
+/** Let the hunter search for `seconds` with nobody to find (the player is far outside the house). */
+function scout(g: HideSeekGame, seconds: number): void {
+  const ctx = {
+    world: g.world,
+    spots: g.spots,
+    body: { floor: 1 as const, x: -50, y: -50, crouching: false, hiding: null },
+    events: [],
+    timeS: 0,
+    openDoor: (id: string) => g.setDoor(id, true, 'hunter'),
+    step: () => {},
+  };
+  for (let t = 0; t < seconds; t += DT) g.hunter.step(DT, { ...ctx, timeS: t });
 }
 
 function hide(g: HideSeekGame, id: string): void {
@@ -26,7 +41,7 @@ function hide(g: HideSeekGame, id: string): void {
 
 describe('hunter perception', () => {
   it('cannot see through a wall', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     // The toilet and the living room are separate rooms; the player stands in the toilet.
     const eyes = { floor: 0 as const, x: 14.3, y: 15, facing: -Math.PI / 2, gait: 'walk' as const };
     const body = { floor: 0 as const, x: 11.5, y: 11.5, crouching: false, hiding: null };
@@ -34,7 +49,7 @@ describe('hunter perception', () => {
   });
 
   it('sees a player in the open, and crouching is slower to notice', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const eyes = { floor: 0 as const, x: 14, y: 17.5, facing: -Math.PI / 2, gait: 'walk' as const };
     const standing = sightRate(g.world, eyes, { floor: 0, x: 14, y: 15, crouching: false, hiding: null });
     const crouched = sightRate(g.world, eyes, { floor: 0, x: 14, y: 15, crouching: true, hiding: null });
@@ -43,13 +58,13 @@ describe('hunter perception', () => {
   });
 
   it('does not see behind him', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const eyes = { floor: 0 as const, x: 14, y: 17.5, facing: Math.PI / 2, gait: 'walk' as const };
     expect(sightRate(g.world, eyes, { floor: 0, x: 14, y: 14, crouching: false, hiding: null })).toBe(0);
   });
 
   it('hears loud sounds further than quiet ones, and less through walls', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const ear = { floor: 0 as const, x: 14, y: 15 };
     const at = (loudness: number, x: number, y: number) => heardStrength(g.world, ear, { floor: 0, x, y, loudness });
     expect(at(0.9, 20, 15)).toBeGreaterThan(at(0.12, 20, 15));
@@ -58,7 +73,7 @@ describe('hunter perception', () => {
   });
 
   it('draws a vision cone clipped by walls', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const eyes = { floor: 0 as const, x: 14, y: 15, facing: -Math.PI / 2, gait: 'walk' as const };
     const poly = visionPolygon(g.world, eyes);
     expect(poly.length).toBeGreaterThan(10);
@@ -68,7 +83,7 @@ describe('hunter perception', () => {
 
 describe('hunter behaviour', () => {
   it('waits during the preparation and then patrols', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const start = { x: g.hunter.x, y: g.hunter.y };
     run(g, 15);
     expect({ x: g.hunter.x, y: g.hunter.y }).toEqual(start);
@@ -127,22 +142,41 @@ describe('hunter behaviour', () => {
     expect(g.hunter.mode).toBe(before);
   });
 
-  it('searches the whole house, upstairs too, and checks hiding places', () => {
+  it('searches the house room by room, upstairs too, and checks hiding places', () => {
     const g = hunting({ floor: 1, x: 12, y: 15 });
-    hide(g, 'wardrobe-30');
-    run(g, 119);
-    expect(g.round.phase).toBe('hunt');
+    scout(g, 119);
     expect(g.hunter.searched.size).toBeGreaterThan(5);
     expect(g.hunter.inspected.size).toBeGreaterThan(3);
+    expect([...g.hunter.searched.keys()].some((id) => g.world.room(id)?.floor === 1)).toBe(true);
   });
 
   it('never wanders off the floor plan', () => {
     const g = hunting({ floor: 1, x: 12, y: 15 });
-    hide(g, 'wardrobe-30');
     for (let t = 0; t < 119; t += DT) {
-      g.step(DT, NO_INPUT);
+      scout(g, DT);
       expect(g.world.fits(g.hunter.floor, g.hunter.x, g.hunter.y, 0.2) || g.hunter.onStairs !== null).toBe(true);
     }
+  });
+
+  it('a well-hidden player survives the hunter standing in front of the hiding place for a moment', () => {
+    const g = hunting({ floor: 1, x: 12, y: 15 });
+    hide(g, 'wardrobe-30');
+    const spot = g.spots.find((s) => s.id === 'wardrobe-30')!;
+    g.hunter.floor = 1;
+    g.hunter.x = spot.spec.at.x;
+    g.hunter.y = spot.spec.at.y + 1.1;
+    g.hunter.facing = -Math.PI / 2;
+    for (let t = 0; t < 1.2; t += DT)
+      g.hunter.step(DT, {
+        world: g.world,
+        spots: g.spots,
+        body: { floor: 1, x: g.player.x, y: g.player.y, crouching: false, hiding: spot },
+        events: [],
+        timeS: 0,
+        openDoor: () => {},
+        step: () => {},
+      });
+    expect(g.hunter.awareness).toBeLessThan(1);
   });
 
   it('peeking never changes what the hunter notices (the body is what he reads)', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HOUSE } from '../../../src/data/arenas/house';
+import { HOUSE_PLAN } from '../../../src/data/arenas/house';
 import { HIDDEN_PEEK_M, HideSeekGame, NO_INPUT } from '../../../src/modes/hide-seek/game';
 import { exitPoint, exposure, hideSpots } from '../../../src/modes/hide-seek/hiding';
 import { THROW_RANGE_M } from '../../../src/modes/hide-seek/props';
@@ -12,7 +12,7 @@ const idle = (g: HideSeekGame, seconds: number, extra: object = {}) => {
 };
 
 describe('hiding places (sections B and F)', () => {
-  const spots = hideSpots(HOUSE);
+  const spots = hideSpots(HOUSE_PLAN);
 
   it('there are hiding places of every kind the brief lists, on both floors and outdoors', () => {
     const kinds = new Set(spots.map((s) => s.spec.kind));
@@ -35,7 +35,7 @@ describe('hiding places (sections B and F)', () => {
 
   it('every hiding place can be entered and left, and the way out is a free spot', () => {
     for (const s of spots) {
-      const g = new HideSeekGame();
+      const g = new HideSeekGame(HOUSE_PLAN);
       const out = exitPoint(g.world, s);
       expect(g.world.fits(s.floor, out.x, out.y), `${s.id} exit`).toBe(true);
       // Stand where the exit is and hide.
@@ -55,7 +55,7 @@ describe('hiding places (sections B and F)', () => {
   it('getting in and out makes a noise that depends on the place; hiding is never silent', () => {
     const noise: Record<string, number> = {};
     for (const s of spots) {
-      const g = new HideSeekGame();
+      const g = new HideSeekGame(HOUSE_PLAN);
       const out = exitPoint(g.world, s);
       g.player.floor = s.floor;
       g.player.x = out.x;
@@ -76,7 +76,7 @@ describe('hiding places (sections B and F)', () => {
   });
 
   it('hidden: the body stays put, the view narrows, and only a small lean is allowed', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const wardrobe = spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 1)!;
     g.player.floor = 1;
     const out = exitPoint(g.world, wardrobe);
@@ -95,7 +95,7 @@ describe('hiding places (sections B and F)', () => {
   });
 
   it('the hidden player sees much less: a far room is not lit from inside a cupboard', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const cupboard = spots.find((s) => s.spec.kind === 'cupboard' && s.floor === 0 && s.id.startsWith('cupboard'))!;
     const out = exitPoint(g.world, cupboard);
     g.player.floor = 0;
@@ -138,7 +138,7 @@ describe('hiding places (sections B and F)', () => {
 describe('throwable distractions (section E)', () => {
   /** The player standing by the bottle on the living-room side table. */
   const nearBottle = () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     g.player.x = 18.1;
     g.player.y = 17.8;
     return g;
@@ -175,7 +175,7 @@ describe('throwable distractions (section E)', () => {
     expect(impact.at.x - 18.1).toBeLessThanOrEqual(THROW_RANGE_M + 1.5);
     expect(g.props.find((p) => p.id === 't1')!.mode).toBe('rest');
     // A toy is quieter.
-    const toy = new HideSeekGame();
+    const toy = new HideSeekGame(HOUSE_PLAN);
     toy.player.x = 16;
     toy.player.y = 17.9;
     toy.props.find((p) => p.id === 't3')!.x = 16;

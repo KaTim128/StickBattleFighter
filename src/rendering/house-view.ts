@@ -54,12 +54,12 @@ export interface HouseView {
 
 const WALL_CHUNK_M = 0.5;
 const LEDGE_M = 0.35;
-const PLASTER = 0xd9cfbd;
+const PLASTER = 0xe4e6ea;
 const BRICK = 0xb39a82;
-const WOOD_FLOOR = 0x9a7a55;
+const WOOD_FLOOR = 0xd9ae78;
 const TILE = 0xaeb4b0;
 const BATH_TILE = 0x9fb4bc;
-const HALL_FLOOR = 0x8a6a4a;
+const HALL_FLOOR = 0xc9a070;
 const GRASS = 0x274a2c;
 const STREET = 0x35353a;
 const SHED_FLOOR = 0x6f5a40;

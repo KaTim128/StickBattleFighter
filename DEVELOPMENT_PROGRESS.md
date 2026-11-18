@@ -810,3 +810,6 @@ Done: swap any ability (TD-092), details only on a closable board, one balance p
 
 ### 18/11/2026 Phase 2 started (owner approved; no further balancing)
 P2-1 done: house data, two-floor world, stairs, doors, routing, rules, player movement, the isometric house view, the mode page and the Game Modes entry (TD-095, TD-096). Next: P2-2 room visibility, lighting and peeking.
+
+### 18/11/2026 Phase 2 P2-4 (hunter) and the roomier house
+Done: perception and hunter brain with search memory (TD-099), hunter figure and vision cone in the scene; owner feedback applied: house scaled 1.45 times, palette toward the reference, only the current room visible (TD-100). Tests: 71 hide-seek unit tests (hunter 14, house-scale 5). Known limits: no windows or reference-level art yet; hunter balance untested by a human; CI full run not yet read for the latest pushes. Next: P2-5 (Game Over and Victory screens with Restart and Menu, kill animation, restart resetting visibility, horror audio and positional footsteps, e2e for a full round), then owner review of Phase 2.

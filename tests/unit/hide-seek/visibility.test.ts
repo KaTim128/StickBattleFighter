@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { HOUSE } from '../../../src/data/arenas/house';
+import { HOUSE_PLAN } from '../../../src/data/arenas/house';
 import { HideSeekGame, NO_INPUT, PEEK_M } from '../../../src/modes/hide-seek/game';
 import { MEMORY_LIGHT, type Viewer, Visibility } from '../../../src/modes/hide-seek/visibility';
 import { HouseWorld } from '../../../src/modes/hide-seek/world';
 
 const at = (floor: 0 | 1, x: number, y: number): Viewer => ({ floor, x, y, onStairs: null, stairT: 0 });
 const setup = () => {
-  const world = new HouseWorld(HOUSE);
+  const world = new HouseWorld(HOUSE_PLAN);
   return { world, vis: new Visibility(world) };
 };
 
@@ -30,7 +30,7 @@ describe('room-based visibility (section C)', () => {
     expect(vis.floorOpacity(0)).toBe(1);
     expect(vis.floorOpacity(1)).toBe(0);
     // And nothing upstairs shows: no furniture, no hiding place.
-    for (const f of HOUSE.furniture.filter((x) => x.floor === 1)) expect(vis.objectAlpha(f.id), f.id).toBe(0);
+    for (const f of HOUSE_PLAN.furniture.filter((x) => x.floor === 1)) expect(vis.objectAlpha(f.id), f.id).toBe(0);
   });
 
   it('an open arch shows the room beyond, with its furniture; a wall does not', () => {
@@ -38,15 +38,15 @@ describe('room-based visibility (section C)', () => {
     // Standing in the living room straight in front of the dining arch (x 14 to 17).
     vis.settle(at(0, 15.5, 16.5));
     expect(vis.roomLight('dining')).toBeGreaterThan(0.1);
-    const table = HOUSE.furniture.find((f) => f.kind === 'dining-table')!;
+    const table = HOUSE_PLAN.furniture.find((f) => f.kind === 'dining-table')!;
     expect(vis.objectAlpha(table.id)).toBeGreaterThan(0.1);
     // The toilet behind the wall at the same moment: nothing.
-    const toilet = HOUSE.furniture.find((f) => f.kind === 'toilet' && f.floor === 0)!;
+    const toilet = HOUSE_PLAN.furniture.find((f) => f.kind === 'toilet' && f.floor === 0)!;
     expect(vis.objectAlpha(toilet.id)).toBe(0);
   });
 
   it('a shut door hides the room behind it; opening the door reveals it', () => {
-    const world = new HouseWorld(HOUSE);
+    const world = new HouseWorld(HOUSE_PLAN);
     const vis = new Visibility(world);
     const v = at(0, 21, 16);
     vis.settle(v);
@@ -54,28 +54,29 @@ describe('room-based visibility (section C)', () => {
     world.setDoor('d-kitchen-living', true);
     vis.settle(v);
     expect(vis.roomLight('kitchen')).toBeGreaterThan(0.1);
-    const island = HOUSE.furniture.find((f) => f.kind === 'counter' && f.y0 > 11)!;
+    const island = HOUSE_PLAN.furniture.find((f) => f.kind === 'counter' && f.y0 > 11)!;
     expect(vis.objectAlpha(island.id)).toBeGreaterThan(0.1);
     world.setDoor('d-kitchen-living', false);
     vis.settle(v);
-    // Shut again: the kitchen is a remembered room now (dim), not a live view.
+    // Shut again: only the room you are in shows (owner, 18/11/2026), so the kitchen goes dark.
     expect(vis.roomLight('kitchen')).toBeCloseTo(MEMORY_LIGHT, 1);
+    expect(MEMORY_LIGHT).toBe(0);
   });
 
-  it('explored rooms stay as a dim memory; rooms never visited stay black', () => {
+  it('a room you have left goes dark again: only the room you are in (and what an open doorway shows) is visible', () => {
     const { vis } = setup();
     vis.settle(at(0, 16, 12)); // inside the dining room
     expect(vis.occupiedRoom).toBe('dining');
-    vis.settle(at(0, 12, 19)); // back in the living room, away from the arch's line
+    vis.settle(at(0, 28, 19)); // out in the hall, with walls between
     expect(vis.explored.has('dining')).toBe(true);
-    expect(vis.roomLight('dining')).toBeGreaterThanOrEqual(MEMORY_LIGHT - 0.01);
+    expect(vis.roomLight('dining')).toBeLessThan(0.05);
     expect(vis.roomLight('toilet')).toBe(0); // never seen: black
     expect(vis.explored.has('toilet')).toBe(false);
   });
 
   it('on the stairs the other floor is revealed progressively; at the bottom it stays hidden', () => {
     const { world, vis } = setup();
-    const s = HOUSE.stairs[0]!;
+    const s = HOUSE_PLAN.stairs[0]!;
     const onRamp = (y: number): Viewer => ({ floor: 0, x: 27.2, y, onStairs: s.id, stairT: world.rampT(s, 27.2, y) });
     vis.settle(onRamp(14.9));
     expect(vis.floorOpacity(1)).toBeLessThan(0.05);
@@ -100,7 +101,7 @@ describe('room-based visibility (section C)', () => {
   });
 
   it('peeking leans the view through a doorway without moving the body', () => {
-    const world = new HouseWorld(HOUSE);
+    const world = new HouseWorld(HOUSE_PLAN);
     const vis = new Visibility(world);
     // Beside the dining arch, behind the wall to its left: the dining room is hidden.
     const behind = at(0, 13.2, 15.2);
@@ -112,7 +113,7 @@ describe('room-based visibility (section C)', () => {
   });
 
   it('the game leans the view by the peek input but leaves the body where it is, and never through a wall', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     g.player.x = 13.2;
     g.player.y = 15.2;
     for (let i = 0; i < 40; i++) g.step(1 / 60, { ...NO_INPUT, move: { x: 1, y: 0 }, peek: true });
@@ -120,7 +121,7 @@ describe('room-based visibility (section C)', () => {
     expect(g.player.y).toBe(15.2);
     expect(g.viewer().x).toBeGreaterThan(13.2 + 0.5);
     // Leaning north into the wall (y=14) is cut short: the view origin keeps a clear line from the body.
-    const h = new HideSeekGame();
+    const h = new HideSeekGame(HOUSE_PLAN);
     h.player.x = 12.6;
     h.player.y = 14.7;
     for (let i = 0; i < 60; i++) h.step(1 / 60, { ...NO_INPUT, move: { x: 0, y: -1 }, peek: true });

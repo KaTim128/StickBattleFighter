@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { HOUSE_SCALE as K } from '../../src/data/arenas/house';
 
 /** Hide and Seek Nightmare (Phase 2, TD-095): the page loads, shows the countdown, and the dummy walks the house. */
 type Debug = { phase: string; floor: number; x: number; y: number; prepLeftS: number; survivalLeftS: number };
@@ -73,12 +74,15 @@ test('room visibility: only the lit room shows at the start; upstairs is hidden 
   expect(await vis('bed1')).toBe(0);
   expect(await vis('toilet')).toBe(0);
   expect(await upstairs()).toBeLessThan(0.05);
-  await page.evaluate(() => {
-    const g = (window as unknown as Scene).__hideSeek.game.player;
-    g.floor = 1;
-    g.x = 27;
-    g.y = 9.8;
-  });
+  await page.evaluate(
+    ({ x, y }) => {
+      const g = (window as unknown as Scene).__hideSeek.game.player;
+      g.floor = 1;
+      g.x = x;
+      g.y = y;
+    },
+    { x: 27 * K, y: 9.8 * K },
+  );
   await expect.poll(upstairs, { timeout: 10_000 }).toBeGreaterThan(0.9);
   await expect.poll(() => vis('uphall'), { timeout: 10_000 }).toBeGreaterThan(0.9);
   await expect.poll(() => vis('living'), { timeout: 10_000 }).toBeLessThan(0.05); // fades out
@@ -104,7 +108,7 @@ test('hiding and throwing: G gets into a hiding place and out, picks up a bottle
       [floor, x, y],
     );
   // The sofa's hiding place (living room): stand beside it and hide.
-  await put(0, 15, 17.8);
+  await put(0, 15 * K, 17.8 * K);
   await expect.poll(() => page.evaluate(() => (window as unknown as Scene).__hideSeek.game.prompt())).toContain('Hide');
   await expect(page.locator('.hs-prompt')).toContainText('Hide');
   await page.keyboard.press('KeyG');
@@ -113,7 +117,7 @@ test('hiding and throwing: G gets into a hiding place and out, picks up a bottle
   await page.keyboard.press('KeyG');
   await expect.poll(async () => (await player()).hidingIn).toBeNull();
   // The bottle on the side table.
-  await put(0, 18.1, 17.8);
+  await put(0, 18.1 * K, 18.7 * K - 0.5);
   await expect(page.locator('.hs-prompt')).toContainText('Pick up the bottle');
   await page.keyboard.press('KeyG');
   await expect.poll(async () => (await player()).carrying).toBe('t1');

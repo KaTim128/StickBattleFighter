@@ -81,7 +81,7 @@ export function sightRate(world: HouseWorld, eyes: Eyes, body: BodyView): number
   const skip = body.hiding ? new Set<Rect>([body.hiding.rect]) : undefined;
   if (!coversPoint(world, eyes, body.floor, body, skip)) return 0;
   // Exposure already weighs distance and the side he looks from; in the open distance is weighed here.
-  if (body.hiding) return exposure(body.hiding, eyes) * 1.6;
+  if (body.hiding) return exposure(body.hiding, eyes) * 1.2;
   const d = Math.hypot(body.x - eyes.x, body.y - eyes.y);
   const distance = d < 2.5 ? 2.4 : d < 5 ? 1.5 : d < 8 ? 0.8 : 0.4;
   return distance * (body.crouching ? 0.6 : 1);

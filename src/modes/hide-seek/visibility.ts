@@ -15,7 +15,9 @@ import type { HouseWorld, Point } from './world';
  */
 export const VIEW_DISTANCE_M = 17;
 /** How dim a remembered (explored but not currently visible) room is. */
-export const MEMORY_LIGHT = 0.3;
+export const MEMORY_LIGHT = 0;
+/** The most light a room other than yours can have: a glimpse through an open doorway (owner, 18/11/2026). */
+export const DOORWAY_GLIMPSE = 0.45;
 /** Seconds to fade fully in or out. */
 const FADE_S = 0.35;
 /** The sightlines are recomputed this often (they depend only on position and doors, not on frames). */
@@ -188,7 +190,8 @@ export class Visibility {
         if (floor === viewer.floor && room.id === here?.id) light = 1;
         else {
           const seen = this.roomSeen(viewer, room, floor);
-          light = seen * room.light;
+          // Only the room you are in is fully visible; an open doorway lets you glimpse the next one, dimly.
+          light = Math.min(seen * room.light, DOORWAY_GLIMPSE);
           // Rooms entered before stay as a dim memory; unexplored rooms stay black until seen.
           if (this.explored.has(room.id)) light = Math.max(light, MEMORY_LIGHT * (floor === viewer.floor ? 1 : 0.6));
           if (seen > 0.05) this.explored.add(room.id);

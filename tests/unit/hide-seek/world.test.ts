@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { HOUSE } from '../../../src/data/arenas/house';
+import { HOUSE_PLAN } from '../../../src/data/arenas/house';
 import { BODY_RADIUS_M, HouseWorld, insideRect, type Placed } from '../../../src/modes/hide-seek/world';
 
 const placed = (floor: 0 | 1, x: number, y: number): Placed => ({ floor, x, y, z: 0, onStairs: null });
 
 describe('the house data (Phase 2 section A)', () => {
-  const world = new HouseWorld(HOUSE);
+  const world = new HouseWorld(HOUSE_PLAN);
 
   it('has the rooms the brief asks for on both floors', () => {
-    const names = HOUSE.rooms.map((r) => r.id);
+    const names = HOUSE_PLAN.rooms.map((r) => r.id);
     for (const id of [
       'living',
       'dining',
@@ -23,20 +23,20 @@ describe('the house data (Phase 2 section A)', () => {
       'uphall',
     ])
       expect(names, id).toContain(id);
-    expect(HOUSE.rooms.filter((r) => r.floor === 1 && r.kind === 'bathroom')).toHaveLength(2);
-    expect(HOUSE.rooms.filter((r) => r.floor === 1 && r.id.startsWith('bed'))).toHaveLength(2);
+    expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && r.kind === 'bathroom')).toHaveLength(2);
+    expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && r.id.startsWith('bed'))).toHaveLength(2);
     for (const id of ['frontyard', 'backyard', 'shed']) expect(names).toContain(id);
   });
 
   it('has a front entrance, a back entrance and a staircase', () => {
     expect(world.door('d-front')?.exterior).toBe(true);
     expect(world.door('d-back')?.exterior).toBe(true);
-    expect(HOUSE.stairs).toHaveLength(1);
+    expect(HOUSE_PLAN.stairs).toHaveLength(1);
   });
 
   it('rooms on one floor never overlap, except the shed standing in the backyard', () => {
-    for (const a of HOUSE.rooms)
-      for (const b of HOUSE.rooms) {
+    for (const a of HOUSE_PLAN.rooms)
+      for (const b of HOUSE_PLAN.rooms) {
         if (a.id >= b.id || a.floor !== b.floor) continue;
         const ox = Math.min(a.rect.x1, b.rect.x1) - Math.max(a.rect.x0, b.rect.x0);
         const oy = Math.min(a.rect.y1, b.rect.y1) - Math.max(a.rect.y0, b.rect.y0);
@@ -45,19 +45,19 @@ describe('the house data (Phase 2 section A)', () => {
   });
 
   it('every door joins two rooms that exist, and sits on a wall line', () => {
-    for (const d of HOUSE.doors) {
+    for (const d of HOUSE_PLAN.doors) {
       for (const id of d.between) expect(world.room(id), `${d.id}: ${id}`).toBeDefined();
     }
   });
 
   it('every piece of furniture and every hiding place is inside a room, and no solid furniture overlaps a wall', () => {
-    for (const f of HOUSE.furniture) {
+    for (const f of HOUSE_PLAN.furniture) {
       if (f.kind === 'lawn' || f.kind === 'path') continue;
       const cx = (f.x0 + f.x1) / 2;
       const cy = (f.y0 + f.y1) / 2;
       expect(world.roomAt(f.floor, cx, cy), `${f.id} at ${cx},${cy}`).not.toBeNull();
       if (f.solid)
-        for (const w of HOUSE.walls) {
+        for (const w of HOUSE_PLAN.walls) {
           if (w.floor !== f.floor || w.kind === 'rail') continue;
           const ox = Math.min(f.x1, w.x1) - Math.max(f.x0, w.x0);
           const oy = Math.min(f.y1, w.y1) - Math.max(f.y0, w.y0);
@@ -65,7 +65,7 @@ describe('the house data (Phase 2 section A)', () => {
         }
       if (f.hide) expect(world.roomAt(f.floor, f.hide.at.x, f.hide.at.y), `${f.id} hide spot`).not.toBeNull();
     }
-    const kinds = new Set(HOUSE.furniture.flatMap((f) => (f.hide ? [f.hide.kind] : [])));
+    const kinds = new Set(HOUSE_PLAN.furniture.flatMap((f) => (f.hide ? [f.hide.kind] : [])));
     for (const k of [
       'under-bed',
       'wardrobe',
@@ -81,25 +81,25 @@ describe('the house data (Phase 2 section A)', () => {
   });
 
   it('the start spots are free, and the player starts inside the house', () => {
-    const p = HOUSE.playerStart;
+    const p = HOUSE_PLAN.playerStart;
     expect(world.fits(p.floor, p.x, p.y)).toBe(true);
     expect(world.roomAt(p.floor, p.x, p.y)?.id).toBe('living');
-    const h = HOUSE.hunterStart;
+    const h = HOUSE_PLAN.hunterStart;
     expect(world.fits(h.floor, h.x, h.y)).toBe(true);
-    for (const w of HOUSE.patrol) expect(world.fits(w.floor, w.x, w.y), `${w.x},${w.y}`).toBe(true);
+    for (const w of HOUSE_PLAN.patrol) expect(world.fits(w.floor, w.x, w.y), `${w.x},${w.y}`).toBe(true);
   });
 
   it('there are throwable objects on both floors', () => {
-    expect(HOUSE.throwables.some((t) => t.floor === 0)).toBe(true);
-    expect(HOUSE.throwables.some((t) => t.floor === 1)).toBe(true);
+    expect(HOUSE_PLAN.throwables.some((t) => t.floor === 0)).toBe(true);
+    expect(HOUSE_PLAN.throwables.some((t) => t.floor === 1)).toBe(true);
     // They lie on tables, counters and the floor: each is inside a room (a table top is not floor space).
-    for (const t of HOUSE.throwables) expect(world.roomAt(t.floor, t.x, t.y), t.id).not.toBeNull();
+    for (const t of HOUSE_PLAN.throwables) expect(world.roomAt(t.floor, t.x, t.y), t.id).not.toBeNull();
   });
 });
 
 describe('movement, doors and stairs', () => {
   it('walls and shut doors stop a body; opening a door lets it through', () => {
-    const w = new HouseWorld(HOUSE);
+    const w = new HouseWorld(HOUSE_PLAN);
     // The kitchen door (x=25, y 10.2 to 11.8), shut at the start.
     const p = placed(0, 24.3, 11);
     let pushed: string | null = null;
@@ -115,7 +115,7 @@ describe('movement, doors and stairs', () => {
   });
 
   it('a body cannot walk through a wall or leave the lot', () => {
-    const w = new HouseWorld(HOUSE);
+    const w = new HouseWorld(HOUSE_PLAN);
     const p = placed(0, 12, 15);
     for (let i = 0; i < 60; i++) w.move(p, 0, -0.1); // north into the wall line y=14 (a gap sits at x 14 to 17)
     expect(p.y).toBeGreaterThan(14.2);
@@ -125,7 +125,7 @@ describe('movement, doors and stairs', () => {
   });
 
   it('walking up the stairs lifts the body and puts it on the upper floor; walking down brings it back', () => {
-    const w = new HouseWorld(HOUSE);
+    const w = new HouseWorld(HOUSE_PLAN);
     const p = placed(0, 27.2, 16);
     const zs: number[] = [];
     for (let i = 0; i < 140 && p.floor === 0; i++) {
@@ -145,7 +145,7 @@ describe('movement, doors and stairs', () => {
   });
 
   it('the ground floor stairs cannot be entered from the side', () => {
-    const w = new HouseWorld(HOUSE);
+    const w = new HouseWorld(HOUSE_PLAN);
     const p = placed(0, 29, 13); // beside the stairs, in the hall
     for (let i = 0; i < 40; i++) w.move(p, -0.1, 0);
     expect(p.floor).toBe(0);
@@ -155,7 +155,7 @@ describe('movement, doors and stairs', () => {
 });
 
 describe('sight, sound and rooms', () => {
-  const w = new HouseWorld(HOUSE);
+  const w = new HouseWorld(HOUSE_PLAN);
 
   it('sees through an open arch, not through a wall or a shut door', () => {
     // Living room to dining room through the arch (x 14 to 17 at y=14).
@@ -166,7 +166,7 @@ describe('sight, sound and rooms', () => {
     const a = { x: 21, y: 16 };
     const b = { x: 21, y: 12 };
     expect(w.lineOfSight(0, a, b)).toBe(false);
-    const w2 = new HouseWorld(HOUSE);
+    const w2 = new HouseWorld(HOUSE_PLAN);
     w2.setDoor('d-kitchen-living', true);
     expect(w2.lineOfSight(0, a, b)).toBe(true);
   });
@@ -178,8 +178,8 @@ describe('sight, sound and rooms', () => {
   });
 
   it('walls quieten a sound, shut doors even more, open doors not at all', () => {
-    const closed = new HouseWorld(HOUSE);
-    const open = new HouseWorld(HOUSE);
+    const closed = new HouseWorld(HOUSE_PLAN);
+    const open = new HouseWorld(HOUSE_PLAN);
     open.setDoor('d-kitchen-living', true);
     const a = { x: 21, y: 16 };
     const b = { x: 21, y: 12 };
@@ -201,7 +201,7 @@ describe('sight, sound and rooms', () => {
 });
 
 describe('routing across floors', () => {
-  const w = new HouseWorld(HOUSE);
+  const w = new HouseWorld(HOUSE_PLAN);
 
   /** A free spot well inside a room. */
   function spotIn(roomId: string): { floor: 0 | 1; x: number; y: number } {
@@ -213,8 +213,8 @@ describe('routing across floors', () => {
   }
 
   it('every room can be reached from the player start, upstairs included', () => {
-    const from = HOUSE.playerStart;
-    for (const room of HOUSE.rooms) {
+    const from = HOUSE_PLAN.playerStart;
+    for (const room of HOUSE_PLAN.rooms) {
       const to = spotIn(room.id);
       const route = w.route(from, to);
       expect(route, `route to ${room.id}`).not.toBeNull();
@@ -222,7 +222,7 @@ describe('routing across floors', () => {
   });
 
   it('a route to another floor climbs the stairs exactly once', () => {
-    const route = w.route(HOUSE.playerStart, spotIn('bed2'))!;
+    const route = w.route(HOUSE_PLAN.playerStart, spotIn('bed2'))!;
     expect(route.filter((p) => p.stairs === 'up')).toHaveLength(1);
     expect(route.filter((p) => p.stairs === 'down')).toHaveLength(0);
     expect(route.at(-1)!.floor).toBe(1);
@@ -231,10 +231,10 @@ describe('routing across floors', () => {
   });
 
   it('a body can actually walk a cross-floor route, opening doors as it goes', () => {
-    const world = new HouseWorld(HOUSE);
+    const world = new HouseWorld(HOUSE_PLAN);
     const target = spotIn('bath2');
-    const route = world.route(HOUSE.playerStart, target)!;
-    const p = placed(HOUSE.playerStart.floor, HOUSE.playerStart.x, HOUSE.playerStart.y);
+    const route = world.route(HOUSE_PLAN.playerStart, target)!;
+    const p = placed(HOUSE_PLAN.playerStart.floor, HOUSE_PLAN.playerStart.x, HOUSE_PLAN.playerStart.y);
     let i = 0;
     for (let step = 0; step < 6000 && i < route.length; step++) {
       const wp = route[i]!;

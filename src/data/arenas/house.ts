@@ -1,3 +1,4 @@
+import { scaleHouse } from '../../modes/hide-seek/house-scale';
 import type {
   DoorDef,
   FloorIndex,
@@ -292,7 +293,7 @@ const hide = (
 
 const WOOD = 0x8a6a48;
 const DARK_WOOD = 0x5a4430;
-const FABRIC = 0x6b4f6e;
+const FABRIC = 0x7d6b9c;
 const WHITE = 0xd9d6cf;
 
 export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
@@ -433,7 +434,8 @@ export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
 /** Who is in the house: the standard dummy as the player, the masked slasher as the one hunter (Phase 2). */
 export const HOUSE_CAST = { player: 'training-dummy', hunter: 'shroud' } as const;
 
-export const HOUSE: HouseDef = {
+/** The authored plan, before the roomier scale: what the rule tests place bodies in by coordinates. */
+export const HOUSE_PLAN: HouseDef = {
   id: 'house',
   name: 'The house',
   widthM: 40,
@@ -452,3 +454,8 @@ export const HOUSE: HouseDef = {
     { floor: 0, x: 21.5, y: 18.4 },
   ],
 };
+
+/** The rooms are made this much roomier than the authored plan (owner, 18/11/2026: a bigger, bungalow-sized house). */
+export const HOUSE_SCALE = 1.45;
+
+export const HOUSE: HouseDef = scaleHouse(HOUSE_PLAN, HOUSE_SCALE);

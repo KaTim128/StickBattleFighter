@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { HOUSE_PLAN } from '../../../src/data/arenas/house';
 import {
   CROUCH_MPS,
   FOOTSTEP_LOUDNESS,
@@ -16,7 +17,7 @@ const walk = (g: HideSeekGame, move: { x: number; y: number }, seconds: number, 
 describe('player movement and stealth speeds (section D)', () => {
   it('walks at walking pace, runs faster, and crouches slowest', () => {
     const dist = (mode: 'walk' | 'run' | 'crouch') => {
-      const g = new HideSeekGame();
+      const g = new HideSeekGame(HOUSE_PLAN);
       if (mode === 'crouch') g.step(STEP, { ...NO_INPUT, crouchPress: true });
       const x0 = g.player.x;
       walk(g, { x: 1, y: 0 }, 0.5, { run: mode === 'run' });
@@ -30,7 +31,7 @@ describe('player movement and stealth speeds (section D)', () => {
   });
 
   it('crouching toggles, and a crouching body that is told to run still only crouches', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     g.step(STEP, { ...NO_INPUT, crouchPress: true });
     expect(g.player.crouching).toBe(true);
     walk(g, { x: 1, y: 0 }, 0.2, { run: true });
@@ -43,7 +44,7 @@ describe('player movement and stealth speeds (section D)', () => {
     expect(FOOTSTEP_LOUDNESS.run).toBeGreaterThan(FOOTSTEP_LOUDNESS.walk);
     expect(FOOTSTEP_LOUDNESS.walk).toBeGreaterThan(FOOTSTEP_LOUDNESS.crouch);
     const loudest = (run: boolean, crouch: boolean) => {
-      const g = new HideSeekGame();
+      const g = new HideSeekGame(HOUSE_PLAN);
       if (crouch) g.step(STEP, { ...NO_INPUT, crouchPress: true });
       walk(g, { x: 1, y: 0 }, 2, { run });
       const steps = g.takeEvents().filter((e) => e.kind === 'footstep');
@@ -58,7 +59,7 @@ describe('player movement and stealth speeds (section D)', () => {
   });
 
   it('opens a shut door by walking into it, and the interact key toggles a nearby door', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     // The kitchen door to the living room (x 20.2 to 21.8, y=14): walk into it from the living room.
     g.player.x = 21;
     g.player.y = 15;
@@ -74,7 +75,7 @@ describe('player movement and stealth speeds (section D)', () => {
   });
 
   it('peeking leaves the body where it is', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     const { x, y } = g.player;
     walk(g, { x: 1, y: 0 }, 1, { peek: true });
     expect(g.player.x).toBe(x);
@@ -82,7 +83,7 @@ describe('player movement and stealth speeds (section D)', () => {
   });
 
   it('restart puts everything back', () => {
-    const g = new HideSeekGame();
+    const g = new HideSeekGame(HOUSE_PLAN);
     g.player.x = 21;
     g.player.y = 15;
     walk(g, { x: 0, y: -1 }, 3);
