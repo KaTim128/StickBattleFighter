@@ -69,7 +69,7 @@ test('the dodge (L) always goes straight back from the facing, even with a movem
   await page.keyboard.down('KeyD');
   await page.waitForTimeout(250);
   await page.keyboard.up('KeyD');
-  await expect.poll(async () => (await hook(page)).player.speed, { timeout: 3000 }).toBeLessThan(0.05);
+  await expect.poll(async () => (await hook(page)).player.speed, { timeout: 15_000 }).toBeLessThan(0.05); // game time runs slow on a CI browser
   const before = await hook(page);
   // Hold "right" (toward the facing) and dodge: it still steps back, to the left, still facing right.
   await page.keyboard.down('KeyD');

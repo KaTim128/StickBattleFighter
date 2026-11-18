@@ -305,7 +305,7 @@ test('loadout (B14): the alternative can replace any of the four; swap buttons o
   await expect(alt).toContainText('Rampage Charge');
   // Details only on click: a board with the numbers, which closes.
   await expect(select.locator('.fe-ab-board')).toBeHidden();
-  await slot(2).click();
+  await slot(2).locator('.fe-ab-name').click(); // the name, never the Swap button
   const board = select.locator('.fe-ab-board');
   await expect(board).toBeVisible();
   await expect(board).toContainText('Crushing Strike');
