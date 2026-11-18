@@ -53,6 +53,7 @@ export function scaleHouse(base: HouseDef, opts: ScaleOptions): HouseDef {
     throwables: base.throwables.map(pt),
     playerStart: pt(base.playerStart),
     hunterStart: pt(base.hunterStart),
+    ...(base.hunterEntry ? { hunterEntry: { ...base.hunterEntry, to: pt(base.hunterEntry.to) } } : {}),
     patrol: base.patrol.map(pt),
   };
   // Starts, patrol points and objects must not land inside the furniture that moved.
@@ -63,6 +64,7 @@ export function scaleHouse(base: HouseDef, opts: ScaleOptions): HouseDef {
     throwables: out.throwables.map(free),
     playerStart: free(out.playerStart),
     hunterStart: free(out.hunterStart),
+    ...(out.hunterEntry ? { hunterEntry: { ...out.hunterEntry, to: free(out.hunterEntry.to) } } : {}),
     patrol: out.patrol.map(free),
   };
 }

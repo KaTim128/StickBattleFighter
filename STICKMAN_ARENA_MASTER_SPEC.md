@@ -696,3 +696,4 @@ When a phase is implemented, its requirements will be added to the sections abov
 | 17/11/2026 | Phase 1 B3 and B4: damage relationships, ability names on the HUD, no fighter inside solids; Fire Beam 2.4 s, interrupted by any hit, imperfect AI aim (TD-075, TD-076). | Master Developer |
 | 17/11/2026 | Phase 1 B10 (part): Blue Inferno is Inferno's ultimate, Eruption his fifth ability (SUP-36, TD-080). | Master Developer |
 | 18/11/2026 | Phase 1 B10 (rest): ultimate charge scales with strength; AI target choice against summoners; Shroud's ultimate and balance (SUP-37, TD-081). | Master Developer |
+| 19/11/2026 | Phase order changed: four new fighters, then the Colosseum, then the other eight, then the rest of Phase 3 and Phase 4 (TD-112). Hide and Seek: automatic peek view, no peek giveaway, the execution (TD-111). | Master Developer |

@@ -15,6 +15,7 @@ export class Round {
   private clockS = 0;
   private huntS = 0;
   private killS = 0;
+  private killDurationS = KILL_ANIMATION_S;
   private killStarted = 0;
   /** Phase changes this step, for the scene (sounds, screens): consumed by `takeEvents`. */
   private events: string[] = [];
@@ -51,7 +52,7 @@ export class Round {
 
   /** How far through the killing animation, 0..1. */
   get killProgress(): number {
-    return this.phase === 'killing' ? Math.min(1, this.killS / KILL_ANIMATION_S) : this.phase === 'gameover' ? 1 : 0;
+    return this.phase === 'killing' ? Math.min(1, this.killS / this.killDurationS) : this.phase === 'gameover' ? 1 : 0;
   }
 
   update(dtS: number): void {
@@ -72,7 +73,7 @@ export class Round {
         break;
       case 'killing':
         this.killS += dtS;
-        if (this.killS >= KILL_ANIMATION_S) {
+        if (this.killS >= this.killDurationS) {
           this.phase = 'gameover';
           this.events.push('gameover');
         }
@@ -86,8 +87,9 @@ export class Round {
    * The hunter has caught the player. Only counts during the hunt, and only once: the killing
    * animation can never start twice or after a win. Returns whether it started.
    */
-  catchPlayer(): boolean {
+  catchPlayer(durationS = KILL_ANIMATION_S): boolean {
     if (this.phase !== 'hunt') return false;
+    this.killDurationS = durationS;
     this.phase = 'killing';
     this.killStarted++;
     this.events.push('killing');
@@ -104,6 +106,7 @@ export class Round {
     this.clockS = 0;
     this.huntS = 0;
     this.killS = 0;
+    this.killDurationS = KILL_ANIMATION_S;
     this.killStarted = 0;
     this.events = [];
   }

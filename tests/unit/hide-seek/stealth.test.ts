@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HOUSE_PLAN } from '../../../src/data/arenas/house';
-import { HIDDEN_PEEK_M, HideSeekGame, NO_INPUT } from '../../../src/modes/hide-seek/game';
+import { HideSeekGame, NO_INPUT } from '../../../src/modes/hide-seek/game';
 import { exitPoint, exposure, hideSpots } from '../../../src/modes/hide-seek/hiding';
 import { sightRate } from '../../../src/modes/hide-seek/perception';
 import { THROW_RANGE_M } from '../../../src/modes/hide-seek/props';
@@ -70,7 +70,7 @@ describe('hiding places (sections B and F)', () => {
     expect(new Set(Object.values(noise)).size).toBeGreaterThan(3); // different places, different noise
   });
 
-  it('hidden: the body stays put, the view narrows, and only a small lean is allowed', () => {
+  it('hidden: the body stays put and the view narrows by itself, with nothing to lean or hold', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
     const wardrobe = spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 1)!;
     g.player.floor = 1;
@@ -85,8 +85,11 @@ describe('hiding places (sections B and F)', () => {
     expect(g.player.posture).toBe('hidden');
     expect(g.viewer().viewM).toBe(wardrobe.spec.viewM);
     expect(wardrobe.spec.viewM).toBeLessThan(VIEW_DISTANCE_M / 4);
+    // The peek key does nothing while hidden: no lean, no change of view.
     idle(g, 1, { move: { x: 0, y: 1 }, peek: true });
-    expect(Math.hypot(g.player.peekX, g.player.peekY)).toBeLessThanOrEqual(HIDDEN_PEEK_M + 1e-6);
+    expect(Math.hypot(g.player.peekX, g.player.peekY)).toBe(0);
+    expect(g.player.peeking).toBe(false);
+    expect(g.viewer().hiddenView).toBe('peek');
   });
 
   it('the hidden player sees much less: a far room is not lit from inside a cupboard', () => {
@@ -237,7 +240,7 @@ describe('under the table: no door, so no blind and no need to peek (owner, 19/1
     expect(g.viewer().hiddenView).toBeUndefined();
   });
 
-  it('a hiding place with a door still blinds the player, and the table is the only doorless one', () => {
+  it('a hiding place with a door gives the small view circle by itself, and the table is the only doorless one', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
     const wardrobe = g.spots.find((s) => s.spec.kind === 'wardrobe')!;
     const out = exitPoint(g.world, wardrobe);
@@ -245,12 +248,34 @@ describe('under the table: no door, so no blind and no need to peek (owner, 19/1
     g.player.x = out.x;
     g.player.y = out.y;
     press(g);
-    expect(g.viewer().hiddenView).toBe('blind');
+    expect(g.viewer().hiddenView).toBe('peek');
     expect(g.spots.filter((s) => s.spec.kind === 'under-table')).toHaveLength(1);
   });
 });
 
-describe('hiding blinds the player; peeking shows a little but gives them away (owner, 18/11/2026)', () => {
+describe('a hunter who knows where the hider is actually grabs them (owner, 19/11/2026)', () => {
+  it('chasing a player hidden under the table, he reaches the table and the catch begins (no endless walking at it)', () => {
+    const g = new HideSeekGame(HOUSE_PLAN);
+    const table = g.spots.find((s) => s.spec.kind === 'under-table')!;
+    const out = exitPoint(g.world, table);
+    g.player.floor = table.floor;
+    g.player.x = out.x;
+    g.player.y = out.y;
+    press(g);
+    expect(g.player.hidingIn).toBe(table.id);
+    idle(g, 21); // the preparation time passes, and he is let in at the front door
+    g.hunter.action = null;
+    // He is sure of the spot and comes straight for it, from the side, where the table itself stands between them.
+    Object.assign(g.hunter, { floor: table.floor, x: out.x - 3.2, y: g.player.y });
+    g.hunter.mode = 'chase';
+    g.hunter.awareness = 0.05; // not sure any more: the old rule then walked at the table for ever
+    g.hunter.lastKnown = { floor: table.floor, x: g.player.x, y: g.player.y, sure: true, atS: g.timeS };
+    for (let i = 0; i < 60 * 10 && !g.killFrame; i++) g.step(STEP, NO_INPUT);
+    expect(g.killFrame, 'he never grabbed the hiding player').not.toBeNull();
+  });
+});
+
+describe('hiding shows a small view by itself, and looking out never gives the player away (owner, 19/11/2026)', () => {
   const setup = () => {
     const g = new HideSeekGame(HOUSE_PLAN);
     const spot = g.spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 1)!;
@@ -264,20 +289,8 @@ describe('hiding blinds the player; peeking shows a little but gives them away (
     return { g, spot, vis };
   };
 
-  it('while hidden and not peeking the player sees nothing: no room, no furniture, no hunter', () => {
-    const { g, vis } = setup();
-    const v = g.viewer();
-    expect(v.hiddenView).toBe('blind');
-    vis.settle(v);
-    for (const r of g.house.rooms) expect(vis.roomLight(r.id), r.id).toBe(0);
-    for (const f of g.house.furniture.filter((x) => x.floor === 1)) expect(vis.objectAlpha(f.id), f.id).toBe(0);
-    // A hunter standing right in front of the opening is not seen.
-    expect(vis.canSee(v, g.player.floor, { x: g.player.x, y: g.player.y + 1 })).toBe(false);
-  });
-
-  it('peeking shows only a small dim area round the hiding place, not the whole room', () => {
+  it('with no key held the player sees only a small dim area round the hiding place, not the whole room', () => {
     const { g, spot, vis } = setup();
-    g.step(STEP, { ...NO_INPUT, peek: true });
     const v = g.viewer();
     expect(v.hiddenView).toBe('peek');
     vis.settle(v);
@@ -299,7 +312,7 @@ describe('hiding blinds the player; peeking shows a little but gives them away (
     expect(g.viewer().hiddenView).toBeUndefined();
   });
 
-  it('Shroud notices a peeking player several times faster than a still, hidden one', () => {
+  it('Shroud notices a hiding player exactly as before whatever the player does with the peek key', () => {
     const { g, spot } = setup();
     const eyes = {
       floor: spot.floor,
@@ -308,25 +321,25 @@ describe('hiding blinds the player; peeking shows a little but gives them away (
       facing: -Math.PI / 2,
       gait: 'walk' as const,
     };
-    const body = (peeking: boolean) => ({
-      floor: spot.floor,
-      x: spot.spec.at.x,
-      y: spot.spec.at.y,
-      crouching: false,
-      hiding: spot,
-      peeking,
-    });
-    const still = sightRate(g.world, eyes, body(false));
-    const peeking = sightRate(g.world, eyes, body(true));
-    expect(still).toBeGreaterThan(0);
-    expect(peeking).toBeGreaterThanOrEqual(still * 2.5);
+    const body = { floor: spot.floor, x: spot.spec.at.x, y: spot.spec.at.y, crouching: false, hiding: spot };
+    const rate = sightRate(g.world, eyes, body);
+    expect(rate).toBeGreaterThan(0);
+    // The body view has no peeking field at all, and holding the key changes nothing he can sense.
+    expect('peeking' in body).toBe(false);
+    g.step(STEP, { ...NO_INPUT, peek: true });
+    expect(
+      sightRate(g.world, eyes, { floor: spot.floor, x: g.player.x, y: g.player.y, crouching: false, hiding: spot }),
+    ).toBe(rate);
   });
 
-  it('peeking while NOT hiding still does not change what Shroud notices (the old rule stands)', () => {
+  it('peeking while NOT hiding does not change what Shroud notices either', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
     const eyes = { floor: 0 as const, x: 22.8, y: 19.5, facing: -Math.PI / 2, gait: 'walk' as const };
-    const a = sightRate(g.world, eyes, { floor: 0, x: 22.8, y: 17, crouching: false, hiding: null, peeking: false });
-    const b = sightRate(g.world, eyes, { floor: 0, x: 22.8, y: 17, crouching: false, hiding: null, peeking: true });
-    expect(b).toBe(a);
+    const body = { floor: 0 as const, x: 22.8, y: 17, crouching: false, hiding: null };
+    const before = sightRate(g.world, eyes, body);
+    g.player.x = 22.8;
+    g.player.y = 17;
+    g.step(STEP, { ...NO_INPUT, peek: true });
+    expect(sightRate(g.world, eyes, body)).toBe(before);
   });
 });

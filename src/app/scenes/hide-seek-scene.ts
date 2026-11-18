@@ -8,12 +8,14 @@ import { HideSeekGame, type PlayerInput } from '../../modes/hide-seek/game';
 import { hideCues } from '../../modes/hide-seek/hiding';
 import type { Rect } from '../../modes/hide-seek/house-types';
 import { actionPose, openAmount } from '../../modes/hide-seek/hunter-actions';
+import type { KillEvent } from '../../modes/hide-seek/kill-sequence';
 import { Visibility } from '../../modes/hide-seek/visibility';
 import type { Point } from '../../modes/hide-seek/world';
 import { FLOOR_HEIGHT_M } from '../../modes/hide-seek/world';
 import { ActorView } from '../../rendering/actor-view';
 import { isLongPiece, longPieceKey, personOrder } from '../../rendering/depth-sort';
 import { bakerFor, buildHouseView, type HouseView, isFrontWallOf } from '../../rendering/house-view';
+import { KillEffects } from '../../rendering/kill-effects';
 import { iso } from '../../rendering/projection';
 import { SpotEffects } from '../../rendering/spot-effects';
 import type { Viewport } from './arena-scene';
@@ -45,6 +47,12 @@ export class HideSeekScene implements GameScene {
   private fadedRoom: string | null | undefined;
   private lastHunter = { x: 0, y: 0 };
   private cam = { x: 0, y: 0 };
+  /** The camera's push-in during the execution (1 = normal), eased, and the clock for its shake. */
+  private zoom = 1;
+  private shakeClockS = 0;
+  /** Blood at the blows and the pool under the body. */
+  private readonly blood = new KillEffects();
+  private bloodFloor: 0 | 1 | null = null;
   /** Room visibility and lighting (section C); drives which things are drawn and how bright. */
   readonly visibility: Visibility;
   private lit: {
@@ -210,10 +218,11 @@ export class HideSeekScene implements GameScene {
     if (Math.abs(this.playerAlpha - goalAlpha) < 0.02) this.playerAlpha = goalAlpha;
     player.view.root.alpha = this.playerAlpha;
     player.view.root.visible = this.playerAlpha > 0.01;
-    // The catch: the player collapses once, over the killing animation (the rules start it exactly once).
-    const kill = g.round.killProgress;
-    player.view.root.rotation = kill > 0 ? Math.min(1, kill * 2.2) * 1.45 * p.facing : 0;
-    const at = iso(p.x, p.y, p.z);
+    // The execution drives the body: dragged out limp, thrown down, lying where it is killed.
+    const kill = g.killFrame;
+    player.view.root.rotation = kill ? kill.player.lie * 1.45 * p.facing : 0;
+    // Held up by the neck, the figure hangs off the floor.
+    const at = iso(p.x, p.y, p.z + (kill?.player.lift ?? 0));
     player.view.root.position.set(at.x, at.y);
 
     // Room visibility and lighting: what the eyes can see from where they are (body plus any peek).
@@ -222,8 +231,13 @@ export class HideSeekScene implements GameScene {
     const act = g.hunter.action;
     this.spotFx?.update(
       frameDtS,
-      act?.spot ? { spotId: act.spot.id, amount: openAmount(act.kind, Math.min(1, act.elapsedS / act.durS)) } : null,
+      kill
+        ? kill.spot && { spotId: kill.spot.id, amount: kill.spot.amount }
+        : act?.spot
+          ? { spotId: act.spot.id, amount: openAmount(act.kind, Math.min(1, act.elapsedS / act.durS)) }
+          : null,
     );
+    this.blood.update(frameDtS);
     const eyes = g.viewer();
     this.visibility.update(frameDtS, eyes);
     this.fadeFrontWalls(view);
@@ -237,17 +251,44 @@ export class HideSeekScene implements GameScene {
     this.spotFx?.syncDepth();
     view.fader.update([{ node: player.view.root, depth: () => player.view.root.zIndex }], frameDtS);
 
-    // The camera glides after the player.
-    const lean = iso(p.x + p.peekX, p.y + p.peekY, p.z);
+    // The camera glides after the player. In the execution it frames the two of them, pushes in and shakes at each blow.
+    const lean = kill ? iso(kill.focus.x, kill.focus.y, 0.5) : iso(p.x + p.peekX, p.y + p.peekY, p.z);
     const goalX = lean.x;
-    const goalY = lean.y - p.floor * FLOOR_HEIGHT_M - 0.8;
-    const k = 1 - Math.exp(-CAMERA_RATE * frameDtS);
+    const goalY = lean.y - p.floor * FLOOR_HEIGHT_M - (kill ? 0.3 : 0.8);
+    const k = 1 - Math.exp(-(kill ? CAMERA_RATE * 2 : CAMERA_RATE) * frameDtS);
     this.cam.x += (goalX - this.cam.x) * k;
     this.cam.y += (goalY - this.cam.y) * k;
+    this.zoom += ((kill ? kill.zoom : 1) - this.zoom) * (1 - Math.exp(-(kill ? 9 : 4) * frameDtS));
+    this.shakeClockS += frameDtS;
+    const shake = kill ? kill.shake * 0.22 : 0;
+    const shakeX = Math.sin(this.shakeClockS * 71) * shake;
+    const shakeY = Math.cos(this.shakeClockS * 53) * shake * 0.7;
     const { width, height } = this.viewport();
-    const scale = Math.min(width, height) / VIEW_SHORT_SIDE_M;
+    const scale = (Math.min(width, height) / VIEW_SHORT_SIDE_M) * this.zoom;
     view.world.scale.set(scale);
-    view.world.position.set(width / 2 - this.cam.x * scale, height / 2 - this.cam.y * scale);
+    view.world.position.set(width / 2 - (this.cam.x + shakeX) * scale, height / 2 - (this.cam.y + shakeY) * scale);
+  }
+
+  /** A moment of the execution (a blow landing): the blood. The sounds are the page's. */
+  onKillEvent(e: KillEvent): void {
+    const view = this.view;
+    if (!view) return;
+    const p = this.game.player;
+    if (this.bloodFloor !== p.floor) {
+      const floor = view.floors[p.floor];
+      floor.actors.add(this.blood.pool, -0.35);
+      floor.container.addChild(this.blood.drops);
+      this.bloodFloor = p.floor;
+    }
+    if (e.kind === 'stab') {
+      // The stomach of a body held up by the neck.
+      const at = iso(p.x, p.y, p.z + 0.85 + (this.game.killFrame?.player.lift ?? 0));
+      this.blood.burst(at.x, at.y, e.final ? 2.2 : 1);
+      if (e.final) {
+        const ground = iso(p.x, p.y, p.z);
+        this.blood.startPool(ground.x, ground.y);
+      }
+    }
   }
 
   /** The hunter: drawn only where the player could see him. His sight cone is never shown to the player (owner, 18/11/2026). */
@@ -266,8 +307,9 @@ export class HideSeekScene implements GameScene {
     const facing: 1 | -1 = Math.cos(h.facing) - Math.sin(h.facing) >= 0 ? 1 : -1;
     // His body: a search action (opening a door, kneeling to look under a bed...) or, at the catch, the strike.
     let pose: Pose | undefined;
-    if (g.round.phase === 'killing' || g.round.phase === 'gameover') {
-      pose = actionPose('strike', Math.min(1, g.round.killProgress * 1.5));
+    const kill = g.killFrame;
+    if (kill) {
+      pose = kill.hunter.pose;
     } else if (h.action) {
       pose = actionPose(h.action.kind, Math.min(1, h.action.elapsedS / h.action.durS));
     }
@@ -286,7 +328,8 @@ export class HideSeekScene implements GameScene {
       (g.player.hidingIn === null &&
         h.floor === g.player.floor &&
         Math.hypot(h.x - g.player.x, h.y - g.player.y) < 1.5);
-    hv.view.root.visible = seen && view.floors[h.floor].container.visible;
+    // In the execution he is always in view: it is the scene.
+    hv.view.root.visible = (seen || kill !== null) && view.floors[h.floor].container.visible;
   }
 
   /** The throwable objects: on the floor, carried over the player's head, or flying in an arc. */
@@ -338,6 +381,8 @@ export class HideSeekScene implements GameScene {
     this.visibility.settle(this.game.viewer());
     this.playerAlpha = 1;
     this.spotFx?.reset();
+    this.blood.clear();
+    this.zoom = 1;
     if (this.player) this.player.view.root.rotation = 0;
     const p = this.game.player;
     const at = iso(p.x, p.y, p.z);

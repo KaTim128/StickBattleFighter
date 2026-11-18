@@ -79,6 +79,7 @@ export interface SightOptions {
 
 export class HouseWorld {
   private readonly open = new Map<string, boolean>();
+  private readonly unlocked = new Set<string>();
   private readonly navs: [NavGrid, NavGrid];
   private readonly wallsBy: [WallDef[], WallDef[]] = [[], []];
   private readonly furnitureBy: [FurnitureDef[], FurnitureDef[]] = [[], []];
@@ -100,10 +101,27 @@ export class HouseWorld {
     return this.open.get(id) ?? true;
   }
 
+  /** A door that never opens: locked in its data, unless it has been unlocked for the hunter's entrance. */
+  isLocked(id: string): boolean {
+    return (this.house.doors.find((x) => x.id === id)?.locked ?? false) && !this.unlocked.has(id);
+  }
+
+  /** Unlock a locked door for a moment (the hunter's entrance), or lock it again. */
+  setUnlocked(id: string, on: boolean): void {
+    if (on) this.unlocked.add(id);
+    else this.unlocked.delete(id);
+  }
+
+  /** Every door back as authored: shut or open as it started, locked ones locked. */
+  resetDoors(): void {
+    this.unlocked.clear();
+    for (const d of this.house.doors) this.open.set(d.id, d.open);
+  }
+
   /** Set a door open or shut; returns whether anything changed. Arches never close. */
   setDoor(id: string, open: boolean): boolean {
     const d = this.house.doors.find((x) => x.id === id);
-    if (!d || d.kind === 'arch' || d.locked || this.open.get(id) === open) return false;
+    if (!d || d.kind === 'arch' || this.isLocked(id) || this.open.get(id) === open) return false;
     this.open.set(id, open);
     return true;
   }
@@ -205,7 +223,8 @@ export class HouseWorld {
   }
 
   private doorAt(floor: FloorIndex, x: number, y: number, radius: number): string | null {
-    for (const d of this.closedDoors(floor)) if (!d.locked && circleHitsRect(x, y, radius + 0.05, d.rect)) return d.id;
+    for (const d of this.closedDoors(floor))
+      if (!this.isLocked(d.id) && circleHitsRect(x, y, radius + 0.05, d.rect)) return d.id;
     return null;
   }
 

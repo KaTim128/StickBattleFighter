@@ -143,6 +143,7 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
   };
   window.__hideSeekDebug = debug;
   let last: number | null = null;
+  let baseTimeScale = 1;
   const loop = new GameLoop({
     update: (stepS) => {
       if (!paused) scenes.update(stepS);
@@ -156,6 +157,13 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       // Sound: what the player hears of every event, from where the body is; the heartbeat follows the hunter.
       const body = { floor: g.player.floor, x: g.player.x, y: g.player.y };
       for (const e of g.takeEvents()) audio.event(e, g.world, body);
+      // The execution: its sounds and blood, and the slow-motion into each blow.
+      for (const e of g.takeKillEvents()) {
+        audio.killEvent(e);
+        scene.onKillEvent(e);
+      }
+      const kill = g.killFrame;
+      loop.timeScale = baseTimeScale * (kill?.timeScale ?? 1);
       const h = g.hunter;
       const near = h.floor === body.floor ? Math.max(0, 1 - Math.hypot(h.x - body.x, h.y - body.y) / 12) : 0;
       audio.update(dt, g.round.phase === 'hunt' ? Math.max(h.mode === 'chase' ? 1 : 0, h.awareness, near * 0.5) : 0);
@@ -168,6 +176,7 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       }
       hud.setBubbles(scene.hideBubbles());
       hud.update({
+        cinema: kill ? { bars: kill.bars, flash: kill.flash, fade: kill.fade } : null,
         killProgress: g.round.killProgress,
         hiddenView: g.viewer().hiddenView ?? null,
         survivedS: g.round.survivedS,
@@ -195,7 +204,10 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
       app.render();
     },
   });
-  if (params.has('slowmo')) loop.timeScale = Math.min(1, Math.max(0.05, Number(params.get('slowmo')) || 1));
+  if (params.has('slowmo')) {
+    baseTimeScale = Math.min(1, Math.max(0.05, Number(params.get('slowmo')) || 1));
+    loop.timeScale = baseTimeScale;
+  }
   loop.start();
   status.dataset.state = 'ready';
   status.textContent = 'Hide and Seek Nightmare';

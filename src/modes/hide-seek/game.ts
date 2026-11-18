@@ -2,8 +2,9 @@ import { HOUSE } from '../../data/arenas/house';
 import { exitPoint, type HideSpot, hideSpots, nearestHideSpot } from './hiding';
 import type { HouseDef } from './house-types';
 import { HUNTER_STEP_LOUDNESS, Hunter } from './hunter';
+import { type KillEvent, type KillFrame, KillSequence } from './kill-sequence';
 import { flyStep, IMPACT_LOUDNESS, initialProps, launch, PICKUP_REACH_M, type PropState } from './props';
-import { Round } from './rules';
+import { Round, type RoundPhase } from './rules';
 import type { Viewer } from './visibility';
 import { BODY_RADIUS_M, HouseWorld, type Placed, type Point } from './world';
 
@@ -12,11 +13,16 @@ import { BODY_RADIUS_M, HouseWorld, type Placed, type Point } from './world';
  * hunter, advanced by fixed steps from the player's input. Pure and deterministic; the scene only
  * reads it to draw, and tests drive it directly.
  */
-/** Hiding places with nothing to shut (under the table) leave the player's view as it is: no blind, no peek (owner, 19/11/2026). */
+/**
+ * Hiding in a place with a door, a lid or a curtain gives the small view circle automatically (owner, 19/11/2026);
+ * under the table there is nothing to shut, so the view stays as it is.
+ */
 export function blindsWhenHidden(spot: { spec: { kind: string } } | undefined): boolean {
   return spot !== undefined && spot.spec.kind !== 'under-table';
 }
 
+/** How fast Shroud walks in through the front door: slow and deliberate. */
+export const ENTRANCE_MPS = 2.0;
 export const WALK_MPS = 2.4;
 export const RUN_MPS = 4.4;
 export const CROUCH_MPS = 1.2;
@@ -25,8 +31,6 @@ export const DOOR_REACH_M = 1.3;
 /** The most a peek leans the view away from the body, metres. */
 export const PEEK_M = 0.9;
 const PEEK_RATE = 7;
-/** The small lean allowed from inside a hiding place (limited camera movement). */
-export const HIDDEN_PEEK_M = 0.35;
 
 export type Posture = 'walk' | 'run' | 'crouch' | 'hidden';
 
@@ -68,7 +72,7 @@ export interface PlayerState extends Placed {
   peekY: number;
   /** The hiding place the player is in (furniture id), or null. */
   hidingIn: string | null;
-  /** The peek key is held (while hiding it shows a little of the room, but gives the player away). */
+  /** The peek key is held (leans the view round a door while walking; never used while hiding). */
   peeking: boolean;
   /** The thrown-object id being carried, or null. */
   carrying: string | null;
@@ -98,6 +102,14 @@ export class HideSeekGame {
   readonly hunter: Hunter;
   private events: GameEvent[] = [];
   readonly spots: readonly HideSpot[];
+  /** The execution under way (the hunter caught the player), or null. */
+  kill: KillSequence | null = null;
+  private killT = 0;
+  private killEvents: KillEvent[] = [];
+  /** The hunter walking in through the front door as the hunt begins, or null. */
+  private entrance: { from: Point; to: Point; walkedM: number; lenM: number; closeAtM: number; stepM: number } | null =
+    null;
+  private lastPhase: RoundPhase = 'prep';
   /** The throwable objects and where they are. */
   props: PropState[];
   /** The sim clock, seconds. */
@@ -136,17 +148,32 @@ export class HideSeekGame {
 
   /** Everything is back to the start: doors shut as authored, the player at the start, the round reset. */
   restart(): void {
-    for (const d of this.house.doors) this.world.setDoor(d.id, d.open);
+    this.world.resetDoors();
+    this.entrance = null;
+    this.lastPhase = 'prep';
     Object.assign(this.player, this.freshPlayer());
     this.props = initialProps(this.house.throwables);
     this.round.reset();
     this.hunter.reset();
     this.events = [];
+    this.kill = null;
+    this.killT = 0;
+    this.killEvents = [];
     this.timeS = 0;
   }
 
   takeEvents(): GameEvent[] {
     return this.events.splice(0, this.events.length);
+  }
+
+  /** What happened in the execution since last asked (stages beginning, blows landing), for the sound and effects. */
+  takeKillEvents(): KillEvent[] {
+    return this.killEvents.splice(0, this.killEvents.length);
+  }
+
+  /** The whole scene of the execution now (positions, poses, camera), or null when there is none. */
+  get killFrame(): KillFrame | null {
+    return this.kill ? this.kill.frame(Math.min(this.killT, this.kill.durationS)) : null;
   }
 
   /** Is this body outside the house (in a yard or on the street)? The player may not go there. */
@@ -163,6 +190,9 @@ export class HideSeekGame {
   step(dtS: number, input: PlayerInput): void {
     this.timeS += dtS;
     this.round.update(dtS);
+    if (this.round.phase === 'hunt' && this.lastPhase === 'prep') this.beginEntrance();
+    this.lastPhase = this.round.phase;
+    if (this.kill) this.stepKill(dtS);
     if (this.round.over || this.round.phase === 'killing') {
       this.player.speedMps = 0;
       return;
@@ -175,6 +205,10 @@ export class HideSeekGame {
 
   /** The hunter thinks and moves; he reads the player's body and the noises just made, never the peeking view. */
   private stepHunter(dtS: number, heard: GameEvent[]): void {
+    if (this.entrance) {
+      this.stepEntrance(dtS);
+      return;
+    }
     const p = this.player;
     const caught = this.hunter.step(dtS, {
       world: this.world,
@@ -184,7 +218,6 @@ export class HideSeekGame {
         x: p.x,
         y: p.y,
         crouching: p.crouching,
-        peeking: p.peeking && p.hidingIn !== null,
         hiding: this.spots.find((s) => s.id === p.hidingIn) ?? null,
       },
       events: heard,
@@ -195,7 +228,119 @@ export class HideSeekGame {
       noise: (at, floor, loudness, detail) =>
         this.events.push({ kind: 'inspect', at, floor, loudness, detail, by: 'hunter' }),
     });
-    if (caught) this.round.catchPlayer();
+    if (caught) this.beginKill();
+  }
+
+  /**
+   * The hunt begins (owner, 19/11/2026): the front door is unlocked and opens, and Shroud walks in from outside. He
+   * is only driven in if he is still waiting at his start; he is not thinking until he is through, and the door
+   * shuts and locks behind him.
+   */
+  private beginEntrance(): void {
+    const e = this.house.hunterEntry;
+    const h = this.hunter;
+    const start = this.house.hunterStart;
+    if (!e || Math.hypot(h.x - start.x, h.y - start.y) > 0.5) return;
+    const door = this.world.door(e.doorId);
+    if (!door) return;
+    const from = { x: h.x, y: h.y };
+    const to = { x: e.to.x, y: e.to.y };
+    const through = { x: (door.rect.x0 + door.rect.x1) / 2, y: (door.rect.y0 + door.rect.y1) / 2 };
+    const lenM = Math.hypot(to.x - from.x, to.y - from.y);
+    const doorM = Math.hypot(through.x - from.x, through.y - from.y);
+    this.world.setUnlocked(e.doorId, true);
+    this.setDoor(e.doorId, true, 'hunter');
+    this.entrance = { from, to, walkedM: 0, lenM, closeAtM: Math.min(lenM, doorM + 1.1), stepM: 0 };
+  }
+
+  private stepEntrance(dtS: number): void {
+    const en = this.entrance;
+    const e = this.house.hunterEntry;
+    if (!en || !e) return;
+    const h = this.hunter;
+    const speed = ENTRANCE_MPS * dtS;
+    en.walkedM = Math.min(en.lenM, en.walkedM + speed);
+    en.stepM += speed;
+    const k = en.lenM > 0 ? en.walkedM / en.lenM : 1;
+    h.floor = e.to.floor;
+    h.x = en.from.x + (en.to.x - en.from.x) * k;
+    h.y = en.from.y + (en.to.y - en.from.y) * k;
+    h.facing = Math.atan2(en.to.y - en.from.y, en.to.x - en.from.x);
+    h.gait = 'walk';
+    if (en.stepM >= 1.1) {
+      en.stepM = 0;
+      this.events.push({
+        kind: 'footstep',
+        at: { x: h.x, y: h.y },
+        floor: h.floor,
+        loudness: HUNTER_STEP_LOUDNESS.walk,
+        by: 'hunter',
+      });
+    }
+    // Through the doorway: it swings shut behind him and locks for good.
+    if (en.walkedM >= en.closeAtM && this.world.isOpen(e.doorId)) {
+      this.setDoor(e.doorId, false, 'hunter');
+      this.world.setUnlocked(e.doorId, false);
+    }
+    if (en.walkedM >= en.lenM) {
+      this.world.setUnlocked(e.doorId, false);
+      this.entrance = null;
+    }
+  }
+
+  /**
+   * The catch (owner, 19/11/2026): the execution starts where he stands. If the player is hiding he opens the place,
+   * drags them out and kills them in the room; the round's killing phase lasts as long as that takes.
+   */
+  private beginKill(): void {
+    const p = this.player;
+    const h = this.hunter;
+    const spot = this.spots.find((s) => s.id === p.hidingIn) ?? null;
+    const seq = new KillSequence({
+      world: this.world,
+      floor: p.floor,
+      hunter: { x: h.x, y: h.y },
+      player: { x: p.x, y: p.y },
+      spot,
+    });
+    if (!this.round.catchPlayer(seq.durationS)) return;
+    h.mode = 'chase';
+    this.kill = seq;
+    this.killT = 0;
+    this.killEvents.push(...seq.eventsBetween(-1, 0));
+    this.applyKill();
+  }
+
+  private stepKill(dtS: number): void {
+    const seq = this.kill;
+    if (!seq) return;
+    const from = this.killT;
+    this.killT = Math.min(seq.durationS, this.killT + dtS);
+    this.killEvents.push(...seq.eventsBetween(from, this.killT));
+    this.applyKill();
+  }
+
+  /** Put both bodies where the execution has them (the hunter and the player are driven, not simulated). */
+  private applyKill(): void {
+    const f = this.killFrame;
+    if (!f) return;
+    const h = this.hunter;
+    const p = this.player;
+    h.x = f.hunter.x;
+    h.y = f.hunter.y;
+    h.floor = p.floor;
+    h.facing = f.hunter.face;
+    p.x = f.player.x;
+    p.y = f.player.y;
+    if (f.player.revealed) p.hidingIn = null;
+    p.posture = p.hidingIn ? 'hidden' : 'crouch';
+    p.crouching = f.player.limp;
+    p.speedMps = 0;
+    p.peeking = false;
+    p.peekX = 0;
+    p.peekY = 0;
+    // Facing on screen: away from the hunter, so the body sprawls forward in front of him.
+    p.facing = p.x - h.x - (p.y - h.y) >= 0 ? 1 : -1;
   }
 
   private stepPlayer(dtS: number, input: PlayerInput): void {
@@ -264,12 +409,19 @@ export class HideSeekGame {
   /** Lean the view toward where the player pushes while peek is held, never through a wall. */
   private stepPeek(dtS: number, input: PlayerInput): void {
     const p = this.player;
-    p.peeking = input.peek && (!p.hidingIn || blindsWhenHidden(this.spots.find((s) => s.id === p.hidingIn)));
+    // Hidden, the view is fixed: a small circle round the place, with nothing to hold or lean (owner, 19/11/2026).
+    if (p.hidingIn) {
+      p.peeking = false;
+      p.peekX = 0;
+      p.peekY = 0;
+      return;
+    }
+    p.peeking = input.peek;
     const m = Math.hypot(input.move.x, input.move.y);
     let gx = 0;
     let gy = 0;
     if (input.peek && m > 0.05) {
-      const reach = p.hidingIn ? HIDDEN_PEEK_M : PEEK_M;
+      const reach = PEEK_M;
       gx = (input.move.x / m) * reach;
       gy = (input.move.y / m) * reach;
       // Shorten the lean until the view origin has a clear line from the body (no leaning through a wall).
@@ -303,10 +455,9 @@ export class HideSeekGame {
       y: p.y + p.peekY,
       onStairs: p.onStairs,
       stairT: t,
-      // A hiding place with a door (or a lid, a curtain) blinds the player; one with no door, under the table, does not.
-      ...(spot && blindsWhenHidden(spot)
-        ? { viewM: spot.spec.viewM, hiddenView: p.peeking ? ('peek' as const) : ('blind' as const) }
-        : {}),
+      // A hiding place with a door, a lid or a curtain shows the small view circle by itself; under the table does not.
+      // In the execution the whole scene is shown: the view circle is gone.
+      ...(spot && !this.kill && blindsWhenHidden(spot) ? { viewM: spot.spec.viewM, hiddenView: 'peek' as const } : {}),
     };
   }
 
@@ -315,7 +466,7 @@ export class HideSeekGame {
     const p = this.player;
     let best: { id: string; open: boolean; d: number } | null = null;
     for (const d of this.house.doors) {
-      if (d.floor !== p.floor || d.kind === 'arch' || d.locked) continue;
+      if (d.floor !== p.floor || d.kind === 'arch' || this.world.isLocked(d.id)) continue;
       const cx = (d.rect.x0 + d.rect.x1) / 2;
       const cy = (d.rect.y0 + d.rect.y1) / 2;
       const dist = Math.hypot(cx - p.x, cy - p.y);

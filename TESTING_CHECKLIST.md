@@ -573,4 +573,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] No sofa hiding place; under the table keeps the normal view and peeking does nothing (`stealth.test.ts`, `horror-house.test.ts`)
 - [x] A fighter put outside the map is put back inside, and one inside is left alone (`stay-inside-map.test.ts`)
 - [ ] Owner check: the fighter-outside-the-map bug does not come back (say which ability and where if it does)
+- [x] Hide and Seek execution (TD-111): found hiding means open, drag out, throw down, stabs, Game Over (`kill-sequence.test.ts`, `kill-game.test.ts`, `hide-seek.spec.ts`); hiding shows the view circle by itself and Shroud's sight ignores it (`stealth.test.ts`)
+- [ ] Owner check: the execution's pacing, camera, blood and sounds feel threatening and not too long (play `?mode=hide-seek`, get caught in a wardrobe, a bed and in the open)
 
+
+## Hide and Seek: entrance, tuning, sounds (19/11/2026)
+- [ ] Shroud walks in through the front door after the 20 s preparation, then the door closes behind him.
+- [ ] He does not spot a player in plain view instantly; he is a little slower than before but still faster than a runner.
+- [ ] A hider he is sure of is grabbed by the neck and stabbed in the stomach (no walking at the table without grabbing).
+- [ ] No high-pitched whistle or shriek in the kill; opening a wardrobe, cupboard, chest or door plays a short creak-knock that ends with the animation; closing is one short clunk.

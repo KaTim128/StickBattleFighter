@@ -6,7 +6,8 @@ import type { HouseWorld, Point } from './world';
  * What the hunter can see and hear (Phase 2, master plan sections G and I). Sight needs a clear line
  * inside a view cone; hiding, crouching and distance cut how much of the player he makes out; sounds
  * are quieter through walls and shut doors and across floors. Everything here reads the player's
- * BODY only: the peeking view origin never reaches this module (section C).
+ * BODY only: what the player sees (the peeking lean, the small view circle in a hiding place) never reaches this
+ * module, so looking out never gives the player away (owner, 19/11/2026; section C).
  */
 export type Gait = 'walk' | 'tiptoe' | 'run';
 
@@ -22,8 +23,6 @@ export const VISION: Readonly<Record<Gait, Vision>> = {
   tiptoe: { rangeM: 8, halfAngle: 1.2 },
   run: { rangeM: 7, halfAngle: 0.7 },
 };
-/** Peeking out of a hiding place makes the player this many times easier to notice. */
-export const PEEK_GIVEAWAY = 3;
 /** Anything this close is sensed whichever way he faces (he feels it, hears it breathe). */
 export const CLOSE_SENSE_M = 1.2;
 
@@ -43,8 +42,6 @@ export interface BodyView {
   readonly crouching: boolean;
   /** The hiding place the player is in, or null. */
   readonly hiding: HideSpot | null;
-  /** The player is peeking out of their hiding place: movement at the opening gives them away (owner, 18/11/2026). */
-  readonly peeking?: boolean;
 }
 
 const wrap = (a: number): number => {
@@ -85,7 +82,7 @@ export function sightRate(world: HouseWorld, eyes: Eyes, body: BodyView): number
   const skip = body.hiding ? new Set<Rect>([body.hiding.rect]) : undefined;
   if (!coversPoint(world, eyes, body.floor, body, skip)) return 0;
   // Exposure already weighs distance and the side he looks from; in the open distance is weighed here.
-  if (body.hiding) return exposure(body.hiding, eyes) * 1.2 * (body.peeking ? PEEK_GIVEAWAY : 1);
+  if (body.hiding) return exposure(body.hiding, eyes) * 1.2;
   const d = Math.hypot(body.x - eyes.x, body.y - eyes.y);
   const distance = d < 2.5 ? 2.4 : d < 5 ? 1.5 : d < 8 ? 0.8 : 0.4;
   return distance * (body.crouching ? 0.6 : 1);

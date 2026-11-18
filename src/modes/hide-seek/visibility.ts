@@ -38,10 +38,10 @@ export interface Viewer {
   /** How far the eyes can see, metres (a hiding place narrows it). Default: the full view distance. */
   readonly viewM?: number;
   /**
-   * Hiding (owner, 18/11/2026): `blind` sees nothing at all; `peek` sees only a small, dim area round the hiding
+   * Hiding (owner, 19/11/2026): the player sees only a small, dim area round the hiding
    * place (as far as `viewM`), never the rest of the room, other rooms or anything beyond.
    */
-  readonly hiddenView?: 'blind' | 'peek';
+  readonly hiddenView?: 'peek';
 }
 
 interface Target {
@@ -115,7 +115,6 @@ export class Visibility {
    * is lit or occupied)? Used for the hunter: he is drawn only when the player could see him.
    */
   canSee(viewer: Viewer, floor: FloorIndex, p: Point): boolean {
-    if (viewer.hiddenView === 'blind') return false;
     if (viewer.hiddenView === 'peek') {
       return (
         floor === viewer.floor &&

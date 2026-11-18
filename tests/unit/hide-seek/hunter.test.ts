@@ -227,6 +227,7 @@ describe('how he searches a hiding place (owner, 18/11/2026)', () => {
   function watch(rng: () => number, seconds = 119) {
     const g = new HideSeekGame(HOUSE_PLAN);
     const h = new Hunter(HOUSE_PLAN, rng);
+    Object.assign(h, HOUSE_PLAN.hunterEntry!.to); // inside, where the front-door entrance leaves him
     const kinds = new Set<string>();
     const noises: string[] = [];
     const ctx = {
@@ -363,7 +364,11 @@ describe('how he searches a hiding place (owner, 18/11/2026)', () => {
       step: () => {},
       noise: () => {},
     };
-    for (let t = 0; t < 2 && h.mode !== 'chase'; t += DT) h.step(DT, ctx);
+    // Owner, 19/11/2026: he must not know where the player is so suddenly. Noticing is gradual now (not in 0.3 s)...
+    for (let t = 0; t < 0.3; t += DT) h.step(DT, ctx);
+    expect(h.awareness).toBeLessThan(1);
+    // ...but a player standing in plain view is still spotted within a few seconds, and he drops what he was doing.
+    for (let t = 0; t < 5 && h.mode !== 'chase'; t += DT) h.step(DT, ctx);
     expect(h.mode).toBe('chase');
     expect(h.action).toBeNull();
   });

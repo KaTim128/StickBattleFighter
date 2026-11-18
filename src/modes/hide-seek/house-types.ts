@@ -172,6 +172,14 @@ export interface HouseDef {
   /** The player's start (a room with a few hiding places near) and the hunter's (outside, at the front gate). */
   readonly playerStart: { readonly floor: FloorIndex; readonly x: number; readonly y: number };
   readonly hunterStart: { readonly floor: FloorIndex; readonly x: number; readonly y: number };
+  /**
+   * How the hunter gets in when the hunt begins (owner, 19/11/2026): he waits outside at `hunterStart`, the outside
+   * door opens, he walks in to `to`, and the door shuts and locks behind him. Without it he starts at `hunterStart`.
+   */
+  readonly hunterEntry?: {
+    readonly doorId: string;
+    readonly to: { readonly floor: FloorIndex; readonly x: number; readonly y: number };
+  };
   /** Where the hunter first looks when the hunt begins (his patrol route). */
   readonly patrol: readonly { readonly floor: FloorIndex; readonly x: number; readonly y: number }[];
 }

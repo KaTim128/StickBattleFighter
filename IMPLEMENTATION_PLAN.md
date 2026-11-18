@@ -105,6 +105,8 @@ The owner switches models by hand; the chat names the models.
 
 ## 3. Phase 3: Colosseum, sixteen fighters, UI redesign and tutorial
 
+> **Owner order (19/11/2026, TD-112):** four of the twelve new fighters first (to be named), then the Colosseum (part A), then the other eight fighters (B1 and B2), and only then parts C to C7 and Phase 4. Needs Phase 2 reviewed and approved first.
+
 **Implementation model.** One session in the order A → B → C, then one review.
 
 | Part | Tasks | Files |

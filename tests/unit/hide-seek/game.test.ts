@@ -118,15 +118,55 @@ describe('the game is played inside the house (owner, 18/11/2026)', () => {
     expect(g.takeEvents().some((e) => e.kind === 'door')).toBe(false);
   });
 
-  it('the player starts in the hall, just inside the front door, and the hunter starts inside the house', () => {
+  it('the player starts in the hall, just inside the front door; Shroud waits outside it', () => {
     const g = new HideSeekGame(HOUSE);
     const door = g.world.door('d-front')!.rect;
     const p = g.player;
     expect(g.world.roomAt(p.floor, p.x, p.y)?.id).toBe('hall');
     expect(Math.hypot(p.x - (door.x0 + door.x1) / 2, p.y - door.y0)).toBeLessThan(5);
     const h = g.hunter;
-    expect(g.world.roomAt(h.floor, h.x, h.y)?.outdoors).not.toBe(true);
-    expect(Math.hypot(h.x - p.x, h.y - p.y)).toBeGreaterThan(8); // not on top of the player
+    expect(g.world.roomAt(h.floor, h.x, h.y)?.outdoors).toBe(true); // outside, in front of the door
+    expect(Math.hypot(h.x - p.x, h.y - p.y)).toBeGreaterThan(8);
+    expect(g.world.isOpen('d-front')).toBe(false);
+  });
+
+  it('when the hunt begins the front door opens, Shroud walks in, and it shuts and locks behind him (owner, 19/11/2026)', () => {
+    for (const house of [HOUSE_PLAN, HOUSE]) {
+      const g = new HideSeekGame(house);
+      const start = { x: g.hunter.x, y: g.hunter.y };
+      // Through the preparation he waits outside and the door stays shut and locked.
+      for (let i = 0; i < 60 * 19; i++) g.step(STEP, NO_INPUT);
+      expect(g.round.phase).toBe('prep');
+      expect({ x: g.hunter.x, y: g.hunter.y }).toEqual(start);
+      expect(g.world.isOpen('d-front')).toBe(false);
+      // The hunt begins: the door opens (with its noise) and he starts to walk in.
+      let opened = false;
+      let sawDoorEvent = false;
+      let inside = -1;
+      const events: { kind: string; open?: boolean; by?: string }[] = [];
+      for (let i = 0; i < 60 * 14; i++) {
+        g.step(STEP, NO_INPUT);
+        for (const e of g.takeEvents()) events.push(e);
+        if (g.world.isOpen('d-front')) opened = true;
+        const room = g.world.roomAt(g.hunter.floor, g.hunter.x, g.hunter.y);
+        if (inside < 0 && room && room.outdoors !== true) inside = i / 60;
+      }
+      sawDoorEvent = events.some((e) => e.kind === 'door' && e.open === true && e.by === 'hunter');
+      expect(opened).toBe(true);
+      expect(sawDoorEvent).toBe(true);
+      expect(events.some((e) => e.kind === 'door' && e.open === false && e.by === 'hunter')).toBe(true); // it swings shut
+      expect(inside).toBeGreaterThan(1); // he does not appear inside: he walks in
+      // Afterwards the door is shut and locked for good, and he is inside thinking for himself.
+      expect(g.world.isOpen('d-front')).toBe(false);
+      expect(g.world.isLocked('d-front')).toBe(true);
+      expect(g.world.roomAt(g.hunter.floor, g.hunter.x, g.hunter.y)?.outdoors).not.toBe(true);
+      expect(g.world.setDoor('d-front', true)).toBe(false);
+      // A restart puts him back outside and the door back as it was.
+      g.restart();
+      expect({ x: g.hunter.x, y: g.hunter.y }).toEqual(start);
+      expect(g.world.isOpen('d-front')).toBe(false);
+      expect(g.world.isLocked('d-front')).toBe(true);
+    }
   });
 
   it('there are no hiding places outdoors, and the hunter does not search the yards', () => {

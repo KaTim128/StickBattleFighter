@@ -15,10 +15,12 @@ export interface HideSeekHudState {
   readonly posture: string;
   /** 0..1 through the killing animation (a red flash builds), 1 on Game Over. */
   readonly killProgress: number;
-  /** While hiding: nothing visible (`blind`) or only a small circle round the hiding place (`peek`); null otherwise. */
-  readonly hiddenView: 'blind' | 'peek' | null;
+  /** While hiding (in a place with a door, a lid or a curtain): a small circle round the hiding place (`peek`), by itself; null otherwise. */
+  readonly hiddenView: 'peek' | null;
   /** Seconds of the hunt survived, for the result text. */
   readonly survivedS: number;
+  /** The execution's presentation: letterbox bars, the red flash at each blow and the fade to black, each 0..1; null otherwise. */
+  readonly cinema?: { readonly bars: number; readonly flash: number; readonly fade: number } | null;
 }
 
 export interface HideSeekTouch {
@@ -49,6 +51,9 @@ export class HideSeekHud {
   private readonly status = document.createElement('div');
   private readonly promptEl = document.createElement('div');
   private readonly flash = document.createElement('div');
+  private readonly barTop = document.createElement('div');
+  private readonly barBottom = document.createElement('div');
+  private readonly fade = document.createElement('div');
   private readonly vignette = document.createElement('div');
   private readonly mask = document.createElement('div');
   private readonly bubbleLayer = document.createElement('div');
@@ -76,11 +81,14 @@ export class HideSeekHud {
     this.promptEl.hidden = true;
     const hint = document.createElement('div');
     hint.className = 'hs-hint';
-    hint.textContent = `WASD move · ${keys.run} run · ${keys.crouch} crouch · ${keys.act} act · hold ${keys.peek} to peek`;
+    hint.textContent = `WASD move · ${keys.run} run · ${keys.crouch} crouch · ${keys.act} act · hold ${keys.peek} to peek round doors`;
     this.vignette.className = 'hs-vignette';
     this.mask.className = 'hs-mask';
     this.bubbleLayer.className = 'hs-bubbles';
     this.flash.className = 'hs-flash';
+    this.barTop.className = 'hs-bar hs-bar-top';
+    this.barBottom.className = 'hs-bar hs-bar-bottom';
+    this.fade.className = 'hs-fade';
     this.result.className = 'hs-result';
     this.result.hidden = true;
     this.resultTitle.className = 'hs-result-title';
@@ -102,6 +110,9 @@ export class HideSeekHud {
       this.mask,
       this.bubbleLayer,
       this.flash,
+      this.barTop,
+      this.barBottom,
+      this.fade,
       this.banner,
       this.clock,
       this.status,
@@ -155,7 +166,13 @@ export class HideSeekHud {
       this.clock.dataset.mode = 'hunt';
     }
     this.mask.dataset.view = s.hiddenView ?? '';
-    this.flash.style.opacity = String(Math.min(0.85, s.killProgress * 0.85));
+    // The execution: a slow red wash, a hard flash at each blow, letterbox bars, and black at the end.
+    const cinema = s.cinema ?? null;
+    this.root.dataset.cinema = s.phase === 'killing' ? '1' : '';
+    this.flash.style.opacity = String(Math.min(0.9, Math.max(s.killProgress * 0.3, (cinema?.flash ?? 0) * 0.85)));
+    this.barTop.style.height = `${(cinema?.bars ?? 0) * 11}%`;
+    this.barBottom.style.height = `${(cinema?.bars ?? 0) * 11}%`;
+    this.fade.style.opacity = String(cinema?.fade ?? 0);
     const over = s.phase === 'victory' || s.phase === 'gameover';
     this.result.hidden = !over;
     if (over) {

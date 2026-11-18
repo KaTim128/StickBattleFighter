@@ -77,7 +77,19 @@ export function validateHouse(house: HouseDef, opts: ValidateOptions = DEFAULT_S
     if (outside(p.floor, p.x, p.y)) problems.push(`${label} is not inside the house`);
   };
   free('player start', house.playerStart);
-  free('hunter start', house.hunterStart);
+  const entry = house.hunterEntry;
+  if (entry) {
+    // He waits outside and comes in through the (locked, for everyone else) front door.
+    const door = house.doors.find((d) => d.id === entry.doorId);
+    if (!door?.exterior) problems.push(`the hunter's entrance ${entry.doorId} is not an outside door`);
+    if (!world.fits(house.hunterStart.floor, house.hunterStart.x, house.hunterStart.y))
+      problems.push('hunter start is not on free floor');
+    if (!outside(house.hunterStart.floor, house.hunterStart.x, house.hunterStart.y))
+      problems.push('the hunter starts inside although he enters through a door');
+    free('hunter entrance end', entry.to);
+  } else {
+    free('hunter start', house.hunterStart);
+  }
   for (const [i, p] of house.patrol.entries()) free(`patrol point ${i}`, p);
   const front = house.doors.find((d) => d.exterior);
   if (front) {

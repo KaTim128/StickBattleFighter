@@ -51,6 +51,7 @@ describe('the roomier house', () => {
 
   it('the hunter searches the real house in depth: several rooms and many hiding places, opened and looked into', () => {
     const g = new HideSeekGame();
+    Object.assign(g.hunter, g.house.hunterEntry!.to); // inside, where the front-door entrance leaves him
     const kinds = new Set<string>();
     const ctx = {
       world: g.world,

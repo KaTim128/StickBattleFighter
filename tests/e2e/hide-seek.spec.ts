@@ -321,3 +321,56 @@ test('Leave in the Settings panel goes back to the main menu, not into a fight',
   await expect(page.locator('.hs-clock')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('found hiding: Shroud opens the place, drags the player out and kills them, then Game Over; no key needed to look out', async ({
+  page,
+}) => {
+  const errors = await open(page);
+  type G = {
+    round: { phase: string; update(s: number): void };
+    spots: { id: string; floor: number; spec: { kind: string; at: { x: number; y: number }; opensToward: string } }[];
+    player: { floor: number; x: number; y: number; hidingIn: string | null };
+    hunter: { floor: number; x: number; y: number };
+    kill: { durationS: number } | null;
+    enterHiding(s: unknown): void;
+    beginKill(): void;
+    step(dt: number, input: unknown): void;
+  };
+  type Scene = { __hideSeek: { game: G; visibility: { settle(v: unknown): void } } };
+  const idle = { move: { x: 0, y: 0 }, run: false, crouchPress: false, interactPress: false, peek: false };
+  // Hide in a wardrobe: the small view circle shows by itself, with no key held.
+  await page.evaluate(() => {
+    const s = (window as unknown as Scene).__hideSeek;
+    const g = s.game;
+    g.round.update(21);
+    const spot =
+      g.spots.find((x) => x.spec.kind === 'wardrobe' && x.floor === 0) ??
+      g.spots.find((x) => x.spec.kind === 'cupboard')!;
+    g.player.floor = spot.floor;
+    g.enterHiding(spot);
+    const o = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[spot.spec.opensToward] as number[];
+    g.hunter.floor = spot.floor;
+    g.hunter.x = spot.spec.at.x + o[0]! * 1.6;
+    g.hunter.y = spot.spec.at.y + o[1]! * 1.6;
+  });
+  await expect(page.locator('.hs-mask')).toHaveAttribute('data-view', 'peek');
+  // Found: the execution starts. Part way through the player is out of the place and the cinema is on.
+  await page.evaluate(() => (window as unknown as Scene).__hideSeek.game.beginKill());
+  await page.evaluate((i) => {
+    const g = (window as unknown as Scene).__hideSeek.game;
+    for (let k = 0; k < 60 * 3; k++) g.step(1 / 60, i);
+  }, idle);
+  expect(await page.evaluate(() => (window as unknown as Scene).__hideSeek.game.player.hidingIn)).toBeNull();
+  expect(await page.evaluate(() => (window as unknown as Scene).__hideSeek.game.round.phase)).toBe('killing');
+  await expect(page.locator('.hs-result')).toBeHidden();
+  await expect
+    .poll(() => page.locator('.hs-bar-top').evaluate((el) => el.getBoundingClientRect().height))
+    .toBeGreaterThan(20);
+  // Then it ends: Game Over, once the whole execution has played.
+  await page.evaluate((i) => {
+    const g = (window as unknown as Scene).__hideSeek.game;
+    for (let k = 0; k < 60 * 4; k++) g.step(1 / 60, i);
+  }, idle);
+  await expect(page.locator('.hs-result-title')).toHaveText('GAME OVER');
+  expect(errors).toEqual([]);
+});

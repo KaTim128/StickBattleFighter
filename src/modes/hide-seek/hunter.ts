@@ -20,7 +20,8 @@ import { BODY_RADIUS_M, type HouseWorld, type Placed, type Point, type Waypoint 
  */
 export type HunterMode = 'patrol' | 'investigate' | 'search' | 'chase';
 
-export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 4.6, tiptoe: 1.5, run: 5.4 };
+/** A tad slower than before (owner, 19/11/2026); still faster than the player's run (4.4 m/s) when he gives chase. */
+export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 4.3, tiptoe: 1.5, run: 5.0 };
 /** How loud his own steps are (the player hears him coming, positionally; P2-5). */
 export const HUNTER_STEP_LOUDNESS: Readonly<Record<Gait, number>> = { walk: 0.4, tiptoe: 0.1, run: 0.85 };
 
@@ -28,6 +29,16 @@ const TURN_RAD_S = 5;
 const CHASE_TURN_RAD_S = 9;
 const CATCH_M = 0.85;
 const CATCH_HIDDEN_M = 1.8;
+/** Knowing where a hiding player is, he grabs them from this close to the place's edge, metres. */
+const CATCH_HIDDEN_REACH_M = 1.1;
+/**
+ * He does not know where the player is all at once (owner, 19/11/2026): what he sees fills his awareness at this
+ * fraction of the raw rate, so noticing takes a few seconds at range and about a second close up...
+ */
+const DETECT_SCALE = 0.55;
+/** ...except by luck: each second he can see the player there is this chance of a sudden hunch, which fills this much. */
+const HUNCH_PER_S = 0.04;
+const HUNCH_BUMP = 0.4;
 /** Awareness above this makes him stop and look at the player; at 1 he gives chase. */
 const SUSPECT = 0.3;
 const AWARENESS_DECAY_S = 0.3;
@@ -201,7 +212,8 @@ export class Hunter implements Placed {
 
   private see(dtS: number, rate: number, ctx: HunterContext): void {
     if (rate > 0) {
-      this.awareness = Math.min(1, this.awareness + rate * dtS);
+      this.awareness = Math.min(1, this.awareness + rate * DETECT_SCALE * dtS);
+      if (this.rng() < HUNCH_PER_S * dtS) this.awareness = Math.min(1, this.awareness + HUNCH_BUMP);
       this.unseenS = 0;
       if (this.awareness >= SUSPECT)
         this.lastKnown = { floor: ctx.body.floor, x: ctx.body.x, y: ctx.body.y, sure: true, atS: ctx.timeS };
@@ -332,7 +344,11 @@ export class Hunter implements Placed {
     this.repathS -= dtS;
     if (!this.goal || this.repathS <= 0) {
       this.repathS = REPATH_S;
-      this.setGoal({ kind: 'chase', to: last }, ctx);
+      // Knowing the player is in a hiding place, he goes to its opening: the place itself is solid, so a goal
+      // inside it could never be reached (he would push at it for ever).
+      const hiding = ctx.body.hiding;
+      const to = hiding ? { floor: hiding.floor, ...exitPoint(ctx.world, hiding) } : last;
+      this.setGoal({ kind: 'chase', to }, ctx);
     }
     if (this.arrivedAtGoal() && this.unseenS >= LOSE_SIGHT_S) this.goal = null;
   }
@@ -585,7 +601,13 @@ export class Hunter implements Placed {
     const b = ctx.body;
     if (b.floor !== this.floor) return false;
     const d = Math.hypot(b.x - this.x, b.y - this.y);
-    if (b.hiding) return this.awareness >= 1 && rate > 0 && d <= CATCH_HIDDEN_M;
+    if (b.hiding) {
+      // He knows (he is chasing) and is at the place: he reaches in. Distance to the place's edge, not its middle.
+      const r = b.hiding.rect;
+      const edge = Math.hypot(Math.max(r.x0 - this.x, 0, this.x - r.x1), Math.max(r.y0 - this.y, 0, this.y - r.y1));
+      if (this.mode === 'chase' && edge <= CATCH_HIDDEN_REACH_M) return true;
+      return this.awareness >= 1 && rate > 0 && d <= CATCH_HIDDEN_M;
+    }
     return this.mode === 'chase' && rate > 0 && d <= CATCH_M;
   }
 }

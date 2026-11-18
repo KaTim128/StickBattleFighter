@@ -1,5 +1,6 @@
 import { HOUSE_SFX } from '../data/audio/house-sfx';
 import type { GameEvent } from '../modes/hide-seek/game';
+import type { KillEvent } from '../modes/hide-seek/kill-sequence';
 import { heardStrength } from '../modes/hide-seek/perception';
 import type { HouseWorld, Point } from '../modes/hide-seek/world';
 import { AudioClip } from './music';
@@ -57,8 +58,8 @@ export class HideSeekAudio {
   private seed = 99;
   /** Recorded effects, decoded on attach; a missing one falls back to the synthesised sound. */
   private readonly clips = {
-    door: new AudioClip(HOUSE_SFX.door),
-    chest: new AudioClip(HOUSE_SFX.chest),
+    woodOpen: new AudioClip(HOUSE_SFX.woodOpen),
+    woodClose: new AudioClip(HOUSE_SFX.woodClose),
     blade: new AudioClip(HOUSE_SFX.blade),
   };
 
@@ -114,14 +115,20 @@ export class HideSeekAudio {
         break;
       case 'door':
         if (e.open) {
-          if (!this.clip('door', sp, 1)) this.creak(sp, 0.55);
-        } else this.thud(sp, 110, 0.16);
+          if (!this.clip('woodOpen', sp, 1)) this.creak(sp, 0.55);
+        } else if (!this.clip('woodClose', sp, 1)) this.thud(sp, 110, 0.16);
         break;
       case 'hide-enter':
-      case 'hide-exit':
-        this.creak(sp, e.detail === 'wardrobe' || e.detail === 'cupboard' ? 0.4 : 0.22);
-        this.thud(sp, 140, 0.08);
+      case 'hide-exit': {
+        // Wooden hiding places with a door or lid: the door shuts behind the player, and swings open as they leave.
+        const wooden = e.detail === 'wardrobe' || e.detail === 'cupboard' || e.detail === 'chest';
+        const key = e.kind === 'hide-enter' ? 'woodClose' : 'woodOpen';
+        if (!wooden || !this.clip(key, sp, 0.85)) {
+          this.creak(sp, e.detail === 'wardrobe' || e.detail === 'cupboard' ? 0.4 : 0.22);
+          this.thud(sp, 140, 0.08);
+        }
         break;
+      }
       case 'impact':
         if (e.detail === 'bottle') this.shatter(sp);
         else if (e.detail === 'can') this.clang(sp);
@@ -158,18 +165,71 @@ export class HideSeekAudio {
     this.sweep(70, 150, 1.1, 0.22);
   }
 
-  /** The catch: a harsh descending shriek and a heavy hit. */
+  /** The catch: a heavy low beat as the execution begins (no whistles or whines: owner, 19/11/2026). */
   kill(): void {
-    if (this.ctx && this.out && !this.muted && this.clips.blade.ready) {
-      const src = this.ctx.createBufferSource();
-      src.buffer = this.clips.blade.ready;
-      const g = this.ctx.createGain();
-      g.gain.value = HOUSE_SFX.blade.level;
-      src.connect(g).connect(this.out);
-      src.start(this.ctx.currentTime + 0.005);
+    const here: Spatial = { pan: 0, gain: 1, muffle: 0 };
+    this.thud(here, 60, 0.5);
+    this.thud(here, 48, 0.4, 0.18);
+  }
+
+  /**
+   * The execution, stage by stage (owner, 19/11/2026): the place opening, the grab, the drag across the floor, the
+   * throw, the knife drawn up, the blows (the blade clip under a wet thud, the last far heavier) and the silence.
+   * Heard from the middle of the room: it is the scene, not a place in it.
+   */
+  killEvent(e: KillEvent): void {
+    if (!this.ctx || this.muted) return;
+    const here: Spatial = { pan: 0, gain: 1, muffle: 0 };
+    switch (e.kind) {
+      case 'open':
+        if (e.action === 'open-door') {
+          if (!this.clip('woodOpen', here, 0.9)) this.creak(here, 0.9);
+        } else if (e.action === 'lift-lid') {
+          if (!this.clip('woodOpen', here, 0.9)) {
+            this.thud(here, 150, 0.22);
+            this.creak(here, 0.5);
+          }
+        } else if (e.action === 'pull-curtain') {
+          this.burst(here, { durS: 0.4, freq: 3200, q: 0.9, type: 'highpass', gain: 0.28 });
+        } else {
+          this.thud(here, 120, 0.2); // a knee on the floorboards
+        }
+        break;
+      case 'seize':
+        // A hand in cloth, a hard grip, a stifled gasp.
+        this.burst(here, { durS: 0.22, freq: 1800, q: 0.8, type: 'bandpass', gain: 0.3 });
+        this.thud(here, 110, 0.3, 0.05);
+        break;
+      case 'drag':
+        // A body hauled over boards by the neck: a long low scrape, feet trailing, with the grunts of effort in it.
+        this.burst(here, { durS: 0.85, freq: 520, q: 0.7, type: 'bandpass', gain: 0.32 });
+        this.burst(here, { durS: 0.6, freq: 180, q: 0.5, type: 'lowpass', gain: 0.3, delayS: 0.15 });
+        break;
+      case 'hold':
+        // Lifted by the throat: cloth strains, a choked, rasping gasp, feet leaving the boards.
+        this.burst(here, { durS: 0.3, freq: 1500, q: 0.8, type: 'bandpass', gain: 0.22 });
+        this.burst(here, { durS: 0.4, freq: 900, q: 1, type: 'lowpass', gain: 0.12, delayS: 0.1 });
+        this.thud(here, 90, 0.2, 0.2);
+        break;
+      case 'raise':
+        // The blade drawn back: a soft rustle of cloth, nothing high or thin.
+        this.burst(here, { durS: 0.3, freq: 1200, q: 0.7, type: 'lowpass', gain: 0.12 });
+        break;
+      case 'stab': {
+        const heavy = e.final;
+        this.clip('blade', here, heavy ? 1 : 0.85);
+        this.thud(here, heavy ? 52 : 90, heavy ? 0.75 : 0.45); // the wet thud under the steel
+        this.burst(here, { durS: heavy ? 0.35 : 0.18, freq: 2400, q: 0.8, type: 'lowpass', gain: heavy ? 0.4 : 0.22 });
+        if (heavy) this.thud(here, 40, 0.6, 0.12); // the last blow lands harder, and low
+        break;
+      }
+      case 'finish':
+        // The heartbeat is gone: one low drone dying away into the dark.
+        this.sweep(70, 38, 1.4, 0.16, 'sine');
+        break;
+      default:
+        break;
     }
-    this.sweep(900, 120, 0.9, 0.3, 'sawtooth');
-    this.thud({ pan: 0, gain: 1, muffle: 0 }, 60, 0.5, 0.35);
   }
 
   /** Survived: a calm, low, lifting tone. */
@@ -262,13 +322,13 @@ export class HideSeekAudio {
   private inspect(sp: Spatial, what: string): void {
     switch (what) {
       case 'open-door':
-        if (!this.clip('door', sp, 1)) {
+        if (!this.clip('woodOpen', sp, 1)) {
           this.creak(sp, 0.9); // a long, slow door
           this.thud(sp, 130, 0.12, 0.45);
         }
         break;
       case 'lift-lid':
-        if (!this.clip('chest', sp, 1)) {
+        if (!this.clip('woodOpen', sp, 1)) {
           this.thud(sp, 150, 0.22);
           this.creak(sp, 0.5);
         }

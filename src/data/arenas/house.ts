@@ -400,7 +400,9 @@ export const HOUSE_PLAN: HouseDef = {
   furniture: HOUSE_FURNITURE,
   throwables: HOUSE_THROWABLES,
   playerStart: { floor: 0, x: 26.8, y: 18.9 }, // in the hall, just inside the front door
-  hunterStart: { floor: 0, x: 19, y: 12.4 }, // inside, in the kitchen: out of sight of the hall and far from the front door
+  // Shroud waits outside the front door; when the hunt begins it opens and he walks in (owner, 19/11/2026).
+  hunterStart: { floor: 0, x: 27, y: 27.5 },
+  hunterEntry: { doorId: 'd-front', to: { floor: 0, x: 27, y: 19.4 } },
 
   patrol: [
     { floor: 0, x: 22.8, y: 17.6 },

@@ -853,3 +853,10 @@ Done: blind view while hidden, a small dim peek circle, 3x detection while peeki
 - **Next.** Owner reviews the compact house on the phone; Phase 2 review; no Phase 3 without approval.
 - **Follow-up (same day).** Fixed the floating dining table (long-piece draw key only moves as far as a person needs) and the floating wall at the head of the stairs (landing block collision only; hall back wall behind the flight drawn as a low ledge). Browser screenshots checked at the start, mid-climb and the top.
 - **Leave fix.** Leave in the Hide and Seek Settings panel now opens the main menu's title (`?home`, as the fights do) instead of starting a practice fight. e2e test added.
+
+### 19/11/2026 The execution, automatic peek view, Phase 3 order (TD-111, TD-112)
+- **Changed.** New `modes/hide-seek/kill-sequence.ts`, `rendering/kill-effects.ts`; `game.ts` (execution, automatic view, no lean while hiding), `rules.ts` (kill length), `perception.ts` (peek giveaway removed), `visibility.ts`, `hunter`-side tests, scene, HUD, page, audio (`killEvent`).
+- **Tests.** New kill-sequence, kill-game, e2e; stealth tests rewritten for the new view rule. Full gate run before commit.
+- **Known issues.** Pacing and sounds not yet judged by the owner. The cause of the earlier fighter-outside-the-map report is still unknown (guard in place).
+- **Next.** Owner names the four fighters for the new Phase 3 order; Phase 2 review first.
+
