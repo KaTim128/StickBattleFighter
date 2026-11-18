@@ -82,26 +82,28 @@ test('the dodge (L) always goes straight back from the facing, even with a movem
   expect(errors).toEqual([]);
 });
 
-test('Inferno ultimate on the keyboard (owner, 12/11/2026): I aims with WASD and on-screen help; Esc cancels; I again jumps', async ({
+test('Eruption on the keyboard (owner, 12/11/2026; Inferno fifth ability on R since 17/11/2026): R aims with WASD and on-screen help; Esc cancels; R again jumps', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
   // Clear floor straight up the screen (a pillar stands just up-screen of the default start, which
   // rightly cuts the leap short), and the dummy out of lock-on range (REQ-CTL-22).
+  await page.addInitScript(() =>
+    localStorage.setItem('stickman-arena.loadouts', JSON.stringify({ '(guest)': { inferno: { useFifth: true } } })),
+  );
   await open(page, errors, 'scene=training-yard&playerAt=17,10&dummyAt=29,21');
-  await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
   const hint = page.locator('.aim-hint');
   // K aims; the instructions name the keys; Escape cancels without opening the settings or casting.
-  await page.keyboard.press('KeyI');
+  await page.keyboard.press('KeyR');
   await expect(hint).toBeVisible();
-  await expect(hint).toHaveText(/W A S D to move the target · I to launch · Esc to cancel/);
+  await expect(hint).toHaveText(/W A S D to move the target · R to confirm · Esc to cancel/);
   await page.keyboard.press('Escape');
   await expect(hint).toBeHidden();
   await expect(page.locator('.settings-panel:not(.fighter-controls)')).toBeHidden();
   expect((await hook(page)).player.ability).toBeNull();
   // Again: W slides the spot up the screen (the fighter stays put), K launches the leap there.
   const start = await hook(page);
-  await page.keyboard.press('KeyI');
+  await page.keyboard.press('KeyR');
   await expect.poll(async () => (await hook(page)).aimSpot, { timeout: 5000 }).not.toBeNull();
   // Hold W until the spot is well up the screen from the fighter (the aim moves in game time, and
   // a software-rendered CI browser runs far slower than real time, so no fixed wait is safe).
@@ -120,7 +122,7 @@ test('Inferno ultimate on the keyboard (owner, 12/11/2026): I aims with WASD and
     Math.hypot((await hook(page)).player.x - start.player.x, (await hook(page)).player.y - start.player.y),
   ).toBeLessThan(0.1);
   await page.screenshot({ path: testInfo.outputPath('ult-keyboard-aim.png') });
-  await page.keyboard.press('KeyI');
+  await page.keyboard.press('KeyR');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
   await expect(hint).toBeHidden();
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull();

@@ -377,6 +377,8 @@ export class FightArenaScene implements ArenaScene {
   private hitstopS = 0;
   /** Where the player is aiming the leaping ultimate, while aiming (else null). */
   private ultAimPoint: { x: number; y: number } | null = null;
+  /** The slot whose leap is being aimed (the ultimate, or a normal ability such as Eruption, B13). */
+  private leapSlot: AbilitySlot = 'ult';
   /** The pointer's move count when the aim last followed it (a hover only steers when it moves). */
   private aimPrepT = 0;
   /** Why the player's last ability press did not cast (HUD feedback), or null. */
@@ -1065,7 +1067,7 @@ export class FightArenaScene implements ArenaScene {
     // Buttons 2–5: abilities and the ultimate (a leaping ultimate is aimed first).
     const pressedSlot = this.intents.consumeAbility();
     const slot = f.landHoldS > 0 ? null : pressedSlot; // a firm landing squat finishes first
-    if (slot === 'ult' && f.caster?.def('ult').delivery.type === 'leap') this.ultimatePress(f);
+    if (slot && f.caster?.def(slot).delivery.type === 'leap') this.ultimatePress(f, slot);
     else if (slot && this.needsPointAim(f, slot)) this.beginPointAim(f, slot);
     else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
     if (this.pointAim || this.ultAimPoint) {
@@ -1600,7 +1602,7 @@ export class FightArenaScene implements ArenaScene {
    * hit or stunned calls it off, and the move input slides the target at the ability's aim speed.
    */
   private stepTargeting(f: FighterEntity, stepS: number): void {
-    const slot = this.pointAim?.slot ?? 'ult';
+    const slot = this.pointAim?.slot ?? this.leapSlot;
     const cancel = this.intents.consumeAimCancel();
     let confirm = false;
     for (let press = this.intents.consumeAbility(); press; press = this.intents.consumeAbility())
@@ -1626,7 +1628,7 @@ export class FightArenaScene implements ArenaScene {
       return;
     }
     if (confirm) {
-      this.ultimatePress(f);
+      this.ultimatePress(f, this.leapSlot);
       return;
     }
     this.steerUltimateAim(f, stepS);
@@ -1634,7 +1636,7 @@ export class FightArenaScene implements ArenaScene {
 
   /** Is the player choosing a target right now (Escape then cancels instead of opening settings)? */
   get targeting(): { slot: AbilitySlot; name: string } | null {
-    const slot = this.pointAim?.slot ?? (this.ultAimPoint ? 'ult' : null);
+    const slot = this.pointAim?.slot ?? (this.ultAimPoint ? this.leapSlot : null);
     const def = slot ? this.playerFighter.caster?.def(slot) : undefined;
     return slot && def ? { slot, name: def.name } : null;
   }
@@ -1705,22 +1707,23 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /** I / F / ULT: start aiming the leap, or launch it at the aimed spot (owner, 11/11/2026). */
-  private ultimatePress(f: FighterEntity): void {
+  private ultimatePress(f: FighterEntity, slot: AbilitySlot = 'ult'): void {
     if (!this.abilities || !f.caster) return;
     if (this.ultAimPoint) {
       const target = this.ultAim?.to ?? this.ultAimPoint;
       this.ultAimPoint = null;
-      this.lastAbilityBlock = this.abilities.tryCast(f, 'ult', target);
+      this.lastAbilityBlock = this.abilities.tryCast(f, this.leapSlot, target);
       return;
     }
-    const block = f.caster.check('ult', {
+    const block = f.caster.check(slot, {
       canAct: f.combatant.canAct && !f.combo.attack,
       stamina: f.combatant.stamina,
       airborne: f.airborne,
     });
     this.lastAbilityBlock = block;
-    if (block) return;
-    this.ultAimPoint = this.clampToRange(f, this.insideMap(this.abilities.aimFor(f, f.caster.def('ult'))));
+    if (block || (slot !== 'ult' && f.combatant.stamina < f.caster.def(slot).staminaCost)) return;
+    this.leapSlot = slot;
+    this.ultAimPoint = this.clampToRange(f, this.insideMap(this.abilities.aimFor(f, f.caster.def(slot))));
   }
 
   /** The floor point under the mouse cursor (null without a mouse over the game). */
@@ -1736,14 +1739,14 @@ export class FightArenaScene implements ArenaScene {
     const aim = this.ultAimPoint;
     if (!aim || !f.caster) return;
     const m = this.intents.move;
-    const speed = this.aimSpeed(f, 'ult') * stepS;
+    const speed = this.aimSpeed(f, this.leapSlot) * stepS;
     this.ultAimPoint = this.clampToRange(f, this.insideMap({ x: aim.x + m.x * speed, y: aim.y + m.y * speed }));
     if (Math.hypot(this.ultAimPoint.x - f.x, this.ultAimPoint.y - f.y) > 0.1)
       f.faceToward(this.ultAimPoint.x - f.x, this.ultAimPoint.y - f.y);
   }
 
   private ultRange(f: FighterEntity): number {
-    const d = f.caster?.def('ult').delivery;
+    const d = f.caster?.def(this.leapSlot).delivery;
     return d?.type === 'leap' ? d.maxRangeM : 0;
   }
 
@@ -1769,7 +1772,7 @@ export class FightArenaScene implements ArenaScene {
   } | null {
     const aim = this.ultAimPoint;
     const f = this.playerFighter;
-    const d = f.caster?.def('ult').delivery;
+    const d = f.caster?.def(this.leapSlot).delivery;
     if (!aim || d?.type !== 'leap' || !this.physics) return null;
     const from = { x: f.x, y: f.y };
     const want = Math.hypot(aim.x - from.x, aim.y - from.y);
@@ -3094,7 +3097,7 @@ export class FightArenaScene implements ArenaScene {
       this.aimPrepT += frameDtS;
       pose = abilityPose(
         pose,
-        f.caster?.def('ult').id ?? '',
+        f.caster?.def(this.leapSlot).id ?? '',
         'windup',
         0.85 + 0.15 * Math.sin(this.aimPrepT * 7),
         false,

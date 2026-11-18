@@ -741,3 +741,9 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Source.** Synthesised (see `AUDIO_ASSET_CATALOG.md` section 8): Pixabay was not reachable and no recorded audio was downloaded or edited. A real recording can later replace any id without code changes.
 **Limits.** Cast sounds stay shared within a fighter; blocks, parries and status applications are not individually voiced; the sounds have not been auditioned by a person.
 **Status.** ACCEPTED.
+
+### TD-091: Aimed leaps work from any ability slot; stale browser tests fixed (found by CI, 18/11/2026) — ACCEPTED
+**Found.** CI's browser jobs had been red since B10: the aim-then-leap flow (crouch, move the landing spot, press again to jump) was tied to the ultimate slot, so Eruption, which became a normal ability in B10, cast at once when equipped and the player could not choose the landing spot. Local runs had covered unit and integration tests and the front-end spec only, so this was not seen until CI was read.
+**Decision.** The aiming state remembers which slot is being aimed (`leapSlot`): any ability whose delivery is a leap is aimed first, with its own range, indicator, aim speed and pose; the key (or button) pressed again launches it. The hint reads "confirm" for a normal ability and "launch" for the ultimate.
+**Test changes (reasons).** `phase6.spec.ts` and `controls.spec.ts` aimed-leap tests drove the ultimate key; the leap is now Eruption on R / A4, equipped through the saved loadout. `menu.spec.ts` counted 7 ability entries on the details screen; there are now 8 (the fifth ability is listed as an alternative, B14). The flaky `controls.spec.ts` dodge test passes on repeat locally and is unchanged.
+**Status.** ACCEPTED.

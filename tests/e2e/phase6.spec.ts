@@ -11,7 +11,12 @@ interface Hook {
 type DebugWindow = Window & { __stickmanDebug?: Hook };
 const hook = (page: Page) => page.evaluate(() => (window as DebugWindow).__stickmanDebug!);
 
-async function open(page: Page, errors: string[], playerAt = '14,13') {
+async function open(page: Page, errors: string[], playerAt = '14,13', eruption = false) {
+  // Eruption is Inferno's fifth ability (B10, B13): equip it in place of Flame Detonation (slot a4).
+  if (eruption)
+    await page.addInitScript(() =>
+      localStorage.setItem('stickman-arena.loadouts', JSON.stringify({ '(guest)': { inferno: { useFifth: true } } })),
+    );
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   // Default: five metres from the training dummy (19, 13), facing it: inside the Fireball's lock range.
@@ -61,14 +66,13 @@ test('touch: six combat buttons (MELEE, A1–A4, ULT; owner 12/11/2026); A1 cast
   expect(errors).toEqual([]);
 });
 
-test('ultimate aiming (desktop): I aims in a crouch, W moves the spot, I again launches the leap there', async ({
+test('aimed leap (desktop, Eruption on R): R aims in a crouch, W moves the spot, R again launches the leap there', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'keyboard test');
   const errors: string[] = [];
-  await open(page, errors);
-  await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
-  await page.keyboard.press('KeyI');
+  await open(page, errors, '14,13', true);
+  await page.keyboard.press('KeyR');
   await expect
     .poll(() => page.evaluate(() => (window as DebugWindow).__stickmanDebug!.aimSpot), { timeout: 5000 })
     .not.toBeNull();
@@ -84,23 +88,22 @@ test('ultimate aiming (desktop): I aims in a crouch, W moves the spot, I again l
   const before = await hook(page);
   expect(before.player.ability).toBeNull(); // still aiming
   await page.screenshot({ path: testInfo.outputPath('ult-aiming.png') });
-  await page.keyboard.press('KeyI');
+  await page.keyboard.press('KeyR');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 8000, intervals: [20] }).toBe('eruption');
   await expect.poll(async () => (await hook(page)).player.ability, { timeout: 10_000 }).toBeNull(); // headroom for a slow software-rendered browser
   expect((await hook(page)).player.y).toBeLessThan(before.player.y - 1); // landed up the screen, where aimed
   expect(errors).toEqual([]);
 });
 
-test('ultimate aiming (touch, owner 12/11/2026): tap ULT, the joystick moves the target, ✕ cancels, ULT again jumps', async ({
+test('aimed leap (touch, owner 12/11/2026; Eruption on A4): tap it, the joystick moves the target, ✕ cancels, tap again jumps', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'touch test');
   const errors: string[] = [];
   // A spot with clear floor straight up the screen (the 2.5D view, TD-045): no pillar in the leap's way.
-  await open(page, errors, '17,10');
+  await open(page, errors, '17,10', true);
   await page.touchscreen.tap(30, 30);
-  await page.evaluate(() => (window as DebugWindow).__stickmanDebug!.fillMeter());
-  const ult = page.locator('.ability-button[data-slot="ult"]');
+  const ult = page.locator('.ability-button[data-slot="a4"]');
   const cancel = page.locator('.aim-cancel-button');
   const hint = page.locator('.aim-hint');
   await expect(cancel).toBeHidden();
