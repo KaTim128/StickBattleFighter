@@ -71,6 +71,33 @@ describe.each([
     }
   });
 
+  it('every cabinet, counter and appliance stands with its back to the wall behind it and its front into the room', () => {
+    const fronted = new Set([
+      'cupboard',
+      'wardrobe',
+      'shed-cabinet',
+      'counter',
+      'sink',
+      'stove',
+      'fridge',
+      'nightstand',
+      'bookshelf',
+      'shelf',
+      'tv-console',
+      'desk',
+      'chest',
+    ]);
+    let checked = 0;
+    for (const f of house.furniture.filter((x) => fronted.has(x.kind))) {
+      const side = wallSide(f, walls(f.floor));
+      if (!side) continue;
+      checked++;
+      const opposite = { n: 's', s: 'n', e: 'w', w: 'e' }[side];
+      expect(face(f), `${f.kind} ${f.id} against the ${side} wall`).toBe(opposite);
+    }
+    expect(checked).toBeGreaterThan(15);
+  });
+
   it('the camera sees fronts that face south or east only', () => {
     expect(frontVisible('s')).toBe(true);
     expect(frontVisible('e')).toBe(true);

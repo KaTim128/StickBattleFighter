@@ -203,10 +203,11 @@ export function drawInto(g: Graphics, f: FurnitureDef, all: readonly FurnitureDe
       break;
     }
     case 'counter':
+    case 'sink':
       withMaterial('wood', () => {
         B(f.x0, f.y0, f.x1, f.y1, 0, h - 0.06, { colour: c });
         B(f.x0 - 0.02, f.y0 - 0.02, f.x1 + 0.02, f.y1 + 0.03, h - 0.06, h, { colour: 0xb4ad9d, noAo: true });
-        const horiz = w >= d;
+        const horiz = facing === 's';
         const front = horiz ? face.left(f.y1) : face.right(f.x1);
         const [a0, a1] = horiz ? [f.x0, f.x1] : [f.y0, f.y1];
         const n = Math.max(2, Math.round((a1 - a0) / 0.7));
@@ -222,11 +223,12 @@ export function drawInto(g: Graphics, f: FurnitureDef, all: readonly FurnitureDe
           faceQuad(g, front, (u0 + u1) / 2 - 0.06, h - 0.22, (u0 + u1) / 2 + 0.06, h - 0.2).fill(0x8f8b80);
         }
       });
+      if (f.kind === 'sink') sink(g, f, facing);
       break;
     case 'fridge': {
       withMaterial('metal', () => B(f.x0, f.y0, f.x1, f.y1, 0, h, { colour: 0xcfd2d4 }));
-      const front = w >= d ? face.left(f.y1) : face.right(f.x1);
-      const [a0, a1] = w >= d ? [f.x0, f.x1] : [f.y0, f.y1];
+      const front = facing === 's' ? face.left(f.y1) : face.right(f.x1);
+      const [a0, a1] = facing === 's' ? [f.x0, f.x1] : [f.y0, f.y1];
       faceQuad(g, front, a0 + 0.03, h * 0.62, a1 - 0.03, h * 0.625).fill({ color: 0x000000, alpha: 0.55 });
       faceQuad(g, front, a1 - 0.12, h * 0.66, a1 - 0.09, h * 0.9).fill(0x8a8e92);
       faceQuad(g, front, a1 - 0.12, h * 0.2, a1 - 0.09, h * 0.55).fill(0x8a8e92);
@@ -245,31 +247,16 @@ export function drawInto(g: Graphics, f: FurnitureDef, all: readonly FurnitureDe
         g.ellipse(p.x, p.y, 0.1, 0.05).fill(0x14151a).stroke({ width: 0.012, color: 0x3a3d44 });
         g.ellipse(p.x, p.y, 0.05, 0.025).stroke({ width: 0.008, color: 0x3a3d44 });
       }
-      const front = w >= d ? face.left(f.y1) : face.right(f.x1);
-      const [a0, a1] = w >= d ? [f.x0, f.x1] : [f.y0, f.y1];
+      const front = facing === 's' ? face.left(f.y1) : face.right(f.x1);
+      const [a0, a1] = facing === 's' ? [f.x0, f.x1] : [f.y0, f.y1];
       faceQuad(g, front, a0 + 0.08, 0.1, a1 - 0.08, h - 0.15).fill({ color: 0x15171b, alpha: 0.85 }); // oven window
       faceQuad(g, front, a0 + 0.08, h - 0.12, a1 - 0.08, h - 0.1).fill(0xa4a8ae);
-      break;
-    }
-    case 'sink': {
-      withMaterial('wood', () => {
-        B(f.x0, f.y0, f.x1, f.y1, 0, h - 0.06, { colour: c });
-        B(f.x0 - 0.02, f.y0 - 0.02, f.x1 + 0.02, f.y1 + 0.03, h - 0.06, h, { colour: 0xb4ad9d, noAo: true });
-      });
-      const p = iso((f.x0 + f.x1) / 2, (f.y0 + f.y1) / 2, h);
-      g.ellipse(p.x, p.y, Math.min(0.32, w * 0.3), 0.15)
-        .fill(0x6e7378)
-        .stroke({ width: 0.012, color: 0x2a2d33 });
-      g.ellipse(p.x, p.y + 0.01, Math.min(0.26, w * 0.24), 0.11).fill(0x3d4146);
-      const t = iso((f.x0 + f.x1) / 2, f.y0 + 0.08, h);
-      g.rect(t.x - 0.015, t.y - 0.22, 0.03, 0.22).fill(0x9aa0a6);
-      g.rect(t.x - 0.015, t.y - 0.22, 0.14, 0.03).fill(0x9aa0a6);
       break;
     }
     case 'cupboard':
     case 'wardrobe':
     case 'shed-cabinet':
-      withMaterial('wood', () => cabinet(g, f, B, seed));
+      withMaterial('wood', () => cabinet(g, f, B, seed, facing));
       break;
     case 'toilet':
       withMaterial('ceramic', () => toilet(g, f));
@@ -318,8 +305,8 @@ export function drawInto(g: Graphics, f: FurnitureDef, all: readonly FurnitureDe
     case 'nightstand':
       withMaterial('wood', () => {
         B(f.x0, f.y0, f.x1, f.y1, 0.05, h, { colour: c });
-        const front = f.x1 - f.x0 >= f.y1 - f.y0 ? face.left(f.y1) : face.right(f.x1);
-        const [a0, a1] = f.x1 - f.x0 >= f.y1 - f.y0 ? [f.x0, f.x1] : [f.y0, f.y1];
+        const front = facing === 's' ? face.left(f.y1) : face.right(f.x1);
+        const [a0, a1] = facing === 's' ? [f.x0, f.x1] : [f.y0, f.y1];
         faceQuad(g, front, a0 + 0.04, h * 0.5, a1 - 0.04, h - 0.05).stroke({
           width: 0.012,
           color: 0x120e0a,
@@ -362,7 +349,7 @@ export function drawInto(g: Graphics, f: FurnitureDef, all: readonly FurnitureDe
       withMaterial('wood', () => {
         B(f.x0, f.y0, f.x1, f.y1, 0, h * 0.72, { colour: c });
         B(f.x0 - 0.01, f.y0 - 0.01, f.x1 + 0.01, f.y1 + 0.01, h * 0.72, h, { colour: shade(c, 0.9) });
-        const horiz = w >= d;
+        const horiz = facing === 's';
         const front = horiz ? face.left(f.y1 + 0.01) : face.right(f.x1 + 0.01);
         const [a0, a1] = horiz ? [f.x0, f.x1] : [f.y0, f.y1];
         for (const u of [a0 + (a1 - a0) * 0.2, a1 - (a1 - a0) * 0.2 - 0.05])
@@ -456,6 +443,7 @@ const FRONTED = new Set<FurnitureDef['kind']>([
   'wardrobe',
   'shed-cabinet',
   'counter',
+  'sink',
   'fridge',
   'stove',
   'nightstand',
@@ -605,7 +593,7 @@ function chair(f: FurnitureDef, facing: Facing, B: Blk): void {
 }
 
 /** Wardrobe, cupboard, shed cabinet: carcass, plinth, crown, panelled doors with handles (one a crack open). */
-function cabinet(g: Graphics, f: FurnitureDef, B: Blk, seed: number): void {
+function cabinet(g: Graphics, f: FurnitureDef, B: Blk, seed: number, facing: Facing): void {
   const c = f.colour;
   const w = f.x1 - f.x0;
   const d = f.y1 - f.y0;
@@ -614,7 +602,7 @@ function cabinet(g: Graphics, f: FurnitureDef, B: Blk, seed: number): void {
   B(f.x0 + 0.03, f.y0 + 0.03, f.x1 - 0.03, f.y1 - 0.03, 0, 0.08, { colour: MOULD, noAo: true });
   if (f.kind !== 'shed-cabinet')
     B(f.x0 - 0.03, f.y0 - 0.03, f.x1 + 0.03, f.y1 + 0.03, h - 0.07, h, { colour: shade(c, 1.1), noAo: true });
-  const horiz = w >= d;
+  const horiz = facing === 's';
   const front = horiz ? face.left(f.y1) : face.right(f.x1);
   const [a0, a1] = horiz ? [f.x0, f.x1] : [f.y0, f.y1];
   const doors = a1 - a0 > 1.1 ? 2 : 1;
@@ -669,6 +657,41 @@ function toilet(g: Graphics, f: FurnitureDef): void {
  * A bed with its head to `facing`'s back (a wall): headboard, a sheeted mattress, two plump pillows at the head, and a
  * blanket tucked in under the pillows, with a folded-back cuff, draped sides, wrinkles and an old stain.
  */
+/**
+ * A sink's bowl, and a tap at its back (the wall side) whose spout arcs forward over the bowl, whichever way the
+ * unit faces (owner, 18/11/2026: the tap must face the bowl).
+ */
+function sink(g: Graphics, f: FurnitureDef, facing: Facing): void {
+  const h = f.heightM;
+  const { R, L, D } = frameFor(f, facing);
+  const mid = (a: number, p: number, z: number) => {
+    const r = R(a, a, p, p);
+    return iso(r[0], r[1], z);
+  };
+  const bowl = mid(L / 2, D / 2, h);
+  g.ellipse(bowl.x, bowl.y, Math.min(0.34, L * 0.3), Math.min(0.34, L * 0.3) * 0.5)
+    .fill(0x6e7378)
+    .stroke({ width: 0.012, color: 0x2a2d33 });
+  g.ellipse(bowl.x, bowl.y + 0.01, Math.min(0.28, L * 0.24), Math.min(0.28, L * 0.24) * 0.5).fill(0x3d4146);
+  // The tap stands at the back edge, rises, bends toward the front and ends over the bowl, pointing down.
+  const reach = Math.min(D * 0.42, 0.4);
+  const base = mid(L / 2, 0.1, h);
+  const top = mid(L / 2, 0.1, h + 0.3);
+  const over = mid(L / 2, reach, h + 0.3);
+  const tip = mid(L / 2, reach, h + 0.22);
+  g.moveTo(base.x, base.y).lineTo(top.x, top.y).lineTo(over.x, over.y).lineTo(tip.x, tip.y).stroke({
+    width: 0.035,
+    color: 0xaab0b6,
+    cap: 'round',
+    join: 'round',
+  });
+  g.circle(base.x, base.y, 0.045).fill(0x7a8086); // the tap's base
+  for (const a of [L / 2 - 0.12, L / 2 + 0.12]) {
+    const hp = mid(a, 0.1, h + 0.05);
+    g.circle(hp.x, hp.y, 0.022).fill(0xc9ced3); // the two handles either side of the pole
+  }
+}
+
 /** Where the bed's rails end and its mattress begins: the legs stand this high, leaving the gap below clear. */
 export const BED_RAIL_TOP_M = 0.5;
 
