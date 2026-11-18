@@ -832,3 +832,6 @@ Done: ten keyframed search actions, doors/lids/curtains/bushes that react, thoro
 ### 18/11/2026 House made smaller (TD-105)
 Done: `HOUSE_SCALE` 1.9 to 1.6. Tests: 599 unit tests pass.
 
+### 18/11/2026 Fewer rooms and hiding places (TD-106)
+Done: storage room and landing nook removed (walled solid), their doorway and furniture removed, the can moved, hiding places 36 to 32, rooms 19 to 17. Tests: 599 unit tests pass.
+

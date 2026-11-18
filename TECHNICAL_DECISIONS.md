@@ -850,3 +850,9 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Decision.** `HOUSE_SCALE` reduced from 1.9 to 1.6 (still larger than the original plan at 1.0, and than the 1.45 first used). Furniture stays at `FURNITURE_SCALE` 1.45, so rooms have a little less floor and the furniture is less spread out. Doors, spacing, reachability and hunter search tests all still pass on the smaller house.
 **Status.** ACCEPTED, owner to review in play.
 
+### TD-106: Fewer rooms and hiding places (owner 18/11/2026) — ACCEPTED
+**Owner request.** Reduce the number of rooms and hiding places; keep the rooms the same size.
+**Decision.** The upstairs storage room and the landing nook are no longer rooms: their space is walled solid, their doorway is closed, and their furniture is removed (the upstairs hall, bathroom 2 and corridor keep their size). The throwable can that lay in storage moved to bathroom 2. Hiding places go from about 36 to 32 (the storage boxes, the storage chest and the nook chest). Rooms go from 19 to 17 (12 indoors and 5 outdoors). Furniture is 103 pieces. The room and hiding-place tests were updated to match (the hiding-place minimum is now 26, the furniture minimum 100).
+**Found by testing.** Moving a throwable next to a hiding place made the act key pick the object up instead of hiding (pickup has priority over hiding); the can now lies away from every exit.
+**Status.** ACCEPTED, owner to review in play.
+

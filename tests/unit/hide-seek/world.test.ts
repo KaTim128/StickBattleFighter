@@ -9,19 +9,7 @@ describe('the house data (Phase 2 section A)', () => {
 
   it('has the rooms the brief asks for on both floors', () => {
     const names = HOUSE_PLAN.rooms.map((r) => r.id);
-    for (const id of [
-      'living',
-      'dining',
-      'kitchen',
-      'toilet',
-      'hall',
-      'bed1',
-      'bed2',
-      'bath1',
-      'bath2',
-      'storage',
-      'uphall',
-    ])
+    for (const id of ['living', 'dining', 'kitchen', 'toilet', 'hall', 'bed1', 'bed2', 'bath1', 'bath2', 'uphall'])
       expect(names, id).toContain(id);
     expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && r.kind === 'bathroom')).toHaveLength(2);
     expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && r.id.startsWith('bed'))).toHaveLength(2);
