@@ -531,3 +531,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Owner check: dodge feel on desktop and phone; swing direction commitment (B16 tail) if it still feels wrong
 - [x] Watched Hard AI fights are at least 15% longer (median) and 10% longer (mean) than the recorded baseline; no fighter wins over 80% or under 15% (`fight-length.test.ts`)
 - [ ] Owner check: fights feel longer yet still hit hard; AI dodge rate (1.5%) seems low?
+- [x] Every melee move and every ability, ultimate and fifth ability has its own sound; Shroud's five cuts sound different, once each, none on a whiff (`move-sounds.test.ts`, `shroud.test.ts`)
+- [ ] Owner check: listen to the synthesised attack sounds (all four fighters); say which should be replaced by recorded clips

@@ -42,6 +42,8 @@ export interface AttackDef {
   /** Camera feedback on a landed hit (REQ-CAM-4, PRS-3). */
   /** How the contact feels and sounds (flash, sparks, recoil, hit-stop, shake): src/data/combat/impacts.ts. */
   readonly impact: ImpactId;
+  /** The move's own contact sound (B18), or null for the profile's sound for its category. */
+  readonly sfx: string | null;
   readonly trauma: number;
   readonly zoomPunch: number;
   /** Which animation state shows it (the fighter's Animation Profile picks the clip). */

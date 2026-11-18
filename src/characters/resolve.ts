@@ -204,6 +204,7 @@ export function resolveMoves(
       aerial: m.aerial,
       next: next as Partial<Record<MoveInput, string>>,
       effect: m.effect ?? null,
+      sfx: m.sfx ?? null,
       burn: m.status?.burn ?? null,
       bleed: m.status?.bleed ?? false,
       groundBounce: (m.groundBounce ?? false) && caps.canGroundBounce,

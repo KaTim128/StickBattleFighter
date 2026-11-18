@@ -10,6 +10,8 @@
  * called on the first key or pointer press. Without Web Audio (tests, old
  * browsers) everything is a silent no-op.
  */
+import { MOVE_RECIPES } from '../data/audio/move-sounds';
+
 type Ctx = AudioContext;
 
 interface NoiseSpec {
@@ -39,10 +41,14 @@ interface ToneSpec {
   drive?: number;
 }
 
-type Layer = { noise: NoiseSpec } | { tone: ToneSpec } | { crackle: { dur: number; gain: number; count: number } };
+export type Layer =
+  | { noise: NoiseSpec }
+  | { tone: ToneSpec }
+  | { crackle: { dur: number; gain: number; count: number } };
 
 /** Recipes by sound id (the ids attacks, impact profiles and abilities name). */
 const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
+  ...MOVE_RECIPES,
   // Bare knuckles, light: a tight slap-crack over a short body thump.
   'punch-light': [
     { tone: { wave: 'sine', f0: 170, f1: 70, dur: 0.07, gain: 0.55 } },

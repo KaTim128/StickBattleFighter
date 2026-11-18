@@ -30,7 +30,8 @@
       "requires": ["canPunch"],
       "next": {
         "tap": "bone-chop"
-      }
+      },
+      "sfx": "hit-skeleton-bone-slash"
     },
     {
       "id": "bone-chop",
@@ -55,7 +56,8 @@
       "impact": "knuckle-light",
       "shake": 0.14,
       "zoomPunch": 0.012,
-      "requires": ["canPunch", "canUseCombos"]
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-skeleton-bone-chop"
     }
   ]
 }

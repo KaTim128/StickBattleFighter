@@ -798,3 +798,6 @@ Input buffer added (TD-088); the other dodge rules reviewed unchanged. Next: B17
 
 ### 18/11/2026 Phase 1 Batch B: B17 longer fights
 Baseline recorded and tuned (TD-089): median +30%, mean +28%. Next: B18 unique audio (synthesised; Pixabay unreachable), then hand Phase 1 over for owner review.
+
+### 18/11/2026 Phase 1 Batch B: B18 unique audio (end of Batch B)
+Per-move and per-ability sounds, synthesised (TD-090). All of B1 to B18 done; remaining Phase 1 items are owner checks, the HUD info control and cast-name notice, premium icons (#51) and CI and preview redeploy. Next: full gate, CI check, redeploy, Phase 1 hand-off for owner review. No Phase 2 without approval.

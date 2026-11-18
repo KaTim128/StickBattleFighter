@@ -35,7 +35,8 @@
         "tap": "straight",
         "tap-forward": "roundhouse"
       },
-      "requires": ["canPunch"]
+      "requires": ["canPunch"],
+      "sfx": "hit-inferno-jab"
     },
     {
       "id": "straight",
@@ -63,7 +64,8 @@
       "next": {
         "tap": "hook"
       },
-      "requires": ["canPunch", "canUseCombos"]
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-inferno-straight"
     },
     {
       "id": "hook",
@@ -91,7 +93,8 @@
       "next": {
         "tap": "roundhouse"
       },
-      "requires": ["canPunch", "canUseCombos"]
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-inferno-hook"
     },
     {
       "id": "roundhouse",
@@ -123,7 +126,8 @@
           "dps": 12,
           "durationS": 2
         }
-      }
+      },
+      "sfx": "hit-inferno-roundhouse"
     },
     {
       "id": "front-kick",
@@ -152,7 +156,8 @@
         "tap": "side-kick",
         "tap-forward": "side-kick"
       },
-      "requires": ["canKick"]
+      "requires": ["canKick"],
+      "sfx": "hit-inferno-front-kick"
     },
     {
       "id": "side-kick",
@@ -181,7 +186,8 @@
         "tap": "spinning-kick",
         "tap-forward": "spinning-kick"
       },
-      "requires": ["canKick", "canUseCombos"]
+      "requires": ["canKick", "canUseCombos"],
+      "sfx": "hit-inferno-side-kick"
     },
     {
       "id": "spinning-kick",
@@ -213,7 +219,8 @@
           "dps": 10,
           "durationS": 1.5
         }
-      }
+      },
+      "sfx": "hit-inferno-spinning-kick"
     },
     {
       "id": "jumping-front-kick",
@@ -239,7 +246,8 @@
       "shake": 0.55,
       "zoomPunch": 0.05,
       "requires": ["canKick", "canUseAerialKicks", "canJump"],
-      "effect": "flame-burst-small"
+      "effect": "flame-burst-small",
+      "sfx": "hit-inferno-jumping-front-kick"
     },
     {
       "id": "meteor-kick",
@@ -272,7 +280,8 @@
           "durationS": 2
         }
       },
-      "groundBounce": true
+      "groundBounce": true,
+      "sfx": "hit-inferno-meteor-kick"
     },
     {
       "id": "blazing-axe-kick",
@@ -304,7 +313,8 @@
           "dps": 12,
           "durationS": 2
         }
-      }
+      },
+      "sfx": "hit-inferno-blazing-axe-kick"
     }
   ]
 }

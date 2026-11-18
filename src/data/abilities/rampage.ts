@@ -153,7 +153,7 @@ export const RAMPAGE_KIT: AbilityKit = {
     payload: { damage: 105, knockbackMps: 6, heavy: true, strength: 900, impact: 'knuckle-heavy' },
     delivery: { type: 'grab', reachM: 1.2, radiusM: 0.5, liftS: 0.5, liftM: 1.1, slamRadiusM: 1.4 },
     vfx: 'grapple-slam',
-    sfx: { cast: 'rampage-grunt', release: 'heavy-whoosh', impact: 'crushing-impact' },
+    sfx: { cast: 'rampage-grunt', release: 'grab-whoosh', impact: 'slam-thud' },
     look: {
       palette: DUST,
       impact: {
@@ -200,7 +200,7 @@ export const RAMPAGE_KIT: AbilityKit = {
       },
     },
     vfx: 'rampage-mode',
-    sfx: { cast: 'rampage-grunt', release: 'heavy-whoosh', impact: 'crushing-impact' },
+    sfx: { cast: 'rampage-grunt', release: 'anchor-plant', impact: 'anchor-shove' },
     look: {
       palette: DUST,
       impact: { flashM: 1, sparks: 20, motes: 30, ringM: 2, smoke: 10, groundFire: false, smokeColour: 0x8a7a66 },
@@ -239,7 +239,7 @@ export const RAMPAGE_KIT: AbilityKit = {
       },
     },
     vfx: 'rampage-mode',
-    sfx: { cast: 'rampage-roar', release: 'rage-burst', impact: 'rage-burst' },
+    sfx: { cast: 'rampage-roar', release: 'rage-burst', impact: 'rage-shock' },
     look: {
       palette: RAGE,
       charge: { gatherRadiusM: 1.4, motesPerS: 120, coreMaxM: 0 },

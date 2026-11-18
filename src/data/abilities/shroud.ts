@@ -100,7 +100,7 @@ export const SHROUD_KIT: AbilityKit = {
       stabSfx: ['blade-stab-1', 'blade-stab-2', 'blade-stab-3'],
     },
     vfx: 'stalker-lunge',
-    sfx: { cast: 'knife-draw', release: 'shade-rush', impact: 'knife-stab' },
+    sfx: { cast: 'knife-draw', release: 'lunge-rush', impact: 'lunge-stab' },
     look: {
       palette: BLOOD,
       flight: { trailPerS: 140, sparksPerS: 0, shimmer: false },
@@ -195,7 +195,7 @@ export const SHROUD_KIT: AbilityKit = {
       meleeBleed: true,
     },
     vfx: 'hunting-frenzy',
-    sfx: { cast: 'frenzy-build', release: 'frenzy-snap', impact: 'frenzy-snap' },
+    sfx: { cast: 'frenzy-build', release: 'feint-slip', impact: 'feint-cut' },
     look: {
       palette: { deep: 0x0a0a14, hot: 0x2a2540, bright: 0x6a5f94, core: 0xdcd6f2 },
       impact: { flashM: 0.5, sparks: 8, motes: 20, ringM: 1.4, smoke: 8, groundFire: false, smokeColour: 0x14121c },

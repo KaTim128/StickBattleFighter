@@ -32,7 +32,8 @@
       "requires": ["canPunch"],
       "next": {
         "tap": "haymaker"
-      }
+      },
+      "sfx": "hit-titan-hammer-jab"
     },
     {
       "id": "haymaker",
@@ -60,7 +61,8 @@
       "requires": ["canPunch", "canUseCombos"],
       "next": {
         "tap": "double-hammer"
-      }
+      },
+      "sfx": "hit-titan-haymaker"
     },
     {
       "id": "double-hammer",
@@ -85,7 +87,8 @@
       "impact": "knuckle-heavy",
       "shake": 0.55,
       "zoomPunch": 0.05,
-      "requires": ["canPunch", "canUseCombos"]
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-titan-double-hammer"
     },
     {
       "id": "body-slam",
@@ -110,7 +113,8 @@
       "impact": "knuckle-heavy",
       "shake": 0.45,
       "zoomPunch": 0.04,
-      "requires": ["canUseAerialPunches"]
+      "requires": ["canUseAerialPunches"],
+      "sfx": "hit-titan-body-slam"
     },
     {
       "id": "sledgehammer",
@@ -136,7 +140,8 @@
       "shake": 0.7,
       "zoomPunch": 0.06,
       "requires": ["canPunch"],
-      "groundBounce": true
+      "groundBounce": true,
+      "sfx": "hit-titan-sledgehammer"
     }
   ]
 }

@@ -146,6 +146,11 @@ export interface MoveDef {
   readonly next?: Partial<Record<MoveInput, string>>;
   /** Effect played on contact (Effects library id), on top of the profile's defaults. */
   readonly effect?: string;
+  /**
+   * This move's own contact sound (a sound-board id, master plan B18): played once when the blow lands
+   * on a fighter. Absent = the Audio Profile's sound for the move's category.
+   */
+  readonly sfx?: string;
   readonly status?: {
     readonly burn?: { readonly dps: number; readonly durationS: number };
     /** The target bleeds (Shroud's knife). */

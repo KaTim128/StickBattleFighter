@@ -180,3 +180,19 @@ There is therefore **one** ambience candidate, not two. An untouched copy is kep
 `docs/references/master-plan/darkne-scary-horror-atmosphere-620036.mp3`
 
 It is not wired into the game. In Phase 2 it becomes the Hide and Seek bed, looped with a crossfade. The rest of the horror layer (creaks, doors, footsteps per movement style, hiding sounds per hiding spot, Shroud's approach cues) comes from the Phase 2 audio batch, positional. The source licence must be confirmed by the owner: the filename suggests Pixabay item 620036.
+
+## 8. Phase 1 B18: per-attack combat audio (18/11/2026)
+
+**Source: synthesised in the game, no files, no third-party audio.** The master plan prefers Pixabay recordings of the real physical events. Pixabay could not be reached from the build environment in this session, and no download or edit was attempted, so **nothing here is a Pixabay asset and no licence record applies**. Every sound below is an original Web Audio recipe (`src/data/audio/move-sounds.ts`, `src/audio/sound-board.ts`). They are placeholders in the sense that recorded, edited clips could replace them one id at a time (the ids are the stable interface); the owner decides whether synthesised sounds are good enough.
+
+| Group | Sound ids | Event |
+|---|---|---|
+| Inferno melee (10) | `hit-inferno-jab`, `-straight`, `-hook`, `-roundhouse`, `-front-kick`, `-side-kick`, `-spinning-kick`, `-jumping-front-kick`, `-meteor-kick`, `-blazing-axe-kick` | contact of that move |
+| Titan melee (5) | `hit-titan-hammer-jab`, `-haymaker`, `-double-hammer`, `-body-slam`, `-sledgehammer` | contact |
+| Necro melee (5) | `hit-necro-staff-sweep`, `-soul-thrust`, `-grave-slam`, `-staff-plunge`, `-soul-rend` | contact |
+| Shroud melee (7) | `hit-shroud-knife-slash`, `-backhand-slash`, `-rising-cut`, `-cross-slash`, `-lunging-stab` (the five combo hits), `-knife-plunge`, `-gutting-stab` | contact |
+| Skeleton warrior (2) | `hit-skeleton-bone-slash`, `-bone-chop` | contact |
+| Abilities (newly unique) | `detonation-boom`, `blue-gather`, `blue-ignite`, `blue-surge`, `tether-cast`, `tether-bind`, `grab-whoosh`, `slam-thud`, `anchor-plant`, `anchor-shove`, `rage-shock`, `lunge-rush`, `lunge-stab`, `feint-slip`, `feint-cut` | release or impact of Flame Detonation, Blue Inferno, Soul Tether, Grapple Slam, Bastion Anchor, Rampage Mode, Stalker Lunge, Umbral Feint |
+
+Verification (automated, `tests/unit/audio/move-sounds.test.ts`, `tests/integration/scenes/shroud.test.ts`): every melee move of the four fighters and the skeleton has its own existing sound; no two sounds are the same recipe; every ability (all five normal and the ultimate, per fighter) has its own release and its own impact sound and an existing cast sound; Shroud's five combo hits play five different sounds, each once as it lands, and a whiff plays none. **Not verified by ear:** nobody has listened to these in a browser in this session; judging how they sound is an owner check.
+Not yet covered: block and parry still use the shared guard sounds, and the cast sounds of several abilities of one fighter are still shared family sounds (`rampage-grunt`, `knife-draw`, `soul-gather`); status applications (bleed, burn, blind) have no sound of their own.

@@ -186,7 +186,7 @@ export const NECRO_KIT: AbilityKit = {
     },
     delivery: { type: 'projectile', speedMps: 12, radiusM: 0.3, maxRangeM: 9 },
     vfx: 'soul-drain',
-    sfx: { cast: 'soul-gather', release: 'soul-cast', impact: 'soul-drain-hit' },
+    sfx: { cast: 'soul-gather', release: 'tether-cast', impact: 'tether-bind' },
     look: {
       palette: SOUL,
       charge: { gatherRadiusM: 0.9, motesPerS: 45, coreMaxM: 0.2 },

@@ -171,7 +171,7 @@ export const INFERNO_KIT: AbilityKit = {
     },
     delivery: { type: 'nova', radiusM: 2.3, telegraphS: 0.05 },
     vfx: 'flame-detonation',
-    sfx: { cast: 'fireball-charge', release: 'detonation-blast', impact: 'fireball-boom' },
+    sfx: { cast: 'fireball-charge', release: 'detonation-blast', impact: 'detonation-boom' },
     look: {
       palette: FIRE_PALETTE,
       charge: { gatherRadiusM: 1.1, motesPerS: 120, coreMaxM: 0.32 },
@@ -253,7 +253,7 @@ export const INFERNO_KIT: AbilityKit = {
       blueFlames: true,
     },
     vfx: 'blue-fire',
-    sfx: { cast: 'fire-roar', release: 'fire-roar', impact: 'fire-roar' },
+    sfx: { cast: 'blue-gather', release: 'blue-ignite', impact: 'blue-surge' },
     look: {
       palette: BLUE_PALETTE,
       charge: { gatherRadiusM: 1.6, motesPerS: 150, coreMaxM: 0 },

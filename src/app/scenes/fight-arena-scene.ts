@@ -2201,6 +2201,8 @@ export class FightArenaScene implements ArenaScene {
       profile?: ImpactProfile;
       /** Punch or kick (picks the attacker's impact effect and sound). */
       category?: 'punch' | 'kick';
+      /** The move's own contact sound (B18); absent = the Audio Profile's sound for its category. */
+      sfx?: string;
       /** An effect on contact instead of the profile's default (Effects library id). */
       effect?: string | null;
       /** The target bounces off the floor. */
@@ -2311,6 +2313,7 @@ export class FightArenaScene implements ArenaScene {
       melee: boolean;
       heavy: boolean;
       category?: 'punch' | 'kick';
+      sfx?: string;
       effect?: string | null;
       flashColour?: number;
     },
@@ -2355,7 +2358,8 @@ export class FightArenaScene implements ArenaScene {
               : s.heavy
                 ? 'heavyPunch'
                 : 'lightPunch';
-      this.characterSound(guarded ? target : attacker, key);
+      if (s.sfx && !guarded && outcome !== 'parried') this.queueSound(s.sfx);
+      else this.characterSound(guarded ? target : attacker, key);
     }
     if (outcome === 'ko') this.characterSound(target, 'defeat');
     if (s.melee && profile.recoilMps > 0 && attacker.body) {
@@ -2500,6 +2504,7 @@ export class FightArenaScene implements ArenaScene {
         impact: a.impact,
         category: a.category,
         effect: a.effect,
+        sfx: a.sfx ?? undefined,
         groundBounce: a.groundBounce,
         burn: a.burn ?? undefined,
       };

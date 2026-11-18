@@ -91,6 +91,52 @@ describe('Shroud', () => {
     scenes.clear();
   });
 
+  it('B18: each of the five cuts plays its own sound exactly once when it lands, and a whiff plays none', async () => {
+    const { intents, scene, scenes, run, runUntil } = await setup({ x: 15, y: 13 }, { x: 16.2, y: 13 });
+    const heard: string[] = [];
+    scene.drainSoundCues();
+    const started: string[] = [];
+    const listen = () => {
+      for (const c of scene.drainSoundCues()) if (c.id.startsWith('hit-shroud-')) heard.push(c.id);
+    };
+    for (let k = 0; k < 5; k++) {
+      intents.pressMelee();
+      for (let i = 0; i < 90 && !(scene.player.attack && !started.includes(scene.player.attack)); i++) {
+        run(STEP);
+        listen();
+      }
+      if (scene.player.attack) started.push(scene.player.attack);
+      for (let i = 0; i < 7; i++) {
+        run(STEP);
+        listen();
+      }
+    }
+    for (let i = 0; i < 90; i++) {
+      run(STEP);
+      for (const c of scene.drainSoundCues()) if (c.id.startsWith('hit-shroud-')) heard.push(c.id);
+    }
+    expect(heard).toEqual([
+      'hit-shroud-knife-slash',
+      'hit-shroud-backhand-slash',
+      'hit-shroud-rising-cut',
+      'hit-shroud-cross-slash',
+      'hit-shroud-lunging-stab',
+    ]);
+    // Nobody in reach: the swing makes no contact sound.
+    scene.respawnDummy({ x: 30, y: 13 });
+    run(3);
+    scene.drainSoundCues();
+    intents.pressMelee();
+    runUntil(() => scene.player.attack !== null, 1);
+    const whiff: string[] = [];
+    for (let i = 0; i < 60; i++) {
+      run(STEP);
+      for (const c of scene.drainSoundCues()) if (c.id.startsWith('hit-')) whiff.push(c.id);
+    }
+    expect(whiff).toEqual([]);
+    scenes.clear();
+  });
+
   it('Bloodfade (owner, 13/11/2026): darts in, one bloody stab that bleeds without stunning, then springs well away', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 12, y: 13 }, { x: 15, y: 13 });
     (scene.playerFighter.def.stats as { critChance: number }).critChance = 0;
