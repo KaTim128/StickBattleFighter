@@ -24,12 +24,10 @@ it.skipIf(!who)(
     const all = [kit.a1.id, kit.a2.id, kit.a3.id, kit.a4.id, kit.a5!.id];
     const out: Record<string, { wins: number; games: number; meanS: number }> = {};
     for (const benched of all) {
-      const equipped = all.filter((id) => id !== benched);
       // Keep the standard order where possible: the fifth takes the benched ability's button.
       const std = equippedIds(kit);
       const arranged = std.map((id) => (id === benched ? (kit.a5!.id as string) : id));
       const loadout = benched === kit.a5!.id ? { equipped: std } : { equipped: arranged };
-      void equipped;
       let wins = 0;
       let games = 0;
       let total = 0;
