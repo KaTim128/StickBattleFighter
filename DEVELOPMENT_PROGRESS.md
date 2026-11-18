@@ -823,3 +823,6 @@ Done: modelled and aged furniture (office style), aged walls and floors with hor
 ### 18/11/2026 House follow-up (TD-102)
 Done: armchairs and sofa closer to the table, a better-made bed (blanket under the pillows), textured doors with frames and lintels, 27 hiding places (5 added), furniture fade limited to tall pieces. Tests: 99 hide-seek and rendering unit tests.
 
+### 18/11/2026 Bigger house, doors, four-legged beds (TD-102)
+Done: rooms scaled 1.9 with furniture at its natural size, doors two thirds as wide, about 40 more pieces and nine more hiding places (36), beds on four legs with clearance and a fully hidden player. Known limits: the stairs are now wide (scaled with the rooms); the hunter was sped up and not human-tested.
+

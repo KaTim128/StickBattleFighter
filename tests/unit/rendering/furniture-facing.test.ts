@@ -35,11 +35,29 @@ describe.each([
 
   it('dining chairs face the dining table', () => {
     const table = house.furniture.find((f) => f.kind === 'dining-table')!;
-    const near = house.furniture.filter(
-      (f) => f.kind === 'chair' && f.floor === 0 && Math.abs(f.y0 - table.y0) < 3 * (house.widthM / HOUSE_PLAN.widthM),
-    );
+    const t = mid(table);
+    const near = house.furniture.filter((f) => {
+      const c = mid(f);
+      return (
+        f.kind === 'chair' &&
+        f.floor === 0 &&
+        Math.hypot(c.x - t.x, c.y - t.y) < 3.2 * (house.widthM / HOUSE_PLAN.widthM)
+      );
+    });
     expect(near.length).toBeGreaterThanOrEqual(2);
     for (const c of near) expect(face(c)).toBe(toward(c, table));
+  });
+
+  it('kitchen chairs face the counter they are pulled up to', () => {
+    const chairs = house.furniture.filter(
+      (f) =>
+        f.kind === 'chair' &&
+        f.floor === 0 &&
+        mid(f).y > 12 * (house.widthM / HOUSE_PLAN.widthM) &&
+        mid(f).x > 20 * (house.widthM / HOUSE_PLAN.widthM),
+    );
+    expect(chairs.length).toBeGreaterThanOrEqual(2);
+    for (const c of chairs) expect(face(c)).toBe('n');
   });
 
   it('every bed has its head to a wall, and storage stands with its back to one', () => {

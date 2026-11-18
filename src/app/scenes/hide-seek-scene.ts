@@ -35,6 +35,8 @@ export class HideSeekScene implements GameScene {
   /** The hunter's vision cone, drawn on the ground of his floor: the very area his sight test uses. */
   private cone: Graphics | null = null;
   private hunterFloor: 0 | 1 = 0;
+  /** The player's figure's opacity, eased: it fades as they crawl under cover. */
+  private playerAlpha = 1;
   /** Heights of the hiding places (for the bubble anchors), by furniture id. */
   private readonly spotTops = new Map<string, number>();
   /** The room whose front walls are currently see-through. */
@@ -179,7 +181,15 @@ export class HideSeekScene implements GameScene {
       0,
     );
     // Hiding: the figure is half hidden inside the place.
-    player.view.root.alpha = p.hidingIn ? 0.4 : 1;
+    // Hiding under a bed (or in a closed place) the body is completely out of sight: it crawls in and fades with the
+    // crouch, so no leg or foot ever shows. Where the cover is partial (a curtain, a bush) it stays dimly there.
+    const hidKind = g.spots.find((sp) => sp.id === p.hidingIn)?.spec.kind;
+    const hiddenAlpha = hidKind && COMPLETE_COVER.has(hidKind) ? 0 : 0.4;
+    const goalAlpha = p.hidingIn ? hiddenAlpha : 1;
+    this.playerAlpha += (goalAlpha - this.playerAlpha) * Math.min(1, frameDtS * 7);
+    if (Math.abs(this.playerAlpha - goalAlpha) < 0.02) this.playerAlpha = goalAlpha;
+    player.view.root.alpha = this.playerAlpha;
+    player.view.root.visible = this.playerAlpha > 0.01;
     // The catch: the player collapses once, over the killing animation (the rules start it exactly once).
     const kill = g.round.killProgress;
     player.view.root.rotation = kill > 0 ? Math.min(1, kill * 2.2) * 1.45 * p.facing : 0;
@@ -283,6 +293,7 @@ export class HideSeekScene implements GameScene {
     this.game.restart();
     this.visibility.reset();
     this.visibility.settle(this.game.viewer());
+    this.playerAlpha = 1;
     if (this.player) this.player.view.root.rotation = 0;
     const p = this.game.player;
     const at = iso(p.x, p.y, p.z);
@@ -387,6 +398,9 @@ export class HideSeekScene implements GameScene {
     return { floor: p.floor, x: p.x.toFixed(1), y: p.y.toFixed(1), phase: this.game.round.phase };
   }
 }
+
+/** Hiding places that hide the whole body (the player's figure is not drawn at all while inside). */
+export const COMPLETE_COVER = new Set(['under-bed', 'wardrobe', 'cupboard', 'chest', 'box', 'shed-cabinet']);
 
 /** The house's overall darkness: lit rooms are this bright at most. */
 const AMBIENT = 0.78;

@@ -291,6 +291,8 @@ const hide = (
   opensToward: HideSpec['opensToward'],
 ): HideSpec => ({ kind, concealment, noise, viewM, at: { x, y }, opensToward });
 
+/** A bed's mattress top: the frame stands on four legs with 0.45 m clear underneath, enough to crawl under. */
+const BED_TOP_M = 0.78;
 const WOOD = 0x8a6a48;
 const DARK_WOOD = 0x5a4430;
 const FABRIC = 0x7d6b9c;
@@ -347,7 +349,9 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
     hide: hide('cupboard', 0.85, 0.3, 0.9, 29.6, 19.8, 'w'),
   }),
   // ---------------------------------------------------------------- Bedroom 1
-  item('bed', 1, 11.4, 9.4, 13.6, 11.8, 0.55, 0x8a8aa0, { hide: hide('under-bed', 0.75, 0.4, 1.3, 12.5, 11.2, 's') }),
+  item('bed', 1, 11.4, 9.4, 13.6, 11.8, BED_TOP_M, 0x8a8aa0, {
+    hide: hide('under-bed', 0.9, 0.4, 1.3, 12.5, 10.6, 's'),
+  }),
   item('nightstand', 1, 10.4, 9.4, 11, 10, 0.5, WOOD),
   item('wardrobe', 1, 14.6, 9.3, 15.8, 10.2, 2.0, DARK_WOOD, {
     blocksSight: true,
@@ -368,7 +372,9 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('box', 1, 19.4, 12.6, 20.6, 13.8, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 20, 13.2, 'e') }),
   item('box', 1, 23.4, 12.4, 24.6, 13.6, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 24, 13, 'w') }),
   // ---------------------------------------------------------------- Bedroom 2
-  item('bed', 1, 11.4, 19.2, 13.9, 20.8, 0.55, 0x8aa08a, { hide: hide('under-bed', 0.75, 0.4, 1.3, 12.6, 20.0, 'n') }),
+  item('bed', 1, 11.4, 19.2, 13.9, 20.8, BED_TOP_M, 0x8aa08a, {
+    hide: hide('under-bed', 0.9, 0.4, 1.3, 12.65, 20.0, 'n'),
+  }),
   item('wardrobe', 1, 10.4, 16.3, 11.6, 17.4, 2.0, DARK_WOOD, {
     blocksSight: true,
     hide: hide('wardrobe', 0.9, 0.45, 0.9, 11, 17.0, 'e'),
@@ -415,12 +421,56 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
     blocksSight: true,
     hide: hide('shed-cabinet', 0.85, 0.4, 0.8, 6.3, 2.8, 's'),
   }),
-  item('box', 0, 3.3, 2.3, 4.5, 3.4, 0.5, 0xb59a6a),
+  item('box', 0, 3.3, 2.3, 4.5, 3.4, 0.5, 0xb59a6a, { hide: hide('box', 0.8, 0.2, 0.8, 3.9, 2.85, 's') }),
   // ---------------------------------------------------------------- Side yards
   item('bush', 0, 2, 12, 3.4, 13.6, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 2.7, 12.8, 'e') }),
   item('tree', 0, 5, 16, 6, 17, 3.4, 0x4a3a2a),
   item('bench', 0, 33, 12, 34.8, 12.8, 0.5, DARK_WOOD),
   item('bush', 0, 34, 16, 35.6, 17.6, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 34.8, 16.8, 'w') }),
+  // ---------------------------------------------------------------- More furniture and hiding places (owner, 18/11/2026)
+  item('bin', 0, 12.3, 12.6, 12.8, 13.1, 0.5, 0x4a5a4a),
+  item('side-table', 0, 18.2, 9.3, 18.8, 9.9, 0.6, WOOD),
+  item('chair', 0, 21, 12.7, 21.6, 13.3, 0.5, DARK_WOOD),
+  item('chair', 0, 22.2, 12.7, 22.8, 13.3, 0.5, DARK_WOOD),
+  item('bin', 0, 23.2, 13.2, 23.7, 13.7, 0.5, 0x4a5a4a),
+  item('bookshelf', 0, 12.4, 14.25, 13.6, 14.85, 2.0, DARK_WOOD, { blocksSight: true }),
+  item('sofa', 0, 21, 18.7, 23.4, 19.7, 0.9, FABRIC),
+  item('coffee-table', 0, 21.4, 17.3, 22.9, 18.2, 0.45, WOOD),
+  item('cupboard', 0, 11.8, 20.1, 13, 20.8, 1.9, DARK_WOOD, {
+    blocksSight: true,
+    hide: hide('cupboard', 0.85, 0.3, 0.9, 12.4, 20.45, 'n'),
+  }),
+  item('chest', 1, 12.6, 12, 13.8, 12.6, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 13.2, 12.3, 's') }),
+  item('nightstand', 1, 13.85, 9.4, 14.45, 10, 0.5, WOOD),
+  item('wardrobe', 1, 20.6, 9.3, 21.8, 10.2, 2.0, DARK_WOOD, {
+    blocksSight: true,
+    hide: hide('wardrobe', 0.9, 0.45, 0.9, 21.2, 9.9, 's'),
+  }),
+  item('shelf', 1, 24.4, 10.5, 24.8, 12.2, 1.8, DARK_WOOD, { blocksSight: true }),
+  item('bookshelf', 1, 16.6, 16.25, 18.4, 16.85, 2.0, DARK_WOOD, { blocksSight: true }),
+  item('chest', 1, 11.5, 18.3, 12.9, 18.9, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 12.2, 18.6, 'n') }),
+  item('shelf', 1, 23.2, 16.3, 23.8, 17.9, 1.8, DARK_WOOD, { blocksSight: true }),
+  item('chest', 1, 28.6, 19, 29.8, 19.8, 0.5, DARK_WOOD, { hide: hide('chest', 0.85, 0.4, 0.7, 29.2, 19.4, 'w') }),
+  item('bush', 0, 7.5, 25, 9.9, 26.3, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 8.7, 25.65, 's') }),
+  item('bush', 0, 30, 7.2, 32.6, 8.5, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 31.3, 7.8, 'n') }),
+  item('bush', 0, 36, 12, 37.6, 13.6, 1.1, 0x244a2a, { hide: hide('bush', 0.8, 0.4, 1.4, 36.8, 12.8, 'w') }),
+  item('bench', 0, 28, 3, 29.8, 3.8, 0.5, DARK_WOOD),
+  item('tree', 0, 30, 27, 31, 28, 3.4, 0x4a3a2a),
+  item('tree', 0, 10, 5, 11, 6, 3.6, 0x4a3a2a),
+  item('shelf', 0, 10.25, 11.3, 10.7, 12.5, 1.6, DARK_WOOD, { blocksSight: true }),
+  item('bookshelf', 0, 14.2, 20.25, 15.8, 20.85, 2.0, DARK_WOOD, { blocksSight: true }),
+  item('floor-lamp', 0, 23.5, 15.3, 24, 15.8, 1.6, 0xe8d28a),
+  item('floor-lamp', 0, 29.3, 10, 29.8, 10.5, 1.6, 0xe8d28a),
+  item('bin', 0, 29.35, 14.3, 29.8, 14.75, 0.5, 0x4a5a4a),
+  item('shelf', 1, 15.45, 12.6, 15.85, 13.8, 1.6, DARK_WOOD, { blocksSight: true }),
+  item('bin', 1, 18.4, 11.4, 18.8, 11.8, 0.5, 0x4a5a4a),
+  item('floor-lamp', 1, 14.2, 19.5, 14.7, 20, 1.6, 0xe8d28a),
+  item('bench', 1, 26.3, 19.2, 28.1, 19.8, 0.5, DARK_WOOD),
+  item('floor-lamp', 1, 29.3, 15.2, 29.8, 15.7, 1.6, 0xe8d28a),
+  item('bench', 0, 20, 22.8, 21.8, 23.6, 0.5, DARK_WOOD),
+  item('tree', 0, 36, 5, 37, 6, 3.6, 0x4a3a2a),
+  item('tree', 0, 1, 19, 2, 20, 3.4, 0x4a3a2a),
+  item('bin', 0, 36.5, 19, 37.2, 19.7, 1, 0x4a5a4a),
 ];
 
 export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
@@ -430,7 +480,7 @@ export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
   { id: 't4', kind: 'bottle', floor: 0, x: 15, y: 11.8 },
   { id: 't5', kind: 'can', floor: 0, x: 29.5, y: 17 },
   { id: 't6', kind: 'toy', floor: 1, x: 12, y: 15 },
-  { id: 't7', kind: 'bottle', floor: 1, x: 13, y: 13.2 },
+  { id: 't7', kind: 'bottle', floor: 1, x: 14.6, y: 12.8 },
   { id: 't8', kind: 'can', floor: 1, x: 22, y: 12.8 },
   { id: 't9', kind: 'toy', floor: 1, x: 27, y: 18 },
   { id: 't10', kind: 'bottle', floor: 0, x: 8, y: 14 },
@@ -458,11 +508,19 @@ export const HOUSE_PLAN: HouseDef = {
   patrol: [
     { floor: 0, x: 26, y: 24 },
     { floor: 0, x: 27.5, y: 19 },
-    { floor: 0, x: 21.5, y: 18.4 },
+    { floor: 0, x: 20.6, y: 16.6 },
   ],
 };
 
 /** The rooms are made this much roomier than the authored plan (owner, 18/11/2026: a bigger, bungalow-sized house). */
-export const HOUSE_SCALE = 1.45;
+export const HOUSE_SCALE = 1.9;
+/** Furniture keeps closer to its natural size, so the bigger rooms have space for more of it. */
+export const FURNITURE_SCALE = 1.45;
+/** Doors are two thirds as wide as they were (owner, 18/11/2026). */
+export const DOOR_FRACTION = 2 / 3;
 
-export const HOUSE: HouseDef = scaleHouse(HOUSE_PLAN, HOUSE_SCALE);
+export const HOUSE: HouseDef = scaleHouse(HOUSE_PLAN, {
+  roomScale: HOUSE_SCALE,
+  furnitureScale: FURNITURE_SCALE,
+  doorFraction: DOOR_FRACTION,
+});

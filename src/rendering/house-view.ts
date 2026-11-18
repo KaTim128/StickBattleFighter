@@ -251,11 +251,12 @@ const noBake: Baker = (g) => g;
  * between the camera and everything in the room, so they go see-through while the player is inside it.
  */
 export function isFrontWallOf(room: Rect, wall: Rect, tol = 0.45): boolean {
+  // By position, not by the piece's shape: a short block of a thick wall is nearly square.
   const cx = (wall.x0 + wall.x1) / 2;
   const cy = (wall.y0 + wall.y1) / 2;
-  const alongX = wall.x1 - wall.x0 >= wall.y1 - wall.y0;
-  if (alongX) return Math.abs(cy - room.y1) <= tol && cx >= room.x0 - tol && cx <= room.x1 + tol;
-  return Math.abs(cx - room.x1) <= tol && cy >= room.y0 - tol && cy <= room.y1 + tol;
+  const south = Math.abs(cy - room.y1) <= tol && cx >= room.x0 - tol && cx <= room.x1 + tol;
+  const east = Math.abs(cx - room.x1) <= tol && cy >= room.y0 - tol && cy <= room.y1 + tol;
+  return south || east;
 }
 
 /** The building's outline: every indoor room (not the yards or the shed) on both floors. */

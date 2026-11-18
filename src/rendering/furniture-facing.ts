@@ -10,7 +10,7 @@ export type Facing = 'n' | 's' | 'e' | 'w';
 const OPPOSITE: Record<Facing, Facing> = { n: 's', s: 'n', e: 'w', w: 'e' };
 /** Seating looks at these, nearest first (a coffee table, else the television). */
 const SEAT_FOCUS: readonly FurnitureDef['kind'][] = ['coffee-table', 'tv-console'];
-const CHAIR_FOCUS: readonly FurnitureDef['kind'][] = ['dining-table', 'desk', 'garden-table'];
+const CHAIR_FOCUS: readonly FurnitureDef['kind'][] = ['dining-table', 'desk', 'garden-table', 'counter'];
 const SEATING = new Set<FurnitureDef['kind']>(['sofa', 'armchair']);
 
 const centre = (r: Rect): { x: number; y: number } => ({ x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 });

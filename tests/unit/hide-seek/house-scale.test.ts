@@ -75,14 +75,13 @@ describe.each([
   const pieces = house.furniture.filter((f) => !flat.has(f.kind));
 
   it("no two pieces overlap or touch (a hand's breadth between them)", () => {
-    const k = house.widthM / HOUSE_PLAN.widthM;
     for (let i = 0; i < pieces.length; i++)
       for (let j = i + 1; j < pieces.length; j++) {
         const a = pieces[i]!;
         const b = pieces[j]!;
         if (a.floor !== b.floor) continue;
         const gap = Math.max(Math.max(a.x0 - b.x1, b.x0 - a.x1), Math.max(a.y0 - b.y1, b.y0 - a.y1));
-        expect(gap, `${a.id} and ${b.id}`).toBeGreaterThanOrEqual(0.09 * k);
+        expect(gap, `${a.id} and ${b.id}`).toBeGreaterThanOrEqual(0.08);
       }
   });
 

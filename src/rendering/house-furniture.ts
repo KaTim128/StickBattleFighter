@@ -669,6 +669,9 @@ function toilet(g: Graphics, f: FurnitureDef): void {
  * A bed with its head to `facing`'s back (a wall): headboard, a sheeted mattress, two plump pillows at the head, and a
  * blanket tucked in under the pillows, with a folded-back cuff, draped sides, wrinkles and an old stain.
  */
+/** Where the bed's rails end and its mattress begins: the legs stand this high, leaving the gap below clear. */
+export const BED_RAIL_TOP_M = 0.5;
+
 function bed(g: Graphics, f: FurnitureDef, B: Blk, seed: number, facing: Facing): void {
   const c = f.colour;
   const { R, L, D } = frameFor(f, facing);
@@ -678,10 +681,31 @@ function bed(g: Graphics, f: FurnitureDef, B: Blk, seed: number, facing: Facing)
     parts.push({ r, z0, z1, look });
   const ph = Math.min(0.75, D * 0.2); // pillow depth
   const blanketFrom = 0.14 + ph + 0.04; // the blanket starts where the pillows end: it is tucked in under them
-  add(R(0, L, 0, D), 0, 0.2, { colour: 0x4a3a2a });
-  add(R(0, L, 0, 0.12), 0.2, h + 0.55, { colour: 0x4a3a2a }); // headboard
-  add(R(0.04, L - 0.04, 0.02, 0.12), h + 0.2, h + 0.5, { colour: shade(0x4a3a2a, 1.15), noAo: true }); // its raised panel
-  add(R(0.04, L - 0.04, 0.12, D - 0.02), 0.2, h, { colour: 0xe6e0d0 }); // the mattress and its sheet
+  // The floor under the bed is in shadow; the frame stands on four legs with a clear gap beneath its rails.
+  const FRAME = 0x4a3a2a;
+  const under = [R(0.05, L - 0.05, 0.1, D - 0.05)].map((q) => [
+    iso(q[0], q[1]),
+    iso(q[2], q[1]),
+    iso(q[2], q[3]),
+    iso(q[0], q[3]),
+  ])[0]!;
+  g.poly(under.flatMap((p) => [p.x, p.y])).fill({ color: 0x000000, alpha: 0.5 });
+  const leg = 0.12;
+  for (const [a0, a1] of [
+    [0, leg],
+    [L - leg, L],
+  ] as const)
+    for (const [p0, p1] of [
+      [0, leg],
+      [D - leg, D],
+    ] as const)
+      add(R(a0, a1, p0, p1), 0, BED_RAIL_TOP_M, { colour: FRAME, edge: 0.4 });
+  add(R(leg, L - leg, D - 0.07, D - 0.01), BED_RAIL_TOP_M - 0.12, BED_RAIL_TOP_M, { colour: FRAME }); // the foot rail
+  add(R(0, 0.07, leg, D - leg), BED_RAIL_TOP_M - 0.12, BED_RAIL_TOP_M, { colour: FRAME }); // the side rails
+  add(R(L - 0.07, L, leg, D - leg), BED_RAIL_TOP_M - 0.12, BED_RAIL_TOP_M, { colour: FRAME });
+  add(R(0, L, 0, 0.12), 0.25, h + 0.55, { colour: FRAME }); // the headboard
+  add(R(0.04, L - 0.04, 0.02, 0.12), h + 0.2, h + 0.5, { colour: shade(FRAME, 1.15), noAo: true }); // its raised panel
+  add(R(0.04, L - 0.04, 0.12, D - 0.04), BED_RAIL_TOP_M, h, { colour: 0xe6e0d0 }); // the mattress and its sheet
   // Blanket: wider than the mattress so it drapes down the sides, a lighter cuff folded back at the top edge.
   // A blanket with a colour of its own (burgundy or deep green), so it reads against the pale sheet and pillows.
   const wool = [0x8a3a46, 0x3f6a58, 0x6a4a7a][seed % 3] ?? c;

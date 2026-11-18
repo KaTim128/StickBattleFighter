@@ -12,7 +12,7 @@ import { BODY_RADIUS_M, type HouseWorld, type Placed, type Point, type Waypoint 
  */
 export type HunterMode = 'patrol' | 'investigate' | 'search' | 'chase';
 
-export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 2.3, tiptoe: 1.1, run: 4.1 };
+export const HUNTER_SPEED_MPS: Readonly<Record<Gait, number>> = { walk: 3.0, tiptoe: 1.3, run: 4.2 };
 /** How loud his own steps are (the player hears him coming, positionally; P2-5). */
 export const HUNTER_STEP_LOUDNESS: Readonly<Record<Gait, number>> = { walk: 0.4, tiptoe: 0.1, run: 0.85 };
 
@@ -24,8 +24,8 @@ const CATCH_HIDDEN_M = 1.8;
 const SUSPECT = 0.3;
 const AWARENESS_DECAY_S = 0.3;
 const LOSE_SIGHT_S = 1.4;
-const DWELL_S = 1.0;
-const INSPECT_S = 1.3;
+const DWELL_S = 0.7;
+const INSPECT_S = 1.1;
 /** A room or hiding place he checked is not checked again for this long, seconds. */
 const FORGET_S = 70;
 const SPOT_NEAR_LAST_M = 5;
