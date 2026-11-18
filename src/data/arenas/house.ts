@@ -146,7 +146,7 @@ const wallsGround: WallDef[] = [
   ]),
   // Staircase rails (ground): both sides and the top end
   seg(0, STAIR_X0 - 0.15, STAIR_TOP_Y, STAIR_X0, STAIR_BOTTOM_Y, 'rail'),
-  seg(0, STAIR_X1, STAIR_TOP_Y, STAIR_X1 + 0.15, STAIR_BOTTOM_Y, 'rail'),
+  // (No rail on the east side: the wall is right there, and a rail's end would trap a player pushing up and to the right.)
   // Under the landing: the stairs run right up to the back wall, with no empty floor behind the top step.
   { ...seg(0, STAIR_X0 - 0.15, 9.1, STAIR_X1 + 0.15, STAIR_TOP_Y), heightM: 3 },
   // The shed (door on the south side)
