@@ -178,6 +178,9 @@ export class FighterEntity {
   aiPropCooldownS = 0;
   aiPropApproachS = 0;
   aiHeldS = 0;
+  /** Who this AI is going for now (a fighter or one of the enemy's minions, B10) and for how long. */
+  aiTargetId: string | null = null;
+  aiTargetS = 0;
   aiLastPos: { x: number; y: number } | null = null;
   aiUnstick: { x: number; y: number; leftS: number } | null = null;
   /** Smoothed presentation values. */

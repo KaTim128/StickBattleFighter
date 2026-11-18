@@ -172,7 +172,8 @@ describe('Shroud', () => {
     intents.pressAbility('ult');
     runUntil(() => scene.playerFighter.buff !== null, 2);
     const b = scene.playerFighter.buff!;
-    expect(b.speedFactor).toBeGreaterThan(1.2);
+    expect(b.speedFactor).toBeCloseTo(1.17, 6); // +17% (master plan B10)
+    expect(b.durationS).toBe(4);
     expect(b.attackSpeedFactor).toBeGreaterThan(1.05);
     expect(b.meleeDamageFactor).toBeCloseTo(1, 6);
     run(0.4);
@@ -185,7 +186,7 @@ describe('Shroud', () => {
     scenes.clear();
   });
 
-  it('Hunting Frenzy puts the lights out (owner): a bulb bursts, the enemy sees only 1.6 m round itself, Shroud sees all', async () => {
+  it('Hunting Frenzy puts the lights out (owner): a bulb bursts, the whole arena is dark for the enemy (it sees 1 m round itself, 4 s), Shroud sees all', async () => {
     const { intents, scene, scenes, run, runUntil } = await setup({ x: 12, y: 13 }, { x: 15, y: 13 });
     scene.dummyAttacks = true;
     scene.playerFighter.caster!.fillMeter();
@@ -195,20 +196,20 @@ describe('Shroud', () => {
     const fx = scene.abilities!.recentFx.map((e) => e.sfx);
     expect(fx).toContain('bulb-burst');
     const foe = scene.dummyFighter.combatant;
-    expect(foe.darkLeftS).toBeGreaterThan(7.5); // for the frenzy's 8 s
-    expect(foe.sightM).toBeCloseTo(1.5, 6);
+    expect(foe.darkLeftS).toBeGreaterThan(3.5); // for the frenzy's 4 s
+    expect(foe.sightM).toBeCloseTo(1, 6);
     expect(scene.player.sightM).toBe(Number.POSITIVE_INFINITY); // night vision: he sees everything
-    expect(scene.player.nightVisionS).toBeGreaterThan(7.5);
+    expect(scene.player.nightVisionS).toBeGreaterThan(3.5);
     // 3 m away in the dark: it cannot find him, so it never turns to face him.
     scene.dummyFighter.faceToward(1, 0); // looking away from him (he is on its left)
     run(0.5);
     expect(scene.dummyFighter.facing).toBe(1);
     // Inside its little circle it sees him again.
-    scene.playerFighter.placeAt({ x: 13.9, y: 13 });
+    scene.playerFighter.placeAt({ x: 14.3, y: 13 });
     run(0.3);
     expect(scene.dummyFighter.facing).toBe(-1);
     // When the frenzy ends the lights come back.
-    run(8.5);
+    run(4.5);
     expect(foe.darkLeftS).toBe(0);
     expect(foe.sightM).toBe(Number.POSITIVE_INFINITY);
     scenes.clear();

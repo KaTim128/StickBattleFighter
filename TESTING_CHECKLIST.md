@@ -511,3 +511,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [x] The aimed leap ultimate mechanic still works (labelled fixture in `abilities.test.ts`)
 - [x] Telegraph and beam loops survive several cancels in one step
 - [ ] Owner check: how Blue Inferno looks and feels in play (screenshots checked: skin and flames are blue; the floor aura ring is still orange), and its numbers
+
+## B10 rest: charge by strength, AI vs summons, Hunting Frenzy (18/11/2026)
+- [x] A stronger ultimate takes proportionally longer to charge; all four kits use the table (`ultimate-charge.test.ts`)
+- [x] AI target choice rules and stickiness (`target-choice.test.ts`); a Titan AI clears skeletons on top of it while Necro is far, and goes for Necro when he is close (fails without the wiring)
+- [x] Hunting Frenzy: 4 s, +17% speed, enemy sees 1 m; spectators are never darkened (`shroud.test.ts`, `vision-veil.test.ts`)
+- [ ] Owner check: Hunting Frenzy as the player being darkened (the whole screen near black except around your fighter), and Shroud's feel at the new crit values

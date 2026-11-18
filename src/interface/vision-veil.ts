@@ -1,8 +1,17 @@
 /**
+ * Whether the screen should go dark (Hunting Frenzy, master plan B10): the fighter someone is playing
+ * is in the dark, but spectators of a watched AI battle are not affected.
+ */
+export function inTheDark(darkS: number, spectating: boolean): boolean {
+  return darkS > 0 && !spectating;
+}
+
+/**
  * Lights out (owner, 12/11/2026, Shroud's Hunting Frenzy). Purely presentation; the game state
  * comes from the scene.
- * - The player in the dark: everything goes almost black except a small circle round their own
- *   fighter, which follows them; it fades back in over the last half second.
+ * - The player in the dark: the whole arena goes almost black except the space right round their own
+ *   fighter, which follows them; it fades back in over the last half second (B10: 1 m, 4 s; nobody
+ *   merely watching a battle is affected).
  * - The player as Shroud: they see in the dark like night vision (a cold green, grainy, slightly
  *   washed-out view with a soft vignette); nothing is hidden from them.
  */

@@ -1,4 +1,5 @@
 import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Necro's kit (owner, 12/11/2026): a hooded death mage. Q Soul Drain (blinds), E Death Eruption,
@@ -192,5 +193,6 @@ export const NECRO_KIT: AbilityKit = {
       impact: { flashM: 0.4, sparks: 6, motes: 16, ringM: 2, smoke: 5, groundFire: false, smokeColour: 0x2e2438 },
     },
   },
-  charge: { max: 100, perDamageDealt: 0.25, perDamageTaken: 0.2, perSecond: 1 },
+  // B10: a stronger ultimate charges slower (src/abilities/ultimate-charge.ts).
+  charge: chargeFor('undeadArmy'),
 };

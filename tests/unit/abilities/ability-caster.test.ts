@@ -81,12 +81,14 @@ describe('AbilityCaster', () => {
   });
 
   it('the ultimate needs a full meter (OQ-04: charge meter), which empties on use', () => {
+    const k = INFERNO_KIT.charge; // the kit's own rates (they scale with the ultimate's strength, B10)
     const c = new AbilityCaster(INFERNO_KIT);
     expect(c.check('ult', READY)).toBe('meter');
-    c.onDamage(200, 0); // 50
-    c.onDamage(0, 200); // +30
-    expect(c.meter).toBeCloseTo(80, 5);
-    run(c, 20.5); // passive 1/s
+    c.onDamage(200, 0);
+    c.onDamage(0, 200);
+    const gained = 200 * k.perDamageDealt + 200 * k.perDamageTaken;
+    expect(c.meter).toBeCloseTo(gained, 5);
+    run(c, (k.max - gained) / k.perSecond + 0.5); // then the passive trickle fills the rest
     expect(c.meterFull).toBe(true);
     expect(c.check('ult', READY)).toBeNull();
     c.start('ult');

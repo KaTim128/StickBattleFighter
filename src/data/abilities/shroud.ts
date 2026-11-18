@@ -1,4 +1,5 @@
 import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Shroud's kit (owner, 12/11/2026; Bloodfade and the three-stab Stalker Lunge 13/11/2026): an
@@ -175,7 +176,7 @@ export const SHROUD_KIT: AbilityKit = {
     name: 'Hunting Frenzy',
     label: 'ULT',
     description:
-      'A light bulb bursts and the lights go out on the opponent, who can see only a small circle around itself. For 8 seconds he is faster, quicker and deadlier with the knife, and every cut bleeds.',
+      'A light bulb bursts and the whole arena goes dark for the opponent, who can see only the space right around itself. For 4 seconds he is 17% faster, quicker with the knife, and every cut bleeds. Anyone watching is not affected.',
     icon: 'hunting-frenzy',
     slot: 'ult',
     staminaCost: 0,
@@ -188,14 +189,15 @@ export const SHROUD_KIT: AbilityKit = {
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
     delivery: {
       type: 'buff',
-      durationS: 8,
-      speedFactor: 1.3,
+      // Master plan B10 (17/11/2026): a 4 s ultimate, +17% speed, the whole arena dark for the opponent.
+      durationS: 4,
+      speedFactor: 1.17,
       damageTakenFactor: 1,
       attackSpeedFactor: 1.1,
       // Owner, 12/11/2026: the knife buff is 10% (was 35%); the lights go out on the opponent.
       meleeDamageFactor: 1,
       meleeBleed: true,
-      darkensFoes: { visibleM: 1.5 },
+      darkensFoes: { visibleM: 1 },
     },
     vfx: 'hunting-frenzy',
     // The snap now comes with a light bulb bursting overhead (owner, 12/11/2026).
@@ -206,5 +208,6 @@ export const SHROUD_KIT: AbilityKit = {
       impact: { flashM: 1.4, sparks: 30, motes: 50, ringM: 2.2, smoke: 10, groundFire: false, smokeColour: 0x3a0306 },
     },
   },
-  charge: { max: 100, perDamageDealt: 0.25, perDamageTaken: 0.2, perSecond: 1 },
+  // B10: a stronger ultimate charges slower (src/abilities/ultimate-charge.ts).
+  charge: chargeFor('huntingFrenzy'),
 };

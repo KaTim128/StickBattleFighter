@@ -11,6 +11,7 @@ import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
+import { chooseTarget } from '../../ai/target-choice';
 import { abilityPose, assaultPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
@@ -1153,6 +1154,32 @@ export class FightArenaScene implements ArenaScene {
     return jump;
   }
 
+  /**
+   * Who `f` goes for: the enemy fighter it was given, or one of that enemy's summoned minions when the
+   * situation calls for it (B10), with the choice held for a moment.
+   */
+  private aiPickTarget(f: FighterEntity, main: FighterEntity, stepS: number): FighterEntity {
+    if (this.summons.list.length === 0) {
+      f.aiTargetId = main.name;
+      return main;
+    }
+    const foes = this.fighters.filter((o) => o.team !== f.team && !o.combatant.isKo && (o === main || o.summon));
+    const id = chooseTarget(
+      foes.map((o) => ({
+        id: o.name,
+        isSummon: o.summon !== undefined && o.summon !== null,
+        distM: Math.hypot(o.x - f.x, o.y - f.y),
+        hpFrac: o.combatant.hp / o.combatant.stats.maxHp,
+      })),
+      { reachM: AI_MELEE_REACH_M * (f.def.sizeScale ?? 1), currentId: f.aiTargetId, heldS: f.aiTargetS },
+    );
+    if (id !== f.aiTargetId) {
+      f.aiTargetId = id;
+      f.aiTargetS = 0;
+    } else f.aiTargetS += stepS;
+    return foes.find((o) => o.name === id) ?? main;
+  }
+
   /** Lift a prop overhead (the player's pickup press and the AI's pickup share this). */
   private liftProp(f: FighterEntity, grab: ArenaProp): void {
     this.props?.pickUp(grab, this.fighters.indexOf(f), this.holdPoint(f));
@@ -1782,7 +1809,7 @@ export class FightArenaScene implements ArenaScene {
       const to = this.teams.aiTagChoice(side);
       if (to !== null && this.rng() < stepS * 1.2 && this.teams.tryTag(side, this.canTag(f), to)) return;
     }
-    const p = target;
+    const p = this.aiPickTarget(f, target, stepS);
     const c = f.combatant;
     if (!f.brain) f.brain = new FighterBrain();
     const brain = f.brain;

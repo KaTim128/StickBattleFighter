@@ -1,4 +1,5 @@
 import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Inferno's kit (owner chose Inferno as the first full kit, 11/11/2026).
@@ -260,5 +261,6 @@ export const INFERNO_KIT: AbilityKit = {
     },
   },
   // OQ-04 (owner): a charge meter. A full combo (240) fills about 60%; you also gain from being hit.
-  charge: { max: 100, perDamageDealt: 0.25, perDamageTaken: 0.15, perSecond: 1 },
+  // B10: a stronger ultimate charges slower (src/abilities/ultimate-charge.ts).
+  charge: chargeFor('blueFire'),
 };

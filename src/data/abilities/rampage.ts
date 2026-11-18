@@ -1,4 +1,5 @@
 import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Rampage's kit (owner, 12/11/2026): a heavily muscled brute built on strength and durability.
@@ -209,5 +210,6 @@ export const RAMPAGE_KIT: AbilityKit = {
       impact: { flashM: 1.6, sparks: 40, motes: 60, ringM: 2.4, smoke: 16, groundFire: false, smokeColour: 0xd8d0c8 },
     },
   },
-  charge: { max: 100, perDamageDealt: 0.25, perDamageTaken: 0.2, perSecond: 1 },
+  // B10: a stronger ultimate charges slower (src/abilities/ultimate-charge.ts).
+  charge: chargeFor('rampageMode'),
 };

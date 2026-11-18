@@ -47,7 +47,7 @@ import { SettingsPanel } from '../interface/settings-panel';
 import { TeamHud } from '../interface/team-hud';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { TutorialOverlay } from '../interface/tutorial-overlay';
-import { VisionVeil } from '../interface/vision-veil';
+import { inTheDark, VisionVeil } from '../interface/vision-veil';
 import { aiTeam } from '../modes/team/team-battle';
 import { initPhysics } from '../physics/physics-world';
 import { loadPlayerName, savePlayerName } from '../progression/player-name';
@@ -522,7 +522,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         {
           // Lights out: the circle the player can still see, centred on their body, in screen pixels.
           const p = debug.player;
-          const at = p.darkS > 0 ? scene.worldToScreen(p.x, p.y, 0.9) : null;
+          // Spectators of a watched AI battle are not in the dark: only a fighter someone is playing is.
+          const at = inTheDark(p.darkS, scene.match?.spectate === true) ? scene.worldToScreen(p.x, p.y, 0.9) : null;
           const edge =
             at && Number.isFinite(p.sightM)
               ? scene.worldToScreen(p.x + p.sightM * Math.SQRT1_2, p.y - p.sightM * Math.SQRT1_2, 0.9)

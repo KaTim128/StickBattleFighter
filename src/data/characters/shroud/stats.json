@@ -1,6 +1,6 @@
 {
   "id": "shroud-stats",
-  "maxHp": 950,
+  "maxHp": 990,
   "maxStamina": 100,
   "staminaRegenPerS": 30,
   "staminaRegenDelayS": 0.7,
@@ -17,8 +17,8 @@
   },
   "power": 1.1,
   "defence": 1.02,
-  "critChance": 0.12,
-  "critMultiplier": 1.6,
+  "critChance": 0.22,
+  "critMultiplier": 1.9,
   "knockbackResistance": 0,
   "multipliers": {
     "attackSpeed": 1.0,
