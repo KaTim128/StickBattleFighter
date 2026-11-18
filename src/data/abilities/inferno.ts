@@ -160,7 +160,7 @@ export const INFERNO_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 85,
+      damage: 95,
       knockbackMps: 15,
       heavy: true,
       strength: 600,

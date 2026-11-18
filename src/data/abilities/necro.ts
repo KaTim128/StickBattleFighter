@@ -102,7 +102,7 @@ export const NECRO_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: {
-      damage: 35,
+      damage: 40,
       knockbackMps: 1.5,
       heavy: false,
       strength: 150,

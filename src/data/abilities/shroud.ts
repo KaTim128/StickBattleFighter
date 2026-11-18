@@ -81,7 +81,7 @@ export const SHROUD_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 28,
+      damage: 26,
       knockbackMps: 0.8,
       heavy: false,
       strength: 300,
@@ -175,7 +175,7 @@ export const SHROUD_KIT: AbilityKit = {
     name: 'Umbral Feint',
     label: 'FEINT',
     description:
-      'Slips into shadow for 3 seconds: 30% faster, 15% harder to hurt, quicker with the knife, and every cut bleeds.',
+      'Slips into shadow for 4 seconds: 30% faster, 15% harder to hurt, quicker and 15% deadlier with the knife, and every cut bleeds.',
     icon: 'umbral-feint',
     slot: 'a2',
     staminaCost: 25,
@@ -188,10 +188,11 @@ export const SHROUD_KIT: AbilityKit = {
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
     delivery: {
       type: 'buff',
-      durationS: 3,
+      durationS: 4,
       speedFactor: 1.3,
       damageTakenFactor: 0.85,
       attackSpeedFactor: 1.2,
+      meleeDamageFactor: 1.15,
       meleeBleed: true,
     },
     vfx: 'hunting-frenzy',
