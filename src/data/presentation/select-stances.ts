@@ -127,17 +127,18 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1.2, pelvis: 0.01, hands: 0.03 },
   },
-  // Kenshiro: a samurai's ready guard: the katana in both hands at the hip, the blade rising diagonally across the body (never levelled at the foe), knees bent, one foot forward.
+  // Kenshiro: hasso-no-kamae, the samurai's ready guard: the katana held in both hands with the arms stretched out in front, the blade rising
+  // diagonally upward, a wide stance with the knees bent and the front foot ahead. Ready to cut down in one stroke.
   kenshiro: {
     title: 'The Patient Blade',
     style: 'Sword duelist: perfect parries, counters and precise cuts',
-    pelvis: 0.78,
-    leadFoot: 0.34,
-    rearFoot: -0.38,
-    lean: -4,
+    pelvis: 0.74,
+    leadFoot: 0.4,
+    rearFoot: -0.42,
+    lean: -3,
     head: 2,
-    front: { x: 0.3, y: 0.2 },
-    back: { x: 0.24, y: 0.3 },
+    front: { x: 0.74, y: 0.14 },
+    back: { x: 0.5, y: 0.22 },
     turn: 0.6,
     scale: 1,
     breath: { lean: 0.6, pelvis: 0.006, hands: 0.012 },

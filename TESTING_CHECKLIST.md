@@ -703,3 +703,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Prism Guard blocks only frontal damage, drains faster on heavy blows, is bypassed by grabs; Crystal Sovereign armour and shield break after a few hits.
 - [ ] Select screen: Vexoris, Aerion, Reson, Chronos show both arms in a guard; Kenshiro holds the katana in both hands, blade diagonal.
 - [ ] Sonic Boom leaves the mouth, many strong shaking rings, camera trembles, no stray line.
+
+## Offline play (21/11/2026)
+- [ ] Open the live game once online, close it, switch to flight mode, open it again: menus, a fight, audio and the training yard all work.
+- [ ] After a new deploy, the first online visit shows the new version (pages are fetched network first).

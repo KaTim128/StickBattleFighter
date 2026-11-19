@@ -44,7 +44,7 @@ const FLAME = { glow: 0xff5a14, ember: 0x6a1404, deep: 0xd8320c, core: 0xffd56a 
 /** How far Shroud's knife is cocked up from the forearm (radians). */
 const KNIFE_TILT_RAD = (50 * Math.PI) / 180;
 /** The katana's line is the lead forearm tilted this far up (counter-clockwise on screen), and its length, metres. */
-const KATANA_TILT_RAD = (-8 * Math.PI) / 180;
+const KATANA_TILT_RAD = (-40 * Math.PI) / 180;
 const KATANA_LENGTH_M = 0.95;
 
 export class StickmanView {

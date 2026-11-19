@@ -1,6 +1,9 @@
 import { bootstrap } from './app/bootstrap';
 import { bootstrapHideSeek } from './app/hide-seek-page';
 import { mountShell, wantsShell } from './app/shell';
+import { registerOfflineSupport } from './pwa-register';
+
+registerOfflineSupport();
 
 const container = document.getElementById('app');
 const status = document.getElementById('status');

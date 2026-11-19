@@ -179,7 +179,7 @@ function stalkerIdle(timeS: number, bones: BoneLengths): Pose {
  * the opponent's throat, the front foot ahead and the weight settled between the feet. Nothing bounces; only a slow
  * breath and the blade tip's tiny float. `lowered` (0..1) drops the blade toward the floor: the relaxed gedan carry.
  */
-export const SAMURAI_STANCE = { leadFootX: 0.3, rearFootX: -0.34, pelvisM: 0.68, lean: -3, head: 2 } as const;
+export const SAMURAI_STANCE = { leadFootX: 0.36, rearFootX: -0.4, pelvisM: 0.64, lean: -3, head: 2 } as const;
 
 function samuraiIdle(timeS: number, bones: BoneLengths, lowered = 0): Pose {
   const s = SAMURAI_STANCE;
@@ -189,8 +189,8 @@ function samuraiIdle(timeS: number, bones: BoneLengths, lowered = 0): Pose {
     lean: deg(s.lean + breath * 0.8),
     head: deg(s.head),
     // The lead hand at the belly, in front of the body; the rear hand is placed on the hilt by the view.
-    armFront: armIk(0.3 - lowered * 0.06, 0.22 + lowered * 0.38 + float, bones.upperArm, bones.foreArm),
-    armBack: armIk(0.22, 0.34, bones.upperArm, bones.foreArm),
+    armFront: armIk(0.7 - lowered * 0.2, 0.14 + lowered * 0.5 + float, bones.upperArm, bones.foreArm),
+    armBack: armIk(0.5, 0.22, bones.upperArm, bones.foreArm),
     legFront: legIk(s.leadFootX, s.pelvisM - breath * 0.006, bones.thigh, bones.shin),
     legBack: legIk(s.rearFootX, s.pelvisM - breath * 0.006, bones.thigh, bones.shin),
   };

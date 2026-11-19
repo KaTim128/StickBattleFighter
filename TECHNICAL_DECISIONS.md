@@ -1143,3 +1143,15 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Context.** Owner: guard stances for Aerion, Vexoris, Reson, Chronos with both arms visible (one hand forward, one guarding the upper body, bent knees); Kenshiro's katana held in both hands diagonally across the body, not levelled like a spear; Sonic Boom must come from the mouth, show more and stronger waves, shake, and draw no stray blue line.
 **Decision.** Select stances only (idle base poses, attacks untouched): hands are placed forward of the body so the far arm is not hidden by the 3/4 turn. The katana's hilt spacing grew to 0.26 m and its tilt to -8 degrees, hands at chest height, so the blade rises diagonally. The stray line was an arc continuing the previous path point: every arc now starts with its own `moveTo`. The scream draws 20 doubled, wobbling rings at mouth height from a pulsing mouth burst, a faint floor cone, and holds the camera at trauma 0.4 while it pours.
 **Status.** Accepted.
+
+## TD-139: Offline play through a service worker (21/11/2026)
+**Context.** Owner: the game must be playable offline. It is a static site with no network calls in play (all audio, art and the physics engine are bundled), so only caching was missing.
+**Decision.** The build plugin `offline-service-worker` (vite.config.ts) writes `sw.js` from `pwa/sw.template.js` listing every built file except source maps (about 30 files) with a version taken from their names and sizes; `src/pwa-register.ts` registers it in production builds only. First online visit stores everything; after that the game starts and plays with no connection. Pages (`navigate`) go network first with the stored copy as fallback, so updates arrive when online; hashed build files are served from the cache first. A new build gets a new cache name and the old one is deleted on activation. The existing web app manifest keeps the home-screen install.
+**Verified.** A production build served locally under the Pages path, loaded once, the server stopped and the browser set offline: a reload reached the ready fight screen with no errors.
+**Limits.** The first visit must be online. Saved data (profile, settings) already lives on the device. Development and test runs never register the worker.
+**Status.** Accepted.
+
+## TD-140: Reson's gold body and Kenshiro's samurai guard (21/11/2026)
+**Context.** Owner: Reson's look was too close to the other dark fighters; Kenshiro's stance must read as a samurai's.
+**Decision.** Reson's `sonic` skin is now gold and amber with dark bronze armour and cyan sound accents (the sound effects stay cyan); a chest speaker cone was tried and removed at the owner's request. Kenshiro's idle and select stance: arms stretched forward, both hands on the katana, blade rising diagonally upward (`KATANA_TILT_RAD` -40 degrees), wide bent-knee stance. Only idle poses and the sword's drawn angle changed; every attack clip is untouched.
+**Status.** Accepted.

@@ -914,3 +914,6 @@ Done: stickman/picker layout, larger stance frames, three-slash slower heavier t
 
 ## 21/11/2026: Prismor, stance guard pass, Sonic Boom
 Done: Prismor fighter (TD-137); guard stances and Kenshiro grip, Sonic Boom from the mouth (TD-138). Tests: typecheck clean, vitest 1187 passed. Limits: Sovereign sword is a visual (disclosed); Prismor weapons verified by unit tests and only partly in the browser; in-game idle poses for Aerion/Reson/Chronos not changed beyond the select screen. Next: Arcstrike, then Frostweld, Solstice, Tidebreaker, Quakor; Colosseum after all.
+
+## 21/11/2026: offline play (TD-139)
+Service worker emitted by the build, registered in production only. Verified in headless Chromium with the server stopped and the page offline (reload reaches the fight screen). Not yet checked on a phone: install or open once online, then try flight mode.
