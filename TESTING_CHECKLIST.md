@@ -658,3 +658,4 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Kenshiro's J chain is three slow slashes (horizontal, horizontal back, rising diagonal) that hit hard; heavy is a slow overhead slice with big damage.
 - [ ] Open Zone: the opponent is a dropdown; choosing a fighter in it starts that fight.
 - [ ] Open Zone: the opponent is a dropdown; choosing a fighter in it starts that fight.
+- [ ] Select screens: Arena, Opponent and Difficulty are dropdowns, defaulting to Colosseum and Easy.

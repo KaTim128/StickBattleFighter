@@ -1080,3 +1080,5 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 **Opponent dropdown (21/11/2026, after TD-128).** On the Open Zone select screen the opponent is a dropdown (`.fe-dropdown`, `select[data-opponent]`) instead of a row of a button per fighter, which filled the bottom of the screen; arena and AI difficulty stay as buttons. The admin main menu's opponent buttons are unchanged.
 
 **Opponent dropdown (21/11/2026, after TD-128).** On the Open Zone select screen the opponent is a dropdown (`.fe-dropdown`, `select[data-opponent]`) instead of a row of a button per fighter, which filled the bottom of the screen; arena and AI difficulty stay as buttons. The admin main menu's opponent buttons are unchanged.
+
+**Select-screen dropdowns and defaults (21/11/2026, after TD-128).** Arena, Opponent and Difficulty (renamed from AI) are dropdowns (`dropdownField` in `front-end.ts`); Open Zone and Tournament start on the Colosseum and Easy. The tournament size and the admin main menu keep their buttons.

@@ -140,7 +140,7 @@ export class FrontEnd {
     // Open Zone and Tournament start in the Colosseum on Easy (owner, 21/11/2026).
     this.choice = {
       ...o.initial,
-      arena: o.arenas.find((a) => a.id === 'colosseum')?.id ?? o.initial.arena,
+      arena: o.arenas.find((a) => a.name === 'Colosseum')?.id ?? o.initial.arena,
       difficulty: o.difficulties.find((d) => d.id === 'easy')?.id ?? o.initial.difficulty,
       opponent: o.opponents[0]?.id ?? '',
     };
@@ -470,26 +470,6 @@ export class FrontEnd {
     }
     row.append(el('span', '', 'vs a random AI team'));
     const bar = el('div', 'fe-sel-bar');
-    const chips = (
-      label: string,
-      key: string,
-      items: readonly { id: string; name: string }[],
-      get: () => string,
-      set: (v: string) => void,
-    ) => {
-      const g = el('div', 'fe-chips');
-      g.append(el('span', 'fe-chips-label', label));
-      for (const it of items) {
-        const b = button('fe-chip', it.name, () => {
-          set(it.id);
-          for (const c of g.querySelectorAll('.fe-chip')) c.classList.toggle('selected', c === b);
-        });
-        b.dataset[key] = it.id;
-        if (it.id === get()) b.classList.add('selected');
-        g.append(b);
-      }
-      bar.append(g);
-    };
     bar.append(
       dropdownField(
         'Arena',
