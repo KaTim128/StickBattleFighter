@@ -1423,13 +1423,13 @@ export class StickmanView {
       return;
     }
     if (this.held === 'katana') {
-      // Two swords (Kenshiro): the lead hand's blade points forward and a little up, the rear hand's cocked back.
-      this.drawKatana(g, hand, ux, uy, -0.22, 0.82, o);
+      // Two swords (Kenshiro): a long katana in the lead hand pointing forward and a little up, and a shorter companion blade cocked back in the rear hand.
+      this.drawKatana(g, hand, ux, uy, -0.22, 1.2, o);
       const [, be, bh] = s.armBack;
       const bx = bh.x - be.x;
       const by = bh.y - be.y;
       const bl = Math.hypot(bx, by) || 1;
-      this.drawKatana(g, bh, bx / bl, by / bl, -0.5, 0.68, o);
+      this.drawKatana(g, bh, bx / bl, by / bl, -0.5, 0.62, o);
       return;
     }
     // Grave blade: one clean tapered blade of dark violet obsidian with a pale cutting edge (it
