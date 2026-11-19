@@ -92,6 +92,32 @@ export interface FrontEndOptions {
   startHideSeek(): void;
 }
 
+/** A labelled dropdown (owner, 21/11/2026: arena, opponent and difficulty are dropdowns, not a row of buttons). */
+function dropdownField(
+  label: string,
+  key: string,
+  items: readonly { id: string; name: string }[],
+  get: () => string,
+  set: (v: string) => void,
+): HTMLElement {
+  const g = el('div', 'fe-chips');
+  g.append(el('span', 'fe-chips-label', label));
+  const dropdown = document.createElement('select');
+  dropdown.className = 'fe-dropdown';
+  dropdown.dataset[key] = '';
+  dropdown.setAttribute('aria-label', label);
+  for (const it of items) {
+    const opt = document.createElement('option');
+    opt.value = it.id;
+    opt.textContent = it.name;
+    dropdown.append(opt);
+  }
+  dropdown.value = get();
+  dropdown.addEventListener('change', () => set(dropdown.value));
+  g.append(dropdown);
+  return g;
+}
+
 export class FrontEnd {
   readonly root: HTMLDivElement;
   private screen: FrontScreen = 'title';
@@ -111,7 +137,13 @@ export class FrontEnd {
     parent: HTMLElement,
     private readonly o: FrontEndOptions,
   ) {
-    this.choice = { ...o.initial, opponent: o.opponents[0]?.id ?? '' };
+    // Open Zone and Tournament start in the Colosseum on Easy (owner, 21/11/2026).
+    this.choice = {
+      ...o.initial,
+      arena: o.arenas.find((a) => a.id === 'colosseum')?.id ?? o.initial.arena,
+      difficulty: o.difficulties.find((d) => d.id === 'easy')?.id ?? o.initial.difficulty,
+      opponent: o.opponents[0]?.id ?? '',
+    };
     for (const f of o.fighters) this.names.set(f.id, f.name);
     this.root = el('div', 'front-end');
     this.root.hidden = true;
@@ -458,23 +490,25 @@ export class FrontEnd {
       }
       bar.append(g);
     };
-    chips(
-      'Arena',
-      'arena',
-      this.o.arenas,
-      () => this.choice.arena,
-      (v) => {
-        this.choice.arena = v;
-      },
-    );
-    chips(
-      'AI',
-      'difficulty',
-      this.o.difficulties,
-      () => this.choice.difficulty,
-      (v) => {
-        this.choice.difficulty = v;
-      },
+    bar.append(
+      dropdownField(
+        'Arena',
+        'arena',
+        this.o.arenas,
+        () => this.choice.arena,
+        (v) => {
+          this.choice.arena = v;
+        },
+      ),
+      dropdownField(
+        'Difficulty',
+        'difficulty',
+        this.o.difficulties,
+        () => this.choice.difficulty,
+        (v) => {
+          this.choice.difficulty = v;
+        },
+      ),
     );
     const actions = el('div', 'fe-sel-actions');
     const fight = button('fe-go fe-fight fe-team-fight', 'FIGHT', () => {
@@ -726,35 +760,29 @@ export class FrontEnd {
       }
       bar.append(g);
     };
-    chips(
-      'Arena',
-      'arena',
-      this.o.arenas.map((a) => ({ id: a.id, name: a.name })),
-      () => this.choice.arena,
-      (v) => {
-        this.choice.arena = v;
-      },
+    bar.append(
+      dropdownField(
+        'Arena',
+        'arena',
+        this.o.arenas.map((a) => ({ id: a.id, name: a.name })),
+        () => this.choice.arena,
+        (v) => {
+          this.choice.arena = v;
+        },
+      ),
     );
     if (this.selectFor === 'practice') {
-      // The opponent is a dropdown (owner, 21/11/2026): a row of a button per fighter filled the bottom of the screen.
-      const g = el('div', 'fe-chips');
-      g.append(el('span', 'fe-chips-label', 'Opponent'));
-      const dropdown = document.createElement('select');
-      dropdown.className = 'fe-dropdown';
-      dropdown.dataset.opponent = '';
-      dropdown.setAttribute('aria-label', 'Opponent');
-      for (const d of this.o.opponents) {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.name;
-        dropdown.append(opt);
-      }
-      dropdown.value = this.choice.opponent;
-      dropdown.addEventListener('change', () => {
-        this.choice.opponent = dropdown.value;
-      });
-      g.append(dropdown);
-      bar.append(g);
+      bar.append(
+        dropdownField(
+          'Opponent',
+          'opponent',
+          this.o.opponents.map((d) => ({ id: d.id, name: d.name })),
+          () => this.choice.opponent,
+          (v) => {
+            this.choice.opponent = v;
+          },
+        ),
+      );
     } else
       chips(
         'Fighters',
@@ -765,14 +793,16 @@ export class FrontEnd {
           this.choice.size = v;
         },
       );
-    chips(
-      'AI',
-      'difficulty',
-      this.o.difficulties.map((d) => ({ id: d.id, name: d.name })),
-      () => this.choice.difficulty,
-      (v) => {
-        this.choice.difficulty = v;
-      },
+    bar.append(
+      dropdownField(
+        'Difficulty',
+        'difficulty',
+        this.o.difficulties.map((d) => ({ id: d.id, name: d.name })),
+        () => this.choice.difficulty,
+        (v) => {
+          this.choice.difficulty = v;
+        },
+      ),
     );
     const actions = el('div', 'fe-sel-actions');
     actions.append(
