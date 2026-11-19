@@ -482,7 +482,7 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
   'sonic-boom': icon(
     'sonic',
     rays(24, 24, 16, '#eafcff', 0.25),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M12 8 C22 14 22 34 12 40" stroke="#7ae8ff" stroke-width="3"/><path d="M20 8 C32 14 32 34 20 40" stroke="#19c4e0" stroke-width="3.2"/><path d="M28 8 C42 14 42 34 28 40" stroke="#eafcff" stroke-width="3" opacity=".8"/></g>`,
+    `<g filter="url(#ds)"><circle cx="14" cy="24" r="8" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/><ellipse cx="17" cy="25" rx="3" ry="4.2" fill="#04080a"/></g><g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M26 15 C30 20 30 28 26 33" stroke="#eafcff" stroke-width="3"/><path d="M32 11 C38 18 38 30 32 37" stroke="#7ae8ff" stroke-width="3"/><path d="M38 7 C46 16 46 32 38 41" stroke="#19c4e0" stroke-width="2.6" opacity=".8"/></g>`,
   ),
   'vibration-punch': icon(
     'sonic',
@@ -494,10 +494,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 14, '#eafcff', 0.2),
     `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#7ae8ff" stroke-width="2.6"/><circle cx="24" cy="24" r="11" stroke="#19c4e0" stroke-width="2.2" opacity=".8"/><circle cx="24" cy="24" r="5" stroke="#eafcff" stroke-width="2.4"/></g>`,
   ),
-  'resonance-dash': icon(
+  'resonance-break': icon(
     'sonic',
     rays(24, 24, 14, '#eafcff', 0.2),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M30 10 C24 16 24 32 30 38" stroke="#eafcff" stroke-width="3"/><path d="M22 10 C16 16 16 32 22 38" stroke="#7ae8ff" stroke-width="2.6" opacity=".8"/><path d="M14 10 C8 16 8 32 14 38" stroke="#19c4e0" stroke-width="2.2" opacity=".6"/></g><path d="M34 24 H44 M40 20 L44 24 L40 28" fill="none" stroke="#eafcff" stroke-width="2.6" stroke-linecap="round"/>`,
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M6 24 H20" stroke="#eafcff" stroke-width="2.4"/><path d="M12 18 C16 22 16 26 12 30" stroke="#7ae8ff" stroke-width="2"/></g><g filter="url(#ds)"><path d="M28 18 H33 L38 13 V35 L33 30 H28 Z" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/></g><path d="M25 38 L43 10" stroke="#ff5a5a" stroke-width="3" stroke-linecap="round"/><path d="M30 36 l3 -6 l-3 -2 l4 -5" fill="none" stroke="#eafcff" stroke-width="1.8" stroke-linecap="round"/>`,
   ),
   'feedback-pulse': icon(
     'sonic',

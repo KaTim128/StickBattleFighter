@@ -149,6 +149,14 @@ export interface AbilityVfxInput {
     readonly hitS: number;
     readonly palette: Palette | null;
   }[];
+  /** Fighters muted and/or with shattered defence (Reson's Resonance Break): seconds left of each. */
+  readonly afflicted?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly muteS: number;
+    readonly shatterS: number;
+    readonly heightM: number;
+  }[];
   /** Temporal afterimages trailing a fast-moving fighter (Chronos): where, facing, age and lifetime. */
   readonly ghosts?: readonly {
     readonly x: number;
@@ -305,7 +313,6 @@ export class AbilityVfx {
   readonly floor = new Graphics();
   readonly air = new Graphics();
   private readonly particles: Particle[] = [];
-  private distortionS = 0;
   private readonly rings: Ring[] = [];
   private readonly scorches: Scorch[] = [];
   private readonly flashes: {
@@ -445,14 +452,6 @@ export class AbilityVfx {
     }
     for (const tr of input.trails ?? []) {
       const pal = tr.look.palette;
-      if (tr.look.flight?.wave) {
-        // A sonic dash: a distortion ring left every few frames, widening and fading behind the body.
-        this.distortionS -= dtS;
-        if (this.distortionS <= 0) {
-          this.distortionS = 0.045;
-          this.rings.push({ colour: pal.bright, x: tr.x, y: tr.y, z: 0.9, r0: 0.15, r1: 0.95, ageS: 0, lifeS: 0.32 });
-        }
-      }
       const n = this.count((tr.look.flight?.trailPerS ?? 60) * dtS);
       for (let i = 0; i < n; i++) {
         const p = this.free();
@@ -495,7 +494,7 @@ export class AbilityVfx {
         });
       }
     }
-    for (const b of input.beams ?? []) this.beamParticles(b, dtS);
+    for (const b of input.beams ?? []) if (b.def.look?.beamStyle !== 'scream') this.beamParticles(b, dtS);
     for (const c of input.clouds ?? []) this.cloudPuffs(c, dtS);
     for (const z of input.zones) if (this.rand() < 0.35) this.emitAt(z.x, z.y, 0.1, 1, 0.5, 0.25, 0.08);
     for (const b of input.burning)
@@ -1462,6 +1461,47 @@ export class AbilityVfx {
         });
     }
 
+    // Resonance Break: a muted fighter has a crossed-out speaker over its head, one whose defence is shattered a cracked ring at its feet.
+    for (const af of input.afflicted ?? []) {
+      if (af.muteS > 0) {
+        const fade = Math.min(1, af.muteS / 0.4);
+        const c = P(af.x, af.y, af.heightM + 0.3);
+        const pulse = 0.8 + 0.2 * Math.sin(t * 8);
+        g.circle(c.x, c.y, 0.2 * pulse).fill({ color: 0x0a1418, alpha: 0.7 * fade });
+        g.poly([
+          c.x - 0.1,
+          c.y - 0.04,
+          c.x - 0.04,
+          c.y - 0.04,
+          c.x + 0.04,
+          c.y - 0.1,
+          c.x + 0.04,
+          c.y + 0.1,
+          c.x - 0.04,
+          c.y + 0.04,
+          c.x - 0.1,
+          c.y + 0.04,
+        ]).fill({ color: 0xeafcff, alpha: fade });
+        g.moveTo(c.x - 0.17, c.y + 0.15)
+          .lineTo(c.x + 0.17, c.y - 0.15)
+          .stroke({ width: 0.04, color: 0xff5a5a, alpha: fade, cap: 'round' });
+      }
+      if (af.shatterS > 0) {
+        const fade = Math.min(1, af.shatterS / 0.5);
+        for (let i = 0; i < 6; i++) {
+          const a0 = (i * Math.PI) / 3 + 0.2;
+          f.arc(af.x, af.y, 0.62, a0, a0 + 0.62).stroke({
+            width: 0.05,
+            color: 0x7ae8ff,
+            alpha: 0.85 * fade,
+            cap: 'round',
+          });
+          f.moveTo(af.x + Math.cos(a0 + 0.31) * 0.62, af.y + Math.sin(a0 + 0.31) * 0.62)
+            .lineTo(af.x + Math.cos(a0 + 0.31) * 0.85, af.y + Math.sin(a0 + 0.31) * 0.85)
+            .stroke({ width: 0.03, color: 0xeafcff, alpha: 0.7 * fade });
+        }
+      }
+    }
     // Chronos's time: afterimages, waiting echoes and decoys, all as cyan silhouettes with clock marks.
     const silhouette = (x: number, y: number, facing: number, alpha: number, colour: number, glow: number): void => {
       const head = iso(x, y, 1.62);
@@ -1729,6 +1769,43 @@ export class AbilityVfx {
       const d = b.def.delivery;
       if (d.type !== 'beam') continue;
       const pal = b.def.look?.palette ?? FIRE;
+      if (b.def.look?.beamStyle === 'scream') {
+        // A scream: rings of sound pouring out of his mouth, each wider and fainter than the last as it travels, with a shimmering
+        // cone on the floor showing what the sound reaches.
+        const amount = Math.min(1, b.ageS / 0.1, (d.durationS - b.ageS) / 0.25);
+        const dx = b.to.x - b.from.x;
+        const dy = b.to.y - b.from.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const ang = Math.atan2(dy, dx);
+        const half = Math.atan2(d.widthM / 2, len);
+        f.poly([
+          b.from.x,
+          b.from.y,
+          b.to.x + Math.cos(ang - Math.PI / 2) * d.widthM * 0.5,
+          b.to.y + Math.sin(ang - Math.PI / 2) * d.widthM * 0.5,
+          b.to.x + Math.cos(ang + Math.PI / 2) * d.widthM * 0.5,
+          b.to.y + Math.sin(ang + Math.PI / 2) * d.widthM * 0.5,
+        ]).fill({ color: pal.deep, alpha: 0.16 * amount });
+        for (let i = 0; i < 8; i++) {
+          const ph = (t * 1.7 + i / 8) % 1;
+          const r = 0.5 + ph * (len - 0.5);
+          const spread = half * (0.7 + 0.5 * ph) + 0.12;
+          f.arc(b.from.x, b.from.y, r, ang - spread, ang + spread).stroke({
+            width: 0.09 * (1 - ph * 0.5),
+            color: i % 2 === 0 ? pal.bright : pal.core,
+            alpha: (1 - ph * 0.8) * amount,
+            cap: 'round',
+          });
+          const c = P(b.from.x + Math.cos(ang) * r, b.from.y + Math.sin(ang) * r, BEAM_HEIGHT_M);
+          g.arc(c.x, c.y, 0.2 + 0.5 * ph, Math.atan2(dy * ISO_T, dx) - 1.1, Math.atan2(dy * ISO_T, dx) + 1.1).stroke({
+            width: 0.06 * (1 - ph * 0.6),
+            color: pal.core,
+            alpha: (1 - ph) * 0.9 * amount,
+            cap: 'round',
+          });
+        }
+        continue;
+      }
       const amount = Math.min(1, b.ageS / 0.08, (d.durationS - b.ageS) / 0.15);
       const a0 = P(b.from.x, b.from.y, BEAM_HEIGHT_M);
       const a1 = P(b.to.x, b.to.y, BEAM_HEIGHT_M);
@@ -2083,6 +2160,23 @@ export class AbilityVfx {
     if (look.flight?.wave) {
       // A sonic boom: three nested crescents of sound opening toward where it is going, with a bright leading edge.
       const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);
+      if (look.flight.screech) {
+        // A screech: five thin, tight rings packed close and shivering, a piercing needle at the front.
+        for (let i = 0; i < 5; i++) {
+          const cx = c.x - Math.cos(ang) * i * 0.16;
+          const cy = c.y - Math.sin(ang) * i * 0.16 * ISO_T;
+          g.arc(cx, cy, 0.28 + i * 0.06 + 0.03 * Math.sin(t * 50 + i), ang - 0.8, ang + 0.8).stroke({
+            width: 0.035,
+            color: i === 0 ? pal.core : pal.bright,
+            alpha: 0.95 - i * 0.15,
+            cap: 'round',
+          });
+        }
+        g.moveTo(c.x - Math.cos(ang) * 0.3, c.y - Math.sin(ang) * 0.3 * ISO_T)
+          .lineTo(c.x + Math.cos(ang) * 0.35, c.y + Math.sin(ang) * 0.35 * ISO_T)
+          .stroke({ width: 0.05, color: pal.core, alpha: 1, cap: 'round' });
+        return;
+      }
       for (let i = 0; i < 3; i++) {
         const back = i * 0.32;
         const w = (0.55 + i * 0.22) * (1 + 0.06 * Math.sin(t * 26 + i));

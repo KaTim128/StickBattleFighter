@@ -46,14 +46,35 @@ describe('Reson kit', () => {
       expect(a.payload.sonic, a.id).toBe(true);
   });
 
-  it('Sonic Boom rolls on through everyone in its path, hitting each once', () => {
-    const a = arena([
-      { x: 3, y: 0 },
-      { x: 6, y: 0 },
-    ]);
-    a.world.release('me', RESON_KIT.a1, { x: 9, y: 0 }, a.host);
-    run(a, 1);
-    expect(a.hits.map((h) => h.target).sort()).toEqual(['foe0', 'foe1']);
+  it('Sonic Boom is a 3 second scream that pins what it hits, interrupting it once only', () => {
+    const a = arena([{ x: 3, y: 0 }]);
+    const pins: number[] = [];
+    const flinch: boolean[] = [];
+    a.host.pin = (_id, away, secs) => pins.push(away.x * secs);
+    a.host.hitFighter = (_c, target, payload) => {
+      a.hits.push({ target, damage: payload.damage, disrupt: false });
+      flinch.push(payload.noFlinch !== true);
+      return true;
+    };
+    const d = RESON_KIT.a1.delivery;
+    if (d.type !== 'beam') throw new Error('a beam');
+    expect(d.durationS).toBe(3);
+    expect(d.scream).toBe(true);
+    a.world.release('me', RESON_KIT.a1, { x: 7, y: 0 }, a.host);
+    run(a, 3.5);
+    expect(a.hits.length).toBeGreaterThanOrEqual(8);
+    expect(pins.length).toBe(a.hits.length); // every tick pins it
+    expect(pins.every((p) => p > 0)).toBe(true); // away from the caster
+    expect(flinch[0]).toBe(true);
+    expect(flinch.slice(1).every((x) => !x)).toBe(true);
+    expect(a.world.beams).toHaveLength(0); // it ends on time
+  });
+
+  it('the scream does not reach beyond its range', () => {
+    const a = arena([{ x: 12, y: 0 }]);
+    a.world.release('me', RESON_KIT.a1, { x: 7, y: 0 }, a.host);
+    run(a, 3.5);
+    expect(a.hits).toHaveLength(0);
   });
 
   it('Vibration Punch hits hard but only at arm length', () => {
@@ -66,12 +87,15 @@ describe('Reson kit', () => {
     expect(far.hits).toHaveLength(0);
   });
 
-  it('Resonance Dash is pure mobility: it carries him forward and hits nobody', () => {
-    const a = arena([{ x: 2, y: 0 }]);
-    a.world.release('me', RESON_KIT.a4, { x: 6, y: 0 }, a.host);
+  it('Resonance Break is a fast screech that mutes and shatters the defence of what it hits, for 4 seconds', () => {
+    const p = RESON_KIT.a4.payload;
+    expect(p.mute).toEqual({ durationS: 4 });
+    expect(p.shatter).toEqual({ durationS: 4, defenceFactor: 0.7 });
+    const a = arena([{ x: 4, y: 0 }]);
+    a.world.release('me', RESON_KIT.a4, { x: 4, y: 0 }, a.host);
     run(a, 0.5);
-    expect(a.me.x).toBeGreaterThan(4);
-    expect(a.hits).toHaveLength(0);
+    expect(a.hits).toHaveLength(1);
+    expect(a.hits[0]!.damage).toBe(p.damage);
   });
 
   it('Feedback Pulse pushes everyone near, hurts a little, and disrupts without stunning', () => {
@@ -113,6 +137,48 @@ describe('Resonance Barrier and Feedback Pulse effects', () => {
     expect(RESON_KIT.a3.look?.barrierStyle).toBe('sonic');
     expect(RESON_KIT.a3.delivery).toMatchObject({ type: 'barrier', hp: 60, durationS: 5 });
   });
+  it('Resonance Break mutes: a muted fighter cannot cast, for exactly 4 seconds', () => {
+    const c = new Combatant(STATS);
+    c.mute(4);
+    expect(c.muted).toBe(true);
+    for (let i = 0; i < 3.9 * 60; i++) c.update(1 / 60);
+    expect(c.muted).toBe(true);
+    for (let i = 0; i < 0.3 * 60; i++) c.update(1 / 60);
+    expect(c.muted).toBe(false);
+  });
+
+  it('Resonance Break cuts defence by 30%: real hits then do 1/0.7 as much damage, until it ends', () => {
+    const hit = { baseDamage: 40, attackerPower: 1, heavy: false, fromFront: true, critRoll: 0.99 };
+    const plain = new Combatant(STATS);
+    const broken = new Combatant(STATS);
+    broken.shatter(4, 0.7);
+    const before = plain.receive(hit).damage;
+    const after = broken.receive(hit).damage;
+    expect(after / before).toBeCloseTo(1 / 0.7, 1);
+    for (let i = 0; i < 4.2 * 60; i++) broken.update(1 / 60);
+    const later = new Combatant(STATS);
+    later.shatter(4, 0.7);
+    for (let i = 0; i < 4.2 * 60; i++) later.update(1 / 60);
+    expect(later.receive(hit).damage).toBe(before);
+  });
+
+  it('a stronger or other defence effect is never overwritten or stacked by Resonance Break', () => {
+    const c = new Combatant(STATS);
+    c.decay(5, 1, 0.5); // Curse of Decay keeps its own timer
+    c.shatter(4, 0.7);
+    expect(c.defenceFactor).toBeCloseTo(0.5 * 0.7, 5);
+    c.shatter(4, 0.7);
+    expect(c.defenceFactor).toBeCloseTo(0.5 * 0.7, 5); // refreshed, not squared
+  });
+
+  it('Vibration Punch launches lighter bodies further than heavier ones', () => {
+    const k = RESON_KIT.a2.payload.knockbackByWeight!;
+    const launch = (kg: number) => RESON_KIT.a2.payload.knockbackMps * Math.min(k.maxK, Math.max(k.minK, k.refKg / kg));
+    expect(launch(58)).toBeGreaterThan(launch(70));
+    expect(launch(70)).toBeGreaterThan(launch(110));
+    expect(launch(300)).toBe(RESON_KIT.a2.payload.knockbackMps * k.minK);
+  });
+
   it('a disrupted fighter wavers for its duration and is never stunned or made unable to act', () => {
     const c = new Combatant(STATS);
     c.disrupt(1.5);

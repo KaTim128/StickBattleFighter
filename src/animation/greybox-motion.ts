@@ -293,12 +293,12 @@ function sonicIdle(timeS: number, bones: BoneLengths): Pose {
   const pulse = 0.5 + 0.5 * Math.sin(timeS * TAU * 2.0);
   const legs = bones.thigh + bones.shin;
   return {
-    lean: deg(-3 + beat * 1.5),
-    head: deg(-2 + beat * 1.2),
+    lean: deg(-1 + beat * 1.2),
+    head: deg(0 + beat * 1.0),
     armFront: { root: deg(62 + pulse * 5), bend: deg(112) },
     armBack: { root: deg(44 - pulse * 4), bend: deg(120) },
-    legFront: legIk(0.2 + beat * 0.02, legs * 0.88 - pulse * 0.018, bones.thigh, bones.shin),
-    legBack: legIk(-0.24 + beat * 0.02, legs * 0.88 - (1 - pulse) * 0.018, bones.thigh, bones.shin),
+    legFront: legIk(0.16 + beat * 0.02, legs * 0.96 - pulse * 0.014, bones.thigh, bones.shin),
+    legBack: legIk(-0.2 + beat * 0.02, legs * 0.96 - (1 - pulse) * 0.014, bones.thigh, bones.shin),
   };
 }
 
@@ -514,15 +514,15 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   if (style === 'sonic') {
     // A rhythmic stride on the beat: springy steps, the chest bobbing, both gauntlets held up in front.
     return gaitPose(phase, bones, {
-      pelvisM: 0.76,
-      bob: 0.05,
+      pelvisM: 0.84,
+      bob: 0.04,
       leadX: 0.14,
       rearX: -0.18,
       reach: 0.15 * k,
       lift: 0.1,
-      lean: -4,
-      sway: 1.6,
-      head: -2,
+      lean: -2,
+      sway: 1.4,
+      head: 0,
       arms: { lead: { x: 0.3, y: 0.62 }, rear: { x: 0.16, y: 0.58 }, swingX: 0.02, swingY: 0.04 },
     });
   }
@@ -877,15 +877,15 @@ const MECHANIC_RUN: RunStyle = {
 
 /** SONIC RUN: light and bouncing on the beat, the gauntlets pumping in front of the chest. */
 const SONIC_RUN: RunStyle = {
-  pelvisM: 0.7,
+  pelvisM: 0.78,
   bob: 0.05,
   reachM: 0.3,
   pushM: 0.34,
   stance: 0.34,
   swingLiftM: 0.3,
-  lean: -11,
-  drive: 4,
-  head: -2,
+  lean: -7,
+  drive: 3,
+  head: 0,
   pumpFront: { shoulder: 80, elbow: 100 },
   pumpBack: { shoulder: 60, elbow: 104 },
 };

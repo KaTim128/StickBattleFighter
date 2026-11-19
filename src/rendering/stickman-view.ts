@@ -121,6 +121,8 @@ export class StickmanView {
   wingSpread = 0.3;
   /** 0..1 how far the armour plates have extended (Reinforced Plating). */
   plating = 0;
+  /** The mouth is open in a shout (Reson's Sonic Boom, Resonance Break), with how wide. */
+  shout: { kind: 'scream' | 'screech'; k: number } | null = null;
   /** 0..1 how strongly a Focus Stance glows along the blades (Kenshiro). */
   focus = 0;
   /** The body's turn about its own axis while spinning (Aerion's Wind Blade), radians; 0 = not spinning. */
@@ -424,6 +426,7 @@ export class StickmanView {
         eyeGlow: this.eyeGlow,
         wingSpread: this.wingSpread,
         plating: this.plating,
+        shout: this.shout,
         wingFlap: this.wingFlap,
       });
     } else {

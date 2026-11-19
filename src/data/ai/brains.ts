@@ -203,7 +203,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   },
   // Reson: a sonic skirmisher. Opens with booms from range, dashes in and out, punches when close, shields when hurt.
   'reson-ai': {
-    style: 'Sonic skirmisher: booms from range, dashes in and out, punches close, shields when hurt.',
+    style: 'Sonic skirmisher: screams to pin the target, breaks its defence, punches close, shields when hurt.',
     preferredRangeM: [2.5, 5],
     movement: 'kite',
     meleeBias: 0.45,
@@ -212,10 +212,10 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     retreatBelowHp: 0.25,
     hitAndRunS: 1.2,
     tactics: {
-      a1: { role: 'poke', minM: 2, maxM: 9, weight: 1.3 },
+      a1: { role: 'control', minM: 2, maxM: 6.5, weight: 1.1 },
       a2: { role: 'burst', minM: 0, maxM: 2, weight: 1.2 },
       a3: { role: 'buff', minM: 0, maxM: 6, weight: 0.9, when: { selfHpBelow: 0.7 } },
-      a4: { role: 'gapClose', minM: 3, maxM: 7, weight: 0.9 },
+      a4: { role: 'curse', minM: 2, maxM: 7, weight: 1.1 },
       ult: { role: 'burst', minM: 0, maxM: 5, weight: 1.3 },
     },
     combos: [['a4', 'a2']],

@@ -49,6 +49,15 @@ export interface AbilityPayload {
   readonly gadget?: boolean;
   /** A sonic ability (Reson): eligible for Resonance's enhancement. */
   readonly sonic?: boolean;
+  /** Mutes the target for `durationS`: it cannot use abilities (blows, blocking and dodging still work). */
+  readonly mute?: { readonly durationS: number };
+  /** Shatters the target's defence: its defence is multiplied by `defenceFactor` for `durationS` (Resonance Break). */
+  readonly shatter?: { readonly durationS: number; readonly defenceFactor: number };
+  /**
+   * Knockback scales with the target's weight (Vibration Punch): `knockbackMps` is for a body of `refKg`; a lighter one
+   * flies further, a heavier one less, never below `minK` or above `maxK` of the base.
+   */
+  readonly knockbackByWeight?: { readonly refKg: number; readonly minK: number; readonly maxK: number };
   /** A temporal ability (Chronos): eligible for Temporal Momentum's enhancement. */
   readonly temporal?: boolean;
   /**
@@ -173,8 +182,6 @@ export interface ProjectileDelivery {
   readonly speedMps: number;
   readonly radiusM: number;
   readonly maxRangeM: number;
-  /** Flies on through everyone it hits, once each (Reson's Sonic Boom). */
-  readonly pierce?: boolean;
   /**
    * A tornado (Aerion's Tornado Surge): on contact the target takes the payload's contact hit, is swept up `liftM` over
    * `liftS` seconds, and the tornado disappears; the target then falls and takes `fallDamage`.
@@ -345,6 +352,11 @@ export interface LeapDelivery {
  */
 export interface BeamDelivery {
   readonly type: 'beam';
+  /**
+   * A scream (Reson's Sonic Boom): the first tick on a target interrupts it (a flinch), and for as long as it stays in
+   * the sound it cannot walk toward the caster. Later ticks never flinch, so it cannot stunlock.
+   */
+  readonly scream?: boolean;
   readonly rangeM: number;
   readonly widthM: number;
   readonly durationS: number;
@@ -643,6 +655,8 @@ export interface MagicLook {
     readonly debris?: boolean;
     /** Drawn as a widening crescent of sound waves (Reson's Sonic Boom). */
     readonly wave?: boolean;
+    /** The wave drawn as tight, thin, fast rings (Reson's Resonance Break). */
+    readonly screech?: boolean;
   };
   /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
   readonly impact?: {
@@ -675,6 +689,10 @@ export interface MagicLook {
   readonly barrierStyle?: 'sonic';
   /** A slow field drawn as a turning clock face (Chronos's Temporal Collapse). */
   readonly field?: 'clock';
+  /** A beam drawn as expanding rings of sound from the caster's mouth (Reson's Sonic Boom). */
+  readonly beamStyle?: 'scream';
+  /** The caster's mouth opens while the ability runs: a wide roar or a thin high screech (Reson). */
+  readonly shout?: 'scream' | 'screech';
   /** Afterimages trail the caster while this ability runs (Chronos). */
   readonly afterimages?: boolean;
   /** What wraps the caster while a leap carries it: flames (default) or streaming wind (Aerion's dives). */

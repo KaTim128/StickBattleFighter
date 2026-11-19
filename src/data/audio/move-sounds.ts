@@ -476,6 +476,38 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sawtooth', 1100, 100, 0.45, 0.3),
     noise('highpass', 5500, 2200, 0.25, 0.4, 1, 0.04),
   ],
+  // Reson's scream: a breath in, three seconds of a roaring, wavering voice with a rough edge, a gritty crackle where it connects.
+  'scream-breath': [
+    noise('bandpass', 600, 1800, 0.5, 0.25, 1.4, 0, { attack: 0.35 }),
+    tone('sine', 140, 300, 0.5, 0.18),
+  ],
+  'sonic-scream': [
+    tone('sawtooth', 420, 560, 3.0, 0.22, 0, 3),
+    tone('sawtooth', 840, 1130, 3.0, 0.1, 0, 2),
+    tone('square', 210, 280, 3.0, 0.1, 0, 2),
+    noise('bandpass', 1900, 2600, 3.0, 0.2, 2.2, 0, { flutter: 14, drive: 2 }),
+    tone('sine', 70, 70, 3.0, 0.3),
+  ],
+  'scream-hit': [
+    noise('bandpass', 2400, 1200, 0.2, 0.4, 2, 0, { flutter: 40 }),
+    tone('sawtooth', 600, 300, 0.18, 0.2, 0, 3),
+  ],
+  // Resonance Break: a thin, very high screech, nothing low in it at all.
+  'screech-inhale': [
+    tone('sine', 1800, 3200, 0.4, 0.1),
+    noise('highpass', 5000, 7000, 0.4, 0.08, 1, 0, { attack: 0.3 }),
+  ],
+  'screech-release': [
+    tone('sine', 3400, 5200, 0.9, 0.3),
+    tone('sine', 6800, 7600, 0.9, 0.12),
+    tone('square', 4100, 4600, 0.8, 0.07, 0, 2),
+    noise('highpass', 6000, 9000, 0.8, 0.14, 1, 0, { flutter: 60 }),
+  ],
+  'screech-hit': [
+    tone('sine', 5600, 2400, 0.35, 0.3),
+    noise('highpass', 7000, 4000, 0.3, 0.3, 1.2),
+    tone('sine', 2800, 1100, 0.3, 0.2, 0.04),
+  ],
   // Reson's sound: pure sine tones that swell and fall, deep pressure thumps, rippling tremolo tails.
   'hit-reson-blast': [
     tone('sine', 150, 50, 0.4, 0.6),
@@ -487,12 +519,6 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sine', 440, 1480, 0.45, 0.1),
     noise('bandpass', 2000, 3600, 0.4, 0.08, 4, 0, { attack: 0.25 }),
   ],
-  'boom-launch': [
-    tone('sine', 130, 55, 0.4, 0.6),
-    noise('bandpass', 700, 300, 0.3, 0.45, 1.5),
-    tone('sine', 520, 180, 0.25, 0.25),
-  ],
-  'boom-hit': [tone('sine', 180, 60, 0.28, 0.55), noise('bandpass', 1500, 500, 0.18, 0.4, 2)],
   'vib-release': [
     tone('square', 90, 90, 0.2, 0.2, 0, 2),
     tone('sine', 240, 60, 0.3, 0.5),
@@ -519,12 +545,6 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sine', 90, 40, 0.35, 0.5),
     tone('triangle', 2200, 600, 0.3, 0.2, 0.05),
   ],
-  'sonic-dash': [
-    tone('sine', 400, 1200, 0.25, 0.35),
-    noise('bandpass', 2400, 900, 0.25, 0.35, 1.2),
-    tone('sine', 100, 70, 0.2, 0.3),
-  ],
-  'sonic-dash-end': [tone('sine', 900, 300, 0.2, 0.3), noise('bandpass', 1800, 700, 0.12, 0.25, 2)],
   'pulse-emit': [
     tone('sine', 160, 90, 0.3, 0.5),
     tone('sine', 320, 180, 0.25, 0.2),

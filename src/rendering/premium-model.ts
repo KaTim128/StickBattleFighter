@@ -539,6 +539,8 @@ export interface PremiumDrawState {
   readonly wingFlap?: number;
   /** 0..1 how far the armour plates have extended and locked (Reinforced Plating); 0 = folded away. */
   readonly plating?: number;
+  /** The mouth is open in a roar or a thin screech (Reson), with how wide (0..1). */
+  readonly shout?: { readonly kind: 'scream' | 'screech'; readonly k: number } | null;
   /**
    * The body turned towards the camera (select screen, owner 13/11/2026): the torso and garment
    * are drawn this much wider, as the chest is seen more from the front. 1 = profile.
@@ -698,6 +700,7 @@ export class PremiumModel {
       st.drawHead?.();
       if (this.skin.helm) this.helm(g, s);
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
+      if (this.st.shout) this.shoutMouth(g, fire, s);
     }
     this.arm(g, fire, s.armFront, false);
     if (this.skin.gauntlets) this.gauntlet(g, fire, s.armFront, false);
@@ -842,6 +845,30 @@ export class PremiumModel {
     for (let i = 0; i < 3; i++) {
       const ph = (t * 1.2 + i / 3) % 1;
       fire.arc(cx, cy, 0.05 + ph * 0.16, -0.9, 0.9).stroke({ width: w * 0.1, color: sg.glow, alpha: 0.7 * (1 - ph) });
+    }
+  }
+
+  /** An open mouth on the face side of the head: a wide dark oval for a roar, a small tight one for a screech, with rings of sound leaving it. */
+  private shoutMouth(g: Graphics, fire: Graphics, s: Skel): void {
+    const sh = this.st.shout;
+    if (!sh) return;
+    const { headRadius: r, w, t } = this.st;
+    const open = sh.k * (0.7 + 0.3 * Math.sin(t * (sh.kind === 'scream' ? 22 : 40)));
+    const mx = s.head.x + r * 0.62;
+    const my = s.head.y + r * 0.34;
+    const wide = sh.kind === 'scream' ? 0.5 : 0.22;
+    const tall = sh.kind === 'scream' ? 0.62 : 0.3;
+    g.ellipse(mx, my, r * wide * (0.6 + open * 0.4), r * tall * (0.4 + open * 0.6)).fill(0x04080a);
+    g.ellipse(mx, my, r * wide * (0.6 + open * 0.4), r * tall * (0.4 + open * 0.6)).stroke({
+      width: w * 0.1,
+      color: this.c(this.P.rim),
+      alpha: 0.9,
+    });
+    for (let i = 0; i < 2; i++) {
+      const ph = (t * (sh.kind === 'scream' ? 2.2 : 3.4) + i * 0.5) % 1;
+      fire
+        .arc(mx, my, r * (0.5 + ph * 1.4), -0.7, 0.7)
+        .stroke({ width: w * 0.12, color: this.P.glow ?? 0x19c4e0, alpha: sh.k * 0.7 * (1 - ph) });
     }
   }
 

@@ -64,6 +64,9 @@ Done: Reson fighter and kit, pierce/disrupt/sonic-barrier/rings engine support, 
 ## Chronos batch (21/11/2026, TD-133)
 Done: Chronos fighter and kit, echo/rewind/decoy/slow-field/dodge-recovery engine support, `temporal` skin, clips, sounds, icons, AI, stance, tests. Known: combo echo is visual; decoy not targeted by the AI; checked in still screenshots. Next: Arcstrike, Tidebreaker and the remaining fighters, then Colosseum (owner, 21/11/2026).
 
+## Reson update (21/11/2026, TD-134)
+Done: scream (beam with pin), weight-scaled Vibration Punch, Resonance Break (mute, shatter) replacing Resonance Dash, new sounds, icons, poses, effects, tests (1168); Reson and Aerion select stances fixed; Reson idle/walk/run straightened. Known: checked in still screenshots only; the scream also takes beam steering input. Next: Arcstrike, Tidebreaker, remaining fighters, then Colosseum.
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

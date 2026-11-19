@@ -12,6 +12,7 @@ const FIGHTERS = Object.values(BUILT_IN_LIBRARY.characters).filter(
 function castDamage(a: AbilityDef): number {
   const d = a.delivery;
   if (d.type === 'assault') return a.payload.damage * (d.stabs + (d.finalFactor ? d.finalFactor - 1 : 0));
+  if (d.type === 'beam') return (a.payload.damage * Math.round(d.durationS / d.tickS)) / 2; // half the ticks connect
   if (d.type === 'whirl') return a.payload.damage * Math.round(d.durationS / d.tickS);
   if (d.type === 'drone') return (d.shot.payload.damage * (d.durationS / d.intervalS)) / 2; // half its shots land
   if (d.type === 'strike' && d.echo) return a.payload.damage * (1 + d.echo.factor); // the blow and its echo
@@ -34,9 +35,11 @@ describe('ability balance', () => {
   });
 
   it('no fighter is a pure damage dealer or a pure support: every kit sits in the same wide band', () => {
-    const top = Math.max(...sums.map((f) => f.dps));
-    // The weakest direct damage is made up by control and defence (barriers, lifts, plating, poison), so the band is wide.
-    for (const f of sums) expect(f.dps, f.id).toBeGreaterThanOrEqual(top * 0.2);
+    // The weakest direct damage is made up by control and defence (barriers, lifts, plating, mute, slows), so the band is wide.
+    for (const f of sums) {
+      expect(f.dps, f.id).toBeGreaterThanOrEqual(10);
+      expect(f.dps, f.id).toBeLessThanOrEqual(95);
+    }
   });
 
   it('every kit has at least one defensive or control ability and one ability that damages', () => {

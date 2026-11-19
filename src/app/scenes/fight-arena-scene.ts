@@ -2197,6 +2197,15 @@ export class FightArenaScene implements ArenaScene {
             ? attack.moveFactor
             : 1;
       move = { x: move.x * factor, y: move.y * factor };
+      // Sonic Boom: held in the scream, it cannot walk toward the one screaming (it can still back away or sidestep).
+      if (f.pinned) {
+        f.pinned.leftS -= stepS;
+        if (f.pinned.leftS <= 0) f.pinned = null;
+        else {
+          const toward = -(move.x * f.pinned.awayX + move.y * f.pinned.awayY);
+          if (toward > 0) move = { x: move.x + f.pinned.awayX * toward, y: move.y + f.pinned.awayY * toward };
+        }
+      }
       // Feedback Pulse: the way they move wobbles for a moment (never a stun).
       if (c.disrupted) {
         const wob = Math.sin(this.simTimeS * 9) * 0.9;
@@ -3196,6 +3205,11 @@ export class FightArenaScene implements ArenaScene {
       funnels: world.funnels,
       cages: world.cages,
       ghosts: this.ghostsNow(frameDtS),
+      afflicted: this.fighters.flatMap((o) =>
+        o.combatant.muteLeftS > 0 || o.combatant.shatterLeftS > 0
+          ? [{ x: o.x, y: o.y, muteS: o.combatant.muteLeftS, shatterS: o.combatant.shatterLeftS, heightM: headTop(o) }]
+          : [],
+      ),
       echoes: world.echoes.map((e) => ({
         x: e.from.x,
         y: e.from.y,
@@ -3549,6 +3563,16 @@ export class FightArenaScene implements ArenaScene {
         this.ghosts.push({ x: f.x, y: f.y, facing: f.facing, ageS: 0, lifeS: 0.45 });
         if (this.ghosts.length > 60) this.ghosts.shift();
       }
+    }
+    // A shout (Reson): the mouth opens through the wind-up and stays open while the scream pours.
+    {
+      const sl = f.caster?.cast?.def.look?.shout;
+      const screaming = this.abilities?.world.beams.some((b) => b.casterId === f.name && b.def.look?.shout) ?? false;
+      f.view.shout = sl
+        ? { kind: sl, k: f.caster?.cast?.phase === 'windup' ? Math.min(1, 0.3 + f.caster.phaseProgress) : 1 }
+        : screaming
+          ? { kind: 'scream', k: 1 }
+          : null;
     }
     // Reinforced Plating: the armour plates slide out and lock, then fold away at the end.
     const platingTo = f.buff?.plating ? Math.min(1, f.buff.leftS / 0.4) : 0;

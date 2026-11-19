@@ -156,6 +156,8 @@ export class FighterEntity {
   stalkAmount = 0;
   /** Presentation (winged fighters): how far the hover has lifted it, and the wings' spread and beat. */
   hoverNow = 0;
+  /** Held in a scream: it cannot walk toward the caster (the direction away from him is awayX/awayY) for leftS more seconds. */
+  pinned: { awayX: number; awayY: number; leftS: number } | null = null;
   /** Presentation: seconds until the next temporal afterimage is left behind. */
   ghostS = 0;
   /** Presentation: the crimson glow along Kenshiro's blades (0..1). */

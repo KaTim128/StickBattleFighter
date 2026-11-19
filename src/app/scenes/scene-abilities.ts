@@ -92,6 +92,8 @@ export class SceneAbilities implements AbilityHost {
     const caster = f.caster;
     if (!caster) return 'unavailable';
     const c = f.combatant;
+    // Resonance Break: a muted fighter cannot use abilities (blows, blocks and dodges are unaffected).
+    if (c.muted) return 'muted';
     const block = caster.check(slot, {
       canAct: c.canAct && !f.combo.attack,
       stamina: c.stamina,
@@ -227,10 +229,16 @@ export class SceneAbilities implements AbilityHost {
     damage *= finisherFactor(payload, target.combatant.hp / Math.max(1, target.combatant.stats.maxHp));
     if ((payload.sword || payload.psi || payload.gadget || payload.sonic || payload.temporal) && mastery)
       damage *= attacker.combatant.swordFactor(mastery.threshold, mastery.damageFactor, mastery.windowS);
+    // Vibration Punch: lighter bodies fly further than heavier ones.
+    const byWeight = payload.knockbackByWeight;
+    const knockback = byWeight
+      ? payload.knockbackMps *
+        Math.min(byWeight.maxK, Math.max(byWeight.minK, byWeight.refKg / Math.max(1, target.def.body.massKg)))
+      : payload.knockbackMps;
     const landed = this.strike(attacker, target, {
       damage,
       heavy: payload.heavy,
-      knockbackMps: payload.knockbackMps,
+      knockbackMps: knockback,
       dir,
       melee: false,
       burn: payload.burn,
@@ -254,6 +262,8 @@ export class SceneAbilities implements AbilityHost {
       attacker.combatant.gainMastery(1, attacker.caster.kit.passive.maxStacks);
     // Soul Drain: the target is blinded for a while.
     if (landed && payload.blindS) target.combatant.blind(payload.blindS);
+    if (landed && payload.mute) target.combatant.mute(payload.mute.durationS);
+    if (landed && payload.shatter) target.combatant.shatter(payload.shatter.durationS, payload.shatter.defenceFactor);
     if (landed && payload.disrupt) target.combatant.disrupt(payload.disrupt.durationS);
     // Curse of Decay: weaker blows and weaker defence for a while.
     if (landed && payload.decay) {
@@ -266,6 +276,11 @@ export class SceneAbilities implements AbilityHost {
       c.hp = Math.min(c.stats.maxHp, c.hp + damage * payload.lifesteal);
     }
     return landed;
+  }
+
+  pin(targetId: string, away: Vec2, seconds: number): void {
+    const t = this.byName(targetId);
+    if (t) t.pinned = { awayX: away.x, awayY: away.y, leftS: seconds };
   }
 
   barrier(casterId: string, hp: number, durationS: number): void {

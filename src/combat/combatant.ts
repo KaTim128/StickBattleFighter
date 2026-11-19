@@ -558,6 +558,30 @@ export class Combatant {
     this.status.apply('disrupt', seconds);
   }
 
+  /** Resonance Break: no abilities for `seconds`. */
+  mute(seconds: number): void {
+    if (this.koAgeS >= 0) return;
+    this.status.apply('mute', seconds);
+  }
+
+  get muted(): boolean {
+    return this.status.has('mute');
+  }
+
+  get muteLeftS(): number {
+    return this.status.leftS('mute');
+  }
+
+  /** Resonance Break: defence multiplied by `defenceFactor` for `seconds` (the lowest factor in force wins; it never stacks). */
+  shatter(seconds: number, defenceFactor: number): void {
+    if (this.koAgeS >= 0) return;
+    this.status.apply('shatter', seconds, { defenceFactor });
+  }
+
+  get shatterLeftS(): number {
+    return this.status.leftS('shatter');
+  }
+
   get disrupted(): boolean {
     return this.status.has('disrupt');
   }

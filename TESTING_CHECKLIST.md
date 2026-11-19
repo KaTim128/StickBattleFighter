@@ -683,3 +683,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ### Chronos (21/11/2026, TD-133)
 - [ ] Chronos: dark silver with bronze and cyan, clock face behind him, dial on one forearm; weight swings like a pendulum when idle.
 - [ ] Temporal Acceleration leaves afterimages and quickens dodges; Echo Strike lands twice 0.6 s apart; Temporal Collapse slows opponents (clock face on the floor) and never tints his own screen; Rewind Step returns him about 2.5 s back; Afterimage Decoy leaves a pale copy for 3 s; End of Time lays a field, hits six times, ends with a shockwave.
+
+### Reson update (21/11/2026, TD-134)
+- [ ] Sonic Boom: Reson opens his mouth and screams for 3 s rooted; rings of sound travel to the enemy; a target is interrupted once and cannot walk toward him while held.
+- [ ] Vibration Punch launches a light fighter (Chronos, Psion) clearly further than a heavy one (Rampage).
+- [ ] Resonance Break: a thin screech flies out; the victim shows a crossed speaker for 4 s, cannot use abilities, and takes about 43% more damage from hits for those 4 s.
+- [ ] Select screen: Reson stands upright, Aerion's hands are attached.

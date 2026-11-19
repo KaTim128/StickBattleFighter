@@ -610,25 +610,45 @@ const SHAPES: Record<string, CastShape> = {
   },
 
   // ---- Reson (master plan section 4): the gauntlets do the work, tuned up and released.
-  // Sonic Boom: both gauntlets drawn to the chest, then thrown out flat together.
   sonicBoom: {
     windup: {
-      lean: deg(8),
-      head: deg(0),
-      armFront: limb(60, 130),
-      armBack: limb(54, 130),
-      legFront: limb(22, -34),
-      legBack: limb(-26, -30),
+      lean: deg(-10),
+      head: deg(-24),
+      armFront: limb(40, 20),
+      armBack: limb(24, 24),
+      legFront: limb(18, -30),
+      legBack: limb(-22, -28),
+    },
+    tremble: deg(1.4),
+    release: {
+      lean: deg(14),
+      head: deg(12),
+      armFront: limb(18, 70),
+      armBack: limb(-14, 80),
+      legFront: limb(26, -34),
+      legBack: limb(-30, -30),
+    },
+    settle: 0.2,
+  },
+  // Resonance Break: both hands cupped to the sides of the mouth, the head thrust forward and up for a thin, piercing screech.
+  resonanceBreak: {
+    windup: {
+      lean: deg(-6),
+      head: deg(-14),
+      armFront: limb(120, 150),
+      armBack: limb(110, 150),
+      legFront: limb(16, -26),
+      legBack: limb(-20, -24),
     },
     release: {
-      lean: deg(-20),
+      lean: deg(8),
       head: deg(-4),
-      armFront: limb(94, 4),
-      armBack: limb(90, 6),
-      legFront: limb(32, -34),
-      legBack: limb(-28, -22),
+      armFront: limb(130, 140),
+      armBack: limb(116, 142),
+      legFront: limb(22, -28),
+      legBack: limb(-24, -24),
     },
-    settle: 0.4,
+    settle: 0.35,
   },
   // Vibration Punch: the whole arm shuddering back, then one fist driven straight in.
   vibrationPunch: {
@@ -670,26 +690,6 @@ const SHAPES: Record<string, CastShape> = {
       legBack: limb(-28, -26),
     },
     settle: 0.35,
-  },
-  // Resonance Dash: crouched and coiled, then leaning hard into the burst with the gauntlets trailing.
-  resonanceDash: {
-    windup: {
-      lean: deg(18),
-      head: deg(6),
-      armFront: limb(30, 120),
-      armBack: limb(20, 120),
-      legFront: limb(36, -64),
-      legBack: limb(-30, -56),
-    },
-    release: {
-      lean: deg(-26),
-      head: deg(-4),
-      armFront: limb(-50, 40),
-      armBack: limb(-60, 40),
-      legFront: limb(40, -50),
-      legBack: limb(-44, -34),
-    },
-    settle: 0.25,
   },
   // Feedback Pulse: both fists clenched in against the chest, then both hands thrown open and the body rocked back.
   feedbackPulse: {

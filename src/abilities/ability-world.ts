@@ -106,6 +106,8 @@ export interface AbilityHost {
   hold?(targetId: string, seconds: number): void;
   /** Put a telekinetic barrier round a caster: it absorbs `hp` damage over at most `durationS` seconds. Optional. */
   barrier?(casterId: string, hp: number, durationS: number): void;
+  /** Hold a target in a scream: for `seconds` it cannot walk toward the caster (`awayX/awayY` is the direction from the caster). Optional. */
+  pin?(targetId: string, away: Vec2, seconds: number): void;
   /** Tug loose metal props within `radiusM` of `at` toward it (a magnetic mine, one step's worth). Optional. */
   attract?(at: Vec2, radiusM: number, strength: number): void;
   /** How much longer this caster's parry stance lasts right now (Focus Stance: 1.5); 1 when nothing changes it. */
@@ -125,8 +127,6 @@ export interface Projectile {
   y: number;
   readonly dir: Vec2;
   travelledM: number;
-  /** Fighters a piercing shot has already hit. */
-  hit?: Set<string>;
   /** Recent positions for the trail (newest last). */
   readonly trail: Vec2[];
 }
@@ -1241,15 +1241,10 @@ export class AbilityWorld {
       let done = false;
       for (const f of host.fighters()) {
         if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
-        if (p.hit?.has(f.id)) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
         if (d.lift) this.startLift(p, f, host);
-        if (d.pierce) {
-          (p.hit ??= new Set()).add(f.id); // passes through, once each
-          continue;
-        }
         done = true;
         break;
       }
@@ -1356,13 +1351,16 @@ export class AbilityWorld {
         const contactS = was.includes(f.id) ? (b.contact.get(f.id) ?? 0) + d.tickS : 0;
         const at = payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M);
         const k = beamRampFactor(d.ramp, contactS);
-        const payload = k === 1 ? at : { ...at, damage: Math.round(at.damage * k) };
+        const scaled = k === 1 ? at : { ...at, damage: Math.round(at.damage * k) };
+        // A scream flinches a target only when it first connects; later ticks never interrupt again.
+        const payload = d.scream && was.includes(f.id) ? { ...scaled, noFlinch: true } : scaled;
         if (!this.hit(host, b.casterId, f.id, payload, b.dir, b.def.look?.hitFlash)) {
           b.contact.delete(f.id);
           continue;
         }
         b.contact.set(f.id, contactS);
         b.touching.push(f.id);
+        if (d.scream) host.pin?.(f.id, b.dir, d.tickS * 2);
         host.emit({
           kind: 'impact',
           ability: b.def.id,
