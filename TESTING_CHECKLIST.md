@@ -656,3 +656,4 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ### Select layout and Kenshiro's slow strikes (21/11/2026, TD-128)
 - [ ] Select screen: stats on the left, a big stickman in the middle, the four-per-row picker on the right.
 - [ ] Kenshiro's J chain is three slow slashes (horizontal, horizontal back, rising diagonal) that hit hard; heavy is a slow overhead slice with big damage.
+- [ ] Open Zone: the opponent is a dropdown; choosing a fighter in it starts that fight.

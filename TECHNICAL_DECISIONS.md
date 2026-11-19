@@ -1076,3 +1076,5 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 - Test: `tests/unit/abilities/kenshiro.test.ts` checks the chain, that the taps are at least 0.2 s to start and 30 damage each, and that the heavy is slow and at least twice a tap.
 **Not verified.** Feel and fight length against the other fighters in play (the damage-per-second of the slow taps is lower than the fast fighters', their per-blow damage higher; provisional, OQ-05); the layout on a real phone beyond the screenshot.
 **Status.** ACCEPTED, owner to review in play.
+
+**Opponent dropdown (21/11/2026, after TD-128).** On the Open Zone select screen the opponent is a dropdown (`.fe-dropdown`, `select[data-opponent]`) instead of a row of a button per fighter, which filled the bottom of the screen; arena and AI difficulty stay as buttons. The admin main menu's opponent buttons are unchanged.

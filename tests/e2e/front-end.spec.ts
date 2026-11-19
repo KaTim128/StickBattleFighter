@@ -205,7 +205,7 @@ test('Practice: the tutorial teaches step by step; the Open Zone tries any fight
   const select = front.locator('[data-screen="select"]');
   await expect(select.locator('.fe-h')).toHaveText('OPEN ZONE');
   await select.locator('.fe-tile[data-fighter="shroud"]').click();
-  await select.locator('[data-opponent="necro"]').click();
+  await select.locator('select[data-opponent]').selectOption('necro'); // the opponent is a dropdown
   await Promise.all([page.waitForURL(/opponent=necro/), select.locator('.fe-enter').click()]);
   await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
   expect(page.url()).toContain('character=shroud');

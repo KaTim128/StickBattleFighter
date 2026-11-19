@@ -735,17 +735,27 @@ export class FrontEnd {
         this.choice.arena = v;
       },
     );
-    if (this.selectFor === 'practice')
-      chips(
-        'Opponent',
-        'opponent',
-        this.o.opponents.map((d) => ({ id: d.id, name: d.name })),
-        () => this.choice.opponent,
-        (v) => {
-          this.choice.opponent = v;
-        },
-      );
-    else
+    if (this.selectFor === 'practice') {
+      // The opponent is a dropdown (owner, 21/11/2026): a row of a button per fighter filled the bottom of the screen.
+      const g = el('div', 'fe-chips');
+      g.append(el('span', 'fe-chips-label', 'Opponent'));
+      const dropdown = document.createElement('select');
+      dropdown.className = 'fe-dropdown';
+      dropdown.dataset.opponent = '';
+      dropdown.setAttribute('aria-label', 'Opponent');
+      for (const d of this.o.opponents) {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.name;
+        dropdown.append(opt);
+      }
+      dropdown.value = this.choice.opponent;
+      dropdown.addEventListener('change', () => {
+        this.choice.opponent = dropdown.value;
+      });
+      g.append(dropdown);
+      bar.append(g);
+    } else
       chips(
         'Fighters',
         'size',
