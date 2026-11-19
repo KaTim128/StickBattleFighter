@@ -1,3 +1,4 @@
+import { AERION_KIT } from '../data/abilities/aerion';
 import { INFERNO_KIT } from '../data/abilities/inferno';
 import { NECRO_KIT } from '../data/abilities/necro';
 import { RAMPAGE_KIT } from '../data/abilities/rampage';
@@ -12,4 +13,5 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'necro-kit': NECRO_KIT,
   'shroud-kit': SHROUD_KIT,
   'vexoris-kit': VEXORIS_KIT,
+  'aerion-kit': AERION_KIT,
 };

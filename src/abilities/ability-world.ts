@@ -244,6 +244,12 @@ interface LeapAction {
   readonly to: Vec2;
   t: number;
   readonly telegraph: Telegraph;
+  /** Volleys already loosed (Celestial Tempest). */
+  volleysFired: number;
+  /** The shots a volley carries: the ability with a projectile delivery and the volley's payload. */
+  readonly volleyDef?: AbilityDef;
+  /** The direction the first volley points (towards where the leap was aimed). */
+  readonly baseDir: Vec2;
 }
 
 /** A target being dragged to its caster (Grave Chains). */
@@ -266,6 +272,9 @@ interface GrabAction {
   readonly def: AbilityDef;
   readonly dir: Vec2;
   ageS: number;
+  /** Where the held target is now (a cyclone's funnel stands there). */
+  x: number;
+  y: number;
 }
 
 /** A knife assault under way: rushing in, stabbing, springing back (Shroud). */
@@ -309,6 +318,11 @@ const GRENADE_RELEASE_HEIGHT_M = 1.3;
 const GRENADE_STICK_MAX_Z_M = 1.9;
 /** Out of the hand, a grenade ignores bodies for this long a flight (it cannot stick to its own thrower's side). */
 const GRENADE_ARM_K = 0.12;
+
+const rotate = (v: Vec2, rad: number): Vec2 => ({
+  x: v.x * Math.cos(rad) - v.y * Math.sin(rad),
+  y: v.x * Math.sin(rad) + v.y * Math.cos(rad),
+});
 
 const norm = (v: Vec2): Vec2 => {
   const l = Math.hypot(v.x, v.y);
@@ -452,6 +466,17 @@ export class AbilityWorld {
     return this.grabOutcomes.get(casterId);
   }
 
+  /** Tornadoes standing now (Cyclone Lift): where, how long they have spun, and how long the lift lasts. */
+  get cyclones(): { x: number; y: number; ageS: number; liftS: number; palette: MagicLook['palette'] | null }[] {
+    const out: { x: number; y: number; ageS: number; liftS: number; palette: MagicLook['palette'] | null }[] = [];
+    for (const a of this.actions) {
+      const d = a.kind === 'grab' ? a.def.delivery : null;
+      if (a.kind === 'grab' && d?.type === 'grab' && d.cyclone)
+        out.push({ x: a.x, y: a.y, ageS: a.ageS, liftS: d.liftS, palette: a.def.look?.palette ?? null });
+    }
+    return out;
+  }
+
   /** How high a grabbed fighter is hoisted this step (render lift), or 0. */
   heldLiftOf(targetId: string): number {
     const a = this.actions.find((x) => x.kind === 'grab' && x.targetId === targetId) as GrabAction | undefined;
@@ -479,17 +504,24 @@ export class AbilityWorld {
     });
     const d = def.delivery;
     switch (d.type) {
-      case 'projectile':
-        this.projectiles.push({
-          casterId,
-          def,
-          x: at.x + dir.x * MUZZLE_M,
-          y: at.y + dir.y * MUZZLE_M,
-          dir,
-          travelledM: 0,
-          trail: [],
-        });
+      case 'projectile': {
+        // One shot, or a fan of `count` spread over `spreadRad` (Wind Blade).
+        const n = Math.max(1, d.count ?? 1);
+        for (let i = 0; i < n; i++) {
+          const turn = n === 1 ? 0 : ((i / (n - 1)) * 2 - 1) * ((d.spreadRad ?? 0) / 2);
+          const shotDir = turn === 0 ? dir : rotate(dir, turn);
+          this.projectiles.push({
+            casterId,
+            def,
+            x: at.x + shotDir.x * MUZZLE_M,
+            y: at.y + shotDir.y * MUZZLE_M,
+            dir: shotDir,
+            travelledM: 0,
+            trail: [],
+          });
+        }
         break;
+      }
       case 'cloud': {
         // Where it aims, within range and short of any wall in the way.
         const want = Math.min(def.aimRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
@@ -746,7 +778,7 @@ export class AbilityWorld {
         }
         this.grabOutcomes.set(casterId, { state: 'hold' });
         host.hold?.(best.id, d.liftS + 0.5);
-        this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0 });
+        this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0, x: best.x, y: best.y });
         break;
       }
       case 'buff':
@@ -804,7 +836,26 @@ export class AbilityWorld {
           y: to.y,
           radiusM: d.radiusM,
         });
-        this.actions.push({ kind: 'leap', casterId, def, from: at, to, t: 0, telegraph });
+        const v = d.volley;
+        const volleyDef: AbilityDef | undefined = v
+          ? {
+              ...def,
+              payload: v.payload,
+              delivery: { type: 'projectile', speedMps: v.speedMps, radiusM: v.radiusM, maxRangeM: v.maxRangeM },
+            }
+          : undefined;
+        this.actions.push({
+          kind: 'leap',
+          casterId,
+          def,
+          from: at,
+          to,
+          t: 0,
+          telegraph,
+          volleysFired: 0,
+          ...(volleyDef ? { volleyDef } : {}),
+          baseDir: dir,
+        });
         break;
       }
     }
@@ -1118,7 +1169,7 @@ export class AbilityWorld {
     // Keep the target held just in front of the caster, rising overhead.
     // A small gap off the grabber's body, so the two circles never touch: held exactly at the sum of
     // the radii they pushed each other apart every step and the target jittered (master plan B9).
-    const gapM = caster.radiusM + target.radiusM + GRAB_HOLD_GAP_M;
+    const gapM = d.cyclone ? d.cyclone.holdM : caster.radiusM + target.radiusM + GRAB_HOLD_GAP_M;
     const hold = { x: caster.x + a.dir.x * gapM, y: caster.y + a.dir.y * gapM };
     const lift = d.liftM * Math.min(1, a.ageS / d.liftS);
     // Close the distance smoothly: a speed that eases off near the hold point and never exceeds the cap.
@@ -1128,7 +1179,26 @@ export class AbilityWorld {
     const speed =
       dist < GRAB_SETTLE_M ? 0 : Math.min(GRAB_MAX_SPEED_MPS, dist / Math.max(dtS, 1e-3), dist * GRAB_GAIN_PER_S);
     host.drive(a.targetId, dist > 1e-6 ? { x: (dx / dist) * speed, y: (dy / dist) * speed } : { x: 0, y: 0 }, lift);
+    a.x = hold.x;
+    a.y = hold.y;
     if (a.ageS < d.liftS) return false;
+    if (d.cyclone) {
+      // The tornado lets go: the target is flung straight away from the caster.
+      this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
+      host.drive(a.targetId, null, 0);
+      host.hitFighter(a.casterId, a.targetId, a.def.payload, a.dir, a.def.look?.hitFlash);
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: a.def.sfx.impact,
+        x: target.x,
+        y: target.y,
+        radiusM: d.slamRadiusM,
+      });
+      return true;
+    }
     // The slam: down in front, with the full payload and a dust blast.
     this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
     host.drive(a.targetId, null, 0);
@@ -1326,6 +1396,37 @@ export class AbilityWorld {
     const d = a.def.delivery;
     if (d.type !== 'leap') return true;
     a.t += dtS;
+    const vol = d.volley;
+    if (vol && a.volleyDef) {
+      // The storm: volleys at even times while he hangs in the air, each fan sweeping a little further round.
+      const due = (i: number) => vol.fromS + ((vol.untilS - vol.fromS) * i) / Math.max(1, vol.count - 1);
+      while (a.volleysFired < vol.count && a.t >= due(a.volleysFired)) {
+        const at = host.position(a.casterId);
+        const sweep = vol.count > 1 ? (a.volleysFired / (vol.count - 1)) * vol.sweepRad : 0;
+        for (let b = 0; b < vol.blades; b++) {
+          const dir = rotate(a.baseDir, sweep + (b / vol.blades) * Math.PI * 2);
+          this.projectiles.push({
+            casterId: a.casterId,
+            def: a.volleyDef,
+            x: at.x + dir.x * MUZZLE_M,
+            y: at.y + dir.y * MUZZLE_M,
+            dir,
+            travelledM: 0,
+            trail: [],
+          });
+        }
+        host.emit({
+          kind: 'release',
+          ability: a.def.id,
+          look: a.def.look,
+          vfx: 'tempest-volley',
+          sfx: a.def.sfx.release,
+          x: at.x,
+          y: at.y,
+        });
+        a.volleysFired++;
+      }
+    }
     if (a.t >= d.airS) {
       // Slam down where the caster actually is (the telegraph showed the planned spot).
       const at = host.position(a.casterId);

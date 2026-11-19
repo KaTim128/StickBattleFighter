@@ -1,0 +1,253 @@
+import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
+
+/**
+ * Aerion's kit (master plan section 4, fighter 1): an elegant winged wind warrior. Where Vexoris wears an enemy down,
+ * Aerion lives in the air: he dives, cuts with wind, hoists enemies off their feet and outruns everything. His strength
+ * is mobility and pressure from range, his weakness is a thin frame. Values are PROVISIONAL (OQ-05).
+ */
+const WIND = { deep: 0x4a6f9a, hot: 0x8fc4f4, bright: 0xd4eeff, core: 0xffffff } as const;
+
+export const AERION_KIT: AbilityKit = {
+  comboIcon: 'wing-combo',
+  heavyIcon: 'wing-smash',
+  passive: {
+    id: 'momentum',
+    name: 'Aerial Momentum',
+    description:
+      'Every melee blow that lands adds a stack of momentum (up to 5, each 4% faster, 4 seconds, renewed by every blow). His wings flare faster as it builds.',
+    maxStacks: 5,
+    durationS: 4,
+    speedPerStack: 0.04,
+  },
+  // A1 (Q): Sky Dive. He launches high and dives onto the aimed spot; a concentrated burst of wind pushes everyone near
+  // the landing away. Untouchable while he is in the air.
+  a1: {
+    id: 'skyDive',
+    name: 'Sky Dive',
+    label: 'DIVE',
+    description:
+      'Launches into the air and dives onto the aimed spot. The landing releases a wind burst that damages and pushes away nearby opponents. Cannot be hit in the air.',
+    icon: 'sky-dive',
+    slot: 'a1',
+    staminaCost: 28,
+    cooldownS: 9,
+    castS: 0.22,
+    recoveryS: 0.4,
+    aimRangeM: 8,
+    moveFactor: 0,
+    interruptible: false,
+    payload: {
+      damage: 54,
+      knockbackMps: 9,
+      heavy: true,
+      strength: 560,
+      impact: 'knuckle-heavy',
+      falloff: { fullWithinM: 0.9, minFactor: 0.55 },
+    },
+    delivery: { type: 'leap', maxRangeM: 8, airS: 0.85, peakM: 3.4, radiusM: 2.4, aimSpeedMps: 7 },
+    vfx: 'sky-dive',
+    sfx: { cast: 'wing-flap', release: 'sky-launch', impact: 'wind-burst' },
+    look: {
+      palette: WIND,
+      impact: {
+        flashM: 1.4,
+        sparks: 22,
+        motes: 50,
+        ringM: 2.6,
+        smoke: 10,
+        groundFire: false,
+        smokeColour: 0xbcd6ea,
+        shake: 0.4,
+      },
+      hitFlash: 0xd4eeff,
+      airBody: 'wind',
+    },
+  },
+  // A2 (E): Wind Blade. Three compressed blades of air in a fan; each has its own trail and impact.
+  a2: {
+    id: 'windBlade',
+    name: 'Wind Blade',
+    label: 'BLADES',
+    description:
+      'Throws three compressed air blades in a fan. Each blade cuts for modest damage with its own trail, so close targets are hit by all three.',
+    icon: 'wind-blade',
+    slot: 'a2',
+    staminaCost: 22,
+    cooldownS: 7,
+    castS: 0.24,
+    recoveryS: 0.3,
+    aimRangeM: 11,
+    moveFactor: 0.3,
+    interruptible: true,
+    payload: { damage: 15, knockbackMps: 1.6, heavy: false, strength: 130, noFlinch: true, impact: 'knuckle-light' },
+    delivery: { type: 'projectile', speedMps: 16, radiusM: 0.3, maxRangeM: 11, count: 3, spreadRad: 0.5 },
+    vfx: 'wind-blade',
+    sfx: { cast: 'wing-flap', release: 'blade-whoosh', impact: 'blade-cut' },
+    look: {
+      palette: WIND,
+      flight: { trailPerS: 60, sparksPerS: 8, shimmer: true },
+      impact: { flashM: 0.5, sparks: 8, motes: 14, ringM: 0.8, smoke: 2, groundFire: false, smokeColour: 0xbcd6ea },
+      hitFlash: 0xd4eeff,
+    },
+  },
+  // A3 (F): Cyclone Lift. A miniature tornado seizes the nearest enemy ahead, spins them up for under a second, and
+  // flings them away. Short reach and a visible wind-up are the counterplay; the hold is brief.
+  a3: {
+    id: 'cycloneLift',
+    name: 'Cyclone Lift',
+    label: 'CYCLONE',
+    description:
+      'Raises a miniature tornado that seizes the nearest enemy close ahead, lifts them for under a second and flings them away. Short reach and a clear wind-up make it easy to dodge.',
+    icon: 'cyclone-lift',
+    slot: 'a3',
+    staminaCost: 30,
+    cooldownS: 14,
+    castS: 0.4,
+    recoveryS: 0.4,
+    aimRangeM: 4,
+    moveFactor: 0,
+    interruptible: true,
+    payload: { damage: 40, knockbackMps: 11, heavy: true, strength: 600, impact: 'knuckle-heavy' },
+    delivery: {
+      type: 'grab',
+      reachM: 3.6,
+      radiusM: 0.7,
+      liftS: 0.9,
+      liftM: 1.7,
+      slamRadiusM: 1.8,
+      cyclone: { holdM: 1.8 },
+    },
+    vfx: 'cyclone-lift',
+    sfx: { cast: 'wind-gather', release: 'cyclone-spin', impact: 'cyclone-fling' },
+    look: {
+      palette: WIND,
+      impact: { flashM: 0.9, sparks: 12, motes: 30, ringM: 1.8, smoke: 6, groundFire: false, smokeColour: 0xbcd6ea },
+      hitFlash: 0xd4eeff,
+    },
+  },
+  // A4 (R): Tailwind. Wind gathers round him and the wings spread: 30% faster for 5 seconds. A mobility buff, no damage.
+  a4: {
+    id: 'tailwind',
+    name: 'Tailwind',
+    label: 'TAILWIND',
+    description:
+      'Gathers wind round himself and spreads his wings: 30% faster movement for 5 seconds. A mobility buff with no damage of its own.',
+    icon: 'tailwind',
+    slot: 'a4',
+    staminaCost: 20,
+    cooldownS: 12,
+    castS: 0.25,
+    recoveryS: 0.2,
+    aimRangeM: 0,
+    moveFactor: 0.5,
+    interruptible: true,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: { type: 'buff', durationS: 5, speedFactor: 1.3, damageTakenFactor: 1 },
+    vfx: 'tailwind',
+    sfx: { cast: 'wind-gather', release: 'tailwind-rush', impact: 'wing-flap' },
+    look: {
+      palette: WIND,
+      impact: { flashM: 0.5, sparks: 6, motes: 24, ringM: 1.4, smoke: 4, groundFire: false, smokeColour: 0xbcd6ea },
+      aura: 'full',
+    },
+  },
+  // A5 (fifth, B13): Feather Guard. He folds his wings round himself: half the damage for 3 seconds, but slower. The
+  // defensive answer his thin frame needs; it takes the R slot if equipped in place of Tailwind.
+  a5: {
+    id: 'featherGuard',
+    name: 'Feather Guard',
+    label: 'GUARD',
+    description:
+      'Folds his wings round himself: half the damage taken for 3 seconds, but 20% slower. A defensive alternative to Tailwind.',
+    icon: 'feather-guard',
+    slot: 'a4',
+    staminaCost: 24,
+    cooldownS: 15,
+    castS: 0.2,
+    recoveryS: 0.2,
+    aimRangeM: 0,
+    moveFactor: 0.4,
+    interruptible: true,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: { type: 'buff', durationS: 3, speedFactor: 0.8, damageTakenFactor: 0.5 },
+    vfx: 'feather-guard',
+    sfx: { cast: 'wing-flap', release: 'guard-fold', impact: 'guard-fold' },
+    look: {
+      palette: WIND,
+      impact: { flashM: 0.5, sparks: 4, motes: 16, ringM: 1.2, smoke: 2, groundFire: false, smokeColour: 0xbcd6ea },
+      aura: 'quiet',
+    },
+  },
+  // ULT (I): Celestial Tempest. He rises high, summons a storm: waves of wind blades sweep out across the battlefield
+  // while he hangs untouchable, then he dives onto the aimed spot with a huge wind impact.
+  ult: {
+    id: 'celestialTempest',
+    name: 'Celestial Tempest',
+    label: 'ULT',
+    description:
+      'Rises high into the air and calls a storm: waves of wind blades sweep across the battlefield while he cannot be hit, then he dives onto the aimed spot with a large wind impact.',
+    icon: 'celestial-tempest',
+    slot: 'ult',
+    staminaCost: 0,
+    cooldownS: 1,
+    castS: 0.5,
+    recoveryS: 0.7,
+    aimRangeM: 7,
+    moveFactor: 0,
+    interruptible: false,
+    payload: {
+      damage: 90,
+      knockbackMps: 12,
+      heavy: true,
+      strength: 900,
+      impact: 'knuckle-heavy',
+      falloff: { fullWithinM: 1.2, minFactor: 0.5 },
+    },
+    delivery: {
+      type: 'leap',
+      maxRangeM: 7,
+      airS: 2.4,
+      peakM: 4.6,
+      radiusM: 4,
+      aimSpeedMps: 7,
+      volley: {
+        count: 6,
+        fromS: 0.5,
+        untilS: 1.9,
+        blades: 5,
+        sweepRad: 1.5,
+        payload: {
+          damage: 18,
+          knockbackMps: 2.5,
+          heavy: false,
+          strength: 160,
+          noFlinch: true,
+          impact: 'knuckle-light',
+        },
+        speedMps: 13,
+        radiusM: 0.32,
+        maxRangeM: 12,
+      },
+    },
+    vfx: 'celestial-tempest',
+    sfx: { cast: 'wind-gather', release: 'tempest-volley', impact: 'tempest-dive' },
+    look: {
+      palette: WIND,
+      flight: { trailPerS: 50, sparksPerS: 6, shimmer: true },
+      impact: {
+        flashM: 2.4,
+        sparks: 36,
+        motes: 90,
+        ringM: 4.2,
+        smoke: 20,
+        groundFire: false,
+        smokeColour: 0xbcd6ea,
+        shake: 0.6,
+      },
+      hitFlash: 0xffffff,
+      airBody: 'wind',
+    },
+  },
+  charge: chargeFor('celestialTempest'),
+};

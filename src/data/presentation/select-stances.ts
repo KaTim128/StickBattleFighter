@@ -108,6 +108,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.008, hands: 0.025 },
   },
+  // Aerion: tall and light, weight on the toes, one wing-arm swept back and open, the other hand raised in invitation.
+  aerion: {
+    title: 'The Sky Sovereign',
+    style: 'Aerial wind warrior: dives, wind blades, lifts enemies and outruns everything',
+    pelvis: 0.9,
+    leadFoot: 0.3,
+    rearFoot: -0.3,
+    lean: -4,
+    head: 6,
+    front: { x: 0.52, y: 0.05 },
+    back: { x: -0.42, y: 0.3 },
+    turn: 0.6,
+    scale: 1,
+    breath: { lean: 1.2, pelvis: 0.01, hands: 0.03 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

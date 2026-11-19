@@ -114,6 +114,9 @@ export class StickmanView {
   jar = 0;
   /** 0..1 how much of a grenade is in the rear hand (Vexoris's Grenade wind-up). */
   grenade = 0;
+  /** How far the wings are spread (0 folded, 1 wide) and how hard they beat (winged skins). */
+  wingSpread = 0.3;
+  wingFlap = 0;
   /** 0..1 red glow in the eyes of a mask (Death Mark charged). */
   eyeGlow = 0;
   private slashColours = { colour: 0xe5242e, edge: 0xff9a9a };
@@ -155,6 +158,11 @@ export class StickmanView {
     this.root.addChild(scaled);
     this.scaled = scaled;
     this.baseSize = size;
+  }
+
+  /** How far a standing fighter hovers above the floor with this look (winged skins), metres. */
+  get hoverM(): number {
+    return this.premium?.hoverM ?? 0;
   }
 
   private readonly scaled: Container;
@@ -400,6 +408,8 @@ export class StickmanView {
         drawHead,
         bodyWidthK: 1 + 0.6 * this.turn,
         eyeGlow: this.eyeGlow,
+        wingSpread: this.wingSpread,
+        wingFlap: this.wingFlap,
       });
     } else {
       for (const i of muscled ? [0, 1, 3, 2] : [0, 1, 2, 3]) drawPart(limbs[i]!, i);

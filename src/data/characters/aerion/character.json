@@ -1,0 +1,66 @@
+{
+  "id": "aerion",
+  "template": "base-stickman",
+  "displayName": "Aerion",
+  "description": "Aerion was raised above the cloud line, where the wind answers to anyone fast enough to ask. He came down to the arena to find out whether anyone on the ground could keep up. So far nobody has, and he has stopped being gentle about proving it.",
+  "characterType": "fighter",
+  "element": "wind",
+  "combatStyle": "aerial",
+  "profiles": {
+    "animation": "aerion-animation",
+    "moveset": "aerion-moveset",
+    "stats": "aerion-stats",
+    "effects": "aerion-effects",
+    "audio": "aerion-audio",
+    "ai": "aerion-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.52,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.43,
+      "shin": 0.43
+    },
+    "colour": "#d9e2ee",
+    "colourBack": "#a9b8c9",
+    "outline": "#26323f",
+    "limbWidthM": 0.074,
+    "outlineWidthM": 0.03,
+    "spine": 0.54
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": true,
+    "usesElementalEffects": true,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "aerion-kit"
+}

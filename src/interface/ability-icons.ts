@@ -7,7 +7,7 @@
  * deliberate shape. Original artwork; one per icon id (`AbilityDef.icon`, `AbilityKit.comboIcon`,
  * `AbilityKit.heavyIcon`).
  */
-type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin';
+type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin' | 'wind';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -19,6 +19,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   decay: ['#e2f7b8', '#4f7a1c', '#0f1608'],
   blue: ['#d8f0ff', '#1f6fe8', '#020a22'],
   toxin: ['#e8ffc8', '#2f8a12', '#06140a'],
+  wind: ['#ffffff', '#3a78b8', '#06121f'],
 };
 
 const MATERIALS = `
@@ -298,6 +299,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'toxin',
     rays(24, 26, 16, '#ffe9a8', 0.22),
     `<circle cx="24" cy="28" r="15" fill="#ffb347" opacity=".3" filter="url(#bl)"/><g filter="url(#ds)"><ellipse cx="24" cy="29" rx="11.5" ry="13" fill="#4a5a30" stroke="#10160b" stroke-width="1.8"/><path d="M14 24 H34 M14 29 H34 M14 34 H34 M24 17 V41" stroke="#2c3820" stroke-width="1.5" fill="none"/><rect x="20" y="12" width="8" height="6" rx="1.5" fill="#6d6f7a" stroke="#17181d" stroke-width="1.4"/><path d="M28 14 C34 10 38 12 38 17" stroke="#c9d1b0" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="38" cy="19" r="3" fill="none" stroke="#c9d1b0" stroke-width="1.8"/></g><ellipse cx="19" cy="25" rx="2.6" ry="4" fill="#fff" opacity=".28"/>`,
+  ),
+  'sky-dive': icon(
+    'wind',
+    rays(24, 26, 14, '#ffffff', 0.25),
+    `<path d="M10 8 C14 18 20 26 30 38" stroke="#bfe2ff" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".7"/><g filter="url(#ds)"><path d="M32 36 L26 18 C20 22 14 24 8 20 C16 30 24 38 32 36Z" fill="#eef6ff" stroke="#26323f" stroke-width="1.6"/><path d="M32 36 L36 22 C40 24 42 28 42 34 C38 38 34 38 32 36Z" fill="#d4eeff" stroke="#26323f" stroke-width="1.6"/></g><ellipse cx="32" cy="41" rx="10" ry="3" fill="#bfe2ff" opacity=".5" filter="url(#bl)"/>`,
+  ),
+  'wind-blade': icon(
+    'wind',
+    rays(24, 24, 14, '#ffffff', 0.2),
+    `<g filter="url(#gl)" opacity=".9"><path d="M6 14 C18 10 30 12 42 20 C30 18 18 18 6 14Z" fill="#d4eeff"/><path d="M6 24 C20 20 34 22 44 28 C32 27 18 28 6 24Z" fill="#bfe2ff"/><path d="M8 34 C20 31 32 33 42 38 C30 37 18 38 8 34Z" fill="#8fc4f4"/></g>`,
+  ),
+  'cyclone-lift': icon(
+    'wind',
+    rays(24, 24, 14, '#ffffff', 0.2),
+    `<g fill="none" stroke="#d4eeff" stroke-width="3" stroke-linecap="round" filter="url(#gl)"><path d="M10 10 C20 6 34 8 38 12"/><path d="M13 18 C22 14 32 16 35 20"/><path d="M16 26 C23 23 30 24 32 28"/><path d="M19 33 C24 31 28 32 29 35"/></g><g filter="url(#ds)"><circle cx="24" cy="12" r="3.4" fill="#eef6ff" stroke="#26323f" stroke-width="1.4"/></g>`,
+  ),
+  tailwind: icon(
+    'wind',
+    rays(24, 24, 14, '#ffffff', 0.18),
+    `<g fill="none" stroke="#bfe2ff" stroke-width="3" stroke-linecap="round" filter="url(#gl)"><path d="M4 18 H30 C36 18 36 10 30 10"/><path d="M6 26 H36 C42 26 42 34 36 34"/><path d="M10 34 H22"/></g><g filter="url(#ds)"><path d="M30 24 C36 14 42 12 44 8 C44 18 40 28 32 30Z" fill="#eef6ff" stroke="#26323f" stroke-width="1.5"/></g>`,
+  ),
+  'feather-guard': icon(
+    'wind',
+    rays(24, 24, 14, '#ffffff', 0.18),
+    `<g filter="url(#ds)"><path d="M24 6 C10 10 8 26 14 40 C20 36 24 30 24 24 C24 30 28 36 34 40 C40 26 38 10 24 6Z" fill="#eef6ff" stroke="#26323f" stroke-width="1.8"/><path d="M24 10 V38 M17 14 C15 22 16 30 19 36 M31 14 C33 22 32 30 29 36" stroke="#8fc4f4" stroke-width="1.6" fill="none"/></g>`,
+  ),
+  'celestial-tempest': icon(
+    'wind',
+    rays(24, 24, 18, '#ffffff', 0.3),
+    `<g fill="none" stroke="#d4eeff" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="6"/><path d="M24 24 m-11 0 a11 11 0 1 1 11 11"/><path d="M24 24 m-17 0 a17 17 0 1 1 17 17" opacity=".7"/></g><circle cx="24" cy="24" r="3" fill="#ffffff"/>`,
+  ),
+  'wing-combo': icon(
+    'wind',
+    rays(24, 24, 14, '#ffffff', 0.15),
+    `<path d="M6 36 C12 18 28 8 42 10 C34 16 24 24 18 38Z" fill="#eef6ff" stroke="#26323f" stroke-width="1.6" filter="url(#ds)"/><path d="M14 34 C20 22 30 16 38 14 M18 38 C22 28 28 22 34 18" stroke="#8fc4f4" stroke-width="1.6" fill="none"/>`,
+  ),
+  'wing-smash': icon(
+    'wind',
+    rays(24, 28, 16, '#ffffff', 0.25),
+    `<g filter="url(#ds)"><path d="M24 8 C14 8 6 14 4 24 C12 20 18 22 24 30 C30 22 36 20 44 24 C42 14 34 8 24 8Z" fill="#eef6ff" stroke="#26323f" stroke-width="1.6"/></g><ellipse cx="24" cy="38" rx="16" ry="4" fill="#bfe2ff" opacity=".6" filter="url(#bl)"/><path d="M10 38 H38" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`,
   ),
   'plague-bloom': icon(
     'toxin',

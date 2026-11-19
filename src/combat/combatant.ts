@@ -464,6 +464,21 @@ export class Combatant {
     this.status.apply('fog', 0.35, { dps: chipDps, speedFactor, sightM });
   }
 
+  /** One more stack of aerial momentum (Aerion's passive): `speedPerStack` faster each, up to `maxStacks`, for `durationS`. */
+  gainMomentum(speedPerStack: number, maxStacks: number, durationS: number): void {
+    if (this.koAgeS >= 0) return;
+    if (this.status.stacks('momentum') >= maxStacks) {
+      // At the cap a blow only renews the time.
+      this.status.refresh('momentum', durationS);
+      return;
+    }
+    this.status.apply('momentum', durationS, { speedFactor: 1 + speedPerStack });
+  }
+
+  get momentumStacks(): number {
+    return this.status.stacks('momentum');
+  }
+
   /** Seconds of fog left on it (presentation: the green haze over the view). */
   get fogLeftS(): number {
     return this.status.leftS('fog');

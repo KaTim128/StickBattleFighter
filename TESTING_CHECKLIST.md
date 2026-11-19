@@ -625,3 +625,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Equip Grenade on the select screen (E slot): it arcs forward; a direct hit sticks and blinks for 0.5 s then explodes; a miss explodes 1 s after landing; high damage and knockback within 3 m, no poison.
 - [ ] Vapour Step (R) dashes backwards, leaving a 3 s poison mist where he stood: enemies entering are poisoned, he is not.
 - [ ] Plague Bloom: an enemy inside sees only about 1 m round themselves.
+
+### Aerion (21/11/2026, TD-123)
+- [ ] Aerion appears on the select screen (stance, details with passive), Practice, Tournament and the Admin Panel; he hovers and his wings change with movement, air, Tailwind and Feather Guard.
+- [ ] Light combo: palm, spinning kick, wing slash, upward launcher; heavy wing smash with a wind ring; momentum stacks speed up his run.
+- [ ] Q dives on the aimed spot; E throws three blades; F raises a tornado, lifts a close enemy and flings them; R Tailwind; the fifth ability swaps for R; I Celestial Tempest rains blades then dives.

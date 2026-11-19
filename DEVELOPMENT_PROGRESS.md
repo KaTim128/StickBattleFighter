@@ -869,3 +869,6 @@ Done: landmine Chemical Trap, thrown-jar Toxic Jar, 10 s poison-fog Plague Bloom
 
 ## 21/11/2026: Vexoris Grenade, Vapour Step, fog sight 1.2 m (TD-122)
 Gate: biome, typecheck, vitest. Screenshots checked: grenade arc, stick, explosion; Vapour Step mist. Next: deploy, owner review, then Arcstrike.
+
+## 21/11/2026: Aerion (TD-123)
+Done: Aerion playable (winged skin, hover, combo, heavy, passive, five abilities, ultimate, AI, stance, icons, sounds). Gate: biome, typecheck, vitest 987, menu and front-end e2e 18 passed. Next: deploy, owner review, then Arcstrike.

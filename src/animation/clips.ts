@@ -172,6 +172,90 @@ const STRIKES = {
     { lean: deg(-6), head: deg(4), armBack: limb(-78, 22), armFront: limb(60, 56), legFront: limb(30, -26) },
   ),
 
+  // ---- Aerion's combo (spec section 4): light, sweeping, a lot of arm and wing. Each pose shows the wings' work.
+  // 1. Wing-assisted palm strike: the rear shoulder drives through, an open palm thrust forward.
+  'aerion.palm': strike(
+    { lean: deg(6), head: deg(-2), armFront: limb(60, 130), armBack: limb(120, 50), legFront: limb(26, -28) },
+    {
+      lean: deg(-22),
+      head: deg(8),
+      armFront: limb(92, 4),
+      armBack: limb(-30, 40),
+      legFront: limb(42, -34),
+      legBack: limb(-30, -8),
+    },
+  ),
+  // 2. Spinning kick: a full turn of the body whipping the rear leg round.
+  'aerion.spin-kick': strike(
+    {
+      lean: deg(-30),
+      head: deg(22),
+      armFront: limb(-40, 90),
+      armBack: limb(80, 70),
+      legFront: limb(20, -50),
+      legBack: limb(-34, -50),
+    },
+    {
+      lean: deg(24),
+      head: deg(-16),
+      armFront: limb(120, 50),
+      armBack: limb(-60, 30),
+      legFront: limb(36, -20),
+      legBack: limb(100, -8),
+    },
+  ),
+  // 3. Horizontal wing slash: the arm flung out level, the whole wing cutting through the air in one flat arc.
+  'aerion.wing-slash': strike(
+    { lean: deg(-24), head: deg(14), armFront: limb(-80, 40), armBack: limb(40, 100), legFront: limb(30, -40) },
+    {
+      lean: deg(18),
+      head: deg(-12),
+      armFront: limb(100, 4),
+      armBack: limb(20, 110),
+      legFront: limb(46, -34),
+      legBack: limb(-34, -10),
+    },
+  ),
+  // 4. Upward launching strike: crouching low, then driving the fist up and the body off the ground.
+  'aerion.rising-strike': strike(
+    {
+      lean: deg(-18),
+      head: deg(16),
+      armFront: limb(30, 120),
+      armBack: limb(60, 120),
+      legFront: limb(56, -96),
+      legBack: limb(-18, -74),
+    },
+    {
+      lean: deg(14),
+      head: deg(-22),
+      armFront: limb(168, 8),
+      armBack: limb(-40, 50),
+      legFront: limb(14, -12),
+      legBack: limb(-14, -8),
+    },
+  ),
+  // Heavy: both arms spread wide (the wings with them) and brought down together in one great downward smash.
+  'aerion.wing-smash': strike(
+    {
+      lean: deg(10),
+      head: deg(-8),
+      armFront: limb(170, 20),
+      armBack: limb(160, 26),
+      legFront: limb(30, -30),
+      legBack: limb(-24, -22),
+    },
+    {
+      lean: deg(-40),
+      head: deg(22),
+      armFront: limb(40, 8),
+      armBack: limb(30, 12),
+      legFront: limb(56, -60),
+      legBack: limb(-40, -18),
+    },
+    { lean: deg(-4), head: deg(-4), armFront: limb(120, 40), armBack: limb(120, 40), legFront: limb(26, -22) },
+  ),
+
   // ---- Standard kicks (shared default: a plain, readable version of each).
   'std.front-kick': strike(
     { lean: deg(8), legFront: limb(80, -115), armFront: limb(70, 110), armBack: limb(50, 130) },

@@ -1,0 +1,11 @@
+{
+  "id": "aerion-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Jab": "aerion.palm",
+    "SideKick": "aerion.spin-kick",
+    "Hook": "aerion.wing-slash",
+    "RoundhouseKick": "aerion.rising-strike",
+    "HeavyAttack": "aerion.wing-smash"
+  }
+}

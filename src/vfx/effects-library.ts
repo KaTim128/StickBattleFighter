@@ -91,6 +91,18 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     splash: { count: 22, colour: 0x5fe02a },
     mist: 12,
   },
+  // Aerion's wind: pale blue streaks on the limbs, a quick gust ring on every blow, a wide shockwave on the wing smash.
+  'wind-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x4a6f9a, hot: 0x8fc4f4, bright: 0xd4eeff, core: 0xffffff },
+  },
+  'wind-hit': { sparks: { count: 10, speedMps: 6, colour: 0xd4eeff }, ring: { sizeM: 0.45, colour: 0xd4eeff } },
+  'wind-launch': { sparks: { count: 16, speedMps: 8, colour: 0xffffff }, ring: { sizeM: 0.8, colour: 0xbfe2ff } },
+  'wind-smash': {
+    sparks: { count: 22, speedMps: 8, colour: 0xe8f6ff },
+    ring: { sizeM: 1.9, colour: 0xbfe2ff },
+    mist: 8,
+  },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },

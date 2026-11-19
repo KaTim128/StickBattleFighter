@@ -138,6 +138,9 @@ export interface ProjectileDelivery {
   readonly speedMps: number;
   readonly radiusM: number;
   readonly maxRangeM: number;
+  /** Several shots at once, fanned across `spreadRad` (Aerion's Wind Blade); each is its own shot with its own trail. */
+  readonly count?: number;
+  readonly spreadRad?: number;
 }
 
 /** The caster rushes forward, hitting fighters in the way, optionally leaving a burning trail. */
@@ -249,6 +252,22 @@ export interface LeapDelivery {
   readonly radiusM: number;
   /** How fast WASD or the joystick moves the landing spot while aiming (owner, 12/11/2026). */
   readonly aimSpeedMps?: number;
+  /**
+   * Shots loosed while the caster hangs in the air (Aerion's Celestial Tempest): `count` volleys between `fromS` and
+   * `untilS` into the leap, each of `blades` shots fanned round the caster, sweeping round by `sweepRad` over the
+   * whole volley so the storm crosses the battlefield. Each shot carries `payload`.
+   */
+  readonly volley?: {
+    readonly count: number;
+    readonly fromS: number;
+    readonly untilS: number;
+    readonly blades: number;
+    readonly sweepRad: number;
+    readonly payload: AbilityPayload;
+    readonly speedMps: number;
+    readonly radiusM: number;
+    readonly maxRangeM: number;
+  };
 }
 
 /**
@@ -385,6 +404,11 @@ export interface GrabDelivery {
   readonly liftS: number;
   readonly liftM: number;
   readonly slamRadiusM: number;
+  /**
+   * A miniature tornado instead of a slam (Aerion's Cyclone Lift): the target is held `holdM` ahead of the caster,
+   * spinning up in the funnel, then flung straight away from the caster with the payload.
+   */
+  readonly cyclone?: { readonly holdM: number };
 }
 
 /** What a running buff does (the buff delivery without its summons). */
@@ -452,6 +476,8 @@ export interface MagicLook {
   };
   /** The target's body flashes this colour on contact (white for the Fireball). */
   readonly hitFlash?: number;
+  /** What wraps the caster while a leap carries it: flames (default) or streaming wind (Aerion's dives). */
+  readonly airBody?: 'flames' | 'wind';
   /**
    * A buff's aura while it lasts: 'full' (default) has rising embers and steam (a fury); 'quiet'
    * keeps only the soft ring on the floor, for casters whose own body glow shows the power
@@ -532,4 +558,17 @@ export interface AbilityKit {
   readonly comboIcon?: string;
   /** The Heavy Attack's picture on the fighter details screen. */
   readonly heavyIcon?: string;
+  /**
+   * A passive (master plan: each fighter has one). Momentum (Aerion's Aerial Momentum): every melee blow that lands
+   * adds a stack for `durationS` (each stack refreshes it) up to `maxStacks`; each stack makes him `speedPerStack`
+   * faster. All stacks lapse together when the time runs out.
+   */
+  readonly passive?: {
+    readonly id: 'momentum';
+    readonly name: string;
+    readonly description: string;
+    readonly maxStacks: number;
+    readonly durationS: number;
+    readonly speedPerStack: number;
+  };
 }

@@ -277,6 +277,38 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sine', 110, 50, 0.2, 0.55),
     noise('bandpass', 1400, 700, 0.5, 0.18, 0.9, 0.1, { attack: 0.05 }),
   ],
+  // Aerion's wind: airy whooshes, the beat of wings, a rushing roar for the storm.
+  'hit-aerion-wing-smash': [
+    noise('bandpass', 2400, 900, 0.16, 0.5, 1),
+    tone('sine', 120, 55, 0.22, 0.55),
+    noise('lowpass', 1800, 300, 0.4, 0.3, 0.8, 0.04),
+  ],
+  'wing-flap': [noise('bandpass', 700, 450, 0.2, 0.3, 0.9, 0, { attack: 0.05 }), tone('sine', 90, 70, 0.16, 0.2)],
+  'sky-launch': [
+    noise('bandpass', 600, 2200, 0.34, 0.42, 0.9, 0, { attack: 0.06 }),
+    tone('sine', 120, 220, 0.22, 0.25),
+  ],
+  'wind-burst': [
+    noise('lowpass', 2200, 200, 0.55, 0.62, 0.7),
+    tone('sine', 100, 38, 0.4, 0.55),
+    noise('bandpass', 3000, 1200, 0.2, 0.35, 1),
+  ],
+  'blade-whoosh': [noise('bandpass', 2600, 1200, 0.22, 0.35, 1.6, 0, { attack: 0.02 })],
+  'blade-cut': [noise('bandpass', 3400, 1800, 0.1, 0.4, 1.8), tone('triangle', 900, 500, 0.08, 0.2)],
+  'wind-gather': [
+    noise('bandpass', 500, 1400, 0.5, 0.28, 1, 0, { attack: 0.3, flutter: 5 }),
+    tone('sine', 80, 120, 0.4, 0.2),
+  ],
+  'cyclone-spin': [noise('bandpass', 700, 1500, 0.7, 0.34, 1.1, 0, { attack: 0.15, flutter: 9 })],
+  'cyclone-fling': [noise('bandpass', 1800, 400, 0.4, 0.5, 0.9), tone('sine', 140, 60, 0.3, 0.45)],
+  'tailwind-rush': [noise('bandpass', 800, 2400, 0.45, 0.38, 0.9, 0, { attack: 0.1 })],
+  'guard-fold': [noise('lowpass', 1400, 500, 0.2, 0.3, 0.9), tone('sine', 110, 80, 0.16, 0.3)],
+  'tempest-volley': [noise('bandpass', 2000, 900, 0.35, 0.4, 1.2, 0, { attack: 0.03 }), tone('sine', 70, 55, 0.3, 0.3)],
+  'tempest-dive': [
+    noise('lowpass', 2600, 150, 0.8, 0.75, 0.7),
+    tone('sine', 80, 30, 0.6, 0.65),
+    noise('bandpass', 3200, 1000, 0.3, 0.4, 1, 0.05),
+  ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),
     noise('lowpass', 1200, 400, 0.26, 0.25, 1, 0.02),

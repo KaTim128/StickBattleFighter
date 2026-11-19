@@ -2632,6 +2632,10 @@ export class FightArenaScene implements ArenaScene {
 
     if (connected) {
       attacker.hits++;
+      // Passive (Aerion's Aerial Momentum): every blow that lands on a fighter adds a stack of speed.
+      const passive = attacker.caster?.kit.passive;
+      if (hitFighter && passive?.id === 'momentum')
+        attacker.combatant.gainMomentum(passive.speedPerStack, passive.maxStacks, passive.durationS);
       if (!hitFighter) this.shake.addTrauma(a.trauma);
       this.shake.punch(a.zoomPunch);
     }
@@ -3068,9 +3072,14 @@ export class FightArenaScene implements ArenaScene {
         const pts = [0.2, 0.6, 1.0, 1.4].map((z) =>
           besideOnScreen(f.x, f.y, (this.fxRng() - 0.5) * 0.3, f.abilityLift + z),
         );
-        this.frameFlames.push({ points: pts, strength: 1 });
-        burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.1, baseM: f.abilityLift, widthM: 0.75 });
-        burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.8, baseM: f.abilityLift + 0.8, widthM: 0.55 });
+        if (cast.def.look?.airBody === 'wind') {
+          // Aerion's dive: the body streams pale wind instead of burning.
+          this.frameFlames.push({ points: pts, strength: 0.7, palette: cast.def.look.palette });
+        } else {
+          this.frameFlames.push({ points: pts, strength: 1 });
+          burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.1, baseM: f.abilityLift, widthM: 0.75 });
+          burning.push({ x: f.x, y: f.y, heightM: f.abilityLift + 1.8, baseM: f.abilityLift + 0.8, widthM: 0.55 });
+        }
       }
     }
     for (const p of this.props?.props ?? []) {
@@ -3109,6 +3118,7 @@ export class FightArenaScene implements ArenaScene {
       zones: world.zones,
       clouds: world.clouds,
       grenades: world.grenades,
+      cyclones: world.cyclones,
       marks: world.marks.flatMap((m) => {
         const t = this.fighterByName(m.targetId);
         return t ? [{ x: t.x, y: t.y, phase: m.phase, ageS: m.ageS }] : [];
@@ -3279,7 +3289,34 @@ export class FightArenaScene implements ArenaScene {
     }
     // The striker's little bounce off a landed blow.
     const bounce = f.recoilS > 0 ? 0.07 * Math.sin(Math.PI * (1 - f.recoilS / RECOIL_BOUNCE_S)) : 0;
-    const drawnHeight = heightM + lift + f.abilityLift + bounce;
+    // Winged fighters (Aerion) hover a little off the floor while standing, bobbing gently, and their wings follow what
+    // they do: folded close for Feather Guard, wide in the air or under Tailwind, beating harder with momentum.
+    let hoverLift = 0;
+    const hoverM = f.view.hoverM;
+    if (hoverM > 0) {
+      const air = heightM + lift + f.abilityLift;
+      const standing = air < 0.05 && !c.isKo && c.state !== 'knockdown' && c.state !== 'dodging' && !f.climb;
+      f.hoverNow += ((standing ? 1 : 0) - f.hoverNow) * smoothing(8, frameDtS);
+      hoverLift = hoverM * f.hoverNow * (1 + 0.22 * Math.sin(this.simTimeS * 2.4));
+      const moving = f.view.motion;
+      const spreadTarget =
+        f.buffSourceId === 'featherGuard'
+          ? -0.2
+          : f.buffSourceId === 'tailwind'
+            ? 1
+            : air > 0.25
+              ? 0.9
+              : 0.5 + 0.3 * moving;
+      const flapTarget =
+        air > 0.25
+          ? 0.7
+          : Math.min(1, moving * 0.4 + c.momentumStacks * 0.14 + (f.buffSourceId === 'tailwind' ? 0.3 : 0));
+      f.wingSpreadNow += (spreadTarget - f.wingSpreadNow) * smoothing(9, frameDtS);
+      f.wingFlapNow += (flapTarget - f.wingFlapNow) * smoothing(7, frameDtS);
+      f.view.wingSpread = f.wingSpreadNow;
+      f.view.wingFlap = f.wingFlapNow;
+    }
+    const drawnHeight = heightM + lift + f.abilityLift + bounce + hoverLift;
     // Dodge (owner, 11/11/2026): each character's own Dodge clip from its Animation Profile.
     const dodge: DodgeLook = {};
     if (c.state === 'dodging') {

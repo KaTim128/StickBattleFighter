@@ -1,0 +1,17 @@
+{
+  "id": "aerion-effects",
+  "punchImpact": "wind-hit",
+  "kickImpact": "wind-hit",
+  "heavyImpact": "wind-smash",
+  "blockImpact": "block-guard",
+  "limbTrail": "wind-limbs",
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#d4eeff",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "winged"
+}

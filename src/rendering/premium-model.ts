@@ -76,6 +76,15 @@ export interface PremiumSkin {
   readonly pelvisBall?: boolean;
   /** One glowing eye on the round head (Titan's reference: a white slanted eye). */
   readonly eye?: number;
+  /** Layered feathered wings from the shoulder blades (Aerion). */
+  readonly wings?: {
+    readonly feather: number;
+    readonly featherShade: number;
+    readonly edge: number;
+    readonly glow: number;
+  };
+  /** Hovers this far above the floor when standing (render only; Aerion), metres. */
+  readonly hoverM?: number;
 }
 
 /** Fire (the approved Inferno look). */
@@ -239,6 +248,40 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     garment: { hem: 'coat', trim: 0x4a7a22, cloth: [0x233a1e, 0x3e5c32, 0x101a0d] },
     head: 'gasmask',
   },
+  // Aerion (master plan section 4): an elegant silver and white winged warrior in streamlined plate with pale blue
+  // light, and layered feathered wings from the shoulder blades. Light and tall; he never quite touches the ground.
+  winged: {
+    palette: {
+      outline: 0x26323f,
+      skin: 0xdbe4ee,
+      skinLit: 0xffffff,
+      skinShade: 0xa9b8c9,
+      skinBack: 0xb7c5d6,
+      rim: 0xd4eeff,
+      armour: 0xeef3f9,
+      armourLit: 0xffffff,
+      armourEdge: 0x3a4a5c,
+      seam: 0x8fc4f4,
+      lava: 0xd4eeff,
+      glow: 0x8fc4f4,
+      hand: 0xe2eaf3,
+    },
+    bulk: 1.15,
+    muscle: 0.3,
+    gear: {
+      shoulder: 'guard',
+      bracers: true,
+      legs: 'trousers',
+      kneeGuards: true,
+      shinGuards: true,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'own',
+    wings: { feather: 0xf2f8ff, featherShade: 0xb8cce2, edge: 0x2f4157, glow: 0x8fc4f4 },
+    hoverM: 0.14,
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -291,6 +334,10 @@ export interface PremiumDrawState {
   readonly tint?: { readonly colour: number; readonly k: number };
   /** Draws the fighter's own head style (skins with `head: 'own'`), after the body, before the near arm. */
   readonly drawHead?: () => void;
+  /** 0..1 how far the wings are spread (0 folded against the back); winged skins only. */
+  readonly wingSpread?: number;
+  /** 0..1 how hard the wings beat (momentum, flight). */
+  readonly wingFlap?: number;
   /**
    * The body turned towards the camera (select screen, owner 13/11/2026): the torso and garment
    * are drawn this much wider, as the chest is seen more from the front. 1 = profile.
@@ -415,6 +462,7 @@ export class PremiumModel {
     this.st = { ...st, w: st.w * this.skin.bulk };
     this.lx = -0.55 * st.facing;
     this.ly = -0.83;
+    if (this.skin.wings) this.wings(g, fire, s);
     this.arm(g, fire, s.armBack, true);
     const coated = this.skin.garment?.hem === 'coat';
     // An open coat wraps the legs: its back tail and lining first (behind both legs), the front panels and belt last.
@@ -443,6 +491,80 @@ export class PremiumModel {
       st.drawHead?.();
     }
     this.arm(g, fire, s.armFront, false);
+  }
+
+  /** Where the hover lifts the figure when standing (render only). */
+  get hoverM(): number {
+    return this.skin.hoverM ?? 0;
+  }
+
+  /**
+   * Layered feathered wings from the shoulder blades, behind the whole body. Folded (spread 0) they hang down the
+   * back; spread (1) the leading edge lifts up and back and the feathers fan out. A beat sweeps the whole wing, and
+   * the far wing sits a little higher, darker and out of step, so they read as a pair from the side.
+   */
+  private wings(g: Graphics, fire: Graphics, s: Skel): void {
+    const wing = this.skin.wings;
+    if (!wing) return;
+    const { t, w } = this.st;
+    const spread = Math.min(1, Math.max(-0.2, this.st.wingSpread ?? 0.3));
+    const flap = this.st.wingFlap ?? 0;
+    const root = {
+      x: s.neck.x + (s.chest.x - s.neck.x) * 0.3 - w * 0.55,
+      y: s.neck.y + (s.chest.y - s.neck.y) * 0.3,
+    };
+    const feathers = 7;
+    for (const far of [true, false]) {
+      const beat = Math.sin(t * (4 + flap * 10) + (far ? 0.9 : 0)) * (0.05 + flap * 0.22);
+      // Angle from straight up, turning backward (so 180 degrees hangs straight down).
+      const lead =
+        ((165 - 105 * Math.max(0, spread)) * Math.PI) / 180 +
+        beat -
+        (far ? 0.14 : 0) +
+        (spread < 0 ? -spread * 0.5 : 0);
+      const fan = ((5 + 8 * Math.max(0, spread)) * Math.PI) / 180;
+      const reach = 0.78 + 0.5 * Math.max(0, spread);
+      const colour = this.c(far ? wing.featherShade : wing.feather);
+      const ox = far ? w * 0.4 : 0;
+      const oy = far ? -w * 0.5 : 0;
+      for (let k = feathers - 1; k >= 0; k--) {
+        const a = lead + k * fan;
+        const len = reach * (1 - 0.38 * (k / (feathers - 1)));
+        const ux = -Math.sin(a);
+        const uy = -Math.cos(a);
+        const px = -uy;
+        const py = ux;
+        const wd = w * (2.1 - 0.4 * (k / feathers));
+        const sx = root.x + ox + ux * w * 0.5;
+        const sy = root.y + oy + uy * w * 0.5;
+        const mx = sx + ux * len * 0.55;
+        const my = sy + uy * len * 0.55;
+        const tx = sx + ux * len;
+        const ty = sy + uy * len;
+        const pts = [
+          sx + px * wd * 0.35,
+          sy + py * wd * 0.35,
+          mx + px * wd,
+          my + py * wd,
+          tx,
+          ty,
+          mx - px * wd * 0.8,
+          my - py * wd * 0.8,
+          sx - px * wd * 0.35,
+          sy - py * wd * 0.35,
+        ];
+        g.poly(pts).fill({ color: colour, alpha: 1 });
+        g.poly(pts).stroke({ width: w * 0.28, color: this.c(wing.edge), alpha: far ? 0.8 : 1, join: 'round' });
+        // The quill and a pale-blue light along each tip.
+        g.moveTo(sx, sy)
+          .lineTo(tx, ty)
+          .stroke({ width: w * 0.1, color: this.c(wing.featherShade), alpha: 0.9 });
+        fire
+          .moveTo(mx, my)
+          .lineTo(tx, ty)
+          .stroke({ width: w * 0.22, color: wing.glow, alpha: (far ? 0.2 : 0.35) + flap * 0.25, cap: 'round' });
+      }
+    }
   }
 
   // ---------------------------------------------------------------- colour helpers

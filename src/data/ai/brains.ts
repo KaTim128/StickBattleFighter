@@ -113,6 +113,28 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a2', 'a3'],
     ],
   },
+  // Aerion: a mobile skirmisher. Blades from range, dives to close, lifts a target that gets in close, buffs to chase or escape.
+  'aerion-ai': {
+    style: 'Aerial skirmisher: blades at range, dives in, cyclone on anyone close, fast and evasive.',
+    preferredRangeM: [2.2, 5],
+    movement: 'circle',
+    meleeBias: 0.65,
+    heavyBias: 0.25,
+    defence: 'dodge',
+    retreatBelowHp: 0.25,
+    hitAndRunS: 0.9,
+    tactics: {
+      a1: { role: 'gapClose', minM: 3, maxM: 8, weight: 1.2 },
+      a2: { role: 'poke', minM: 2.5, maxM: 10, weight: 1.3 },
+      a3: { role: 'control', minM: 0, maxM: 3.4, weight: 1.1 },
+      a4: { role: 'buff', minM: 4, maxM: 12, weight: 0.8 },
+      ult: { role: 'burst', minM: 0, maxM: 7, weight: 1.3 },
+    },
+    combos: [
+      ['a2', 'a1'],
+      ['a3', 'a2'],
+    ],
+  },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
   'rampage-ai': {
@@ -224,6 +246,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   soulTether: { role: 'control', minM: 2, maxM: 9, weight: 1.1 },
   // Grenade: lob it at a target in mid range; the blast is wide, so it needs no precision.
   grenade: { role: 'burst', minM: 3, maxM: 7.5, weight: 1.2 },
+  // Feather Guard: fold the wings when hurt and someone is on him.
+  featherGuard: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.6 } },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
   deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };

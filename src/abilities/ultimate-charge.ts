@@ -11,6 +11,7 @@ import type { UltimateCharge } from './ability-def';
  * - Hunting Frenzy 0.9: only 4 s, but the whole arena goes dark for the opponent and he is 17% faster.
  * - Undead Army 1.0: two frail, stun-free skeletons per cast, never more than four.
  * - Plague Bloom 1.2: a huge toxic burst, but its strength is two stacks of poison, and a full second of warning.
+ * - Celestial Tempest 1.25: untouchable for 2.4 s, up to thirty blades across the battlefield and a 90 damage dive.
  * - Rampage Mode 1.3: 8 s of 40% more defence, cooldowns 25% sooner, 15% faster and a shockwave.
  * - Blue Inferno 1.4: 10 s of +70% damage, cooldowns 30% sooner and 15% faster.
  */
@@ -18,6 +19,7 @@ export const ULTIMATE_POWER = {
   huntingFrenzy: 0.9,
   plagueBloom: 1.2,
   undeadArmy: 1.0,
+  celestialTempest: 1.25,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

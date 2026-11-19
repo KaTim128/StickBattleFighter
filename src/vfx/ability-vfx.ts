@@ -125,6 +125,14 @@ export interface AbilityVfxInput {
   readonly clouds?: readonly Cloud[];
   /** Lobbed grenades in flight, landed or stuck (Vexoris). */
   readonly grenades?: readonly Grenade[];
+  /** Miniature tornadoes holding an enemy (Aerion's Cyclone Lift). */
+  readonly cyclones?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly ageS: number;
+    readonly liftS: number;
+    readonly palette: Palette | null;
+  }[];
   readonly telegraphs: readonly Telegraph[];
   readonly fx: readonly AbilityFx[];
   readonly burning: readonly BurningThing[];
@@ -282,6 +290,22 @@ export class AbilityVfx {
       const look = p.def.look;
       if (look?.flight) this.flightTrail(p, look, dtS);
       else this.emitAt(p.x, p.y, BOLT_HEIGHT_M, 2, 0.6, 0.3, 0.09);
+    }
+    for (const cy of input.cyclones ?? []) {
+      const n = this.count(30 * dtS);
+      for (let i = 0; i < n; i++) {
+        const ang = this.rand() * Math.PI * 2;
+        this.emitAt(
+          cy.x + Math.cos(ang) * 0.5,
+          cy.y + Math.sin(ang) * 0.5,
+          this.rand() * 2.2,
+          1,
+          0.8,
+          0.5,
+          0.07,
+          cy.palette ?? undefined,
+        );
+      }
     }
     for (const c of input.charges ?? []) this.chargeParticles(c, dtS);
     for (const a of input.auras ?? []) {
@@ -1121,9 +1145,11 @@ export class AbilityVfx {
     for (const tg of input.telegraphs) {
       const k = Math.min(1, tg.ageS / tg.durationS);
       const pulse = 0.75 + 0.25 * Math.sin(t * 22);
-      f.circle(tg.x, tg.y, tg.radiusM).fill({ color: FIRE.deep, alpha: 0.14 });
-      f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: FIRE.hot, alpha: 0.22 });
-      f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: FIRE.bright, alpha: pulse });
+      // The ring takes its element's colour for wind dives; everything else keeps the warning orange.
+      const tp = tg.def.look?.airBody === 'wind' ? tg.def.look.palette : FIRE;
+      f.circle(tg.x, tg.y, tg.radiusM).fill({ color: tp.deep, alpha: 0.14 });
+      f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: tp.hot, alpha: 0.22 });
+      f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: tp.bright, alpha: pulse });
     }
 
     // Death Mark (owner, 20/11/2026): a red sigil, a ringed eye with a blade through it, turning slowly over the
@@ -1174,6 +1200,30 @@ export class AbilityVfx {
       f.circle(c.x, c.y, c.radiusM * swell).fill({ color: pal.deep, alpha: 0.3 * life });
       f.circle(c.x, c.y, c.radiusM * 0.7 * swell).fill({ color: pal.hot, alpha: 0.22 * life });
       if (c.ageS < c.armS) f.circle(c.x, c.y, c.radiusM).stroke({ width: 0.06, color: pal.bright, alpha: 0.6 });
+    }
+
+    // Cyclone Lift: a funnel of stacked, turning rings widening upward, with streaks flung off it.
+    for (const cy of input.cyclones ?? []) {
+      const pal = cy.palette ?? FIRE;
+      const grow = Math.min(1, cy.ageS / 0.25);
+      const levels = 9;
+      for (let i = 0; i < levels; i++) {
+        const k = i / (levels - 1);
+        const h = 0.1 + k * 2.3 * grow;
+        const r = (0.18 + 0.62 * k) * grow;
+        const c = iso(cy.x, cy.y, h);
+        const turn = t * (9 - k * 3) + i * 0.8;
+        g.ellipse(c.x, c.y, r, r * ISO_T).stroke({ width: 0.03, color: pal.bright, alpha: 0.35 + 0.3 * (1 - k) });
+        for (const off of [0, 2.1, 4.2]) {
+          const a0 = turn + off;
+          const x0 = c.x + Math.cos(a0) * r;
+          const y0 = c.y + Math.sin(a0) * r * ISO_T;
+          const x1 = c.x + Math.cos(a0 + 0.7) * r;
+          const y1 = c.y + Math.sin(a0 + 0.7) * r * ISO_T;
+          g.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 0.06, color: pal.core, alpha: 0.8, cap: 'round' });
+        }
+      }
+      f.circle(cy.x, cy.y, 0.7 * grow).fill({ color: pal.hot, alpha: 0.18 });
     }
 
     // Grenades: a shadow on the floor, then the olive body tumbling through its arc (or sitting, or stuck to someone),

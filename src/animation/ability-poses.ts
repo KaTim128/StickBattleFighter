@@ -316,6 +316,70 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-50), head: deg(-6), armFront: limb(52, 60), armBack: limb(100, 20), ...CROUCH },
     settle: 0.3,
   },
+  // ---- Aerion (master plan section 4): elegant, open-armed, always a little off the ground.
+  // Sky Dive: a crouch and spring, then folded in the air head-first for the dive (AIR), the landing is the release.
+  skyDive: {
+    windup: { lean: deg(-12), head: deg(10), armFront: limb(40, 100), armBack: limb(-20, 100), ...CROUCH },
+    release: { lean: deg(-48), head: deg(30), armFront: limb(60, 8), armBack: limb(50, 12), ...CROUCH },
+    settle: 0.3,
+    air: {
+      lean: deg(-60),
+      head: deg(24),
+      armFront: limb(120, 10),
+      armBack: limb(110, 10),
+      legFront: limb(20, -14),
+      legBack: limb(10, -10),
+    },
+  },
+  // Wind Blade: one arm drawn across the chest, then flung out in a slicing sweep.
+  windBlade: {
+    windup: { lean: deg(6), head: deg(-4), armFront: limb(-30, 100), armBack: limb(70, 80), legFront: limb(24, -26) },
+    release: { lean: deg(-18), head: deg(8), armFront: limb(96, 6), armBack: limb(-10, 50), legFront: limb(38, -30) },
+    settle: 0.45,
+  },
+  // Cyclone Lift: the arm spun round overhead gathering the wind, then both hands pushing the tornado forward; the
+  // target hangs in it (hold), then flung (slam). A miss: the arms close on empty air.
+  cycloneLift: {
+    windup: { lean: deg(4), head: deg(-6), armFront: limb(170, 40), armBack: limb(40, 100), legFront: limb(26, -24) },
+    release: { lean: deg(-14), head: deg(6), armFront: limb(100, 14), armBack: limb(90, 20), legFront: limb(34, -28) },
+    slam: { lean: deg(-24), head: deg(12), armFront: limb(84, 4), armBack: limb(70, 8), legFront: limb(44, -36) },
+    miss: { lean: deg(-28), head: deg(16), armFront: limb(90, 40), armBack: limb(70, 60), legFront: limb(50, -40) },
+    settle: 0.4,
+  },
+  // Tailwind: arms thrown back and chest out as the wings spread and the wind gathers.
+  tailwind: {
+    windup: { lean: deg(10), head: deg(-8), armFront: limb(-10, 30), armBack: limb(-30, 30), legFront: limb(20, -20) },
+    release: { lean: deg(-6), head: deg(10), armFront: limb(-50, 12), armBack: limb(-70, 12), legFront: limb(30, -26) },
+    settle: 0.4,
+  },
+  // Feather Guard: both arms crossed tight over the chest, the wings folded round him.
+  featherGuard: {
+    windup: { lean: deg(4), armFront: limb(100, 130), armBack: limb(110, 130), legFront: limb(30, -34) },
+    release: {
+      lean: deg(-4),
+      head: deg(8),
+      armFront: limb(120, 140),
+      armBack: limb(124, 140),
+      legFront: limb(34, -40),
+    },
+    settle: 0.4,
+  },
+  // Celestial Tempest: a deep crouch gathering the storm, then flung up with arms wide (AIR), the dive a hard landing.
+  celestialTempest: {
+    windup: { lean: deg(-14), head: deg(12), armFront: limb(30, 110), armBack: limb(-20, 110), ...CROUCH },
+    tremble: deg(2),
+    release: { lean: deg(-50), head: deg(32), armFront: limb(58, 8), armBack: limb(46, 12), ...CROUCH },
+    settle: 0.3,
+    air: {
+      lean: deg(8),
+      head: deg(-18),
+      armFront: limb(130, 10),
+      armBack: limb(-130, 10),
+      legFront: limb(14, -14),
+      legBack: limb(-8, -10),
+    },
+  },
+
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.

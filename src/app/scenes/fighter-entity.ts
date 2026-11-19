@@ -154,6 +154,10 @@ export class FighterEntity {
   carryWeight = 0;
   /** 0..1 how far into the stalking crouch (Death Mark), and how brightly the eyes glow once it is charged. */
   stalkAmount = 0;
+  /** Presentation (winged fighters): how far the hover has lifted it, and the wings' spread and beat. */
+  hoverNow = 0;
+  wingSpreadNow = 0.3;
+  wingFlapNow = 0;
   eyeGlowAmount = 0;
   /** Presentation: how much bigger it is drawn right now (eases to a buff's sizeFactor and back). */
   growth = 1;
