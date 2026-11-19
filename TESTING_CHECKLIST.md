@@ -646,3 +646,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Kenshiro carries one katana, held in both hands, blade pointing forward at the belly in idle; walking glides with the sword steady; relaxed it lowers.
 - [ ] J combo: horizontal slash, second horizontal slash back the other way, rising diagonal slash, then a downward finishing cut that knocks down.
 - [ ] Vexoris (karate), Aerion (airy), Inferno (restless bounce), Kenshiro (samurai) each stand differently, and no two fighters share an attack animation.
+
+### Portraits, picker, Kenshiro rework (21/11/2026, TD-127)
+- [ ] Every fighter's face shows on the select screen and in the fight top bar; the picker is four to a row and scrolls.
+- [ ] Kenshiro's tap: slash, second slash, rising diagonal slash, downward finishing cut; forward and air taps are slashes too, nothing pokes.
+- [ ] Q Sliding Slice slides a very short way, cutting through everyone in the path; a target at 15% health or less takes 60% more.
+- [ ] The fifth ability Iaido rushes forward cutting every opponent in the line without knocking anyone back.

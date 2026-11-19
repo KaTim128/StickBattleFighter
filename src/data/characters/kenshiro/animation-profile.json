@@ -10,7 +10,7 @@
     "FightingStance": "proc.idle.samurai",
     "Turn": "proc.idle.samurai",
     "Uppercut": "kenshiro.rising",
-    "FrontKick": "kenshiro.thrust",
+    "FrontKick": "kenshiro.lunge-slash",
     "JumpingFrontKick": "kenshiro.air-slash",
     "DownwardAerialKick": "kenshiro.plunge"
   }

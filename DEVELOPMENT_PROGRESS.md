@@ -881,3 +881,6 @@ Done: Sky Dive flight arc, Tornado Surge, spinning Wind Blade, description wordi
 
 ## 21/11/2026: Kenshiro single katana and combo, unique idles and attacks (TD-126)
 Done: one two-handed katana, samurai idle/walk/run, new three slashes plus downward finisher, thrust/aerial/plunge, new idle styles for Kenshiro/Vexoris/Aerion/Inferno, unique clips for all, uniqueness test. Gate: biome, typecheck, vitest 1054, menu and front-end e2e 18 passed. Next: deploy, owner review, then Psion.
+
+## 21/11/2026: Portraits, picker, Kenshiro rework (TD-127)
+Done: batched portrait read-back, four-per-row scrollable picker, Kenshiro slash-only tap, Sliding Slice, charging Iaido. Gate: biome, typecheck, vitest 1058, front-end and menu e2e. Next: deploy, owner review, then Psion.

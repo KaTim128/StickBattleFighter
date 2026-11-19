@@ -339,3 +339,47 @@ test('loadout (B14): the abilities equipped on fighter select are the ones on th
     },
   );
 });
+
+/**
+ * Owner, 21/11/2026: every fighter's face shows on the select screen and in the fight's top bar. The portraits were read back in
+ * one GPU read that grew with the roster and came back blank past the GPU's largest texture, so a fighter picker with more
+ * fighters than fit showed empty cards and a blank top-bar portrait.
+ */
+test('every fighter has a real portrait on the select screen and in the fight top bar, four tiles to a row', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors = await launch(page);
+  await page.evaluate(() => localStorage.setItem('stickman-arena.player-name.v1', 'Katim'));
+  await page.reload();
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'ready', { timeout: 60_000 });
+  const front = page.locator('.front-end');
+  await front.locator('[data-nav="practice"]').click();
+  await front.locator('[data-practice="open-zone"]').click();
+  const select = front.locator('[data-screen="select"]');
+  await expect(select.locator('.fe-tile').first()).toBeVisible();
+  const inkedPixels = await select.locator('.fe-tile-face').evaluateAll(async (imgs) => {
+    const counts: Record<string, number> = {};
+    for (const img of imgs as HTMLImageElement[]) {
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 64;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, 64, 64);
+      const d = ctx.getImageData(0, 0, 64, 64).data;
+      let inked = 0;
+      for (let i = 3; i < d.length; i += 4) if (d[i]! > 20) inked++;
+      counts[img.dataset.face ?? '?'] = inked;
+    }
+    return counts;
+  });
+  for (const [id, inked] of Object.entries(inkedPixels)) expect(inked, `${id} portrait is blank`).toBeGreaterThan(500);
+  // Four tiles to a row.
+  const tops = await select
+    .locator('.fe-tile')
+    .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+  const firstRow = tops.filter((t) => t === tops[0]).length;
+  expect(firstRow).toBe(4);
+  expect(errors).toEqual([]);
+});

@@ -2,7 +2,7 @@
   "id": "kenshiro-moveset",
   "starters": {
     "tap": "slash-1",
-    "tap-forward": "thrust",
+    "tap-forward": "lunge-slash",
     "air-tap": "air-slash",
     "falling-tap": "plunge",
     "heavy": "overhead-cut"
@@ -122,8 +122,8 @@
       "effect": "sword-heavy"
     },
     {
-      "id": "thrust",
-      "displayName": "Lunging thrust",
+      "id": "lunge-slash",
+      "displayName": "Lunging diagonal slash",
       "animationState": "FrontKick",
       "category": "punch",
       "heavy": false,
@@ -175,7 +175,7 @@
     },
     {
       "id": "plunge",
-      "displayName": "Plunging cut",
+      "displayName": "Downward slash",
       "animationState": "DownwardAerialKick",
       "category": "punch",
       "heavy": true,

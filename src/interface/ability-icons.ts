@@ -341,10 +341,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 28, 16, '#ffffff', 0.25),
     `<g filter="url(#ds)"><path d="M24 8 C14 8 6 14 4 24 C12 20 18 22 24 30 C30 22 36 20 44 24 C42 14 34 8 24 8Z" fill="#eef6ff" stroke="#26323f" stroke-width="1.6"/></g><ellipse cx="24" cy="38" rx="16" ry="4" fill="#bfe2ff" opacity=".6" filter="url(#bl)"/><path d="M10 38 H38" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`,
   ),
-  'twin-fang': icon(
+  'sliding-slice': icon(
     'steel',
-    rays(24, 24, 14, '#ffffff', 0.2),
-    `<g filter="url(#gl)" opacity=".9"><path d="M6 36 C12 22 26 12 42 8" stroke="#ff6a72" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M8 42 C16 30 30 22 44 20" stroke="#ffd0d4" stroke-width="3.2" fill="none" stroke-linecap="round"/></g><g filter="url(#ds)"><path d="M30 8 L42 6 L34 16Z" fill="#eef2f7" stroke="#1a0508" stroke-width="1.4"/></g>`,
+    rays(24, 26, 14, '#ffffff', 0.2),
+    `<path d="M4 38 H44" stroke="#ff6a72" stroke-width="3" opacity=".55" filter="url(#gl)"/><g filter="url(#ds)"><path d="M8 34 L42 22" stroke="#eef2f7" stroke-width="4.5" stroke-linecap="round"/><path d="M10 40 C16 36 24 38 30 36" stroke="#cfd7e2" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="6" y="31" width="8" height="5" rx="1.5" fill="#6a1520" stroke="#1a0508" stroke-width="1.2" transform="rotate(-20 10 33)"/></g><path d="M16 44 H40" stroke="#ffd0d4" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>`,
   ),
   'perfect-parry': icon(
     'steel',

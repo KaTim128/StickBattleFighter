@@ -288,20 +288,20 @@ const STRIKES = {
     { lean: deg(-44), head: deg(20), armFront: limb(76, 4), legFront: limb(58, -56), legBack: limb(-44, -16) },
     { lean: deg(8), head: deg(-6), armFront: limb(168, 30), legFront: limb(26, -24) },
   ),
-  // Forward tap: a lunging thrust straight at the throat.
-  'kenshiro.thrust': strike(
-    { lean: deg(-6), head: deg(2), armFront: limb(30, 110), legFront: limb(22, -26), legBack: limb(-20, -18) },
-    { lean: deg(-50), head: deg(16), armFront: limb(92, 0), legFront: limb(64, -48), legBack: limb(-48, -10) },
+  // Forward tap: a lunging diagonal slash, the sword raised high behind the shoulder then cut down across the body in a deep step.
+  'kenshiro.lunge-slash': strike(
+    { lean: deg(8), head: deg(-4), armFront: limb(150, 50), legFront: limb(24, -26), legBack: limb(-22, -20) },
+    { lean: deg(-48), head: deg(16), armFront: limb(70, 4), legFront: limb(64, -48), legBack: limb(-48, -10) },
   ),
   // In the air: a diagonal cut carried through the jump.
   'kenshiro.air-slash': strike(
     { lean: deg(-10), head: deg(4), armFront: limb(150, 30), legFront: limb(60, -110), legBack: limb(30, -100) },
     { lean: deg(-34), head: deg(14), armFront: limb(76, 4), legFront: limb(50, -90), legBack: limb(10, -80) },
   ),
-  // Falling: the blade driven straight down, point first.
+  // Falling: a downward slash, the sword brought up over the head and cut down across the fall.
   'kenshiro.plunge': strike(
-    { lean: deg(-8), head: deg(0), armFront: limb(172, 20), legFront: limb(50, -100), legBack: limb(20, -90) },
-    { lean: deg(-26), head: deg(16), armFront: limb(14, 0), legFront: limb(30, -80), legBack: limb(-6, -70) },
+    { lean: deg(-8), head: deg(0), armFront: limb(170, 30), legFront: limb(50, -100), legBack: limb(20, -90) },
+    { lean: deg(-30), head: deg(16), armFront: limb(56, 4), legFront: limb(34, -80), legBack: limb(-4, -70) },
   ),
 
   // ---- Inferno's fire style (spec REQ-ANI-7: no fighter shares a clip): hot, direct, explosive.

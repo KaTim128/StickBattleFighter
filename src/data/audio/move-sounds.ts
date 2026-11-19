@@ -320,6 +320,15 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('triangle', 2400, 3200, 0.1, 0.15),
   ],
   'katana-ready': [tone('triangle', 1800, 1700, 0.08, 0.2), noise('bandpass', 3000, 2800, 0.08, 0.15, 2)],
+  'slide-slice': [
+    noise('bandpass', 1200, 3800, 0.22, 0.4, 1.2, 0, { attack: 0.02 }),
+    noise('lowpass', 900, 300, 0.2, 0.25, 0.9),
+  ],
+  'slice-hit': [
+    noise('bandpass', 3600, 1600, 0.1, 0.5, 1.8),
+    tone('triangle', 1700, 650, 0.1, 0.22),
+    tone('sine', 100, 50, 0.14, 0.3),
+  ],
   'katana-cut-1': [noise('bandpass', 3600, 1800, 0.1, 0.38, 2)],
   'katana-cut-2': [noise('bandpass', 4200, 2200, 0.09, 0.38, 2.2)],
   'katana-cut-3': [noise('bandpass', 3000, 1500, 0.11, 0.38, 1.8)],

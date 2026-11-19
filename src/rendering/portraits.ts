@@ -103,22 +103,30 @@ export async function renderPortraits(app: Application, defs: readonly FighterDe
     return slot;
   });
   try {
-    const canvas = app.renderer.extract.canvas({
-      target: sheet,
-      frame: new Rectangle(0, 0, pitch * defs.length, cell),
-      resolution: 1,
-    }) as HTMLCanvasElement;
-    return slots.map((_, i) => {
-      const out = document.createElement('canvas');
-      out.width = cell;
-      out.height = cell;
-      const ctx = out.getContext('2d');
-      const premium = lookFor(defs[i]!.effects.body);
-      if (ctx && premium) premiumBackdrop(ctx, cell, premium);
-      ctx?.drawImage(canvas, i * pitch, 0, cell, cell, 0, 0, cell, cell);
-      if (ctx && premium) premiumFinish(ctx, cell, premium);
-      return out.toDataURL('image/png');
-    });
+    // Read the sheet back a few fighters at a time: the whole sheet grows with the roster, and one read wider than the GPU's
+    // largest texture comes back blank (every portrait missing on phones and in some browsers).
+    const perRead = Math.max(1, Math.floor(MAX_READ_PX / pitch));
+    const urls: string[] = [];
+    for (let f0 = 0; f0 < defs.length; f0 += perRead) {
+      const n = Math.min(perRead, defs.length - f0);
+      const canvas = app.renderer.extract.canvas({
+        target: sheet,
+        frame: new Rectangle(f0 * pitch, 0, pitch * n, cell),
+        resolution: 1,
+      }) as HTMLCanvasElement;
+      for (let k = 0; k < n; k++) {
+        const out = document.createElement('canvas');
+        out.width = cell;
+        out.height = cell;
+        const ctx = out.getContext('2d');
+        const premium = lookFor(defs[f0 + k]!.effects.body);
+        if (ctx && premium) premiumBackdrop(ctx, cell, premium);
+        ctx?.drawImage(canvas, k * pitch, 0, cell, cell, 0, 0, cell, cell);
+        if (ctx && premium) premiumFinish(ctx, cell, premium);
+        urls.push(out.toDataURL('image/png'));
+      }
+    }
+    return urls;
   } finally {
     sheet.destroy({ children: true });
   }
@@ -142,6 +150,9 @@ const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   robe: { deep: '#030205', mid: '#180a24', glow: '#4f1d85', spark: '#a8e08a', frame: '#7b3fc4' },
   cloak: { deep: '#040304', mid: '#2a0608', glow: '#c0141e', spark: '#ff8a8a', frame: '#e5242e' },
   solid: { deep: '#0b0d12', mid: '#2b3240', glow: '#ffb000', spark: '#fff0b0', frame: '#ffc83a' },
+  soldier: { deep: '#050a04', mid: '#14310c', glow: '#4fd81c', spark: '#d5ff9a', frame: '#7dff3a' },
+  winged: { deep: '#06101c', mid: '#1c3a5c', glow: '#8fc4f4', spark: '#ffffff', frame: '#bfe2ff' },
+  samurai: { deep: '#080204', mid: '#3a0a12', glow: '#d02438', spark: '#ffb0b8', frame: '#e5434f' },
 };
 
 /** The premium portrait look for a body style (every redesigned fighter, owner 13/11/2026). */

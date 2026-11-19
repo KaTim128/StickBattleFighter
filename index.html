@@ -788,7 +788,12 @@
       .fe-sel-stage { grid-area: stage; position: relative; min-height: 0; display: flex; justify-content: center; align-items: flex-end; }
       .fe-sel-stage .fe-model { height: 100%; max-width: 100%; }
       .fe-sel-glow { position: absolute; left: 50%; bottom: 0; width: 70%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--fighter, #ff8a3d) 35%, transparent), transparent 65%); pointer-events: none; }
-      .fe-roster { grid-area: roster; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+      /* Fighter picker (owner, 21/11/2026): four tiles to a row, two rows showing, scrolling for the rest. */
+      .fe-roster {
+        grid-area: roster; display: grid; grid-template-columns: repeat(4, 66px); gap: 8px; justify-content: center; align-content: start;
+        max-height: calc(2 * (66px + 18px) + 8px + 6px); overflow-y: auto; overscroll-behavior: contain; padding: 3px 6px 3px 3px;
+        scrollbar-width: thin; scrollbar-color: rgba(255, 138, 61, 0.6) transparent; -webkit-overflow-scrolling: touch;
+      }
       .fe-tile { position: relative; width: 66px; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid rgba(232, 237, 245, 0.2); background: #12151c; cursor: pointer; transform: skewX(-6deg); }
       .fe-tile-face { display: block; width: 100%; aspect-ratio: 1; }
       .fe-tile-name { display: block; padding: 2px 0; font: 800 10px system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: rgba(0, 0, 0, 0.6); }

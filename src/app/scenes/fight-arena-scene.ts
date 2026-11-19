@@ -3295,7 +3295,9 @@ export class FightArenaScene implements ArenaScene {
           ? { index: assault.stab, last: assault.stab >= d.stabs - 1, ...slashLook }
           : judgement?.phase === 'cut' && slashLook && d.type === 'judgement'
             ? { index: judgement.cuts, last: judgement.cuts >= d.strikes, ...slashLook }
-            : null;
+            : d.type === 'dash' && slashLook && f.driveVelocity
+              ? { index: 0, last: true, ...slashLook }
+              : null;
     } else f.view.slash = null;
     // Death Mark: he sinks into a stalking crouch while it charges, and his eyes burn red once it is ready.
     const mark = this.abilities?.world.markOf(f.name);

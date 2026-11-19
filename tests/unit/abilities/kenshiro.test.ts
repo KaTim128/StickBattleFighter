@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { finisherFactor } from '../../../src/abilities/ability-def';
 import { type AbilityHost, AbilityWorld } from '../../../src/abilities/ability-world';
 import { Combatant, type CombatStats } from '../../../src/combat/combatant';
 import { KENSHIRO_KIT } from '../../../src/data/abilities/kenshiro';
@@ -52,19 +53,11 @@ describe('Kenshiro kit', () => {
     expect(KENSHIRO_KIT.passive?.id).toBe('mastery');
   });
 
-  it('Twin Fang cuts twice and Blade Tempest six times, each cut its own hit', () => {
-    for (const [def, cuts] of [
-      [KENSHIRO_KIT.a1, 2],
-      [KENSHIRO_KIT.a3, 6],
-    ] as const) {
-      const a = arena({ x: 1.6, y: 0 });
-      a.world.release('me', def, { x: 1.6, y: 0 }, a.host);
-      run(a, 2);
-      expect(
-        a.hits.filter((h) => h.target === 'foe'),
-        def.id,
-      ).toHaveLength(cuts);
-    }
+  it('Blade Tempest cuts six times, each cut its own hit', () => {
+    const a = arena({ x: 1.6, y: 0 });
+    a.world.release('me', KENSHIRO_KIT.a3, { x: 1.6, y: 0 }, a.host);
+    run(a, 2);
+    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(6);
   });
 
   it('Focus Stance sharpens cuts a little, lightens damage taken, lengthens the parry, and is no crit or free damage', () => {
@@ -77,12 +70,58 @@ describe('Kenshiro kit', () => {
     expect(KENSHIRO_KIT.a4.payload.damage).toBe(0);
   });
 
-  it('Iaido Draw (the fifth ability) cuts everyone in a five metre line', () => {
-    const a = arena({ x: 3, y: 0 });
-    a.world.release('me', KENSHIRO_KIT.a5!, { x: 5, y: 0 }, a.host);
-    run(a, 0.5);
+  it('Sliding Slice slides a very short way, slicing through everyone in the path once and pushing nobody', () => {
+    const a = arena({ x: 2, y: 0 });
+    a.world.release('me', KENSHIRO_KIT.a1, { x: 3, y: 0 }, a.host);
+    run(a, 0.6);
     expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
-    expect(a.me.x).toBeGreaterThan(4);
+    expect(a.me.x).toBeGreaterThan(2.5);
+    expect(a.me.x).toBeLessThan(3.6); // a very short slide (3.2 m)
+    const d = KENSHIRO_KIT.a1.delivery;
+    expect(d.type === 'dash' && d.distanceM).toBeLessThanOrEqual(3.5);
+    expect(KENSHIRO_KIT.a1.payload.knockbackMps).toBeLessThan(1);
+  });
+
+  it('Sliding Slice deals 60% more to a target at 15% health or less, and only then', () => {
+    const p = KENSHIRO_KIT.a1.payload;
+    expect(p.finisher).toEqual({ belowHp: 0.15, bonus: 0.6 });
+    expect(finisherFactor(p, 1)).toBe(1);
+    expect(finisherFactor(p, 0.16)).toBe(1);
+    expect(finisherFactor(p, 0.15)).toBeCloseTo(1.6, 6);
+    expect(finisherFactor(p, 0.02)).toBeCloseTo(1.6, 6);
+    // Nothing else in the kit has the bonus.
+    for (const def of [KENSHIRO_KIT.a2, KENSHIRO_KIT.a3, KENSHIRO_KIT.a5!, KENSHIRO_KIT.ult])
+      expect(def.payload.finisher, def.id).toBeUndefined();
+  });
+
+  it('Iaido (the fifth ability) is a forward charge: it cuts everyone in the line once, with no knockback and no launch', () => {
+    const a = arena({ x: 3, y: 0 });
+    const second = { id: 'foe2', x: 5, y: 0.2, radiusM: 0.3, hittable: true };
+    const fighters = a.host.fighters();
+    a.host.fighters = () => [...fighters, second];
+    a.world.release('me', KENSHIRO_KIT.a5!, { x: 6, y: 0 }, a.host);
+    run(a, 0.6);
+    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
+    expect(a.hits.filter((h) => h.target === 'foe2')).toHaveLength(1); // both enemies in the line
+    expect(a.me.x).toBeGreaterThan(5.5);
+    const p = KENSHIRO_KIT.a5!.payload;
+    expect(p.knockbackMps).toBe(0);
+    expect(p.heavy).toBe(false);
+    expect(p.noFlinch).toBe(true); // no stagger or knock-down either
+    expect(KENSHIRO_KIT.a5?.name).toBe('Iaido');
+  });
+
+  it('is balanced: the new dashes are lighter per target than the ultimate and the parry counter, on real cooldowns', () => {
+    const slice = KENSHIRO_KIT.a1;
+    const iaido = KENSHIRO_KIT.a5!;
+    expect(slice.payload.damage * 1.6).toBeLessThan(KENSHIRO_KIT.a2.payload.damage * 1.3); // even the bonus is below the parry counter
+    expect(iaido.payload.damage).toBeLessThan(slice.payload.damage); // a crowd charge is lighter per target
+    expect(slice.cooldownS).toBeGreaterThanOrEqual(7);
+    expect(iaido.cooldownS).toBeGreaterThanOrEqual(10);
+    for (const def of [slice, iaido]) {
+      expect(def.castS + def.recoveryS).toBeLessThanOrEqual(0.7); // quick, not free
+      expect(def.staminaCost).toBeGreaterThanOrEqual(20);
+    }
   });
 });
 
@@ -172,6 +211,15 @@ describe('Kenshiro combo, heavy and Sword Mastery', () => {
       expect(states[m.animationState]).toMatch(/^kenshiro\./);
     expect(set.starters.heavy).toBe('overhead-cut');
     expect(states.HeavyAttack).toBe('kenshiro.overhead');
+  });
+
+  it('every attack is a slice, never a poke: no thrust or stab clip anywhere in his moveset or profile', () => {
+    for (const m of set.moves) {
+      expect(m.id).not.toMatch(/thrust|stab|poke/);
+      expect(states[m.animationState] ?? '', m.id).toMatch(/^kenshiro\./);
+      expect(states[m.animationState] ?? '', m.id).not.toMatch(/thrust|stab/);
+    }
+    expect(set.starters['tap-forward']).toBe('lunge-slash');
   });
 
   it('mastery builds to the threshold, enhances every hit of the next sword ability, then is spent', () => {

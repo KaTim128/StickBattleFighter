@@ -699,6 +699,11 @@ export class FrontEnd {
       tile.append(img, el('span', 'fe-tile-name', this.names.get(r.id) ?? r.name));
       roster.append(tile);
     }
+    // Keep the chosen fighter in view when the picker has scrolled rows away.
+    requestAnimationFrame(() => {
+      const chosen = roster.querySelector<HTMLElement>('.fe-tile.selected');
+      if (chosen) roster.scrollTop = Math.max(0, chosen.offsetTop - roster.offsetTop - 3);
+    });
 
     const bar = el('div', 'fe-sel-bar');
     const chips = <T extends string | number>(

@@ -44,6 +44,11 @@ export interface AbilityPayload {
   /** A sword ability (Kenshiro): eligible for Sword Mastery's enhancement. */
   readonly sword?: boolean;
   /**
+   * Finishing bonus (Kenshiro's Sliding Slice): against a target at or below `belowHp` of its health (0..1) the blow
+   * deals `bonus` more damage (0.6 = 60% more).
+   */
+  readonly finisher?: { readonly belowHp: number; readonly bonus: number };
+  /**
    * Smashes through obstacles (Rampage Charge): breakable wall sections take this much damage, and
    * furniture and doors in the way are hit with the payload's full strength. Solid walls still stop it.
    */
@@ -99,6 +104,12 @@ export function payloadAt(payload: AbilityPayload, distanceM: number, reachM: nu
     damage: Math.round(payload.damage * k),
     knockbackMps: payload.knockbackMps * (0.5 + 0.5 * k),
   };
+}
+
+/** The damage factor of a payload's finishing bonus against a target with `hpFraction` (0..1) of its health left (1 = none). */
+export function finisherFactor(payload: AbilityPayload, hpFraction: number): number {
+  const f = payload.finisher;
+  return f && hpFraction <= f.belowHp ? 1 + f.bonus : 1;
 }
 
 /**

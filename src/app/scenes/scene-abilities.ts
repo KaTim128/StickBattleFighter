@@ -1,11 +1,12 @@
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
-import type {
-  AbilityDef,
-  AbilityPayload,
-  AbilitySlot,
-  BuffEffect,
-  Burn,
-  SummonSpec,
+import {
+  type AbilityDef,
+  type AbilityPayload,
+  type AbilitySlot,
+  type BuffEffect,
+  type Burn,
+  finisherFactor,
+  type SummonSpec,
 } from '../../abilities/ability-def';
 import {
   type AbilityFx,
@@ -222,6 +223,8 @@ export class SceneAbilities implements AbilityHost {
     let damage = payload.damage * (attacker.buff?.abilityDamageFactor ?? 1);
     // Sword Mastery (Kenshiro): enough stacks make the next sword ability stronger, every hit of it.
     const mastery = attacker.caster?.kit.passive?.mastery;
+    // Finishing bonus (Sliding Slice): a target already nearly beaten takes more.
+    damage *= finisherFactor(payload, target.combatant.hp / Math.max(1, target.combatant.stats.maxHp));
     if (payload.sword && mastery)
       damage *= attacker.combatant.swordFactor(mastery.threshold, mastery.damageFactor, mastery.windowS);
     const landed = this.strike(attacker, target, {

@@ -123,6 +123,8 @@ export class StickmanView {
   focus = 0;
   /** The body's turn about its own axis while spinning (Aerion's Wind Blade), radians; 0 = not spinning. */
   spinAngle = 0;
+  /** Where the katana's blade tip and a point near the hand are this frame (the slash ribbon follows them). */
+  private bladeTip: { tip: Point; inner: Point } | null = null;
   wingFlap = 0;
   /** 0..1 red glow in the eyes of a mask (Death Mark charged). */
   eyeGlow = 0;
@@ -495,8 +497,13 @@ export class StickmanView {
       // The blade points up from the fist, cocked as in drawKnife.
       const ux = (fx / len) * c + (fy / len) * sn;
       const uy = (-fx / len) * sn + (fy / len) * c;
-      const tip = { x: hand.x + ux * 0.42, y: hand.y + uy * 0.42 };
-      const inner = { x: hand.x + ux * 0.08, y: hand.y + uy * 0.08 };
+      // A katana's ribbon follows the real blade (its tip and a point near the hands); a knife's uses its short blade.
+      const tip =
+        this.held === 'katana' && this.bladeTip ? this.bladeTip.tip : { x: hand.x + ux * 0.42, y: hand.y + uy * 0.42 };
+      const inner =
+        this.held === 'katana' && this.bladeTip
+          ? this.bladeTip.inner
+          : { x: hand.x + ux * 0.08, y: hand.y + uy * 0.08 };
       const prev = this.slashTrail[this.slashTrail.length - 1];
       if (!prev || Math.hypot(prev.x - tip.x, prev.y - tip.y) > 0.01 || prev.k !== sl.index)
         this.slashTrail.push({ x: tip.x, y: tip.y, ix: inner.x, iy: inner.y, t, k: sl.index, last: sl.last });
@@ -1055,6 +1062,7 @@ export class StickmanView {
         .stroke({ width: 0.01, color: 0xb8202e, cap: 'round' });
     }
     // The blade.
+    this.bladeTip = { tip: at(len, len * 0.05), inner: at(0.12, 0) };
     const bow = len * 0.035;
     const blade = [
       at(0.06, 0.022),

@@ -146,7 +146,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     retreatBelowHp: 0.2,
     hitAndRunS: 0.6,
     tactics: {
-      a1: { role: 'gapClose', minM: 1, maxM: 3.6, weight: 1.2 },
+      a1: { role: 'gapClose', minM: 1.2, maxM: 3.2, weight: 1.2 },
       a2: { role: 'buff', minM: 0, maxM: 2.2, weight: 1.1 },
       a3: { role: 'burst', minM: 0, maxM: 4, weight: 1.1 },
       a4: { role: 'buff', minM: 0, maxM: 9, weight: 0.7 },
@@ -271,7 +271,7 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   // Feather Guard: fold the wings when hurt and someone is on him.
   featherGuard: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.6 } },
   // Iaido Draw: a lightning cut to close the gap.
-  iaidoDraw: { role: 'gapClose', minM: 2, maxM: 5.5, weight: 1.2 },
+  iaidoDraw: { role: 'gapClose', minM: 2, maxM: 6, weight: 1.2 },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
   deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };

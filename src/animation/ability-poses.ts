@@ -392,12 +392,15 @@ const SHAPES: Record<string, CastShape> = {
   },
 
   // ---- Kenshiro (spec section 4): upright, still, economical. The blade is the whole animation.
-  // Twin Fang and Blade Tempest: the cast pose is a hand on the hilt; the cuts themselves are `swordPose`.
-  twinFang: {
-    windup: { lean: deg(-6), head: deg(4), armFront: limb(30, 60), armBack: limb(20, 70), legFront: limb(30, -30) },
-    release: { lean: deg(-26), head: deg(8), armFront: limb(96, 6), armBack: limb(24, 110), legFront: limb(44, -36) },
+  // Sliding Slice: dropping low onto the heel, the body laid back and the lead leg shot out along the floor, the sword
+  // held out level to cut whatever it slides through.
+  slidingSlice: {
+    windup: { lean: deg(-14), head: deg(6), armFront: limb(40, 80), legFront: limb(50, -100), legBack: limb(-20, -80) },
+    release: { lean: deg(34), head: deg(-10), armFront: limb(96, 4), legFront: limb(88, -6), legBack: limb(-30, -120) },
+    run: { lean: deg(34), head: deg(-10), armFront: limb(96, 4), legFront: limb(88, -6), legBack: limb(-30, -120) },
     settle: 0.45,
   },
+  // Blade Tempest: the cast pose is a hand on the hilt; the cuts themselves are `swordCut`.
   bladeTempest: {
     windup: { lean: deg(-12), head: deg(6), armFront: limb(40, 70), armBack: limb(30, 80), ...CROUCH },
     release: { lean: deg(-30), head: deg(8), armFront: limb(100, 6), armBack: limb(30, 100), legFront: limb(50, -40) },
@@ -644,8 +647,7 @@ export function assaultPose(base: Pose, a: AssaultState, abilityId?: string): Po
   if (a.phase === 'retreat') return blendPose(base, { ...base, ...RETREAT }, ease(a.t / 0.08));
   if (a.phase !== 'stab') return base;
   if (abilityId === 'rendingFlurry') return flurryPose(base, a);
-  if (abilityId === 'twinFang') return swordCut(base, a, 0);
-  if (abilityId === 'bladeTempest') return swordCut(base, a, 2);
+  if (abilityId === 'bladeTempest') return swordCut(base, a, 0);
   const s = STABS[a.stab % STABS.length]!;
   const cock = { ...base, ...s.cock };
   const strike = { ...base, ...s.strike };
@@ -656,8 +658,8 @@ export function assaultPose(base: Pose, a: AssaultState, abilityId?: string): Po
 }
 
 /**
- * Kenshiro's cuts: horizontal, reverse diagonal, a low rising cut, an overhead cut, a spinning cut and a lunging thrust.
- * Twin Fang uses the first two; Blade Tempest runs through all six, so no two cuts in a row look alike.
+ * Kenshiro's cuts: horizontal, reverse diagonal, a low rising cut, an overhead cut, a spinning cut and a downward diagonal cut:
+ * all slices, never a poke. Blade Tempest runs through all six, so no two cuts in a row look alike.
  */
 const SWORD_CUTS: readonly { cock: Partial<Pose>; strike: Partial<Pose> }[] = [
   {
@@ -681,15 +683,8 @@ const SWORD_CUTS: readonly { cock: Partial<Pose>; strike: Partial<Pose> }[] = [
     strike: { lean: deg(20), head: deg(-14), armFront: limb(110, 6), armBack: limb(-40, 40), legBack: limb(40, -20) },
   },
   {
-    cock: { lean: deg(-20), armFront: limb(40, 120), armBack: limb(20, 100) },
-    strike: {
-      lean: deg(-52),
-      head: deg(18),
-      armFront: limb(92, 0),
-      armBack: limb(-20, 50),
-      legFront: limb(64, -46),
-      legBack: limb(-46, -12),
-    },
+    cock: { lean: deg(10), armFront: limb(150, 60) },
+    strike: { lean: deg(-46), head: deg(18), armFront: limb(60, 4), legFront: limb(62, -46), legBack: limb(-46, -12) },
   },
 ];
 
