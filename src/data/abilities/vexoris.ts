@@ -249,7 +249,7 @@ export const VEXORIS_KIT: AbilityKit = {
     name: 'Plague Bloom',
     label: 'ULT',
     description:
-      'Vents a huge poison fog for 10 seconds. Enemies inside see only about 1 metre through the green haze, move slower and take slow chip damage; after 3 seconds inside they gain a stack of poison. He sees clearly through it.',
+      'Vents a huge poison fog for 10 seconds. Enemies inside see only about 1 metre through the green haze, move 40% slower and take rapid poison chip damage (a small tick every fifth of a second); after 3 seconds inside they gain a stack of poison. He sees clearly through it.',
     icon: 'plague-bloom',
     slot: 'ult',
     staminaCost: 0,
@@ -272,7 +272,7 @@ export const VEXORIS_KIT: AbilityKit = {
       radiusM: 5.5,
       lifeS: 10,
       armS: 0.8,
-      fog: { sightM: 1.2, speedFactor: 0.8, chipDps: 3, stackAfterS: 3 },
+      fog: { sightM: 1.2, speedFactor: 0.6, chipDps: 10, stackAfterS: 3 },
     },
     vfx: 'plague-bloom',
     sfx: { cast: 'bloom-build', release: 'bloom-vent', impact: 'bloom-burst' },

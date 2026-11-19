@@ -119,9 +119,10 @@ describe('Plague Bloom fog', () => {
     expect(a.fog.filter((f) => f.stack)).toHaveLength(1);
     run(a, 5);
     expect(a.fog.filter((f) => f.stack)).toHaveLength(1); // once per stay
-    // Slow chip damage: a few per second, not a burst.
-    expect(d.fog?.chipDps).toBeGreaterThan(0);
-    expect(d.fog?.chipDps).toBeLessThanOrEqual(5);
+    // Chip damage: a steady stream, never a burst; slowed by 40 percent.
+    expect(d.fog?.chipDps).toBeGreaterThan(5);
+    expect(d.fog?.chipDps).toBeLessThanOrEqual(15);
+    expect(d.fog?.speedFactor).toBe(0.6);
   });
 
   it('never affects its caster, and leaving the fog resets the three-second count', () => {
@@ -247,14 +248,20 @@ describe('fog on a fighter', () => {
   it('slows, limits sight and drains health slowly while renewed, and wears off a moment after leaving', () => {
     const c = new Combatant(STATS);
     expect(c.sightM).toBe(Number.POSITIVE_INFINITY);
+    const drops: number[] = [];
     for (let i = 0; i < 120; i++) {
-      c.fog(3, 0.8, 3);
+      const before = c.hp;
+      c.fog(10, 0.6, 3);
       c.update(1 / 60);
+      if (c.hp < before) drops.push(before - c.hp);
     }
     expect(c.sightM).toBe(3);
-    expect(c.status.speedFactor).toBeCloseTo(0.8, 5);
-    expect(1000 - c.hp).toBeGreaterThan(5);
-    expect(1000 - c.hp).toBeLessThan(7);
+    expect(c.status.speedFactor).toBeCloseTo(0.6, 5);
+    expect(1000 - c.hp).toBeGreaterThan(17); // 10 per second over 2 s
+    expect(1000 - c.hp).toBeLessThan(21);
+    // Rapid, repeated small lumps (about five a second), none large.
+    expect(drops.length).toBeGreaterThanOrEqual(8);
+    expect(Math.max(...drops)).toBeLessThanOrEqual(2.5);
     for (let i = 0; i < 30; i++) c.update(1 / 60);
     expect(c.sightM).toBe(Number.POSITIVE_INFINITY);
     expect(c.status.speedFactor).toBe(1);

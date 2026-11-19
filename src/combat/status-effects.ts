@@ -48,6 +48,9 @@ export interface StatusParams {
  */
 export const BLEED = { damageTakenFactor: 1.1, durationS: 6 } as const;
 
+/** Poison fog damage lands in lumps this far apart (seconds): rapid and repeated, never one big hit. */
+export const FOG_TICK_S = 0.2;
+
 export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   burn: { stacking: 'strongest', tickIntervalS: 0 },
   bleed: { stacking: 'strongest', tickIntervalS: 0 },
@@ -55,7 +58,7 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   decay: { stacking: 'strongest', tickIntervalS: 0 },
   dark: { stacking: 'strongest', tickIntervalS: 0 },
   // Vexoris's Plague Bloom fog: renewed every step while inside it, so it lapses a moment after leaving.
-  fog: { stacking: 'strongest', tickIntervalS: 0 },
+  fog: { stacking: 'strongest', tickIntervalS: FOG_TICK_S },
   // Poison keeps its own meter (`Toxicity`); this entry only names it for the registry's indicators.
   toxicity: { stacking: 'stack', tickIntervalS: 0 },
 };
