@@ -47,6 +47,13 @@ export interface AbilityPayload {
   readonly psi?: boolean;
   /** A gadget (Geargrind): eligible for Mechanical Efficiency's enhancement. */
   readonly gadget?: boolean;
+  /** A sonic ability (Reson): eligible for Resonance's enhancement. */
+  readonly sonic?: boolean;
+  /**
+   * Feedback Pulse (Reson): the target's movement direction wobbles for `durationS` seconds and its facing drifts. It
+   * never stuns and never cancels an attack.
+   */
+  readonly disrupt?: { readonly durationS: number };
   /**
    * Finishing bonus (Kenshiro's Sliding Slice): against a target at or below `belowHp` of its health (0..1) the blow
    * deals `bonus` more damage (0.6 = 60% more).
@@ -164,6 +171,8 @@ export interface ProjectileDelivery {
   readonly speedMps: number;
   readonly radiusM: number;
   readonly maxRangeM: number;
+  /** Flies on through everyone it hits, once each (Reson's Sonic Boom). */
+  readonly pierce?: boolean;
   /**
    * A tornado (Aerion's Tornado Surge): on contact the target takes the payload's contact hit, is swept up `liftM` over
    * `liftS` seconds, and the tornado disappears; the target then falls and takes `fallDamage`.
@@ -607,6 +616,8 @@ export interface MagicLook {
     readonly tornado?: boolean;
     /** Drawn as a spinning chunk of debris (Psion's Mindstorm). */
     readonly debris?: boolean;
+    /** Drawn as a widening crescent of sound waves (Reson's Sonic Boom). */
+    readonly wave?: boolean;
   };
   /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
   readonly impact?: {
@@ -626,13 +637,17 @@ export interface MagicLook {
     readonly shards?: number;
     readonly splash?: { readonly count: number; readonly colour: number };
     readonly mist?: number;
+    /** Extra expanding rings after the first, each a little behind the last (Reson's Shatterwave). */
+    readonly rings?: number;
   };
   /** The target's body flashes this colour on contact (white for the Fireball). */
   readonly hitFlash?: number;
   /** A cage of turning geometric rings round a lifted target (Psion's Floating Prison). */
   readonly cage?: boolean;
   /** The warning ring closes in instead of filling (Psion's Mind Crush), and floating debris rises in a field (Mindstorm). */
-  readonly telegraph?: 'compress' | 'debris';
+  readonly telegraph?: 'compress' | 'debris' | 'rings';
+  /** A barrier drawn as rippling sound-wave rings instead of hexagonal facets (Reson's Resonance Barrier). */
+  readonly barrierStyle?: 'sonic';
   /** What wraps the caster while a leap carries it: flames (default) or streaming wind (Aerion's dives). */
   readonly airBody?: 'flames' | 'wind';
   /**
@@ -721,7 +736,7 @@ export interface AbilityKit {
    * faster. All stacks lapse together when the time runs out.
    */
   readonly passive?: {
-    readonly id: 'momentum' | 'mastery' | 'focus' | 'efficiency';
+    readonly id: 'momentum' | 'mastery' | 'focus' | 'efficiency' | 'resonance';
     readonly name: string;
     readonly description: string;
     readonly maxStacks: number;

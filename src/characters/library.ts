@@ -51,6 +51,13 @@ import rampageCharacter from '../data/characters/rampage/character.json';
 import rampageEffects from '../data/characters/rampage/effects.json';
 import rampageMoveset from '../data/characters/rampage/moveset.json';
 import rampageStats from '../data/characters/rampage/stats.json';
+import resonAi from '../data/characters/reson/ai.json';
+import resonAnimation from '../data/characters/reson/animation-profile.json';
+import resonAudio from '../data/characters/reson/audio.json';
+import resonCharacter from '../data/characters/reson/character.json';
+import resonEffects from '../data/characters/reson/effects.json';
+import resonMoveset from '../data/characters/reson/moveset.json';
+import resonStats from '../data/characters/reson/stats.json';
 import defaultAi from '../data/characters/shared/ai-default.json';
 import defaultAnimation from '../data/characters/shared/animation-default.json';
 import boxingAnimation from '../data/characters/shared/animation-style-boxing.json';
@@ -111,6 +118,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroCharacter,
     psionCharacter,
     geargrindCharacter,
+    resonCharacter,
     skeletonCharacter,
     dummyCharacter,
   ]),
@@ -128,6 +136,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroAnimation,
     psionAnimation,
     geargrindAnimation,
+    resonAnimation,
   ]),
   moveset: byId<MovesetProfile>([
     baseMoveset,
@@ -140,6 +149,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroMoveset,
     psionMoveset,
     geargrindMoveset,
+    resonMoveset,
     skeletonMoveset,
   ]),
   stats: byId<StatsProfile>([
@@ -153,6 +163,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroStats,
     psionStats,
     geargrindStats,
+    resonStats,
     skeletonStats,
     dummyStats,
   ]),
@@ -167,6 +178,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroEffects,
     psionEffects,
     geargrindEffects,
+    resonEffects,
     skeletonEffects,
   ]),
   audio: byId<AudioProfile>([
@@ -180,6 +192,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroAudio,
     psionAudio,
     geargrindAudio,
+    resonAudio,
   ]),
   ai: byId<AiProfile>([
     defaultAi,
@@ -194,6 +207,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroAi,
     psionAi,
     geargrindAi,
+    resonAi,
   ]),
 };
 

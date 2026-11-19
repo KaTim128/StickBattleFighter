@@ -549,6 +549,16 @@ export class Combatant {
     this.status.apply('blind', seconds);
   }
 
+  /** Feedback Pulse (Reson): their movement direction wobbles for `seconds` (a longer one replaces a shorter one). */
+  disrupt(seconds: number): void {
+    if (this.koAgeS >= 0) return;
+    this.status.apply('disrupt', seconds);
+  }
+
+  get disrupted(): boolean {
+    return this.status.has('disrupt');
+  }
+
   /** Advance timers. Returns damage-over-time taken this step (for floating numbers and the ultimate meter). */
   update(dtS: number): number {
     if (this.isKo) {

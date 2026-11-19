@@ -99,6 +99,10 @@ export interface PremiumSkin {
   readonly backpack?: { readonly shell: number; readonly trim: number; readonly light: number };
   /** The near arm is a machine: steel segments, a piston, bolts and an orange stripe (Geargrind). */
   readonly machineArm?: { readonly steel: number; readonly stripe: number };
+  /** A circular resonance device on each forearm (Reson): a steel ring with a pulsing cyan core and wave rings. */
+  readonly gauntlets?: { readonly steel: number; readonly ring: number };
+  /** Geometric sound-amplification gear: hexagonal emitter plates on the shoulders and wave arcs on the chest (Reson). */
+  readonly soundGear?: { readonly plate: number; readonly glow: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
   readonly hoverM?: number;
 }
@@ -404,6 +408,40 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     backpack: { shell: 0x3a3f48, trim: 0xff7a1a, light: 0xffb455 },
     machineArm: { steel: 0x586070, stripe: 0xff7a1a },
   },
+  // Reson (master plan section 4): a dark charcoal stickman with glowing cyan soundwave patterns, a resonance device on each
+  // forearm and geometric amplification plates on the shoulders. Not Geargrind: no backpack, no machine arm, no orange.
+  sonic: {
+    palette: {
+      outline: 0x07090b,
+      skin: 0x2e333a,
+      skinLit: 0x56606c,
+      skinShade: 0x1a1d22,
+      skinBack: 0x23272d,
+      rim: 0x7ae8ff,
+      armour: 0x20242a,
+      armourLit: 0x424a55,
+      armourEdge: 0x07090b,
+      seam: 0x19c4e0,
+      lava: 0xeafcff,
+      glow: 0x19c4e0,
+      hand: 0x2e333a,
+    },
+    bulk: 1.1,
+    muscle: 0.4,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'trousers',
+      kneeGuards: false,
+      shinGuards: true,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'own',
+    gauntlets: { steel: 0x586070, ring: 0x19c4e0 },
+    soundGear: { plate: 0x3a424c, glow: 0x7ae8ff },
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -591,6 +629,7 @@ export class PremiumModel {
     if (this.skin.fragments) this.fragments(g, fire, s, false);
     if (this.skin.wings) this.wings(g, fire, s);
     this.arm(g, fire, s.armBack, true);
+    if (this.skin.gauntlets) this.gauntlet(g, fire, s.armBack, true);
     const coated = this.skin.garment?.hem === 'coat';
     // An open coat wraps the legs: its back tail and lining first (behind both legs), the front panels and belt last.
     if (coated) this.coatBack(g, s);
@@ -621,6 +660,8 @@ export class PremiumModel {
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
     }
     this.arm(g, fire, s.armFront, false);
+    if (this.skin.gauntlets) this.gauntlet(g, fire, s.armFront, false);
+    if (this.skin.soundGear) this.soundGear(g, fire, s);
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
     if ((this.st.plating ?? 0) > 0.02) this.platingOverlay(g, fire, s);
     if (this.skin.handGlow !== undefined) this.handGlow(fire, s);
@@ -652,6 +693,54 @@ export class PremiumModel {
       for (let k = 0; k <= 6; k++)
         pts.push(cx + Math.cos(a + k * 0.12) * r * 0.62, cy + Math.sin(a + k * 0.12) * r * 0.62);
       g.poly(pts, false).stroke({ width: w * 0.16, color: this.c(h.glow), alpha: 0.9 });
+    }
+  }
+
+  /** A resonance device on the forearm: a dark steel ring round the arm, a cyan core pulsing, and wave rings spreading off it. */
+  private gauntlet(g: Graphics, fire: Graphics, pts: readonly Point[], far: boolean): void {
+    const gt = this.skin.gauntlets;
+    if (!gt) return;
+    const [, el, hand] = pts as [Point, Point, Point];
+    const { w, t } = this.st;
+    const out = this.c(this.P.outline);
+    const c = lerp(el, hand, 0.52);
+    const r = w * 0.95;
+    const pulse = 0.5 + 0.5 * Math.sin(t * 6 + (far ? 1.2 : 0));
+    g.circle(c.x, c.y, r + w * 0.2).fill(out);
+    g.circle(c.x, c.y, r).fill(this.c(gt.steel));
+    g.circle(c.x, c.y, r * 0.66).fill(out);
+    g.circle(c.x, c.y, r * 0.5).fill({ color: gt.ring, alpha: 0.5 + 0.5 * pulse });
+    fire.circle(c.x, c.y, r * (1.4 + 0.5 * pulse)).fill({ color: gt.ring, alpha: far ? 0.1 : 0.16 });
+    fire
+      .circle(c.x, c.y, r * (1.5 + 0.9 * ((t * 1.6) % 1)))
+      .stroke({ width: w * 0.12, color: gt.ring, alpha: 0.5 * (1 - ((t * 1.6) % 1)) });
+  }
+
+  /** Geometric sound gear: hexagonal emitter plates on the shoulders and cyan wave arcs across the chest. */
+  private soundGear(g: Graphics, fire: Graphics, s: Skel): void {
+    const sg = this.skin.soundGear;
+    if (!sg) return;
+    const { w, t } = this.st;
+    const out = this.c(this.P.outline);
+    const hex = (x: number, y: number, r: number, colour: number) =>
+      g
+        .poly(
+          Array.from({ length: 6 }, (_, n) => [
+            x + Math.cos((n * Math.PI) / 3) * r,
+            y + Math.sin((n * Math.PI) / 3) * r,
+          ]).flat(),
+        )
+        .fill(colour);
+    for (const sh of [s.armFront[0]!, s.armBack[0]!]) {
+      hex(sh.x, sh.y - w * 0.3, w * 0.95, out);
+      hex(sh.x, sh.y - w * 0.3, w * 0.75, this.c(sg.plate));
+      hex(sh.x, sh.y - w * 0.3, w * 0.35, sg.glow);
+    }
+    const cx = s.chest.x + 0.02;
+    const cy = s.chest.y + 0.03;
+    for (let i = 0; i < 3; i++) {
+      const ph = (t * 1.2 + i / 3) % 1;
+      fire.arc(cx, cy, 0.05 + ph * 0.16, -0.9, 0.9).stroke({ width: w * 0.1, color: sg.glow, alpha: 0.7 * (1 - ph) });
     }
   }
 

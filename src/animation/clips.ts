@@ -43,6 +43,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.pyro',
   'proc.idle.psychic',
   'proc.idle.mechanic',
+  'proc.idle.sonic',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -739,6 +740,154 @@ const STRIKES = {
       armBack: limb(24, 8),
       legFront: limb(30, -40),
       legBack: limb(-8, -36),
+    },
+  ),
+
+  // ---- Reson's sonic style: short rhythmic blows from a bouncing stance, the gauntlets leading, each with a snap of recoil.
+  // 1. Sonic jab: a quick jab with the forearm ring turned to face the target.
+  'reson.jab': strike(
+    {
+      lean: deg(-2),
+      head: deg(-2),
+      armFront: limb(62, 112),
+      armBack: limb(44, 120),
+      legFront: limb(20, -26),
+      legBack: limb(-24, -24),
+    },
+    {
+      lean: deg(-12),
+      head: deg(-4),
+      armFront: limb(86, 6),
+      armBack: limb(46, 118),
+      legFront: limb(28, -30),
+      legBack: limb(-26, -22),
+    },
+  ),
+  // 2. Resonance cross: the rear gauntlet driven through, the chest turning with it.
+  'reson.cross': strike(
+    {
+      lean: deg(8),
+      head: deg(-4),
+      armFront: limb(70, 120),
+      armBack: limb(-10, 124),
+      legFront: limb(22, -28),
+      legBack: limb(-26, -26),
+    },
+    {
+      lean: deg(-22),
+      head: deg(-6),
+      armFront: limb(44, 110),
+      armBack: limb(90, 4),
+      legFront: limb(30, -32),
+      legBack: limb(-16, -30),
+    },
+  ),
+  // 3. Vibrating elbow: the elbow shaken as it drives in, the forearm held tight to the body.
+  'reson.elbow': strike(
+    {
+      lean: deg(-8),
+      head: deg(4),
+      armFront: limb(-26, 132),
+      armBack: limb(40, 116),
+      legFront: limb(22, -30),
+      legBack: limb(-26, -28),
+    },
+    {
+      lean: deg(18),
+      head: deg(-6),
+      armFront: limb(96, 122),
+      armBack: limb(30, 110),
+      legFront: limb(30, -34),
+      legBack: limb(-22, -28),
+    },
+  ),
+  // 4. Double palm shockwave: both gauntlets drawn back to the ribs, then thrust together palms out.
+  'reson.double-palm': strike(
+    {
+      lean: deg(10),
+      head: deg(2),
+      armFront: limb(-14, 112),
+      armBack: limb(-14, 112),
+      legFront: limb(20, -30),
+      legBack: limb(-24, -26),
+    },
+    {
+      lean: deg(-26),
+      head: deg(-4),
+      armFront: limb(90, 2),
+      armBack: limb(82, 4),
+      legFront: limb(34, -34),
+      legBack: limb(-26, -22),
+    },
+  ),
+  // Heavy: both gauntlets brought together at the chest and held, shaking, then thrown apart and out in a short blast.
+  'reson.gauntlet-blast': strike(
+    {
+      lean: deg(12),
+      head: deg(4),
+      armFront: limb(74, 128),
+      armBack: limb(66, 130),
+      legFront: limb(22, -40),
+      legBack: limb(-28, -36),
+    },
+    {
+      lean: deg(-30),
+      head: deg(-6),
+      armFront: limb(100, 6),
+      armBack: limb(60, 8),
+      legFront: limb(34, -32),
+      legBack: limb(-30, -20),
+    },
+    { lean: deg(0), head: deg(-2), armFront: limb(84, 138), armBack: limb(80, 140), legFront: limb(22, -34) },
+  ),
+  // Forward tap: a flat shove with the heel of the gauntlet, shoulder behind it.
+  'reson.shove': strike(
+    { lean: deg(2), head: deg(-2), armFront: limb(52, 118), armBack: limb(36, 120), legFront: limb(20, -26) },
+    {
+      lean: deg(-26),
+      head: deg(-4),
+      armFront: limb(98, 4),
+      armBack: limb(40, 114),
+      legFront: limb(34, -32),
+      legBack: limb(-28, -18),
+    },
+  ),
+  // In the air: a ringing downward-angled palm strike, the other gauntlet held back.
+  'reson.air-chime': strike(
+    {
+      lean: deg(-4),
+      head: deg(2),
+      armFront: limb(110, 90),
+      armBack: limb(-20, 100),
+      legFront: limb(30, -62),
+      legBack: limb(10, -52),
+    },
+    {
+      lean: deg(-20),
+      head: deg(8),
+      armFront: limb(54, 4),
+      armBack: limb(-30, 90),
+      legFront: limb(34, -56),
+      legBack: limb(0, -44),
+    },
+  ),
+  // Falling: both gauntlets slammed down together, the shockwave dropped under him.
+  'reson.bass-drop': strike(
+    {
+      lean: deg(-2),
+      head: deg(-2),
+      armFront: limb(140, 80),
+      armBack: limb(134, 84),
+      legFront: limb(22, -48),
+      legBack: limb(0, -44),
+    },
+    {
+      lean: deg(-22),
+      head: deg(10),
+      armFront: limb(14, 6),
+      armBack: limb(8, 8),
+      legFront: limb(30, -42),
+      legBack: limb(-6, -38),
     },
   ),
 

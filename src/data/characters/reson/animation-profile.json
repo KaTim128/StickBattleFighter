@@ -1,0 +1,17 @@
+{
+  "id": "reson-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Idle": "proc.idle.sonic",
+    "FightingStance": "proc.idle.sonic",
+    "Turn": "proc.idle.sonic",
+    "Jab": "reson.jab",
+    "Hook": "reson.cross",
+    "SideKick": "reson.elbow",
+    "RoundhouseKick": "reson.double-palm",
+    "FrontKick": "reson.shove",
+    "JumpingFrontKick": "reson.air-chime",
+    "DownwardAerialKick": "reson.bass-drop",
+    "HeavyAttack": "reson.gauntlet-blast"
+  }
+}

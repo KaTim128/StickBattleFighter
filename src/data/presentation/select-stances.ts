@@ -168,6 +168,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.01, hands: 0.02 },
   },
+  // Reson: on the beat, weight rocking, both gauntlets raised in front of the chest.
+  reson: {
+    title: 'The Tuned Fist',
+    style: 'Sonic specialist: booms, vibrating punches, a sonic barrier and a shattering ultimate',
+    pelvis: 0.76,
+    leadFoot: 0.2,
+    rearFoot: -0.24,
+    lean: -3,
+    head: -2,
+    front: { x: 0.34, y: 0.7 },
+    back: { x: 0.2, y: 0.62 },
+    turn: 0.55,
+    scale: 1,
+    breath: { lean: 1.5, pelvis: 0.018, hands: 0.03 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

@@ -2185,6 +2185,14 @@ export class FightArenaScene implements ArenaScene {
             ? attack.moveFactor
             : 1;
       move = { x: move.x * factor, y: move.y * factor };
+      // Feedback Pulse: the way they move wobbles for a moment (never a stun).
+      if (c.disrupted) {
+        const wob = Math.sin(this.simTimeS * 9) * 0.9;
+        move = {
+          x: move.x * Math.cos(wob) - move.y * Math.sin(wob),
+          y: move.x * Math.sin(wob) + move.y * Math.cos(wob),
+        };
+      }
       f.moveIntent.x = move.x;
       f.moveIntent.y = move.y;
       const isIdle = move.x === 0 && move.y === 0;
@@ -2643,7 +2651,13 @@ export class FightArenaScene implements ArenaScene {
       const passive = attacker.caster?.kit.passive;
       if (hitFighter && passive?.id === 'momentum')
         attacker.combatant.gainMomentum(passive.speedPerStack, passive.maxStacks, passive.durationS);
-      if (hitFighter && (passive?.id === 'mastery' || passive?.id === 'focus' || passive?.id === 'efficiency'))
+      if (
+        hitFighter &&
+        (passive?.id === 'mastery' ||
+          passive?.id === 'focus' ||
+          passive?.id === 'efficiency' ||
+          passive?.id === 'resonance')
+      )
         attacker.combatant.gainMastery(1, passive.maxStacks);
       if (!hitFighter) this.shake.addTrauma(a.trauma);
       this.shake.punch(a.zoomPunch);
@@ -3201,6 +3215,7 @@ export class FightArenaScene implements ArenaScene {
             k: c.barrierHp / Math.max(1, c.barrierMaxHp),
             hitS: c.barrierHitS,
             palette: look?.palette ?? null,
+            sonic: look?.barrierStyle === 'sonic',
           },
         ];
       }),
@@ -3413,7 +3428,7 @@ export class FightArenaScene implements ArenaScene {
           ability: bd.id,
           look: bd.look,
           vfx: 'barrier-break',
-          sfx: 'barrier-break',
+          sfx: bd.look?.barrierStyle === 'sonic' ? 'sonic-shatter' : 'barrier-break',
           x: f.x,
           y: f.y,
           radiusM: 1.4,

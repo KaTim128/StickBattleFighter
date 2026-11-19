@@ -674,3 +674,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Psion and Aerion float in every direction (legs hang, body bobs, no footsteps); Aerion's wings beat slowly.
 - [ ] Geargrind walks and runs upright, clearly unlike Kenshiro's low stance.
 - [ ] Watching an AI battle in Tournament: Soul Drain, Hunting Frenzy and fog never darken the spectator's screen.
+
+### Reson (21/11/2026, TD-132)
+- [ ] Reson: charcoal body with cyan forearm devices and shoulder emitters; rocks on the beat when idle.
+- [ ] Sonic Boom passes through two opponents in a line; Vibration Punch only hits at arm length; Resonance Barrier shows sound rings, ripples when hit and shatters; Resonance Dash leaves distortion rings and no damage.
+- [ ] Feedback Pulse pushes opponents and makes their steering waver for about a second without stunning; Shatterwave shows converging rings, then four expanding rings.

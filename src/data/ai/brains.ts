@@ -201,6 +201,25 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     },
     combos: [['a3', 'a1']],
   },
+  // Reson: a sonic skirmisher. Opens with booms from range, dashes in and out, punches when close, shields when hurt.
+  'reson-ai': {
+    style: 'Sonic skirmisher: booms from range, dashes in and out, punches close, shields when hurt.',
+    preferredRangeM: [2.5, 5],
+    movement: 'kite',
+    meleeBias: 0.45,
+    heavyBias: 0.3,
+    defence: 'dodge',
+    retreatBelowHp: 0.25,
+    hitAndRunS: 1.2,
+    tactics: {
+      a1: { role: 'poke', minM: 2, maxM: 9, weight: 1.3 },
+      a2: { role: 'burst', minM: 0, maxM: 2, weight: 1.2 },
+      a3: { role: 'buff', minM: 0, maxM: 6, weight: 0.9, when: { selfHpBelow: 0.7 } },
+      a4: { role: 'gapClose', minM: 3, maxM: 7, weight: 0.9 },
+      ult: { role: 'burst', minM: 0, maxM: 5, weight: 1.3 },
+    },
+    combos: [['a4', 'a2']],
+  },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
   'rampage-ai': {
@@ -316,6 +335,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   featherGuard: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.6 } },
   // Iaido Draw: a lightning cut to close the gap.
   iaidoDraw: { role: 'gapClose', minM: 2, maxM: 6, weight: 1.2 },
+  // Feedback Pulse: shoves crowders off and scrambles their steps.
+  feedbackPulse: { role: 'escape', minM: 0, maxM: 3, weight: 1.1 },
   // Arc Coil: a close jolt when something is on top of him.
   arcCoil: { role: 'escape', minM: 0, maxM: 3, weight: 1.1 },
   // Repulse: shove everyone off when crowded.

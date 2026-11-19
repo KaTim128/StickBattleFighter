@@ -152,6 +152,7 @@ const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   solid: { deep: '#0b0d12', mid: '#2b3240', glow: '#ffb000', spark: '#fff0b0', frame: '#ffc83a' },
   soldier: { deep: '#050a04', mid: '#14310c', glow: '#4fd81c', spark: '#d5ff9a', frame: '#7dff3a' },
   winged: { deep: '#06101c', mid: '#1c3a5c', glow: '#8fc4f4', spark: '#ffffff', frame: '#bfe2ff' },
+  sonic: { deep: '#04090c', mid: '#0f2a33', glow: '#19c4e0', spark: '#eafcff', frame: '#7ae8ff' },
   mechanic: { deep: '#0b0c0e', mid: '#2a2d33', glow: '#ff7a1a', spark: '#ffd9a0', frame: '#ff9a3c' },
   psychic: { deep: '#07040f', mid: '#1f1040', glow: '#8a4fe0', spark: '#e4d2ff', frame: '#c7a1ff' },
   samurai: { deep: '#080204', mid: '#3a0a12', glow: '#d02438', spark: '#ffb0b8', frame: '#e5434f' },

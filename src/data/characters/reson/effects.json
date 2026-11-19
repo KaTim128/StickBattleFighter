@@ -1,0 +1,17 @@
+{
+  "id": "reson-effects",
+  "punchImpact": "sonic-hit",
+  "kickImpact": "sonic-hit",
+  "heavyImpact": "sonic-wave",
+  "blockImpact": "block-guard",
+  "limbTrail": "sonic-limbs",
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#7ae8ff",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "sonic"
+}

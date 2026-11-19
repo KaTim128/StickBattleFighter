@@ -142,6 +142,7 @@ export interface AbilityVfxInput {
   }[];
   /** Telekinetic barriers up (Psion's Psychic Barrier): where, how much is left (0..1), and seconds since the last hit. */
   readonly barriers?: readonly {
+    readonly sonic?: boolean;
     readonly x: number;
     readonly y: number;
     readonly k: number;
@@ -278,6 +279,7 @@ export class AbilityVfx {
   readonly floor = new Graphics();
   readonly air = new Graphics();
   private readonly particles: Particle[] = [];
+  private distortionS = 0;
   private readonly rings: Ring[] = [];
   private readonly scorches: Scorch[] = [];
   private readonly flashes: {
@@ -417,6 +419,14 @@ export class AbilityVfx {
     }
     for (const tr of input.trails ?? []) {
       const pal = tr.look.palette;
+      if (tr.look.flight?.wave) {
+        // A sonic dash: a distortion ring left every few frames, widening and fading behind the body.
+        this.distortionS -= dtS;
+        if (this.distortionS <= 0) {
+          this.distortionS = 0.045;
+          this.rings.push({ colour: pal.bright, x: tr.x, y: tr.y, z: 0.9, r0: 0.15, r1: 0.95, ageS: 0, lifeS: 0.32 });
+        }
+      }
       const n = this.count((tr.look.flight?.trailPerS ?? 60) * dtS);
       for (let i = 0; i < n; i++) {
         const p = this.free();
@@ -814,6 +824,17 @@ export class AbilityVfx {
       });
       if (im.groundFire !== false) this.flameRings.push({ x: fx.x, y: fx.y, r1: im.ringM, ageS: 0, lifeS: 0.9, pal });
     }
+    for (let n = 1; n < (im.rings ?? 1); n++)
+      this.rings.push({
+        colour: n % 2 === 0 ? pal.core : pal.bright,
+        x: fx.x,
+        y: fx.y,
+        z: 0,
+        r0: im.ringM * 0.25,
+        r1: im.ringM * (1 - 0.1 * n),
+        ageS: -0.1 * n,
+        lifeS: 0.5,
+      });
     if (im.scorchM) {
       this.scorches.push({ x: fx.x, y: fx.y, r: im.scorchM, ageS: 0 });
       if (this.scorches.length > 12) this.scorches.shift();
@@ -1236,6 +1257,20 @@ export class AbilityVfx {
         }
         continue;
       }
+      if (tg.def.look?.telegraph === 'rings') {
+        // Reson: the limit ring, and sound rings drawn in toward him again and again as the charge builds.
+        f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.04, color: tp.hot, alpha: 0.35 + 0.3 * k });
+        for (let i = 0; i < 3; i++) {
+          const ph = (t * (1.2 + k * 2) + i / 3) % 1;
+          f.circle(tg.x, tg.y, tg.radiusM * (1 - ph)).stroke({
+            width: 0.05,
+            color: tp.bright,
+            alpha: (0.25 + 0.5 * k) * (1 - ph * 0.5),
+          });
+        }
+        f.circle(tg.x, tg.y, tg.radiusM * 0.12 * (1 + k)).fill({ color: tp.core, alpha: 0.5 + 0.4 * k });
+        continue;
+      }
       f.circle(tg.x, tg.y, tg.radiusM).fill({ color: tp.deep, alpha: 0.14 });
       f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: tp.hot, alpha: 0.22 });
       f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: tp.bright, alpha: pulse });
@@ -1327,6 +1362,33 @@ export class AbilityVfx {
       const flare = Math.max(0, 1 - bar.hitS / 0.35);
       const c = iso(bar.x, bar.y, 1.0);
       const rx = 0.95;
+      if (bar.sonic) {
+        // Resonance Barrier: concentric sound rings that ripple outward, and distort where it was struck.
+        g.ellipse(c.x, c.y, rx, rx * 1.05).fill({ color: pal.deep, alpha: 0.1 + 0.1 * bar.k });
+        for (let i = 0; i < 3; i++) {
+          const ph = (t * 0.9 + i / 3) % 1;
+          const r = rx * (0.45 + 0.6 * ph);
+          g.ellipse(c.x, c.y, r, r * 1.05).stroke({
+            width: 0.03,
+            color: pal.bright,
+            alpha: (1 - ph) * (0.4 + 0.4 * bar.k),
+          });
+        }
+        g.ellipse(c.x, c.y, rx, rx * 1.05).stroke({
+          width: 0.04 + 0.05 * flare,
+          color: pal.bright,
+          alpha: 0.5 + 0.4 * flare,
+        });
+        if (flare > 0)
+          for (let i = 0; i < 2; i++)
+            g.ellipse(
+              c.x,
+              c.y,
+              rx * (1 + 0.12 * (1 - flare) * (i + 1)),
+              rx * 1.05 * (1 + 0.1 * (1 - flare) * (i + 1)),
+            ).stroke({ width: 0.04, color: pal.core, alpha: 0.6 * flare });
+        continue;
+      }
       g.ellipse(c.x, c.y, rx, rx * 1.05).fill({ color: pal.deep, alpha: 0.12 + 0.12 * bar.k });
       g.ellipse(c.x, c.y, rx, rx * 1.05).stroke({
         width: 0.03 + 0.03 * flare,
@@ -1921,6 +1983,24 @@ export class AbilityVfx {
     }
     // A tornado shot is drawn as its funnel (see `funnels`), not as a bolt.
     if (look.flight?.tornado) return;
+    if (look.flight?.wave) {
+      // A sonic boom: three nested crescents of sound opening toward where it is going, with a bright leading edge.
+      const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);
+      for (let i = 0; i < 3; i++) {
+        const back = i * 0.32;
+        const w = (0.55 + i * 0.22) * (1 + 0.06 * Math.sin(t * 26 + i));
+        const cx = c.x - Math.cos(ang) * back;
+        const cy = c.y - Math.sin(ang) * back * ISO_T;
+        g.arc(cx, cy, w, ang - 1.0, ang + 1.0).stroke({
+          width: 0.09 - i * 0.02,
+          color: i === 0 ? pal.core : pal.bright,
+          alpha: 0.95 - i * 0.25,
+          cap: 'round',
+        });
+      }
+      g.circle(c.x, c.y, 0.16).fill({ color: pal.core, alpha: 0.9 });
+      return;
+    }
     if (look.flight?.debris) {
       // A flung object: a dark chunk with a violet edge, tumbling.
       const sp = t * 12 + p.x * 3;

@@ -281,6 +281,7 @@ export const BODY_STYLES = [
   'samurai',
   'psychic',
   'mechanic',
+  'sonic',
 ] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
 export const HELD_ITEMS = ['staff', 'bone-sword', 'knife', 'katana'] as const;

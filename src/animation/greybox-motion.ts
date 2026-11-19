@@ -127,7 +127,8 @@ export type IdleStyle =
   | 'aerial'
   | 'pyro'
   | 'psychic'
-  | 'mechanic';
+  | 'mechanic'
+  | 'sonic';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -141,6 +142,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.pyro') return 'pyro';
   if (clipId === 'proc.idle.psychic') return 'psychic';
   if (clipId === 'proc.idle.mechanic') return 'mechanic';
+  if (clipId === 'proc.idle.sonic') return 'sonic';
   return 'boxer';
 }
 
@@ -280,7 +282,26 @@ function mechanicIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * SONIC (Reson): he stands on the beat. The weight rocks from foot to foot twice a second, the shoulders and chest pulse with
+ * it, and both gauntlets are held up in front of the chest, forearms vertical, the rings facing the opponent.
+ */
+function sonicIdle(timeS: number, bones: BoneLengths): Pose {
+  const beat = Math.sin(timeS * TAU * 1.0);
+  const pulse = 0.5 + 0.5 * Math.sin(timeS * TAU * 2.0);
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-3 + beat * 1.5),
+    head: deg(-2 + beat * 1.2),
+    armFront: { root: deg(62 + pulse * 5), bend: deg(112) },
+    armBack: { root: deg(44 - pulse * 4), bend: deg(120) },
+    legFront: legIk(0.2 + beat * 0.02, legs * 0.88 - pulse * 0.018, bones.thigh, bones.shin),
+    legBack: legIk(-0.24 + beat * 0.02, legs * 0.88 - (1 - pulse) * 0.018, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'sonic') return sonicIdle(timeS, bones);
   if (style === 'mechanic') return mechanicIdle(timeS, bones);
   if (style === 'psychic') return psychicIdle(timeS, bones);
   if (style === 'samurai') return samuraiIdle(timeS, bones);
@@ -453,6 +474,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0);
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'sonic') {
+    // A rhythmic stride on the beat: springy steps, the chest bobbing, both gauntlets held up in front.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.76,
+      bob: 0.05,
+      leadX: 0.14,
+      rearX: -0.18,
+      reach: 0.15 * k,
+      lift: 0.1,
+      lean: -4,
+      sway: 1.6,
+      head: -2,
+      arms: { lead: { x: 0.3, y: 0.62 }, rear: { x: 0.16, y: 0.58 }, swingX: 0.02, swingY: 0.04 },
+    });
+  }
   if (style === 'mechanic') {
     // An upright industrial march (owner, 21/11/2026: not crouched): the legs nearly straight, lifted like pistons and set down
     // square, the torso held tall and still, the machine arm raised ready, the other swinging a little.
@@ -544,7 +580,8 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
     style === 'aerial' ||
     style === 'pyro' ||
     style === 'psychic' ||
-    style === 'mechanic'
+    style === 'mechanic' ||
+    style === 'sonic'
   )
     return idlePose(timeS, bones, style);
   if (style === 'samurai') return samuraiIdle(timeS, bones, 1);
@@ -800,22 +837,39 @@ const MECHANIC_RUN: RunStyle = {
   pumpBack: { shoulder: -40, elbow: 90 },
 };
 
+/** SONIC RUN: light and bouncing on the beat, the gauntlets pumping in front of the chest. */
+const SONIC_RUN: RunStyle = {
+  pelvisM: 0.7,
+  bob: 0.05,
+  reachM: 0.3,
+  pushM: 0.34,
+  stance: 0.34,
+  swingLiftM: 0.3,
+  lean: -11,
+  drive: 4,
+  head: -2,
+  pumpFront: { shoulder: 80, elbow: 100 },
+  pumpBack: { shoulder: 60, elbow: 104 },
+};
+
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'mechanic'
-    ? MECHANIC_RUN
-    : style === 'psychic'
-      ? PSYCHIC_RUN
-      : style === 'samurai'
-        ? SAMURAI_RUN
-        : style === 'heavyweight'
-          ? sprint
-            ? HEAVY_SPRINT
-            : HEAVY_RUN
-          : style === 'stalker'
-            ? STALKER_RUN
-            : sprint
-              ? SPRINT_STYLE
-              : RUN;
+  style === 'sonic'
+    ? SONIC_RUN
+    : style === 'mechanic'
+      ? MECHANIC_RUN
+      : style === 'psychic'
+        ? PSYCHIC_RUN
+        : style === 'samurai'
+          ? SAMURAI_RUN
+          : style === 'heavyweight'
+            ? sprint
+              ? HEAVY_SPRINT
+              : HEAVY_RUN
+            : style === 'stalker'
+              ? STALKER_RUN
+              : sprint
+                ? SPRINT_STYLE
+                : RUN;
 
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {

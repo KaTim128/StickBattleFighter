@@ -129,6 +129,17 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 1.6, colour: 0xff7a1a },
     dust: [0x8a8f98, 0x55595f],
   },
+  // Reson's sound: cyan rings that ring out from every touch, a wide shockwave on the gauntlet blast.
+  'sonic-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x0a3a4a, hot: 0x19c4e0, bright: 0x7ae8ff, core: 0xeafcff },
+  },
+  'sonic-hit': { sparks: { count: 8, speedMps: 5, colour: 0x7ae8ff }, ring: { sizeM: 0.7, colour: 0x19c4e0 } },
+  'sonic-wave': {
+    sparks: { count: 18, speedMps: 8, colour: 0xeafcff },
+    ring: { sizeM: 2.0, colour: 0x7ae8ff },
+    mist: 4,
+  },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },

@@ -19,7 +19,8 @@ type Theme =
   | 'wind'
   | 'steel'
   | 'psi'
-  | 'gear';
+  | 'gear'
+  | 'sonic';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -35,6 +36,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   steel: ['#ffe9e9', '#a01826', '#1a0508'],
   psi: ['#f4eaff', '#7a3fd0', '#0d0618'],
   gear: ['#fff1d6', '#d9650f', '#15171b'],
+  sonic: ['#eafcff', '#0e8fa8', '#04141a'],
 };
 
 const MATERIALS = `
@@ -474,6 +476,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'gear',
     rays(24, 28, 16, '#fff1d6', 0.3),
     `<g filter="url(#ds)"><rect x="14" y="6" width="20" height="10" rx="2" fill="#3a3f48" stroke="#8a919d" stroke-width="1.6"/><rect x="20" y="16" width="8" height="12" fill="#c9ced8"/><rect x="12" y="28" width="24" height="10" rx="3" fill="#586070" stroke="#c9ced8" stroke-width="2"/></g><g stroke="#ff7a1a" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><path d="M6 42 H42 M10 38 L4 44 M38 38 L44 44"/></g>`,
+  ),
+  'sonic-boom': icon(
+    'sonic',
+    rays(24, 24, 16, '#eafcff', 0.25),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M12 8 C22 14 22 34 12 40" stroke="#7ae8ff" stroke-width="3"/><path d="M20 8 C32 14 32 34 20 40" stroke="#19c4e0" stroke-width="3.2"/><path d="M28 8 C42 14 42 34 28 40" stroke="#eafcff" stroke-width="3" opacity=".8"/></g>`,
+  ),
+  'vibration-punch': icon(
+    'sonic',
+    rays(24, 24, 14, '#eafcff', 0.25),
+    `<g filter="url(#ds)"><rect x="18" y="16" width="20" height="16" rx="4" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/></g><g fill="none" stroke="#7ae8ff" stroke-width="2.4" stroke-linecap="round" filter="url(#gl)"><path d="M12 14 L8 18 L12 22 L8 26 L12 30 L8 34"/><circle cx="28" cy="24" r="5"/></g>`,
+  ),
+  'resonance-barrier': icon(
+    'sonic',
+    rays(24, 24, 14, '#eafcff', 0.2),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#7ae8ff" stroke-width="2.6"/><circle cx="24" cy="24" r="11" stroke="#19c4e0" stroke-width="2.2" opacity=".8"/><circle cx="24" cy="24" r="5" stroke="#eafcff" stroke-width="2.4"/></g>`,
+  ),
+  'resonance-dash': icon(
+    'sonic',
+    rays(24, 24, 14, '#eafcff', 0.2),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M30 10 C24 16 24 32 30 38" stroke="#eafcff" stroke-width="3"/><path d="M22 10 C16 16 16 32 22 38" stroke="#7ae8ff" stroke-width="2.6" opacity=".8"/><path d="M14 10 C8 16 8 32 14 38" stroke="#19c4e0" stroke-width="2.2" opacity=".6"/></g><path d="M34 24 H44 M40 20 L44 24 L40 28" fill="none" stroke="#eafcff" stroke-width="2.6" stroke-linecap="round"/>`,
+  ),
+  'feedback-pulse': icon(
+    'sonic',
+    rays(24, 24, 16, '#eafcff', 0.3),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="5" stroke="#eafcff" stroke-width="3"/><circle cx="24" cy="24" r="11" stroke="#7ae8ff" stroke-width="2.4" stroke-dasharray="4 3"/><circle cx="24" cy="24" r="17" stroke="#19c4e0" stroke-width="2" stroke-dasharray="3 4" opacity=".7"/></g>`,
+  ),
+  shatterwave: icon(
+    'sonic',
+    rays(24, 24, 20, '#eafcff', 0.35),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="6" stroke="#eafcff" stroke-width="3"/><circle cx="24" cy="24" r="12" stroke="#7ae8ff" stroke-width="2.6"/><circle cx="24" cy="24" r="18" stroke="#19c4e0" stroke-width="2.4" stroke-dasharray="6 4"/></g><g stroke="#eafcff" stroke-width="2.4" stroke-linecap="round"><path d="M24 2 V8 M24 40 V46 M2 24 H8 M40 24 H46"/></g>`,
+  ),
+  'sonic-combo': icon(
+    'sonic',
+    rays(24, 24, 14, '#eafcff', 0.15),
+    `<g filter="url(#gl)" fill="none" stroke="#7ae8ff" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="32" r="5"/><circle cx="24" cy="22" r="5"/><circle cx="36" cy="12" r="5"/></g><path d="M6 40 L20 28 M18 36 L34 20" stroke="#eafcff" stroke-width="2" stroke-linecap="round"/>`,
+  ),
+  'gauntlet-blast': icon(
+    'sonic',
+    rays(24, 24, 16, '#eafcff', 0.25),
+    `<g filter="url(#ds)"><rect x="4" y="18" width="12" height="12" rx="3" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/><rect x="32" y="18" width="12" height="12" rx="3" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/></g><g fill="none" stroke="#eafcff" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><path d="M18 14 C22 20 22 28 18 34 M30 14 C26 20 26 28 30 34"/></g>`,
   ),
   'plague-bloom': icon(
     'toxin',

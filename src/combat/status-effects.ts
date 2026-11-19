@@ -7,7 +7,7 @@
 
 import { Toxicity } from './toxicity';
 
-export type StatusId = 'burn' | 'bleed' | 'blind' | 'decay' | 'dark' | 'toxicity' | 'fog' | 'momentum';
+export type StatusId = 'burn' | 'bleed' | 'blind' | 'decay' | 'dark' | 'toxicity' | 'fog' | 'momentum' | 'disrupt';
 
 /** How a new application meets one already running. */
 export type StatusStacking =
@@ -55,6 +55,8 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   burn: { stacking: 'strongest', tickIntervalS: 0 },
   bleed: { stacking: 'strongest', tickIntervalS: 0 },
   blind: { stacking: 'strongest', tickIntervalS: 0 },
+  // Reson's Feedback Pulse: movement direction wobbles for a moment; no damage, no stun.
+  disrupt: { stacking: 'strongest', tickIntervalS: 0 },
   decay: { stacking: 'strongest', tickIntervalS: 0 },
   dark: { stacking: 'strongest', tickIntervalS: 0 },
   // Vexoris's Plague Bloom fog: renewed every step while inside it, so it lapses a moment after leaving.

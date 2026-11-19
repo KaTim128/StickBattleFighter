@@ -476,6 +476,73 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sawtooth', 1100, 100, 0.45, 0.3),
     noise('highpass', 5500, 2200, 0.25, 0.4, 1, 0.04),
   ],
+  // Reson's sound: pure sine tones that swell and fall, deep pressure thumps, rippling tremolo tails.
+  'hit-reson-blast': [
+    tone('sine', 150, 50, 0.4, 0.6),
+    tone('sine', 300, 100, 0.3, 0.3, 0.02),
+    noise('bandpass', 900, 250, 0.35, 0.4, 1.8),
+  ],
+  'sonic-charge': [
+    tone('sine', 220, 740, 0.45, 0.2),
+    tone('sine', 440, 1480, 0.45, 0.1),
+    noise('bandpass', 2000, 3600, 0.4, 0.08, 4, 0, { attack: 0.25 }),
+  ],
+  'boom-launch': [
+    tone('sine', 130, 55, 0.4, 0.6),
+    noise('bandpass', 700, 300, 0.3, 0.45, 1.5),
+    tone('sine', 520, 180, 0.25, 0.25),
+  ],
+  'boom-hit': [tone('sine', 180, 60, 0.28, 0.55), noise('bandpass', 1500, 500, 0.18, 0.4, 2)],
+  'vib-release': [
+    tone('square', 90, 90, 0.2, 0.2, 0, 2),
+    tone('sine', 240, 60, 0.3, 0.5),
+    noise('lowpass', 1800, 300, 0.2, 0.4),
+  ],
+  'vib-impact': [
+    tone('sine', 110, 40, 0.4, 0.7),
+    tone('square', 70, 70, 0.3, 0.25, 0, 3),
+    noise('bandpass', 600, 200, 0.25, 0.5, 1.6),
+  ],
+  'sonic-barrier-up': [
+    tone('sine', 300, 900, 0.4, 0.3),
+    tone('triangle', 900, 1500, 0.3, 0.12),
+    noise('bandpass', 2400, 4000, 0.3, 0.08, 4),
+  ],
+  'sonic-barrier-hit': [
+    tone('sine', 1100, 700, 0.2, 0.3),
+    tone('sine', 1650, 1050, 0.16, 0.15),
+    noise('bandpass', 2600, 1400, 0.12, 0.2, 3),
+  ],
+  'sonic-shatter': [
+    tone('sine', 1400, 200, 0.5, 0.4),
+    noise('bandpass', 3800, 900, 0.4, 0.5, 1.4),
+    tone('sine', 90, 40, 0.35, 0.5),
+    tone('triangle', 2200, 600, 0.3, 0.2, 0.05),
+  ],
+  'sonic-dash': [
+    tone('sine', 400, 1200, 0.25, 0.35),
+    noise('bandpass', 2400, 900, 0.25, 0.35, 1.2),
+    tone('sine', 100, 70, 0.2, 0.3),
+  ],
+  'sonic-dash-end': [tone('sine', 900, 300, 0.2, 0.3), noise('bandpass', 1800, 700, 0.12, 0.25, 2)],
+  'pulse-emit': [
+    tone('sine', 160, 90, 0.3, 0.5),
+    tone('sine', 320, 180, 0.25, 0.2),
+    noise('lowpass', 1400, 300, 0.25, 0.35),
+  ],
+  'pulse-hit': [tone('sine', 220, 110, 0.18, 0.4), noise('bandpass', 1200, 600, 0.12, 0.3, 2)],
+  'shatter-start': [
+    tone('sine', 60, 400, 0.8, 0.3),
+    tone('sine', 120, 800, 0.8, 0.15),
+    noise('bandpass', 400, 4000, 0.8, 0.2, 2, 0, { attack: 0.5 }),
+  ],
+  'shatterwave-blast': [
+    tone('sine', 70, 28, 0.9, 0.85),
+    noise('lowpass', 3000, 160, 0.8, 0.8, 0.7),
+    tone('sine', 1800, 300, 0.5, 0.3),
+    tone('sine', 900, 150, 0.6, 0.3, 0.08),
+    noise('bandpass', 4200, 1200, 0.4, 0.4, 1.2, 0.05),
+  ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),
     noise('lowpass', 1200, 400, 0.26, 0.25, 1, 0.02),

@@ -58,6 +58,9 @@ Done: Geargrind fighter and kit, fist/drone/magnet/plating engine support, mecha
 ## Animation and balance batch (21/11/2026, TD-131)
 Done: Kenshiro three-swing tap, hover locomotion for Psion and Aerion, upright Geargrind, spectator sight fix, ability and melee balance pass plus `ability-balance.test.ts`. Tests: 1114 passed | 2 skipped. Known: the swing arcs and floating were checked only in still screenshots; balance is estimated, not simulated. Next: Reson, then Chronos, then Arcstrike and Tidebreaker; Colosseum after all remaining fighters (owner, 21/11/2026).
 
+## Reson batch (21/11/2026, TD-132)
+Done: Reson fighter and kit, pierce/disrupt/sonic-barrier/rings engine support, `sonic` skin, idle/walk/run, clips, sounds, icons, AI, stance, tests (1137). Balance test widened to top/bottom three (explained in TD-132). Known: disrupt rotates movement only; checked in still screenshots. Next: Chronos, then Arcstrike and Tidebreaker, then Colosseum (owner, 21/11/2026).
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

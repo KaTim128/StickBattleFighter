@@ -609,6 +609,130 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.5,
   },
 
+  // ---- Reson (master plan section 4): the gauntlets do the work, tuned up and released.
+  // Sonic Boom: both gauntlets drawn to the chest, then thrown out flat together.
+  sonicBoom: {
+    windup: {
+      lean: deg(8),
+      head: deg(0),
+      armFront: limb(60, 130),
+      armBack: limb(54, 130),
+      legFront: limb(22, -34),
+      legBack: limb(-26, -30),
+    },
+    release: {
+      lean: deg(-20),
+      head: deg(-4),
+      armFront: limb(94, 4),
+      armBack: limb(90, 6),
+      legFront: limb(32, -34),
+      legBack: limb(-28, -22),
+    },
+    settle: 0.4,
+  },
+  // Vibration Punch: the whole arm shuddering back, then one fist driven straight in.
+  vibrationPunch: {
+    windup: {
+      lean: deg(10),
+      head: deg(2),
+      armFront: limb(-20, 124),
+      armBack: limb(50, 110),
+      legFront: limb(24, -36),
+      legBack: limb(-30, -32),
+    },
+    tremble: deg(2.6),
+    release: {
+      lean: deg(-28),
+      head: deg(-6),
+      armFront: limb(92, 2),
+      armBack: limb(40, 112),
+      legFront: limb(36, -34),
+      legBack: limb(-30, -20),
+    },
+    settle: 0.45,
+  },
+  // Resonance Barrier: both gauntlets crossed at the chest, then swept wide in a circle.
+  resonanceBarrier: {
+    windup: {
+      lean: deg(4),
+      head: deg(0),
+      armFront: limb(60, 140),
+      armBack: limb(54, 140),
+      legFront: limb(22, -30),
+      legBack: limb(-26, -28),
+    },
+    release: {
+      lean: deg(0),
+      head: deg(-2),
+      armFront: limb(86, 24),
+      armBack: limb(-70, 26),
+      legFront: limb(24, -30),
+      legBack: limb(-28, -26),
+    },
+    settle: 0.35,
+  },
+  // Resonance Dash: crouched and coiled, then leaning hard into the burst with the gauntlets trailing.
+  resonanceDash: {
+    windup: {
+      lean: deg(18),
+      head: deg(6),
+      armFront: limb(30, 120),
+      armBack: limb(20, 120),
+      legFront: limb(36, -64),
+      legBack: limb(-30, -56),
+    },
+    release: {
+      lean: deg(-26),
+      head: deg(-4),
+      armFront: limb(-50, 40),
+      armBack: limb(-60, 40),
+      legFront: limb(40, -50),
+      legBack: limb(-44, -34),
+    },
+    settle: 0.25,
+  },
+  // Feedback Pulse: both fists clenched in against the chest, then both hands thrown open and the body rocked back.
+  feedbackPulse: {
+    windup: {
+      lean: deg(10),
+      head: deg(2),
+      armFront: limb(50, 140),
+      armBack: limb(46, 140),
+      legFront: limb(22, -34),
+      legBack: limb(-26, -30),
+    },
+    release: {
+      lean: deg(-10),
+      head: deg(-4),
+      armFront: limb(84, 18),
+      armBack: limb(-84, 18),
+      legFront: limb(26, -32),
+      legBack: limb(-30, -24),
+    },
+    settle: 0.35,
+  },
+  // Shatterwave: both gauntlets raised overhead and brought together, shuddering, then slammed apart and down.
+  shatterwave: {
+    windup: {
+      lean: deg(2),
+      head: deg(-8),
+      armFront: limb(158, 50),
+      armBack: limb(152, 54),
+      legFront: limb(24, -36),
+      legBack: limb(-30, -32),
+    },
+    tremble: deg(3),
+    release: {
+      lean: deg(-24),
+      head: deg(-2),
+      armFront: limb(40, 4),
+      armBack: limb(-30, 6),
+      legFront: limb(36, -36),
+      legBack: limb(-32, -20),
+    },
+    settle: 0.55,
+  },
+
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.

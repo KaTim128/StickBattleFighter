@@ -1,0 +1,66 @@
+{
+  "id": "reson",
+  "template": "base-stickman",
+  "displayName": "Reson",
+  "description": "Reson hears the arena the way other fighters see it. Every footfall, heartbeat and swung fist is a note to him, and he has built the gauntlets on his forearms to answer in kind. He rarely shouts; he does not need to. When he finally releases what he has been tuning, the air itself rings, and people who were standing in front of him are no longer standing there.",
+  "characterType": "fighter",
+  "element": "sonic",
+  "combatStyle": "vibration",
+  "profiles": {
+    "animation": "reson-animation",
+    "moveset": "reson-moveset",
+    "stats": "reson-stats",
+    "effects": "reson-effects",
+    "audio": "reson-audio",
+    "ai": "reson-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.44,
+      "shin": 0.44
+    },
+    "colour": "#2b2f35",
+    "colourBack": "#1b1e23",
+    "outline": "#07090b",
+    "limbWidthM": 0.08,
+    "outlineWidthM": 0.03,
+    "spine": 0.55
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "reson-kit"
+}

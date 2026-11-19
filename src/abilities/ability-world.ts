@@ -125,6 +125,8 @@ export interface Projectile {
   y: number;
   readonly dir: Vec2;
   travelledM: number;
+  /** Fighters a piercing shot has already hit. */
+  hit?: Set<string>;
   /** Recent positions for the trail (newest last). */
   readonly trail: Vec2[];
 }
@@ -1151,10 +1153,15 @@ export class AbilityWorld {
       let done = false;
       for (const f of host.fighters()) {
         if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
+        if (p.hit?.has(f.id)) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
         if (d.lift) this.startLift(p, f, host);
+        if (d.pierce) {
+          (p.hit ??= new Set()).add(f.id); // passes through, once each
+          continue;
+        }
         done = true;
         break;
       }
