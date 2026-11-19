@@ -191,6 +191,8 @@ export interface ProjectileDelivery {
    * `liftS` seconds, and the tornado disappears; the target then falls and takes `fallDamage`.
    */
   readonly lift?: { readonly liftS: number; readonly liftM: number; readonly fallDamage: number };
+  /** Shard Volley: `count` shots leave at once, spread evenly across `spreadRad` radians round the aim. */
+  readonly fan?: { readonly count: number; readonly spreadRad: number };
 }
 
 /** The caster rushes forward, hitting fighters in the way, optionally leaving a burning trail. */
@@ -222,6 +224,14 @@ export interface DashDelivery {
    * `lifeS`. They deal no damage, cannot be hurt, and enemy shots that reach one are spent on it.
    */
   readonly afterimages?: { readonly spacingM: number; readonly lifeS: number };
+  /**
+   * Crystal Slide (Prismor): a glowing crystal trail lies under the path for `trailLifeS`, and where the slide stops crystal
+   * thorns erupt after a short `warnS` warning: a blast of `radiusM` that deals `payload`.
+   */
+  readonly slide?: {
+    readonly trailLifeS: number;
+    readonly thorns: { readonly radiusM: number; readonly warnS: number; readonly payload: AbilityPayload };
+  };
 }
 
 /**
@@ -506,53 +516,55 @@ export interface BarrierDelivery {
   readonly durationS: number;
 }
 
-export type WeaponKind = 'greatsword' | 'dualBlades' | 'lance' | 'warhammer';
-
-/** One blow of a crystal weapon: when it lands after the release, where it reaches, and how hard it hits. */
-export interface WeaponHit {
-  readonly atS: number;
-  /** `arc`: a sector in front of him; `line`: a narrow thrust that goes through everyone in line; `circle`: all round him; `smash`: a point ahead, then a ring round it. */
-  readonly shape: 'arc' | 'line' | 'circle' | 'smash';
-  readonly reachM: number;
-  /** Half-width of the blow: the half-angle (radians) of an arc, or the half-width (metres) of a line or smash. */
-  readonly widthM: number;
-  readonly damageFactor: number;
-  readonly knockbackFactor: number;
-  readonly heavy?: boolean;
-}
+/** The five crystal weapons Crystal Arsenal can grow into his hands (Prismor). */
+export type WeaponKind = 'greatsword' | 'warhammer' | 'lance' | 'dualBlades' | 'guard';
+export const WEAPON_KINDS: readonly WeaponKind[] = ['greatsword', 'warhammer', 'lance', 'dualBlades', 'guard'];
 
 /**
- * A crystal weapon grown from his arms (Prismor): a timeline of blows. Each blow hits everyone in its shape once (no target
- * is hit twice by one blow), re-aimed at the nearest enemy in reach. A lance goes through everyone in line, each one after
- * the first taking `pierceFalloff` of the one before. A smash also sends a ring of crystal out round where it lands. If no
- * blow connects at all he stays exposed for `missRecoveryS` more.
+ * Crystal Arsenal (Prismor): a random one of the five crystal weapons grows into his hands and replaces his unarmed taps with
+ * its own tap combo and heavy attack (src/data/abilities/crystal-arsenal.ts). It shatters the moment he is hurt or uses
+ * another ability. The guard's shield has `guardHp` durability and bursts when it is spent.
  */
-export interface WeaponDelivery {
-  readonly type: 'weapon';
-  readonly weapon: WeaponKind;
-  readonly hits: readonly WeaponHit[];
-  readonly pierceFalloff?: number;
-  readonly shockwave?: { readonly radiusM: number; readonly damageFactor: number; readonly knockbackFactor: number };
-  readonly missRecoveryS: number;
+export interface ArsenalDelivery {
+  readonly type: 'arsenal';
+  readonly guardHp: number;
+  /** The burst when a guard shield is spent: radius (metres) and the damage it deals to everyone near. */
+  readonly guardBurst: { readonly radiusM: number; readonly payload: AbilityPayload };
 }
 
-/**
- * A crystal shield grown from the oversized forearm (Prismor's Prism Guard): it takes frontal damage up to `hp` for
- * `durationS`, heavy blows wear it down `heavyFactor` times as fast, a melee blow it stops answers with a bash, and he
- * moves at `moveFactor` while it is up. Blows from behind and grabs ignore it.
- */
-export interface ShieldDelivery {
-  readonly type: 'shield';
+/** A crystal shield held in front of the body: it takes frontal damage up to `hp` and bursts when it is spent (Crystal Guard). */
+export interface ShieldSpec {
   readonly hp: number;
-  readonly durationS: number;
+  /** Heavy blows wear it down this many times as fast. */
   readonly heavyFactor: number;
-  readonly moveFactor: number;
-  readonly bash: {
-    readonly damage: number;
-    readonly knockbackMps: number;
-    readonly reachM: number;
-    readonly cooldownS: number;
-  };
+  readonly burst: { readonly radiusM: number; readonly payload: AbilityPayload };
+}
+
+/**
+ * Crystal Prison (Prismor): thick crystal grows round both of the nearest enemy's legs. For `reactS` seconds the crystals only
+ * form; a grounded enemy that jumps clear in that time escapes. A fighter that flies, hovers or floats cannot: the crystals
+ * reach its legs wherever they are, then drag it down to the floor. Once locked the legs are held for exactly `holdS` seconds
+ * and nothing breaks them. Movement, jumping, dodging, flight and movement abilities are off; damage still lands.
+ */
+export interface LegTrapDelivery {
+  readonly type: 'legTrap';
+  readonly rangeM: number;
+  readonly reactS: number;
+  readonly holdS: number;
+}
+
+/**
+ * Crystal Groundstrike (Prismor): he plants a hand and `count` separate eruption zones appear, each at its own random spot
+ * within `spreadM` of the nearest enemy (or of him), kept inside the arena and apart from each other. Each shows a warning
+ * for `warnS`, then erupts as its own blast with the ability's payload. `staggerS` delays each zone after the last.
+ */
+export interface EruptionsDelivery {
+  readonly type: 'eruptions';
+  readonly count: number;
+  readonly radiusM: number;
+  readonly warnS: number;
+  readonly staggerS: number;
+  readonly spreadM: number;
 }
 
 /**
@@ -683,8 +695,9 @@ export type Delivery =
   | NovaDelivery
   | ParryDelivery
   | WhirlDelivery
-  | WeaponDelivery
-  | ShieldDelivery
+  | ArsenalDelivery
+  | LegTrapDelivery
+  | EruptionsDelivery
   | LiftDelivery
   | BarrierDelivery
   | FistDelivery
@@ -737,6 +750,8 @@ export interface MagicLook {
     readonly screech?: boolean;
     /** Drawn as a wide horizontal crescent of light cutting across the way it travels (Chronos's Chrono Slash). */
     readonly crescent?: boolean;
+    /** Drawn as a small spinning crystal shard with a glinting trail (Prismor's Shard Volley). */
+    readonly shard?: boolean;
   };
   /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
   readonly impact?: {
@@ -764,7 +779,7 @@ export interface MagicLook {
   /** A cage of turning geometric rings round a lifted target (Psion's Floating Prison). */
   readonly cage?: boolean;
   /** The warning ring closes in instead of filling (Psion's Mind Crush), and floating debris rises in a field (Mindstorm). */
-  readonly telegraph?: 'compress' | 'debris' | 'rings';
+  readonly telegraph?: 'compress' | 'debris' | 'rings' | 'crystal';
   /** A barrier drawn as rippling sound-wave rings instead of hexagonal facets (Reson's Resonance Barrier). */
   readonly barrierStyle?: 'sonic';
   /** A slow field drawn as a turning clock face (Chronos's Temporal Collapse). */

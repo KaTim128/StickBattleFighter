@@ -107,8 +107,6 @@ export interface PremiumSkin {
   readonly clockDisc?: { readonly bronze: number; readonly cyan: number };
   /** A temporal device on the near forearm: a bronze dial with cyan hands and a glowing crystal (Chronos). */
   readonly dial?: { readonly bronze: number; readonly cyan: number };
-  /** The near arm is an oversized crystal limb: a huge faceted forearm and fist, a shoulder crystal (Prismor). */
-  readonly crystalArm?: { readonly body: number; readonly edge: number; readonly glow: number };
   /** A crystal crown of sharp points on the head (Prismor). */
   readonly crown?: { readonly body: number; readonly glow: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
@@ -517,7 +515,6 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     },
     fire: { core: false, veins: true, fists: false },
     head: 'own',
-    crystalArm: { body: 0x7b6cff, edge: 0x2a2266, glow: 0x4aa8ff },
     crown: { body: 0x9f8cff, glow: 0x4aa8ff },
   },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
@@ -751,7 +748,6 @@ export class PremiumModel {
     if (this.skin.dial) this.dial(g, fire, s.armFront);
     if (this.skin.soundGear) this.soundGear(g, fire, s);
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
-    if (this.skin.crystalArm) this.crystalArm(g, fire, s.armFront);
     if ((this.st.crystalArmour ?? 0) > 0.02) this.crystalArmourOverlay(g, fire, s);
     if (this.st.weapon) this.crystalWeapon(g, fire, s);
     if ((this.st.plating ?? 0) > 0.02) this.platingOverlay(g, fire, s);
@@ -932,7 +928,10 @@ export class PremiumModel {
     fire.poly(flat).fill({ color: glow, alpha: 0.12 });
   }
 
-  /** A blade grown from `at` along `ang`: faceted, tapering to a point, `len` long when full, `wid` wide. */
+  /**
+   * A crystal blade grown from `at` along `ang`: `len` long when full, `wid` wide. A dark silhouette, a lit face and a shaded face
+   * meeting on a pale spine, small barbs along the edges, a bright inner seam, and a glowing tip while it is still growing.
+   */
   private crystalBlade(
     g: Graphics,
     fire: Graphics,
@@ -944,34 +943,89 @@ export class PremiumModel {
   ): void {
     const L = len * form;
     if (L < 0.03) return;
+    const { w, t } = this.st;
     const ux = Math.cos(ang);
     const uy = Math.sin(ang);
-    const nx = -uy;
-    const ny = ux;
-    const q = (a: number, b: number): Point => ({ x: at.x + ux * a + nx * b, y: at.y + uy * a + ny * b });
-    this.crystal(
-      g,
-      fire,
-      [
-        q(0, -wid / 2),
-        q(L * 0.18, -wid * 0.62),
-        q(L * 0.92, -wid * 0.2),
-        q(L, 0),
-        q(L * 0.92, wid * 0.2),
-        q(L * 0.18, wid * 0.62),
-        q(0, wid / 2),
-      ],
-      0x6f64ff,
-      0x4aa8ff,
-    );
-    g.moveTo(q(L * 0.05, 0).x, q(L * 0.05, 0).y)
-      .lineTo(q(L * 0.95, 0).x, q(L * 0.95, 0).y)
-      .stroke({ width: this.st.w * 0.08, color: 0xe9e2ff, alpha: 0.7 });
+    const q = (a: number, b: number): Point => ({ x: at.x + ux * a - uy * b, y: at.y + uy * a + ux * b });
+    const flat = (pts: Point[]) => pts.flatMap((p) => [p.x, p.y]);
+    const outline = [
+      q(0, -wid * 0.5),
+      q(L * 0.12, -wid * 0.66),
+      q(L * 0.55, -wid * 0.5),
+      q(L * 0.9, -wid * 0.16),
+      q(L, 0),
+      q(L * 0.9, wid * 0.16),
+      q(L * 0.55, wid * 0.5),
+      q(L * 0.12, wid * 0.66),
+      q(0, wid * 0.5),
+    ];
+    g.poly(flat(outline)).fill({ color: 0x120d38, alpha: 0.95 });
+    const spine = [q(0.01, 0), q(L * 0.12, 0), q(L * 0.55, 0), q(L * 0.9, 0), q(L, 0)];
+    // The lit face (upper) and the shaded face (lower).
+    g.poly(
+      flat([
+        q(0.01, -wid * 0.44),
+        q(L * 0.12, -wid * 0.6),
+        q(L * 0.55, -wid * 0.45),
+        q(L * 0.9, -wid * 0.13),
+        q(L * 0.98, 0),
+        ...spine.slice().reverse(),
+      ]),
+    ).fill({ color: 0x9f8cff, alpha: 0.95 });
+    g.poly(
+      flat([
+        q(0.01, wid * 0.44),
+        q(L * 0.12, wid * 0.6),
+        q(L * 0.55, wid * 0.45),
+        q(L * 0.9, wid * 0.13),
+        q(L * 0.98, 0),
+        ...spine.slice().reverse(),
+      ]),
+    ).fill({ color: 0x4338c9, alpha: 0.95 });
+    // A paler band down the lit face and a blue glow in the shade, so it reads as a thick, translucent crystal.
+    g.poly(
+      flat([
+        q(L * 0.1, -wid * 0.3),
+        q(L * 0.6, -wid * 0.28),
+        q(L * 0.88, -wid * 0.08),
+        q(L * 0.6, -wid * 0.06),
+        q(L * 0.1, -wid * 0.08),
+      ]),
+    ).fill({ color: 0xe9e2ff, alpha: 0.4 });
+    g.moveTo(spine[0]!.x, spine[0]!.y)
+      .lineTo(q(L * 0.97, 0).x, q(L * 0.97, 0).y)
+      .stroke({ width: w * 0.09, color: 0xe9e2ff, alpha: 0.85 });
+    g.poly(flat(outline)).stroke({ width: w * 0.1, color: 0x120d38, alpha: 0.9, join: 'round' });
+    // Barbs: small crystal teeth along both edges, longer toward the base.
+    for (const [a, side] of [
+      [0.3, -1],
+      [0.5, 1],
+      [0.7, -1],
+    ] as const) {
+      const base = q(L * a, side * wid * 0.45);
+      const tip = q(L * (a + 0.07), side * wid * (0.45 + 0.34 * (1 - a)));
+      const back = q(L * (a - 0.05), side * wid * 0.4);
+      g.poly([base.x, base.y, tip.x, tip.y, back.x, back.y]).fill({ color: 0xb9b0ff, alpha: 0.9 * form });
+    }
+    fire.poly(flat(outline)).fill({ color: 0x4aa8ff, alpha: 0.14 + 0.05 * Math.sin(t * 4) });
     // The growing tip glows while the blade is still forming.
     if (form < 0.98)
       fire
-        .circle(q(L, 0).x, q(L, 0).y, wid * (0.6 + (1 - form)))
+        .circle(q(L, 0).x, q(L, 0).y, wid * (0.7 + (1 - form)))
         .fill({ color: 0x9fd8ff, alpha: 0.5 * (1 - form) + 0.1 });
+  }
+
+  /** A crystal-wrapped shaft from `a` to `b`: a dark core, a lilac sheen and glinting rings. */
+  private crystalShaft(g: Graphics, a: Point, b: Point, wid: number): void {
+    const { w } = this.st;
+    const { ux, uy, l } = frame(a, b);
+    sleeveQuad(g, a, b, wid * 0.6, wid * 0.6, 0x120d38);
+    sleeveQuad(g, a, b, wid * 0.4, wid * 0.4, 0x4338c9);
+    sleeveQuad(g, lerp(a, b, 0.02), lerp(a, b, 0.98), wid * 0.13, wid * 0.13, 0xb9b0ff, 0.8);
+    for (let i = 1; i < 5; i++) {
+      const c = { x: a.x + ux * l * (i / 5), y: a.y + uy * l * (i / 5) };
+      g.circle(c.x, c.y, wid * 0.52).stroke({ width: w * 0.07, color: 0x9f8cff, alpha: 0.9 });
+    }
   }
 
   /** The direction a forearm points, radians. */
@@ -980,212 +1034,390 @@ export class PremiumModel {
     return Math.atan2(hand.y - el.y, hand.x - el.x);
   }
 
-  /** Crystal weapons, each grown from the arm or arms it belongs to and held in them (Prismor). */
+  /** Crystal weapons (Crystal Arsenal), each grown in his ordinary hands and held in them. */
   private crystalWeapon(g: Graphics, fire: Graphics, s: Skel): void {
     const wp = this.st.weapon;
     if (!wp) return;
-    const { w } = this.st;
     const f = wp.form;
     const handF = s.armFront[2]!;
     const handB = s.armBack[2]!;
     const angF = this.armAngle(s.armFront);
     const angB = this.armAngle(s.armBack);
-    const mid = { x: (handF.x + handB.x) / 2, y: (handF.y + handB.y) / 2 };
-    // Both hands carry one blade: the average of the two forearm directions.
-    const both = Math.atan2(Math.sin(angF) + Math.sin(angB), Math.cos(angF) + Math.cos(angB));
+    // The line through both hands (a two-handed grip), or the lead forearm when they are together.
+    const apart = Math.hypot(handF.x - handB.x, handF.y - handB.y);
+    const grip = apart > 0.12 ? Math.atan2(handF.y - handB.y, handF.x - handB.x) : angF;
+    const { w } = this.st;
     switch (wp.kind) {
       case 'greatsword': {
-        this.crystalBlade(g, fire, mid, both, 1.6, 0.3, f);
-        // A crossguard of two crystal wings where the hands grip, and both fists wrapped round the hilt.
-        const nx = -Math.sin(both);
-        const ny = Math.cos(both);
-        this.crystal(
-          g,
-          fire,
-          [
-            { x: mid.x + nx * 0.28 * f, y: mid.y + ny * 0.28 * f },
-            { x: mid.x + Math.cos(both) * 0.1, y: mid.y + Math.sin(both) * 0.1 },
-            { x: mid.x - nx * 0.28 * f, y: mid.y - ny * 0.28 * f },
-          ],
-          0x4aa8ff,
-          0x7b5cff,
-          0.9,
-        );
-        break;
-      }
-      case 'dualBlades':
-        this.crystalBlade(g, fire, handF, angF, 0.8, 0.14, f);
-        this.crystalBlade(g, fire, handB, angB, 0.8, 0.14, f);
-        break;
-      case 'lance': {
-        const el = s.armFront[1]!;
-        const start = { x: el.x + (handF.x - el.x) * 0.4, y: el.y + (handF.y - el.y) * 0.4 };
-        const reach = Math.hypot(handF.x - start.x, handF.y - start.y);
-        this.crystalBlade(g, fire, start, angF, (reach + 1.9) * 1, 0.2, f);
-        break;
-      }
-      case 'warhammer': {
-        const el = s.armFront[1]!;
-        const ux = Math.cos(angF);
-        const uy = Math.sin(angF);
+        // Grip behind the hands (a pommel), a crystal crossguard in front of them, then the long blade.
+        const ux = Math.cos(grip);
+        const uy = Math.sin(grip);
+        const pommel = { x: handB.x - ux * 0.22 * f, y: handB.y - uy * 0.22 * f };
+        const guard = { x: handF.x + ux * 0.1 * f, y: handF.y + uy * 0.1 * f };
+        this.crystalShaft(g, pommel, guard, w * 1.1);
         const nx = -uy;
         const ny = ux;
-        const hs = { x: el.x + (handF.x - el.x) * 0.25, y: el.y + (handF.y - el.y) * 0.25 };
-        const he = { x: handF.x + ux * 0.5 * f, y: handF.y + uy * 0.5 * f };
-        g.moveTo(hs.x, hs.y)
-          .lineTo(he.x, he.y)
-          .stroke({ width: w * 0.5, color: 0x1b1450, cap: 'round' });
-        g.moveTo(hs.x, hs.y)
-          .lineTo(he.x, he.y)
-          .stroke({ width: w * 0.32, color: 0x8a7cff, alpha: 0.9, cap: 'round' });
-        const q = (a: number, b: number): Point => ({
-          x: handF.x + ux * a * f + nx * b * f,
-          y: handF.y + uy * a * f + ny * b * f,
-        });
-        // The head forms round the fist: a heavy faceted block.
         this.crystal(
           g,
           fire,
           [
-            q(-0.2, -0.42),
-            q(0.12, -0.5),
-            q(0.42, -0.34),
-            q(0.46, 0.0),
-            q(0.42, 0.34),
-            q(0.12, 0.5),
-            q(-0.2, 0.42),
-            q(-0.28, 0),
+            { x: guard.x + nx * 0.3 * f, y: guard.y + ny * 0.3 * f },
+            { x: guard.x + ux * 0.14 + nx * 0.12, y: guard.y + uy * 0.14 + ny * 0.12 },
+            { x: guard.x + ux * 0.14 - nx * 0.12, y: guard.y + uy * 0.14 - ny * 0.12 },
+            { x: guard.x - nx * 0.3 * f, y: guard.y - ny * 0.3 * f },
+            { x: guard.x - ux * 0.06, y: guard.y - uy * 0.06 },
           ],
           0x6f64ff,
           0x4aa8ff,
-          0.88,
+          0.95,
         );
+        this.crystalBlade(g, fire, guard, grip, 1.75, 0.34, f);
         break;
       }
-      case 'shield':
+      case 'dualBlades':
+        this.crystalBlade(g, fire, handF, angF, 0.92, 0.16, f);
+        this.crystalBlade(g, fire, handB, angB, 0.92, 0.16, f);
+        for (const [h, a] of [
+          [handF, angF],
+          [handB, angB],
+        ] as const)
+          this.crystal(
+            g,
+            fire,
+            [
+              { x: h.x + Math.sin(a) * 0.12 * f, y: h.y - Math.cos(a) * 0.12 * f },
+              { x: h.x + Math.cos(a) * 0.1, y: h.y + Math.sin(a) * 0.1 },
+              { x: h.x - Math.sin(a) * 0.12 * f, y: h.y + Math.cos(a) * 0.12 * f },
+            ],
+            0x6f64ff,
+            0x4aa8ff,
+            0.95,
+          );
+        break;
+      case 'lance': {
+        // A long shaft through both hands ending in a slim, many-faceted spearhead with a flared collar.
+        const ux = Math.cos(grip);
+        const uy = Math.sin(grip);
+        const tail = { x: handB.x - ux * 0.5 * f, y: handB.y - uy * 0.5 * f };
+        const collar = { x: handF.x + ux * 1.5 * f, y: handF.y + uy * 1.5 * f };
+        this.crystalShaft(g, tail, collar, w * 0.95);
+        const nx = -uy;
+        const ny = ux;
+        this.crystal(
+          g,
+          fire,
+          [
+            { x: collar.x + nx * 0.16 * f, y: collar.y + ny * 0.16 * f },
+            { x: collar.x + ux * 0.16, y: collar.y + uy * 0.16 },
+            { x: collar.x - nx * 0.16 * f, y: collar.y - ny * 0.16 * f },
+            { x: collar.x - ux * 0.06, y: collar.y - uy * 0.06 },
+          ],
+          0x4aa8ff,
+          0x7b5cff,
+          0.95,
+        );
+        this.crystalBlade(g, fire, collar, grip, 0.85, 0.26, f);
+        break;
+      }
+      case 'warhammer': {
+        // A long crystal haft and a heavy double-faced head at its end, one face blunt and one cut into a spike.
+        const ux = Math.cos(grip);
+        const uy = Math.sin(grip);
+        const nx = -uy;
+        const ny = ux;
+        const tail = { x: handB.x - ux * 0.3 * f, y: handB.y - uy * 0.3 * f };
+        const top = { x: handF.x + ux * 0.9 * f, y: handF.y + uy * 0.9 * f };
+        this.crystalShaft(g, tail, top, w * 1.2);
+        const q = (a: number, b: number): Point => ({
+          x: top.x + (ux * a + nx * b) * f,
+          y: top.y + (uy * a + ny * b) * f,
+        });
+        this.crystal(
+          g,
+          fire,
+          [
+            q(-0.12, -0.34),
+            q(0.2, -0.46),
+            q(0.42, -0.4),
+            q(0.46, -0.1),
+            q(0.46, 0.1),
+            q(0.42, 0.4),
+            q(0.2, 0.46),
+            q(-0.12, 0.34),
+            q(-0.2, 0),
+          ],
+          0x5a4bbf,
+          0x4aa8ff,
+          0.94,
+        );
+        this.crystal(
+          g,
+          fire,
+          [q(0.42, -0.34), q(0.66, -0.12), q(0.9, 0), q(0.66, 0.12), q(0.42, 0.34)],
+          0x9f8cff,
+          0x7b5cff,
+          0.95,
+        );
+        g.moveTo(q(-0.1, 0).x, q(-0.1, 0).y)
+          .lineTo(q(0.82, 0).x, q(0.82, 0).y)
+          .stroke({ width: w * 0.08, color: 0xe9e2ff, alpha: 0.7 });
+        break;
+      }
+      case 'guard':
       case 'sovereign':
         this.crystalShield(g, fire, s, wp.kind === 'sovereign' ? 0.62 : 1, f);
-        if (wp.kind === 'sovereign') this.crystalBlade(g, fire, handB, angB, 1.05, 0.17, f);
+        // The Sovereign's sword is held up and forward in the back hand, ready, whatever the arm is doing.
+        if (wp.kind === 'sovereign') this.crystalBlade(g, fire, handB, -0.75, 1.05, 0.2, f);
         break;
     }
   }
 
-  /** A large angular shield growing from the oversized forearm, standing across the way the arm points. */
+  /**
+   * A crystal shield held squarely in front of the torso (never over his head): a tall faceted kite covering shoulder to hip,
+   * anchored to the shield hand so it jabs and bashes with the arm, and a pale boss at its middle.
+   */
   private crystalShield(g: Graphics, fire: Graphics, s: Skel, size: number, form: number): void {
-    const [, el, hand] = s.armFront as [Point, Point, Point];
-    const ang = Math.atan2(hand.y - el.y, hand.x - el.x);
-    const ux = Math.cos(ang);
-    const uy = Math.sin(ang);
-    const nx = -uy;
-    const ny = ux;
-    const k = size * form;
-    const c = { x: hand.x + ux * 0.04, y: hand.y + uy * 0.04 };
-    const q = (a: number, b: number): Point => ({ x: c.x + ux * a * k + nx * b * k, y: c.y + uy * a * k + ny * b * k });
-    this.crystal(
-      g,
-      fire,
-      [q(0.2, 0.64), q(0.3, 0.2), q(0.22, -0.52), q(0.02, -0.68), q(-0.12, -0.05), q(0, 0.56)],
-      0x6f64ff,
-      0x4aa8ff,
-      0.8,
-    );
-    g.moveTo(q(0.12, 0.5).x, q(0.12, 0.5).y)
-      .lineTo(q(0.18, -0.55).x, q(0.18, -0.55).y)
-      .stroke({ width: this.st.w * 0.08, color: 0xe9e2ff, alpha: 0.6 });
-  }
-
-  /** The oversized crystal arm: a thick faceted upper arm, a huge forearm and a fist of crystal, a crystal at the shoulder. */
-  private crystalArm(g: Graphics, fire: Graphics, pts: readonly Point[]): void {
-    const ca = this.skin.crystalArm;
-    if (!ca) return;
-    const [sh, el, hand] = pts as [Point, Point, Point];
+    const hand = s.armFront[2]!;
     const { w, t } = this.st;
-    sleeveQuad(g, lerp(sh, el, 0.05), lerp(sh, el, 0.95), w * 1.3, w * 1.2, 0x1b1450);
-    sleeveQuad(g, lerp(sh, el, 0.05), lerp(sh, el, 0.95), w * 1.05, w * 0.95, ca.body, 0.9);
-    sleeveQuad(g, lerp(el, hand, 0.0), lerp(el, hand, 0.8), w * 1.8, w * 1.6, 0x1b1450);
-    sleeveQuad(g, lerp(el, hand, 0.0), lerp(el, hand, 0.8), w * 1.5, w * 1.3, ca.body, 0.9);
-    const ang = Math.atan2(hand.y - el.y, hand.x - el.x);
-    const q = (a: number, b: number): Point => ({
-      x: hand.x + Math.cos(ang) * a - Math.sin(ang) * b,
-      y: hand.y + Math.sin(ang) * a + Math.cos(ang) * b,
+    const mid = lerp(s.chest, s.pelvis, 0.45);
+    // In front of the body, drawn toward the shield hand when it reaches out, and kept at torso height.
+    const cx = mid.x + 0.3 * size + Math.max(0, hand.x - (mid.x + 0.35)) * 0.7;
+    const cy = mid.y + (hand.y - mid.y) * 0.25;
+    const k = size * form;
+    // Wider than it is thick, so it still reads as a shield from the angled camera.
+    const q = (a: number, b: number): Point => ({ x: cx + a * k * 1.7, y: cy + b * k * 1.08 });
+    const flat = (pts: Point[]) => pts.flatMap((p) => [p.x, p.y]);
+    const kite = [
+      q(0.02, -0.52),
+      q(0.2, -0.36),
+      q(0.22, 0.06),
+      q(0.1, 0.42),
+      q(0.02, 0.56),
+      q(-0.12, 0.34),
+      q(-0.16, -0.08),
+      q(-0.1, -0.4),
+    ];
+    g.poly(flat(kite)).fill({ color: 0x120d38, alpha: 0.96 });
+    g.poly(flat([q(0.02, -0.5), q(0.17, -0.35), q(0.19, 0.04), q(0.03, 0.02), q(-0.08, -0.38)])).fill({
+      color: 0xb9b0ff,
+      alpha: 0.9,
     });
-    this.crystal(
-      g,
-      fire,
-      [q(-0.12, -0.2), q(0.1, -0.26), q(0.26, -0.1), q(0.28, 0.12), q(0.1, 0.26), q(-0.12, 0.2)],
-      ca.edge,
-      ca.glow,
-      0.92,
-    );
-    this.crystal(
-      g,
-      fire,
-      [
-        { x: sh.x - w * 0.2, y: sh.y - w * 1.6 },
-        { x: sh.x + w * 0.9, y: sh.y - w * 0.2 },
-        { x: sh.x - w * 0.6, y: sh.y + w * 0.2 },
-      ],
-      ca.edge,
-      ca.glow,
-      0.9,
-    );
-    // Light turning slowly inside the crystal.
-    const lit = lerp(el, hand, 0.4 + 0.2 * Math.sin(t * 1.5));
-    fire.circle(lit.x, lit.y, w * 1.1).fill({ color: ca.glow, alpha: 0.18 });
+    g.poly(flat([q(0.19, 0.04), q(0.09, 0.4), q(0.02, 0.53), q(-0.1, 0.32), q(-0.13, -0.06), q(0.03, 0.02)])).fill({
+      color: 0x4338c9,
+      alpha: 0.92,
+    });
+    g.poly(flat([q(0.04, -0.2), q(0.12, -0.05), q(0.04, 0.12), q(-0.04, -0.05)])).fill({
+      color: 0xe9e2ff,
+      alpha: 0.75,
+    });
+    g.poly(flat(kite)).stroke({ width: w * 0.12, color: 0x120d38, alpha: 0.95, join: 'round' });
+    g.moveTo(q(0.02, -0.5).x, q(0.02, -0.5).y)
+      .lineTo(q(0.03, 0.54).x, q(0.03, 0.54).y)
+      .stroke({ width: w * 0.07, color: 0xe9e2ff, alpha: 0.55 });
+    fire.poly(flat(kite)).fill({ color: 0x4aa8ff, alpha: 0.16 + 0.05 * Math.sin(t * 3) });
+    // The arm reaches in behind it: a crystal grip plate where the hand meets the shield.
+    g.circle(hand.x, hand.y, w * 0.8).fill({ color: 0x4338c9, alpha: 0.95 });
   }
 
-  /** Crystal armour grown over the body: a chest crystal, shoulder crystals and thigh plates, flashing where it takes a blow. */
+  /**
+   * The Crystal Sovereign suit (owner 22/11/2026): one fitted set of polished crystal armour. A chest plate with banded lames and
+   * a glowing core seam, shoulder guards joined to it, sculpted forearm guards, thigh, knee and shin armour with boots, and a
+   * crystal helm; all built from the body's own joints so it moves with every animation. `k` builds it in stages: a gathering
+   * glow, the plates sliding in from outside, then the seams lighting with a burst.
+   */
   private crystalArmourOverlay(g: Graphics, fire: Graphics, s: Skel): void {
     const k = Math.min(1, this.st.crystalArmour ?? 0);
-    const { w } = this.st;
-    const c = { x: (s.chest.x + s.pelvis.x) / 2, y: (s.chest.y + s.pelvis.y) / 2 };
-    const sc = (p: Point, o: Point): Point => ({
-      x: c.x + (p.x - c.x) * k + o.x * k,
-      y: c.y + (p.y - c.y) * k + o.y * k,
+    const { w, t, headRadius: hr } = this.st;
+    const stage = (a: number, b: number) => Math.max(0, Math.min(1, (k - a) / (b - a)));
+    const plates = stage(0.25, 0.7);
+    const seams = stage(0.65, 1);
+    const flat = (pts: Point[]) => pts.flatMap((p) => [p.x, p.y]);
+    const OUT = 0x120d38;
+    const BODY = 0x6f64ff;
+    const LIT = 0xb9b0ff;
+    const DARK = 0x3a2fa8;
+    const GLOW = 0x4aa8ff;
+    const c = lerp(s.chest, s.pelvis, 0.5);
+    // Plates slide in from outside as they form.
+    const away = (p: Point, d = 0.5): Point => ({
+      x: p.x + (p.x - c.x) * (1 - plates) * d,
+      y: p.y + (p.y - c.y) * (1 - plates) * d,
     });
-    this.crystal(
-      g,
-      fire,
-      [
-        sc(c, { x: 0, y: -0.34 }),
-        sc(c, { x: 0.2, y: -0.1 }),
-        sc(c, { x: 0.12, y: 0.22 }),
-        sc(c, { x: -0.12, y: 0.22 }),
-        sc(c, { x: -0.2, y: -0.1 }),
-      ],
-      0x6f64ff,
-      0x4aa8ff,
-      0.7,
-    );
-    for (const arm of [s.armFront, s.armBack]) {
-      const sh = arm[0]!;
-      this.crystal(
-        g,
-        fire,
+    const alpha = Math.min(1, 0.15 + plates * 1.1);
+    // One plated piece: a dark edge, a body, and a lit upper facet.
+    const plate = (pts: Point[], tone: number = BODY): void => {
+      const a = pts.map((p) => away(p));
+      g.poly(flat(a)).fill({ color: OUT, alpha });
+      const inner = a.map((p) => ({ x: p.x + (c.x - p.x) * 0.06, y: p.y + (c.y - p.y) * 0.06 }));
+      g.poly(flat(inner)).fill({ color: tone, alpha: alpha * 0.95 });
+      const half = inner.slice(0, Math.max(3, Math.ceil(inner.length / 2)));
+      g.poly(flat(half)).fill({ color: LIT, alpha: alpha * 0.32 });
+      g.poly(flat(a)).stroke({ width: w * 0.1, color: OUT, alpha, join: 'round' });
+      if (seams > 0) g.poly(flat(inner)).stroke({ width: w * 0.04, color: GLOW, alpha: 0.7 * seams, join: 'round' });
+    };
+    // A band of crystal armour along a limb segment: a sleeve with a glowing edge.
+    const band = (a: Point, b: Point, ra: number, rb: number, tone: number = BODY): void => {
+      const pa = away(a);
+      const pb = away(b);
+      sleeveQuad(g, pa, pb, ra * 1.12, rb * 1.12, OUT, alpha);
+      sleeveQuad(g, pa, pb, ra, rb, tone, alpha * 0.95);
+      const f = frame(pa, pb);
+      sleeveQuad(g, pa, pb, ra * 0.35, rb * 0.35, LIT, alpha * 0.4);
+      if (seams > 0) {
+        g.moveTo(pa.x + f.nx * ra, pa.y + f.ny * ra)
+          .lineTo(pb.x + f.nx * rb, pb.y + f.ny * rb)
+          .stroke({ width: w * 0.05, color: GLOW, alpha: 0.75 * seams });
+      }
+    };
+    // A gathering glow while it is still forming.
+    if (plates < 1)
+      fire.ellipse(c.x, c.y, 0.5, 0.85).fill({ color: GLOW, alpha: 0.28 * (1 - plates) * Math.min(1, k * 4) });
+    const arm = (pts: readonly Point[]): void => {
+      const [sh, el, hand] = pts as [Point, Point, Point];
+      band(lerp(sh, el, 0.1), lerp(sh, el, 0.9), w * 0.85, w * 0.8, DARK);
+      plate([
+        { x: el.x - w * 0.9, y: el.y - w * 0.6 },
+        { x: el.x + w * 0.9, y: el.y - w * 0.6 },
+        { x: el.x + w * 0.8, y: el.y + w * 0.8 },
+        { x: el.x - w * 0.8, y: el.y + w * 0.8 },
+      ]);
+      band(lerp(el, hand, 0.08), lerp(el, hand, 0.95), w * 1.15, w * 0.9);
+    };
+    const leg = (pts: readonly Point[]): void => {
+      const [hip, knee, foot] = pts as [Point, Point, Point];
+      band(lerp(hip, knee, 0.05), lerp(hip, knee, 0.95), w * 1.25, w * 1.05);
+      plate(
         [
-          { x: sh.x - w * 0.9 * k, y: sh.y - w * 1.5 * k },
-          { x: sh.x + w * 0.9 * k, y: sh.y - w * 0.3 * k },
-          { x: sh.x - w * 0.5 * k, y: sh.y + w * 0.5 * k },
+          { x: knee.x - w * 1.1, y: knee.y - w * 0.7 },
+          { x: knee.x + w * 1.15, y: knee.y - w * 0.4 },
+          { x: knee.x + w * 0.9, y: knee.y + w * 0.9 },
+          { x: knee.x - w * 0.9, y: knee.y + w * 0.8 },
         ],
-        0x6f64ff,
-        0x4aa8ff,
-        0.8,
+        LIT,
+      );
+      band(lerp(knee, foot, 0.05), lerp(knee, foot, 0.92), w * 1.05, w * 0.9, DARK);
+      // The boot: a sloped plate over the foot, toe forward.
+      plate([
+        { x: foot.x - w * 0.9, y: foot.y - w * 1.4 },
+        { x: foot.x + w * 0.8, y: foot.y - w * 1.3 },
+        { x: foot.x + w * 2.3, y: foot.y + w * 0.4 },
+        { x: foot.x - w * 0.9, y: foot.y + w * 0.5 },
+      ]);
+    };
+    leg(s.legBack);
+    arm(s.armBack);
+    // The chest plate: shoulders to waist in banded lames, with a glowing core seam and a gem at the sternum.
+    const shF = s.armFront[0]!;
+    const shB = s.armBack[0]!;
+    const waist = { x: s.pelvis.x, y: s.pelvis.y - 0.04 };
+    const half = Math.max(w * 1.7, Math.hypot(shF.x - shB.x, shF.y - shB.y) * 0.62);
+    const topL = { x: s.chest.x - half * 0.95, y: s.chest.y - w * 0.4 };
+    const topR = { x: s.chest.x + half * 0.95, y: s.chest.y - w * 0.4 };
+    plate([
+      topL,
+      topR,
+      { x: waist.x + half * 0.7, y: waist.y - 0.18 },
+      { x: waist.x + half * 0.5, y: waist.y },
+      { x: waist.x - half * 0.5, y: waist.y },
+      { x: waist.x - half * 0.7, y: waist.y - 0.18 },
+    ]);
+    for (const u of [0.38, 0.68]) {
+      const y = s.chest.y + (waist.y - s.chest.y) * u;
+      const x = s.chest.x + (waist.x - s.chest.x) * u;
+      const hw = half * (0.95 - 0.35 * u);
+      g.moveTo(x - hw, y)
+        .lineTo(x + hw, y)
+        .stroke({ width: w * 0.08, color: OUT, alpha });
+      if (seams > 0)
+        g.moveTo(x - hw, y + w * 0.06)
+          .lineTo(x + hw, y + w * 0.06)
+          .stroke({ width: w * 0.035, color: GLOW, alpha: 0.6 * seams });
+    }
+    if (seams > 0) {
+      g.moveTo(s.chest.x, s.chest.y - w * 0.2)
+        .lineTo(waist.x, waist.y)
+        .stroke({ width: w * 0.07, color: GLOW, alpha: 0.85 * seams });
+      const gem = { x: s.chest.x, y: s.chest.y + (waist.y - s.chest.y) * 0.22 };
+      g.poly(
+        flat([
+          { x: gem.x, y: gem.y - w * 0.8 },
+          { x: gem.x + w * 0.6, y: gem.y },
+          { x: gem.x, y: gem.y + w * 0.8 },
+          { x: gem.x - w * 0.6, y: gem.y },
+        ]),
+      ).fill({ color: 0xe9e2ff, alpha: seams });
+      fire.circle(gem.x, gem.y, w * (1.6 + 0.4 * Math.sin(t * 5))).fill({ color: GLOW, alpha: 0.3 * seams });
+    }
+    // A fauld (waist skirt) of two plates over the hips, joining chest and legs into one suit.
+    plate(
+      [
+        { x: waist.x - half * 0.55, y: waist.y - 0.02 },
+        { x: waist.x + half * 0.55, y: waist.y - 0.02 },
+        { x: waist.x + half * 0.7, y: waist.y + w * 1.5 },
+        { x: waist.x, y: waist.y + w * 2.2 },
+        { x: waist.x - half * 0.7, y: waist.y + w * 1.5 },
+      ],
+      DARK,
+    );
+    leg(s.legFront);
+    // Pauldrons: layered shoulder guards sitting on the cuirass edge, each with a ridge.
+    for (const sh of [shB, shF]) {
+      plate(
+        [
+          { x: sh.x - w * 1.5, y: sh.y - w * 0.4 },
+          { x: sh.x - w * 0.4, y: sh.y - w * 1.7 },
+          { x: sh.x + w * 1.3, y: sh.y - w * 1.3 },
+          { x: sh.x + w * 1.7, y: sh.y + w * 0.5 },
+          { x: sh.x, y: sh.y + w * 0.9 },
+        ],
+        LIT,
+      );
+      plate([
+        { x: sh.x - w * 1.3, y: sh.y + w * 0.4 },
+        { x: sh.x + w * 1.5, y: sh.y + w * 0.5 },
+        { x: sh.x + w * 1.1, y: sh.y + w * 1.7 },
+        { x: sh.x - w * 0.9, y: sh.y + w * 1.5 },
+      ]);
+    }
+    arm(s.armFront);
+    // The helm: a dome over the head with a brow ridge, a neck guard and a crest fin; the face stays open to the eyes.
+    if (plates > 0.4) {
+      const hd = s.head;
+      const r = hr;
+      plate(
+        [
+          { x: hd.x - r * 1.08, y: hd.y + r * 0.1 },
+          { x: hd.x - r * 0.85, y: hd.y - r * 0.8 },
+          { x: hd.x, y: hd.y - r * 1.2 },
+          { x: hd.x + r * 0.85, y: hd.y - r * 0.8 },
+          { x: hd.x + r * 1.08, y: hd.y - r * 0.1 },
+          { x: hd.x + r * 0.4, y: hd.y - r * 0.32 },
+          { x: hd.x - r * 0.4, y: hd.y - r * 0.28 },
+        ],
+        BODY,
+      );
+      plate(
+        [
+          { x: hd.x - r * 1.05, y: hd.y + r * 0.05 },
+          { x: hd.x - r * 0.5, y: hd.y + r * 0.3 },
+          { x: hd.x - r * 0.7, y: hd.y + r * 1.05 },
+          { x: hd.x - r * 1.2, y: hd.y + r * 0.7 },
+        ],
+        DARK,
+      );
+      plate(
+        [
+          { x: hd.x - r * 0.18, y: hd.y - r * 1.15 },
+          { x: hd.x + r * 0.12, y: hd.y - r * 1.85 },
+          { x: hd.x + r * 0.5, y: hd.y - r * 1.1 },
+        ],
+        LIT,
       );
     }
-    for (const leg of [s.legFront, s.legBack]) {
-      const th = lerp(leg[0]!, leg[1]!, 0.5);
-      this.crystal(
-        g,
-        fire,
-        [
-          { x: th.x - w * 0.9 * k, y: th.y - w * 1.2 * k },
-          { x: th.x + w * 0.9 * k, y: th.y },
-          { x: th.x - w * 0.4 * k, y: th.y + w * 1.2 * k },
-        ],
-        0x4aa8ff,
-        0x7b5cff,
-        0.7,
-      );
+    // The burst as it completes: a ring of light through the whole suit.
+    if (k > 0.6 && k < 0.95) {
+      const b = (k - 0.6) / 0.35;
+      fire.circle(c.x, c.y, 0.3 + b * 1.4).stroke({ width: 0.12 * (1 - b), color: 0xe9e2ff, alpha: 0.8 * (1 - b) });
     }
   }
 

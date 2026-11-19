@@ -238,6 +238,13 @@ export interface AbilityVfxInput {
     readonly palette: Palette | null;
   }[];
   readonly telegraphs: readonly Telegraph[];
+  /** Glowing crystal patches under a Crystal Slide. */
+  readonly slideTrail?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly ageS: number;
+    readonly lifeS: number;
+  }[];
   readonly fx: readonly AbilityFx[];
   readonly burning: readonly BurningThing[];
   /** Flames on attacking limbs and auras (Effects Profiles, TD-039). */
@@ -327,6 +334,13 @@ interface FlameRing {
 }
 /** A fireball flies at chest height. */
 const BOLT_HEIGHT_M = 1.0;
+/** Prismor's crystal eruptions by effect id: how many spikes, how tall (metres), and whether they stand in a ring round the edge. */
+const CRYSTAL_ERUPTIONS: Readonly<Record<string, { count: number; h: number; ring?: boolean }>> = {
+  'crystal-groundstrike': { count: 9, h: 1.45 },
+  'crystal-thorns': { count: 8, h: 1.2 },
+  'guard-burst': { count: 12, h: 1.1, ring: true },
+  'prison-lock': { count: 8, h: 0.7, ring: true },
+};
 /** Grave Chains run at the staff's height. */
 const CHAIN_HEIGHT_M = 1.05;
 
@@ -533,7 +547,16 @@ export class AbilityVfx {
    * Bone spikes and skeletal hands bursting from the ground (Death Eruption, owner 12/11/2026):
    * each shoots up fast, holds for a moment, then sinks back into a dark stain.
    */
-  private readonly spikes: { x: number; y: number; h: number; lean: number; hand: boolean; ageS: number }[] = [];
+  private readonly spikes: {
+    x: number;
+    y: number;
+    h: number;
+    lean: number;
+    hand: boolean;
+    ageS: number;
+    /** A crystal spike (Prismor): faceted purple and blue, wider, rising faster and fading by shattering. */
+    crystal?: boolean;
+  }[] = [];
 
   private onFx(fx: AbilityFx): void {
     const r = fx.radiusM ?? 0.5;
@@ -551,6 +574,24 @@ export class AbilityVfx {
         });
       }
       if (this.spikes.length > 60) this.spikes.splice(0, this.spikes.length - 60);
+    }
+    if (fx.kind === 'impact' && CRYSTAL_ERUPTIONS[fx.vfx]) {
+      // Prismor's eruptions (Groundstrike zones, Slide thorns, a bursting guard, a Prison closing): crystal spikes jump out of the floor.
+      const e = CRYSTAL_ERUPTIONS[fx.vfx]!;
+      for (let i = 0; i < e.count; i++) {
+        const a = this.rand() * Math.PI * 2;
+        const d = e.ring ? r * (0.75 + this.rand() * 0.25) : Math.sqrt(this.rand()) * r * 0.9;
+        this.spikes.push({
+          x: fx.x + Math.cos(a) * d,
+          y: fx.y + Math.sin(a) * d,
+          h: e.h * (0.55 + this.rand() * 0.6),
+          lean: (this.rand() - 0.5) * 0.5 + (e.ring ? Math.cos(a) * 0.4 : 0),
+          hand: false,
+          crystal: true,
+          ageS: -this.rand() * 0.1,
+        });
+      }
+      if (this.spikes.length > 90) this.spikes.splice(0, this.spikes.length - 90);
     }
     if (fx.kind === 'release' && fx.vfx === 'judgement-cut' && fx.look) {
       // One of Final Judgement's unseen cuts: a hard white flash and a spray of sparks across the target.
@@ -1241,10 +1282,49 @@ export class AbilityVfx {
       }
       if (s.ageS < 0) continue;
       const rise = s.ageS < 0.12 ? s.ageS / 0.12 : s.ageS < 0.6 ? 1 : 1 - (s.ageS - 0.6) / 0.5;
-      f.circle(s.x, s.y, 0.22).fill({ color: 0x1a0d26, alpha: 0.45 * Math.min(1, rise + 0.3) });
+      f.circle(s.x, s.y, 0.22).fill({ color: s.crystal ? 0x1b1450 : 0x1a0d26, alpha: 0.45 * Math.min(1, rise + 0.3) });
       const base = P(s.x, s.y, 0);
       const h = s.h * rise;
       if (h < 0.02) continue;
+      if (s.crystal) {
+        // A faceted crystal spike: a dark edge, a purple body, a lit facet and a pale glint, wide at the root and sharp at the tip.
+        const w = 0.07 + 0.05 * s.h;
+        const tip = { x: base.x + s.lean * h, y: base.y - h };
+        const mid = { x: base.x + s.lean * h * 0.45, y: base.y - h * 0.5 };
+        g.poly([
+          base.x - w * 1.15,
+          base.y,
+          mid.x - w * 1.1,
+          mid.y,
+          tip.x,
+          tip.y,
+          mid.x + w * 0.9,
+          mid.y,
+          base.x + w * 1.15,
+          base.y,
+        ]).fill(0x1b1450);
+        g.poly([
+          base.x - w,
+          base.y,
+          mid.x - w * 0.9,
+          mid.y,
+          tip.x,
+          tip.y + 0.02,
+          mid.x + w * 0.7,
+          mid.y,
+          base.x + w,
+          base.y,
+        ]).fill({ color: 0x6f64ff, alpha: 0.95 });
+        g.poly([base.x - w, base.y, mid.x - w * 0.9, mid.y, tip.x, tip.y + 0.02, mid.x, mid.y + 0.02]).fill({
+          color: 0xe9e2ff,
+          alpha: 0.4,
+        });
+        g.moveTo(base.x, base.y)
+          .lineTo(tip.x, tip.y + 0.03)
+          .stroke({ width: 0.012, color: 0xe9e2ff, alpha: 0.7 });
+        g.circle(tip.x, tip.y, 0.1).fill({ color: 0x4aa8ff, alpha: 0.25 * rise });
+        continue;
+      }
       if (!s.hand) {
         const tip = { x: base.x + s.lean * h, y: base.y - h };
         g.poly([base.x - 0.06, base.y, tip.x, tip.y, base.x + 0.06, base.y]).fill(0x2a241c);
@@ -1283,12 +1363,40 @@ export class AbilityVfx {
       f.circle(a.to.x, a.to.y, 0.35).fill({ color: 0xffffff, alpha: 0.7 * pulse });
     }
 
+    // Crystal Slide: a glowing trail of crystal lying under the path, fading from the oldest end.
+    for (const m of input.slideTrail ?? []) {
+      const life = 1 - m.ageS / m.lifeS;
+      const pulse = 0.8 + 0.2 * Math.sin(t * 9 + m.x * 3);
+      f.circle(m.x, m.y, 0.42).fill({ color: 0x4aa8ff, alpha: 0.2 * life * pulse });
+      f.circle(m.x, m.y, 0.22).fill({ color: 0xe9e2ff, alpha: 0.28 * life });
+      const q = P(m.x, m.y, 0.02);
+      g.poly([q.x - 0.09, q.y, q.x, q.y - 0.2 * life, q.x + 0.09, q.y]).fill({ color: 0x7b6cff, alpha: 0.85 * life });
+    }
+
     // Telegraphs (REQ-ABL-6): a clear ring where it will land, filling as the moment approaches.
     for (const tg of input.telegraphs) {
       const k = Math.min(1, tg.ageS / tg.durationS);
       const pulse = 0.75 + 0.25 * Math.sin(t * 22);
       // The ring takes its element's colour for wind dives; everything else keeps the warning orange.
       const tp = tg.def.look?.airBody === 'wind' || tg.def.look?.telegraph ? tg.def.look.palette : FIRE;
+      if (tg.def.look?.telegraph === 'crystal') {
+        // Prismor's ground warning: a pale crystal ring on the floor, shard marks growing from the middle as the moment nears.
+        f.circle(tg.x, tg.y, tg.radiusM).fill({ color: tp.deep, alpha: 0.18 + 0.12 * k });
+        f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: tp.hot, alpha: 0.2 });
+        f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: tp.bright, alpha: pulse });
+        for (let i = 0; i < 9; i++) {
+          const a0 = (i / 9) * Math.PI * 2 + 0.4;
+          const r0 = tg.radiusM * (0.25 + 0.6 * ((i * 0.37) % 1));
+          const len = 0.18 + 0.4 * k * (0.5 + ((i * 0.53) % 1));
+          const x0 = tg.x + Math.cos(a0) * r0;
+          const y0 = tg.y + Math.sin(a0) * r0;
+          f.poly([x0 - 0.05, y0, x0, y0 - len * ISO_T * 2, x0 + 0.05, y0]).fill({
+            color: tp.core,
+            alpha: 0.35 + 0.5 * k,
+          });
+        }
+        continue;
+      }
       if (tg.def.look?.telegraph === 'compress') {
         // Mind Crush: the ring closes in on the target, brightening as it squeezes.
         const r = tg.radiusM * (1 - 0.8 * k);
@@ -2270,6 +2378,40 @@ export class AbilityVfx {
     }
     // A tornado shot is drawn as its funnel (see `funnels`), not as a bolt.
     if (look.flight?.tornado) return;
+    if (look.flight?.shard) {
+      // A crystal shard: a long sharp diamond pointing the way it flies, a pale core streak, a glinting trail behind it.
+      const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);
+      const L = 0.36;
+      const W = 0.09;
+      const spin = 0.85 + 0.15 * Math.sin(t * 30 + p.x * 7);
+      const ux = Math.cos(ang);
+      const uy = Math.sin(ang);
+      p.trail.forEach((q, i) => {
+        const k = (i + 1) / (p.trail.length + 1);
+        const tc = P(q.x, q.y, BOLT_HEIGHT_M);
+        g.circle(tc.x, tc.y, 0.05 * k).fill({ color: pal.bright, alpha: 0.5 * k });
+      });
+      g.poly([
+        c.x - ux * L * 0.5,
+        c.y - uy * L * 0.5,
+        c.x - uy * W * spin,
+        c.y + ux * W * spin,
+        c.x + ux * L,
+        c.y + uy * L,
+        c.x + uy * W * spin,
+        c.y - ux * W * spin,
+      ]).fill({ color: pal.hot, alpha: 0.95 });
+      g.poly([
+        c.x - ux * L * 0.4,
+        c.y - uy * L * 0.4,
+        c.x - uy * W * 0.5,
+        c.y + ux * W * 0.5,
+        c.x + ux * L * 0.9,
+        c.y + uy * L * 0.9,
+      ]).fill({ color: pal.core, alpha: 0.9 });
+      g.circle(c.x + ux * L, c.y + uy * L, 0.06).fill({ color: pal.bright, alpha: 0.5 });
+      return;
+    }
     if (look.flight?.wave) {
       // A sonic boom: three nested crescents of sound opening toward where it is going, with a bright leading edge.
       const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);

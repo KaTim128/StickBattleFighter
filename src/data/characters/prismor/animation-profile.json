@@ -8,7 +8,6 @@
     "Jab": "prism.jab",
     "Hook": "prism.hook",
     "SideKick": "prism.elbow",
-    "RoundhouseKick": "prism.smash",
     "FrontKick": "prism.shove",
     "JumpingFrontKick": "prism.air-spike",
     "DownwardAerialKick": "prism.drop",

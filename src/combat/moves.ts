@@ -35,16 +35,37 @@ export class MoveController {
   private current: AttackDef | null = null;
   private t = 0;
   private hitDone = false;
+  private extraDone = 0;
   private buffered: MoveInput | null = null;
   private chainIndex = 0;
   private airMoveUsed = false;
   private variantIndex = 0;
 
+  private moves: Readonly<Record<string, AttackDef>>;
+  private starters: Partial<Record<MoveInput, string>>;
+
   constructor(
-    private readonly moves: Readonly<Record<string, AttackDef>>,
-    private readonly starters: Partial<Record<MoveInput, string>>,
+    private readonly baseMoves: Readonly<Record<string, AttackDef>>,
+    private readonly baseStarters: Partial<Record<MoveInput, string>>,
     private readonly pick: () => number = () => 0,
-  ) {}
+  ) {
+    this.moves = baseMoves;
+    this.starters = baseStarters;
+  }
+
+  /**
+   * Swap the whole tap and heavy moveset for another (Prismor's generated crystal weapon): the move running stops, and the new
+   * moves answer the next press. `resetMoveset` brings the fighter's own back.
+   */
+  useMoveset(moves: Readonly<Record<string, AttackDef>>, starters: Partial<Record<MoveInput, string>>): void {
+    this.moves = moves;
+    this.starters = starters;
+    this.interrupt();
+  }
+
+  resetMoveset(): void {
+    this.useMoveset(this.baseMoves, this.baseStarters);
+  }
 
   get attack(): AttackDef | null {
     return this.current;
@@ -109,6 +130,7 @@ export class MoveController {
     this.t = 0;
     this.buffered = null;
     this.chainIndex = 0;
+    this.extraDone = 0;
   }
 
   /** Call when the fighter lands, so the next jump allows another aerial move. */
@@ -125,6 +147,14 @@ export class MoveController {
     this.t += stepS;
     if (!this.hitDone && this.t >= a.windupS) {
       this.hitDone = true;
+      hit = a;
+    } else if (
+      this.hitDone &&
+      a.extraHits &&
+      this.extraDone < a.extraHits.length &&
+      this.t >= a.extraHits[this.extraDone]!
+    ) {
+      this.extraDone++;
       hit = a;
     }
 
@@ -155,6 +185,7 @@ export class MoveController {
     this.current = a;
     this.t = 0;
     this.hitDone = false;
+    this.extraDone = 0;
     this.buffered = null;
   }
 }

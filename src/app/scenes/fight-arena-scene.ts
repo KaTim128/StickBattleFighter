@@ -20,7 +20,7 @@ import {
   judgementPose,
   stalkPose,
   swoopPose,
-  weaponPose,
+  weaponMovePose,
 } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
@@ -855,6 +855,7 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
     this.abilities.summonRoom = (f, spec) => this.summons.room(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
+    this.abilities.standableSource = (p) => this.standableAt(p);
     this.abilities.onTimeStop = (casterId, on) => (on ? this.beginTimeStop(casterId) : this.endTimeStop());
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
@@ -949,7 +950,6 @@ export class FightArenaScene implements ArenaScene {
         }
       }
       f.recoilS = Math.max(0, f.recoilS - stepS);
-      if (f.bash) f.bash.readyS = Math.max(0, f.bash.readyS - stepS);
       f.appearS = Math.max(0, f.appearS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
@@ -1803,6 +1803,18 @@ export class FightArenaScene implements ArenaScene {
     return { x: f.x + (dx / len) * range, y: f.y + (dy / len) * range };
   }
 
+  /** Can a body stand here: inside the arena, clear of walls and furniture (Crystal Groundstrike keeps its zones on usable ground). */
+  private standableAt(p: { x: number; y: number }): boolean {
+    const r = 0.5;
+    return (
+      p.x > r &&
+      p.y > r &&
+      p.x < this.arena.widthM - r &&
+      p.y < this.arena.heightM - r &&
+      (this.physics?.isFree(p, r) ?? true)
+    );
+  }
+
   /**
    * Teleport (owner, 12/11/2026): land on the free spot nearest `to` that a body can stand on (never
    * inside walls or furniture, always inside the map). Returns where it landed, or null if no spot
@@ -2259,6 +2271,12 @@ export class FightArenaScene implements ArenaScene {
       moveIn = { x: 0, y: 0 };
       jump = false;
     }
+    // Crystal Prison: both legs are held, so there is no walking and no jumping (he can still turn and fight).
+    if (c.trapped) {
+      moveIn = { x: 0, y: 0 };
+      jump = false;
+      f.sprinting = false;
+    }
     // What the feet stand on: the floor or the top of a piece of furniture.
     if (this.climbing) f.hop.floorM = this.climbing.floorFor(f);
     const air = f.airborne;
@@ -2277,6 +2295,8 @@ export class FightArenaScene implements ArenaScene {
     f.moveIntent.y = 0;
     if (f.driveVelocity) {
       next = f.driveVelocity; // dash or leap: the ability world moves the body
+    } else if (c.trapped) {
+      next = { x: 0, y: 0 }; // legs held in crystal: not even a shove moves him
     } else if (c.state === 'dodging') {
       // Fast off the mark, easing to a stop: speed falls linearly over the dodge, averaging
       // dodgeSpeedMps, so every dodge covers the same distance and ends without a slide.
@@ -2295,8 +2315,8 @@ export class FightArenaScene implements ArenaScene {
           : attack && !air
             ? attack.moveFactor
             : 1;
-      // Behind a Prism Guard shield he walks slowly.
-      const shieldSlow = c.crystalShieldLeftS > 0 && f.bash ? f.bash.moveFactor : 1;
+      // Behind a Crystal Guard shield he walks slower.
+      const shieldSlow = c.crystalShieldLeftS > 0 ? f.shieldMove : 1;
       move = { x: move.x * factor * shieldSlow, y: move.y * factor * shieldSlow };
       // Sonic Boom: held in the scream, it cannot walk toward the one screaming (it can still back away or sidestep).
       if (f.pinned) {
@@ -2371,6 +2391,34 @@ export class FightArenaScene implements ArenaScene {
     }
 
     if (ev.hit) this.resolveHit(f, ev.hit);
+  }
+
+  /** A spent Crystal Guard bursts: everyone near takes the burst's blow, pushed away, with a crystal explosion. */
+  private guardBurst(owner: FighterEntity, burst: NonNullable<FighterEntity['guardBurst']>): void {
+    this.abilities?.emit({
+      kind: 'impact',
+      ability: 'crystalArsenal',
+      look: owner.caster?.def('a1').look,
+      vfx: 'guard-burst',
+      sfx: 'guard-burst',
+      x: owner.x,
+      y: owner.y,
+      radiusM: burst.radiusM,
+    });
+    for (const foe of this.fighters) {
+      if (foe.team === owner.team || foe.combatant.isKo) continue;
+      const away = Math.hypot(foe.x - owner.x, foe.y - owner.y);
+      if (away > burst.radiusM + foe.def.body.footRadiusM) continue;
+      const d = Math.max(0.01, away);
+      this.applyStrike(owner, foe, {
+        damage: burst.payload.damage,
+        heavy: burst.payload.heavy,
+        knockbackMps: burst.payload.knockbackMps,
+        dir: { x: (foe.x - owner.x) / d, y: (foe.y - owner.y) / d },
+        melee: false,
+        impact: burst.payload.impact ?? 'knuckle-heavy',
+      });
+    }
   }
 
   /**
@@ -2459,40 +2507,12 @@ export class FightArenaScene implements ArenaScene {
 
     if (result.outcome === 'dodged') return false;
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
+    // A crystal weapon in his hands shatters the moment a blow gets through (a guard that held is not a hit).
+    if (!guarded && result.damage > 0 && target.heldWeapon) this.abilities?.disarm(target);
     if (!guarded && this.abilities) {
       // Being hit breaks a stalk; a landed blow spends a charged mark.
       this.abilities.world.cancelStalk(target.name, this.abilities);
       if (markFactor > 1) this.abilities.world.consumeMark(attacker.name, this.abilities);
-    }
-    // Prism Guard: a melee blow the crystal shield stops is answered with a bash on the attacker, once in a while.
-    if (guarded && s.melee && target.bash && target.bash.readyS <= 0 && target.combatant.crystalShieldLeftS > 0) {
-      const b = target.bash;
-      const away = Math.hypot(attacker.x - target.x, attacker.y - target.y);
-      if (away <= b.reachM + attacker.def.body.footRadiusM) {
-        b.readyS = b.cooldownS;
-        const dirB = {
-          x: (attacker.x - target.x) / Math.max(0.01, away),
-          y: (attacker.y - target.y) / Math.max(0.01, away),
-        };
-        this.applyStrike(target, attacker, {
-          damage: b.damage,
-          heavy: false,
-          knockbackMps: b.knockbackMps,
-          dir: dirB,
-          melee: false,
-          impact: 'knuckle-heavy',
-          stunS: 0.5,
-        });
-        this.abilities?.emit({
-          kind: 'impact',
-          ability: 'prismGuard',
-          vfx: 'shield-bash',
-          sfx: 'shield-bash',
-          x: attacker.x,
-          y: attacker.y,
-          radiusM: 1,
-        });
-      }
     }
     if (guarded)
       target.shieldS = SHIELD_FLARE_S; // the guard flares where it took the blow (PRS-5)
@@ -3443,6 +3463,7 @@ export class FightArenaScene implements ArenaScene {
         return t ? [{ x: t.x, y: t.y, phase: m.phase, ageS: m.ageS }] : [];
       }),
       telegraphs: world.telegraphs,
+      slideTrail: world.slideTrail,
       fx,
       burning,
       charges,
@@ -3500,7 +3521,11 @@ export class FightArenaScene implements ArenaScene {
     // Hanging and pulling up a ledge (owner, 12/11/2026).
     if (f.climb) pose = climbPose(f.climb.shown + (f.climb.stepUp?.t ?? 0), this.simTimeS);
     const attack = f.combo.attack;
-    if (attack) pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
+    if (attack?.swing)
+      // A crystal weapon blow (Crystal Arsenal): the body swings to the weapon's own pose row instead of a punch clip.
+      pose = weaponMovePose(pose, { ...attack, swing: attack.swing }, f.combo.progress * attackDuration(attack));
+    else if (attack)
+      pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
     // The poison jar comes out of the coat pocket part-way through the heavy's wind-up and is gone at the smash.
     {
       const total = attack ? attack.windupS + attack.activeS + attack.recoveryS : 1;
@@ -3554,8 +3579,6 @@ export class FightArenaScene implements ArenaScene {
       );
       const assault = this.abilities?.world.assaultOf(f.name);
       if (assault) pose = assaultPose(pose, assault, cast.def.id);
-      const swing = this.abilities?.world.weaponOf(f.name);
-      if (swing) pose = weaponPose(pose, swing);
       const swoop = this.abilities?.world.swoopOf(f.name);
       if (swoop !== null && swoop !== undefined) pose = swoopPose(pose, swoop);
       const judgement = this.abilities?.world.judgementOf(f.name);
@@ -3639,26 +3662,35 @@ export class FightArenaScene implements ArenaScene {
       f.focusNow += (target - f.focusNow) * smoothing(8, frameDtS);
       f.view.focus = f.focusNow;
     }
-    // Prismor's crystal weapons: grown out of his arms through the wind-up, held while they are used, shattered when they end.
+    // Prismor's crystal weapons (Crystal Arsenal): a held weapon grows into his hands, stays while he fights with it, and shatters
+    // into crystal fragments the moment it is lost.
     {
       const cast = f.caster?.cast;
-      const d = cast?.def.delivery;
+      const broke = c.takeCrystalBreaks();
+      // A Crystal Guard worn down to nothing bursts and hurts everyone close.
+      if (broke.shield && f.guardBurst) this.guardBurst(f, f.guardBurst);
+      if (f.heldWeapon && cast && cast.def.delivery.type !== 'arsenal') this.abilities?.disarm(f); // another ability: it shatters
+      // A guard that was spent, broken by a blow or dropped by a grab is gone with its shield.
+      if (f.heldWeapon === 'guard' && c.crystalShieldLeftS <= 0) this.abilities?.disarm(f);
       let kind: string | null = null;
       let target = 0;
-      if (d?.type === 'weapon') {
-        kind = d.weapon;
-        target = cast?.phase === 'windup' ? Math.min(1, (f.caster?.phaseProgress ?? 0) * 1.25) : 1;
+      if (f.heldWeapon) {
+        kind = f.heldWeapon;
+        target = 1;
       } else if (f.buff?.sovereign) {
         kind = 'sovereign';
         target = 1;
       } else if (c.crystalShieldLeftS > 0) {
-        kind = 'shield';
+        kind = 'guard';
         target = 1;
       }
       if (kind) {
+        if (f.weaponKind !== kind) f.weaponForm = 0; // a new weapon grows from nothing
         f.weaponKind = kind;
         f.weaponForm =
-          target >= f.weaponForm ? target : f.weaponForm + (target - f.weaponForm) * smoothing(10, frameDtS);
+          target >= f.weaponForm
+            ? Math.min(1, f.weaponForm + frameDtS * 4)
+            : f.weaponForm + (target - f.weaponForm) * smoothing(10, frameDtS);
       } else if (f.weaponKind) {
         // It is over: the weapon shatters into crystal fragments at his hands.
         this.abilities?.emit({
@@ -3675,10 +3707,23 @@ export class FightArenaScene implements ArenaScene {
         f.weaponForm = 0;
       }
       f.view.weapon = f.weaponKind ? { kind: f.weaponKind, form: f.weaponForm } : null;
-      const armourTarget = c.crystalArmourHits > 0 ? 1 : 0;
+      // Crystal Prison: the crystal climbs both legs while it forms, and is solid once locked.
+      const prison = this.abilities?.world.prisons.find((p) => p.targetId === f.name);
+      const prisonD = prison?.def.delivery;
+      const legTarget = !prison
+        ? 0
+        : prison.phase === 'held'
+          ? 1
+          : prisonD?.type === 'legTrap'
+            ? Math.min(0.9, (prison.ageS / prisonD.reactS) * 0.9)
+            : 0;
+      f.view.legTrap += (legTarget - f.view.legTrap) * smoothing(legTarget > f.view.legTrap ? 12 : 30, frameDtS);
+      // The Sovereign forms in stages: crystal gathers during the wind-up, the suit snaps whole when the buff begins.
+      const sovereignCast = cast?.def.id === 'crystalSovereign' && f.caster ? cast : null;
+      const forming = sovereignCast ? (sovereignCast.phase === 'windup' ? 0.5 * f.caster!.phaseProgress : 0.5) : 0;
+      const armourTarget = c.crystalArmourHits > 0 ? 1 : forming;
       f.view.crystalArmour += (armourTarget - f.view.crystalArmour) * smoothing(armourTarget > 0 ? 9 : 30, frameDtS);
       if (Math.abs(f.view.crystalArmour - armourTarget) < 0.01) f.view.crystalArmour = armourTarget;
-      const broke = c.takeCrystalBreaks();
       if (broke.armour || broke.shield)
         this.abilities?.emit({
           kind: 'impact',
@@ -3715,7 +3760,9 @@ export class FightArenaScene implements ArenaScene {
     const hoverM = f.view.hoverM;
     if (hoverM > 0) {
       const air = heightM + lift + f.abilityLift;
-      const standing = air < 0.05 && !c.isKo && c.state !== 'knockdown' && c.state !== 'dodging' && !f.climb;
+      // A fighter held by Crystal Prison is dragged down to the floor and kept there.
+      const standing =
+        air < 0.05 && !c.isKo && !c.trapped && c.state !== 'knockdown' && c.state !== 'dodging' && !f.climb;
       f.hoverNow += ((standing ? 1 : 0) - f.hoverNow) * smoothing(8, frameDtS);
       hoverLift =
         hoverM *

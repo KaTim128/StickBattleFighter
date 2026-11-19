@@ -1,6 +1,7 @@
 import type { RigidBody } from '@dimforge/rapier2d';
 import type { Container } from 'pixi.js';
 import { AbilityCaster } from '../../abilities/ability-caster';
+import type { ShieldSpec, WeaponKind } from '../../abilities/ability-def';
 import { BeamTracker } from '../../ai/beam-tracker';
 import { StickmanAnimator } from '../../animation/animator';
 import type { Clip, StrikeClip } from '../../animation/clips';
@@ -156,15 +157,11 @@ export class FighterEntity {
   stalkAmount = 0;
   /** Presentation (winged fighters): how far the hover has lifted it, and the wings' spread and beat. */
   hoverNow = 0;
-  /** Prism Guard: the bash its shield answers a melee blow with, how long until it may again, and how slowly he moves behind it. */
-  bash: {
-    damage: number;
-    knockbackMps: number;
-    reachM: number;
-    cooldownS: number;
-    readyS: number;
-    moveFactor: number;
-  } | null = null;
+  /** The crystal weapon in his hands (Crystal Arsenal), if any: its moveset has replaced his unarmed taps. */
+  heldWeapon: WeaponKind | null = null;
+  /** The burst a held Crystal Guard shield makes when it is spent, and how slowly he walks behind it (1 = full speed). */
+  guardBurst: ShieldSpec['burst'] | null = null;
+  shieldMove = 1;
   /** Presentation: how fully grown his crystal weapon is (0..1), and which one. */
   weaponForm = 0;
   weaponKind: string | null = null;

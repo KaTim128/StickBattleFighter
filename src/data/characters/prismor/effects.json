@@ -4,7 +4,7 @@
   "kickImpact": "crystal-hit",
   "heavyImpact": "crystal-wave",
   "blockImpact": "block-guard",
-  "limbTrail": "crystal-limbs",
+  "limbTrail": null,
   "aura": null,
   "clash": "clash-white",
   "finisher": "finisher-white",

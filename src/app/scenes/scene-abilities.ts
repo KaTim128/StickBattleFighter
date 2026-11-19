@@ -3,11 +3,13 @@ import {
   type AbilityDef,
   type AbilityPayload,
   type AbilitySlot,
+  type ArsenalDelivery,
   type BuffEffect,
   type Burn,
   finisherFactor,
-  type ShieldDelivery,
+  type ShieldSpec,
   type SummonSpec,
+  type WeaponKind,
 } from '../../abilities/ability-def';
 import {
   type AbilityFx,
@@ -16,6 +18,7 @@ import {
   AbilityWorld,
   type Vec2,
 } from '../../abilities/ability-world';
+import { ARSENAL_MOVESETS } from '../../data/abilities/crystal-arsenal';
 import type { ImpactId } from '../../data/combat/impacts';
 import type { ArenaProps } from '../../environment/arena-props';
 import { type BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
@@ -52,6 +55,20 @@ const MAX_FX_LOG = 60;
  * scene's strike path, furniture, doors, walls) and the FX event queue for VFX
  * and sound hooks.
  */
+/** Deliveries that move the caster's own body: refused while his legs are held (Crystal Prison). */
+const MOVEMENT_DELIVERIES: ReadonlySet<string> = new Set([
+  'dash',
+  'leap',
+  'teleport',
+  'rewindTime',
+  'assault',
+  'judgement',
+]);
+/** A Crystal Guard has no timer (it ends when spent, broken by a blow, or replaced), so its clock is simply long. */
+const GUARD_FOREVER_S = 1e9;
+/** How fast he walks behind a held Crystal Guard. */
+const GUARD_MOVE_FACTOR = 0.8;
+
 export class SceneAbilities implements AbilityHost {
   readonly world = new AbilityWorld();
   /** Spots chosen by aiming (the ultimate), used at release instead of the soft lock. */
@@ -64,6 +81,8 @@ export class SceneAbilities implements AbilityHost {
   readonly recentFx: AbilityFx[] = [];
   /** Moves a caster to the nearest free spot (set by the scene, which owns the physics). */
   teleportSource: (f: FighterEntity, to: Vec2) => Vec2 | null = () => null;
+  /** Can a body stand at this spot (inside the arena, clear of walls and furniture)? Set by the scene, which owns the physics. */
+  standableSource: (at: Vec2) => boolean = () => true;
   /** Raises a caster's minions (set by the scene, which owns the fighters). */
   summonSource: (f: FighterEntity, spec: SummonSpec) => void = () => {};
   /** How many more minions this fighter may raise right now (the scene counts the living ones). */
@@ -97,6 +116,8 @@ export class SceneAbilities implements AbilityHost {
     if (this.world.stopOf()) return 'busy';
     // Resonance Break: a muted fighter cannot use abilities (blows, blocks and dodges are unaffected).
     if (c.muted) return 'muted';
+    // Crystal Prison: legs held in crystal, so no ability that moves the body.
+    if (c.trapped && MOVEMENT_DELIVERIES.has(caster.def(slot).delivery.type)) return 'trapped';
     const block = caster.check(slot, {
       canAct: c.canAct && !f.combo.attack,
       stamina: c.stamina,
@@ -332,6 +353,7 @@ export class SceneAbilities implements AbilityHost {
     // or its own drive and the grab's would fight and fling both round the arena. The stun keeps it
     // from starting anything new until it is slammed down.
     f.caster?.interrupt(true);
+    f.guardBurst = null; // a grabbed guard just breaks: no burst
     f.combatant.dropCrystalShield(); // a grab ignores a shield: it shatters
     this.world.cancel(f.name, this);
     f.scriptedAttack = null;
@@ -433,7 +455,8 @@ export class SceneAbilities implements AbilityHost {
         seconds: buff.durationS,
         heavyFactor: 1,
       });
-      f.bash = null;
+      f.guardBurst = null; // the Sovereign's small shield just breaks
+      f.shieldMove = 1;
     }
     // Hunting Frenzy puts the lights out on every enemy for as long as it lasts.
     if (buff?.darkensFoes)
@@ -441,16 +464,62 @@ export class SceneAbilities implements AbilityHost {
         if (o.team !== f.team && !o.combatant.isKo) o.combatant.darken(buff.durationS, buff.darkensFoes.visibleM);
   }
 
-  shield(casterId: string, spec: ShieldDelivery | null): void {
+  shield(casterId: string, spec: ShieldSpec | null): void {
     const f = this.byName(casterId);
     if (!f) return;
     if (!spec) {
       f.combatant.dropCrystalShield();
-      f.bash = null;
+      f.guardBurst = null;
+      f.shieldMove = 1;
       return;
     }
-    f.combatant.raiseCrystalShield({ hp: spec.hp, hits: 0, seconds: spec.durationS, heavyFactor: spec.heavyFactor });
-    f.bash = { ...spec.bash, readyS: 0, moveFactor: spec.moveFactor };
+    // The guard lasts until its durability is spent, he is hurt, or he uses another ability: no timer.
+    f.combatant.raiseCrystalShield({ hp: spec.hp, hits: 0, seconds: GUARD_FOREVER_S, heavyFactor: spec.heavyFactor });
+    f.guardBurst = spec.burst;
+    f.shieldMove = GUARD_MOVE_FACTOR;
+  }
+
+  arm(casterId: string, kind: WeaponKind, d: ArsenalDelivery): void {
+    const f = this.byName(casterId);
+    if (!f) return;
+    this.disarm(f);
+    f.heldWeapon = kind;
+    const set = ARSENAL_MOVESETS[kind];
+    f.combo.useMoveset(set.moves, set.starters);
+    if (kind === 'guard') this.shield(casterId, { hp: d.guardHp, heavyFactor: 2, burst: d.guardBurst });
+  }
+
+  /** The crystal weapon in his hands is gone (it shattered, or he used another ability): his own taps and heavy return at once. */
+  disarm(f: FighterEntity): void {
+    if (!f.heldWeapon) return;
+    if (f.heldWeapon === 'guard') this.shield(f.name, null);
+    f.heldWeapon = null;
+    f.combo.resetMoveset();
+  }
+
+  trap(targetId: string, seconds: number): void {
+    const f = this.byName(targetId);
+    if (!f) return;
+    f.combatant.trapLegs(seconds);
+    if (seconds > 0) {
+      // Held where it stands: whatever it was doing with its legs stops (a charge, a dash, a leap).
+      this.world.cancel(f.name, this);
+      f.combo.interrupt();
+    }
+  }
+
+  legTrapState(targetId: string): { heightM: number; flies: boolean; trappedS: number } {
+    const f = this.byName(targetId);
+    if (!f) return { heightM: 0, flies: false, trappedS: 0 };
+    return {
+      heightM: f.hop.heightM + f.abilityLift,
+      flies: (f.view?.hoverM ?? 0) > 0 || f.abilityLift > 0.05,
+      trappedS: f.combatant.trapLeftS,
+    };
+  }
+
+  standable(at: Vec2): boolean {
+    return this.standableSource(at);
   }
 
   burnFighter(targetId: string, burn: Burn): void {

@@ -917,3 +917,6 @@ Done: Prismor fighter (TD-137); guard stances and Kenshiro grip, Sonic Boom from
 
 ## 21/11/2026: offline play (TD-139)
 Service worker emitted by the build, registered in production only. Verified in headless Chromium with the server stopped and the page offline (reload reaches the fight screen). Not yet checked on a phone: install or open once online, then try flight mode.
+
+## 22/11/2026: Prismor rework (TD-141)
+Crystal Arsenal with five weapon movesets, Crystal Slide, Shard Volley, Crystal Prison, Crystal Groundstrike, plain unarmed taps, new Sovereign armour. Crystal Breakout dropped (owner choice, five abilities rule). Tests: typecheck clean, vitest 1209 passed, new `tests/unit/abilities/prismor.test.ts` covers the verification list; browser checks of each weapon, the slide, volley, prison, groundstrike and the ultimate. Limits: see TD-141. Next: Arcstrike.

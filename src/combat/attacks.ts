@@ -62,6 +62,13 @@ export interface AttackDef {
   readonly poison?: number;
   /** The target bounces off the floor. */
   readonly groundBounce: boolean;
+  /**
+   * More blows after the first, at these seconds from the start of the move (a multi-slash heavy attack): each one checks
+   * the hit area again, so every slash can land.
+   */
+  readonly extraHits?: readonly number[];
+  /** A crystal weapon's swing (Prismor's Crystal Arsenal): which weapon, and which blow of its table the body poses as. */
+  readonly swing?: { readonly weapon: string; readonly index: number };
 }
 
 export function attackDuration(a: {

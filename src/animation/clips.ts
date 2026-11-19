@@ -1042,84 +1042,65 @@ const STRIKES = {
     },
   ),
 
-  // ---- Prismor's crystal style: heavy shouldered blows, the oversized crystal arm leading and swinging like a wrecking beam.
-  // 1. Crystal jab: the big forearm driven straight out from the shoulder.
+  // ---- Prismor's unarmed fighting (owner 22/11/2026: ordinary stickman punches with proper arm extension, body turn and recovery).
+  // 1. Lead punch: a straight jab from the guard, the shoulder turning in behind it, the other fist kept up by the chin.
   'prism.jab': strike(
     {
-      lean: deg(-2),
-      head: deg(-3),
-      armFront: limb(38, 30),
-      armBack: limb(-14, 40),
-      legFront: limb(22, -26),
+      lean: deg(-4),
+      head: deg(-2),
+      armFront: limb(46, 104),
+      armBack: limb(40, 112),
+      legFront: limb(24, -28),
       legBack: limb(-28, -24),
     },
     {
-      lean: deg(-14),
+      lean: deg(-16),
       head: deg(-4),
-      armFront: limb(90, 4),
-      armBack: limb(-20, 44),
-      legFront: limb(30, -30),
-      legBack: limb(-30, -22),
+      armFront: limb(92, 4),
+      armBack: limb(44, 110),
+      legFront: limb(32, -30),
+      legBack: limb(-32, -22),
     },
   ),
-  // 2. Geode hook: the big arm swung round in a wide flat arc.
+  // 2. Rear cross: the back fist drives through with the hips and shoulders, the lead hand guarding.
   'prism.hook': strike(
     {
-      lean: deg(8),
+      lean: deg(6),
       head: deg(0),
-      armFront: limb(-40, 90),
-      armBack: limb(20, 60),
-      legFront: limb(24, -28),
-      legBack: limb(-30, -26),
-    },
-    {
-      lean: deg(-24),
-      head: deg(-4),
-      armFront: limb(100, 70),
-      armBack: limb(-30, 50),
-      legFront: limb(34, -32),
-      legBack: limb(-34, -24),
-    },
-  ),
-  // 3. Faceted elbow: shoulder dropped and the crystal elbow driven in.
-  'prism.elbow': strike(
-    {
-      lean: deg(-6),
-      head: deg(2),
-      armFront: limb(-30, 140),
-      armBack: limb(10, 60),
+      armFront: limb(56, 104),
+      armBack: limb(18, 122),
       legFront: limb(26, -30),
       legBack: limb(-30, -28),
     },
     {
-      lean: deg(18),
+      lean: deg(-26),
+      head: deg(6),
+      armFront: limb(50, 108),
+      armBack: limb(96, 6),
+      legFront: limb(36, -34),
+      legBack: limb(-36, -22),
+    },
+  ),
+  // 3. Swinging hook: the lead arm pulled wide and swung round in a flat arc, the body turning with it.
+  'prism.elbow': strike(
+    {
+      lean: deg(10),
+      head: deg(2),
+      armFront: limb(-30, 96),
+      armBack: limb(44, 112),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -28),
+    },
+    {
+      lean: deg(-22),
       head: deg(-6),
-      armFront: limb(90, 130),
-      armBack: limb(-20, 50),
+      armFront: limb(100, 66),
+      armBack: limb(46, 112),
       legFront: limb(34, -34),
       legBack: limb(-34, -26),
     },
   ),
-  // 4. Oversized arm smash: the arm hauled high and brought down on a slant.
-  'prism.smash': strike(
-    {
-      lean: deg(10),
-      head: deg(-6),
-      armFront: limb(150, 50),
-      armBack: limb(20, 60),
-      legFront: limb(26, -32),
-      legBack: limb(-32, -28),
-    },
-    {
-      lean: deg(-32),
-      head: deg(10),
-      armFront: limb(60, 6),
-      armBack: limb(-20, 50),
-      legFront: limb(40, -42),
-      legBack: limb(-40, -22),
-    },
-  ),
-  // Heavy: the whole arm raised and held, the crystal glinting, then a crushing downward blow.
+  // Heavy overhand: the fist cocked high and held, then thrown down on the target with the whole body behind it.
   'prism.crush': strike(
     {
       lean: deg(16),
@@ -1139,7 +1120,7 @@ const STRIKES = {
     },
     { lean: deg(-6), head: deg(-4), armFront: limb(120, 50), armBack: limb(10, 60), legFront: limb(24, -30) },
   ),
-  // Forward tap: a shoulder charge, the big arm braced across the body.
+  // Forward tap: a shoulder shove, the arm braced across the body.
   'prism.shove': strike(
     { lean: deg(2), head: deg(-2), armFront: limb(50, 90), armBack: limb(10, 60), legFront: limb(22, -28) },
     {
@@ -1151,7 +1132,7 @@ const STRIKES = {
       legBack: limb(-34, -20),
     },
   ),
-  // In the air: the crystal arm thrust up and forward like a spire.
+  // In the air: a rising uppercut thrown up and forward.
   'prism.air-spike': strike(
     {
       lean: deg(-4),
@@ -1170,7 +1151,7 @@ const STRIKES = {
       legBack: limb(-6, -36),
     },
   ),
-  // Falling: the big fist driven straight down like a pile driver.
+  // Falling: the fist driven straight down in a hammer-fist drop.
   'prism.drop': strike(
     {
       lean: deg(0),

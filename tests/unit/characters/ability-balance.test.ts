@@ -16,6 +16,11 @@ function castDamage(a: AbilityDef): number {
   if (d.type === 'whirl') return a.payload.damage * Math.round(d.durationS / d.tickS);
   if (d.type === 'drone') return (d.shot.payload.damage * (d.durationS / d.intervalS)) / 2; // half its shots land
   if (d.type === 'dash' && d.afterimages) return a.payload.damage;
+  // Crystal Slide: the slide itself and the thorns where it stops. Shard Volley: about half the fan lands on one target.
+  // Crystal Groundstrike: two of its four zones catch one target. Crystal Arsenal and Crystal Prison deal nothing themselves.
+  if (d.type === 'dash' && d.slide) return a.payload.damage + d.slide.thorns.payload.damage;
+  if (d.type === 'projectile' && d.fan) return (a.payload.damage * d.fan.count) / 2;
+  if (d.type === 'eruptions') return a.payload.damage * 2;
   if (a.payload.aging) return a.payload.damage + a.payload.aging.dps * a.payload.aging.durationS;
   return a.payload.damage;
 }

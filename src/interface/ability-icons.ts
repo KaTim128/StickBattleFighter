@@ -561,30 +561,30 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 20, '#fff4cf', 0.35),
     `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#ffd36a" stroke-width="3"/><circle cx="24" cy="24" r="11" stroke="#2f7bff" stroke-width="2.4" stroke-dasharray="5 3"/></g><g fill="#fff4cf" filter="url(#gl)"><rect x="17" y="15" width="5" height="18" rx="1.5"/><rect x="26" y="15" width="5" height="18" rx="1.5"/></g><g stroke="#fff4cf" stroke-width="2.4" stroke-linecap="round"><path d="M24 2 V6 M24 42 V46 M2 24 H6 M42 24 H46"/></g>`,
   ),
-  'crystal-greatsword': icon(
+  'crystal-arsenal': icon(
     'crystal',
-    rays(24, 24, 16, '#e9e2ff', 0.25),
-    `<g filter="url(#ds)"><path d="M24 3 L30 12 L28 32 L24 36 L20 32 L18 12 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.8"/></g><g stroke="#4aa8ff" stroke-width="2" stroke-linecap="round" fill="none"><path d="M24 6 V32"/><path d="M12 34 L36 34"/><path d="M24 36 V45"/></g>`,
+    rays(24, 24, 18, '#e9e2ff', 0.25),
+    `<g filter="url(#ds)"><path d="M24 3 L28 10 L27 28 L24 31 L21 28 L20 10 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.5"/><path d="M8 40 L12 30 L17 31 L18 42 Z" fill="#5a4bbf" stroke="#e9e2ff" stroke-width="1.4"/><path d="M36 42 L35 30 L40 29 L44 40 Z" fill="#4aa8ff" stroke="#e9e2ff" stroke-width="1.4"/></g><g stroke="#e9e2ff" stroke-width="2" stroke-linecap="round" fill="none"><path d="M24 31 V44"/><path d="M19 32 H29"/></g>`,
   ),
-  'prism-guard': icon(
-    'crystal',
-    rays(24, 24, 15, '#e9e2ff', 0.2),
-    `<g filter="url(#ds)"><path d="M24 4 L38 11 L35 30 L24 44 L13 30 L10 11 Z" fill="#6f64ff" fill-opacity=".8" stroke="#e9e2ff" stroke-width="2.2"/></g><g fill="none" stroke="#4aa8ff" stroke-width="1.6" opacity=".9"><path d="M24 4 V44 M10 11 L35 30 M38 11 L13 30"/></g>`,
-  ),
-  'crystal-dual-blades': icon(
+  'crystal-slide': icon(
     'crystal',
     rays(24, 24, 15, '#e9e2ff', 0.2),
-    `<g filter="url(#ds)"><path d="M8 40 L14 10 L20 14 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.6"/><path d="M40 40 L34 10 L28 14 Z" fill="#4aa8ff" stroke="#e9e2ff" stroke-width="1.6"/></g><path d="M6 42 L22 30 M42 42 L26 30" stroke="#e9e2ff" stroke-width="2.4" stroke-linecap="round"/>`,
+    `<g stroke="#4aa8ff" stroke-width="2.4" stroke-linecap="round" opacity=".9"><path d="M4 30 H22"/><path d="M6 36 H26"/><path d="M8 24 H20"/></g><g filter="url(#ds)"><path d="M24 32 L34 20 L44 30 L40 38 L28 40 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.8"/></g><g fill="#e9e2ff"><path d="M36 14 L39 22 L33 22 Z"/><path d="M44 18 L46 25 L41 24 Z"/></g>`,
   ),
-  'crystal-lance': icon(
+  'shard-volley': icon(
     'crystal',
     rays(24, 24, 16, '#e9e2ff', 0.2),
-    `<g filter="url(#ds)"><path d="M4 28 L36 24 L46 24 L36 28 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.6"/><path d="M36 20 L46 24 L36 28" fill="#4aa8ff" stroke="#e9e2ff" stroke-width="1.6"/></g><g fill="#5a4bbf" stroke="#e9e2ff" stroke-width="1.6"><path d="M4 22 L14 20 L16 32 L6 34 Z"/></g>`,
+    `<g filter="url(#ds)" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.5"><path d="M6 24 L24 20 L24 28 Z"/><path d="M8 12 L26 15 L22 21 Z"/><path d="M8 36 L22 27 L26 33 Z"/><path d="M14 6 L30 12 L24 17 Z"/><path d="M14 42 L24 31 L30 36 Z"/></g><circle cx="34" cy="24" r="5" fill="#4aa8ff" stroke="#e9e2ff" stroke-width="1.6"/>`,
   ),
-  'crystal-warhammer': icon(
+  'crystal-prison': icon(
     'crystal',
-    rays(24, 24, 16, '#e9e2ff', 0.25),
-    `<g filter="url(#ds)"><path d="M22 18 H26 V44 H22 Z" fill="#453a9c" stroke="#e9e2ff" stroke-width="1.6"/><path d="M8 6 L22 3 L40 6 L42 16 L26 20 L10 16 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="2"/></g><g stroke="#4aa8ff" stroke-width="1.6" fill="none"><path d="M10 8 L24 12 L40 8 M24 12 V19"/></g>`,
+    rays(24, 24, 15, '#e9e2ff', 0.2),
+    `<g stroke="#2a2266" stroke-width="5" stroke-linecap="round"><path d="M17 4 V24"/><path d="M31 4 V24"/></g><g filter="url(#ds)" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.6"><path d="M11 44 L12 24 L16 28 L20 24 L22 44 Z"/><path d="M26 44 L28 24 L32 28 L36 24 L38 44 Z"/></g><g fill="#4aa8ff" opacity=".9"><path d="M12 24 L14 18 L16 24 Z"/><path d="M28 24 L30 18 L32 24 Z"/></g>`,
+  ),
+  'crystal-groundstrike': icon(
+    'crystal',
+    rays(24, 24, 17, '#e9e2ff', 0.25),
+    `<g filter="url(#ds)" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.5"><path d="M5 44 L9 24 L13 44 Z"/><path d="M15 44 L21 16 L27 44 Z"/><path d="M29 44 L35 20 L40 44 Z"/><path d="M38 44 L42 30 L46 44 Z"/></g><path d="M14 8 L24 10 L30 8 L28 14 L18 14 Z" fill="#5a4bbf" stroke="#e9e2ff" stroke-width="1.4"/><path d="M4 45 H46" stroke="#4aa8ff" stroke-width="2.4" stroke-linecap="round"/>`,
   ),
   'crystal-sovereign': icon(
     'crystal',

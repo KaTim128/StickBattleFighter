@@ -7,7 +7,16 @@ import { ABILITY_SLOTS, type AbilityDef, type AbilityKit, type AbilitySlot } fro
  * calls `start`; `update` reports when the ability is released (the animation
  * event where the delivery begins) and when the cast is over.
  */
-export type CastBlock = 'unavailable' | 'busy' | 'cooldown' | 'stamina' | 'meter' | 'airborne' | 'limit' | 'muted';
+export type CastBlock =
+  | 'unavailable'
+  | 'busy'
+  | 'cooldown'
+  | 'stamina'
+  | 'meter'
+  | 'airborne'
+  | 'limit'
+  | 'muted'
+  | 'trapped';
 
 export interface CastContext {
   /** The fighter can act (free or guarding) and is not mid-attack. */

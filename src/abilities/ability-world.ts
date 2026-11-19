@@ -7,9 +7,10 @@ import {
   type CloudSpec,
   type MagicLook,
   payloadAt,
-  type ShieldDelivery,
+  type ShieldSpec,
   type SummonSpec,
-  type WeaponHit,
+  WEAPON_KINDS,
+  type WeaponKind,
 } from './ability-def';
 
 /**
@@ -110,8 +111,16 @@ export interface AbilityHost {
   barrier?(casterId: string, hp: number, durationS: number): void;
   /** Hold a target in a scream: for `seconds` it cannot walk toward the caster (`awayX/awayY` is the direction from the caster). Optional. */
   pin?(targetId: string, away: Vec2, seconds: number): void;
-  /** Grow (or, with null, drop) a crystal shield on a caster (Prismor's Prism Guard). Optional. */
-  shield?(casterId: string, spec: ShieldDelivery | null): void;
+  /** Grow (or, with null, drop) a crystal shield on a caster (Prismor's Crystal Guard). Optional. */
+  shield?(casterId: string, spec: ShieldSpec | null): void;
+  /** Put a crystal weapon in a caster's hands (Crystal Arsenal), replacing any it held: its moveset takes over his taps. Optional. */
+  arm?(casterId: string, kind: WeaponKind, guard: Extract<AbilityDef['delivery'], { type: 'arsenal' }>): void;
+  /** Hold a fighter's legs in crystal for `seconds` (0 frees them): no walking, jumping, dodging or flying, and a flier is dragged down. Optional. */
+  trap?(targetId: string, seconds: number): void;
+  /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
+  legTrapState?(targetId: string): { heightM: number; flies: boolean; trappedS: number };
+  /** Can a body stand here (inside the arena, clear of walls and furniture)? Optional (everywhere counts when absent). */
+  standable?(at: Vec2): boolean;
   /** Heal a fighter by `amount` (never above its maximum); returns false if it is down and nothing was done. Optional. */
   heal?(targetId: string, amount: number): boolean;
   /** Time Stop begins (`true`) or ends (`false`): the host freezes or releases everything but the caster. Optional. */
@@ -266,19 +275,6 @@ export interface Drone {
   aimY: number;
 }
 
-/** A crystal weapon's blows under way (see `WeaponDelivery`). */
-interface WeaponAction {
-  readonly kind: 'weapon';
-  readonly casterId: string;
-  readonly def: AbilityDef;
-  readonly dir: Vec2;
-  ageS: number;
-  /** How many blows have landed their timeline slot. */
-  done: number;
-  /** Any blow connected with a fighter. */
-  landed: boolean;
-}
-
 /** A spin in progress (see `WhirlDelivery`). */
 interface WhirlAction {
   readonly kind: 'whirl';
@@ -333,6 +329,26 @@ export interface Telegraph {
   readonly erupts?: boolean;
   /** Shots already loosed while this ring built (Mindstorm). */
   volleysFired?: number;
+}
+
+/** Crystal Prison in progress (see `LegTrapDelivery`): the crystals forming, then the legs held until the host says they are free. */
+export interface PrisonTrack {
+  readonly casterId: string;
+  readonly targetId: string;
+  readonly def: AbilityDef;
+  phase: 'form' | 'held';
+  ageS: number;
+  /** A grounded target left the floor while the crystals formed (it escapes). */
+  jumped: boolean;
+}
+
+/** A patch of glowing crystal laid under a Crystal Slide. */
+export interface SlideMark {
+  readonly casterId: string;
+  readonly x: number;
+  readonly y: number;
+  ageS: number;
+  readonly lifeS: number;
 }
 
 /** Rewind Time in progress (see `RewindTimeDelivery`): where he started, the damage really dealt since, and the path walked. */
@@ -448,7 +464,6 @@ type Action =
   | JudgementAction
   | LiftAction
   | FistAction
-  | WeaponAction
   | WhirlAction;
 
 /** How a grab turned out, for the caster's animation. */
@@ -522,6 +537,10 @@ export class AbilityWorld {
   readonly clouds: Cloud[] = [];
   readonly grenades: Grenade[] = [];
   readonly parries: Parry[] = [];
+  readonly prisons: PrisonTrack[] = [];
+  readonly slideTrail: SlideMark[] = [];
+  /** The dice of Crystal Arsenal and the scatter of Shard Volley and Crystal Groundstrike (seedable for tests). */
+  constructor(private readonly rng: () => number = Math.random) {}
   /** A lifted target cannot be lifted again until this time (Floating Prison's anti-lock rule), world seconds. */
   private readonly liftImmuneUntilS = new Map<string, number>();
   private nowS = 0;
@@ -642,9 +661,7 @@ export class AbilityWorld {
     return (
       this.beams.some((b) => b.casterId === casterId) ||
       this.actions.some(
-        (a) =>
-          (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'weapon') &&
-          a.casterId === casterId,
+        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault') && a.casterId === casterId,
       )
     );
   }
@@ -777,17 +794,30 @@ export class AbilityWorld {
     });
     const d = def.delivery;
     switch (d.type) {
-      case 'projectile':
-        this.projectiles.push({
-          casterId,
-          def,
-          x: at.x + dir.x * MUZZLE_M,
-          y: at.y + dir.y * MUZZLE_M,
-          dir,
-          travelledM: 0,
-          trail: [],
-        });
+      case 'projectile': {
+        // A fan (Shard Volley): `count` shots spread evenly across the arc, each with a hair of its own angle.
+        const shots = d.fan?.count ?? 1;
+        for (let k = 0; k < shots; k++) {
+          const spread = d.fan ? (k / Math.max(1, shots - 1) - 0.5) * d.fan.spreadRad + (this.rng() - 0.5) * 0.05 : 0;
+          const shotDir =
+            spread === 0
+              ? dir
+              : {
+                  x: dir.x * Math.cos(spread) - dir.y * Math.sin(spread),
+                  y: dir.x * Math.sin(spread) + dir.y * Math.cos(spread),
+                };
+          this.projectiles.push({
+            casterId,
+            def,
+            x: at.x + shotDir.x * MUZZLE_M,
+            y: at.y + shotDir.y * MUZZLE_M,
+            dir: shotDir,
+            travelledM: 0,
+            trail: [],
+          });
+        }
         break;
+      }
       case 'cloud': {
         // Where it aims, within range and short of any wall in the way.
         const want = Math.min(def.aimRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
@@ -926,23 +956,43 @@ export class AbilityWorld {
           y: at.y,
         });
         break;
-      case 'weapon':
-        // A new weapon replaces a shield he was holding: the shield shatters.
-        host.shield?.(casterId, null);
-        this.actions.push({ kind: 'weapon', casterId, def, dir, ageS: 0, done: 0, landed: false });
-        break;
-      case 'shield':
-        host.shield?.(casterId, d);
+      case 'arsenal': {
+        // A random one of the five weapons; one he already holds is shattered and replaced (it may come up again).
+        const kind = WEAPON_KINDS[Math.floor(this.rng() * WEAPON_KINDS.length)] as WeaponKind;
+        host.arm?.(casterId, kind, d);
         host.emit({
           kind: 'impact',
           ability: def.id,
           look: def.look,
           vfx: def.vfx,
-          sfx: null,
+          sfx: def.sfx.impact,
           x: at.x,
           y: at.y,
           radiusM: 1.2,
         });
+        break;
+      }
+      case 'legTrap': {
+        const foe = this.nearestEnemy(casterId, at, d.rangeM, host);
+        if (!foe) {
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+          break;
+        }
+        this.prisons.push({ casterId, targetId: foe.id, def, phase: 'form', ageS: 0, jumped: false });
+        host.emit({
+          kind: 'telegraph',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.release,
+          x: foe.x,
+          y: foe.y,
+          radiusM: 1,
+        });
+        break;
+      }
+      case 'eruptions':
+        this.spawnEruptions(casterId, def, d, host);
         break;
       case 'whirl':
         this.actions.push({ kind: 'whirl', casterId, def, ageS: 0, sinceTickS: d.tickS });
@@ -1331,6 +1381,12 @@ export class AbilityWorld {
     this.updateDrones(dtS, host);
     this.updateTime(dtS, host);
     this.updateGrenades(dtS, host);
+    this.updatePrisons(dtS, host);
+    for (let i = this.slideTrail.length - 1; i >= 0; i--) {
+      const m = this.slideTrail[i]!;
+      m.ageS += dtS;
+      if (m.ageS >= m.lifeS) this.slideTrail.splice(i, 1);
+    }
     for (let i = this.parries.length - 1; i >= 0; i--) {
       const p = this.parries[i]!;
       p.leftS -= dtS;
@@ -1610,17 +1666,16 @@ export class AbilityWorld {
                   ? this.stepJudgement(a, dtS, host)
                   : a.kind === 'lift'
                     ? this.stepLift(a, dtS, host)
-                    : a.kind === 'weapon'
-                      ? this.stepWeapon(a, dtS, host)
-                      : a.kind === 'fist'
-                        ? this.stepFist(a, dtS, host)
-                        : a.kind === 'whirl'
-                          ? this.stepWhirl(a, dtS, host)
-                          : this.stepGrab(a, dtS, host);
+                    : a.kind === 'fist'
+                      ? this.stepFist(a, dtS, host)
+                      : a.kind === 'whirl'
+                        ? this.stepWhirl(a, dtS, host)
+                        : this.stepGrab(a, dtS, host);
       if (finished) {
         // The action may have been removed meanwhile (a new pull on the same target).
         const at = this.actions.indexOf(a);
         if (at >= 0) this.actions.splice(at, 1);
+        if (a.kind === 'dash') this.slideThorns(a, host);
         host.drive(a.kind === 'pull' || a.kind === 'grab' || a.kind === 'lift' ? a.targetId : a.casterId, null, 0);
       }
     }
@@ -1819,6 +1874,10 @@ export class AbilityWorld {
         ageS: 0,
         burn: d.trail.burn,
       });
+    }
+    if (d.slide && a.sinceTrailM >= TRAIL_SPACING_M * 0.5) {
+      a.sinceTrailM = 0;
+      this.slideTrail.push({ casterId: a.casterId, x: at.x, y: at.y, ageS: 0, lifeS: d.slide.trailLifeS });
     }
     if (d.afterimages) {
       // Afterimages left exactly along the path he really travels, one every spacingM metres.
@@ -2278,158 +2337,154 @@ export class AbilityWorld {
     }
   }
 
-  /** A crystal weapon's animation state for the caster: which blow, how far through the wind-up to it, and whether it is recovering. */
-  weaponOf(casterId: string): { weapon: string; index: number; t: number; total: number; recovering: boolean } | null {
-    const a = this.actions.find((x) => x.kind === 'weapon' && x.casterId === casterId) as WeaponAction | undefined;
-    const d = a?.def.delivery;
-    if (!a || d?.type !== 'weapon') return null;
-    const last = d.hits[d.hits.length - 1]!;
-    if (a.done >= d.hits.length) {
-      const tail = a.landed ? 0.25 : d.missRecoveryS;
-      return {
-        weapon: d.weapon,
-        index: d.hits.length,
-        t: Math.min(1, (a.ageS - last.atS) / Math.max(0.01, tail)),
-        total: d.hits.length,
-        recovering: true,
-      };
-    }
-    const from = a.done === 0 ? 0 : d.hits[a.done - 1]!.atS;
-    const to = d.hits[a.done]!.atS;
-    return {
-      weapon: d.weapon,
-      index: a.done,
-      t: Math.min(1, Math.max(0, (a.ageS - from) / Math.max(0.01, to - from))),
-      total: d.hits.length,
-      recovering: false,
-    };
-  }
-
-  /** The blows of a crystal weapon: each lands once at its time, on everyone in its shape, re-aimed at the nearest enemy. */
-  private stepWeapon(a: WeaponAction, dtS: number, host: AbilityHost): boolean {
+  /** Where a Crystal Slide stopped, crystal thorns warn and then erupt: a blast with their own payload. */
+  private slideThorns(a: Extract<Action, { kind: 'dash' }>, host: AbilityHost): void {
     const d = a.def.delivery;
-    if (d.type !== 'weapon') return true;
-    a.ageS += dtS;
-    host.drive(a.casterId, { x: 0, y: 0 }, 0); // planted while he swings (his move factor also slows the cast)
-    while (a.done < d.hits.length && a.ageS >= d.hits[a.done]!.atS) {
-      const hit = d.hits[a.done]!;
-      if (a.done > 0)
-        host.emit({
-          kind: 'release',
-          ability: a.def.id,
-          look: a.def.look,
-          vfx: a.def.vfx,
-          sfx: a.def.sfx.release,
-          x: host.position(a.casterId).x,
-          y: host.position(a.casterId).y,
-        });
-      if (this.weaponBlow(a, d, hit, host)) a.landed = true;
-      a.done++;
-    }
-    if (a.done < d.hits.length) return false;
-    const last = d.hits[d.hits.length - 1]!;
-    return a.ageS >= last.atS + (a.landed ? 0.25 : d.missRecoveryS);
+    if (d.type !== 'dash' || !d.slide) return;
+    const at = host.position(a.casterId);
+    const thorns = d.slide.thorns;
+    const def: AbilityDef = {
+      ...a.def,
+      payload: thorns.payload,
+      vfx: 'crystal-thorns',
+      sfx: { ...a.def.sfx, impact: 'thorns-burst' },
+    };
+    this.telegraphs.push({
+      casterId: a.casterId,
+      def,
+      x: at.x,
+      y: at.y,
+      radiusM: thorns.radiusM,
+      durationS: thorns.warnS,
+      ageS: 0,
+      onCaster: false,
+      erupts: true,
+    });
+    host.emit({
+      kind: 'telegraph',
+      ability: def.id,
+      look: def.look,
+      vfx: def.vfx,
+      sfx: null,
+      x: at.x,
+      y: at.y,
+      radiusM: thorns.radiusM,
+    });
   }
 
-  /** One blow: returns whether it connected with a fighter. */
-  private weaponBlow(
-    a: WeaponAction,
-    d: Extract<AbilityDef['delivery'], { type: 'weapon' }>,
-    hit: WeaponHit,
+  /**
+   * Crystal Groundstrike: `count` separate zones, each at its own random spot round the nearest enemy (or the caster), inside the
+   * arena and apart from each other, each its own telegraph that erupts as its own blast.
+   */
+  private spawnEruptions(
+    casterId: string,
+    def: AbilityDef,
+    d: Extract<AbilityDef['delivery'], { type: 'eruptions' }>,
     host: AbilityHost,
-  ): boolean {
-    const at = host.position(a.casterId);
-    const near = this.nearestEnemy(a.casterId, at, hit.reachM * 1.3, host);
-    const dir = near ? norm({ x: near.x - at.x, y: near.y - at.y }) : a.dir;
-    const payloadFor = (damageFactor: number, knockbackFactor: number): AbilityPayload => ({
-      ...a.def.payload,
-      damage: Math.max(1, Math.round(a.def.payload.damage * damageFactor)),
-      knockbackMps: a.def.payload.knockbackMps * knockbackFactor,
-      ...(hit.heavy !== undefined ? { heavy: hit.heavy } : {}),
-    });
-    const struck = new Set<string>();
-    let landed = false;
-    const strike = (f: AbilityTarget, damageFactor: number, knockbackFactor: number, push: Vec2): void => {
-      if (struck.has(f.id)) return;
-      if (!this.hit(host, a.casterId, f.id, payloadFor(damageFactor, knockbackFactor), push, a.def.look?.hitFlash))
-        return;
-      struck.add(f.id);
-      landed = true;
-      host.emit({
-        kind: 'impact',
-        ability: a.def.id,
-        look: a.def.look,
-        vfx: a.def.vfx,
-        sfx: a.def.sfx.impact,
-        x: f.x,
-        y: f.y,
-        radiusM: 0.8,
-        dirX: dir.x,
-        dirY: dir.y,
-      });
-    };
-    const foes = host.fighters().filter((f) => !this.friendly(f, a.casterId, host) && f.hittable);
-    let envAt = at;
-    let envR = hit.reachM * 0.5;
-    if (hit.shape === 'arc' || hit.shape === 'circle') {
-      for (const f of foes) {
-        const dist = Math.hypot(f.x - at.x, f.y - at.y);
-        if (dist > hit.reachM + f.radiusM) continue;
-        if (hit.shape === 'arc') {
-          const ang = Math.acos(
-            Math.max(-1, Math.min(1, ((f.x - at.x) * dir.x + (f.y - at.y) * dir.y) / Math.max(0.001, dist))),
-          );
-          if (ang > hit.widthM) continue;
-        }
-        strike(f, hit.damageFactor, hit.knockbackFactor, norm({ x: f.x - at.x, y: f.y - at.y }));
+  ): void {
+    const at = host.position(casterId);
+    const foe = this.nearestEnemy(casterId, at, Math.max(def.aimRangeM, d.spreadM), host);
+    const centre = foe ? { x: foe.x, y: foe.y } : at;
+    const spots: Vec2[] = [];
+    const apart = d.radiusM * 1.6;
+    for (let k = 0; k < d.count; k++) {
+      let spot: Vec2 | null = null;
+      for (let tries = 0; tries < 64 && !spot; tries++) {
+        // The first tries stay near the enemy; later ones widen, so four zones always fit.
+        const reach = d.spreadM * (0.35 + 0.65 * Math.min(1, tries / 24));
+        const ang = this.rng() * Math.PI * 2;
+        const r = reach * (0.3 + 0.7 * this.rng());
+        const p = { x: centre.x + Math.cos(ang) * r, y: centre.y + Math.sin(ang) * r };
+        const fromMe = Math.hypot(p.x - at.x, p.y - at.y);
+        if (fromMe < 1.2 || (tries < 56 && fromMe > def.aimRangeM + 1.5)) continue; // within his attack range, never right on top of him
+        if (host.standable && !host.standable(p)) continue;
+        if (tries < 56 && spots.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < apart)) continue;
+        spot = p;
       }
-      envAt = hit.shape === 'circle' ? at : { x: at.x + dir.x * hit.reachM * 0.6, y: at.y + dir.y * hit.reachM * 0.6 };
-      envR = hit.shape === 'circle' ? hit.reachM : hit.reachM * 0.55;
-    } else if (hit.shape === 'line') {
-      const tip = { x: at.x + dir.x * hit.reachM, y: at.y + dir.y * hit.reachM };
-      const inLine = foes
-        .filter((f) => segmentDistance(at, tip, f) <= hit.widthM + f.radiusM)
-        .sort((p, q) => Math.hypot(p.x - at.x, p.y - at.y) - Math.hypot(q.x - at.x, q.y - at.y));
-      inLine.forEach((f, i) => strike(f, hit.damageFactor * (d.pierceFalloff ?? 1) ** i, hit.knockbackFactor, dir));
-      envAt = tip;
-      envR = hit.widthM + 0.2;
-    } else {
-      const c = { x: at.x + dir.x * hit.reachM, y: at.y + dir.y * hit.reachM };
-      for (const f of foes)
-        if (Math.hypot(f.x - c.x, f.y - c.y) <= hit.widthM + f.radiusM)
-          strike(f, hit.damageFactor, hit.knockbackFactor, norm({ x: f.x - c.x, y: f.y - c.y }));
-      const sw = d.shockwave;
-      if (sw) {
-        for (const f of foes)
-          if (Math.hypot(f.x - c.x, f.y - c.y) <= sw.radiusM + f.radiusM)
-            strike(f, sw.damageFactor, sw.knockbackFactor, norm({ x: f.x - c.x, y: f.y - c.y }));
-        envR = sw.radiusM;
+      spots.push(spot ?? { x: centre.x + (k % 2 === 0 ? 1 : -1) * apart, y: centre.y + (k < 2 ? 1 : -1) * apart });
+    }
+    spots.forEach((p, k) => {
+      const delay = k * d.staggerS;
+      this.telegraphs.push({
+        casterId,
+        def,
+        x: p.x,
+        y: p.y,
+        radiusM: d.radiusM,
+        durationS: d.warnS + delay,
+        ageS: 0,
+        onCaster: false,
+        erupts: true,
+      });
+      host.emit({
+        kind: 'telegraph',
+        ability: def.id,
+        look: def.look,
+        vfx: def.vfx,
+        sfx: null,
+        x: p.x,
+        y: p.y,
+        radiusM: d.radiusM,
+      });
+    });
+  }
+
+  /** Crystal Prison: forming, then locked on (or escaped), then released when the host says the legs are free. */
+  private updatePrisons(dtS: number, host: AbilityHost): void {
+    for (let i = this.prisons.length - 1; i >= 0; i--) {
+      const pr = this.prisons[i]!;
+      const d = pr.def.delivery;
+      const target = host.fighters().find((f) => f.id === pr.targetId);
+      const state = host.legTrapState?.(pr.targetId);
+      if (d.type !== 'legTrap' || !target || !target.hittable || !state) {
+        host.trap?.(pr.targetId, 0);
+        this.prisons.splice(i, 1);
+        continue;
+      }
+      pr.ageS += dtS;
+      if (pr.phase === 'form') {
+        // A grounded fighter that leaves the floor before the crystals lock gets clear; a flier cannot.
+        if (!state.flies && state.heightM > 0.25) pr.jumped = true;
+        if (pr.ageS < d.reactS) continue;
+        if (pr.jumped) {
+          host.emit({
+            kind: 'fizzle',
+            ability: pr.def.id,
+            look: pr.def.look,
+            vfx: 'prison-miss',
+            sfx: null,
+            x: target.x,
+            y: target.y,
+          });
+          this.prisons.splice(i, 1);
+          continue;
+        }
+        pr.phase = 'held';
+        host.trap?.(pr.targetId, d.holdS);
         host.emit({
           kind: 'impact',
-          ability: a.def.id,
-          look: a.def.look,
-          vfx: 'crystal-shockwave',
-          sfx: null,
-          x: c.x,
-          y: c.y,
-          radiusM: sw.radiusM,
+          ability: pr.def.id,
+          look: pr.def.look,
+          vfx: 'prison-lock',
+          sfx: pr.def.sfx.impact,
+          x: target.x,
+          y: target.y,
+          radiusM: 1.1,
         });
+      } else if (state.trappedS <= 0) {
+        host.emit({
+          kind: 'impact',
+          ability: pr.def.id,
+          look: pr.def.look,
+          vfx: 'prison-shatter',
+          sfx: 'prison-shatter',
+          x: target.x,
+          y: target.y,
+          radiusM: 1.3,
+        });
+        this.prisons.splice(i, 1);
       }
-      envAt = c;
     }
-    host.hitEnvironment(a.casterId, envAt, envR, payloadFor(hit.damageFactor, hit.knockbackFactor), dir, false);
-    if (!landed)
-      host.emit({
-        kind: 'impact',
-        ability: a.def.id,
-        look: a.def.look,
-        vfx: 'crystal-whiff',
-        sfx: null,
-        x: envAt.x,
-        y: envAt.y,
-        radiusM: 0.5,
-      });
-    return landed;
   }
 
   /** The fist: out along the aim, one blow to each enemy it passes, a beat at full reach, then back. */

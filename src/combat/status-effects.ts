@@ -20,7 +20,8 @@ export type StatusId =
   | 'mute'
   | 'shatter'
   | 'slow'
-  | 'aging';
+  | 'aging'
+  | 'trap';
 
 /** How a new application meets one already running. */
 export type StatusStacking =
@@ -76,6 +77,8 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   // Chronos: a short slow, and the aging that wears a target down (its own timer, defence cut and damage over time).
   slow: { stacking: 'strongest', tickIntervalS: 0 },
   aging: { stacking: 'strongest', tickIntervalS: 0.5 },
+  // Prismor's Crystal Prison: the legs held in crystal for an exact time (nothing refreshes it or cuts it short but the end).
+  trap: { stacking: 'strongest', tickIntervalS: 0 },
   decay: { stacking: 'strongest', tickIntervalS: 0 },
   dark: { stacking: 'strongest', tickIntervalS: 0 },
   // Vexoris's Plague Bloom fog: renewed every step while inside it, so it lapses a moment after leaving.

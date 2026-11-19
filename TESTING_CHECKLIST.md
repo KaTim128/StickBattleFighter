@@ -707,3 +707,14 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ## Offline play (21/11/2026)
 - [ ] Open the live game once online, close it, switch to flight mode, open it again: menus, a fight, audio and the training yard all work.
 - [ ] After a new deploy, the first online visit shows the new version (pages are fetched network first).
+
+## Prismor rework (22/11/2026)
+- [ ] Crystal Arsenal: over many casts all five weapons appear; each weapon grows into his hands and follows his swings.
+- [ ] Tap counts: Great Sword 2, War Hammer 2, Lance 3, Dual Blades 5, Crystal Guard 2, each with a different heavy; the Guard's second tap is a bash.
+- [ ] Being hit, or using another ability, shatters the weapon and his punches return; Arsenal again gives a new one.
+- [ ] Unarmed taps are plain punches with normal hands (no oversized fist) and no button, cost or cooldown.
+- [ ] Crystal Guard blocks frontal damage without HP loss, wears down, bursts and hurts nearby enemies at zero.
+- [ ] Crystal Slide leaves a trail, knocks the foe off balance and thorns erupt and hurt where it stops.
+- [ ] Shard Volley fires a fan of shards; Crystal Groundstrike marks exactly four zones, then erupts four times.
+- [ ] Crystal Prison: a grounded foe that jumps in time escapes; otherwise legs are held exactly 4 s (also a flier or hoverer, dragged down); hits do not free them; the cuffs shatter at 4 s.
+- [ ] The Sovereign armour looks like one fitted crystal suit (chest, shoulders, forearms, legs, boots, helm) and forms in stages.

@@ -206,7 +206,7 @@ export class Combatant {
   tryDodge(): boolean {
     const chain = this.dodgeChainLength;
     const cost = this.dodgeCostFor(chain);
-    if (!this.canAct || this.dodgeCooldownS > 0 || this.stamina < cost) return false;
+    if (!this.canAct || this.trapped || this.dodgeCooldownS > 0 || this.stamina < cost) return false;
     this.guardUp = false;
     this.stamina -= cost;
     this.sinceStaminaUseS = 0;
@@ -636,6 +636,20 @@ export class Combatant {
   }
 
   /** Resonance Break: no abilities for `seconds`. */
+  /** Crystal Prison: both legs held in crystal for exactly `seconds` (0 frees them). No walking, jumping, dodging or flying; damage still lands. */
+  trapLegs(seconds: number): void {
+    if (seconds <= 0 || this.koAgeS >= 0) this.status.clear('trap');
+    else this.status.apply('trap', seconds);
+  }
+
+  get trapped(): boolean {
+    return this.status.has('trap');
+  }
+
+  get trapLeftS(): number {
+    return this.status.leftS('trap');
+  }
+
   mute(seconds: number): void {
     if (this.koAgeS >= 0) return;
     this.status.apply('mute', seconds);
@@ -692,6 +706,7 @@ export class Combatant {
       this.status.clear('burn');
       this.status.clear('bleed');
       this.status.clear('toxicity');
+      this.status.clear('trap');
       this.crystalShieldLeftS = 0;
       this.crystalShieldHp = 0;
       this.crystalShieldHits = 0;

@@ -1,0 +1,336 @@
+import { describe, expect, it } from 'vitest';
+import { WEAPON_KINDS, type WeaponKind } from '../../../src/abilities/ability-def';
+import { type AbilityHost, type AbilityTarget, AbilityWorld } from '../../../src/abilities/ability-world';
+import { BUILT_IN_LIBRARY } from '../../../src/characters/library';
+import { resolveCharacter } from '../../../src/characters/resolve';
+import { Combatant } from '../../../src/combat/combatant';
+import { MoveController } from '../../../src/combat/moves';
+import { ARSENAL_MOVESETS } from '../../../src/data/abilities/crystal-arsenal';
+import { PRISMOR_KIT } from '../../../src/data/abilities/prismor';
+import prismorMoveset from '../../../src/data/characters/prismor/moveset.json';
+
+/** Owner, 22/11/2026: Crystal Arsenal, Slide, Shard Volley, Crystal Prison, Crystal Groundstrike and the unarmed taps. */
+
+/** A scripted arena: Prismor ("me") at the origin and one enemy, with every host call recorded. */
+function arena(opts: { foe?: Partial<AbilityTarget> & { heightM?: number; flies?: boolean } } = {}) {
+  const log = {
+    armed: [] as WeaponKind[],
+    hits: [] as { target: string; damage: number }[],
+    trapped: [] as number[],
+    fx: [] as string[],
+    me: { x: 0, y: 0 },
+    foeHeight: opts.foe?.heightM ?? 0,
+    trapLeft: 0,
+  };
+  const foe = { id: 'foe', x: 3, y: 0, radiusM: 0.3, hittable: true, ...opts.foe };
+  const host: AbilityHost = {
+    fighters: () => [{ id: 'me', x: log.me.x, y: log.me.y, radiusM: 0.3, hittable: true }, foe],
+    hitFighter: (_c, t, payload) => {
+      log.hits.push({ target: t, damage: payload.damage });
+      return true;
+    },
+    hitEnvironment: () => {},
+    blocked: () => null,
+    position: () => log.me,
+    drive: (_id, v) => {
+      if (v) {
+        log.me.x += v.x / 60;
+        log.me.y += v.y / 60;
+      }
+    },
+    burnFighter: () => {},
+    buff: () => {},
+    emit: (fx) => log.fx.push(fx.vfx),
+    arm: (_id, kind) => log.armed.push(kind),
+    trap: (_id, seconds) => {
+      log.trapped.push(seconds);
+      log.trapLeft = seconds;
+    },
+    legTrapState: () => ({ heightM: log.foeHeight, flies: opts.foe?.flies ?? false, trappedS: log.trapLeft }),
+    standable: (p) => p.x > 0.5 && p.x < 12 && p.y > 0.5 && p.y < 12,
+  };
+  return { host, log, foe };
+}
+const run = (w: AbilityWorld, h: AbilityHost, s: number, onStep?: () => void) => {
+  for (let i = 0; i < Math.round(s * 60); i++) {
+    w.update(1 / 60, h);
+    onStep?.();
+  }
+};
+
+describe('Crystal Arsenal', () => {
+  it('has the five abilities and the ultimate, none of them an unarmed tap', () => {
+    const ids = [PRISMOR_KIT.a1, PRISMOR_KIT.a2, PRISMOR_KIT.a3, PRISMOR_KIT.a4, PRISMOR_KIT.a5!].map((a) => a.id);
+    expect(ids).toEqual(['crystalArsenal', 'crystalSlide', 'shardVolley', 'crystalPrison', 'crystalGroundstrike']);
+    expect(PRISMOR_KIT.ult.id).toBe('crystalSovereign');
+    // The unarmed taps are standard combat controls: they live in the moveset, not in the ability kit.
+    for (const a of [PRISMOR_KIT.a1, PRISMOR_KIT.a2, PRISMOR_KIT.a3, PRISMOR_KIT.a4, PRISMOR_KIT.a5!])
+      expect(['arsenal', 'dash', 'projectile', 'legTrap', 'eruptions']).toContain(a.delivery.type);
+  });
+
+  it('randomly generates all five weapons', () => {
+    const { host, log } = arena();
+    const w = new AbilityWorld(mulberry(7));
+    for (let i = 0; i < 200; i++) w.release('me', PRISMOR_KIT.a1, { x: 3, y: 0 }, host);
+    expect(new Set(log.armed)).toEqual(new Set(WEAPON_KINDS));
+    expect(WEAPON_KINDS).toHaveLength(5);
+  });
+
+  it('each weapon has its specified tap combo count and its own heavy attack', () => {
+    const wanted: Record<WeaponKind, number> = { greatsword: 2, warhammer: 2, lance: 3, dualBlades: 5, guard: 2 };
+    for (const kind of WEAPON_KINDS) {
+      const set = ARSENAL_MOVESETS[kind];
+      let id: string | undefined = set.starters.tap;
+      const chain: string[] = [];
+      while (id) {
+        chain.push(id);
+        id = set.moves[id]?.next.tap;
+      }
+      expect(chain.length, kind).toBe(wanted[kind]);
+      expect(set.taps).toBe(wanted[kind]);
+      const heavy = set.moves[set.starters.heavy!]!;
+      expect(heavy, kind).toBeDefined();
+      expect(heavy.swing?.weapon).toBe(kind);
+    }
+  });
+
+  it('every weapon move is its own: no two share an id or a name, and the weapons differ in speed, reach and damage', () => {
+    const ids = new Set<string>();
+    const names = new Set<string>();
+    for (const kind of WEAPON_KINDS)
+      for (const m of Object.values(ARSENAL_MOVESETS[kind].moves)) {
+        expect(ids.has(m.id), m.id).toBe(false);
+        expect(names.has(m.label), m.label).toBe(false);
+        ids.add(m.id);
+        names.add(m.label);
+      }
+    const firstTap = (k: WeaponKind) => ARSENAL_MOVESETS[k].moves[ARSENAL_MOVESETS[k].starters.tap!]!;
+    expect(firstTap('dualBlades').windupS).toBeLessThan(firstTap('lance').windupS); // blades are the fastest
+    expect(firstTap('lance').windupS).toBeLessThan(firstTap('greatsword').windupS);
+    expect(firstTap('greatsword').windupS).toBeLessThan(firstTap('warhammer').windupS); // the hammer is the slowest
+    expect(firstTap('lance').reachM).toBeGreaterThan(firstTap('greatsword').reachM); // the lance reaches furthest
+    expect(firstTap('warhammer').damage).toBeGreaterThan(firstTap('dualBlades').damage * 3);
+  });
+
+  it("the Guard's second tap is a shield bash that knocks opponents back harder than anything else of its set", () => {
+    const g = ARSENAL_MOVESETS.guard;
+    const bash = g.moves[g.moves[g.starters.tap!]!.next.tap!]!;
+    expect(bash.label).toBe('Shield bash');
+    expect(bash.knockbackSpeedMps).toBeGreaterThan(g.moves[g.starters.tap!]!.knockbackSpeedMps * 3);
+  });
+
+  it("the Dual Blades' heavy is a multi-slash that hits again and again", () => {
+    const flurry = ARSENAL_MOVESETS.dualBlades.moves[ARSENAL_MOVESETS.dualBlades.starters.heavy!]!;
+    expect(flurry.extraHits?.length).toBeGreaterThanOrEqual(4);
+    const c = new MoveController({ [flurry.id]: flurry }, { heavy: flurry.id });
+    c.pressHeavy({ airborne: false, falling: false, forward: false });
+    let hits = 0;
+    for (let i = 0; i < 120; i++) if (c.update(1 / 60, false).hit) hits++;
+    expect(hits).toBe(1 + (flurry.extraHits?.length ?? 0));
+  });
+});
+
+describe('unarmed taps are standard combat controls, never an ability', () => {
+  const unarmed = prismorMoveset as {
+    starters: Record<string, string>;
+    moves: { id: string; damage: number; displayName: string }[];
+  };
+
+  it('the moveset is plain punches, with no oversized-arm move and no slot, cost or cooldown', () => {
+    const names = unarmed.moves.map((m) => m.displayName.toLowerCase()).join(' ');
+    expect(names).not.toMatch(/oversized|crystal|geode|facet/);
+    expect(unarmed.starters.tap).toBe('lead-punch');
+    for (const a of [PRISMOR_KIT.a1, PRISMOR_KIT.a2, PRISMOR_KIT.a3, PRISMOR_KIT.a4, PRISMOR_KIT.a5!])
+      expect(unarmed.moves.some((m) => m.id === a.id)).toBe(false);
+  });
+
+  it('his taps hit a little lighter than other fighters', () => {
+    const taps = ['lead-punch', 'rear-cross', 'swinging-hook'].map(
+      (id) => unarmed.moves.find((m) => m.id === id)!.damage,
+    );
+    const others = ['chronos', 'psion', 'reson', 'geargrind'].map((id) => {
+      const d = resolveCharacter(id, BUILT_IN_LIBRARY) as unknown as {
+        moves: Record<string, { damage: number }>;
+        starters: { tap: string };
+      };
+      return d.moves[d.starters.tap]!.damage;
+    });
+    expect(Math.max(...taps)).toBeLessThanOrEqual(Math.min(...others) + 1);
+    expect(taps[0]).toBeLessThan(Math.min(...others));
+  });
+
+  it('a held weapon swaps his taps for its own, and shattering brings the punches straight back', () => {
+    const set = ARSENAL_MOVESETS.greatsword;
+    const own = resolveCharacter('prismor', BUILT_IN_LIBRARY) as unknown as {
+      moves: Record<string, never>;
+      starters: Record<string, string>;
+    };
+    const c = new MoveController(own.moves, own.starters);
+    const ctx = { airborne: false, falling: false, forward: false };
+    c.press(ctx);
+    expect(c.attack?.id).toBe('lead-punch');
+    c.useMoveset(set.moves, set.starters);
+    expect(c.attack).toBeNull(); // the swap stops what was running
+    c.press(ctx);
+    expect(c.attack?.id).toBe('gs-sweep');
+    c.resetMoveset();
+    c.press(ctx);
+    expect(c.attack?.id).toBe('lead-punch');
+  });
+});
+
+describe('Crystal Guard', () => {
+  const raise = (c: Combatant) => c.raiseCrystalShield({ hp: 110, hits: 0, seconds: 1e9, heavyFactor: 2 });
+  const hit = { baseDamage: 40, attackerPower: 1, heavy: false, fromFront: true, critRoll: 1, staggers: true };
+
+  it('absorbs frontal blows without touching his HP, and wears down on its own durability', () => {
+    const c = new Combatant({ maxHp: 1000, defence: 1 } as never);
+    const hp = c.hp;
+    raise(c);
+    c.receive(hit, 0, 1);
+    expect(c.hp).toBe(hp);
+    expect(c.crystalShieldHp).toBeLessThan(110);
+    const before = c.crystalShieldHp;
+    c.receive({ ...hit, heavy: true }, 0, 1);
+    expect(before - c.crystalShieldHp).toBeGreaterThan(40); // a heavy blow wears it down faster
+  });
+
+  it('shatters at zero durability and says so (the scene makes the explosion)', () => {
+    const c = new Combatant({ maxHp: 1000, defence: 1 } as never);
+    raise(c);
+    for (let i = 0; i < 6; i++) c.receive(hit, 0, 1);
+    expect(c.crystalShieldLeftS).toBe(0);
+    expect(c.takeCrystalBreaks().shield).toBe(true);
+    const burst = PRISMOR_KIT.a1.delivery;
+    expect(burst.type === 'arsenal' && burst.guardBurst.payload.damage).toBeGreaterThan(0);
+  });
+
+  it('does nothing against blows from behind', () => {
+    const c = new Combatant({ maxHp: 1000, defence: 1 } as never);
+    raise(c);
+    const hp = c.hp;
+    c.receive({ ...hit, fromFront: false }, 0, 1);
+    expect(c.hp).toBeLessThan(hp);
+  });
+});
+
+describe('Crystal Slide', () => {
+  it('slides along the ground, hits what it touches, and thorns erupt where it stops and hurt anyone caught there', () => {
+    const { host, log } = arena({ foe: { x: 9, y: 0 } });
+    const w = new AbilityWorld();
+    const slide = PRISMOR_KIT.a2;
+    w.release('me', slide, { x: 9, y: 0 }, host);
+    run(w, host, 0.6);
+    expect(log.me.x).toBeGreaterThan(6); // it covered the ground
+    expect(w.slideTrail.length).toBeGreaterThan(3); // and left a trail
+    expect(w.telegraphs).toHaveLength(1); // thorns are warning where it stopped
+    const thorn = w.telegraphs[0]!;
+    expect(Math.hypot(thorn.x - log.me.x, thorn.y - log.me.y)).toBeLessThan(0.5);
+    log.hits.length = 0;
+    // The foe stands at the stopping point: the thorns are a real blast with their own damage.
+    run(w, host, 0.6);
+    expect(w.telegraphs).toHaveLength(0);
+    const d = slide.delivery;
+    expect(d.type === 'dash' && d.slide?.thorns.payload.damage).toBeGreaterThan(0);
+    expect(log.fx).toContain('crystal-thorns');
+  });
+});
+
+describe('Crystal Groundstrike', () => {
+  it('marks exactly four separate zones inside the arena, apart from each other, and each erupts as its own blast', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { host, log } = arena({ foe: { x: 4, y: 3 } });
+      const w = new AbilityWorld(mulberry(seed));
+      w.release('me', PRISMOR_KIT.a5!, { x: 4, y: 3 }, host);
+      expect(w.telegraphs, `seed ${seed}`).toHaveLength(4);
+      for (const t of w.telegraphs) {
+        expect(host.standable?.({ x: t.x, y: t.y }), `seed ${seed} inside the arena`).toBe(true);
+        expect(Math.hypot(t.x - 4, t.y - 3), `seed ${seed} near the opponent`).toBeLessThanOrEqual(5);
+        expect(Math.hypot(t.x, t.y), `seed ${seed} within his attack range`).toBeLessThanOrEqual(7.6);
+      }
+      const centres = w.telegraphs.map((t) => `${t.x.toFixed(2)},${t.y.toFixed(2)}`);
+      expect(new Set(centres).size).toBe(4);
+      log.fx.length = 0;
+      run(w, host, 1.6);
+      expect(log.fx.filter((v) => v === 'crystal-groundstrike').length).toBe(4); // four impacts, never one big one
+      expect(w.telegraphs).toHaveLength(0);
+    }
+  });
+});
+
+describe('Crystal Prison', () => {
+  const cast = (w: AbilityWorld, h: AbilityHost) => w.release('me', PRISMOR_KIT.a4, { x: 3, y: 0 }, h);
+  const react = (PRISMOR_KIT.a4.delivery.type === 'legTrap' && PRISMOR_KIT.a4.delivery.reactS) || 0;
+
+  it('traps a grounded opponent for exactly 4 seconds, and the legs free themselves then', () => {
+    const { host, log } = arena();
+    const w = new AbilityWorld();
+    cast(w, host);
+    run(w, host, react + 0.1);
+    expect(log.trapped).toEqual([4]);
+    expect(w.prisons[0]?.phase).toBe('held');
+    // The host counts the time down; while it holds nothing releases it, and when it ends the crystals shatter.
+    run(w, host, 2, () => (log.trapLeft = Math.max(0, log.trapLeft - 1 / 60)));
+    expect(w.prisons).toHaveLength(1);
+    run(w, host, 2.1, () => (log.trapLeft = Math.max(0, log.trapLeft - 1 / 60)));
+    expect(w.prisons).toHaveLength(0);
+    expect(log.fx).toContain('prison-shatter');
+  });
+
+  it('lets a grounded opponent jump clear before the crystals lock', () => {
+    const { host, log } = arena();
+    const w = new AbilityWorld();
+    cast(w, host);
+    run(w, host, 0.2);
+    log.foeHeight = 0.6; // it jumps
+    run(w, host, 0.1);
+    log.foeHeight = 0;
+    run(w, host, react + 0.3);
+    expect(log.trapped).toEqual([]); // never trapped
+    expect(w.prisons).toHaveLength(0);
+  });
+
+  it('catches an opponent that flies or hovers, however high, and cannot be escaped by being airborne', () => {
+    const { host, log } = arena({ foe: { flies: true, heightM: 1.4 } });
+    const w = new AbilityWorld();
+    cast(w, host);
+    run(w, host, react + 0.1);
+    expect(log.trapped).toEqual([4]); // a flier is caught like anyone else (the scene drags it to the floor)
+  });
+
+  it('cannot be broken by hits: nothing the world does shortens the hold', () => {
+    const { host, log } = arena();
+    const w = new AbilityWorld();
+    cast(w, host);
+    run(w, host, react + 0.1);
+    for (let i = 0; i < 20; i++)
+      host.hitFighter('me', 'foe', { damage: 50, knockbackMps: 5, heavy: true, strength: 900 }, { x: 1, y: 0 });
+    run(w, host, 1);
+    expect(log.trapped).toEqual([4]); // still the one hold, never released early
+    expect(log.trapLeft).toBe(4);
+  });
+});
+
+describe('Shard Volley', () => {
+  it('fires a rapid fan of small shards', () => {
+    const { host } = arena();
+    const w = new AbilityWorld(mulberry(3));
+    w.release('me', PRISMOR_KIT.a3, { x: 5, y: 0 }, host);
+    expect(w.projectiles).toHaveLength(9);
+    const angles = new Set(w.projectiles.map((p) => Math.round(Math.atan2(p.dir.y, p.dir.x) * 100)));
+    expect(angles.size).toBeGreaterThan(5); // spread across the cone
+    expect(PRISMOR_KIT.a3.payload.damage).toBeLessThanOrEqual(10); // each one is small
+  });
+});
+
+/** A small deterministic random source. */
+function mulberry(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
