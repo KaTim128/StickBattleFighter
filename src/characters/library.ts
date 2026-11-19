@@ -16,6 +16,13 @@ import infernoCharacter from '../data/characters/inferno/character.json';
 import infernoEffects from '../data/characters/inferno/effects.json';
 import infernoMoveset from '../data/characters/inferno/moveset.json';
 import infernoStats from '../data/characters/inferno/stats.json';
+import kenshiroAi from '../data/characters/kenshiro/ai.json';
+import kenshiroAnimation from '../data/characters/kenshiro/animation-profile.json';
+import kenshiroAudio from '../data/characters/kenshiro/audio.json';
+import kenshiroCharacter from '../data/characters/kenshiro/character.json';
+import kenshiroEffects from '../data/characters/kenshiro/effects.json';
+import kenshiroMoveset from '../data/characters/kenshiro/moveset.json';
+import kenshiroStats from '../data/characters/kenshiro/stats.json';
 import necroAi from '../data/characters/necro/ai.json';
 import necroAnimation from '../data/characters/necro/animation-profile.json';
 import necroAudio from '../data/characters/necro/audio.json';
@@ -87,6 +94,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudCharacter,
     vexorisCharacter,
     aerionCharacter,
+    kenshiroCharacter,
     skeletonCharacter,
     dummyCharacter,
   ]),
@@ -101,6 +109,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudAnimation,
     vexorisAnimation,
     aerionAnimation,
+    kenshiroAnimation,
   ]),
   moveset: byId<MovesetProfile>([
     baseMoveset,
@@ -110,6 +119,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudMoveset,
     vexorisMoveset,
     aerionMoveset,
+    kenshiroMoveset,
     skeletonMoveset,
   ]),
   stats: byId<StatsProfile>([
@@ -120,6 +130,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudStats,
     vexorisStats,
     aerionStats,
+    kenshiroStats,
     skeletonStats,
     dummyStats,
   ]),
@@ -131,6 +142,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudEffects,
     vexorisEffects,
     aerionEffects,
+    kenshiroEffects,
     skeletonEffects,
   ]),
   audio: byId<AudioProfile>([
@@ -141,8 +153,20 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudAudio,
     vexorisAudio,
     aerionAudio,
+    kenshiroAudio,
   ]),
-  ai: byId<AiProfile>([defaultAi, dummyAi, skeletonAi, infernoAi, rampageAi, necroAi, shroudAi, vexorisAi, aerionAi]),
+  ai: byId<AiProfile>([
+    defaultAi,
+    dummyAi,
+    skeletonAi,
+    infernoAi,
+    rampageAi,
+    necroAi,
+    shroudAi,
+    vexorisAi,
+    aerionAi,
+    kenshiroAi,
+  ]),
 };
 
 /** Who fights by default (the player's fighter and the Practice opponent). */

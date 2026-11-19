@@ -1,0 +1,39 @@
+{
+  "id": "kenshiro-stats",
+  "maxHp": 1010,
+  "maxStamina": 100,
+  "staminaRegenPerS": 34,
+  "staminaRegenDelayS": 0.7,
+  "movement": {
+    "maxSpeedMps": 5.2,
+    "accelMps2": 66,
+    "decelMps2": 60,
+    "jumpSpeedMps": 6.9,
+    "gravityMps2": 20
+  },
+  "body": {
+    "footRadiusM": 0.3,
+    "massKg": 66
+  },
+  "power": 1.0,
+  "defence": 1.08,
+  "critChance": 0.14,
+  "critMultiplier": 1.6,
+  "knockbackResistance": 0,
+  "multipliers": {
+    "attackSpeed": 1.08,
+    "punchDamage": 1,
+    "kickDamage": 1.0,
+    "aerialDamage": 1.0,
+    "knockback": 0.95,
+    "movementSpeed": 1.0,
+    "jumpForce": 1.0,
+    "clashPower": 1,
+    "specialCharge": 1
+  },
+  "hitStunResistance": 0,
+  "objects": {
+    "maxLiftKg": 18,
+    "throwPower": 0.95
+  }
+}

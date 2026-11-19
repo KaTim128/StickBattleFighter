@@ -1,0 +1,11 @@
+{
+  "id": "kenshiro-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Jab": "kenshiro.slash",
+    "Hook": "kenshiro.reverse",
+    "SideKick": "kenshiro.dual",
+    "RoundhouseKick": "kenshiro.finish",
+    "HeavyAttack": "kenshiro.overhead"
+  }
+}

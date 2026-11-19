@@ -1,0 +1,66 @@
+{
+  "id": "kenshiro",
+  "template": "base-stickman",
+  "displayName": "Kenshiro",
+  "description": "Kenshiro has never been seen to strike first. He stands, he watches, and when you commit he is already behind your guard. He keeps two swords and a rule: no cut is wasted. The arena is only the latest place where someone had to learn it.",
+  "characterType": "fighter",
+  "element": "steel",
+  "combatStyle": "swordsmanship",
+  "profiles": {
+    "animation": "kenshiro-animation",
+    "moveset": "kenshiro-moveset",
+    "stats": "kenshiro-stats",
+    "effects": "kenshiro-effects",
+    "audio": "kenshiro-audio",
+    "ai": "kenshiro-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.52,
+      "neck": 0.07,
+      "headRadius": 0.15,
+      "upperArm": 0.29,
+      "foreArm": 0.28,
+      "thigh": 0.42,
+      "shin": 0.42
+    },
+    "colour": "#7a1822",
+    "colourBack": "#4d0e16",
+    "outline": "#140508",
+    "limbWidthM": 0.078,
+    "outlineWidthM": 0.032,
+    "spine": 0.53
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": true,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "kenshiro-kit"
+}

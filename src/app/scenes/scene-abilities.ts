@@ -129,6 +129,10 @@ export class SceneAbilities implements AbilityHost {
     if (ev.released) {
       const def = ev.released;
       if (def.delivery.type === 'leap') f.combatant.grantInvulnerability(def.delivery.airS + 0.1); // airborne: untouchable
+      if (def.delivery.type === 'judgement')
+        f.combatant.grantInvulnerability(
+          def.delivery.strikes * def.delivery.strikeIntervalS + def.delivery.resolveDelayS + 0.6,
+        ); // unseen until the blow lands
       const aim = this.aimOverrides.get(f.name) ?? this.releaseAimSource(f, def) ?? this.aimFor(f, def);
       this.aimOverrides.delete(f.name);
       this.world.release(f.name, def, aim, this);
@@ -215,7 +219,11 @@ export class SceneAbilities implements AbilityHost {
     const target = this.byName(targetId);
     if (!attacker || !target) return false;
     // A power buff (Death's Dominion) strengthens the caster's abilities while it lasts.
-    const damage = payload.damage * (attacker.buff?.abilityDamageFactor ?? 1);
+    let damage = payload.damage * (attacker.buff?.abilityDamageFactor ?? 1);
+    // Sword Mastery (Kenshiro): enough stacks make the next sword ability stronger, every hit of it.
+    const mastery = attacker.caster?.kit.passive?.mastery;
+    if (payload.sword && mastery)
+      damage *= attacker.combatant.swordFactor(mastery.threshold, mastery.damageFactor, mastery.windowS);
     const landed = this.strike(attacker, target, {
       damage,
       heavy: payload.heavy,
@@ -245,6 +253,10 @@ export class SceneAbilities implements AbilityHost {
       c.hp = Math.min(c.stats.maxHp, c.hp + damage * payload.lifesteal);
     }
     return landed;
+  }
+
+  parryWindowFactor(casterId: string): number {
+    return this.byName(casterId)?.buff?.parryWindowFactor ?? 1;
   }
 
   fogFighter(targetId: string, fog: { sightM: number; speedFactor: number; chipDps: number; stack: boolean }): void {

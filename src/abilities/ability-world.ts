@@ -104,6 +104,8 @@ export interface AbilityHost {
   teleport?(casterId: string, to: Vec2): Vec2 | null;
   /** Keep a fighter helpless for this long (seized by a grab). Optional. */
   hold?(targetId: string, seconds: number): void;
+  /** How much longer this caster's parry stance lasts right now (Focus Stance: 1.5); 1 when nothing changes it. */
+  parryWindowFactor?(casterId: string): number;
   /**
    * Choke a fighter standing in a fog this step (Plague Bloom): short sight, slowed, chip damage, and `stack` = true
    * the one time it earns a stack of poison. Optional.
@@ -190,6 +192,26 @@ export interface Grenade {
   /** The fighter it is stuck to. */
   stuckTo?: string;
   ageS: number;
+}
+
+/** A parry stance up (see `ParryDelivery`): the next attack from the front is deflected and answered. */
+export interface Parry {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  leftS: number;
+  readonly totalS: number;
+}
+
+interface JudgementAction {
+  readonly kind: 'judgement';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly origin: Vec2;
+  readonly targetId: string | null;
+  /** 'rush' to the target, 'cut' the strikes, 'wait' for the blow to land after returning. */
+  phase: 'rush' | 'cut' | 'wait';
+  t: number;
+  cuts: number;
 }
 
 /** A Death Mark in progress (see `MarkDelivery`). */
@@ -291,7 +313,7 @@ interface AssaultAction {
   stabs: number;
 }
 
-type Action = DashAction | LeapAction | PullAction | GrabAction | AssaultAction;
+type Action = DashAction | LeapAction | PullAction | GrabAction | AssaultAction | JudgementAction;
 
 /** How a grab turned out, for the caster's animation. */
 export type GrabOutcome =
@@ -343,6 +365,7 @@ export class AbilityWorld {
   readonly zones: FireZone[] = [];
   readonly clouds: Cloud[] = [];
   readonly grenades: Grenade[] = [];
+  readonly parries: Parry[] = [];
   readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -375,6 +398,7 @@ export class AbilityWorld {
     }
     for (const t of this.telegraphs) if (t.casterId === casterId) ids.add(t.def.id);
     for (const m of this.marks) if (m.casterId === casterId) ids.add(m.def.id);
+    for (const p of this.parries) if (p.casterId === casterId) ids.add(p.def.id);
     return ids;
   }
 
@@ -466,6 +490,25 @@ export class AbilityWorld {
     return this.grabOutcomes.get(casterId);
   }
 
+  /** The parry stance this caster has up, if any. */
+  parryOf(casterId: string): Parry | undefined {
+    return this.parries.find((p) => p.casterId === casterId);
+  }
+
+  /** The stance is spent (it deflected something). */
+  consumeParry(casterId: string): void {
+    const i = this.parries.findIndex((p) => p.casterId === casterId);
+    if (i >= 0) this.parries.splice(i, 1);
+  }
+
+  /** A caster's Final Judgement, for its animation: which phase, how many cuts so far, and the time into the phase. */
+  judgementOf(casterId: string): { phase: 'rush' | 'cut' | 'wait'; cuts: number; t: number } | null {
+    const a = this.actions.find((x) => x.kind === 'judgement' && x.casterId === casterId) as
+      | JudgementAction
+      | undefined;
+    return a ? { phase: a.phase, cuts: a.cuts, t: a.t } : null;
+  }
+
   /** Tornadoes standing now (Cyclone Lift): where, how long they have spun, and how long the lift lasts. */
   get cyclones(): { x: number; y: number; ageS: number; liftS: number; palette: MagicLook['palette'] | null }[] {
     const out: { x: number; y: number; ageS: number; liftS: number; palette: MagicLook['palette'] | null }[] = [];
@@ -548,6 +591,28 @@ export class AbilityWorld {
           sfx: def.sfx.release,
           x: foe.x,
           y: foe.y,
+        });
+        break;
+      }
+      case 'parry': {
+        // One stance per caster; its window is longer under Focus Stance.
+        for (let i = this.parries.length - 1; i >= 0; i--)
+          if (this.parries[i]!.casterId === casterId) this.parries.splice(i, 1);
+        const total = d.windowS * (host.parryWindowFactor?.(casterId) ?? 1);
+        this.parries.push({ casterId, def, leftS: total, totalS: total });
+        break;
+      }
+      case 'judgement': {
+        const foe = this.nearestEnemy(casterId, at, d.rangeM, host);
+        this.actions.push({
+          kind: 'judgement',
+          casterId,
+          def,
+          origin: { x: at.x, y: at.y },
+          targetId: foe?.id ?? null,
+          phase: foe ? 'rush' : 'cut',
+          t: 0,
+          cuts: 0,
         });
         break;
       }
@@ -888,6 +953,11 @@ export class AbilityWorld {
     this.updateZones(dtS, host);
     this.updateClouds(dtS, host);
     this.updateGrenades(dtS, host);
+    for (let i = this.parries.length - 1; i >= 0; i--) {
+      const p = this.parries[i]!;
+      p.leftS -= dtS;
+      if (p.leftS <= 0) this.parries.splice(i, 1);
+    }
     this.updateMarks(dtS, host);
   }
 
@@ -1132,7 +1202,9 @@ export class AbilityWorld {
               ? this.stepPull(a, dtS, host)
               : a.kind === 'assault'
                 ? this.stepAssault(a, dtS, host)
-                : this.stepGrab(a, dtS, host);
+                : a.kind === 'judgement'
+                  ? this.stepJudgement(a, dtS, host)
+                  : this.stepGrab(a, dtS, host);
       if (finished) {
         // The action may have been removed meanwhile (a new pull on the same target).
         const at = this.actions.indexOf(a);
@@ -1306,6 +1378,78 @@ export class AbilityWorld {
     if (a.remainingS <= 0) return true;
     host.drive(a.casterId, { x: a.dir.x * d.speedMps, y: a.dir.y * d.speedMps }, 0);
     return false;
+  }
+
+  /**
+   * Final Judgement: rush in, cut `strikes` times with nothing landing, return to the start, then after a beat every cut
+   * lands at once as one blow with a finishing flash.
+   */
+  private stepJudgement(a: JudgementAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'judgement') return true;
+    a.t += dtS;
+    const me = host.position(a.casterId);
+    const foe = a.targetId ? host.fighters().find((f) => f.id === a.targetId) : undefined;
+    if (a.phase === 'rush') {
+      if (!foe?.hittable) return true;
+      const gap = Math.hypot(foe.x - me.x, foe.y - me.y) - foe.radiusM;
+      if (gap <= 1.0 || a.t > 0.45) {
+        host.drive(a.casterId, null, 0);
+        a.phase = 'cut';
+        a.t = 0;
+        return false;
+      }
+      const dir = norm({ x: foe.x - me.x, y: foe.y - me.y });
+      host.drive(a.casterId, { x: dir.x * 28, y: dir.y * 28 }, 0);
+      return false;
+    }
+    if (a.phase === 'cut') {
+      host.face?.(a.casterId, foe ? norm({ x: foe.x - me.x, y: foe.y - me.y }) : { x: 1, y: 0 });
+      while (a.cuts < d.strikes && a.t >= a.cuts * d.strikeIntervalS) {
+        a.cuts++;
+        const at = foe ?? me;
+        host.emit({
+          kind: 'release',
+          ability: a.def.id,
+          look: a.def.look,
+          vfx: 'judgement-cut',
+          sfx: a.def.sfx.release,
+          x: at.x,
+          y: at.y,
+        });
+      }
+      if (a.cuts < d.strikes || a.t < d.strikes * d.strikeIntervalS) return false;
+      // Back to where he began, unseen: the cuts are done and nothing has landed yet.
+      host.teleport?.(a.casterId, a.origin);
+      host.drive(a.casterId, null, 0);
+      a.phase = 'wait';
+      a.t = 0;
+      return false;
+    }
+    if (a.t < d.resolveDelayS) return false;
+    // All the cuts land together.
+    if (foe?.hittable) {
+      const payload = { ...a.def.payload, damage: a.def.payload.damage * d.strikes };
+      this.hit(
+        host,
+        a.casterId,
+        foe.id,
+        payload,
+        norm({ x: foe.x - a.origin.x, y: foe.y - a.origin.y }),
+        a.def.look?.hitFlash,
+      );
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: a.def.sfx.impact,
+        x: foe.x,
+        y: foe.y,
+        radiusM: 2.2,
+      });
+    }
+    return true;
   }
 
   private stepAssault(a: AssaultAction, dtS: number, host: AbilityHost): boolean {

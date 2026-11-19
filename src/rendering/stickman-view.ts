@@ -116,6 +116,8 @@ export class StickmanView {
   grenade = 0;
   /** How far the wings are spread (0 folded, 1 wide) and how hard they beat (winged skins). */
   wingSpread = 0.3;
+  /** 0..1 how strongly a Focus Stance glows along the blades (Kenshiro). */
+  focus = 0;
   wingFlap = 0;
   /** 0..1 red glow in the eyes of a mask (Death Mark charged). */
   eyeGlow = 0;
@@ -968,6 +970,64 @@ export class StickmanView {
    * from the fist (owner, 13/11/2026): a polished steel blade with a bright cutting edge, a dark spine shade, a small steel
    * guard, and a red stain toward the tip.
    */
+  /**
+   * A katana: a wrapped hilt in the fist, a round guard, and a long, slim, slightly curved blade with a bright edge and a
+   * darker spine, cocked `tilt` radians up from the forearm line. `len` is the blade's length, metres.
+   */
+  private drawKatana(g: Graphics, hand: Point, fx: number, fy: number, tilt: number, len: number, o: number): void {
+    const c = Math.cos(tilt);
+    const sn = Math.sin(tilt);
+    const ux = fx * c - fy * sn;
+    const uy = fx * sn + fy * c;
+    const nx = -uy;
+    const ny = ux;
+    const at = (k: number, side: number) => ({ x: hand.x + ux * k + nx * side, y: hand.y + uy * k + ny * side });
+    // The hilt: dark wrap with crimson ties.
+    g.moveTo(at(-0.16, 0).x, at(-0.16, 0).y)
+      .lineTo(at(0.03, 0).x, at(0.03, 0).y)
+      .stroke({ width: 0.05 + o * 2, color: 0x0a0204, cap: 'round' });
+    g.moveTo(at(-0.16, 0).x, at(-0.16, 0).y)
+      .lineTo(at(0.03, 0).x, at(0.03, 0).y)
+      .stroke({ width: 0.04, color: 0x3a0c14, cap: 'round' });
+    for (const k of [-0.12, -0.07, -0.02]) {
+      g.moveTo(at(k, -0.02).x, at(k, -0.02).y)
+        .lineTo(at(k + 0.02, 0.02).x, at(k + 0.02, 0.02).y)
+        .stroke({ width: 0.01, color: 0xb8202e, cap: 'round' });
+    }
+    // The blade: slim, with a slight upward curve (the tip lifts toward the edge side).
+    const bow = len * 0.04;
+    const blade = [
+      at(0.04, 0.022),
+      at(len * 0.5, 0.02 + bow),
+      at(len, bow * 1.4),
+      at(len * 0.5, -0.012 + bow * 0.6),
+      at(0.04, -0.016),
+    ];
+    const flat = blade.flatMap((q) => [q.x, q.y]);
+    g.poly(flat).fill(0x2a2f38);
+    g.poly(flat).stroke({ width: o * 1.5 + 0.006, color: 0x0a0204, join: 'round' });
+    const edge = [
+      at(0.05, 0.02),
+      at(len * 0.5, 0.018 + bow),
+      at(len * 0.98, bow * 1.4),
+      at(len * 0.5, 0.004 + bow),
+      at(0.05, 0.004),
+    ];
+    g.poly(edge.flatMap((q) => [q.x, q.y])).fill(0xdfe6ee);
+    g.moveTo(at(0.06, 0.012).x, at(0.06, 0.012).y)
+      .lineTo(at(len * 0.92, 0.012 + bow * 1.2).x, at(len * 0.92, 0.012 + bow * 1.2).y)
+      .stroke({ width: 0.007, color: 0xffffff, alpha: 0.95, cap: 'round' });
+    // The guard (tsuba): a small round disc, gold-rimmed.
+    g.circle(at(0.04, 0).x, at(0.04, 0).y, 0.045).fill(0x1a0a0c);
+    g.circle(at(0.04, 0).x, at(0.04, 0).y, 0.045).stroke({ width: 0.012, color: 0xc9a34a });
+    // A subtle crimson glow runs along the blade while a Focus Stance is held.
+    if (this.focus > 0.01) {
+      g.moveTo(at(0.06, 0.005).x, at(0.06, 0.005).y)
+        .lineTo(at(len, bow * 1.4).x, at(len, bow * 1.4).y)
+        .stroke({ width: 0.05, color: 0xff3a48, alpha: 0.28 * this.focus, cap: 'round' });
+    }
+  }
+
   private drawKnife(g: Graphics, hand: Point, fx: number, fy: number, o: number): void {
     // Owner, 13/11/2026: the blade points up diagonally, not straight along the forearm: the wrist
     // cocks it about 50 degrees upward (the figure faces +x; up is -y).
@@ -1360,6 +1420,16 @@ export class StickmanView {
     }
     if (this.held === 'knife') {
       this.drawKnife(g, hand, ux, uy, o);
+      return;
+    }
+    if (this.held === 'katana') {
+      // Two swords (Kenshiro): the lead hand's blade points forward and a little up, the rear hand's cocked back.
+      this.drawKatana(g, hand, ux, uy, -0.22, 0.82, o);
+      const [, be, bh] = s.armBack;
+      const bx = bh.x - be.x;
+      const by = bh.y - be.y;
+      const bl = Math.hypot(bx, by) || 1;
+      this.drawKatana(g, bh, bx / bl, by / bl, -0.5, 0.68, o);
       return;
     }
     // Grave blade: one clean tapered blade of dark violet obsidian with a pale cutting edge (it

@@ -1,0 +1,227 @@
+{
+  "id": "kenshiro-moveset",
+  "starters": {
+    "tap": "katana-slash",
+    "tap-forward": "front-kick",
+    "air-tap": "jumping-front-kick",
+    "falling-tap": "boot-stomp",
+    "heavy": "overhead-cut"
+  },
+  "moves": [
+    {
+      "id": "katana-slash",
+      "displayName": "Horizontal katana slash",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.09,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.6,
+        "radiusM": 0.6
+      },
+      "damage": 12,
+      "strength": 240,
+      "knockbackMps": 1.6,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch"],
+      "next": {
+        "tap": "reverse-slash"
+      },
+      "effect": "sword-hit"
+    },
+    {
+      "id": "reverse-slash",
+      "displayName": "Reverse diagonal slash",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.7,
+        "radiusM": 0.65
+      },
+      "damage": 13,
+      "strength": 240,
+      "knockbackMps": 1.8,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "dual-strike"
+      },
+      "effect": "sword-hit"
+    },
+    {
+      "id": "dual-strike",
+      "displayName": "Dual blade strike",
+      "animationState": "SideKick",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.12,
+      "activeS": 0.1,
+      "recoveryS": 0.25,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.7,
+        "radiusM": 0.8
+      },
+      "damage": 15,
+      "strength": 240,
+      "knockbackMps": 2.4,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "finishing-cut"
+      },
+      "effect": "sword-hit"
+    },
+    {
+      "id": "finishing-cut",
+      "displayName": "Powerful finishing cut",
+      "animationState": "RoundhouseKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.17,
+      "activeS": 0.1,
+      "recoveryS": 0.38,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.9,
+        "radiusM": 0.7
+      },
+      "damage": 20,
+      "strength": 240,
+      "knockbackMps": 5.0,
+      "lungeMps": 2.2,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "effect": "sword-heavy"
+    },
+    {
+      "id": "front-kick",
+      "displayName": "Front kick",
+      "animationState": "FrontKick",
+      "category": "kick",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.07,
+      "recoveryS": 0.24,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.2,
+        "radiusM": 0.5
+      },
+      "damage": 13,
+      "strength": 300,
+      "knockbackMps": 2.2,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canKick"]
+    },
+    {
+      "id": "jumping-front-kick",
+      "displayName": "Jumping front kick",
+      "animationState": "JumpingFrontKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.09,
+      "activeS": 0.12,
+      "recoveryS": 0.3,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.1,
+        "radiusM": 0.5
+      },
+      "damage": 22,
+      "strength": 520,
+      "knockbackMps": 3.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.03,
+      "requires": ["canUseAerialKicks"]
+    },
+    {
+      "id": "boot-stomp",
+      "displayName": "Boot stomp",
+      "animationState": "DownwardAerialKick",
+      "category": "kick",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.07,
+      "activeS": 0.14,
+      "recoveryS": 0.28,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 0.95,
+        "radiusM": 0.5
+      },
+      "damage": 30,
+      "strength": 700,
+      "knockbackMps": 4.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.03,
+      "requires": ["canUseAerialKicks"]
+    },
+    {
+      "id": "overhead-cut",
+      "displayName": "Overhead katana slash",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.45,
+      "activeS": 0.1,
+      "recoveryS": 0.44,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.9,
+        "radiusM": 0.7
+      },
+      "damage": 38,
+      "strength": 240,
+      "knockbackMps": 5.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "effect": "sword-heavy",
+      "sfx": "hit-kenshiro-overhead"
+    }
+  ]
+}

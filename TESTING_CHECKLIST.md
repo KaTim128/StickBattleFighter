@@ -630,3 +630,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Aerion appears on the select screen (stance, details with passive), Practice, Tournament and the Admin Panel; he hovers and his wings change with movement, air, Tailwind and Feather Guard.
 - [ ] Light combo: palm, spinning kick, wing slash, upward launcher; heavy wing smash with a wind ring; momentum stacks speed up his run.
 - [ ] Q dives on the aimed spot; E throws three blades; F raises a tornado, lifts a close enemy and flings them; R Tailwind; the fifth ability swaps for R; I Celestial Tempest rains blades then dives.
+
+### Kenshiro (21/11/2026, TD-124)
+- [ ] Kenshiro appears on the select screen, in Practice, Tournament and the Admin Panel with two swords, a kabuto, and a crimson waist cloth.
+- [ ] Light combo of four distinct cuts; heavy is an overhead slash; mastery stacks glow the blades when ready.
+- [ ] Q Twin Fang (two cuts), E Perfect Parry (stance ring; deflect and counter an attack from the front, wasted if nothing comes), F Blade Tempest (six different cuts), R Focus Stance (red glow, parry lasts longer), the fifth ability Iaido Draw (5 m cut line), I Final Judgement (rush, unseen cuts, return, one huge blow).

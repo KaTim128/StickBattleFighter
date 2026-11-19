@@ -83,6 +83,10 @@ export interface PremiumSkin {
     readonly edge: number;
     readonly glow: number;
   };
+  /** A samurai helmet over the head: a bowl and brow, a neck guard, and crescent horns (Kenshiro). */
+  readonly helm?: { readonly armour: number; readonly trim: number };
+  /** Waist cloth: two flaps of cloth from the belt to the thighs, with a trimmed hem (Kenshiro). */
+  readonly tassets?: { readonly cloth: number; readonly shade: number; readonly trim: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
   readonly hoverM?: number;
 }
@@ -282,6 +286,40 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     wings: { feather: 0xf2f8ff, featherShade: 0xb8cce2, edge: 0x2f4157, glow: 0x8fc4f4 },
     hoverM: 0.14,
   },
+  // Kenshiro (master plan section 4): dark red and black lacquered armour, black pauldrons, a waist cloth of crimson,
+  // a horned kabuto, lean and balanced. Two katana are drawn by the view.
+  samurai: {
+    palette: {
+      outline: 0x120406,
+      skin: 0x8a1c28,
+      skinLit: 0xc03244,
+      skinShade: 0x4c0c14,
+      skinBack: 0x5e1019,
+      rim: 0xff7a84,
+      armour: 0x1b1315,
+      armourLit: 0x4b3b3e,
+      armourEdge: 0x090405,
+      seam: 0xd02438,
+      lava: 0xff8a92,
+      glow: 0xd02438,
+      hand: 0x1b1315,
+    },
+    bulk: 1.2,
+    muscle: 0.55,
+    gear: {
+      shoulder: 'guard',
+      bracers: true,
+      legs: 'trousers',
+      kneeGuards: true,
+      shinGuards: true,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: false, fists: false },
+    head: 'own',
+    helm: { armour: 0x1b1315, trim: 0xc9a34a },
+    tassets: { cloth: 0x9c1d2c, shade: 0x5a0f18, trim: 0xc9a34a },
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -480,6 +518,7 @@ export class PremiumModel {
     } else {
       this.torso(g, fire, s);
       this.leg(g, fire, s.legFront, false);
+      if (this.skin.tassets) this.tassets(g, s);
     }
     const hs = this.skin.head;
     if (hs === 'crest' || hs === 'brute') this.head(g, fire, s, hs);
@@ -489,8 +528,84 @@ export class PremiumModel {
     else {
       this.neck(g, s);
       st.drawHead?.();
+      if (this.skin.helm) this.helm(g, s);
     }
     this.arm(g, fire, s.armFront, false);
+  }
+
+  /** The kabuto: a domed bowl with a peak, a flaring neck guard behind, and two crescent horns on the brow. */
+  private helm(g: Graphics, s: Skel): void {
+    const helm = this.skin.helm;
+    if (!helm) return;
+    const { w, headRadius: r } = this.st;
+    const hx = s.head.x;
+    const hy = s.head.y;
+    const dome: number[] = [];
+    for (let i = 0; i <= 12; i++) {
+      const a = Math.PI + (i / 12) * Math.PI * 1.04;
+      dome.push(hx + Math.cos(a) * r * 1.14, hy - r * 0.05 + Math.sin(a) * r * 1.1);
+    }
+    const outline = this.c(this.P.outline);
+    const neckGuard = [
+      hx - r * 1.1,
+      hy - r * 0.1,
+      hx - r * 1.75,
+      hy + r * 1.0,
+      hx - r * 0.5,
+      hy + r * 1.35,
+      hx + r * 0.2,
+      hy + r * 0.8,
+    ];
+    g.poly(neckGuard).fill(this.c(helm.armour));
+    g.poly(neckGuard).stroke({ width: w * 0.3, color: outline, join: 'round' });
+    for (let k = 1; k < 3; k++) {
+      g.moveTo(hx - r * (1.2 + k * 0.2), hy + r * (0.2 + k * 0.3))
+        .lineTo(hx - r * 0.2, hy + r * (0.55 + k * 0.28))
+        .stroke({ width: w * 0.1, color: this.c(helm.trim), alpha: 0.9 });
+    }
+    g.poly(dome).fill(this.c(helm.armour));
+    g.poly(dome).stroke({ width: w * 0.32, color: outline, join: 'round' });
+    const peak = [hx + r * 0.9, hy - r * 0.25, hx + r * 1.55, hy - r * 0.05, hx + r * 0.9, hy + r * 0.12];
+    g.poly(peak).fill(this.c(helm.armour));
+    g.poly(peak).stroke({ width: w * 0.28, color: outline, join: 'round' });
+    g.moveTo(hx - r * 1.05, hy - r * 0.15)
+      .quadraticCurveTo(hx, hy - r * 0.3, hx + r * 1.2, hy - r * 0.12)
+      .stroke({ width: w * 0.16, color: this.c(helm.trim) });
+    for (const side of [-1, 1]) {
+      g.moveTo(hx + r * 0.35, hy - r * 1.0)
+        .quadraticCurveTo(hx + r * (0.5 + side * 0.15), hy - r * 1.9, hx + r * (1.25 + side * 0.65), hy - r * 2.15)
+        .stroke({ width: w * 0.24, color: this.c(helm.trim), cap: 'round' });
+    }
+  }
+
+  /** The waist cloth: a front and a rear flap from the belt, each following its leg to mid-thigh, with a gold-trimmed hem. */
+  private tassets(g: Graphics, s: Skel): void {
+    const t = this.skin.tassets;
+    if (!t) return;
+    const { w } = this.st;
+    const flap = (leg: readonly Point[], far: boolean) => {
+      const knee = leg[1]!;
+      const tipX = s.pelvis.x + (knee.x - s.pelvis.x) * 0.78;
+      const tipY = s.pelvis.y + (knee.y - s.pelvis.y) * 0.78;
+      const half = w * 1.5;
+      const pts = [
+        s.pelvis.x - half,
+        s.pelvis.y - w * 0.2,
+        s.pelvis.x + half,
+        s.pelvis.y - w * 0.2,
+        tipX + half * 0.9,
+        tipY,
+        tipX - half * 0.9,
+        tipY + w * 0.1,
+      ];
+      g.poly(pts).fill(this.c(far ? t.shade : t.cloth));
+      g.poly(pts).stroke({ width: w * 0.22, color: this.c(this.P.outline), join: 'round' });
+      g.moveTo(tipX - half * 0.9, tipY + w * 0.1)
+        .lineTo(tipX + half * 0.9, tipY)
+        .stroke({ width: w * 0.14, color: this.c(t.trim) });
+    };
+    flap(s.legBack, true);
+    flap(s.legFront, false);
   }
 
   /** Where the hover lifts the figure when standing (render only). */

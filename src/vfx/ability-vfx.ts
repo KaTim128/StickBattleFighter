@@ -125,6 +125,13 @@ export interface AbilityVfxInput {
   readonly clouds?: readonly Cloud[];
   /** Lobbed grenades in flight, landed or stuck (Vexoris). */
   readonly grenades?: readonly Grenade[];
+  /** Parry stances up (Kenshiro's Perfect Parry): where, and how much of the window is left (1 to 0). */
+  readonly parries?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly k: number;
+    readonly palette: Palette | null;
+  }[];
   /** Miniature tornadoes holding an enemy (Aerion's Cyclone Lift). */
   readonly cyclones?: readonly {
     readonly x: number;
@@ -426,6 +433,12 @@ export class AbilityVfx {
         });
       }
       if (this.spikes.length > 60) this.spikes.splice(0, this.spikes.length - 60);
+    }
+    if (fx.kind === 'release' && fx.vfx === 'judgement-cut' && fx.look) {
+      // One of Final Judgement's unseen cuts: a hard white flash and a spray of sparks across the target.
+      this.flashes.push({ x: fx.x, y: fx.y, z: 1.1, r: 0.55, ageS: 0, colour: 0xffffff, lifeS: 0.07 });
+      this.emitAt(fx.x, fx.y, 1.1, 10, 7, 0.22, 0.05, fx.look.palette);
+      return;
     }
     if (fx.kind === 'impact' && fx.stab && fx.look) this.bloodSpray(fx, fx.look.palette);
     if (fx.kind === 'impact' && fx.look?.impact) {
@@ -1200,6 +1213,20 @@ export class AbilityVfx {
       f.circle(c.x, c.y, c.radiusM * swell).fill({ color: pal.deep, alpha: 0.3 * life });
       f.circle(c.x, c.y, c.radiusM * 0.7 * swell).fill({ color: pal.hot, alpha: 0.22 * life });
       if (c.ageS < c.armS) f.circle(c.x, c.y, c.radiusM).stroke({ width: 0.06, color: pal.bright, alpha: 0.6 });
+    }
+
+    // Perfect Parry: a thin ring round him that closes as the window runs out, with a bright flash of crossed steel.
+    for (const pr of input.parries ?? []) {
+      const pal = pr.palette ?? FIRE;
+      const pulse = 0.6 + 0.4 * Math.sin(t * 24);
+      f.circle(pr.x, pr.y, 0.5 + 0.5 * pr.k).stroke({ width: 0.04, color: pal.bright, alpha: 0.7 * pulse });
+      f.circle(pr.x, pr.y, 0.3 + 0.2 * pr.k).fill({ color: pal.hot, alpha: 0.12 });
+      const c = iso(pr.x, pr.y, 1.0);
+      for (const sgn of [-1, 1]) {
+        g.moveTo(c.x - 0.28, c.y - 0.28 * sgn)
+          .lineTo(c.x + 0.28, c.y + 0.28 * sgn)
+          .stroke({ width: 0.03, color: pal.core, alpha: 0.55 * pulse, cap: 'round' });
+      }
     }
 
     // Cyclone Lift: a funnel of stacked, turning rings widening upward, with streaks flung off it.

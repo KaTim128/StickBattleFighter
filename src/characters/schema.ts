@@ -278,9 +278,10 @@ export const BODY_STYLES = [
   'magma',
   'soldier',
   'winged',
+  'samurai',
 ] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
-export const HELD_ITEMS = ['staff', 'bone-sword', 'knife'] as const;
+export const HELD_ITEMS = ['staff', 'bone-sword', 'knife', 'katana'] as const;
 export type HeldItem = (typeof HELD_ITEMS)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */

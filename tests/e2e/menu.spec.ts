@@ -18,8 +18,18 @@ test('admin panel: pick Titan and the training yard, play, then leave the game b
   await expect(menu).toBeVisible();
   // The Admin Panel lists every character (owner, master plan 16/11/2026): the five fighters first,
   // then the skeleton warrior and the training dummy.
-  await expect(menu.locator('[data-fighter]')).toHaveCount(8);
-  for (const id of ['inferno', 'rampage', 'necro', 'shroud', 'vexoris', 'aerion', 'skeleton-warrior', 'training-dummy'])
+  await expect(menu.locator('[data-fighter]')).toHaveCount(9);
+  for (const id of [
+    'inferno',
+    'rampage',
+    'necro',
+    'shroud',
+    'vexoris',
+    'aerion',
+    'kenshiro',
+    'skeleton-warrior',
+    'training-dummy',
+  ])
     await expect(menu.locator(`[data-fighter="${id}"]`)).toHaveCount(1);
   await menu.locator('[data-fighter="rampage"]').click();
   await menu.locator('.mm-d-select').click(); // a card opens the details; Select picks the fighter

@@ -135,6 +135,28 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a3', 'a2'],
     ],
   },
+  // Kenshiro: a patient counter-attacker. Holds mid-range, parries when pressed, cuts in with Twin Fang and Blade Tempest.
+  'kenshiro-ai': {
+    style: 'Counter-attacker: patient, parries when pressed, cuts in with precise strings, ultimate to finish.',
+    preferredRangeM: [1.5, 2.8],
+    movement: 'circle',
+    meleeBias: 0.7,
+    heavyBias: 0.3,
+    defence: 'block',
+    retreatBelowHp: 0.2,
+    hitAndRunS: 0.6,
+    tactics: {
+      a1: { role: 'gapClose', minM: 1, maxM: 3.6, weight: 1.2 },
+      a2: { role: 'buff', minM: 0, maxM: 2.2, weight: 1.1 },
+      a3: { role: 'burst', minM: 0, maxM: 4, weight: 1.1 },
+      a4: { role: 'buff', minM: 0, maxM: 9, weight: 0.7 },
+      ult: { role: 'burst', minM: 0, maxM: 7, weight: 1.3 },
+    },
+    combos: [
+      ['a1', 'a3'],
+      ['a4', 'a3'],
+    ],
+  },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
   'rampage-ai': {
@@ -248,6 +270,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   grenade: { role: 'burst', minM: 3, maxM: 7.5, weight: 1.2 },
   // Feather Guard: fold the wings when hurt and someone is on him.
   featherGuard: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.6 } },
+  // Iaido Draw: a lightning cut to close the gap.
+  iaidoDraw: { role: 'gapClose', minM: 2, maxM: 5.5, weight: 1.2 },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
   deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };

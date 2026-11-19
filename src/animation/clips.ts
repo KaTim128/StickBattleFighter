@@ -256,6 +256,83 @@ const STRIKES = {
     { lean: deg(-4), head: deg(-4), armFront: limb(120, 40), armBack: limb(120, 40), legFront: limb(26, -22) },
   ),
 
+  // ---- Kenshiro's sword combo (spec section 4): precise, economical cuts with the blade in the lead hand.
+  // 1. Horizontal katana slash: a flat draw cut from the hip across the body.
+  'kenshiro.slash': strike(
+    { lean: deg(-6), head: deg(4), armFront: limb(-30, 80), armBack: limb(40, 110), legFront: limb(28, -30) },
+    {
+      lean: deg(-28),
+      head: deg(8),
+      armFront: limb(98, 4),
+      armBack: limb(20, 120),
+      legFront: limb(44, -36),
+      legBack: limb(-30, -10),
+    },
+  ),
+  // 2. Reverse diagonal slash: back up across the same line, high to low.
+  'kenshiro.reverse': strike(
+    { lean: deg(-22), head: deg(10), armFront: limb(130, 40), armBack: limb(30, 110), legFront: limb(34, -34) },
+    {
+      lean: deg(-10),
+      head: deg(2),
+      armFront: limb(30, 6),
+      armBack: limb(60, 100),
+      legFront: limb(30, -26),
+      legBack: limb(-34, -14),
+    },
+  ),
+  // 3. Dual blade strike: both swords cross the body together in a scissoring cut.
+  'kenshiro.dual': strike(
+    { lean: deg(-14), head: deg(8), armFront: limb(-40, 60), armBack: limb(140, 60), legFront: limb(30, -32) },
+    {
+      lean: deg(-30),
+      head: deg(10),
+      armFront: limb(100, 4),
+      armBack: limb(90, 8),
+      legFront: limb(48, -40),
+      legBack: limb(-34, -12),
+    },
+  ),
+  // 4. Powerful finishing cut: a deep lunge, the whole body behind one diagonal cut.
+  'kenshiro.finish': strike(
+    {
+      lean: deg(8),
+      head: deg(-6),
+      armFront: limb(160, 30),
+      armBack: limb(140, 50),
+      legFront: limb(30, -36),
+      legBack: limb(-24, -24),
+    },
+    {
+      lean: deg(-48),
+      head: deg(22),
+      armFront: limb(56, 4),
+      armBack: limb(30, 40),
+      legFront: limb(64, -50),
+      legBack: limb(-48, -14),
+    },
+  ),
+  // Heavy: a deliberate overhead cut: both hands high, held, then down through the target.
+  'kenshiro.overhead': strike(
+    {
+      lean: deg(12),
+      head: deg(-8),
+      armFront: limb(176, 14),
+      armBack: limb(170, 18),
+      legFront: limb(28, -30),
+      legBack: limb(-22, -20),
+    },
+    {
+      lean: deg(-42),
+      head: deg(20),
+      armFront: limb(70, 4),
+      armBack: limb(60, 8),
+      legFront: limb(58, -56),
+      legBack: limb(-44, -16),
+    },
+    { lean: deg(6), head: deg(-4), armFront: limb(150, 30), armBack: limb(146, 34), legFront: limb(26, -26) },
+  ),
+
   // ---- Standard kicks (shared default: a plain, readable version of each).
   'std.front-kick': strike(
     { lean: deg(8), legFront: limb(80, -115), armFront: limb(70, 110), armBack: limb(50, 130) },

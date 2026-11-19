@@ -7,7 +7,7 @@
  * deliberate shape. Original artwork; one per icon id (`AbilityDef.icon`, `AbilityKit.comboIcon`,
  * `AbilityKit.heavyIcon`).
  */
-type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin' | 'wind';
+type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin' | 'wind' | 'steel';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -20,6 +20,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   blue: ['#d8f0ff', '#1f6fe8', '#020a22'],
   toxin: ['#e8ffc8', '#2f8a12', '#06140a'],
   wind: ['#ffffff', '#3a78b8', '#06121f'],
+  steel: ['#ffe9e9', '#a01826', '#1a0508'],
 };
 
 const MATERIALS = `
@@ -339,6 +340,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'wind',
     rays(24, 28, 16, '#ffffff', 0.25),
     `<g filter="url(#ds)"><path d="M24 8 C14 8 6 14 4 24 C12 20 18 22 24 30 C30 22 36 20 44 24 C42 14 34 8 24 8Z" fill="#eef6ff" stroke="#26323f" stroke-width="1.6"/></g><ellipse cx="24" cy="38" rx="16" ry="4" fill="#bfe2ff" opacity=".6" filter="url(#bl)"/><path d="M10 38 H38" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`,
+  ),
+  'twin-fang': icon(
+    'steel',
+    rays(24, 24, 14, '#ffffff', 0.2),
+    `<g filter="url(#gl)" opacity=".9"><path d="M6 36 C12 22 26 12 42 8" stroke="#ff6a72" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M8 42 C16 30 30 22 44 20" stroke="#ffd0d4" stroke-width="3.2" fill="none" stroke-linecap="round"/></g><g filter="url(#ds)"><path d="M30 8 L42 6 L34 16Z" fill="#eef2f7" stroke="#1a0508" stroke-width="1.4"/></g>`,
+  ),
+  'perfect-parry': icon(
+    'steel',
+    rays(24, 24, 16, '#ffffff', 0.3),
+    `<g filter="url(#ds)"><path d="M8 38 L36 10" stroke="#eef2f7" stroke-width="5" stroke-linecap="round"/><path d="M8 10 L36 38" stroke="#cfd7e2" stroke-width="5" stroke-linecap="round"/></g><circle cx="22" cy="24" r="6" fill="#ffffff" filter="url(#gl)"/><g stroke="#ff6a72" stroke-width="2" stroke-linecap="round"><path d="M22 10 V4 M22 44 V38 M8 24 H2 M42 24 H36"/></g>`,
+  ),
+  'blade-tempest': icon(
+    'steel',
+    rays(24, 24, 16, '#ffffff', 0.25),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M6 12 L40 8" stroke="#ffd0d4" stroke-width="2.6"/><path d="M8 20 L44 22" stroke="#ff6a72" stroke-width="2.6"/><path d="M6 30 L40 38" stroke="#ffd0d4" stroke-width="2.6"/><path d="M10 40 L36 14" stroke="#ff6a72" stroke-width="2.6"/><path d="M24 6 L24 44" stroke="#ffffff" stroke-width="2.6"/></g>`,
+  ),
+  'focus-stance': icon(
+    'steel',
+    rays(24, 24, 14, '#ffffff', 0.15),
+    `<circle cx="24" cy="24" r="14" fill="none" stroke="#ff6a72" stroke-width="2" opacity=".7" filter="url(#gl)"/><g filter="url(#ds)"><path d="M14 40 L24 8 L34 40" fill="none" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/></g><circle cx="24" cy="24" r="3" fill="#ff6a72" filter="url(#gl)"/>`,
+  ),
+  'iaido-draw': icon(
+    'steel',
+    rays(24, 24, 14, '#ffffff', 0.2),
+    `<path d="M4 30 H44" stroke="#ff6a72" stroke-width="3" opacity=".6" filter="url(#gl)"/><g filter="url(#ds)"><path d="M8 34 L40 14" stroke="#eef2f7" stroke-width="4.5" stroke-linecap="round"/><rect x="6" y="32" width="8" height="5" rx="1.5" fill="#6a1520" stroke="#1a0508" stroke-width="1.2" transform="rotate(-32 10 34)"/></g>`,
+  ),
+  'final-judgement': icon(
+    'steel',
+    rays(24, 24, 18, '#ffffff', 0.3),
+    `<g stroke-linecap="round" filter="url(#gl)" fill="none"><path d="M8 8 L40 40" stroke="#ff6a72" stroke-width="3.2"/><path d="M40 8 L8 40" stroke="#ffd0d4" stroke-width="3.2"/><path d="M24 4 V44" stroke="#ffffff" stroke-width="3.2"/><path d="M4 24 H44" stroke="#ff6a72" stroke-width="3.2"/></g><circle cx="24" cy="24" r="4" fill="#ffffff" filter="url(#gl)"/>`,
+  ),
+  'katana-combo': icon(
+    'steel',
+    rays(24, 24, 14, '#ffffff', 0.15),
+    `<g filter="url(#ds)"><path d="M6 40 L36 8" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/><path d="M12 42 L42 14" stroke="#cfd7e2" stroke-width="4" stroke-linecap="round"/></g><path d="M8 36 C16 22 28 14 40 12" stroke="#ff6a72" stroke-width="2.4" fill="none" opacity=".7" filter="url(#gl)"/>`,
+  ),
+  'overhead-cut': icon(
+    'steel',
+    rays(24, 26, 16, '#ffffff', 0.25),
+    `<path d="M24 4 V40" stroke="#ff6a72" stroke-width="4" opacity=".6" filter="url(#gl)"/><g filter="url(#ds)"><path d="M24 6 V38" stroke="#eef2f7" stroke-width="5" stroke-linecap="round"/><rect x="18" y="34" width="12" height="4" rx="1.5" fill="#6a1520" stroke="#1a0508" stroke-width="1.2"/></g><ellipse cx="24" cy="42" rx="14" ry="3" fill="#ff6a72" opacity=".4" filter="url(#bl)"/>`,
   ),
   'plague-bloom': icon(
     'toxin',

@@ -872,3 +872,6 @@ Gate: biome, typecheck, vitest. Screenshots checked: grenade arc, stick, explosi
 
 ## 21/11/2026: Aerion (TD-123)
 Done: Aerion playable (winged skin, hover, combo, heavy, passive, five abilities, ultimate, AI, stance, icons, sounds). Gate: biome, typecheck, vitest 987, menu and front-end e2e 18 passed. Next: deploy, owner review, then Arcstrike.
+
+## 21/11/2026: Kenshiro (TD-124)
+Done: Kenshiro playable (samurai skin, two katana, combo, overhead heavy, Sword Mastery, Perfect Parry, Twin Fang, Blade Tempest, Focus Stance, Iaido Draw, Final Judgement). Gate: biome, typecheck, vitest 1009, menu and front-end e2e 18 passed. Next: deploy, owner review, then Psion, Geargrind, Reson, Chronos.

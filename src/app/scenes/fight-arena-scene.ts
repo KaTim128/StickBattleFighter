@@ -7,13 +7,14 @@ import {
   type Burn,
   type MagicLook,
 } from '../../abilities/ability-def';
+import type { Parry } from '../../abilities/ability-world';
 import { applyLoadout, type Loadout } from '../../abilities/loadout';
 import { FighterBrain } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose, stalkPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose, judgementPose, stalkPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -2287,6 +2288,12 @@ export class FightArenaScene implements ArenaScene {
     const fromFront = !s.unblockable && (attacker.x - t.x) * target.aim.x + (attacker.y - t.y) * target.aim.y > 0;
     // Summoned skeletons only hurt: no flinch, push, interruption or freeze (master plan B5).
     const staggers = attacker.def.capabilities.staggersTargets !== false;
+    // Perfect Parry (Kenshiro): an attack from the front that connects while the stance is up is deflected and answered.
+    const parry = fromFront ? this.abilities?.world.parryOf(target.name) : undefined;
+    if (parry) {
+      this.perfectParry(target, attacker, parry);
+      return true;
+    }
     // A charged Death Mark triples the attacker's next landed blow (owner, 20/11/2026).
     const markFactor = this.abilities?.world.markFactor(attacker.name) ?? 1;
     const result = target.combatant.receive(
@@ -2636,6 +2643,7 @@ export class FightArenaScene implements ArenaScene {
       const passive = attacker.caster?.kit.passive;
       if (hitFighter && passive?.id === 'momentum')
         attacker.combatant.gainMomentum(passive.speedPerStack, passive.maxStacks, passive.durationS);
+      if (hitFighter && passive?.id === 'mastery') attacker.combatant.gainMastery(1, passive.maxStacks);
       if (!hitFighter) this.shake.addTrauma(a.trauma);
       this.shake.punch(a.zoomPunch);
     }
@@ -2647,6 +2655,45 @@ export class FightArenaScene implements ArenaScene {
       if (near)
         this.events.push({ kind: 'miss', target: attacker.name, x: p.x, y: p.y - headTop(attacker), amount: 0 });
     }
+  }
+
+  /**
+   * Perfect Parry: the blow is deflected (no damage), its attacker staggers, and the parrier strikes back at once with
+   * the ability's payload. A parry builds Sword Mastery, and the stance is spent.
+   */
+  private perfectParry(target: FighterEntity, attacker: FighterEntity, parry: Parry): void {
+    const d = parry.def.delivery;
+    this.abilities?.world.consumeParry(target.name);
+    target.combatant.grantInvulnerability(0.4);
+    target.shieldS = SHIELD_FLARE_S;
+    attacker.combatant.stun(d.type === 'parry' ? d.stunS : 0.8);
+    attacker.combo.interrupt();
+    this.abilities?.interrupt(attacker, false);
+    this.events.push({
+      kind: 'parried',
+      target: target.name,
+      x: target.x,
+      y: target.y - headTop(target),
+      amount: 0,
+    });
+    this.shake.addTrauma(0.3);
+    this.hitstopS = HITSTOP_HEAVY_S;
+    this.queueSound('parry', 1);
+    const passive = target.caster?.kit.passive;
+    if (passive?.id === 'mastery') target.combatant.gainMastery(3, passive.maxStacks);
+    const p = parry.def.payload;
+    const away = { x: attacker.x - target.x, y: attacker.y - target.y };
+    const len = Math.hypot(away.x, away.y) || 1;
+    // The counter: the parrier's own payload, answered in the same instant (the attacker is stunned and cannot parry it).
+    this.applyStrike(target, attacker, {
+      damage: p.damage * (target.buff?.abilityDamageFactor ?? 1),
+      heavy: p.heavy,
+      knockbackMps: p.knockbackMps,
+      dir: { x: away.x / len, y: away.y / len },
+      melee: false,
+      impact: p.impact ?? 'knuckle-heavy',
+      flashColour: parry.def.look?.hitFlash,
+    });
   }
 
   /** A fighter flying from a heavy knockback smashes a door, and shoves or breaks furniture, that it hits. */
@@ -3119,6 +3166,10 @@ export class FightArenaScene implements ArenaScene {
       clouds: world.clouds,
       grenades: world.grenades,
       cyclones: world.cyclones,
+      parries: world.parries.flatMap((p) => {
+        const c = this.fighterByName(p.casterId);
+        return c ? [{ x: c.x, y: c.y, k: p.leftS / p.totalS, palette: p.def.look?.palette ?? null }] : [];
+      }),
       marks: world.marks.flatMap((m) => {
         const t = this.fighterByName(m.targetId);
         return t ? [{ x: t.x, y: t.y, phase: m.phase, ageS: m.ageS }] : [];
@@ -3228,13 +3279,17 @@ export class FightArenaScene implements ArenaScene {
       );
       const assault = this.abilities?.world.assaultOf(f.name);
       if (assault) pose = assaultPose(pose, assault, cast.def.id);
+      const judgement = this.abilities?.world.judgementOf(f.name);
+      if (judgement) pose = judgementPose(pose, judgement);
       // A slashing knife leaves its red ribbon (Rending Flurry).
       const slashLook = cast.def.look?.slash;
       const d = cast.def.delivery;
       f.view.slash =
         assault?.phase === 'stab' && slashLook && d.type === 'assault'
           ? { index: assault.stab, last: assault.stab >= d.stabs - 1, ...slashLook }
-          : null;
+          : judgement?.phase === 'cut' && slashLook && d.type === 'judgement'
+            ? { index: judgement.cuts, last: judgement.cuts >= d.strikes, ...slashLook }
+            : null;
     } else f.view.slash = null;
     // Death Mark: he sinks into a stalking crouch while it charges, and his eyes burn red once it is ready.
     const mark = this.abilities?.world.markOf(f.name);
@@ -3289,6 +3344,20 @@ export class FightArenaScene implements ArenaScene {
     }
     // The striker's little bounce off a landed blow.
     const bounce = f.recoilS > 0 ? 0.07 * Math.sin(Math.PI * (1 - f.recoilS / RECOIL_BOUNCE_S)) : 0;
+    // Kenshiro's blades glow crimson under Focus Stance, and faintly when Sword Mastery is ready to be spent.
+    {
+      const mastery = f.caster?.kit.passive?.mastery;
+      const target =
+        f.buffSourceId === 'focusStance'
+          ? 1
+          : mastery && c.masteryStacks >= mastery.threshold
+            ? 0.7
+            : c.masteryEmpoweredS > 0
+              ? 1
+              : 0;
+      f.focusNow += (target - f.focusNow) * smoothing(8, frameDtS);
+      f.view.focus = f.focusNow;
+    }
     // Winged fighters (Aerion) hover a little off the floor while standing, bobbing gently, and their wings follow what
     // they do: folded close for Feather Guard, wide in the air or under Tailwind, beating harder with momentum.
     let hoverLift = 0;

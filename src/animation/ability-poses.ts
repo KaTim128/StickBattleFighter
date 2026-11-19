@@ -380,6 +380,66 @@ const SHAPES: Record<string, CastShape> = {
     },
   },
 
+  // ---- Kenshiro (spec section 4): upright, still, economical. The blade is the whole animation.
+  // Twin Fang and Blade Tempest: the cast pose is a hand on the hilt; the cuts themselves are `swordPose`.
+  twinFang: {
+    windup: { lean: deg(-6), head: deg(4), armFront: limb(30, 60), armBack: limb(20, 70), legFront: limb(30, -30) },
+    release: { lean: deg(-26), head: deg(8), armFront: limb(96, 6), armBack: limb(24, 110), legFront: limb(44, -36) },
+    settle: 0.45,
+  },
+  bladeTempest: {
+    windup: { lean: deg(-12), head: deg(6), armFront: limb(40, 70), armBack: limb(30, 80), ...CROUCH },
+    release: { lean: deg(-30), head: deg(8), armFront: limb(100, 6), armBack: limb(30, 100), legFront: limb(50, -40) },
+    settle: 0.4,
+  },
+  // Perfect Parry: the blade drawn across the body, the weight settled onto the back foot: still, ready.
+  perfectParry: {
+    windup: { lean: deg(4), head: deg(-2), armFront: limb(70, 100), armBack: limb(50, 110), legFront: limb(24, -30) },
+    release: {
+      lean: deg(8),
+      head: deg(-4),
+      armFront: limb(86, 90),
+      armBack: limb(60, 100),
+      legFront: limb(20, -34),
+      legBack: limb(-24, -30),
+    },
+    settle: 0.5,
+  },
+  // Focus Stance: both blades lowered, the breath drawn in: a calm, wide, balanced stance.
+  focusStance: {
+    windup: { lean: deg(2), head: deg(0), armFront: limb(40, 60), armBack: limb(30, 60), legFront: limb(30, -28) },
+    release: {
+      lean: deg(-4),
+      head: deg(2),
+      armFront: limb(50, 30),
+      armBack: limb(40, 36),
+      legFront: limb(36, -34),
+      legBack: limb(-34, -26),
+    },
+    settle: 0.4,
+  },
+  // Iaido Draw: weight low over the hip, hand on the hilt; then the whole body flows forward through the cut.
+  iaidoDraw: {
+    windup: { lean: deg(-18), head: deg(8), armFront: limb(10, 70), armBack: limb(-20, 90), ...CROUCH },
+    release: {
+      lean: deg(-40),
+      head: deg(14),
+      armFront: limb(102, 2),
+      armBack: limb(-30, 60),
+      legFront: limb(54, -50),
+      legBack: limb(-44, -18),
+    },
+    run: { lean: deg(-40), head: deg(14), armFront: limb(102, 2), armBack: limb(-30, 60) },
+    settle: 0.4,
+  },
+  // Final Judgement: a bow, a hand on the hilt; the rush and the cuts are `judgementPose`.
+  finalJudgement: {
+    windup: { lean: deg(-14), head: deg(10), armFront: limb(10, 70), armBack: limb(-10, 90), ...CROUCH },
+    tremble: deg(1.5),
+    release: { lean: deg(4), head: deg(0), armFront: limb(14, 70), armBack: limb(8, 80), legFront: limb(24, -26) },
+    settle: 0.5,
+  },
+
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.
@@ -573,6 +633,8 @@ export function assaultPose(base: Pose, a: AssaultState, abilityId?: string): Po
   if (a.phase === 'retreat') return blendPose(base, { ...base, ...RETREAT }, ease(a.t / 0.08));
   if (a.phase !== 'stab') return base;
   if (abilityId === 'rendingFlurry') return flurryPose(base, a);
+  if (abilityId === 'twinFang') return swordCut(base, a, 0);
+  if (abilityId === 'bladeTempest') return swordCut(base, a, 2);
   const s = STABS[a.stab % STABS.length]!;
   const cock = { ...base, ...s.cock };
   const strike = { ...base, ...s.strike };
@@ -580,6 +642,78 @@ export function assaultPose(base: Pose, a: AssaultState, abilityId?: string): Po
   if (a.t < 0.35) return blendPose(cock, strike, ease(a.t / 0.35));
   if (a.t < 0.75) return strike;
   return blendPose(strike, cock, ease((a.t - 0.75) / 0.25) * 0.6);
+}
+
+/**
+ * Kenshiro's cuts: horizontal, reverse diagonal, a low rising cut, an overhead cut, a spinning cut and a lunging thrust.
+ * Twin Fang uses the first two; Blade Tempest runs through all six, so no two cuts in a row look alike.
+ */
+const SWORD_CUTS: readonly { cock: Partial<Pose>; strike: Partial<Pose> }[] = [
+  {
+    cock: { lean: deg(-18), armFront: limb(-30, 70), armBack: limb(40, 100), legFront: limb(30, -34) },
+    strike: { lean: deg(-34), head: deg(8), armFront: limb(98, 4), armBack: limb(20, 120), legFront: limb(48, -40) },
+  },
+  {
+    cock: { lean: deg(-24), armFront: limb(135, 40), armBack: limb(30, 110) },
+    strike: { lean: deg(-12), head: deg(2), armFront: limb(30, 6), armBack: limb(60, 100), legBack: limb(-38, -16) },
+  },
+  {
+    cock: { lean: deg(-30), armFront: limb(0, 40), armBack: limb(30, 90), ...CROUCH },
+    strike: { lean: deg(-16), head: deg(8), armFront: limb(150, 6), armBack: limb(-30, 60), legFront: limb(34, -30) },
+  },
+  {
+    cock: { lean: deg(8), armFront: limb(176, 14), armBack: limb(170, 18) },
+    strike: { lean: deg(-44), head: deg(20), armFront: limb(64, 4), armBack: limb(54, 8), legFront: limb(58, -52) },
+  },
+  {
+    cock: { lean: deg(-36), head: deg(26), armFront: limb(-60, 50), armBack: limb(60, 90) },
+    strike: { lean: deg(20), head: deg(-14), armFront: limb(110, 6), armBack: limb(-40, 40), legBack: limb(40, -20) },
+  },
+  {
+    cock: { lean: deg(-20), armFront: limb(40, 120), armBack: limb(20, 100) },
+    strike: {
+      lean: deg(-52),
+      head: deg(18),
+      armFront: limb(92, 0),
+      armBack: limb(-20, 50),
+      legFront: limb(64, -46),
+      legBack: limb(-46, -12),
+    },
+  },
+];
+
+/** One sword cut: snap in during the first part of the interval, hold, ease toward the next cock. */
+function swordCut(base: Pose, a: AssaultState, offset: number): Pose {
+  const c = SWORD_CUTS[(a.stab + offset) % SWORD_CUTS.length]!;
+  const cock = { ...base, ...c.cock };
+  const strike = { ...base, ...c.strike };
+  if (a.t < 0.45) return blendPose(cock, strike, ease(a.t / 0.45));
+  return strike;
+}
+
+/**
+ * Final Judgement's body: the rush (flat out, blade forward), the cuts (each a different line, too fast to follow),
+ * then the calm of the return: both hands back on the hilt as if nothing had happened, the blow still to land.
+ */
+export function judgementPose(
+  base: Pose,
+  j: { readonly phase: 'rush' | 'cut' | 'wait'; readonly cuts: number; readonly t: number },
+): Pose {
+  if (j.phase === 'rush')
+    return {
+      ...base,
+      lean: deg(-58),
+      head: deg(16),
+      armFront: limb(96, 2),
+      armBack: limb(-30, 50),
+      legFront: limb(60, -40),
+      legBack: limb(-50, -14),
+    };
+  if (j.phase === 'cut') {
+    const c = SWORD_CUTS[j.cuts % SWORD_CUTS.length]!;
+    return { ...base, ...c.strike };
+  }
+  return { ...base, lean: deg(2), head: deg(2), armFront: limb(14, 70), armBack: limb(8, 80), legFront: limb(24, -26) };
 }
 
 /** One slash of the Flurry: snap through in the first 55% of its time, follow through, and flow into the next. */

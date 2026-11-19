@@ -41,6 +41,8 @@ export interface AbilityPayload {
    * or knock down, so repeated stabbing cannot lock a target (master plan B6).
    */
   readonly noFlinch?: boolean;
+  /** A sword ability (Kenshiro): eligible for Sword Mastery's enhancement. */
+  readonly sword?: boolean;
   /**
    * Smashes through obstacles (Rampage Charge): breakable wall sections take this much damage, and
    * furniture and doors in the way are hit with the payload's full strength. Solid walls still stop it.
@@ -342,6 +344,33 @@ export interface MarkDelivery {
   readonly moveFactor: number;
 }
 
+/**
+ * Perfect Parry (Kenshiro): a defensive stance for `windowS` seconds. The first attack from the front that connects in
+ * that window is deflected (no damage, the attacker is stunned) and the caster at once strikes back with the
+ * ability's payload. The window is short and ends when it is spent; nothing parried can be spammed because the
+ * stance only lasts as long as the window and the ability then cools down.
+ */
+export interface ParryDelivery {
+  readonly type: 'parry';
+  readonly windowS: number;
+  /** How long the attacker is stunned after the deflect. */
+  readonly stunS: number;
+}
+
+/**
+ * Final Judgement (Kenshiro's ultimate): he rushes the nearest enemy within `rangeM` and cuts `strikes` times, `strikeIntervalS`
+ * apart, faster than the eye follows, none of which does anything yet. He then returns to where he began; after
+ * `resolveDelayS` all the cuts land together as one blow (`payload.damage` per cut) through a finishing flash. He cannot
+ * be hit from the rush until the blow lands.
+ */
+export interface JudgementDelivery {
+  readonly type: 'judgement';
+  readonly rangeM: number;
+  readonly strikes: number;
+  readonly strikeIntervalS: number;
+  readonly resolveDelayS: number;
+}
+
 /** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */
 export interface StrikeDelivery {
   readonly type: 'strike';
@@ -375,6 +404,8 @@ export interface BuffDelivery {
    * 25% shorter): cooldowns already running are cut at once, and new ones start shorter while it lasts.
    */
   readonly cooldownFactor?: number;
+  /** Perfect Parry stances cast while this lasts are this much longer (Kenshiro's Focus Stance: 1.5). */
+  readonly parryWindowFactor?: number;
   /**
    * Lights out (Hunting Frenzy, owner 12/11/2026): as it begins, every enemy's sight shrinks to
    * `visibleM` round itself for the buff's whole duration (everything further is almost black).
@@ -420,6 +451,8 @@ export type Delivery =
   | MarkDelivery
   | DashDelivery
   | NovaDelivery
+  | ParryDelivery
+  | JudgementDelivery
   | GrenadeDelivery
   | LeapDelivery
   | BeamDelivery
@@ -564,11 +597,13 @@ export interface AbilityKit {
    * faster. All stacks lapse together when the time runs out.
    */
   readonly passive?: {
-    readonly id: 'momentum';
+    readonly id: 'momentum' | 'mastery';
     readonly name: string;
     readonly description: string;
     readonly maxStacks: number;
     readonly durationS: number;
     readonly speedPerStack: number;
+    /** Sword Mastery: stacks that make the next sword ability stronger, by what factor, for how long. */
+    readonly mastery?: { readonly threshold: number; readonly damageFactor: number; readonly windowS: number };
   };
 }

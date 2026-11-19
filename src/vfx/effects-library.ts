@@ -103,6 +103,9 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 1.9, colour: 0xbfe2ff },
     mist: 8,
   },
+  // Kenshiro's steel: a clean white flash and a few bright sparks on every cut, a crimson ring on the heavy.
+  'sword-hit': { sparks: { count: 14, speedMps: 7, colour: 0xffe9e9 }, ring: { sizeM: 0.4, colour: 0xff6a72 } },
+  'sword-heavy': { sparks: { count: 24, speedMps: 9, colour: 0xffffff }, ring: { sizeM: 1, colour: 0xff4a55 } },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },

@@ -1,0 +1,18 @@
+{
+  "id": "kenshiro-effects",
+  "punchImpact": "sword-hit",
+  "kickImpact": "sword-hit",
+  "heavyImpact": "sword-heavy",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#ffe0e0",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "samurai",
+  "held": "katana"
+}

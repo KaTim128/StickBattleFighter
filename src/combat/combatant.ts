@@ -464,6 +464,28 @@ export class Combatant {
     this.status.apply('fog', 0.35, { dps: chipDps, speedFactor, sightM });
   }
 
+  /** Sword Mastery (Kenshiro's passive): stacks built by landed blows and parries; spent by the next sword ability. */
+  masteryStacks = 0;
+  /** Seconds left of an enhancement already unlocked (it covers all of that ability's hits). */
+  masteryEmpoweredS = 0;
+
+  gainMastery(stacks: number, cap: number): void {
+    if (this.koAgeS >= 0) return;
+    this.masteryStacks = Math.min(cap, this.masteryStacks + stacks);
+  }
+
+  /**
+   * The damage factor for a sword ability's hit: at the threshold the stacks are spent and the enhancement runs for
+   * `windowS` (so every hit of that one ability gets it); otherwise 1.
+   */
+  swordFactor(threshold: number, factor: number, windowS: number): number {
+    if (this.masteryEmpoweredS > 0) return factor;
+    if (this.masteryStacks < threshold) return 1;
+    this.masteryStacks = 0;
+    this.masteryEmpoweredS = windowS;
+    return factor;
+  }
+
   /** One more stack of aerial momentum (Aerion's passive): `speedPerStack` faster each, up to `maxStacks`, for `durationS`. */
   gainMomentum(speedPerStack: number, maxStacks: number, durationS: number): void {
     if (this.koAgeS >= 0) return;
@@ -498,6 +520,7 @@ export class Combatant {
       this.status.clear('toxicity');
     }
     this.dotTaken = 0;
+    this.masteryEmpoweredS = Math.max(0, this.masteryEmpoweredS - dtS);
     this.status.tick(dtS, this.dotSink);
     const burned = this.dotTaken;
     this.decayEnded = this.status.endedLastTick('decay');

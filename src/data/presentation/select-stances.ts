@@ -123,6 +123,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1.2, pelvis: 0.01, hands: 0.03 },
   },
+  // Kenshiro: upright and still, the lead blade held low and forward, the other drawn back: a duelist waiting to be committed to.
+  kenshiro: {
+    title: 'The Patient Blade',
+    style: 'Sword duelist: perfect parries, counters and precise cuts',
+    pelvis: 0.82,
+    leadFoot: 0.36,
+    rearFoot: -0.36,
+    lean: -2,
+    head: 2,
+    front: { x: 0.5, y: 0.1 },
+    back: { x: 0.34, y: 0.34 },
+    turn: 0.6,
+    scale: 1,
+    breath: { lean: 0.6, pelvis: 0.006, hands: 0.012 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

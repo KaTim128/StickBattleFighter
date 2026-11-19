@@ -156,6 +156,8 @@ export class FighterEntity {
   stalkAmount = 0;
   /** Presentation (winged fighters): how far the hover has lifted it, and the wings' spread and beat. */
   hoverNow = 0;
+  /** Presentation: the crimson glow along Kenshiro's blades (0..1). */
+  focusNow = 0;
   wingSpreadNow = 0.3;
   wingFlapNow = 0;
   eyeGlowAmount = 0;

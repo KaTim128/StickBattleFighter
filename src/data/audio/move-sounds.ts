@@ -309,6 +309,49 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sine', 80, 30, 0.6, 0.65),
     noise('bandpass', 3200, 1000, 0.3, 0.4, 1, 0.05),
   ],
+  // Kenshiro's steel: clean, bright sword sounds, with long silences around them.
+  'hit-kenshiro-overhead': [
+    noise('bandpass', 3400, 1500, 0.1, 0.5, 1.8),
+    tone('sine', 130, 55, 0.2, 0.55),
+    tone('triangle', 1400, 900, 0.12, 0.25),
+  ],
+  'katana-draw': [
+    noise('bandpass', 4200, 2600, 0.16, 0.34, 2.2, 0, { attack: 0.02 }),
+    tone('triangle', 2400, 3200, 0.1, 0.15),
+  ],
+  'katana-ready': [tone('triangle', 1800, 1700, 0.08, 0.2), noise('bandpass', 3000, 2800, 0.08, 0.15, 2)],
+  'katana-cut-1': [noise('bandpass', 3600, 1800, 0.1, 0.38, 2)],
+  'katana-cut-2': [noise('bandpass', 4200, 2200, 0.09, 0.38, 2.2)],
+  'katana-cut-3': [noise('bandpass', 3000, 1500, 0.11, 0.38, 1.8)],
+  'katana-hit': [
+    noise('bandpass', 3800, 1700, 0.08, 0.5, 1.6),
+    tone('triangle', 1600, 700, 0.1, 0.22),
+    tone('sine', 120, 60, 0.12, 0.35),
+  ],
+  'parry-counter': [
+    noise('bandpass', 4000, 1400, 0.12, 0.55, 1.8),
+    tone('triangle', 2200, 900, 0.14, 0.3),
+    tone('sine', 100, 45, 0.25, 0.55),
+  ],
+  'tempest-hit': [noise('bandpass', 3400, 1600, 0.07, 0.42, 1.6), tone('triangle', 1500, 800, 0.08, 0.2)],
+  'iaido-hit': [
+    noise('bandpass', 4600, 2000, 0.1, 0.5, 2),
+    tone('triangle', 2000, 800, 0.1, 0.25),
+    tone('sine', 110, 55, 0.14, 0.4),
+  ],
+  'parry-stance': [tone('triangle', 900, 880, 0.12, 0.22), noise('bandpass', 2600, 2400, 0.12, 0.18, 2)],
+  'focus-breath': [noise('lowpass', 700, 400, 0.5, 0.2, 0.9, 0, { attack: 0.25 }), tone('sine', 110, 100, 0.5, 0.15)],
+  'iaido-draw': [
+    noise('bandpass', 1500, 5200, 0.18, 0.5, 1.4, 0, { attack: 0.01 }),
+    tone('triangle', 1200, 3000, 0.1, 0.2),
+  ],
+  'judgement-cut': [noise('bandpass', 4400, 2000, 0.06, 0.34, 2.2), tone('triangle', 2600, 1600, 0.05, 0.14)],
+  'judgement-land': [
+    noise('bandpass', 4000, 1200, 0.3, 0.6, 1.4),
+    tone('sine', 90, 35, 0.5, 0.65),
+    tone('triangle', 1800, 600, 0.3, 0.3),
+    noise('lowpass', 1500, 200, 0.5, 0.4, 0.8, 0.05),
+  ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),
     noise('lowpass', 1200, 400, 0.26, 0.25, 1, 0.02),
