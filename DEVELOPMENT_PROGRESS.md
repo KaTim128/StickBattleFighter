@@ -923,3 +923,6 @@ Crystal Arsenal with five weapon movesets, Crystal Slide, Shard Volley, Crystal 
 
 ## 22/11/2026: contact moves, buffed taps, Crystal Fists (TD-142)
 Prismor taps and heavy need body contact (fist-end test and fist-only environment checks); taps buffed to 16/18/20; Crystal Arsenal is now 8 s Crystal Fists (heavy punches, hits don't end them). Removed the five-weapon table and Crystal Guard from Arsenal. Tests: typecheck clean, vitest 1208 passed, production build OK. Browser: fists visible at 3, 6, 9 s and gone by 12 s. Contact hit-rule covered by unit tests; the scene-level "hit does not end fists" is code-verified, not played through. Next: commit, then deploy when asked.
+
+## 22/11/2026: thorns shortened
+Crystal Slide thorn spikes drawn at half their former height (`crystal-thorns` h 1.2 → 0.6 m). Hit area unchanged. Typecheck clean, vitest 1208 passed, production build OK.
