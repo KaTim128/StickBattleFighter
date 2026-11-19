@@ -679,3 +679,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Reson: charcoal body with cyan forearm devices and shoulder emitters; rocks on the beat when idle.
 - [ ] Sonic Boom passes through two opponents in a line; Vibration Punch only hits at arm length; Resonance Barrier shows sound rings, ripples when hit and shatters; Resonance Dash leaves distortion rings and no damage.
 - [ ] Feedback Pulse pushes opponents and makes their steering waver for about a second without stunning; Shatterwave shows converging rings, then four expanding rings.
+
+### Chronos (21/11/2026, TD-133)
+- [ ] Chronos: dark silver with bronze and cyan, clock face behind him, dial on one forearm; weight swings like a pendulum when idle.
+- [ ] Temporal Acceleration leaves afterimages and quickens dodges; Echo Strike lands twice 0.6 s apart; Temporal Collapse slows opponents (clock face on the floor) and never tints his own screen; Rewind Step returns him about 2.5 s back; Afterimage Decoy leaves a pale copy for 3 s; End of Time lays a field, hits six times, ends with a shockwave.

@@ -44,6 +44,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.psychic',
   'proc.idle.mechanic',
   'proc.idle.sonic',
+  'proc.idle.temporal',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -888,6 +889,155 @@ const STRIKES = {
       armBack: limb(8, 8),
       legFront: limb(30, -42),
       legBack: limb(-6, -38),
+    },
+  ),
+
+  // ---- Chronos's temporal style: exact, economical movements; each blow lands a hair late or early, like a stuttering clock.
+  // 1. Forward jab: the dial arm snapped straight out, dead level.
+  'chrono.jab': strike(
+    {
+      lean: deg(-2),
+      head: deg(0),
+      armFront: limb(74, 70),
+      armBack: limb(-14, 112),
+      legFront: limb(16, -24),
+      legBack: limb(-20, -22),
+    },
+    {
+      lean: deg(-10),
+      head: deg(0),
+      armFront: limb(90, 2),
+      armBack: limb(-18, 114),
+      legFront: limb(22, -26),
+      legBack: limb(-22, -22),
+    },
+  ),
+  // 2. Reverse palm strike: the rear hand swept across and out, the hips turned a quarter.
+  'chrono.palm': strike(
+    {
+      lean: deg(6),
+      head: deg(-2),
+      armFront: limb(60, 90),
+      armBack: limb(-40, 100),
+      legFront: limb(18, -26),
+      legBack: limb(-24, -24),
+    },
+    {
+      lean: deg(-18),
+      head: deg(-2),
+      armFront: limb(30, 100),
+      armBack: limb(92, 6),
+      legFront: limb(26, -30),
+      legBack: limb(-18, -26),
+    },
+  ),
+  // 3. Temporal spinning kick: a full turn on the standing foot with the other leg swept flat, the arms held in.
+  'chrono.spin-kick': strike(
+    {
+      lean: deg(-26),
+      head: deg(14),
+      armFront: limb(50, 90),
+      armBack: limb(-30, 90),
+      legFront: limb(14, -44),
+      legBack: limb(-28, -66),
+    },
+    {
+      lean: deg(20),
+      head: deg(-12),
+      armFront: limb(70, 80),
+      armBack: limb(-50, 70),
+      legFront: limb(18, -22),
+      legBack: limb(98, -6),
+    },
+  ),
+  // 4. Delayed impact: the palm drawn back, held a beat, and then driven out after the body has already stopped.
+  'chrono.echo-impact': strike(
+    {
+      lean: deg(8),
+      head: deg(2),
+      armFront: limb(-20, 120),
+      armBack: limb(-10, 112),
+      legFront: limb(20, -28),
+      legBack: limb(-22, -26),
+    },
+    {
+      lean: deg(-22),
+      head: deg(-2),
+      armFront: limb(88, 4),
+      armBack: limb(76, 10),
+      legFront: limb(30, -30),
+      legBack: limb(-24, -24),
+    },
+    { lean: deg(0), head: deg(0), armFront: limb(40, 100), armBack: limb(30, 104), legFront: limb(18, -26) },
+  ),
+  // Heavy: the fist drawn up and back with energy gathering, a long held pause, then the whole arm thrown straight through.
+  'chrono.temporal-fist': strike(
+    {
+      lean: deg(14),
+      head: deg(4),
+      armFront: limb(-34, 132),
+      armBack: limb(30, 110),
+      legFront: limb(22, -36),
+      legBack: limb(-28, -32),
+    },
+    {
+      lean: deg(-32),
+      head: deg(-6),
+      armFront: limb(96, 2),
+      armBack: limb(40, 112),
+      legFront: limb(36, -34),
+      legBack: limb(-30, -20),
+    },
+    { lean: deg(2), head: deg(0), armFront: limb(24, 126), armBack: limb(30, 110), legFront: limb(20, -30) },
+  ),
+  // Forward tap: a step that skips a moment, the dial arm reaching with the foot.
+  'chrono.lunge': strike(
+    { lean: deg(4), head: deg(0), armFront: limb(60, 100), armBack: limb(-10, 108), legFront: limb(20, -26) },
+    {
+      lean: deg(-28),
+      head: deg(-2),
+      armFront: limb(90, 2),
+      armBack: limb(-20, 100),
+      legFront: limb(40, -30),
+      legBack: limb(-34, -18),
+    },
+  ),
+  // In the air: a kick that arrives from nowhere, the leg snapped out forward.
+  'chrono.slip-kick': strike(
+    {
+      lean: deg(0),
+      head: deg(0),
+      armFront: limb(50, 90),
+      armBack: limb(-20, 100),
+      legFront: limb(40, -100),
+      legBack: limb(0, -70),
+    },
+    {
+      lean: deg(-12),
+      head: deg(-4),
+      armFront: limb(40, 80),
+      armBack: limb(-30, 90),
+      legFront: limb(94, -8),
+      legBack: limb(-4, -60),
+    },
+  ),
+  // Falling: a hard drop, the whole body folded and extended straight down in an instant.
+  'chrono.drop': strike(
+    {
+      lean: deg(10),
+      head: deg(4),
+      armFront: limb(120, 90),
+      armBack: limb(110, 92),
+      legFront: limb(30, -70),
+      legBack: limb(6, -60),
+    },
+    {
+      lean: deg(-18),
+      head: deg(8),
+      armFront: limb(20, 6),
+      armBack: limb(12, 8),
+      legFront: limb(26, -30),
+      legBack: limb(-8, -26),
     },
   ),
 

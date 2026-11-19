@@ -20,7 +20,8 @@ type Theme =
   | 'steel'
   | 'psi'
   | 'gear'
-  | 'sonic';
+  | 'sonic'
+  | 'time';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -37,6 +38,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   psi: ['#f4eaff', '#7a3fd0', '#0d0618'],
   gear: ['#fff1d6', '#d9650f', '#15171b'],
   sonic: ['#eafcff', '#0e8fa8', '#04141a'],
+  time: ['#f0fdff', '#2a7f93', '#0a1418'],
 };
 
 const MATERIALS = `
@@ -516,6 +518,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'sonic',
     rays(24, 24, 16, '#eafcff', 0.25),
     `<g filter="url(#ds)"><rect x="4" y="18" width="12" height="12" rx="3" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/><rect x="32" y="18" width="12" height="12" rx="3" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/></g><g fill="none" stroke="#eafcff" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><path d="M18 14 C22 20 22 28 18 34 M30 14 C26 20 26 28 30 34"/></g>`,
+  ),
+  'temporal-acceleration': icon(
+    'time',
+    rays(24, 24, 16, '#f0fdff', 0.25),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#b98a4a" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#8defff" stroke-width="1.6" opacity=".6"/></g><g stroke="#f0fdff" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M24 24 V13 M24 24 L32 28"/></g><g fill="none" stroke="#8defff" stroke-width="2.4" stroke-linecap="round" opacity=".8"><path d="M4 18 H12 M2 26 H10 M6 34 H14"/></g>`,
+  ),
+  'echo-strike': icon(
+    'time',
+    rays(24, 24, 14, '#f0fdff', 0.2),
+    `<g filter="url(#ds)"><rect x="8" y="17" width="16" height="14" rx="4" fill="#4a525c" stroke="#8defff" stroke-width="2"/></g><g fill="none" stroke="#8defff" stroke-width="2.4" stroke-linecap="round" filter="url(#gl)" opacity=".7"><rect x="22" y="17" width="16" height="14" rx="4"/><path d="M42 18 V30"/></g>`,
+  ),
+  'temporal-collapse': icon(
+    'time',
+    rays(24, 24, 16, '#f0fdff', 0.2),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#b98a4a" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#8defff" stroke-width="1.6" opacity=".6"/></g><g stroke="#8defff" stroke-width="2" stroke-linecap="round" fill="none"><path d="M24 24 L24 14 M24 24 L18 28"/><path d="M10 10 L16 16 M38 10 L32 16 M10 38 L16 32 M38 38 L32 32" opacity=".7"/></g>`,
+  ),
+  'rewind-step': icon(
+    'time',
+    rays(24, 24, 14, '#f0fdff', 0.2),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#b98a4a" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#8defff" stroke-width="1.6" opacity=".6"/></g><g fill="none" stroke="#f0fdff" stroke-width="2.6" stroke-linecap="round"><path d="M32 18 A10 10 0 1 0 34 26"/><path d="M32 12 V19 H25"/></g>`,
+  ),
+  'afterimage-decoy': icon(
+    'time',
+    rays(24, 24, 14, '#f0fdff', 0.2),
+    `<g fill="none" stroke="#8defff" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><circle cx="30" cy="12" r="4"/><path d="M30 16 V28 M30 28 L26 38 M30 28 L35 38 M30 20 L38 24"/></g><g fill="none" stroke="#b98a4a" stroke-width="2.2" stroke-linecap="round" opacity=".55"><circle cx="16" cy="14" r="4"/><path d="M16 18 V30 M16 30 L12 40 M16 30 L21 40 M16 22 L24 26"/></g>`,
+  ),
+  'end-of-time': icon(
+    'time',
+    rays(24, 24, 20, '#f0fdff', 0.35),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#b98a4a" stroke-width="3"/><circle cx="24" cy="24" r="11" stroke="#8defff" stroke-width="2.4" stroke-dasharray="5 3"/></g><g stroke="#f0fdff" stroke-width="3" stroke-linecap="round" fill="none"><path d="M24 24 V10 M24 24 L33 30"/></g><g stroke="#f0fdff" stroke-width="2.4" stroke-linecap="round"><path d="M24 2 V6 M24 42 V46 M2 24 H6 M42 24 H46"/></g>`,
+  ),
+  'time-combo': icon(
+    'time',
+    rays(24, 24, 14, '#f0fdff', 0.15),
+    `<g fill="none" stroke="#8defff" stroke-width="2.4" stroke-linecap="round" filter="url(#gl)"><circle cx="12" cy="32" r="5"/><circle cx="24" cy="22" r="5" opacity=".75"/><circle cx="36" cy="12" r="5" opacity=".5"/></g><path d="M6 40 L20 28 M18 36 L34 20" stroke="#b98a4a" stroke-width="2.2" stroke-linecap="round"/>`,
+  ),
+  'temporal-fist': icon(
+    'time',
+    rays(24, 24, 16, '#f0fdff', 0.25),
+    `<g filter="url(#ds)"><rect x="14" y="16" width="20" height="16" rx="5" fill="#4a525c" stroke="#8defff" stroke-width="2.2"/></g><g fill="none" stroke="#b98a4a" stroke-width="2.6" stroke-linecap="round"><circle cx="24" cy="24" r="12" opacity=".8"/><path d="M24 24 V15"/></g>`,
   ),
   'plague-bloom': icon(
     'toxin',

@@ -1,0 +1,17 @@
+{
+  "id": "chronos-effects",
+  "punchImpact": "time-hit",
+  "kickImpact": "time-hit",
+  "heavyImpact": "time-wave",
+  "blockImpact": "block-guard",
+  "limbTrail": "time-limbs",
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#8defff",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "temporal"
+}

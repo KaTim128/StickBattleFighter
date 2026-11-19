@@ -9,6 +9,13 @@ import baseAnimation from '../data/characters/base-stickman/animation-profile.js
 import baseCharacter from '../data/characters/base-stickman/character.json';
 import baseMoveset from '../data/characters/base-stickman/moveset.json';
 import baseStats from '../data/characters/base-stickman/stats.json';
+import chronosAi from '../data/characters/chronos/ai.json';
+import chronosAnimation from '../data/characters/chronos/animation-profile.json';
+import chronosAudio from '../data/characters/chronos/audio.json';
+import chronosCharacter from '../data/characters/chronos/character.json';
+import chronosEffects from '../data/characters/chronos/effects.json';
+import chronosMoveset from '../data/characters/chronos/moveset.json';
+import chronosStats from '../data/characters/chronos/stats.json';
 import geargrindAi from '../data/characters/geargrind/ai.json';
 import geargrindAnimation from '../data/characters/geargrind/animation-profile.json';
 import geargrindAudio from '../data/characters/geargrind/audio.json';
@@ -119,6 +126,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionCharacter,
     geargrindCharacter,
     resonCharacter,
+    chronosCharacter,
     skeletonCharacter,
     dummyCharacter,
   ]),
@@ -137,6 +145,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionAnimation,
     geargrindAnimation,
     resonAnimation,
+    chronosAnimation,
   ]),
   moveset: byId<MovesetProfile>([
     baseMoveset,
@@ -150,6 +159,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionMoveset,
     geargrindMoveset,
     resonMoveset,
+    chronosMoveset,
     skeletonMoveset,
   ]),
   stats: byId<StatsProfile>([
@@ -164,6 +174,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionStats,
     geargrindStats,
     resonStats,
+    chronosStats,
     skeletonStats,
     dummyStats,
   ]),
@@ -179,6 +190,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionEffects,
     geargrindEffects,
     resonEffects,
+    chronosEffects,
     skeletonEffects,
   ]),
   audio: byId<AudioProfile>([
@@ -193,6 +205,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionAudio,
     geargrindAudio,
     resonAudio,
+    chronosAudio,
   ]),
   ai: byId<AiProfile>([
     defaultAi,
@@ -208,6 +221,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionAi,
     geargrindAi,
     resonAi,
+    chronosAi,
   ]),
 };
 

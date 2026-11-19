@@ -140,6 +140,17 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 2.0, colour: 0x7ae8ff },
     mist: 4,
   },
+  // Chronos's time: pale cyan with a bronze glint; delayed rings echo every touch.
+  'time-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x0a3340, hot: 0x19b8d6, bright: 0x8defff, core: 0xf0fdff },
+  },
+  'time-hit': { sparks: { count: 8, speedMps: 4, colour: 0x8defff }, ring: { sizeM: 0.6, colour: 0xb98a4a } },
+  'time-wave': {
+    sparks: { count: 18, speedMps: 7, colour: 0xf0fdff },
+    ring: { sizeM: 1.9, colour: 0x8defff },
+    mist: 4,
+  },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },

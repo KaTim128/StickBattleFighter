@@ -11,6 +11,7 @@ describe('roster', () => {
         .sort(),
     ).toEqual([
       'aerion',
+      'chronos',
       'geargrind',
       'inferno',
       'kenshiro',
@@ -37,8 +38,9 @@ describe('roster', () => {
     ])
       expect(ids).toContain(id);
     expect(ids).not.toContain('base-stickman'); // the shared template is not a fighter
-    expect(ids.slice(0, 10).sort()).toEqual([
+    expect(ids.slice(0, 11).sort()).toEqual([
       'aerion',
+      'chronos',
       'geargrind',
       'inferno',
       'kenshiro',

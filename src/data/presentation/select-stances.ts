@@ -183,6 +183,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1.5, pelvis: 0.018, hands: 0.03 },
   },
+  // Chronos: poised and exact, the dial arm raised out in front, the other folded behind.
+  chronos: {
+    title: 'The Second Hand',
+    style: 'Time specialist: haste, echo strikes, slowing fields, rewinds and decoys',
+    pelvis: 0.82,
+    leadFoot: 0.14,
+    rearFoot: -0.2,
+    lean: -2,
+    head: 0,
+    front: { x: 0.44, y: 0.64 },
+    back: { x: -0.02, y: 0.46 },
+    turn: 0.55,
+    scale: 1,
+    breath: { lean: 1.5, pelvis: 0.01, hands: 0.02 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

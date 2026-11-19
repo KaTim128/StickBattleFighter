@@ -61,6 +61,9 @@ Done: Kenshiro three-swing tap, hover locomotion for Psion and Aerion, upright G
 ## Reson batch (21/11/2026, TD-132)
 Done: Reson fighter and kit, pierce/disrupt/sonic-barrier/rings engine support, `sonic` skin, idle/walk/run, clips, sounds, icons, AI, stance, tests (1137). Balance test widened to top/bottom three (explained in TD-132). Known: disrupt rotates movement only; checked in still screenshots. Next: Chronos, then Arcstrike and Tidebreaker, then Colosseum (owner, 21/11/2026).
 
+## Chronos batch (21/11/2026, TD-133)
+Done: Chronos fighter and kit, echo/rewind/decoy/slow-field/dodge-recovery engine support, `temporal` skin, clips, sounds, icons, AI, stance, tests. Known: combo echo is visual; decoy not targeted by the AI; checked in still screenshots. Next: Arcstrike, Tidebreaker and the remaining fighters, then Colosseum (owner, 21/11/2026).
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

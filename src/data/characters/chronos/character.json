@@ -1,0 +1,66 @@
+{
+  "id": "chronos",
+  "template": "base-stickman",
+  "displayName": "Chronos",
+  "description": "Chronos is never quite where you hit him. He steps a half-second ahead of every blow and a half-second behind every plan, and the dial on his arm ticks differently from any clock in the arena. Those who have fought him swear they landed the first strike. Chronos remembers it landing a moment later.",
+  "characterType": "fighter",
+  "element": "temporal",
+  "combatStyle": "time",
+  "profiles": {
+    "animation": "chronos-animation",
+    "moveset": "chronos-moveset",
+    "stats": "chronos-stats",
+    "effects": "chronos-effects",
+    "audio": "chronos-audio",
+    "ai": "chronos-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.44,
+      "shin": 0.44
+    },
+    "colour": "#6b7480",
+    "colourBack": "#4a525c",
+    "outline": "#10151a",
+    "limbWidthM": 0.075,
+    "outlineWidthM": 0.03,
+    "spine": 0.55
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "chronos-kit"
+}

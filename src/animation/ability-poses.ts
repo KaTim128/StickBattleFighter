@@ -733,6 +733,129 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.55,
   },
 
+  // ---- Chronos (master plan section 4): precise, with the dial arm doing the work.
+  // Temporal Acceleration: the dial arm lifted and tapped, the body leaning forward as if starting to run.
+  temporalAcceleration: {
+    windup: {
+      lean: deg(4),
+      head: deg(2),
+      armFront: limb(100, 90),
+      armBack: limb(-14, 112),
+      legFront: limb(18, -28),
+      legBack: limb(-22, -26),
+    },
+    release: {
+      lean: deg(-14),
+      head: deg(-2),
+      armFront: limb(120, 60),
+      armBack: limb(-50, 70),
+      legFront: limb(30, -36),
+      legBack: limb(-32, -26),
+    },
+    settle: 0.3,
+  },
+  // Echo Strike: a clean palm strike, then the arm held out as the echo catches up.
+  echoStrike: {
+    windup: {
+      lean: deg(8),
+      head: deg(0),
+      armFront: limb(-20, 120),
+      armBack: limb(-10, 112),
+      legFront: limb(22, -30),
+      legBack: limb(-24, -28),
+    },
+    release: {
+      lean: deg(-24),
+      head: deg(-2),
+      armFront: limb(90, 2),
+      armBack: limb(-20, 100),
+      legFront: limb(34, -32),
+      legBack: limb(-28, -22),
+    },
+    settle: 0.45,
+  },
+  // Temporal Collapse: the dial arm held out flat with the palm down, then pressed toward the floor.
+  temporalCollapse: {
+    windup: {
+      lean: deg(2),
+      head: deg(0),
+      armFront: limb(90, 30),
+      armBack: limb(-14, 112),
+      legFront: limb(20, -30),
+      legBack: limb(-24, -28),
+    },
+    release: {
+      lean: deg(10),
+      head: deg(6),
+      armFront: limb(70, 6),
+      armBack: limb(-14, 112),
+      legFront: limb(24, -40),
+      legBack: limb(-26, -34),
+    },
+    settle: 0.35,
+  },
+  // Rewind Step: the dial arm swept backward in a circle, the body leaning back as if pulled.
+  rewindStep: {
+    windup: {
+      lean: deg(0),
+      head: deg(0),
+      armFront: limb(120, 40),
+      armBack: limb(-14, 112),
+      legFront: limb(20, -28),
+      legBack: limb(-24, -26),
+    },
+    release: {
+      lean: deg(16),
+      head: deg(-4),
+      armFront: limb(-70, 30),
+      armBack: limb(-40, 90),
+      legFront: limb(14, -26),
+      legBack: limb(-34, -24),
+    },
+    settle: 0.3,
+  },
+  // Afterimage Decoy: a half-turn away on the spot, one arm sweeping out behind him.
+  afterimageDecoy: {
+    windup: {
+      lean: deg(-6),
+      head: deg(6),
+      armFront: limb(60, 90),
+      armBack: limb(-60, 90),
+      legFront: limb(26, -36),
+      legBack: limb(-28, -32),
+    },
+    release: {
+      lean: deg(-22),
+      head: deg(4),
+      armFront: limb(-40, 60),
+      armBack: limb(-70, 70),
+      legFront: limb(40, -40),
+      legBack: limb(-36, -26),
+    },
+    settle: 0.25,
+  },
+  // End of Time: the dial arm raised high, the hand turned as if winding a clock, held still, then the arm thrown down.
+  endOfTime: {
+    windup: {
+      lean: deg(0),
+      head: deg(-6),
+      armFront: limb(168, 30),
+      armBack: limb(-14, 112),
+      legFront: limb(22, -32),
+      legBack: limb(-26, -30),
+    },
+    tremble: deg(1.6),
+    release: {
+      lean: deg(-26),
+      head: deg(0),
+      armFront: limb(60, 4),
+      armBack: limb(-30, 90),
+      legFront: limb(36, -34),
+      legBack: limb(-32, -20),
+    },
+    settle: 0.5,
+  },
+
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.

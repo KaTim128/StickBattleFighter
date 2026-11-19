@@ -743,7 +743,11 @@ export class FightArenaScene implements ArenaScene {
         : // Vexoris is immune to his own fog and sees clearly through it, tinted green.
           (this.abilities?.world.clouds.some(
               (c) =>
-                c.fog && c.casterId === f.name && c.ageS >= c.armS && Math.hypot(f.x - c.x, f.y - c.y) <= c.radiusM,
+                c.fog &&
+                Number.isFinite(c.fog.sightM) && // a slow field (Chronos) does not tint his own view green
+                c.casterId === f.name &&
+                c.ageS >= c.armS &&
+                Math.hypot(f.x - c.x, f.y - c.y) <= c.radiusM,
             ) ?? false)
           ? 1
           : 0,
@@ -1596,6 +1600,14 @@ export class FightArenaScene implements ArenaScene {
     if (block || (slot !== 'ult' && f.combatant.stamina < f.caster.def(slot).staminaCost)) return;
     const start = { x: f.x + f.aim.x * 3, y: f.y + f.aim.y * 3 };
     this.pointAim = { slot, spot: this.clampToReach(f, slot, this.insideMap(start)) };
+  }
+
+  /** Temporal afterimages (Chronos): the live ones, aged by this frame. */
+  private ghosts: { x: number; y: number; facing: number; ageS: number; lifeS: number }[] = [];
+  private ghostsNow(dtS: number): { x: number; y: number; facing: number; ageS: number; lifeS: number }[] {
+    for (const g of this.ghosts) g.ageS += dtS;
+    this.ghosts = this.ghosts.filter((g) => g.ageS < g.lifeS);
+    return this.ghosts.map((g) => ({ ...g }));
   }
 
   /** A teleport the player aims (not one that picks its own spot, like "Behind You"). */
@@ -2656,7 +2668,8 @@ export class FightArenaScene implements ArenaScene {
         (passive?.id === 'mastery' ||
           passive?.id === 'focus' ||
           passive?.id === 'efficiency' ||
-          passive?.id === 'resonance')
+          passive?.id === 'resonance' ||
+          passive?.id === 'temporal')
       )
         attacker.combatant.gainMastery(1, passive.maxStacks);
       if (!hitFighter) this.shake.addTrauma(a.trauma);
@@ -3182,6 +3195,23 @@ export class FightArenaScene implements ArenaScene {
       grenades: world.grenades,
       funnels: world.funnels,
       cages: world.cages,
+      ghosts: this.ghostsNow(frameDtS),
+      echoes: world.echoes.map((e) => ({
+        x: e.from.x,
+        y: e.from.y,
+        dirX: e.dir.x,
+        dirY: e.dir.y,
+        k: Math.min(1, (world.timeS - e.createdS) / Math.max(0.1, e.dueS - e.createdS)),
+        palette: e.def.look?.palette ?? null,
+      })),
+      decoys: world.decoys.map((d) => ({
+        x: d.x,
+        y: d.y,
+        dirX: d.dir.x,
+        ageS: d.ageS,
+        lifeS: d.lifeS,
+        palette: d.def.look?.palette ?? null,
+      })),
       fists: this.fighters.flatMap((f) => {
         const fo = world.fistOf(f.name);
         if (!fo) return [];
@@ -3509,6 +3539,17 @@ export class FightArenaScene implements ArenaScene {
     f.view.stunned = c.state === 'stunned';
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
+    // Temporal Acceleration: dodges recover faster; and afterimages trail a fighter who is moving fast under it (or in End of Time).
+    c.dodgeRecoveryScale = f.buff?.dodgeRecoveryFactor ?? 1;
+    const afterimageLook = f.caster?.cast?.def.look?.afterimages === true && f.driveVelocity !== null;
+    if ((f.buff?.afterimages || afterimageLook) && !c.isKo && (f.view.motion > 0.15 || afterimageLook)) {
+      f.ghostS -= frameDtS;
+      if (f.ghostS <= 0) {
+        f.ghostS = 0.06;
+        this.ghosts.push({ x: f.x, y: f.y, facing: f.facing, ageS: 0, lifeS: 0.45 });
+        if (this.ghosts.length > 60) this.ghosts.shift();
+      }
+    }
     // Reinforced Plating: the armour plates slide out and lock, then fold away at the end.
     const platingTo = f.buff?.plating ? Math.min(1, f.buff.leftS / 0.4) : 0;
     f.view.plating += (platingTo - f.view.plating) * smoothing(8, frameDtS);

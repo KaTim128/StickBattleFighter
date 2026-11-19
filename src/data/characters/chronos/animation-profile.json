@@ -1,0 +1,17 @@
+{
+  "id": "chronos-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Idle": "proc.idle.temporal",
+    "FightingStance": "proc.idle.temporal",
+    "Turn": "proc.idle.temporal",
+    "Jab": "chrono.jab",
+    "Hook": "chrono.palm",
+    "SideKick": "chrono.spin-kick",
+    "RoundhouseKick": "chrono.echo-impact",
+    "FrontKick": "chrono.lunge",
+    "JumpingFrontKick": "chrono.slip-kick",
+    "DownwardAerialKick": "chrono.drop",
+    "HeavyAttack": "chrono.temporal-fist"
+  }
+}

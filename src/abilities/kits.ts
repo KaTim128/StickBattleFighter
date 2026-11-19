@@ -1,4 +1,5 @@
 import { AERION_KIT } from '../data/abilities/aerion';
+import { CHRONOS_KIT } from '../data/abilities/chronos';
 import { GEARGRIND_KIT } from '../data/abilities/geargrind';
 import { INFERNO_KIT } from '../data/abilities/inferno';
 import { KENSHIRO_KIT } from '../data/abilities/kenshiro';
@@ -19,6 +20,7 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'vexoris-kit': VEXORIS_KIT,
   'aerion-kit': AERION_KIT,
   'kenshiro-kit': KENSHIRO_KIT,
+  'chronos-kit': CHRONOS_KIT,
   'geargrind-kit': GEARGRIND_KIT,
   'psion-kit': PSION_KIT,
   'reson-kit': RESON_KIT,

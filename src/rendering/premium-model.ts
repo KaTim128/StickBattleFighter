@@ -103,6 +103,10 @@ export interface PremiumSkin {
   readonly gauntlets?: { readonly steel: number; readonly ring: number };
   /** Geometric sound-amplification gear: hexagonal emitter plates on the shoulders and wave arcs on the chest (Reson). */
   readonly soundGear?: { readonly plate: number; readonly glow: number };
+  /** A bronze clock face behind the shoulders with turning hands and a ticking second hand (Chronos). */
+  readonly clockDisc?: { readonly bronze: number; readonly cyan: number };
+  /** A temporal device on the near forearm: a bronze dial with cyan hands and a glowing crystal (Chronos). */
+  readonly dial?: { readonly bronze: number; readonly cyan: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
   readonly hoverM?: number;
 }
@@ -442,6 +446,41 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     gauntlets: { steel: 0x586070, ring: 0x19c4e0 },
     soundGear: { plate: 0x3a424c, glow: 0x7ae8ff },
   },
+  // Chronos (master plan section 4): dark silver with bronze details and cyan temporal energy; a clock face behind the shoulders, a
+  // dial device on one forearm, bronze clockwork fragments drifting round him. Not Geargrind: no backpack, no machine arm.
+  temporal: {
+    palette: {
+      outline: 0x10151a,
+      skin: 0x5b6672,
+      skinLit: 0x93a0ad,
+      skinShade: 0x38414b,
+      skinBack: 0x46505b,
+      rim: 0x8defff,
+      armour: 0x3d4650,
+      armourLit: 0x7a8794,
+      armourEdge: 0x10151a,
+      seam: 0xb98a4a,
+      lava: 0xf0fdff,
+      glow: 0x19b8d6,
+      hand: 0x5b6672,
+    },
+    bulk: 1.0,
+    muscle: 0.25,
+    gear: {
+      shoulder: 'none',
+      bracers: true,
+      legs: 'trousers',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'own',
+    clockDisc: { bronze: 0xb98a4a, cyan: 0x19b8d6 },
+    dial: { bronze: 0xb98a4a, cyan: 0x8defff },
+    fragments: { colour: 0xb98a4a, glow: 0x19b8d6 },
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -626,6 +665,7 @@ export class PremiumModel {
     this.ly = -0.83;
     if (this.skin.halo) this.halo(g, fire, s);
     if (this.skin.backpack) this.backpack(g, fire, s);
+    if (this.skin.clockDisc) this.clockDisc(g, fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, false);
     if (this.skin.wings) this.wings(g, fire, s);
     this.arm(g, fire, s.armBack, true);
@@ -661,6 +701,7 @@ export class PremiumModel {
     }
     this.arm(g, fire, s.armFront, false);
     if (this.skin.gauntlets) this.gauntlet(g, fire, s.armFront, false);
+    if (this.skin.dial) this.dial(g, fire, s.armFront);
     if (this.skin.soundGear) this.soundGear(g, fire, s);
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
     if ((this.st.plating ?? 0) > 0.02) this.platingOverlay(g, fire, s);
@@ -694,6 +735,66 @@ export class PremiumModel {
         pts.push(cx + Math.cos(a + k * 0.12) * r * 0.62, cy + Math.sin(a + k * 0.12) * r * 0.62);
       g.poly(pts, false).stroke({ width: w * 0.16, color: this.c(h.glow), alpha: 0.9 });
     }
+  }
+
+  /** The clock face behind him: a bronze rim with twelve marks, an hour and a minute hand turning slowly, a quick second hand. */
+  private clockDisc(g: Graphics, fire: Graphics, s: Skel): void {
+    const cd = this.skin.clockDisc;
+    if (!cd) return;
+    const { t, w } = this.st;
+    const cx = s.chest.x - 0.14;
+    const cy = s.chest.y - 0.05;
+    const r = 0.46;
+    fire.circle(cx, cy, r * 1.15).fill({ color: cd.cyan, alpha: 0.1 });
+    g.circle(cx, cy, r + w * 0.15).fill(this.c(this.P.outline));
+    g.circle(cx, cy, r).fill({ color: this.c(cd.bronze), alpha: 0.28 });
+    g.circle(cx, cy, r).stroke({ width: w * 0.2, color: this.c(cd.bronze), alpha: 0.9 });
+    for (let i = 0; i < 12; i++) {
+      const a = (i * Math.PI) / 6;
+      const r0 = r * (i % 3 === 0 ? 0.74 : 0.84);
+      g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
+        .lineTo(cx + Math.cos(a) * r * 0.96, cy + Math.sin(a) * r * 0.96)
+        .stroke({ width: w * (i % 3 === 0 ? 0.16 : 0.1), color: this.c(cd.bronze), alpha: 0.9 });
+    }
+    const hand = (a: number, len: number, wd: number, colour: number) =>
+      g
+        .moveTo(cx, cy)
+        .lineTo(cx + Math.cos(a - Math.PI / 2) * r * len, cy + Math.sin(a - Math.PI / 2) * r * len)
+        .stroke({ width: w * wd, color: colour, alpha: 0.95, cap: 'round' });
+    hand(t * 0.05, 0.5, 0.17, this.c(cd.bronze));
+    hand(t * 0.6, 0.72, 0.12, this.c(cd.bronze));
+    hand(Math.round(t * 1) * 0.6, 0.8, 0.07, cd.cyan);
+    g.circle(cx, cy, w * 0.2).fill(cd.cyan);
+  }
+
+  /** The temporal device: a dial on the forearm, bronze rim, cyan hands, a crystal that pulses. */
+  private dial(g: Graphics, fire: Graphics, pts: readonly Point[]): void {
+    const d = this.skin.dial;
+    if (!d) return;
+    const [, el, hand] = pts as [Point, Point, Point];
+    const { w, t } = this.st;
+    const c = lerp(el, hand, 0.5);
+    const r = w * 1.15;
+    const out = this.c(this.P.outline);
+    g.circle(c.x, c.y, r + w * 0.2).fill(out);
+    g.circle(c.x, c.y, r).fill(this.c(d.bronze));
+    g.circle(c.x, c.y, r * 0.78).fill(0x0c1a1f);
+    for (let i = 0; i < 12; i++) {
+      const a = (i * Math.PI) / 6;
+      g.moveTo(c.x + Math.cos(a) * r * 0.62, c.y + Math.sin(a) * r * 0.62)
+        .lineTo(c.x + Math.cos(a) * r * 0.74, c.y + Math.sin(a) * r * 0.74)
+        .stroke({ width: w * 0.06, color: d.cyan, alpha: 0.8 });
+    }
+    const a1 = t * 0.9;
+    const a2 = Math.round(t * 2) * 0.5;
+    g.moveTo(c.x, c.y)
+      .lineTo(c.x + Math.cos(a1) * r * 0.62, c.y + Math.sin(a1) * r * 0.62)
+      .stroke({ width: w * 0.1, color: d.cyan, cap: 'round' });
+    g.moveTo(c.x, c.y)
+      .lineTo(c.x + Math.cos(a2) * r * 0.4, c.y + Math.sin(a2) * r * 0.4)
+      .stroke({ width: w * 0.1, color: this.c(d.bronze), cap: 'round' });
+    g.circle(c.x, c.y, w * 0.13).fill(0xf0fdff);
+    fire.circle(c.x, c.y, r * (1.3 + 0.3 * Math.sin(t * 4))).fill({ color: d.cyan, alpha: 0.2 });
   }
 
   /** A resonance device on the forearm: a dark steel ring round the arm, a cyan core pulsing, and wave rings spreading off it. */

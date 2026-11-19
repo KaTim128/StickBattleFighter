@@ -149,6 +149,32 @@ export interface AbilityVfxInput {
     readonly hitS: number;
     readonly palette: Palette | null;
   }[];
+  /** Temporal afterimages trailing a fast-moving fighter (Chronos): where, facing, age and lifetime. */
+  readonly ghosts?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly facing: number;
+    readonly ageS: number;
+    readonly lifeS: number;
+  }[];
+  /** Echo Strikes waiting to land: where thrown, along which way, and how far (0..1) to landing. */
+  readonly echoes?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly dirX: number;
+    readonly dirY: number;
+    readonly k: number;
+    readonly palette: Palette | null;
+  }[];
+  /** Harmless afterimage decoys. */
+  readonly decoys?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly dirX: number;
+    readonly ageS: number;
+    readonly lifeS: number;
+    readonly palette: Palette | null;
+  }[];
   /** Rocket fists out (Geargrind): from where the caster stands, along `dir`, `extentM` out. */
   readonly fists?: readonly {
     readonly x: number;
@@ -1326,6 +1352,29 @@ export class AbilityVfx {
         // A thick bank of poison fog: a wide green pool with a drifting, pulsing edge.
         const rise = Math.min(1, c.ageS / 0.8);
         const rad = c.radiusM * rise;
+        if (c.def.look?.field === 'clock') {
+          // Temporal Collapse / End of Time: a pale pool with a clock face turning slowly in it, ticks round the rim and two hands.
+          f.circle(c.x, c.y, rad).fill({ color: pal.deep, alpha: 0.22 * life });
+          f.circle(c.x, c.y, rad).stroke({ width: 0.06, color: pal.bright, alpha: 0.7 * life });
+          f.circle(c.x, c.y, rad * 0.86).stroke({ width: 0.03, color: pal.hot, alpha: 0.5 * life });
+          for (let i = 0; i < 12; i++) {
+            const a0 = (i * Math.PI) / 6;
+            f.moveTo(c.x + Math.cos(a0) * rad * 0.9, c.y + Math.sin(a0) * rad * 0.9)
+              .lineTo(
+                c.x + Math.cos(a0) * rad * (i % 3 === 0 ? 0.74 : 0.82),
+                c.y + Math.sin(a0) * rad * (i % 3 === 0 ? 0.74 : 0.82),
+              )
+              .stroke({ width: i % 3 === 0 ? 0.06 : 0.035, color: pal.core, alpha: 0.8 * life });
+          }
+          const ha = t * 0.5;
+          f.moveTo(c.x, c.y)
+            .lineTo(c.x + Math.cos(ha) * rad * 0.7, c.y + Math.sin(ha) * rad * 0.7)
+            .stroke({ width: 0.06, color: pal.bright, alpha: 0.8 * life, cap: 'round' });
+          f.moveTo(c.x, c.y)
+            .lineTo(c.x + Math.cos(ha * 12) * rad * 0.5, c.y + Math.sin(ha * 12) * rad * 0.5)
+            .stroke({ width: 0.04, color: pal.core, alpha: 0.7 * life, cap: 'round' });
+          continue;
+        }
         f.circle(c.x, c.y, rad).fill({ color: pal.deep, alpha: 0.4 * life });
         f.circle(c.x, c.y, rad * 0.8).fill({ color: pal.hot, alpha: 0.3 * life });
         f.circle(c.x, c.y, rad * 0.5).fill({ color: pal.bright, alpha: 0.16 * life });
@@ -1411,6 +1460,54 @@ export class AbilityVfx {
           color: pal.core,
           alpha: 0.6 * flare,
         });
+    }
+
+    // Chronos's time: afterimages, waiting echoes and decoys, all as cyan silhouettes with clock marks.
+    const silhouette = (x: number, y: number, facing: number, alpha: number, colour: number, glow: number): void => {
+      const head = iso(x, y, 1.62);
+      const chest = iso(x, y, 1.25);
+      const hip = iso(x, y, 0.85);
+      const foot = iso(x, y, 0);
+      g.circle(head.x, head.y, 0.13).fill({ color: colour, alpha });
+      g.moveTo(chest.x, chest.y).lineTo(hip.x, hip.y).stroke({ width: 0.12, color: colour, alpha, cap: 'round' });
+      g.moveTo(hip.x, hip.y)
+        .lineTo(foot.x + 0.14 * facing, foot.y)
+        .stroke({ width: 0.09, color: colour, alpha, cap: 'round' });
+      g.moveTo(hip.x, hip.y)
+        .lineTo(foot.x - 0.16 * facing, foot.y)
+        .stroke({ width: 0.09, color: colour, alpha, cap: 'round' });
+      g.moveTo(chest.x, chest.y)
+        .lineTo(chest.x + 0.34 * facing, chest.y + 0.1)
+        .stroke({ width: 0.08, color: colour, alpha, cap: 'round' });
+      f.circle(x, y, 0.4).fill({ color: glow, alpha: alpha * 0.25 });
+    };
+    for (const gh of input.ghosts ?? []) {
+      const k = 1 - gh.ageS / gh.lifeS;
+      silhouette(gh.x, gh.y, gh.facing, 0.42 * k, 0x7ae8ff, 0x19c4e0);
+    }
+    for (const dc of input.decoys ?? []) {
+      const pal = dc.palette ?? FIRE;
+      const fade = Math.min(1, (dc.lifeS - dc.ageS) / 0.5);
+      silhouette(dc.x, dc.y, dc.dirX >= 0 ? 1 : -1, (0.4 + 0.1 * Math.sin(t * 14)) * fade, pal.bright, pal.hot);
+      // Now and then it repeats the last blow, a pale arc and no more.
+      const beat = dc.ageS % 0.9;
+      if (beat > 0.45 && beat < 0.6) {
+        const c0 = iso(dc.x + dc.dirX * 0.8, dc.y, 1.2);
+        g.arc(c0.x, c0.y, 0.6, -1.0, 1.0).stroke({ width: 0.05, color: pal.core, alpha: 0.5 * fade, cap: 'round' });
+      }
+    }
+    for (const e of input.echoes ?? []) {
+      const pal = e.palette ?? FIRE;
+      silhouette(e.x, e.y, e.dirX >= 0 ? 1 : -1, 0.2 + 0.3 * e.k, pal.bright, pal.hot);
+      // A clock ring closing as the echo comes due, its hand sweeping round.
+      const r = 0.7 * (1.2 - 0.4 * e.k);
+      f.circle(e.x, e.y, r).stroke({ width: 0.04, color: pal.bright, alpha: 0.35 + 0.5 * e.k });
+      f.moveTo(e.x, e.y)
+        .lineTo(
+          e.x + Math.cos(e.k * Math.PI * 2 - Math.PI / 2) * r,
+          e.y + Math.sin(e.k * Math.PI * 2 - Math.PI / 2) * r,
+        )
+        .stroke({ width: 0.05, color: pal.core, alpha: 0.9, cap: 'round' });
     }
 
     // Rocket Fist: the arm extends from the shoulder as a segmented steel cable with a spiked-knuckle fist and a rocket flame behind it.

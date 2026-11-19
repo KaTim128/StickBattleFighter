@@ -1,0 +1,230 @@
+{
+  "id": "chronos-moveset",
+  "starters": {
+    "tap": "forward-jab",
+    "tap-forward": "phase-lunge",
+    "air-tap": "timeslip-kick",
+    "falling-tap": "dropped-second",
+    "heavy": "temporal-fist"
+  },
+  "moves": [
+    {
+      "id": "forward-jab",
+      "displayName": "Forward jab",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.07,
+      "activeS": 0.07,
+      "recoveryS": 0.2,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.3,
+        "radiusM": 0.55
+      },
+      "damage": 12,
+      "strength": 340,
+      "knockbackMps": 1.8,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch"],
+      "next": {
+        "tap": "reverse-palm-strike"
+      },
+      "effect": "time-hit"
+    },
+    {
+      "id": "reverse-palm-strike",
+      "displayName": "Reverse palm strike",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.2,
+        "radiusM": 0.6
+      },
+      "damage": 14,
+      "strength": 340,
+      "knockbackMps": 2.2,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "temporal-spin-kick"
+      },
+      "effect": "time-hit"
+    },
+    {
+      "id": "temporal-spin-kick",
+      "displayName": "Temporal spinning kick",
+      "animationState": "SideKick",
+      "category": "kick",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.11,
+      "activeS": 0.09,
+      "recoveryS": 0.24,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.4,
+        "radiusM": 0.7
+      },
+      "damage": 15,
+      "strength": 340,
+      "knockbackMps": 2.8,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canKick", "canUseCombos"],
+      "next": {
+        "tap": "delayed-impact"
+      },
+      "effect": "time-hit"
+    },
+    {
+      "id": "delayed-impact",
+      "displayName": "Delayed temporal impact",
+      "animationState": "RoundhouseKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.22,
+      "activeS": 0.1,
+      "recoveryS": 0.38,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.9,
+        "radiusM": 0.85
+      },
+      "damage": 24,
+      "strength": 340,
+      "knockbackMps": 6.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "effect": "time-wave"
+    },
+    {
+      "id": "phase-lunge",
+      "displayName": "Phase lunge",
+      "animationState": "FrontKick",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.26,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.9,
+        "radiusM": 0.7
+      },
+      "damage": 15,
+      "strength": 340,
+      "knockbackMps": 3.5,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "effect": "time-hit"
+    },
+    {
+      "id": "timeslip-kick",
+      "displayName": "Timeslip kick",
+      "animationState": "JumpingFrontKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.09,
+      "activeS": 0.09,
+      "recoveryS": 0.3,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.5,
+        "radiusM": 0.7
+      },
+      "damage": 22,
+      "strength": 340,
+      "knockbackMps": 3.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canUseAerialPunches"],
+      "effect": "time-wave"
+    },
+    {
+      "id": "dropped-second",
+      "displayName": "Dropped second",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.07,
+      "activeS": 0.1,
+      "recoveryS": 0.3,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.3,
+        "radiusM": 0.8
+      },
+      "damage": 30,
+      "strength": 340,
+      "knockbackMps": 4.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canUseAerialPunches"],
+      "effect": "time-wave"
+    },
+    {
+      "id": "temporal-fist",
+      "displayName": "Charged temporal fist",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.5,
+      "activeS": 0.12,
+      "recoveryS": 0.5,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 2.0,
+        "radiusM": 0.95
+      },
+      "damage": 46,
+      "strength": 340,
+      "knockbackMps": 8.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.2,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": ["canPunch", "canUseCombos"],
+      "effect": "time-wave",
+      "sfx": "hit-chronos-fist"
+    }
+  ]
+}

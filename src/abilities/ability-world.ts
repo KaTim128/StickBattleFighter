@@ -234,6 +234,27 @@ interface FistAction {
 }
 
 /** A combat drone hovering by its owner (see `DroneDelivery`). */
+/** A delayed copy of a strike waiting to land (see `StrikeDelivery.echo`). */
+export interface Echo {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly from: Vec2;
+  readonly dir: Vec2;
+  dueS: number;
+  readonly createdS: number;
+}
+
+/** A harmless afterimage left behind (see `DashDelivery.decoy`). */
+export interface Decoy {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly x: number;
+  readonly y: number;
+  readonly dir: Vec2;
+  ageS: number;
+  readonly lifeS: number;
+}
+
 export interface Drone {
   readonly casterId: string;
   readonly def: AbilityDef;
@@ -444,6 +465,11 @@ const GRAB_GAIN_PER_S = 16;
 export class AbilityWorld {
   readonly projectiles: Projectile[] = [];
   readonly drones: Drone[] = [];
+  readonly echoes: Echo[] = [];
+  readonly decoys: Decoy[] = [];
+  /** Where each fighter stood over the last few seconds (for Rewind Step), newest last. */
+  private readonly history = new Map<string, { t: number; x: number; y: number }[]>();
+  private historyDueS = 0;
   readonly beams: Beam[] = [];
   readonly zones: FireZone[] = [];
   readonly clouds: Cloud[] = [];
@@ -452,6 +478,12 @@ export class AbilityWorld {
   /** A lifted target cannot be lifted again until this time (Floating Prison's anti-lock rule), world seconds. */
   private readonly liftImmuneUntilS = new Map<string, number>();
   private nowS = 0;
+
+  /** World seconds so far (presentation: how far an echo has come). */
+  get timeS(): number {
+    return this.nowS;
+  }
+
   readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -734,6 +766,42 @@ export class AbilityWorld {
         );
         break;
       }
+      case 'rewind': {
+        const trail = this.history.get(casterId) ?? [];
+        const want = this.nowS - d.windowS;
+        // The sample closest to the wanted moment, but never less than half a second back.
+        const usable = trail.filter((p) => p.t <= this.nowS - 0.5);
+        const best = usable.reduce<{ t: number; x: number; y: number } | null>(
+          (acc, p) => (!acc || Math.abs(p.t - want) < Math.abs(acc.t - want) ? p : acc),
+          null,
+        );
+        const landed = best ? (host.teleport?.(casterId, { x: best.x, y: best.y }) ?? null) : null;
+        if (!landed) {
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+          break;
+        }
+        host.emit({
+          kind: 'impact',
+          ability: def.id,
+          look: def.look,
+          vfx: 'rewind-from',
+          sfx: def.sfx.impact,
+          x: at.x,
+          y: at.y,
+          radiusM: 0.9,
+        });
+        host.emit({
+          kind: 'impact',
+          ability: def.id,
+          look: def.look,
+          vfx: 'rewind-to',
+          sfx: null,
+          x: landed.x,
+          y: landed.y,
+          radiusM: 0.9,
+        });
+        break;
+      }
       case 'fist':
         this.actions.push({ kind: 'fist', casterId, def, dir, ageS: 0, extentM: 0, hit: new Set() });
         break;
@@ -816,6 +884,7 @@ export class AbilityWorld {
       }
       case 'dash': {
         if (d.leavesCloud) this.spawnCloud(casterId, def, { x: at.x, y: at.y }, d.leavesCloud, host);
+        if (d.decoy) this.decoys.push({ casterId, def, x: at.x, y: at.y, dir, ageS: 0, lifeS: d.decoy.lifeS });
         const dashDir = d.backwards ? { x: -dir.x, y: -dir.y } : dir;
         this.actions.push({
           kind: 'dash',
@@ -940,6 +1009,15 @@ export class AbilityWorld {
         break;
       }
       case 'assault': {
+        // A slow field where the rush begins (End of Time): it only slows, it never hurts.
+        if (d.field)
+          this.spawnCloud(
+            casterId,
+            { ...def, payload: { ...def.payload, damage: 0 } },
+            { x: at.x, y: at.y },
+            d.field,
+            host,
+          );
         // Rush at the nearest enemy in range (or straight ahead), then stab, then maybe spring back.
         const foe = this.nearestEnemy(casterId, at, Math.max(def.aimRangeM, d.reachM), host);
         this.actions.push({
@@ -975,6 +1053,15 @@ export class AbilityWorld {
             });
           }
         }
+        if (d.echo)
+          this.echoes.push({
+            casterId,
+            def,
+            from: { x: at.x, y: at.y },
+            dir,
+            dueS: this.nowS + d.echo.delayS,
+            createdS: this.nowS,
+          });
         host.hitEnvironment(casterId, reach, d.radiusM, def.payload, dir, false);
         if (!landed) {
           host.emit({
@@ -1131,6 +1218,7 @@ export class AbilityWorld {
     this.updateZones(dtS, host);
     this.updateClouds(dtS, host);
     this.updateDrones(dtS, host);
+    this.updateEchoes(dtS, host);
     this.updateGrenades(dtS, host);
     for (let i = this.parries.length - 1; i >= 0; i--) {
       const p = this.parries[i]!;
@@ -2085,6 +2173,65 @@ export class AbilityWorld {
       }
     }
     return a.ageS >= total;
+  }
+
+  /** Time: record where everyone stands (for Rewind Step), let decoys fade, and land delayed echoes. */
+  private updateEchoes(dtS: number, host: AbilityHost): void {
+    this.historyDueS -= dtS;
+    if (this.historyDueS <= 0) {
+      this.historyDueS = 0.1;
+      for (const f of host.fighters()) {
+        const trail = this.history.get(f.id) ?? [];
+        trail.push({ t: this.nowS, x: f.x, y: f.y });
+        while (trail.length > 0 && trail[0]!.t < this.nowS - 6) trail.shift();
+        this.history.set(f.id, trail);
+      }
+    }
+    for (let i = this.decoys.length - 1; i >= 0; i--) {
+      const dc = this.decoys[i]!;
+      dc.ageS += dtS;
+      if (dc.ageS >= dc.lifeS) this.decoys.splice(i, 1);
+    }
+    for (let i = this.echoes.length - 1; i >= 0; i--) {
+      const e = this.echoes[i]!;
+      if (this.nowS < e.dueS) continue;
+      this.echoes.splice(i, 1);
+      const d = e.def.delivery;
+      if (d.type !== 'strike' || !d.echo) continue;
+      const reach = { x: e.from.x + e.dir.x * d.reachM, y: e.from.y + e.dir.y * d.reachM };
+      const payload = {
+        ...e.def.payload,
+        damage: Math.round(e.def.payload.damage * d.echo.factor),
+        knockbackMps: e.def.payload.knockbackMps * d.echo.factor,
+      };
+      // Its own hit registration: whoever is in reach now is hit once by the echo, whatever the first blow did.
+      for (const f of host.fighters()) {
+        if (this.friendly(f, e.casterId, host) || !f.hittable) continue;
+        if (segmentDistance(e.from, reach, f) > d.radiusM + f.radiusM) continue;
+        if (this.hit(host, e.casterId, f.id, payload, e.dir, e.def.look?.hitFlash))
+          host.emit({
+            kind: 'impact',
+            ability: e.def.id,
+            look: e.def.look,
+            vfx: 'echo-strike',
+            sfx: 'echo-hit',
+            x: f.x,
+            y: f.y,
+            radiusM: 0.8,
+          });
+      }
+      host.hitEnvironment(e.casterId, reach, d.radiusM, payload, e.dir, false);
+      host.emit({
+        kind: 'impact',
+        ability: e.def.id,
+        look: e.def.look,
+        vfx: 'echo-strike',
+        sfx: null,
+        x: reach.x,
+        y: reach.y,
+        radiusM: 0.5,
+      });
+    }
   }
 
   /** Drones: follow their owner, loose shots at the nearest enemy in range, wear down under enemy fire, expire. */

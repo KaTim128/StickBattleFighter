@@ -49,6 +49,8 @@ export interface AbilityPayload {
   readonly gadget?: boolean;
   /** A sonic ability (Reson): eligible for Resonance's enhancement. */
   readonly sonic?: boolean;
+  /** A temporal ability (Chronos): eligible for Temporal Momentum's enhancement. */
+  readonly temporal?: boolean;
   /**
    * Feedback Pulse (Reson): the target's movement direction wobbles for `durationS` seconds and its facing drifts. It
    * never stuns and never cancels an attack.
@@ -204,6 +206,8 @@ export interface DashDelivery {
   readonly backwards?: boolean;
   /** Leaves this cloud at the starting position (Vapour Step's mist); a dash with no hit radius hits nobody on the way. */
   readonly leavesCloud?: CloudSpec;
+  /** Leaves a harmless afterimage where he started (Chronos's Afterimage Decoy); it deals no damage and lasts `lifeS`. */
+  readonly decoy?: { readonly lifeS: number };
 }
 
 /**
@@ -288,6 +292,15 @@ export interface TeleportDelivery {
   readonly retreatM?: number;
 }
 
+/**
+ * Rewind Step (Chronos): the caster returns to where he stood `windowS` seconds ago (or the oldest place recorded, at least
+ * half a second back). It restores nothing: no health, no cooldowns, no undone damage.
+ */
+export interface RewindDelivery {
+  readonly type: 'rewind';
+  readonly windowS: number;
+}
+
 export interface SummonDelivery extends SummonSpec {
   readonly type: 'summon';
 }
@@ -369,6 +382,8 @@ export function beamRampFactor(ramp: BeamDelivery['ramp'], contactS: number): nu
  */
 export interface AssaultDelivery {
   readonly type: 'assault';
+  /** A slow field laid down where the rush begins (Chronos's End of Time); it never damages by itself. */
+  readonly field?: CloudSpec;
   readonly approachSpeedMps: number;
   /** The rush gives up after this long (nobody reached): the stabs still come, at the air. */
   readonly maxApproachS: number;
@@ -494,6 +509,11 @@ export interface StrikeDelivery {
   readonly type: 'strike';
   readonly reachM: number;
   readonly radiusM: number;
+  /**
+   * A delayed temporal copy of the blow (Chronos's Echo Strike): `delayS` later the same strike lands again from where
+   * it was thrown, with its own hit registration (it can hit anyone in reach then, once), at `factor` of the damage.
+   */
+  readonly echo?: { readonly delayS: number; readonly factor: number };
 }
 
 /**
@@ -531,6 +551,10 @@ export interface BuffDelivery {
   readonly darkensFoes?: { readonly visibleM: number };
   /** The caster is drawn with dark skin and blue flames while it lasts (Inferno's Blue Inferno). */
   readonly blueFlames?: boolean;
+  /** Temporal afterimages follow the caster's movements while it lasts (Chronos's Temporal Acceleration). */
+  readonly afterimages?: boolean;
+  /** Dodges recover this much faster while it lasts (1 = normal; 0.6 = 40% shorter cooldown). */
+  readonly dodgeRecoveryFactor?: number;
   /** Armour plates extend over the caster while it lasts (Geargrind's Reinforced Plating, Overdrive). */
   readonly plating?: boolean;
   /** The caster is drawn this much bigger while it lasts (Rampage Mode, owner 13/11/2026: 1.1). */
@@ -576,6 +600,7 @@ export type Delivery =
   | LiftDelivery
   | BarrierDelivery
   | FistDelivery
+  | RewindDelivery
   | DroneDelivery
   | JudgementDelivery
   | GrenadeDelivery
@@ -648,6 +673,10 @@ export interface MagicLook {
   readonly telegraph?: 'compress' | 'debris' | 'rings';
   /** A barrier drawn as rippling sound-wave rings instead of hexagonal facets (Reson's Resonance Barrier). */
   readonly barrierStyle?: 'sonic';
+  /** A slow field drawn as a turning clock face (Chronos's Temporal Collapse). */
+  readonly field?: 'clock';
+  /** Afterimages trail the caster while this ability runs (Chronos). */
+  readonly afterimages?: boolean;
   /** What wraps the caster while a leap carries it: flames (default) or streaming wind (Aerion's dives). */
   readonly airBody?: 'flames' | 'wind';
   /**
@@ -736,7 +765,7 @@ export interface AbilityKit {
    * faster. All stacks lapse together when the time runs out.
    */
   readonly passive?: {
-    readonly id: 'momentum' | 'mastery' | 'focus' | 'efficiency' | 'resonance';
+    readonly id: 'momentum' | 'mastery' | 'focus' | 'efficiency' | 'resonance' | 'temporal';
     readonly name: string;
     readonly description: string;
     readonly maxStacks: number;

@@ -537,7 +537,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           const r = at && edge ? Math.hypot(edge.x - at.x, edge.y - at.y) : 0;
           visionVeil.update(p.darkS, at, r, p.nightVisionS);
           // Poison fog: the same circle of sight, but a green haze instead of black.
-          const fogAt = p.fogS > 0 && scene.match?.spectate !== true ? scene.worldToScreen(p.x, p.y, 0.9) : null;
+          const fogAt =
+            p.fogS > 0 && Number.isFinite(p.sightM) && scene.match?.spectate !== true
+              ? scene.worldToScreen(p.x, p.y, 0.9)
+              : null;
           const fogEdge =
             fogAt && Number.isFinite(p.sightM)
               ? scene.worldToScreen(p.x + p.sightM * Math.SQRT1_2, p.y - p.sightM * Math.SQRT1_2, 0.9)

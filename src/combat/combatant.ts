@@ -131,6 +131,8 @@ export class Combatant {
   decayEnded = false;
   private dodgeS = 0;
   private dodgeCooldownS = 0;
+  /** Multiplies the cooldown a dodge starts (Temporal Acceleration shortens it); set by the scene each step. */
+  dodgeRecoveryScale = 1;
   /** Dodges in the current chain (0 when rested) and time since the last one. */
   private dodgeChain = 0;
   private lastDodgeCooldownS = 1;
@@ -213,7 +215,8 @@ export class Combatant {
     this.dodgeS = DEFENCE.dodgeDurationS;
     const k = DEFENCE.dodgeChainInvuln[Math.min(chain, DEFENCE.dodgeChainInvuln.length - 1)]!;
     if (k > 0) this.invulnS = Math.max(this.invulnS, DEFENCE.dodgeInvulnS * k);
-    this.dodgeCooldownS = this.dodgeCooldownTotalS * (1 + DEFENCE.dodgeChainCooldownStep * chain);
+    this.dodgeCooldownS =
+      this.dodgeCooldownTotalS * (1 + DEFENCE.dodgeChainCooldownStep * chain) * this.dodgeRecoveryScale;
     this.lastDodgeCooldownS = this.dodgeCooldownS;
     this.dodgeChain = chain + 1;
     this.sinceDodgeReadyS = 0;

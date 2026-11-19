@@ -20,6 +20,7 @@ const AI: Record<string, string> = {
   'kenshiro-kit': 'kenshiro-ai',
   'psion-kit': 'psion-ai',
   'reson-kit': 'reson-ai',
+  'chronos-kit': 'chronos-ai',
   'geargrind-kit': 'geargrind-ai',
 };
 
