@@ -294,10 +294,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(14, 26, 10, '#d8ffb0', 0.14),
     `<g opacity=".5" filter="url(#bl)"><circle cx="12" cy="28" r="9" fill="#9ab87a"/><circle cx="22" cy="24" r="7" fill="#9ab87a"/></g><path d="M6 36 C18 30 30 26 42 14" stroke="#7dff3a" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".85"/><g filter="url(#ds)"><circle cx="34" cy="17" r="4.2" fill="#2e3226" stroke="#0b0e07" stroke-width="1.4"/><circle cx="32.8" cy="16" r="1.4" fill="#7dff3a"/><circle cx="36.4" cy="16.2" r="1.2" fill="#7dff3a"/></g>`,
   ),
-  'hardened-filter': icon(
+  grenade: icon(
     'toxin',
-    rays(24, 24, 14, '#d8ffb0', 0.2),
-    `<g filter="url(#ds)"><circle cx="24" cy="25" r="13" fill="#2e3226" stroke="#0b0e07" stroke-width="2"/><circle cx="19" cy="22" r="4" fill="#0d1a06" stroke="#3a3d34" stroke-width="1.4"/><circle cx="29" cy="22" r="4" fill="#0d1a06" stroke="#3a3d34" stroke-width="1.4"/><circle cx="19" cy="22" r="2.2" fill="#7dff3a" filter="url(#gl)"/><circle cx="29" cy="22" r="2.2" fill="#7dff3a" filter="url(#gl)"/><rect x="19" y="29" width="10" height="9" rx="4" fill="url(#gr)" stroke="#17181d" stroke-width="1.4"/></g><circle cx="24" cy="25" r="19" fill="none" stroke="#7dff3a" stroke-width="1.6" opacity=".6"/>`,
+    rays(24, 26, 16, '#ffe9a8', 0.22),
+    `<circle cx="24" cy="28" r="15" fill="#ffb347" opacity=".3" filter="url(#bl)"/><g filter="url(#ds)"><ellipse cx="24" cy="29" rx="11.5" ry="13" fill="#4a5a30" stroke="#10160b" stroke-width="1.8"/><path d="M14 24 H34 M14 29 H34 M14 34 H34 M24 17 V41" stroke="#2c3820" stroke-width="1.5" fill="none"/><rect x="20" y="12" width="8" height="6" rx="1.5" fill="#6d6f7a" stroke="#17181d" stroke-width="1.4"/><path d="M28 14 C34 10 38 12 38 17" stroke="#c9d1b0" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="38" cy="19" r="3" fill="none" stroke="#c9d1b0" stroke-width="1.8"/></g><ellipse cx="19" cy="25" rx="2.6" ry="4" fill="#fff" opacity=".28"/>`,
   ),
   'plague-bloom': icon(
     'toxin',

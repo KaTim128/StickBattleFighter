@@ -222,8 +222,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   bastionAnchor: { role: 'buff', minM: 0, maxM: 2.4, weight: 1.2, when: { selfHpBelow: 0.7 } },
   // Soul Tether: reel in and drain a target that is too close or runs.
   soulTether: { role: 'control', minM: 2, maxM: 9, weight: 1.1 },
-  // Hardened Filter: brace when hurt and someone is on him.
-  hardenedFilter: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.7 } },
+  // Grenade: lob it at a target in mid range; the blast is wide, so it needs no precision.
+  grenade: { role: 'burst', minM: 3, maxM: 7.5, weight: 1.2 },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
   deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };

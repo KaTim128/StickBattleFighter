@@ -172,6 +172,26 @@ export interface Cloud {
   readonly dwellS: Map<string, number>;
 }
 
+/** A lobbed grenade in flight, lying where it landed, or stuck to an enemy (see `GrenadeDelivery`). */
+export interface Grenade {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly from: Vec2;
+  readonly to: Vec2;
+  x: number;
+  y: number;
+  /** Height above the floor, metres. */
+  z: number;
+  /** 0..1 along its arc while flying. */
+  k: number;
+  state: 'flying' | 'landed' | 'stuck';
+  /** Seconds until it goes off (counting only once landed or stuck). */
+  fuseLeftS: number;
+  /** The fighter it is stuck to. */
+  stuckTo?: string;
+  ageS: number;
+}
+
 /** A Death Mark in progress (see `MarkDelivery`). */
 export interface DeathMark {
   readonly casterId: string;
@@ -284,6 +304,11 @@ const BEAM_MUZZLE_M = 0.45;
 const RETREAT_TURNS_DEG = [0, 30, -30, 60, -60, 90, -90, 120, -120] as const;
 /** How far short of a wall a blink stops, metres. */
 const WALL_CLEARANCE_M = 0.5;
+/** A lobbed grenade leaves the hand this high, and only sticks to a body below this height, metres. */
+const GRENADE_RELEASE_HEIGHT_M = 1.3;
+const GRENADE_STICK_MAX_Z_M = 1.9;
+/** Out of the hand, a grenade ignores bodies for this long a flight (it cannot stick to its own thrower's side). */
+const GRENADE_ARM_K = 0.12;
 
 const norm = (v: Vec2): Vec2 => {
   const l = Math.hypot(v.x, v.y);
@@ -303,6 +328,7 @@ export class AbilityWorld {
   readonly beams: Beam[] = [];
   readonly zones: FireZone[] = [];
   readonly clouds: Cloud[] = [];
+  readonly grenades: Grenade[] = [];
   readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -493,12 +519,36 @@ export class AbilityWorld {
         });
         break;
       }
-      case 'dash':
+      case 'grenade': {
+        // Lobbed to where it aims, within range and short of any wall in the way.
+        const want = Math.min(def.aimRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+        const end = { x: at.x + dir.x * want, y: at.y + dir.y * want };
+        const block = host.blocked(at, end);
+        const reach = block === null ? want : Math.max(0.4, want * block - 0.3);
+        const to = { x: at.x + dir.x * reach, y: at.y + dir.y * reach };
+        this.grenades.push({
+          casterId,
+          def,
+          from: { x: at.x, y: at.y },
+          to,
+          x: at.x,
+          y: at.y,
+          z: GRENADE_RELEASE_HEIGHT_M,
+          k: 0,
+          state: 'flying',
+          fuseLeftS: 0,
+          ageS: 0,
+        });
+        break;
+      }
+      case 'dash': {
+        if (d.leavesCloud) this.spawnCloud(casterId, def, { x: at.x, y: at.y }, d.leavesCloud, host);
+        const dashDir = d.backwards ? { x: -dir.x, y: -dir.y } : dir;
         this.actions.push({
           kind: 'dash',
           casterId,
           def,
-          dir,
+          dir: dashDir,
           remainingS: d.distanceM / d.speedMps,
           ageS: 0,
           hit: new Set(),
@@ -508,6 +558,7 @@ export class AbilityWorld {
           stuckS: 0,
         });
         break;
+      }
       case 'nova': {
         // Around the caster, or where it aims (within range, short of any wall in the way).
         let spot = at;
@@ -785,6 +836,7 @@ export class AbilityWorld {
     this.updateTelegraphs(dtS, host);
     this.updateZones(dtS, host);
     this.updateClouds(dtS, host);
+    this.updateGrenades(dtS, host);
     this.updateMarks(dtS, host);
   }
 
@@ -1120,6 +1172,13 @@ export class AbilityWorld {
         ageS: 0,
         burn: d.trail.burn,
       });
+    }
+    // A dash with no hit radius (Vapour Step) is a reposition: it hits nobody and nothing on the way.
+    if (d.hitRadiusM <= 0) {
+      a.remainingS -= dtS;
+      if (a.remainingS <= 0) return true;
+      host.drive(a.casterId, { x: a.dir.x * d.speedMps, y: a.dir.y * d.speedMps }, 0);
+      return false;
     }
     for (const f of host.fighters()) {
       if (this.friendly(f, a.casterId, host) || !f.hittable || a.hit.has(f.id)) continue;
@@ -1468,6 +1527,94 @@ export class AbilityWorld {
       if (stack) c.hit.add(f.id);
       host.fogFighter?.(f.id, { sightM: fog.sightM, speedFactor: fog.speedFactor, chipDps: fog.chipDps, stack });
     }
+  }
+
+  /** Grenades: fly the arc, stick to the first enemy passed through, count the fuse, then blast. */
+  private updateGrenades(dtS: number, host: AbilityHost): void {
+    for (let i = this.grenades.length - 1; i >= 0; i--) {
+      const g = this.grenades[i]!;
+      const d = g.def.delivery;
+      if (d.type !== 'grenade') continue;
+      g.ageS += dtS;
+      if (g.state === 'flying') {
+        const total = Math.max(0.01, Math.hypot(g.to.x - g.from.x, g.to.y - g.from.y));
+        g.k = Math.min(1, g.k + (d.speedMps * dtS) / total);
+        g.x = g.from.x + (g.to.x - g.from.x) * g.k;
+        g.y = g.from.y + (g.to.y - g.from.y) * g.k;
+        g.z = GRENADE_RELEASE_HEIGHT_M * (1 - g.k) + 4 * d.arcHeightM * g.k * (1 - g.k);
+        if (g.k > GRENADE_ARM_K && g.z < GRENADE_STICK_MAX_Z_M) {
+          const foe = host
+            .fighters()
+            .find(
+              (f) =>
+                f.hittable &&
+                !this.friendly(f, g.casterId, host) &&
+                Math.hypot(f.x - g.x, f.y - g.y) <= d.stickRadiusM + f.radiusM,
+            );
+          if (foe) {
+            g.state = 'stuck';
+            g.stuckTo = foe.id;
+            g.fuseLeftS = d.stickFuseS;
+            host.emit({
+              kind: 'release',
+              ability: g.def.id,
+              look: g.def.look,
+              vfx: 'grenade-stick',
+              sfx: g.def.sfx.cast,
+              x: foe.x,
+              y: foe.y,
+            });
+          }
+        }
+        if (g.state === 'flying' && g.k >= 1) {
+          g.state = 'landed';
+          g.z = 0;
+          g.fuseLeftS = d.fuseS;
+        }
+        continue;
+      }
+      if (g.state === 'stuck') {
+        const foe = host.fighters().find((f) => f.id === g.stuckTo);
+        if (foe) {
+          g.x = foe.x;
+          g.y = foe.y;
+          g.z = 0.95;
+        }
+      }
+      g.fuseLeftS -= dtS;
+      if (g.fuseLeftS > 0) continue;
+      this.grenades.splice(i, 1);
+      this.explode(g, d, host);
+    }
+  }
+
+  /** The blast: every enemy within the radius is hit once with the payload (falling off with distance); props too. */
+  private explode(g: Grenade, d: Extract<AbilityDef['delivery'], { type: 'grenade' }>, host: AbilityHost): void {
+    const at = { x: g.x, y: g.y };
+    for (const f of host.fighters()) {
+      if (this.friendly(f, g.casterId, host) || !f.hittable) continue;
+      const dist = Math.hypot(f.x - at.x, f.y - at.y);
+      if (dist > d.blastRadiusM + f.radiusM) continue;
+      this.hit(
+        host,
+        g.casterId,
+        f.id,
+        payloadAt(g.def.payload, dist, d.blastRadiusM),
+        norm({ x: f.x - at.x, y: f.y - at.y }),
+        g.def.look?.hitFlash,
+      );
+    }
+    host.hitEnvironment(g.casterId, at, d.blastRadiusM, g.def.payload, { x: 1, y: 0 }, false);
+    host.emit({
+      kind: 'impact',
+      ability: g.def.id,
+      look: g.def.look,
+      vfx: g.def.vfx,
+      sfx: g.def.sfx.impact,
+      x: at.x,
+      y: at.y,
+      radiusM: d.blastRadiusM,
+    });
   }
 
   private updateZones(dtS: number, host: AbilityHost): void {

@@ -866,3 +866,6 @@ Done: separate tap karate and heavy jar smash (see TD-120 addendum). Gate: biome
 
 ## 20/11/2026: Vexoris abilities rework (TD-121)
 Done: landmine Chemical Trap, thrown-jar Toxic Jar, 10 s poison-fog Plague Bloom with enemy haze and Vexoris green sight. Gate: biome, typecheck, vitest 964 passed. Screenshots checked: jar throw and shatter, planted mine, fog bank, Vexoris green view, forced haze overlay. Next: deploy, owner review, then Arcstrike.
+
+## 21/11/2026: Vexoris Grenade, Vapour Step, fog sight 1.2 m (TD-122)
+Gate: biome, typecheck, vitest. Screenshots checked: grenade arc, stick, explosion; Vapour Step mist. Next: deploy, owner review, then Arcstrike.

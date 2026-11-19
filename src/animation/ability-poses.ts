@@ -281,25 +281,26 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-38), armFront: limb(60, 8), armBack: limb(-30, 50), ...CROUCH },
     settle: 0.4,
   },
-  // Vapor Step: weight sinks back onto the rear leg with the arms crossed, then a lunge forward through the smoke.
+  // Vapour Step: the body dissolves backwards: he leans away with the arms thrown forward and the heels pushing off.
   vaporStep: {
-    windup: { lean: deg(10), armFront: limb(30, 120), armBack: limb(30, 120), legBack: limb(-30, -40) },
+    windup: { lean: deg(-6), armFront: limb(40, 90), armBack: limb(40, 90), legFront: limb(20, -20) },
     release: {
-      lean: deg(-28),
-      head: deg(10),
-      armFront: limb(-40, 40),
-      armBack: limb(-50, 40),
-      legFront: limb(48, -40),
-      legBack: limb(-40, -20),
+      lean: deg(22),
+      head: deg(-8),
+      armFront: limb(90, 20),
+      armBack: limb(80, 20),
+      legFront: limb(-30, -50),
+      legBack: limb(30, -20),
     },
-    run: { lean: deg(-30), armFront: limb(-30, 50), armBack: limb(-40, 50) },
-    settle: 0.4,
+    run: { lean: deg(22), armFront: limb(70, 30), armBack: limb(60, 30) },
+    settle: 0.3,
   },
-  // Hardened Filter: both hands to the mask, checking the seal, then a braced guard.
-  hardenedFilter: {
-    windup: { lean: deg(-4), head: deg(6), armFront: limb(120, 120), armBack: limb(110, 120) },
-    release: { lean: deg(-10), armFront: limb(70, 100), armBack: limb(60, 100), legFront: limb(34, -34) },
-    settle: 0.4,
+  // Grenade: the free hand pulls the pin as the rear arm holds the grenade by the shoulder, then an underhand-to-overhand
+  // lob: the throwing arm swings forward and up, the body turning with it.
+  grenade: {
+    windup: { lean: deg(8), head: deg(-4), armBack: limb(150, 90), armFront: limb(40, 100), legFront: limb(22, -22) },
+    release: { lean: deg(-20), head: deg(8), armBack: limb(104, 6), armFront: limb(-30, 60), legFront: limb(40, -30) },
+    settle: 0.45,
   },
   // Plague Bloom: arms drawn up and in over the chest as the poison gathers, then flung wide to vent it all.
   plagueBloom: {

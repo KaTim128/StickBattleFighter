@@ -112,6 +112,8 @@ export class StickmanView {
    * drawn from his coat pocket as the wind-up goes on, and is gone at the smash).
    */
   jar = 0;
+  /** 0..1 how much of a grenade is in the rear hand (Vexoris's Grenade wind-up). */
+  grenade = 0;
   /** 0..1 red glow in the eyes of a mask (Death Mark charged). */
   eyeGlow = 0;
   private slashColours = { colour: 0xe5242e, edge: 0xff9a9a };
@@ -416,6 +418,24 @@ export class StickmanView {
     if (this.dark > 0.01) this.drawDark(s);
   }
 
+  /** A grenade in the rear hand: an olive body with ridges, a steel cap and a pin ring. */
+  private drawGrenade(g: Graphics, s: ReturnType<typeof solveSkeleton>): void {
+    const [, elbow, hand] = s.armBack;
+    const fx = hand.x - elbow.x;
+    const fy = hand.y - elbow.y;
+    const len = Math.hypot(fx, fy) || 1;
+    const k = Math.min(1, this.grenade);
+    const c = { x: hand.x + (fx / len) * 0.09, y: hand.y + (fy / len) * 0.09 };
+    const r = 0.1 * (0.6 + 0.4 * k);
+    g.circle(c.x, c.y, r * 1.1).fill(0x4a5a30);
+    g.circle(c.x, c.y, r * 1.1).stroke({ width: 0.014, color: 0x10160b });
+    g.moveTo(c.x - r, c.y)
+      .lineTo(c.x + r, c.y)
+      .stroke({ width: 0.01, color: 0x2c3820 });
+    g.roundRect(c.x - r * 0.45, c.y - r * 1.5, r * 0.9, r * 0.6, r * 0.15).fill(0x6d6f7a);
+    g.circle(c.x + r * 0.9, c.y - r * 1.3, r * 0.4).stroke({ width: 0.012, color: 0xc9d1b0 });
+  }
+
   /** The poison jar in the rear hand: a small glass jar of glowing green liquid with a metal lid, the glow seen from afar. */
   private drawJar(g: Graphics, s: ReturnType<typeof solveSkeleton>): void {
     const [, elbow, hand] = s.armBack;
@@ -442,6 +462,7 @@ export class StickmanView {
   private drawSlash(s: ReturnType<typeof solveSkeleton>, t: number): void {
     const g = this.slashLayer.clear();
     if (this.jar > 0.01) this.drawJar(g, s);
+    if (this.grenade > 0.01) this.drawGrenade(g, s);
     const sl = this.slash;
     if (sl) {
       this.slashColours = { colour: sl.colour, edge: sl.edge };

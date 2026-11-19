@@ -1,6 +1,6 @@
 import { type Container, Graphics } from 'pixi.js';
 import type { MagicLook } from '../abilities/ability-def';
-import type { AbilityFx, Beam, Cloud, FireZone, Projectile, Telegraph } from '../abilities/ability-world';
+import type { AbilityFx, Beam, Cloud, FireZone, Grenade, Projectile, Telegraph } from '../abilities/ability-world';
 import { ISO_T, iso } from '../rendering/projection';
 
 /**
@@ -123,6 +123,8 @@ export interface AbilityVfxInput {
   }[];
   /** Lingering gas clouds (Vexoris). */
   readonly clouds?: readonly Cloud[];
+  /** Lobbed grenades in flight, landed or stuck (Vexoris). */
+  readonly grenades?: readonly Grenade[];
   readonly telegraphs: readonly Telegraph[];
   readonly fx: readonly AbilityFx[];
   readonly burning: readonly BurningThing[];
@@ -1174,6 +1176,10 @@ export class AbilityVfx {
       if (c.ageS < c.armS) f.circle(c.x, c.y, c.radiusM).stroke({ width: 0.06, color: pal.bright, alpha: 0.6 });
     }
 
+    // Grenades: a shadow on the floor, then the olive body tumbling through its arc (or sitting, or stuck to someone),
+    // with a light that blinks faster as the fuse runs down.
+    for (const gr of input.grenades ?? []) this.grenade(f, g, gr, t);
+
     // Burning floor patches (Flame Dash trail).
     for (const z of input.zones) {
       const life = 1 - z.ageS / z.lifeS;
@@ -1485,6 +1491,43 @@ export class AbilityVfx {
     const light = live ? pal.bright : 0xff4a3a;
     g.circle(top.x, top.y - 0.03, 0.075).fill({ color: light, alpha: 0.28 * blink });
     g.circle(top.x, top.y - 0.03, 0.04).fill({ color: light, alpha: blink });
+  }
+
+  /** A grenade: shadow, body (tumbling in flight), pin ring and a fuse light that blinks faster as it runs down. */
+  private grenade(f: Graphics, g: Graphics, gr: Grenade, t: number): void {
+    const d = gr.def.delivery;
+    if (d.type !== 'grenade') return;
+    const r = 0.13;
+    const lift = Math.max(0, gr.z);
+    f.ellipse(gr.x, gr.y, r * (1.3 - Math.min(0.5, lift * 0.2)), r * 0.9).fill({ color: 0x000000, alpha: 0.28 });
+    const c = iso(gr.x, gr.y, lift + r);
+    const spin = gr.state === 'flying' ? t * 16 : 0;
+    const rot = (x: number, y: number) => ({
+      x: c.x + x * Math.cos(spin) - y * Math.sin(spin),
+      y: c.y + x * Math.sin(spin) + y * Math.cos(spin),
+    });
+    const body = [rot(-r, -r * 0.8), rot(r, -r * 0.8), rot(r * 1.05, r * 0.9), rot(-r * 1.05, r * 0.9)].flatMap((q) => [
+      q.x,
+      q.y,
+    ]);
+    g.circle(c.x, c.y, r * 1.1).fill({ color: 0x4a5a30, alpha: 1 });
+    g.poly(body).fill({ color: 0x4a5a30, alpha: 1 });
+    g.circle(c.x, c.y, r * 1.1).stroke({ width: 0.02, color: 0x10160b, alpha: 1 });
+    const cap = [
+      rot(-r * 0.45, -r * 1.35),
+      rot(r * 0.45, -r * 1.35),
+      rot(r * 0.45, -r * 0.8),
+      rot(-r * 0.45, -r * 0.8),
+    ].flatMap((q) => [q.x, q.y]);
+    g.poly(cap).fill(0x6d6f7a);
+    if (gr.state === 'flying') return;
+    const total = gr.state === 'stuck' ? d.stickFuseS : d.fuseS;
+    const hurry = 1 - Math.max(0, gr.fuseLeftS) / total;
+    const blink = Math.sin(t * (14 + hurry * 40)) > 0 ? 1 : 0.25;
+    g.circle(c.x, c.y - r * 0.2, r * 0.9).fill({ color: 0xff4a2a, alpha: 0.3 * blink });
+    g.circle(c.x, c.y - r * 0.2, r * 0.4).fill({ color: 0xff7a4a, alpha: blink });
+    if (gr.state === 'stuck')
+      g.circle(c.x, c.y, r * (1.6 + hurry)).stroke({ width: 0.02, color: 0xff4a2a, alpha: 0.6 * blink });
   }
 
   /** A thrown poison jar: a glass jar with glowing liquid and a metal lid, tumbling end over end, glowing green. */

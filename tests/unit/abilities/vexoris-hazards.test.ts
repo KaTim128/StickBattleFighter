@@ -137,6 +137,100 @@ describe('Plague Bloom fog', () => {
   });
 });
 
+describe('Grenade (replaces Hardened Filter)', () => {
+  const fuse = () => {
+    const d = VEXORIS_KIT.a5?.delivery;
+    if (d?.type !== 'grenade') throw new Error('the fifth ability is a grenade');
+    return d;
+  };
+
+  it('is the fifth ability in the E slot, with high damage and knockback and no poison', () => {
+    const a5 = VEXORIS_KIT.a5;
+    expect(a5?.id).toBe('grenade');
+    expect(a5?.slot).toBe('a2');
+    expect(a5?.payload.poison).toBeUndefined();
+    expect(a5?.payload.damage).toBeGreaterThanOrEqual(60);
+    expect(a5?.payload.knockbackMps).toBeGreaterThanOrEqual(6);
+  });
+
+  it('arcs over the ground, lands where aimed and explodes 1 second later', () => {
+    const a = arena({ x: 30, y: 30 });
+    a.world.release('me', VEXORIS_KIT.a5!, { x: 6, y: 0 }, a.host);
+    let peak = 0;
+    for (let i = 0; i < 60; i++) {
+      a.world.update(1 / 60, a.host);
+      peak = Math.max(peak, a.world.grenades[0]?.z ?? 0);
+    }
+    expect(peak).toBeGreaterThan(1.5); // a curved arc, not a flat shot
+    const g = a.world.grenades[0];
+    expect(g?.state).toBe('landed');
+    expect(g?.x).toBeCloseTo(6, 1);
+    run(a, fuse().fuseS - 0.5);
+    expect(a.world.grenades).toHaveLength(1);
+    run(a, 0.3);
+    expect(a.world.grenades).toHaveLength(0);
+  });
+
+  it('sticks to an enemy it passes through and explodes 0.5 s later, hitting for the full payload once', () => {
+    const a = arena({ x: 4, y: 0 });
+    a.world.release('me', VEXORIS_KIT.a5!, { x: 4, y: 0 }, a.host);
+    let stuckAt = -1;
+    for (let i = 0; i < 180 && stuckAt < 0; i++) {
+      a.world.update(1 / 60, a.host);
+      if (a.world.grenades[0]?.state === 'stuck') stuckAt = i;
+    }
+    expect(stuckAt).toBeGreaterThan(0);
+    a.them.x = 4.5; // walks off: it goes with them
+    run(a, 0.2);
+    expect(a.world.grenades[0]?.x).toBeCloseTo(4.5, 1);
+    expect(a.hits).toHaveLength(0);
+    run(a, 0.5);
+    expect(a.world.grenades).toHaveLength(0);
+    const hits = a.hits.filter((h) => h.target === 'foe');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.damage).toBeGreaterThanOrEqual(60);
+    expect(hits[0]?.poison).toBeUndefined();
+  });
+
+  it('hurts only enemies within the blast radius, never the thrower, and nobody outside it', () => {
+    const a = arena({ x: 6 + fuse().blastRadiusM + 2, y: 0 });
+    a.me.x = 5;
+    a.world.release('me', VEXORIS_KIT.a5!, { x: 6, y: 0 }, a.host);
+    run(a, 2.5);
+    expect(a.hits).toHaveLength(0);
+  });
+});
+
+describe('Vapour Step', () => {
+  it('dashes backwards, away from the aim, leaving a 3 s poison mist where he stood and hitting nobody on the way', () => {
+    const a = arena({ x: 3, y: 0 });
+    const step = VEXORIS_KIT.a4;
+    expect(step.delivery.type === 'dash' && step.delivery.backwards).toBe(true);
+    const driven: { x: number }[] = [];
+    a.host.drive = (_id, v) => {
+      if (v) driven.push({ x: v.x });
+    };
+    a.world.release('me', step, { x: 3, y: 0 }, a.host);
+    run(a, 0.3);
+    expect(driven.length).toBeGreaterThan(0);
+    expect(driven.every((v) => v.x < 0)).toBe(true); // away from the foe
+    expect(a.hits).toHaveLength(0);
+    const mist = a.world.clouds[0];
+    expect(mist?.x).toBe(0);
+    expect(mist?.lifeS).toBe(3);
+  });
+
+  it('poisons an opponent who enters the mist once, never its caster, and the mist ends after 3 s', () => {
+    const a = arena({ x: 0.5, y: 0 });
+    a.world.release('me', VEXORIS_KIT.a4, { x: 3, y: 0 }, a.host);
+    run(a, 0.5);
+    expect(a.hits.filter((h) => h.target === 'foe' && h.poison === 1)).toHaveLength(1);
+    expect(a.hits.filter((h) => h.target === 'me')).toHaveLength(0);
+    run(a, 3);
+    expect(a.world.clouds).toHaveLength(0);
+  });
+});
+
 describe('fog on a fighter', () => {
   const STATS: CombatStats = {
     maxHp: 1000,

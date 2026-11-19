@@ -283,8 +283,12 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   ],
   'vapor-dash': [noise('bandpass', 900, 1700, 0.26, 0.4, 0.9, 0, { attack: 0.03 }), tone('sine', 90, 120, 0.2, 0.3)],
   'vapor-hit': [noise('bandpass', 1500, 700, 0.16, 0.3, 1), tone('sine', 110, 70, 0.14, 0.25)],
-  'filter-seal': [tone('sine', 70, 60, 0.3, 0.4), noise('bandpass', 600, 400, 0.2, 0.3, 1.4, 0.05)],
-  'filter-lock': [tone('sine', 140, 110, 0.18, 0.3), noise('lowpass', 800, 300, 0.12, 0.25)],
+  'grenade-throw': [noise('bandpass', 900, 600, 0.24, 0.3, 0.9, 0, { attack: 0.05 })],
+  'grenade-blast': [
+    noise('lowpass', 1800, 120, 0.7, 0.8, 0.7),
+    tone('sine', 90, 30, 0.5, 0.7),
+    noise('bandpass', 2400, 900, 0.18, 0.4, 1),
+  ],
   'bloom-vent': [
     noise('bandpass', 500, 1500, 0.8, 0.3, 0.9, 0, { attack: 0.5, flutter: 6 }),
     tone('sine', 50, 45, 0.7, 0.4),
@@ -300,7 +304,11 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   'trap-set': [tone('sine', 150, 70, 0.16, 0.45), noise('lowpass', 900, 300, 0.12, 0.3)],
   'trap-vent': [noise('bandpass', 1500, 800, 0.7, 0.35, 0.8, 0, { attack: 0.08 }), tone('sine', 80, 60, 0.5, 0.2)],
   'vapor-puff': [noise('bandpass', 1300, 600, 0.3, 0.38, 0.8, 0, { attack: 0.02 }), tone('sine', 100, 70, 0.18, 0.25)],
-  'filter-hum': [tone('sine', 90, 100, 0.5, 0.3), noise('bandpass', 800, 800, 0.4, 0.14, 1.4, 0, { attack: 0.15 })],
+  'grenade-pin': [
+    tone('triangle', 1800, 1500, 0.05, 0.3),
+    noise('bandpass', 3000, 2400, 0.05, 0.25, 2),
+    tone('sine', 140, 120, 0.1, 0.25, 0.06),
+  ],
   'bloom-build': [
     tone('sine', 55, 48, 0.7, 0.5),
     noise('bandpass', 600, 1200, 0.7, 0.25, 1, 0, { attack: 0.4, flutter: 8 }),

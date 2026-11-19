@@ -619,4 +619,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ### Vexoris abilities rework (20/11/2026, TD-121)
 - [ ] F plants a visible landmine; it stays until an enemy steps on it, then bursts with damage, poison and a gas cloud; two at a time.
 - [ ] E throws a visible tumbling jar after an arm-back wind-up (jar in hand); it shatters with glass and green liquid, damage and poison.
-- [ ] I makes a 10 s green fog: enemies inside see only about 3 m through a green haze, move slower, take slow chip damage and get one poison stack after 3 s; Vexoris sees clearly in green.
+- [ ] I makes a 10 s green fog: enemies inside see only about 1.2 m through a green haze, move slower, take slow chip damage and get one poison stack after 3 s; Vexoris sees clearly in green.
+
+### Vexoris: Grenade, Vapour Step, tighter fog (21/11/2026, TD-122)
+- [ ] Equip Grenade on the select screen (E slot): it arcs forward; a direct hit sticks and blinks for 0.5 s then explodes; a miss explodes 1 s after landing; high damage and knockback within 3 m, no poison.
+- [ ] Vapour Step (R) dashes backwards, leaving a 3 s poison mist where he stood: enemies entering are poisoned, he is not.
+- [ ] Plague Bloom: an enemy inside sees only about 1 m round themselves.

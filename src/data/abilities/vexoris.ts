@@ -8,7 +8,7 @@ import { chargeFor } from '../../abilities/ultimate-charge';
  * status framework's (`src/combat/toxicity.ts`, TD-115). Values are PROVISIONAL (OQ-05).
  */
 const TOXIN = { deep: 0x153a08, hot: 0x3fae14, bright: 0x7dff3a, core: 0xe8ffc8 } as const;
-const SMOKE = { deep: 0x1c2a14, hot: 0x4c6a34, bright: 0x9ab87a, core: 0xdde8cc } as const;
+const BLAST = { deep: 0x3a2a08, hot: 0xe08a1a, bright: 0xffc84a, core: 0xfff3c0 } as const;
 
 export const VEXORIS_KIT: AbilityKit = {
   comboIcon: 'karate-combo',
@@ -146,66 +146,99 @@ export const VEXORIS_KIT: AbilityKit = {
       hitFlash: 0x7dff3a,
     },
   },
-  // A4 (R): Vapor Step. A burst of smoke and a quick evasive dash through it: no invulnerability, only a reposition
-  // and a veil. Anyone he brushes past is poisoned once.
+  // A4 (R): Vapour Step. He dissolves into green toxic mist and is instantly a few metres behind where he stood. A
+  // small poison mist stays at the spot he left for 3 seconds: any opponent who enters it is poisoned (once). He is
+  // unaffected by his own mist. A reposition, never an escape: no invulnerability.
   a4: {
     id: 'vaporStep',
-    name: 'Vapor Step',
+    name: 'Vapour Step',
     label: 'STEP',
     description:
-      'Bursts into toxic smoke and darts 4.5 metres. A distraction and a reposition, not an escape: anyone he passes is poisoned once.',
+      'Dissolves into green toxic mist and dashes backwards 3.5 metres. A small poison mist stays where he stood for 3 seconds and poisons any opponent who enters it.',
     icon: 'vapor-step',
     slot: 'a4',
     staminaCost: 25,
     cooldownS: 9,
-    castS: 0.12,
-    recoveryS: 0.25,
-    aimRangeM: 4.5,
+    castS: 0.1,
+    recoveryS: 0.2,
+    aimRangeM: 3.5,
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 6,
-      knockbackMps: 1,
+      damage: 2,
+      knockbackMps: 0,
       heavy: false,
-      strength: 100,
+      strength: 60,
       noFlinch: true,
       poison: 1,
       impact: 'knuckle-light',
     },
-    delivery: { type: 'dash', distanceM: 4.5, speedMps: 18, hitRadiusM: 1 },
+    delivery: {
+      type: 'dash',
+      distanceM: 3.5,
+      speedMps: 30,
+      hitRadiusM: 0,
+      backwards: true,
+      leavesCloud: { radiusM: 1.3, lifeS: 3 },
+    },
     vfx: 'vapor-step',
     sfx: { cast: 'vapor-puff', release: 'vapor-dash', impact: 'vapor-hit' },
     look: {
-      palette: SMOKE,
-      impact: { flashM: 0.3, sparks: 0, motes: 24, ringM: 1.3, smoke: 12, groundFire: false, smokeColour: 0x3a5a28 },
-      hitFlash: 0x9ab87a,
+      palette: TOXIN,
+      impact: { flashM: 0.3, sparks: 0, motes: 30, ringM: 1.3, smoke: 14, groundFire: false, smokeColour: 0x3a6a28 },
+      hitFlash: 0x7dff3a,
     },
   },
-  // A5 (fifth, B13): Hardened Filter. He seals his mask and braces for 4 seconds: 20% less damage taken and 12% faster.
-  // A defensive tool with no poison of its own, so it never bypasses the poison limits; it takes the E slot if equipped.
+  // A5 (fifth, B13): Grenade. He lobs a grenade in a curved arc to where he aims. Pass through an enemy and it sticks to
+  // them and goes off 0.5 seconds later; otherwise it lands and goes off a second after. The blast deals high damage and
+  // knockback to every enemy within 3 metres, and applies no poison. It takes the E slot if equipped.
   a5: {
-    id: 'hardenedFilter',
-    name: 'Hardened Filter',
-    label: 'FILTER',
+    id: 'grenade',
+    name: 'Grenade',
+    label: 'NADE',
     description:
-      'Seals his mask and braces for 4 seconds: 20% less damage taken and 12% faster. Adds no poison itself.',
-    icon: 'hardened-filter',
+      'Lobs a grenade in a curved arc. If it hits an enemy it sticks and explodes after 0.5 seconds; otherwise it explodes after 1 second. High damage and knockback within 3 metres. No poison.',
+    icon: 'grenade',
     slot: 'a2',
-    staminaCost: 20,
+    staminaCost: 35,
     cooldownS: 14,
-    castS: 0.2,
-    recoveryS: 0.2,
-    aimRangeM: 0,
-    moveFactor: 0.5,
+    castS: 0.4,
+    recoveryS: 0.35,
+    aimRangeM: 8,
+    moveFactor: 0.2,
     interruptible: true,
-    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'buff', durationS: 4, speedFactor: 1.12, damageTakenFactor: 0.8 },
-    vfx: 'hardened-filter',
-    sfx: { cast: 'filter-hum', release: 'filter-seal', impact: 'filter-lock' },
+    payload: {
+      damage: 80,
+      knockbackMps: 8,
+      heavy: true,
+      strength: 650,
+      impact: 'knuckle-heavy',
+      falloff: { fullWithinM: 1.2, minFactor: 0.55 },
+    },
+    delivery: {
+      type: 'grenade',
+      speedMps: 9,
+      arcHeightM: 1.6,
+      stickRadiusM: 0.35,
+      stickFuseS: 0.5,
+      fuseS: 1,
+      blastRadiusM: 3,
+    },
+    vfx: 'grenade',
+    sfx: { cast: 'grenade-pin', release: 'grenade-throw', impact: 'grenade-blast' },
     look: {
-      palette: TOXIN,
-      impact: { flashM: 0.4, sparks: 4, motes: 18, ringM: 1.2, smoke: 4, groundFire: false, smokeColour: 0x2a6a10 },
-      aura: 'quiet',
+      palette: BLAST,
+      impact: {
+        flashM: 2.2,
+        sparks: 30,
+        motes: 60,
+        ringM: 3,
+        smoke: 16,
+        groundFire: false,
+        smokeColour: 0x3a3626,
+        shake: 0.45,
+      },
+      hitFlash: 0xffc84a,
     },
   },
   // ULT (I): Plague Bloom. He vents his whole supply into a huge poison fog that fills the area around him for 10
@@ -216,7 +249,7 @@ export const VEXORIS_KIT: AbilityKit = {
     name: 'Plague Bloom',
     label: 'ULT',
     description:
-      'Vents a huge poison fog for 10 seconds. Enemies inside see only a few metres through the green haze, move slower and take slow chip damage; after 3 seconds inside they gain a stack of poison. He sees clearly through it.',
+      'Vents a huge poison fog for 10 seconds. Enemies inside see only about 1 metre through the green haze, move slower and take slow chip damage; after 3 seconds inside they gain a stack of poison. He sees clearly through it.',
     icon: 'plague-bloom',
     slot: 'ult',
     staminaCost: 0,
@@ -239,7 +272,7 @@ export const VEXORIS_KIT: AbilityKit = {
       radiusM: 5.5,
       lifeS: 10,
       armS: 0.8,
-      fog: { sightM: 3, speedFactor: 0.8, chipDps: 3, stackAfterS: 3 },
+      fog: { sightM: 1.2, speedFactor: 0.8, chipDps: 3, stackAfterS: 3 },
     },
     vfx: 'plague-bloom',
     sfx: { cast: 'bloom-build', release: 'bloom-vent', impact: 'bloom-burst' },

@@ -3108,6 +3108,7 @@ export class FightArenaScene implements ArenaScene {
       projectiles: world.projectiles,
       zones: world.zones,
       clouds: world.clouds,
+      grenades: world.grenades,
       marks: world.marks.flatMap((m) => {
         const t = this.fighterByName(m.targetId);
         return t ? [{ x: t.x, y: t.y, phase: m.phase, ageS: m.ageS }] : [];
@@ -3184,6 +3185,7 @@ export class FightArenaScene implements ArenaScene {
             cast?.def.id === 'toxicJar' && cast.phase === 'windup'
             ? Math.min(1, cast.t / 0.12)
             : 0;
+      f.view.grenade = cast?.def.id === 'grenade' && cast.phase === 'windup' ? Math.min(1, cast.t / 0.1) : 0;
     }
     if (f.scriptedAttack) {
       const sa = f.scriptedAttack;

@@ -160,6 +160,27 @@ export interface DashDelivery {
    * a solid wall (or the first enemy, with `collision`) stops it.
    */
   readonly untilBlocked?: boolean;
+  /** Dashes directly away from where the caster aims (Vapour Step). */
+  readonly backwards?: boolean;
+  /** Leaves this cloud at the starting position (Vapour Step's mist); a dash with no hit radius hits nobody on the way. */
+  readonly leavesCloud?: CloudSpec;
+}
+
+/**
+ * A lobbed grenade (Vexoris): it flies in a curved arc to where the caster aims (short of walls). Passing through an
+ * enemy it sticks to them and goes off `stickFuseS` later; otherwise it lands and goes off `fuseS` after landing. The
+ * blast hits every enemy within `blastRadiusM` once with the payload (distance falloff applies) and never the caster.
+ */
+export interface GrenadeDelivery {
+  readonly type: 'grenade';
+  readonly speedMps: number;
+  /** Peak height of the arc above the straight line, metres. */
+  readonly arcHeightM: number;
+  /** How close to an enemy's body it must pass in flight to stick to them. */
+  readonly stickRadiusM: number;
+  readonly stickFuseS: number;
+  readonly fuseS: number;
+  readonly blastRadiusM: number;
 }
 
 /** A ring around the caster: telegraphed on the floor first (REQ-ABL-6), then it erupts. */
@@ -375,6 +396,7 @@ export type Delivery =
   | MarkDelivery
   | DashDelivery
   | NovaDelivery
+  | GrenadeDelivery
   | LeapDelivery
   | BeamDelivery
   | StrikeDelivery
