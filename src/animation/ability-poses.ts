@@ -493,6 +493,122 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.5,
   },
 
+  // ---- Geargrind (master plan section 4): machine movements. The arm cranks back to spool, then punches; the gadgets are set
+  // down with a crouch; plates lock with the arms pulled in and out.
+  // Rocket Fist: the machine arm drawn back and cocked at the hip, then thrust dead straight.
+  rocketFist: {
+    windup: {
+      lean: deg(10),
+      head: deg(2),
+      armFront: limb(-30, 120),
+      armBack: limb(40, 100),
+      legFront: limb(26, -40),
+      legBack: limb(-30, -36),
+    },
+    release: {
+      lean: deg(-18),
+      head: deg(-4),
+      armFront: limb(92, 0),
+      armBack: limb(10, 96),
+      legFront: limb(34, -34),
+      legBack: limb(-30, -20),
+    },
+    settle: 0.4,
+  },
+  // Combat Drone: the backpack hatch opened with one hand, the other tossing the drone up.
+  combatDrone: {
+    windup: { lean: deg(-4), head: deg(8), armFront: limb(40, 100), armBack: limb(-60, 130), legFront: limb(20, -30) },
+    release: {
+      lean: deg(-2),
+      head: deg(-10),
+      armFront: limb(140, 40),
+      armBack: limb(-30, 90),
+      legFront: limb(20, -28),
+    },
+    settle: 0.35,
+  },
+  // Magnetic Mine: a crouch, the mine set on the floor with one hand and pressed down.
+  magneticMine: {
+    windup: {
+      lean: deg(14),
+      head: deg(10),
+      armFront: limb(40, 110),
+      armBack: limb(20, 100),
+      legFront: limb(36, -70),
+      legBack: limb(-30, -60),
+    },
+    release: {
+      lean: deg(30),
+      head: deg(16),
+      armFront: limb(70, 10),
+      armBack: limb(10, 90),
+      legFront: limb(40, -80),
+      legBack: limb(-30, -64),
+    },
+    settle: 0.4,
+  },
+  // Reinforced Plating: arms pulled in tight to the chest, then thrown out wide as the plates lock.
+  reinforcedPlating: {
+    windup: {
+      lean: deg(8),
+      head: deg(4),
+      armFront: limb(40, 130),
+      armBack: limb(30, 130),
+      legFront: limb(22, -30),
+      legBack: limb(-26, -28),
+    },
+    release: {
+      lean: deg(-4),
+      head: deg(-2),
+      armFront: limb(70, 24),
+      armBack: limb(-50, 30),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -26),
+    },
+    settle: 0.4,
+  },
+  // Arc Coil: both fists clenched and pulled back as the coil charges, then both opened wide.
+  arcCoil: {
+    windup: {
+      lean: deg(8),
+      head: deg(2),
+      armFront: limb(30, 130),
+      armBack: limb(20, 130),
+      legFront: limb(22, -30),
+      legBack: limb(-26, -28),
+    },
+    release: {
+      lean: deg(-6),
+      head: deg(-4),
+      armFront: limb(86, 16),
+      armBack: limb(-80, 16),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -24),
+    },
+    settle: 0.35,
+  },
+  // Overdrive Protocol: both arms thrown overhead as the machinery unfolds, shuddering, then slammed down.
+  overdrive: {
+    windup: {
+      lean: deg(4),
+      head: deg(-8),
+      armFront: limb(150, 40),
+      armBack: limb(140, 44),
+      legFront: limb(24, -34),
+      legBack: limb(-30, -30),
+    },
+    tremble: deg(2.4),
+    release: {
+      lean: deg(-22),
+      head: deg(-4),
+      armFront: limb(60, 4),
+      armBack: limb(40, 6),
+      legFront: limb(34, -34),
+      legBack: limb(-30, -20),
+    },
+    settle: 0.5,
+  },
+
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.

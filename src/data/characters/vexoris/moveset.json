@@ -31,9 +31,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canPunch"
-      ],
+      "requires": ["canPunch"],
       "next": {
         "tap": "spinning-backfist"
       }
@@ -61,10 +59,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canPunch",
-        "canUseCombos"
-      ],
+      "requires": ["canPunch", "canUseCombos"],
       "next": {
         "tap": "karate-side-kick"
       }
@@ -92,10 +87,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canKick",
-        "canUseCombos"
-      ],
+      "requires": ["canKick", "canUseCombos"],
       "next": {
         "tap": "roundhouse-kick"
       }
@@ -123,10 +115,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": [
-        "canKick",
-        "canUseCombos"
-      ],
+      "requires": ["canKick", "canUseCombos"],
       "status": {
         "poison": 1
       }
@@ -154,9 +143,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canKick"
-      ]
+      "requires": ["canKick"]
     },
     {
       "id": "karate-jump-kick",
@@ -181,9 +168,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": [
-        "canUseAerialKicks"
-      ]
+      "requires": ["canUseAerialKicks"]
     },
     {
       "id": "karate-boot-stomp",
@@ -208,9 +193,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": [
-        "canUseAerialKicks"
-      ]
+      "requires": ["canUseAerialKicks"]
     },
     {
       "id": "jar-smash",
@@ -235,9 +218,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": [
-        "canPunch"
-      ],
+      "requires": ["canPunch"],
       "effect": "toxic-smash",
       "status": {
         "poison": 1

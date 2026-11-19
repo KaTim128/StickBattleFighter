@@ -7,7 +7,19 @@
  * deliberate shape. Original artwork; one per icon id (`AbilityDef.icon`, `AbilityKit.comboIcon`,
  * `AbilityKit.heavyIcon`).
  */
-type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin' | 'wind' | 'steel' | 'psi';
+type Theme =
+  | 'fire'
+  | 'earth'
+  | 'soul'
+  | 'blood'
+  | 'shade'
+  | 'decay'
+  | 'blue'
+  | 'toxin'
+  | 'wind'
+  | 'steel'
+  | 'psi'
+  | 'gear';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -22,6 +34,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   wind: ['#ffffff', '#3a78b8', '#06121f'],
   steel: ['#ffe9e9', '#a01826', '#1a0508'],
   psi: ['#f4eaff', '#7a3fd0', '#0d0618'],
+  gear: ['#fff1d6', '#d9650f', '#15171b'],
 };
 
 const MATERIALS = `
@@ -421,6 +434,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'psi',
     rays(24, 24, 16, '#f4eaff', 0.25),
     `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M10 10 C26 14 26 34 10 38" stroke="#c7a1ff" stroke-width="3"/><path d="M18 10 C34 16 34 32 18 38" stroke="#8a4fe0" stroke-width="3" opacity=".8"/><path d="M26 12 C40 18 40 30 26 36" stroke="#f4eaff" stroke-width="2.6" opacity=".7"/></g>`,
+  ),
+  'rocket-fist': icon(
+    'gear',
+    rays(24, 24, 15, '#fff1d6', 0.25),
+    `<g filter="url(#ds)"><rect x="4" y="21" width="16" height="6" rx="2" fill="#3a3f48" stroke="#8a919d" stroke-width="1.4"/><rect x="22" y="15" width="18" height="18" rx="4" fill="#586070" stroke="#c9ced8" stroke-width="2"/></g><g fill="#ff7a1a" filter="url(#gl)"><path d="M4 24 L-2 20 L-2 28 Z"/></g><g stroke="#15171b" stroke-width="1.6"><path d="M28 18 V30 M34 18 V30"/></g>`,
+  ),
+  'combat-drone': icon(
+    'gear',
+    rays(24, 22, 14, '#fff1d6', 0.2),
+    `<g filter="url(#ds)"><ellipse cx="24" cy="26" rx="11" ry="7" fill="#586070" stroke="#c9ced8" stroke-width="2"/><rect x="21" y="16" width="6" height="4" fill="#3a3f48"/></g><path d="M8 14 H40" stroke="#c9ced8" stroke-width="2.4" stroke-linecap="round"/><circle cx="24" cy="26" r="3.4" fill="#ff7a1a" filter="url(#gl)"/><path d="M24 34 V42" stroke="#ffb455" stroke-width="2" stroke-dasharray="2 2"/>`,
+  ),
+  'magnetic-mine': icon(
+    'gear',
+    rays(24, 26, 15, '#fff1d6', 0.2),
+    `<g filter="url(#ds)"><ellipse cx="24" cy="30" rx="15" ry="8" fill="#3a3f48" stroke="#8a919d" stroke-width="2"/></g><path d="M14 14 V22 A10 10 0 0 0 34 22 V14" fill="none" stroke="#ff7a1a" stroke-width="5" stroke-linecap="butt" filter="url(#gl)"/><path d="M14 14 H18 M30 14 H34" stroke="#e8edf5" stroke-width="5"/>`,
+  ),
+  'reinforced-plating': icon(
+    'gear',
+    rays(24, 24, 15, '#fff1d6', 0.2),
+    `<g filter="url(#ds)"><path d="M10 10 H38 V26 C38 34 31 40 24 43 C17 40 10 34 10 26 Z" fill="#586070" stroke="#c9ced8" stroke-width="2.2"/></g><path d="M16 17 H32 M16 24 H32" stroke="#15171b" stroke-width="2"/><g fill="#ff7a1a"><circle cx="14" cy="14" r="1.6"/><circle cx="34" cy="14" r="1.6"/><circle cx="24" cy="36" r="1.6"/></g>`,
+  ),
+  'arc-coil': icon(
+    'gear',
+    rays(24, 24, 18, '#d8f0ff', 0.3),
+    `<g fill="none" stroke="#3ea0ff" stroke-width="3" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="6"/><path d="M24 4 L19 15 L27 17 L21 26"/><path d="M42 24 L31 19 L29 27 L20 21" opacity=".8"/></g><circle cx="24" cy="24" r="3" fill="#f0fbff" filter="url(#gl)"/>`,
+  ),
+  overdrive: icon(
+    'gear',
+    rays(24, 24, 20, '#fff1d6', 0.35),
+    `<g filter="url(#ds)"><circle cx="24" cy="24" r="12" fill="#3a3f48" stroke="#c9ced8" stroke-width="2"/></g><g fill="#ff7a1a" stroke="#15171b" stroke-width="1.2" filter="url(#gl)"><path d="M24 3 L28 12 H20 Z"/><path d="M24 45 L20 36 H28 Z"/><path d="M3 24 L12 20 V28 Z"/><path d="M45 24 L36 28 V20 Z"/></g><path d="M18 24 L22 28 L31 18" fill="none" stroke="#ffd9a0" stroke-width="3" stroke-linecap="round"/>`,
+  ),
+  'mech-combo': icon(
+    'gear',
+    rays(24, 24, 14, '#fff1d6', 0.15),
+    `<g filter="url(#ds)" fill="#586070" stroke="#c9ced8" stroke-width="1.6"><rect x="5" y="26" width="12" height="12" rx="2"/><rect x="18" y="16" width="12" height="12" rx="2"/><rect x="31" y="8" width="12" height="12" rx="2"/></g><g fill="#ff7a1a"><circle cx="11" cy="32" r="2"/><circle cx="24" cy="22" r="2"/><circle cx="37" cy="14" r="2"/></g>`,
+  ),
+  'hydraulic-smash': icon(
+    'gear',
+    rays(24, 28, 16, '#fff1d6', 0.3),
+    `<g filter="url(#ds)"><rect x="14" y="6" width="20" height="10" rx="2" fill="#3a3f48" stroke="#8a919d" stroke-width="1.6"/><rect x="20" y="16" width="8" height="12" fill="#c9ced8"/><rect x="12" y="28" width="24" height="10" rx="3" fill="#586070" stroke="#c9ced8" stroke-width="2"/></g><g stroke="#ff7a1a" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><path d="M6 42 H42 M10 38 L4 44 M38 38 L44 44"/></g>`,
   ),
   'plague-bloom': icon(
     'toxin',

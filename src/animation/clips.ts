@@ -42,6 +42,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.aerial',
   'proc.idle.pyro',
   'proc.idle.psychic',
+  'proc.idle.mechanic',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -588,6 +589,154 @@ const STRIKES = {
       armBack: limb(10, 6),
       legFront: limb(30, -44),
       legBack: limb(-6, -40),
+    },
+  ),
+
+  // ---- Geargrind's engineer style: short, heavy, piston-driven blows from a braced stance, the machine arm leading.
+  // 1. Mechanical jab: the machine arm punched straight out like a piston.
+  'gear.jab': strike(
+    {
+      lean: deg(-2),
+      head: deg(-2),
+      armFront: limb(70, 100),
+      armBack: limb(10, 100),
+      legFront: limb(18, -26),
+      legBack: limb(-22, -24),
+    },
+    {
+      lean: deg(-14),
+      head: deg(-4),
+      armFront: limb(88, 2),
+      armBack: limb(0, 100),
+      legFront: limb(28, -30),
+      legBack: limb(-24, -22),
+    },
+  ),
+  // 2. Reinforced cross: the rear arm drives across with the hips turned into it.
+  'gear.cross': strike(
+    {
+      lean: deg(6),
+      head: deg(-4),
+      armFront: limb(60, 110),
+      armBack: limb(-30, 120),
+      legFront: limb(20, -28),
+      legBack: limb(-24, -26),
+    },
+    {
+      lean: deg(-24),
+      head: deg(-6),
+      armFront: limb(30, 90),
+      armBack: limb(92, 4),
+      legFront: limb(30, -30),
+      legBack: limb(-14, -30),
+    },
+  ),
+  // 3. Rotating elbow: the whole upper body winds round and the elbow comes through flat, with the forearm locked.
+  'gear.elbow': strike(
+    {
+      lean: deg(-14),
+      head: deg(8),
+      armFront: limb(-40, 130),
+      armBack: limb(20, 110),
+      legFront: limb(22, -30),
+      legBack: limb(-26, -28),
+    },
+    {
+      lean: deg(22),
+      head: deg(-10),
+      armFront: limb(100, 126),
+      armBack: limb(-30, 90),
+      legFront: limb(30, -34),
+      legBack: limb(-20, -30),
+    },
+  ),
+  // 4. Hydraulic uppercut: dropped low, then the machine arm driven up from the hip with the whole body rising.
+  'gear.uppercut': strike(
+    {
+      lean: deg(14),
+      head: deg(2),
+      armFront: limb(-30, 90),
+      armBack: limb(30, 110),
+      legFront: limb(26, -50),
+      legBack: limb(-28, -44),
+    },
+    {
+      lean: deg(-26),
+      head: deg(-14),
+      armFront: limb(150, 16),
+      armBack: limb(-10, 100),
+      legFront: limb(16, -16),
+      legBack: limb(-14, -14),
+    },
+  ),
+  // Heavy: the arm compresses back and in, shuddering, then the hydraulic fist smashes down in front of him.
+  'gear.smash': strike(
+    {
+      lean: deg(16),
+      head: deg(6),
+      armFront: limb(160, 120),
+      armBack: limb(40, 110),
+      legFront: limb(24, -44),
+      legBack: limb(-30, -40),
+    },
+    {
+      lean: deg(-34),
+      head: deg(-6),
+      armFront: limb(46, 6),
+      armBack: limb(10, 96),
+      legFront: limb(34, -34),
+      legBack: limb(-28, -22),
+    },
+    { lean: deg(-18), head: deg(-2), armFront: limb(60, 20), armBack: limb(10, 96), legFront: limb(28, -30) },
+  ),
+  // Forward tap: a piston shove, the machine arm straight out, the shoulder behind it.
+  'gear.shove': strike(
+    { lean: deg(4), head: deg(-2), armFront: limb(50, 120), armBack: limb(10, 100), legFront: limb(20, -26) },
+    {
+      lean: deg(-30),
+      head: deg(-4),
+      armFront: limb(94, 0),
+      armBack: limb(0, 96),
+      legFront: limb(34, -34),
+      legBack: limb(-28, -18),
+    },
+  ),
+  // In the air: a rocket-boosted knee driven up and forward, the arm swung back for balance.
+  'gear.rocket-knee': strike(
+    {
+      lean: deg(4),
+      head: deg(2),
+      armFront: limb(60, 100),
+      armBack: limb(-40, 90),
+      legFront: limb(50, -90),
+      legBack: limb(-10, -40),
+    },
+    {
+      lean: deg(-12),
+      head: deg(-4),
+      armFront: limb(40, 80),
+      armBack: limb(-50, 80),
+      legFront: limb(100, -100),
+      legBack: limb(-14, -30),
+    },
+  ),
+  // Falling: both fists clasped overhead and driven down like a drop hammer.
+  'gear.drop-hammer': strike(
+    {
+      lean: deg(-2),
+      head: deg(-6),
+      armFront: limb(160, 70),
+      armBack: limb(156, 74),
+      legFront: limb(20, -46),
+      legBack: limb(-4, -42),
+    },
+    {
+      lean: deg(-24),
+      head: deg(8),
+      armFront: limb(30, 6),
+      armBack: limb(24, 8),
+      legFront: limb(30, -40),
+      legBack: limb(-8, -36),
     },
   ),
 

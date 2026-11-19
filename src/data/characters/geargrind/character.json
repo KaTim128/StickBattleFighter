@@ -1,0 +1,66 @@
+{
+  "id": "geargrind",
+  "template": "base-stickman",
+  "displayName": "Geargrind",
+  "description": "Geargrind has never trusted anything he did not build. The arm is his own design, the backpack carries his tools, and every fight is a bench test: something is bolted on, set down or switched on before the other fighter has finished their opening move. He talks to his machines more than to people, and the machines tend to answer in the end.",
+  "characterType": "fighter",
+  "element": "mechanical",
+  "combatStyle": "gadgets",
+  "profiles": {
+    "animation": "geargrind-animation",
+    "moveset": "geargrind-moveset",
+    "stats": "geargrind-stats",
+    "effects": "geargrind-effects",
+    "audio": "geargrind-audio",
+    "ai": "geargrind-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.44,
+      "shin": 0.44
+    },
+    "colour": "#3a3f48",
+    "colourBack": "#262a31",
+    "outline": "#0d0f12",
+    "limbWidthM": 0.085,
+    "outlineWidthM": 0.03,
+    "spine": 0.55
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": true,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "geargrind-kit"
+}

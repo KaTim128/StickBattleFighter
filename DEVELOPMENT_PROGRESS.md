@@ -52,6 +52,9 @@ Check this table before assigning work. No two active assignments may share a pa
 ## Psion batch (21/11/2026, TD-129)
 Done: Psion fighter (data, kit, animation, premium look, sounds, icons, AI), shared lift/barrier/volley/telekinetic framework, uniqueness test, renamed Vexoris/Aerion moves. Tests: 1085 passed | 2 skipped; typecheck clean. Known: visuals checked in screenshots for Mind Crush/Throw/Mindstorm only; Barrier and Prison not re-shot centred. Next: Geargrind, then Reson, Chronos.
 
+## Geargrind batch (21/11/2026, TD-130)
+Done: Geargrind fighter and kit, fist/drone/magnet/plating engine support, mechanic body skin, clips, sounds, icons, AI, stance, balance, tests (1108 passed | 2 skipped), admin-menu scroll fix. Known: drone is hurt only by projectiles; plating shown on a small figure; no bespoke hit-reaction clips. Next: Reson, then Chronos.
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

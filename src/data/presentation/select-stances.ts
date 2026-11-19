@@ -153,6 +153,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.012, hands: 0.04 },
   },
+  // Geargrind: braced and low, the machine arm raised and forward, ready to fire; the other hand tucked back.
+  geargrind: {
+    title: 'The Field Engineer',
+    style: 'Combat engineer: fires a rocket fist, flies a drone, lays magnetic mines, plates up',
+    pelvis: 0.72,
+    leadFoot: 0.3,
+    rearFoot: -0.34,
+    lean: -5,
+    head: -2,
+    front: { x: 0.5, y: 0.5 },
+    back: { x: 0.12, y: 0.34 },
+    turn: 0.5,
+    scale: 1,
+    breath: { lean: 1, pelvis: 0.01, hands: 0.02 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

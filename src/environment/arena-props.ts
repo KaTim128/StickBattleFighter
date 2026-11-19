@@ -343,6 +343,26 @@ export class ArenaProps {
     return { hit: n, broke };
   }
 
+  /** A magnet's tug: loose metal props within `radiusM` of `at` are drawn toward it (one step's worth of `strength`). */
+  attract(at: Vec2, radiusM: number, strength: number): void {
+    for (const prop of this.props) {
+      const body = prop.body;
+      if (prop.broken || !body || prop.held || prop.kind.material !== 'metal' || !prop.kind.movable) continue;
+      const pose = prop.pose;
+      const dx = at.x - pose.x;
+      const dy = at.y - pose.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > radiusM || dist < 0.3) continue;
+      if (!prop.awake) {
+        prop.awake = true;
+        this.physics.setPropAwake(body, true);
+      }
+      prop.resetSettle();
+      const j = strength * IMPULSE_PER_STRENGTH;
+      body.applyImpulse({ x: (dx / dist) * j, y: (dy / dist) * j }, true);
+    }
+  }
+
   update(stepS: number): void {
     this.timeS += stepS;
     for (const prop of this.props) {

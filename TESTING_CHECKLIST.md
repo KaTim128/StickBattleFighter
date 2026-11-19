@@ -663,3 +663,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ### Psion and uniqueness (21/11/2026, TD-129)
 - [ ] Psion: Mind Crush ring closes in then hits; Telekinetic Throw lifts then hurls; Psychic Barrier dome absorbs and breaks into fragments; Floating Prison cage lifts, drops, and cannot be re-cast on the same foe for 4 s; Mindstorm flings eight objects then detonates.
 - [ ] Some fighters have no passive; no two fighters share any move or ability.
+
+### Geargrind (21/11/2026, TD-130)
+- [ ] Geargrind: dark steel/orange body with machine arm and backpack; Reinforced Plating plates slide out and lock, then fold away.
+- [ ] Rocket Fist extends on a cable and retracts; Combat Drone hovers, shoots for 10 s and can be shot down; Magnetic Mine pulls metal props and drags in a foe before bursting; Overdrive rushes, hits four times and ends in a big blast.
+- [ ] Admin menu scrolls to the arena buttons on a small landscape phone.

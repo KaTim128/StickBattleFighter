@@ -180,6 +180,27 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a2', 'a1'],
     ],
   },
+  // Geargrind: a gadget fighter. Sets a drone and mines first, plates up when hurt, punches with the rocket fist at range and
+  // brawls close with the hydraulic arm; Overdrive when the enemy is within a rush.
+  'geargrind-ai': {
+    style:
+      'Combat engineer: deploys the drone and mines, plates up when hurt, fires the rocket fist, finishes with Overdrive.',
+    preferredRangeM: [2, 4.5],
+    movement: 'direct',
+    meleeBias: 0.55,
+    heavyBias: 0.3,
+    defence: 'block',
+    retreatBelowHp: 0,
+    hitAndRunS: 0,
+    tactics: {
+      a1: { role: 'poke', minM: 1.5, maxM: 4.8, weight: 1.2 },
+      a2: { role: 'buff', minM: 0, maxM: 9, weight: 1.0 },
+      a3: { role: 'zone', minM: 2, maxM: 6, weight: 0.9 },
+      a4: { role: 'buff', minM: 0, maxM: 6, weight: 0.9, when: { selfHpBelow: 0.7 } },
+      ult: { role: 'burst', minM: 0, maxM: 6.5, weight: 1.3 },
+    },
+    combos: [['a3', 'a1']],
+  },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
   'rampage-ai': {
@@ -295,6 +316,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   featherGuard: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.6 } },
   // Iaido Draw: a lightning cut to close the gap.
   iaidoDraw: { role: 'gapClose', minM: 2, maxM: 6, weight: 1.2 },
+  // Arc Coil: a close jolt when something is on top of him.
+  arcCoil: { role: 'escape', minM: 0, maxM: 3, weight: 1.1 },
   // Repulse: shove everyone off when crowded.
   repulse: { role: 'escape', minM: 0, maxM: 2.4, weight: 1.2 },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.

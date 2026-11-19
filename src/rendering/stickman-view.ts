@@ -119,6 +119,8 @@ export class StickmanView {
   grenade = 0;
   /** How far the wings are spread (0 folded, 1 wide) and how hard they beat (winged skins). */
   wingSpread = 0.3;
+  /** 0..1 how far the armour plates have extended (Reinforced Plating). */
+  plating = 0;
   /** 0..1 how strongly a Focus Stance glows along the blades (Kenshiro). */
   focus = 0;
   /** The body's turn about its own axis while spinning (Aerion's Wind Blade), radians; 0 = not spinning. */
@@ -421,6 +423,7 @@ export class StickmanView {
         bodyWidthK: 1 + 0.6 * this.turn,
         eyeGlow: this.eyeGlow,
         wingSpread: this.wingSpread,
+        plating: this.plating,
         wingFlap: this.wingFlap,
       });
     } else {

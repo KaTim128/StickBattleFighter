@@ -45,6 +45,8 @@ export interface AbilityPayload {
   readonly sword?: boolean;
   /** A psychic ability (Psion): eligible for Mental Focus's enhancement. */
   readonly psi?: boolean;
+  /** A gadget (Geargrind): eligible for Mechanical Efficiency's enhancement. */
+  readonly gadget?: boolean;
   /**
    * Finishing bonus (Kenshiro's Sliding Slice): against a target at or below `belowHp` of its health (0..1) the blow
    * deals `bonus` more damage (0.6 = 60% more).
@@ -127,7 +129,16 @@ export interface CloudSpec {
    * A landmine (Chemical Trap): the cloud lies dormant, drawn as a mine on the floor, until an enemy steps within
    * `triggerRadiusM` of it (after `armS`); then it bursts and the cloud begins. It is removed after `waitS` unused.
    */
-  readonly mine?: { readonly triggerRadiusM: number; readonly waitS: number; readonly maxPerCaster: number };
+  readonly mine?: {
+    readonly triggerRadiusM: number;
+    readonly waitS: number;
+    readonly maxPerCaster: number;
+    /**
+     * A magnetic mine (Geargrind): while it lies armed it tugs loose metal props within `radiusM` toward itself, and
+     * when it goes off every enemy it catches is dragged in and held `holdS` seconds before the burst lands.
+     */
+    readonly magnet?: { readonly radiusM: number; readonly pullStrength: number; readonly holdS: number };
+  };
   /**
    * A choking fog (Plague Bloom): every enemy inside sees only `sightM`, is slowed to `speedFactor`, takes `chipDps`
    * damage per second and, after `stackAfterS` seconds inside, one stack of poison. The caster is immune and sees clearly.
@@ -391,6 +402,37 @@ export interface LiftDelivery {
 }
 
 /**
+ * An extending rocket fist (Geargrind's Rocket Fist): the fist flies out along the aim over `outS`, hitting each enemy
+ * it passes once, holds a moment at full reach, then retracts over `backS`. The caster stays where he stands.
+ */
+export interface FistDelivery {
+  readonly type: 'fist';
+  readonly reachM: number;
+  readonly outS: number;
+  readonly backS: number;
+  readonly radiusM: number;
+}
+
+/**
+ * A combat drone (Geargrind): it hovers beside the caster for `durationS` and fires `shot` at the nearest enemy within
+ * `rangeM` every `intervalS`. It has `hp` of durability: enemy projectiles that hit it wear it down; at zero it falls.
+ * Only `maxAlive` of the caster's drones exist at once (the oldest is recalled).
+ */
+export interface DroneDelivery {
+  readonly type: 'drone';
+  readonly durationS: number;
+  readonly hp: number;
+  readonly rangeM: number;
+  readonly intervalS: number;
+  readonly maxAlive: number;
+  readonly shot: {
+    readonly payload: AbilityPayload;
+    readonly speedMps: number;
+    readonly radiusM: number;
+  };
+}
+
+/**
  * A telekinetic shield round the caster (Psion's Psychic Barrier): it absorbs up to `hp` damage and lasts `durationS`.
  * When it is spent or runs out it breaks into floating fragments.
  */
@@ -480,6 +522,8 @@ export interface BuffDelivery {
   readonly darkensFoes?: { readonly visibleM: number };
   /** The caster is drawn with dark skin and blue flames while it lasts (Inferno's Blue Inferno). */
   readonly blueFlames?: boolean;
+  /** Armour plates extend over the caster while it lasts (Geargrind's Reinforced Plating, Overdrive). */
+  readonly plating?: boolean;
   /** The caster is drawn this much bigger while it lasts (Rampage Mode, owner 13/11/2026: 1.1). */
   readonly sizeFactor?: number;
   /**
@@ -522,6 +566,8 @@ export type Delivery =
   | WhirlDelivery
   | LiftDelivery
   | BarrierDelivery
+  | FistDelivery
+  | DroneDelivery
   | JudgementDelivery
   | GrenadeDelivery
   | LeapDelivery
@@ -675,7 +721,7 @@ export interface AbilityKit {
    * faster. All stacks lapse together when the time runs out.
    */
   readonly passive?: {
-    readonly id: 'momentum' | 'mastery' | 'focus';
+    readonly id: 'momentum' | 'mastery' | 'focus' | 'efficiency';
     readonly name: string;
     readonly description: string;
     readonly maxStacks: number;

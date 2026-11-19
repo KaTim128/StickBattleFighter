@@ -126,7 +126,8 @@ export type IdleStyle =
   | 'karate'
   | 'aerial'
   | 'pyro'
-  | 'psychic';
+  | 'psychic'
+  | 'mechanic';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -139,6 +140,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.aerial') return 'aerial';
   if (clipId === 'proc.idle.pyro') return 'pyro';
   if (clipId === 'proc.idle.psychic') return 'psychic';
+  if (clipId === 'proc.idle.mechanic') return 'mechanic';
   return 'boxer';
 }
 
@@ -260,7 +262,26 @@ function psychicIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * MECHANIC (Geargrind): a braced, workmanlike stance, the feet planted wide, the weight low, the machine arm held up and
+ * forward ready to fire and the human hand tucked back; the shoulders tick with a slow hydraulic pulse.
+ */
+function mechanicIdle(timeS: number, bones: BoneLengths): Pose {
+  const pulse = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.7);
+  const tick = Math.sin(timeS * TAU * 2.2) * 0.4;
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-5 + pulse * 1.2),
+    head: deg(-2),
+    armFront: { root: deg(72 + pulse * 4 + tick), bend: deg(84) },
+    armBack: { root: deg(8 - pulse * 3), bend: deg(104) },
+    legFront: legIk(0.3, legs * 0.9 - pulse * 0.012, bones.thigh, bones.shin),
+    legBack: legIk(-0.34, legs * 0.9 - pulse * 0.012, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'mechanic') return mechanicIdle(timeS, bones);
   if (style === 'psychic') return psychicIdle(timeS, bones);
   if (style === 'samurai') return samuraiIdle(timeS, bones);
   if (style === 'karate') return karateIdle(timeS, bones);
@@ -400,6 +421,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'mechanic') {
+    // A heavy industrial march: short planted steps, the machine arm held up ready, the other swinging a little.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.68,
+      bob: 0.03,
+      leadX: 0.1,
+      rearX: -0.14,
+      reach: 0.12 * k,
+      lift: 0.07,
+      lean: -5,
+      sway: 1.2,
+      head: -2,
+      arms: { lead: { x: 0.26, y: 0.56 }, rear: { x: -0.06, y: 0.42 }, swingX: 0.04, swingY: 0.02 },
+    });
+  }
   if (style === 'psychic') {
     // A glide: the feet barely move, the body floats forward upright, the hands held open at his sides.
     return gaitPose(phase, bones, {
@@ -489,7 +525,8 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
     style === 'karate' ||
     style === 'aerial' ||
     style === 'pyro' ||
-    style === 'psychic'
+    style === 'psychic' ||
+    style === 'mechanic'
   )
     return idlePose(timeS, bones, style);
   if (style === 'samurai') return samuraiIdle(timeS, bones, 1);
@@ -730,20 +767,37 @@ const PSYCHIC_RUN: RunStyle = {
   pumpBack: { shoulder: -50, elbow: 40 },
 };
 
+/** MECHANIC RUN: a heavy, driving charge, shoulders forward, the machine arm held out in front like a ram. */
+const MECHANIC_RUN: RunStyle = {
+  pelvisM: 0.66,
+  bob: 0.035,
+  reachM: 0.3,
+  pushM: 0.34,
+  stance: 0.4,
+  swingLiftM: 0.26,
+  lean: -14,
+  drive: 5,
+  head: -4,
+  pumpFront: { shoulder: 70, elbow: 70 },
+  pumpBack: { shoulder: -40, elbow: 90 },
+};
+
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'psychic'
-    ? PSYCHIC_RUN
-    : style === 'samurai'
-      ? SAMURAI_RUN
-      : style === 'heavyweight'
-        ? sprint
-          ? HEAVY_SPRINT
-          : HEAVY_RUN
-        : style === 'stalker'
-          ? STALKER_RUN
-          : sprint
-            ? SPRINT_STYLE
-            : RUN;
+  style === 'mechanic'
+    ? MECHANIC_RUN
+    : style === 'psychic'
+      ? PSYCHIC_RUN
+      : style === 'samurai'
+        ? SAMURAI_RUN
+        : style === 'heavyweight'
+          ? sprint
+            ? HEAVY_SPRINT
+            : HEAVY_RUN
+          : style === 'stalker'
+            ? STALKER_RUN
+            : sprint
+              ? SPRINT_STYLE
+              : RUN;
 
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {

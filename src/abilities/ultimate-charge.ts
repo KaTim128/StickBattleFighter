@@ -24,6 +24,7 @@ export const ULTIMATE_POWER = {
   celestialTempest: 1.25,
   finalJudgement: 1.3,
   mindstorm: 1.3,
+  overdrive: 1.2,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

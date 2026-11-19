@@ -2643,7 +2643,7 @@ export class FightArenaScene implements ArenaScene {
       const passive = attacker.caster?.kit.passive;
       if (hitFighter && passive?.id === 'momentum')
         attacker.combatant.gainMomentum(passive.speedPerStack, passive.maxStacks, passive.durationS);
-      if (hitFighter && (passive?.id === 'mastery' || passive?.id === 'focus'))
+      if (hitFighter && (passive?.id === 'mastery' || passive?.id === 'focus' || passive?.id === 'efficiency'))
         attacker.combatant.gainMastery(1, passive.maxStacks);
       if (!hitFighter) this.shake.addTrauma(a.trauma);
       this.shake.punch(a.zoomPunch);
@@ -3168,6 +3168,26 @@ export class FightArenaScene implements ArenaScene {
       grenades: world.grenades,
       funnels: world.funnels,
       cages: world.cages,
+      fists: this.fighters.flatMap((f) => {
+        const fo = world.fistOf(f.name);
+        if (!fo) return [];
+        const look = f.caster
+          ? ABILITY_SLOTS.map((sl) => f.caster!.def(sl)).find((d) => d.delivery.type === 'fist')?.look
+          : undefined;
+        return [{ x: f.x, y: f.y, dirX: fo.dirX, dirY: fo.dirY, extentM: fo.extentM, palette: look?.palette ?? null }];
+      }),
+      drones: world.drones.map((dr) => {
+        const d = dr.def.delivery;
+        return {
+          x: dr.x,
+          y: dr.y,
+          ageS: dr.ageS,
+          k: d.type === 'drone' ? dr.hp / d.hp : 1,
+          aimX: dr.aimX,
+          aimY: dr.aimY,
+          palette: dr.def.look?.palette ?? null,
+        };
+      }),
       barriers: this.fighters.flatMap((f) => {
         const c = f.combatant;
         if (c.barrierHp <= 0) return [];
@@ -3471,6 +3491,10 @@ export class FightArenaScene implements ArenaScene {
     f.view.stunned = c.state === 'stunned';
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
+    // Reinforced Plating: the armour plates slide out and lock, then fold away at the end.
+    const platingTo = f.buff?.plating ? Math.min(1, f.buff.leftS / 0.4) : 0;
+    f.view.plating += (platingTo - f.view.plating) * smoothing(8, frameDtS);
+    if (Math.abs(f.view.plating - platingTo) < 1e-3) f.view.plating = platingTo;
     // Blue Inferno: dark skin and blue flames ease in on the cast and out over its last half second.
     const blueTo = f.buff?.blueFlames ? Math.min(1, f.buff.leftS / 0.5) : 0;
     f.view.blueFire += (blueTo - f.view.blueFire) * smoothing(7, frameDtS);

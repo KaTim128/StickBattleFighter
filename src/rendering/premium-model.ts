@@ -95,6 +95,10 @@ export interface PremiumSkin {
   readonly psyEye?: number;
   /** A soft psychic glow round both hands (Psion). */
   readonly handGlow?: number;
+  /** A compact tool backpack with an antenna and a status light behind the shoulders (Geargrind). */
+  readonly backpack?: { readonly shell: number; readonly trim: number; readonly light: number };
+  /** The near arm is a machine: steel segments, a piston, bolts and an orange stripe (Geargrind). */
+  readonly machineArm?: { readonly steel: number; readonly stripe: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
   readonly hoverM?: number;
 }
@@ -365,6 +369,41 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     handGlow: 0xc7a1ff,
     hoverM: 0.2,
   },
+  // Geargrind (master plan section 4): a dark steel and orange combat engineer. One arm is a machine, a tool backpack rides on his
+  // back, and plates extend from it on command. Compact and a little broad, bolts and hydraulics rather than a generic robot.
+  mechanic: {
+    palette: {
+      outline: 0x0d0f12,
+      skin: 0x3a3f48,
+      skinLit: 0x68707d,
+      skinShade: 0x22262c,
+      skinBack: 0x2c3036,
+      rim: 0xffb455,
+      armour: 0x2f343c,
+      armourLit: 0x5d6572,
+      armourEdge: 0x0b0c0f,
+      seam: 0xff7a1a,
+      lava: 0xffd9a0,
+      glow: 0xff7a1a,
+      hand: 0x3a3f48,
+    },
+    bulk: 1.2,
+    muscle: 0.5,
+    gear: {
+      shoulder: 'guard',
+      bracers: true,
+      legs: 'trousers',
+      kneeGuards: true,
+      shinGuards: true,
+      feet: 'boots',
+      belt: true,
+      joints: true,
+    },
+    fire: { core: false, veins: false, fists: false },
+    head: 'own',
+    backpack: { shell: 0x3a3f48, trim: 0xff7a1a, light: 0xffb455 },
+    machineArm: { steel: 0x586070, stripe: 0xff7a1a },
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -421,6 +460,8 @@ export interface PremiumDrawState {
   readonly wingSpread?: number;
   /** 0..1 how hard the wings beat (momentum, flight). */
   readonly wingFlap?: number;
+  /** 0..1 how far the armour plates have extended and locked (Reinforced Plating); 0 = folded away. */
+  readonly plating?: number;
   /**
    * The body turned towards the camera (select screen, owner 13/11/2026): the torso and garment
    * are drawn this much wider, as the chest is seen more from the front. 1 = profile.
@@ -546,6 +587,7 @@ export class PremiumModel {
     this.lx = -0.55 * st.facing;
     this.ly = -0.83;
     if (this.skin.halo) this.halo(g, fire, s);
+    if (this.skin.backpack) this.backpack(g, fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, false);
     if (this.skin.wings) this.wings(g, fire, s);
     this.arm(g, fire, s.armBack, true);
@@ -579,6 +621,8 @@ export class PremiumModel {
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
     }
     this.arm(g, fire, s.armFront, false);
+    if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
+    if ((this.st.plating ?? 0) > 0.02) this.platingOverlay(g, fire, s);
     if (this.skin.handGlow !== undefined) this.handGlow(fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, true);
   }
@@ -609,6 +653,132 @@ export class PremiumModel {
         pts.push(cx + Math.cos(a + k * 0.12) * r * 0.62, cy + Math.sin(a + k * 0.12) * r * 0.62);
       g.poly(pts, false).stroke({ width: w * 0.16, color: this.c(h.glow), alpha: 0.9 });
     }
+  }
+
+  /** The tool backpack: a boxy steel shell on the back with a tool rack, an antenna and a blinking status light. */
+  private backpack(g: Graphics, fire: Graphics, s: Skel): void {
+    const b = this.skin.backpack;
+    if (!b) return;
+    const { t, w } = this.st;
+    const out = this.c(this.P.outline);
+    const cx = s.chest.x - 0.2;
+    const cy = (s.chest.y + s.pelvis.y) / 2 - 0.03;
+    const hw = 0.13;
+    const hh = 0.24;
+    g.roundRect(cx - hw - w * 0.18, cy - hh - w * 0.18, hw * 2 + w * 0.36, hh * 2 + w * 0.36, 0.05).fill(out);
+    g.roundRect(cx - hw, cy - hh, hw * 2, hh * 2, 0.04).fill(this.c(b.shell));
+    g.roundRect(cx - hw * 0.7, cy - hh * 0.8, hw * 0.5, hh * 1.2, 0.02).fill({ color: this.c(b.trim), alpha: 0.9 });
+    g.moveTo(cx - hw, cy)
+      .lineTo(cx + hw, cy)
+      .stroke({ width: w * 0.14, color: out });
+    g.moveTo(cx + hw * 0.4, cy - hh)
+      .lineTo(cx + hw * 0.7, cy - hh - 0.26)
+      .stroke({ width: w * 0.12, color: this.c(b.trim) });
+    const blink = 0.5 + 0.5 * Math.sin(t * 3.2);
+    g.circle(cx + hw * 0.7, cy - hh - 0.26, w * 0.2).fill(b.light);
+    fire.circle(cx + hw * 0.7, cy - hh - 0.26, w * (0.5 + blink * 0.6)).fill({ color: b.light, alpha: 0.35 });
+    g.circle(cx + hw * 0.3, cy + hh * 0.55, w * 0.16).fill(b.light);
+  }
+
+  /** The machine arm: steel segments over the near arm, a piston along the forearm, a blocky fist, bolts and a stripe. */
+  private machineArm(g: Graphics, fire: Graphics, pts: readonly Point[]): void {
+    const m = this.skin.machineArm;
+    if (!m) return;
+    const [sh, el, hand] = pts as [Point, Point, Point];
+    const { w, t } = this.st;
+    const out = this.c(this.P.outline);
+    const steel = this.c(m.steel);
+    const upperA = lerp(sh, el, 0.1);
+    const upperB = lerp(sh, el, 0.9);
+    sleeveQuad(g, upperA, upperB, w * 0.86, w * 0.78, out);
+    sleeveQuad(g, upperA, upperB, w * 0.7, w * 0.64, steel);
+    const fa = lerp(el, hand, 0.08);
+    const fb = lerp(el, hand, 0.78);
+    sleeveQuad(g, fa, fb, w * 0.98, w * 0.9, out);
+    sleeveQuad(g, fa, fb, w * 0.8, w * 0.72, steel);
+    // The orange stripe, the piston rod alongside, and a joint ring at the elbow.
+    const f = frame(el, hand);
+    const s1 = lerp(el, hand, 0.2);
+    const s2 = lerp(el, hand, 0.72);
+    g.moveTo(s1.x, s1.y)
+      .lineTo(s2.x, s2.y)
+      .stroke({ width: w * 0.2, color: m.stripe });
+    g.moveTo(s1.x + f.nx * w * 0.5, s1.y + f.ny * w * 0.5)
+      .lineTo(s2.x + f.nx * w * 0.5, s2.y + f.ny * w * 0.5)
+      .stroke({ width: w * 0.1, color: this.c(this.P.armourLit) });
+    g.circle(el.x, el.y, w * 0.62).fill(out);
+    g.circle(el.x, el.y, w * 0.46).fill(steel);
+    g.circle(el.x, el.y, w * 0.2).fill(m.stripe);
+    // The fist: a squared block with knuckle bolts.
+    const fist = lerp(el, hand, 1);
+    const fu = { x: f.ux, y: f.uy };
+    const fw = w * 0.95;
+    g.poly([
+      fist.x - fu.x * w * 0.5 + f.nx * fw,
+      fist.y - fu.y * w * 0.5 + f.ny * fw,
+      fist.x + fu.x * w * 0.7 + f.nx * fw * 0.9,
+      fist.y + fu.y * w * 0.7 + f.ny * fw * 0.9,
+      fist.x + fu.x * w * 0.7 - f.nx * fw * 0.9,
+      fist.y + fu.y * w * 0.7 - f.ny * fw * 0.9,
+      fist.x - fu.x * w * 0.5 - f.nx * fw,
+      fist.y - fu.y * w * 0.5 - f.ny * fw,
+    ]).fill(steel);
+    g.poly([
+      fist.x - fu.x * w * 0.5 + f.nx * fw,
+      fist.y - fu.y * w * 0.5 + f.ny * fw,
+      fist.x + fu.x * w * 0.7 + f.nx * fw * 0.9,
+      fist.y + fu.y * w * 0.7 + f.ny * fw * 0.9,
+      fist.x + fu.x * w * 0.7 - f.nx * fw * 0.9,
+      fist.y + fu.y * w * 0.7 - f.ny * fw * 0.9,
+      fist.x - fu.x * w * 0.5 - f.nx * fw,
+      fist.y - fu.y * w * 0.5 - f.ny * fw,
+    ]).stroke({ width: w * 0.2, color: out, join: 'round' });
+    for (const k of [-0.5, 0.5])
+      g.circle(fist.x + fu.x * w * 0.3 + f.nx * fw * k, fist.y + fu.y * w * 0.3 + f.ny * fw * k, w * 0.14).fill(
+        m.stripe,
+      );
+    // Idle glow in the fist, and a glow in the elbow that pulses.
+    fire.circle(fist.x, fist.y, w * (1.2 + 0.2 * Math.sin(t * 4))).fill({ color: m.stripe, alpha: 0.18 });
+    fire.circle(el.x, el.y, w * 0.55).fill({ color: m.stripe, alpha: 0.18 + 0.1 * Math.sin(t * 3) });
+  }
+
+  /** Reinforced Plating: plates slide out from the backpack and lock on the shoulder, chest and arms as `plating` rises. */
+  private platingOverlay(g: Graphics, fire: Graphics, s: Skel): void {
+    const k = Math.min(1, this.st.plating ?? 0);
+    const { w } = this.st;
+    const out = this.c(this.P.outline);
+    const plate = this.c(this.P.armourLit);
+    const lit = this.c(0x9aa3b2);
+    const slide = (1 - k) * 0.25; // plates start tucked in toward the back and slide forward
+    const chest = { x: s.chest.x + slide * 0.5, y: s.chest.y };
+    const hw = 0.21 * (0.5 + 0.5 * k);
+    const hh = 0.34;
+    g.roundRect(chest.x - hw - w * 0.15, chest.y - hh * 0.45 - w * 0.15, hw * 2 + w * 0.3, hh + w * 0.3, 0.04).fill(
+      out,
+    );
+    g.roundRect(chest.x - hw, chest.y - hh * 0.45, hw * 2, hh, 0.035).fill(plate);
+    g.roundRect(chest.x - hw * 0.6, chest.y - hh * 0.1, hw * 1.2, hh * 0.25, 0.02).fill({ color: lit, alpha: 0.9 });
+    if (this.P.seam !== null)
+      g.moveTo(chest.x - hw, chest.y + hh * 0.6)
+        .lineTo(chest.x + hw, chest.y + hh * 0.6)
+        .stroke({ width: w * 0.12, color: this.P.seam });
+    for (const arm of [s.armFront, s.armBack]) {
+      const [sh, el, hand] = arm as [Point, Point, Point];
+      const a = lerp(sh, el, 0.05);
+      const b = lerp(sh, el, 0.7);
+      sleeveQuad(g, a, b, w * 1.0 * k, w * 0.85 * k, out);
+      sleeveQuad(g, a, b, w * 0.8 * k, w * 0.68 * k, plate);
+      const c = lerp(el, hand, 0.2);
+      const d = lerp(el, hand, 0.8);
+      sleeveQuad(g, c, d, w * 0.9 * k, w * 0.8 * k, out);
+      sleeveQuad(g, c, d, w * 0.7 * k, w * 0.6 * k, lit);
+      g.circle(sh.x, sh.y, w * 1.15 * k).fill(out);
+      g.circle(sh.x, sh.y, w * 0.95 * k).fill(plate);
+      g.circle(sh.x, sh.y, w * 0.4 * k).fill(this.P.seam ?? lit);
+    }
+    // A flash as each plate locks.
+    if (k > 0.85 && k < 1)
+      fire.circle(chest.x, chest.y, 0.35).fill({ color: this.P.glow ?? 0xff7a1a, alpha: (1 - k) * 4 });
   }
 
   /** Geometric fragments (small triangles and diamonds) orbiting the body, half behind it and half in front. */

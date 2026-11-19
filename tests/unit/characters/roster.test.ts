@@ -9,7 +9,7 @@ describe('roster', () => {
       playableFighters(BUILT_IN_LIBRARY)
         .map((c) => c.id)
         .sort(),
-    ).toEqual(['aerion', 'inferno', 'kenshiro', 'necro', 'psion', 'rampage', 'shroud', 'vexoris']);
+    ).toEqual(['aerion', 'geargrind', 'inferno', 'kenshiro', 'necro', 'psion', 'rampage', 'shroud', 'vexoris']);
   });
 
   it('the Admin Panel sees every character: the fighters, the skeleton variant and the training dummy', () => {
@@ -26,8 +26,9 @@ describe('roster', () => {
     ])
       expect(ids).toContain(id);
     expect(ids).not.toContain('base-stickman'); // the shared template is not a fighter
-    expect(ids.slice(0, 8).sort()).toEqual([
+    expect(ids.slice(0, 9).sort()).toEqual([
       'aerion',
+      'geargrind',
       'inferno',
       'kenshiro',
       'necro',

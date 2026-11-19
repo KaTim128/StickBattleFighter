@@ -106,6 +106,8 @@ export interface AbilityHost {
   hold?(targetId: string, seconds: number): void;
   /** Put a telekinetic barrier round a caster: it absorbs `hp` damage over at most `durationS` seconds. Optional. */
   barrier?(casterId: string, hp: number, durationS: number): void;
+  /** Tug loose metal props within `radiusM` of `at` toward it (a magnetic mine, one step's worth). Optional. */
+  attract?(at: Vec2, radiusM: number, strength: number): void;
   /** How much longer this caster's parry stance lasts right now (Focus Stance: 1.5); 1 when nothing changes it. */
   parryWindowFactor?(casterId: string): number;
   /**
@@ -171,6 +173,8 @@ export interface Cloud {
   readonly hit: Set<string>;
   /** A landmine that has not gone off yet (Chemical Trap): drawn as a mine, no gas, no effect. */
   mine?: NonNullable<CloudSpec['mine']> & { dormantS: number };
+  /** The burst of a magnetic mine drags its victims in instead of pushing them out. */
+  pullIn?: boolean;
   /** A fog (Plague Bloom): its per-fighter seconds spent inside, and its rules. */
   fog?: NonNullable<CloudSpec['fog']>;
   readonly dwellS: Map<string, number>;
@@ -213,6 +217,32 @@ interface LiftAction {
     readonly fallDamage: number;
     readonly immuneS: number;
   };
+}
+
+/** A rocket fist flying out and back (see `FistDelivery`). */
+interface FistAction {
+  readonly kind: 'fist';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly dir: Vec2;
+  ageS: number;
+  /** How far out the fist is now, metres. */
+  extentM: number;
+  readonly hit: Set<string>;
+}
+
+/** A combat drone hovering by its owner (see `DroneDelivery`). */
+export interface Drone {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  x: number;
+  y: number;
+  hp: number;
+  ageS: number;
+  fireInS: number;
+  /** Where it last aimed, for the view. */
+  aimX: number;
+  aimY: number;
 }
 
 /** A spin in progress (see `WhirlDelivery`). */
@@ -350,6 +380,7 @@ type Action =
   | AssaultAction
   | JudgementAction
   | LiftAction
+  | FistAction
   | WhirlAction;
 
 /** How a grab turned out, for the caster's animation. */
@@ -410,6 +441,7 @@ const GRAB_GAIN_PER_S = 16;
 
 export class AbilityWorld {
   readonly projectiles: Projectile[] = [];
+  readonly drones: Drone[] = [];
   readonly beams: Beam[] = [];
   readonly zones: FireZone[] = [];
   readonly clouds: Cloud[] = [];
@@ -603,6 +635,12 @@ export class AbilityWorld {
     return a && d?.type === 'whirl' ? { ageS: a.ageS, durationS: d.durationS, radiusM: d.radiusM } : null;
   }
 
+  /** An extended rocket fist (Geargrind): its direction and how far out it is, or null when none is out. */
+  fistOf(casterId: string): { dirX: number; dirY: number; extentM: number; ageS: number } | null {
+    const a = this.actions.find((x) => x.kind === 'fist' && x.casterId === casterId) as FistAction | undefined;
+    return a ? { dirX: a.dir.x, dirY: a.dir.y, extentM: a.extentM, ageS: a.ageS } : null;
+  }
+
   /** How far through a Sky Dive's flight (0..1) the caster is, or null when not diving that way. */
   swoopOf(casterId: string): number | null {
     const a = this.actions.find((x) => x.kind === 'leap' && x.casterId === casterId) as LeapAction | undefined;
@@ -692,6 +730,27 @@ export class AbilityWorld {
           { liftS: d.liftS, liftM: d.liftM, fallDamage: d.fallDamage, immuneS: d.immuneS },
           host,
         );
+        break;
+      }
+      case 'fist':
+        this.actions.push({ kind: 'fist', casterId, def, dir, ageS: 0, extentM: 0, hit: new Set() });
+        break;
+      case 'drone': {
+        // Only so many at once: the oldest is recalled.
+        const own = this.drones.filter((x) => x.casterId === casterId);
+        for (const old of own.slice(0, Math.max(0, own.length - d.maxAlive + 1)))
+          this.drones.splice(this.drones.indexOf(old), 1);
+        this.drones.push({
+          casterId,
+          def,
+          x: at.x - dir.x * 0.4,
+          y: at.y - dir.y * 0.4,
+          hp: d.hp,
+          ageS: 0,
+          fireInS: 0.5,
+          aimX: dir.x,
+          aimY: dir.y,
+        });
         break;
       }
       case 'barrier':
@@ -1069,6 +1128,7 @@ export class AbilityWorld {
     this.updateTelegraphs(dtS, host);
     this.updateZones(dtS, host);
     this.updateClouds(dtS, host);
+    this.updateDrones(dtS, host);
     this.updateGrenades(dtS, host);
     for (let i = this.parries.length - 1; i >= 0; i--) {
       const p = this.parries[i]!;
@@ -1325,9 +1385,11 @@ export class AbilityWorld {
                   ? this.stepJudgement(a, dtS, host)
                   : a.kind === 'lift'
                     ? this.stepLift(a, dtS, host)
-                    : a.kind === 'whirl'
-                      ? this.stepWhirl(a, dtS, host)
-                      : this.stepGrab(a, dtS, host);
+                    : a.kind === 'fist'
+                      ? this.stepFist(a, dtS, host)
+                      : a.kind === 'whirl'
+                        ? this.stepWhirl(a, dtS, host)
+                        : this.stepGrab(a, dtS, host);
       if (finished) {
         // The action may have been removed meanwhile (a new pull on the same target).
         const at = this.actions.indexOf(a);
@@ -1973,6 +2035,132 @@ export class AbilityWorld {
     }
   }
 
+  /** The fist: out along the aim, one blow to each enemy it passes, a beat at full reach, then back. */
+  private stepFist(a: FistAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'fist') return true;
+    a.ageS += dtS;
+    const hold = 0.12;
+    const total = d.outS + hold + d.backS;
+    const out = Math.min(1, a.ageS / d.outS);
+    const back = a.ageS <= d.outS + hold ? 0 : Math.min(1, (a.ageS - d.outS - hold) / d.backS);
+    const prev = a.extentM;
+    a.extentM = d.reachM * (out * (1 - back));
+    const at = host.position(a.casterId);
+    host.drive(a.casterId, { x: 0, y: 0 }, 0); // planted while the fist is out
+    if (a.ageS <= d.outS + hold) {
+      const from = { x: at.x + a.dir.x * prev, y: at.y + a.dir.y * prev };
+      const to = { x: at.x + a.dir.x * a.extentM, y: at.y + a.dir.y * a.extentM };
+      for (const f of host.fighters()) {
+        if (a.hit.has(f.id) || this.friendly(f, a.casterId, host) || !f.hittable) continue;
+        if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
+        if (!this.hit(host, a.casterId, f.id, a.def.payload, a.dir, a.def.look?.hitFlash)) continue;
+        a.hit.add(f.id);
+        host.emit({
+          kind: 'impact',
+          ability: a.def.id,
+          look: a.def.look,
+          vfx: a.def.vfx,
+          sfx: a.def.sfx.impact,
+          x: f.x,
+          y: f.y,
+          radiusM: 0.8,
+          dirX: a.dir.x,
+          dirY: a.dir.y,
+        });
+      }
+      const wall = host.blocked(from, to);
+      if (wall !== null) {
+        const hitAt = { x: from.x + (to.x - from.x) * wall, y: from.y + (to.y - from.y) * wall };
+        host.hitEnvironment(a.casterId, hitAt, d.radiusM, a.def.payload, a.dir, false);
+        a.extentM = Math.max(0, prev); // stops against the obstacle and comes back
+        a.ageS = Math.max(a.ageS, d.outS + hold);
+      }
+    }
+    return a.ageS >= total;
+  }
+
+  /** Drones: follow their owner, loose shots at the nearest enemy in range, wear down under enemy fire, expire. */
+  private updateDrones(dtS: number, host: AbilityHost): void {
+    for (let i = this.drones.length - 1; i >= 0; i--) {
+      const dr = this.drones[i]!;
+      const d = dr.def.delivery;
+      if (d.type !== 'drone') continue;
+      dr.ageS += dtS;
+      const owner = host.fighters().find((f) => f.id === dr.casterId);
+      if (dr.ageS >= d.durationS || dr.hp <= 0 || !owner || !owner.hittable) {
+        const fell = dr.hp <= 0;
+        this.drones.splice(i, 1);
+        host.emit({
+          kind: 'impact',
+          ability: dr.def.id,
+          look: dr.def.look,
+          vfx: fell ? 'drone-down' : 'drone-recall',
+          sfx: dr.def.sfx.impact,
+          x: dr.x,
+          y: dr.y,
+          radiusM: 0.5,
+        });
+        continue;
+      }
+      // Hover to the owner's shoulder, trailing a little.
+      const bob = Math.sin(dr.ageS * 3) * 0.08;
+      const want = { x: owner.x - 0.5, y: owner.y - 0.9 + bob };
+      const k = Math.min(1, dtS * 5);
+      dr.x += (want.x - dr.x) * k;
+      dr.y += (want.y - dr.y) * k;
+      // Enemy shots that reach it wear it down.
+      for (let j = this.projectiles.length - 1; j >= 0; j--) {
+        const p = this.projectiles[j]!;
+        if (this.friendly({ id: p.casterId, x: 0, y: 0, radiusM: 0, hittable: true }, dr.casterId, host)) continue;
+        if (Math.hypot(p.x - dr.x, p.y - dr.y) > 0.45) continue;
+        dr.hp -= p.def.payload.damage;
+        this.projectiles.splice(j, 1);
+        host.emit({
+          kind: 'impact',
+          ability: dr.def.id,
+          look: dr.def.look,
+          vfx: 'drone-hit',
+          sfx: dr.def.sfx.impact,
+          x: dr.x,
+          y: dr.y,
+          radiusM: 0.3,
+        });
+      }
+      dr.fireInS -= dtS;
+      if (dr.fireInS > 0) continue;
+      const foe = this.nearestEnemy(dr.casterId, dr, d.rangeM, host);
+      if (!foe || host.blocked({ x: dr.x, y: dr.y }, foe) !== null) continue;
+      dr.fireInS = d.intervalS;
+      const dir = norm({ x: foe.x - dr.x, y: foe.y - dr.y });
+      dr.aimX = dir.x;
+      dr.aimY = dir.y;
+      this.projectiles.push({
+        casterId: dr.casterId,
+        def: {
+          ...dr.def,
+          id: `${dr.def.id}-shot`,
+          payload: d.shot.payload,
+          delivery: { type: 'projectile', speedMps: d.shot.speedMps, radiusM: d.shot.radiusM, maxRangeM: d.rangeM + 2 },
+        },
+        x: dr.x + dir.x * 0.3,
+        y: dr.y + dir.y * 0.3,
+        dir,
+        travelledM: 0,
+        trail: [],
+      });
+      host.emit({
+        kind: 'release',
+        ability: dr.def.id,
+        look: dr.def.look,
+        vfx: 'drone-shot',
+        sfx: 'drone-fire',
+        x: dr.x,
+        y: dr.y,
+      });
+    }
+  }
+
   private updateClouds(dtS: number, host: AbilityHost): void {
     for (let i = this.clouds.length - 1; i >= 0; i--) {
       const c = this.clouds[i]!;
@@ -1984,6 +2172,7 @@ export class AbilityWorld {
           continue;
         }
         if (c.mine.dormantS < c.armS) continue;
+        if (c.mine.magnet) host.attract?.({ x: c.x, y: c.y }, c.mine.magnet.radiusM, c.mine.magnet.pullStrength * dtS);
         const foot = host
           .fighters()
           .find(
@@ -1993,9 +2182,19 @@ export class AbilityWorld {
               Math.hypot(f.x - c.x, f.y - c.y) <= c.mine!.triggerRadiusM + f.radiusM,
           );
         if (!foot) continue;
+        const magnet = c.mine.magnet;
+        c.pullIn = magnet !== undefined;
         c.mine = undefined;
         c.armS = 0;
         c.ageS = 0;
+        if (magnet) {
+          // Everything the mine catches is dragged in and held a moment before the burst.
+          for (const f of host.fighters()) {
+            if (this.friendly(f, c.casterId, host) || !f.hittable) continue;
+            if (Math.hypot(f.x - c.x, f.y - c.y) > magnet.radiusM) continue;
+            host.hold?.(f.id, magnet.holdS);
+          }
+        }
         host.emit({
           kind: 'impact',
           ability: c.def.id,
@@ -2020,7 +2219,16 @@ export class AbilityWorld {
         if (c.hit.has(f.id) || this.friendly(f, c.casterId, host) || !f.hittable) continue;
         if (Math.hypot(f.x - c.x, f.y - c.y) > c.radiusM + f.radiusM) continue;
         // Dodged (not landed): it can still catch them once the dodge ends, while they stand in it.
-        if (this.hit(host, c.casterId, f.id, c.def.payload, norm({ x: f.x - c.x, y: f.y - c.y }), c.def.look?.hitFlash))
+        if (
+          this.hit(
+            host,
+            c.casterId,
+            f.id,
+            c.def.payload,
+            norm(c.pullIn ? { x: c.x - f.x, y: c.y - f.y } : { x: f.x - c.x, y: f.y - c.y }),
+            c.def.look?.hitFlash,
+          )
+        )
           c.hit.add(f.id);
       }
     }

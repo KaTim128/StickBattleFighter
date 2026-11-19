@@ -1,0 +1,17 @@
+{
+  "id": "geargrind-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Idle": "proc.idle.mechanic",
+    "FightingStance": "proc.idle.mechanic",
+    "Turn": "proc.idle.mechanic",
+    "Jab": "gear.jab",
+    "Hook": "gear.cross",
+    "SideKick": "gear.elbow",
+    "RoundhouseKick": "gear.uppercut",
+    "FrontKick": "gear.shove",
+    "JumpingFrontKick": "gear.rocket-knee",
+    "DownwardAerialKick": "gear.drop-hammer",
+    "HeavyAttack": "gear.smash"
+  }
+}

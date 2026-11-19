@@ -118,6 +118,17 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     mist: 6,
   },
   'psi-wave': { sparks: { count: 24, speedMps: 8, colour: 0xe8d8ff }, ring: { sizeM: 2.2, colour: 0xc7a1ff }, mist: 8 },
+  // Geargrind's machinery: orange sparks off the knuckles, a clanging ring, a heavy slam on the hydraulic smash.
+  'gear-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x3a3f48, hot: 0xff7a1a, bright: 0xffb455, core: 0xfff1d6 },
+  },
+  'gear-hit': { sparks: { count: 12, speedMps: 6, colour: 0xffb455 }, ring: { sizeM: 0.45, colour: 0xff7a1a } },
+  'gear-slam': {
+    sparks: { count: 26, speedMps: 9, colour: 0xffd9a0 },
+    ring: { sizeM: 1.6, colour: 0xff7a1a },
+    dust: [0x8a8f98, 0x55595f],
+  },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },

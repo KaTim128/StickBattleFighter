@@ -148,6 +148,25 @@ export interface AbilityVfxInput {
     readonly hitS: number;
     readonly palette: Palette | null;
   }[];
+  /** Rocket fists out (Geargrind): from where the caster stands, along `dir`, `extentM` out. */
+  readonly fists?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly dirX: number;
+    readonly dirY: number;
+    readonly extentM: number;
+    readonly palette: Palette | null;
+  }[];
+  /** Combat drones hovering by their owners, and how much durability they have left (0..1). */
+  readonly drones?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly ageS: number;
+    readonly k: number;
+    readonly aimX: number;
+    readonly aimY: number;
+    readonly palette: Palette | null;
+  }[];
   /** Cages round targets Floating Prison has lifted. */
   readonly cages?: readonly {
     readonly x: number;
@@ -1332,6 +1351,56 @@ export class AbilityVfx {
         });
     }
 
+    // Rocket Fist: the arm extends from the shoulder as a segmented steel cable with a spiked-knuckle fist and a rocket flame behind it.
+    for (const fs of input.fists ?? []) {
+      const pal = fs.palette ?? FIRE;
+      const a = iso(fs.x, fs.y, 1.15);
+      const b = iso(fs.x + fs.dirX * fs.extentM, fs.y + fs.dirY * fs.extentM, 1.15);
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 0.12, color: 0x14161a, cap: 'round' });
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 0.075, color: 0x6d7684, cap: 'round' });
+      const segs = Math.max(1, Math.floor(fs.extentM / 0.35));
+      for (let i = 1; i <= segs; i++) {
+        const k = i / (segs + 0.5);
+        g.circle(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, 0.06).fill(0x2a2e35);
+      }
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      const tail = { x: b.x - Math.cos(ang) * 0.22, y: b.y - Math.sin(ang) * 0.22 };
+      f.poly([
+        tail.x,
+        tail.y,
+        tail.x - Math.cos(ang) * (0.35 + 0.1 * Math.sin(t * 40)),
+        tail.y - Math.sin(ang) * 0.35,
+        tail.x + 0.02,
+        tail.y + 0.06,
+      ]).fill({ color: pal.hot, alpha: 0.8 });
+      f.circle(b.x, b.y, 0.26).fill({ color: pal.bright, alpha: 0.35 });
+      g.circle(b.x, b.y, 0.17).fill(0x2a2e35);
+      g.circle(b.x, b.y, 0.13).fill(0x6d7684);
+      g.circle(b.x + Math.cos(ang) * 0.1, b.y + Math.sin(ang) * 0.1, 0.05).fill(pal.hot);
+    }
+
+    // Combat drone: a small hovering disc with a turning rotor, a red-orange eye that tracks its target, and a thin
+    // cracking-up look as its durability falls.
+    for (const dr of input.drones ?? []) {
+      const pal = dr.palette ?? FIRE;
+      const shadow = iso(dr.x, dr.y, 0);
+      g.ellipse(shadow.x, shadow.y, 0.22, 0.09).fill({ color: 0x000000, alpha: 0.25 });
+      const c = iso(dr.x, dr.y, 1.45);
+      f.circle(c.x, c.y, 0.3).fill({ color: pal.hot, alpha: 0.14 });
+      g.ellipse(c.x, c.y, 0.2, 0.15).fill(0x14161a);
+      g.ellipse(c.x, c.y, 0.17, 0.12).fill(dr.k > 0.35 ? 0x4b525e : 0x6b4a3a);
+      g.rect(c.x - 0.1, c.y - 0.15, 0.2, 0.05).fill(0x2a2e35);
+      const spin = t * 30;
+      for (const sgn of [-1, 1])
+        g.moveTo(c.x - 0.3 * Math.cos(spin) * sgn, c.y - 0.2)
+          .lineTo(c.x + 0.3 * Math.cos(spin) * sgn, c.y - 0.2)
+          .stroke({ width: 0.03, color: 0xaab2bf, alpha: 0.55 });
+      g.circle(c.x + dr.aimX * 0.08, c.y + dr.aimY * 0.05, 0.045).fill(pal.hot);
+      f.circle(c.x + dr.aimX * 0.08, c.y + dr.aimY * 0.05, 0.1).fill({ color: pal.bright, alpha: 0.45 });
+      if (dr.k < 0.5)
+        f.circle(c.x - 0.1, c.y - 0.05, 0.05 + 0.04 * Math.sin(t * 20)).fill({ color: 0xffb455, alpha: 0.6 });
+    }
+
     // Floating Prison: a cage of turning rings round the lifted target.
     for (const cg of input.cages ?? []) {
       const pal = cg.palette ?? FIRE;
@@ -1712,6 +1781,26 @@ export class AbilityVfx {
     const pal = c.def.look?.palette ?? FIRE;
     const drop = Math.min(1, m.dormantS / 0.25);
     f.circle(c.x, c.y, 0.36).fill({ color: 0x000000, alpha: 0.3 * drop });
+    if (m.magnet) {
+      // A magnetic mine: a steel disc with an orange horseshoe magnet and field rings drawing inward while it is armed.
+      f.circle(c.x, c.y, 0.32).fill(0x3a3f48);
+      f.circle(c.x, c.y, 0.32).stroke({ width: 0.04, color: 0x0d0f12, alpha: 1 });
+      f.arc(c.x, c.y, 0.18, Math.PI * 0.15, Math.PI * 0.85).stroke({ width: 0.07, color: pal.hot, alpha: 1 });
+      f.arc(c.x, c.y, 0.18, Math.PI * 1.15, Math.PI * 1.85).stroke({ width: 0.07, color: 0xc9ced8, alpha: 1 });
+      if (live)
+        for (let i = 0; i < 3; i++) {
+          const k = 1 - ((t * 0.7 + i / 3) % 1);
+          f.circle(c.x, c.y, 0.4 + (m.magnet.radiusM - 0.4) * k).stroke({
+            width: 0.02,
+            color: pal.bright,
+            alpha: 0.32 * (1 - k),
+          });
+        }
+      const topM = iso(c.x, c.y, 0.08);
+      const blinkM = live ? 0.55 + 0.45 * Math.sin(t * 5) : Math.sin(t * 14) > 0 ? 1 : 0.15;
+      g.circle(topM.x, topM.y - 0.03, 0.07).fill({ color: live ? pal.bright : 0xff4a3a, alpha: blinkM });
+      return;
+    }
     f.circle(c.x, c.y, 0.32).fill(0x2f3822);
     f.circle(c.x, c.y, 0.32).stroke({ width: 0.04, color: 0x10160b, alpha: 1 });
     f.circle(c.x, c.y, 0.2).fill(0x56633a);

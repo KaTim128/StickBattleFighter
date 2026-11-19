@@ -31,9 +31,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canPunch"
-      ],
+      "requires": ["canPunch"],
       "next": {
         "tap": "spin-kick"
       }
@@ -61,10 +59,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canKick",
-        "canUseCombos"
-      ],
+      "requires": ["canKick", "canUseCombos"],
       "next": {
         "tap": "wing-slash"
       }
@@ -92,10 +87,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canPunch",
-        "canUseCombos"
-      ],
+      "requires": ["canPunch", "canUseCombos"],
       "next": {
         "tap": "rising-strike"
       }
@@ -123,10 +115,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canKick",
-        "canUseCombos"
-      ],
+      "requires": ["canKick", "canUseCombos"],
       "effect": "wind-launch"
     },
     {
@@ -152,9 +141,7 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": [
-        "canKick"
-      ]
+      "requires": ["canKick"]
     },
     {
       "id": "soaring-kick",
@@ -179,9 +166,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": [
-        "canUseAerialKicks"
-      ]
+      "requires": ["canUseAerialKicks"]
     },
     {
       "id": "diving-heel-drop",
@@ -206,9 +191,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": [
-        "canUseAerialKicks"
-      ]
+      "requires": ["canUseAerialKicks"]
     },
     {
       "id": "wing-smash",
@@ -233,9 +216,7 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": [
-        "canPunch"
-      ],
+      "requires": ["canPunch"],
       "effect": "wind-smash",
       "sfx": "hit-aerion-wing-smash"
     }

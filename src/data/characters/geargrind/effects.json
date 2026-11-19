@@ -1,0 +1,17 @@
+{
+  "id": "geargrind-effects",
+  "punchImpact": "gear-hit",
+  "kickImpact": "gear-hit",
+  "heavyImpact": "gear-slam",
+  "blockImpact": "block-guard",
+  "limbTrail": "gear-limbs",
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#ffb455",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "mechanic"
+}

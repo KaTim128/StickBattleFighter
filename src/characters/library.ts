@@ -9,6 +9,13 @@ import baseAnimation from '../data/characters/base-stickman/animation-profile.js
 import baseCharacter from '../data/characters/base-stickman/character.json';
 import baseMoveset from '../data/characters/base-stickman/moveset.json';
 import baseStats from '../data/characters/base-stickman/stats.json';
+import geargrindAi from '../data/characters/geargrind/ai.json';
+import geargrindAnimation from '../data/characters/geargrind/animation-profile.json';
+import geargrindAudio from '../data/characters/geargrind/audio.json';
+import geargrindCharacter from '../data/characters/geargrind/character.json';
+import geargrindEffects from '../data/characters/geargrind/effects.json';
+import geargrindMoveset from '../data/characters/geargrind/moveset.json';
+import geargrindStats from '../data/characters/geargrind/stats.json';
 import infernoAi from '../data/characters/inferno/ai.json';
 import infernoAnimation from '../data/characters/inferno/animation-profile.json';
 import infernoAudio from '../data/characters/inferno/audio.json';
@@ -103,6 +110,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionCharacter,
     kenshiroCharacter,
     psionCharacter,
+    geargrindCharacter,
     skeletonCharacter,
     dummyCharacter,
   ]),
@@ -119,6 +127,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionAnimation,
     kenshiroAnimation,
     psionAnimation,
+    geargrindAnimation,
   ]),
   moveset: byId<MovesetProfile>([
     baseMoveset,
@@ -130,6 +139,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionMoveset,
     kenshiroMoveset,
     psionMoveset,
+    geargrindMoveset,
     skeletonMoveset,
   ]),
   stats: byId<StatsProfile>([
@@ -142,6 +152,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionStats,
     kenshiroStats,
     psionStats,
+    geargrindStats,
     skeletonStats,
     dummyStats,
   ]),
@@ -155,6 +166,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionEffects,
     kenshiroEffects,
     psionEffects,
+    geargrindEffects,
     skeletonEffects,
   ]),
   audio: byId<AudioProfile>([
@@ -167,6 +179,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionAudio,
     kenshiroAudio,
     psionAudio,
+    geargrindAudio,
   ]),
   ai: byId<AiProfile>([
     defaultAi,
@@ -180,6 +193,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionAi,
     kenshiroAi,
     psionAi,
+    geargrindAi,
   ]),
 };
 
