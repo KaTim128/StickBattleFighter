@@ -118,6 +118,8 @@ export class StickmanView {
   wingSpread = 0.3;
   /** 0..1 how strongly a Focus Stance glows along the blades (Kenshiro). */
   focus = 0;
+  /** The body's turn about its own axis while spinning (Aerion's Wind Blade), radians; 0 = not spinning. */
+  spinAngle = 0;
   wingFlap = 0;
   /** 0..1 red glow in the eyes of a mask (Death Mark charged). */
   eyeGlow = 0;
@@ -228,7 +230,8 @@ export class StickmanView {
         .fill({ color: 0x1a120a, alpha: a * shrink });
     }
 
-    this.figure.scale.x = facing;
+    // A spin shows as the body turning edge-on and round again (the figure's width follows the cosine of the turn).
+    this.figure.scale.x = this.spinAngle === 0 ? facing : facing * (Math.cos(this.spinAngle) || 0.05);
     const roll = dodge.roll ?? 0;
     if (roll > 0) {
       // Dodge roll ON THE GROUND (owner, 11/11/2026: "rolling on the ground, not floating"): the

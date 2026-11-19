@@ -20,21 +20,21 @@ export const AERION_KIT: AbilityKit = {
     durationS: 4,
     speedPerStack: 0.04,
   },
-  // A1 (Q): Sky Dive. He launches high and dives onto the aimed spot; a concentrated burst of wind pushes everyone near
-  // the landing away. Untouchable while he is in the air.
+  // A1 (Q): Sky Dive. He takes flight: a steep climb, a curve over the top and a dive onto the aimed spot, the path an
+  // upside-down J. The landing is a wind burst that damages and pushes away everyone near. Untouchable in the air.
   a1: {
     id: 'skyDive',
     name: 'Sky Dive',
     label: 'DIVE',
     description:
-      'Launches into the air and dives onto the aimed spot. The landing releases a wind burst that damages and pushes away nearby opponents. Cannot be hit in the air.',
+      'Takes flight along a curved path, climbing steeply, arcing over and diving onto the aimed spot. The landing releases a wind burst that damages and pushes away nearby opponents. Cannot be hit in the air.',
     icon: 'sky-dive',
     slot: 'a1',
     staminaCost: 28,
     cooldownS: 9,
-    castS: 0.22,
+    castS: 0.2,
     recoveryS: 0.4,
-    aimRangeM: 8,
+    aimRangeM: 7,
     moveFactor: 0,
     interruptible: false,
     payload: {
@@ -45,7 +45,7 @@ export const AERION_KIT: AbilityKit = {
       impact: 'knuckle-heavy',
       falloff: { fullWithinM: 0.9, minFactor: 0.55 },
     },
-    delivery: { type: 'leap', maxRangeM: 8, airS: 0.85, peakM: 3.4, radiusM: 2.4, aimSpeedMps: 7 },
+    delivery: { type: 'leap', maxRangeM: 7, airS: 1.15, peakM: 4.2, radiusM: 2.4, aimSpeedMps: 7, swoop: true },
     vfx: 'sky-dive',
     sfx: { cast: 'wing-flap', release: 'sky-launch', impact: 'wind-burst' },
     look: {
@@ -64,64 +64,63 @@ export const AERION_KIT: AbilityKit = {
       airBody: 'wind',
     },
   },
-  // A2 (E): Wind Blade. Three compressed blades of air in a fan; each has its own trail and impact.
+  // A2 (E): Wind Blade. He spins on the spot with his wings spread wide: the wings are the blades, slashing everyone
+  // close four times as he turns, each cut pushing them away.
   a2: {
     id: 'windBlade',
     name: 'Wind Blade',
-    label: 'BLADES',
+    label: 'BLADE',
     description:
-      'Throws three compressed air blades in a fan. Each blade cuts for modest damage with its own trail, so close targets are hit by all three.',
+      'Spins on the spot with his wings spread, using them as blades to slash every opponent close to him four times, pushing them away.',
     icon: 'wind-blade',
     slot: 'a2',
-    staminaCost: 22,
-    cooldownS: 7,
-    castS: 0.24,
-    recoveryS: 0.3,
-    aimRangeM: 11,
-    moveFactor: 0.3,
+    staminaCost: 24,
+    cooldownS: 8,
+    castS: 0.18,
+    recoveryS: 0.9,
+    aimRangeM: 0,
+    moveFactor: 0.4,
     interruptible: true,
-    payload: { damage: 15, knockbackMps: 1.6, heavy: false, strength: 130, noFlinch: true, impact: 'knuckle-light' },
-    delivery: { type: 'projectile', speedMps: 16, radiusM: 0.3, maxRangeM: 11, count: 3, spreadRad: 0.5 },
+    payload: { damage: 15, knockbackMps: 2.6, heavy: false, strength: 220, noFlinch: true, impact: 'knuckle-light' },
+    delivery: { type: 'whirl', radiusM: 2.3, durationS: 0.8, tickS: 0.2 },
     vfx: 'wind-blade',
     sfx: { cast: 'wing-flap', release: 'blade-whoosh', impact: 'blade-cut' },
     look: {
       palette: WIND,
-      flight: { trailPerS: 60, sparksPerS: 8, shimmer: true },
       impact: { flashM: 0.5, sparks: 8, motes: 14, ringM: 0.8, smoke: 2, groundFire: false, smokeColour: 0xbcd6ea },
       hitFlash: 0xd4eeff,
     },
   },
-  // A3 (F): Cyclone Lift. A miniature tornado seizes the nearest enemy ahead, spins them up for under a second, and
-  // flings them away. Short reach and a visible wind-up are the counterplay; the hold is brief.
+  // A3 (F): Tornado Surge. He makes a tornado in his hands and launches it at the enemy. On contact it carries them up,
+  // then disappears and they fall, taking damage on landing. A narrow, slow-ish shot is the counterplay.
   a3: {
-    id: 'cycloneLift',
-    name: 'Cyclone Lift',
-    label: 'CYCLONE',
+    id: 'tornadoSurge',
+    name: 'Tornado Surge',
+    label: 'TORNADO',
     description:
-      'Raises a miniature tornado that seizes the nearest enemy close ahead, lifts them for under a second and flings them away. Short reach and a clear wind-up make it easy to dodge.',
-    icon: 'cyclone-lift',
+      'Launches a tornado from his hands at the opponent. On contact it lifts them into the air, then disappears, and they fall and take damage.',
+    icon: 'tornado-surge',
     slot: 'a3',
     staminaCost: 30,
     cooldownS: 14,
-    castS: 0.4,
+    castS: 0.35,
     recoveryS: 0.4,
-    aimRangeM: 4,
-    moveFactor: 0,
+    aimRangeM: 9,
+    moveFactor: 0.1,
     interruptible: true,
-    payload: { damage: 40, knockbackMps: 11, heavy: true, strength: 600, impact: 'knuckle-heavy' },
+    payload: { damage: 14, knockbackMps: 0.4, heavy: false, strength: 300, noFlinch: true, impact: 'knuckle-light' },
     delivery: {
-      type: 'grab',
-      reachM: 3.6,
-      radiusM: 0.7,
-      liftS: 0.9,
-      liftM: 1.7,
-      slamRadiusM: 1.8,
-      cyclone: { holdM: 1.8 },
+      type: 'projectile',
+      speedMps: 11,
+      radiusM: 0.5,
+      maxRangeM: 9,
+      lift: { liftS: 0.7, liftM: 2.1, fallDamage: 38 },
     },
-    vfx: 'cyclone-lift',
+    vfx: 'tornado-surge',
     sfx: { cast: 'wind-gather', release: 'cyclone-spin', impact: 'cyclone-fling' },
     look: {
       palette: WIND,
+      flight: { trailPerS: 30, sparksPerS: 4, shimmer: true, tornado: true },
       impact: { flashM: 0.9, sparks: 12, motes: 30, ringM: 1.8, smoke: 6, groundFire: false, smokeColour: 0xbcd6ea },
       hitFlash: 0xd4eeff,
     },
@@ -153,13 +152,12 @@ export const AERION_KIT: AbilityKit = {
     },
   },
   // A5 (fifth, B13): Feather Guard. He folds his wings round himself: half the damage for 3 seconds, but slower. The
-  // defensive answer his thin frame needs; it takes the R slot if equipped in place of Tailwind.
+  // defensive answer his thin frame needs; it takes the R slot when equipped.
   a5: {
     id: 'featherGuard',
     name: 'Feather Guard',
     label: 'GUARD',
-    description:
-      'Folds his wings round himself: half the damage taken for 3 seconds, but 20% slower. A defensive alternative to Tailwind.',
+    description: 'Folds his wings round himself: half the damage taken for 3 seconds, but 20% slower.',
     icon: 'feather-guard',
     slot: 'a4',
     staminaCost: 24,

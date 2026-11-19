@@ -309,9 +309,9 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
   'wind-blade': icon(
     'wind',
     rays(24, 24, 14, '#ffffff', 0.2),
-    `<g filter="url(#gl)" opacity=".9"><path d="M6 14 C18 10 30 12 42 20 C30 18 18 18 6 14Z" fill="#d4eeff"/><path d="M6 24 C20 20 34 22 44 28 C32 27 18 28 6 24Z" fill="#bfe2ff"/><path d="M8 34 C20 31 32 33 42 38 C30 37 18 38 8 34Z" fill="#8fc4f4"/></g>`,
+    `<circle cx="24" cy="24" r="16" fill="none" stroke="#bfe2ff" stroke-width="2" stroke-dasharray="4 5" opacity=".7" filter="url(#gl)"/><g filter="url(#ds)"><path d="M24 24 C28 12 38 8 44 12 C40 20 32 26 24 24Z" fill="#f2f8ff" stroke="#26323f" stroke-width="1.5"/><path d="M24 24 C20 36 10 40 4 36 C8 28 16 22 24 24Z" fill="#cfe3f6" stroke="#26323f" stroke-width="1.5"/></g><circle cx="24" cy="24" r="3" fill="#ffffff"/>`,
   ),
-  'cyclone-lift': icon(
+  'tornado-surge': icon(
     'wind',
     rays(24, 24, 14, '#ffffff', 0.2),
     `<g fill="none" stroke="#d4eeff" stroke-width="3" stroke-linecap="round" filter="url(#gl)"><path d="M10 10 C20 6 34 8 38 12"/><path d="M13 18 C22 14 32 16 35 20"/><path d="M16 26 C23 23 30 24 32 28"/><path d="M19 33 C24 31 28 32 29 35"/></g><g filter="url(#ds)"><circle cx="24" cy="12" r="3.4" fill="#eef6ff" stroke="#26323f" stroke-width="1.4"/></g>`,

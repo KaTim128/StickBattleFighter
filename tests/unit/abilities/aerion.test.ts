@@ -48,38 +48,70 @@ describe('Aerion kit', () => {
     expect(AERION_KIT.a5?.delivery.type === 'buff' && AERION_KIT.a5.delivery.damageTakenFactor).toBeLessThan(1); // Feather Guard
   });
 
-  it('Wind Blade throws a fan of three shots, each its own projectile', () => {
+  it('Wind Blade is a spin on the spot: four wing slashes on everyone close, each pushing them away, and nobody far', () => {
+    const a = arena({ x: 1.5, y: 0 });
+    a.world.release('me', AERION_KIT.a2, { x: 1.5, y: 0 }, a.host);
+    expect(a.world.whirlOf('me')).not.toBeNull();
+    run(a, 1);
+    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(4);
+    expect(a.hits.every((h) => h.dirX > 0.9)).toBe(true); // pushed away from him
+    expect(a.world.whirlOf('me')).toBeNull();
+    const far = arena({ x: 6, y: 0 });
+    far.world.release('me', AERION_KIT.a2, { x: 6, y: 0 }, far.host);
+    run(far, 1);
+    expect(far.hits).toHaveLength(0);
+  });
+
+  it('Sky Dive flies an upside-down J: climbs steeply with little forward travel, peaks early, then dives onto the aimed spot', () => {
     const a = arena({ x: 6, y: 0 });
-    a.world.release('me', AERION_KIT.a2, { x: 6, y: 0 }, a.host);
-    expect(a.world.projectiles).toHaveLength(3);
-    const angles = a.world.projectiles.map((p) => Math.atan2(p.dir.y, p.dir.x)).sort((x, y) => x - y);
-    expect(angles[0]).toBeLessThan(0);
-    expect(angles[2]).toBeGreaterThan(0);
-    expect(angles[1]).toBeCloseTo(0, 5);
-  });
-
-  it('Sky Dive leaps to the aimed spot and lands with a wind burst that hits the foe once', () => {
-    const a = arena({ x: 5, y: 0 });
-    a.world.release('me', AERION_KIT.a1, { x: 5, y: 0 }, a.host);
-    run(a, 0.5);
-    expect(a.world.liftOf('me')).toBeGreaterThan(2);
-    run(a, 0.6);
-    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
-  });
-
-  it('Cyclone Lift holds the nearest foe up in the tornado for under a second, then flings them away', () => {
-    const a = arena({ x: 2.5, y: 0 });
-    a.world.release('me', AERION_KIT.a3, { x: 2.5, y: 0 }, a.host);
-    run(a, 0.8);
-    expect(a.world.cyclones).toHaveLength(1);
-    expect(Math.max(...a.lifts)).toBeGreaterThan(1);
-    expect(a.hits).toHaveLength(0);
+    a.world.release('me', AERION_KIT.a1, { x: 6, y: 0 }, a.host);
+    const d = AERION_KIT.a1.delivery;
+    if (d.type !== 'leap' || !d.swoop) throw new Error('Sky Dive is a swoop');
+    let peakAt = 0;
+    let peak = 0;
+    let xAtPeak = 0;
+    const steps = Math.round(d.airS * 60);
+    for (let i = 0; i < steps - 1; i++) {
+      a.world.update(1 / 60, a.host);
+      const h = a.world.liftOf('me');
+      if (h > peak) {
+        peak = h;
+        peakAt = i / steps;
+        xAtPeak = a.me.x;
+      }
+    }
+    expect(peak).toBeGreaterThan(3.5);
+    expect(peakAt).toBeLessThan(0.4); // the height peaks early: a steep climb
+    expect(xAtPeak).toBeLessThan(6 * 0.3); // and little ground is covered getting there
     run(a, 0.3);
-    expect(a.world.cyclones).toHaveLength(0);
-    expect(a.hits).toHaveLength(1);
-    expect(a.hits[0]?.dirX).toBeGreaterThan(0.9); // flung straight away from the caster
+    expect(a.me.x).toBeGreaterThan(5.4); // down onto the spot
+    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
+    expect(a.world.liftOf('me')).toBe(0);
+  });
+
+  it('Tornado Surge flies from his hands, lifts what it hits into the air, vanishes, and the fall hurts', () => {
+    const a = arena({ x: 5, y: 0 });
+    a.world.release('me', AERION_KIT.a3, { x: 5, y: 0 }, a.host);
+    expect(a.world.funnels).toHaveLength(1); // the tornado in flight
     const d = AERION_KIT.a3.delivery;
-    expect(d.type === 'grab' && d.liftS).toBeLessThan(1);
+    if (d.type !== 'projectile' || !d.lift) throw new Error('Tornado Surge lifts');
+    let rose = false;
+    let funnelWhileLifting = false;
+    let funnelAfterRise = false;
+    for (let i = 0; i < 60 * 3; i++) {
+      a.world.update(1 / 60, a.host);
+      if (Math.max(0, ...a.lifts) > 1) rose = true;
+      const lifting = a.world.funnels.some((f) => f.size === 1);
+      if (rose && lifting) funnelWhileLifting = true;
+      if (i > 60 * 1.9 && a.world.funnels.length > 0) funnelAfterRise = true;
+    }
+    expect(rose).toBe(true);
+    expect(Math.max(...a.lifts)).toBeCloseTo(d.lift.liftM, 0);
+    expect(funnelWhileLifting).toBe(true);
+    expect(funnelAfterRise).toBe(false); // the tornado disappears; they only fall
+    const dmg = a.hits.filter((h) => h.target === 'foe').map((h) => h.damage);
+    expect(dmg).toEqual([AERION_KIT.a3.payload.damage, d.lift.fallDamage]); // the touch, then the fall
+    expect(a.lifts.at(-1)).toBe(0);
   });
 
   it('Celestial Tempest sends volleys of blades across the battlefield while he is airborne, then dives', () => {

@@ -113,9 +113,9 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a2', 'a3'],
     ],
   },
-  // Aerion: a mobile skirmisher. Blades from range, dives to close, lifts a target that gets in close, buffs to chase or escape.
+  // Aerion: a mobile skirmisher. Tornado shots from range, dives to close, spins his wings on anyone close, buffs to chase or escape.
   'aerion-ai': {
-    style: 'Aerial skirmisher: blades at range, dives in, cyclone on anyone close, fast and evasive.',
+    style: 'Aerial skirmisher: tornado shots at range, dives in, wing spin on anyone close, fast and evasive.',
     preferredRangeM: [2.2, 5],
     movement: 'circle',
     meleeBias: 0.65,
@@ -125,8 +125,8 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     hitAndRunS: 0.9,
     tactics: {
       a1: { role: 'gapClose', minM: 3, maxM: 8, weight: 1.2 },
-      a2: { role: 'poke', minM: 2.5, maxM: 10, weight: 1.3 },
-      a3: { role: 'control', minM: 0, maxM: 3.4, weight: 1.1 },
+      a2: { role: 'burst', minM: 0, maxM: 2.2, weight: 1.3 },
+      a3: { role: 'poke', minM: 2, maxM: 8.5, weight: 1.3 },
       a4: { role: 'buff', minM: 4, maxM: 12, weight: 0.8 },
       ult: { role: 'burst', minM: 0, maxM: 7, weight: 1.3 },
     },

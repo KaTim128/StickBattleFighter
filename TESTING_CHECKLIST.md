@@ -635,3 +635,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Kenshiro appears on the select screen, in Practice, Tournament and the Admin Panel with two swords, a kabuto, and a crimson waist cloth.
 - [ ] Light combo of four distinct cuts; heavy is an overhead slash; mastery stacks glow the blades when ready.
 - [ ] Q Twin Fang (two cuts), E Perfect Parry (stance ring; deflect and counter an attack from the front, wasted if nothing comes), F Blade Tempest (six different cuts), R Focus Stance (red glow, parry lasts longer), the fifth ability Iaido Draw (5 m cut line), I Final Judgement (rush, unseen cuts, return, one huge blow).
+
+### Aerion rework (21/11/2026, TD-125)
+- [ ] Q Sky Dive: he flies up steeply, arcs over and dives onto the aimed spot with a wind burst (an upside-down J).
+- [ ] E Wind Blade: he spins with his wings spread as blades and cuts everyone close four times.
+- [ ] F Tornado Surge: a tornado leaves his hands, lifts the enemy it hits, vanishes, and they fall and take damage.
+- [ ] No ability description anywhere says it is an alternative to another ability.

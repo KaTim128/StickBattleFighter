@@ -140,9 +140,11 @@ export interface ProjectileDelivery {
   readonly speedMps: number;
   readonly radiusM: number;
   readonly maxRangeM: number;
-  /** Several shots at once, fanned across `spreadRad` (Aerion's Wind Blade); each is its own shot with its own trail. */
-  readonly count?: number;
-  readonly spreadRad?: number;
+  /**
+   * A tornado (Aerion's Tornado Surge): on contact the target takes the payload's contact hit, is swept up `liftM` over
+   * `liftS` seconds, and the tornado disappears; the target then falls and takes `fallDamage`.
+   */
+  readonly lift?: { readonly liftS: number; readonly liftM: number; readonly fallDamage: number };
 }
 
 /** The caster rushes forward, hitting fighters in the way, optionally leaving a burning trail. */
@@ -255,6 +257,11 @@ export interface LeapDelivery {
   /** How fast WASD or the joystick moves the landing spot while aiming (owner, 12/11/2026). */
   readonly aimSpeedMps?: number;
   /**
+   * Fly and dive instead of jump and slam (Aerion's Sky Dive): up steeply with little forward travel, over the top in
+   * a curve and down onto the end point, the whole path an upside-down J.
+   */
+  readonly swoop?: boolean;
+  /**
    * Shots loosed while the caster hangs in the air (Aerion's Celestial Tempest): `count` volleys between `fromS` and
    * `untilS` into the leap, each of `blades` shots fanned round the caster, sweeping round by `sweepRad` over the
    * whole volley so the storm crosses the battlefield. Each shot carries `payload`.
@@ -342,6 +349,17 @@ export interface MarkDelivery {
   readonly damageFactor: number;
   /** Walking speed while stalking, as a fraction of normal. */
   readonly moveFactor: number;
+}
+
+/**
+ * A spinning attack on the spot (Aerion's Wind Blade): for `durationS`, every `tickS` seconds, each enemy within `radiusM`
+ * takes the payload, pushed away from the caster. The caster's wings are the blades: the view spreads them and turns him.
+ */
+export interface WhirlDelivery {
+  readonly type: 'whirl';
+  readonly radiusM: number;
+  readonly durationS: number;
+  readonly tickS: number;
 }
 
 /**
@@ -435,11 +453,6 @@ export interface GrabDelivery {
   readonly liftS: number;
   readonly liftM: number;
   readonly slamRadiusM: number;
-  /**
-   * A miniature tornado instead of a slam (Aerion's Cyclone Lift): the target is held `holdM` ahead of the caster,
-   * spinning up in the funnel, then flung straight away from the caster with the payload.
-   */
-  readonly cyclone?: { readonly holdM: number };
 }
 
 /** What a running buff does (the buff delivery without its summons). */
@@ -452,6 +465,7 @@ export type Delivery =
   | DashDelivery
   | NovaDelivery
   | ParryDelivery
+  | WhirlDelivery
   | JudgementDelivery
   | GrenadeDelivery
   | LeapDelivery
@@ -487,6 +501,8 @@ export interface MagicLook {
     readonly shimmer: boolean;
     /** Drawn as a tumbling glass jar of glowing liquid instead of a streaming bolt (Vexoris's Toxic Jar). */
     readonly jar?: boolean;
+    /** Drawn as a spinning tornado funnel instead of a streaming bolt (Aerion's Tornado Surge). */
+    readonly tornado?: boolean;
   };
   /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
   readonly impact?: {

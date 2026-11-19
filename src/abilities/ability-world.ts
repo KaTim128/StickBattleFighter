@@ -194,6 +194,28 @@ export interface Grenade {
   ageS: number;
 }
 
+/** A target swept up by a tornado (see `ProjectileDelivery.lift`): rising, then falling to take the fall damage. */
+interface LiftAction {
+  readonly kind: 'lift';
+  readonly casterId: string;
+  readonly targetId: string;
+  readonly def: AbilityDef;
+  readonly dir: Vec2;
+  ageS: number;
+  /** Where the target is, for the funnel. */
+  x: number;
+  y: number;
+}
+
+/** A spin in progress (see `WhirlDelivery`). */
+interface WhirlAction {
+  readonly kind: 'whirl';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  ageS: number;
+  sinceTickS: number;
+}
+
 /** A parry stance up (see `ParryDelivery`): the next attack from the front is deflected and answered. */
 export interface Parry {
   readonly casterId: string;
@@ -294,9 +316,6 @@ interface GrabAction {
   readonly def: AbilityDef;
   readonly dir: Vec2;
   ageS: number;
-  /** Where the held target is now (a cyclone's funnel stands there). */
-  x: number;
-  y: number;
 }
 
 /** A knife assault under way: rushing in, stabbing, springing back (Shroud). */
@@ -313,7 +332,15 @@ interface AssaultAction {
   stabs: number;
 }
 
-type Action = DashAction | LeapAction | PullAction | GrabAction | AssaultAction | JudgementAction;
+type Action =
+  | DashAction
+  | LeapAction
+  | PullAction
+  | GrabAction
+  | AssaultAction
+  | JudgementAction
+  | LiftAction
+  | WhirlAction;
 
 /** How a grab turned out, for the caster's animation. */
 export type GrabOutcome =
@@ -337,6 +364,8 @@ const RETREAT_TURNS_DEG = [0, 30, -30, 60, -60, 90, -90, 120, -120] as const;
 const WALL_CLEARANCE_M = 0.5;
 /** A lobbed grenade leaves the hand this high, and only sticks to a body below this height, metres. */
 const GRENADE_RELEASE_HEIGHT_M = 1.3;
+/** A lifted target falls for this long, seconds. */
+const LIFT_FALL_S = 0.4;
 const GRENADE_STICK_MAX_Z_M = 1.9;
 /** Out of the hand, a grenade ignores bodies for this long a flight (it cannot stick to its own thrower's side). */
 const GRENADE_ARM_K = 0.12;
@@ -345,6 +374,16 @@ const rotate = (v: Vec2, rad: number): Vec2 => ({
   x: v.x * Math.cos(rad) - v.y * Math.sin(rad),
   y: v.x * Math.sin(rad) + v.y * Math.cos(rad),
 });
+
+/**
+ * Sky Dive's flight (an upside-down J): the climb is steep and early (the height peaks a quarter of the way through),
+ * the forward travel is saved for the end, so the path rises, bends over the top and drops onto the end point.
+ */
+const swoopHeight = (u: number, peakM: number): number => {
+  const q = u ** 0.55;
+  return 4 * peakM * q * (1 - q);
+};
+const swoopSpeedFactor = (u: number): number => 2.6 * u ** 1.6;
 
 const norm = (v: Vec2): Vec2 => {
   const l = Math.hypot(v.x, v.y);
@@ -379,7 +418,7 @@ export class AbilityWorld {
     const d = a.def.delivery;
     if (d.type !== 'leap') return 0;
     const u = Math.min(1, a.t / d.airS);
-    return 4 * d.peakM * u * (1 - u);
+    return d.swoop ? swoopHeight(u, d.peakM) : 4 * d.peakM * u * (1 - u);
   }
 
   /**
@@ -509,15 +548,37 @@ export class AbilityWorld {
     return a ? { phase: a.phase, cuts: a.cuts, t: a.t } : null;
   }
 
-  /** Tornadoes standing now (Cyclone Lift): where, how long they have spun, and how long the lift lasts. */
-  get cyclones(): { x: number; y: number; ageS: number; liftS: number; palette: MagicLook['palette'] | null }[] {
-    const out: { x: number; y: number; ageS: number; liftS: number; palette: MagicLook['palette'] | null }[] = [];
+  /**
+   * Tornado funnels to draw (Tornado Surge): the one flying from his hands (small) and the one lifting a target (full
+   * size, only while it rises: it disappears as the target starts to fall).
+   */
+  get funnels(): { x: number; y: number; ageS: number; size: number; palette: MagicLook['palette'] | null }[] {
+    const out: { x: number; y: number; ageS: number; size: number; palette: MagicLook['palette'] | null }[] = [];
+    for (const p of this.projectiles) {
+      const d = p.def.delivery;
+      if (d.type === 'projectile' && p.def.look?.flight?.tornado)
+        out.push({ x: p.x, y: p.y, ageS: p.travelledM / d.speedMps, size: 0.6, palette: p.def.look.palette });
+    }
     for (const a of this.actions) {
-      const d = a.kind === 'grab' ? a.def.delivery : null;
-      if (a.kind === 'grab' && d?.type === 'grab' && d.cyclone)
-        out.push({ x: a.x, y: a.y, ageS: a.ageS, liftS: d.liftS, palette: a.def.look?.palette ?? null });
+      const d = a.kind === 'lift' ? a.def.delivery : null;
+      if (a.kind === 'lift' && d?.type === 'projectile' && d.lift && a.ageS < d.lift.liftS)
+        out.push({ x: a.x, y: a.y, ageS: a.ageS + 0.3, size: 1, palette: a.def.look?.palette ?? null });
     }
     return out;
+  }
+
+  /** A spin under way (Wind Blade), for the wing blades and the turning body. */
+  whirlOf(casterId: string): { ageS: number; durationS: number; radiusM: number } | null {
+    const a = this.actions.find((x) => x.kind === 'whirl' && x.casterId === casterId) as WhirlAction | undefined;
+    const d = a?.def.delivery;
+    return a && d?.type === 'whirl' ? { ageS: a.ageS, durationS: d.durationS, radiusM: d.radiusM } : null;
+  }
+
+  /** How far through a Sky Dive's flight (0..1) the caster is, or null when not diving that way. */
+  swoopOf(casterId: string): number | null {
+    const a = this.actions.find((x) => x.kind === 'leap' && x.casterId === casterId) as LeapAction | undefined;
+    const d = a?.def.delivery;
+    return a && d?.type === 'leap' && d.swoop ? Math.min(1, a.t / d.airS) : null;
   }
 
   /** How high a grabbed fighter is hoisted this step (render lift), or 0. */
@@ -547,24 +608,17 @@ export class AbilityWorld {
     });
     const d = def.delivery;
     switch (d.type) {
-      case 'projectile': {
-        // One shot, or a fan of `count` spread over `spreadRad` (Wind Blade).
-        const n = Math.max(1, d.count ?? 1);
-        for (let i = 0; i < n; i++) {
-          const turn = n === 1 ? 0 : ((i / (n - 1)) * 2 - 1) * ((d.spreadRad ?? 0) / 2);
-          const shotDir = turn === 0 ? dir : rotate(dir, turn);
-          this.projectiles.push({
-            casterId,
-            def,
-            x: at.x + shotDir.x * MUZZLE_M,
-            y: at.y + shotDir.y * MUZZLE_M,
-            dir: shotDir,
-            travelledM: 0,
-            trail: [],
-          });
-        }
+      case 'projectile':
+        this.projectiles.push({
+          casterId,
+          def,
+          x: at.x + dir.x * MUZZLE_M,
+          y: at.y + dir.y * MUZZLE_M,
+          dir,
+          travelledM: 0,
+          trail: [],
+        });
         break;
-      }
       case 'cloud': {
         // Where it aims, within range and short of any wall in the way.
         const want = Math.min(def.aimRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
@@ -594,6 +648,9 @@ export class AbilityWorld {
         });
         break;
       }
+      case 'whirl':
+        this.actions.push({ kind: 'whirl', casterId, def, ageS: 0, sinceTickS: d.tickS });
+        break;
       case 'parry': {
         // One stance per caster; its window is longer under Focus Stance.
         for (let i = this.parries.length - 1; i >= 0; i--)
@@ -843,7 +900,7 @@ export class AbilityWorld {
         }
         this.grabOutcomes.set(casterId, { state: 'hold' });
         host.hold?.(best.id, d.liftS + 0.5);
-        this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0, x: best.x, y: best.y });
+        this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0 });
         break;
       }
       case 'buff':
@@ -933,6 +990,7 @@ export class AbilityWorld {
     for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
+      if (this.actions[i]!.kind === 'lift') continue; // a tornado that has caught someone carries on without him
       this.actions.splice(i, 1);
       host.drive(casterId, null, 0);
     }
@@ -977,6 +1035,7 @@ export class AbilityWorld {
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
+        if (d.lift) this.startLift(p, f, host);
         done = true;
         break;
       }
@@ -1172,7 +1231,8 @@ export class AbilityWorld {
     if (landed && payload.pull) {
       for (let i = this.actions.length - 1; i >= 0; i--) {
         const a = this.actions[i]!;
-        if ((a.kind === 'pull' || a.kind === 'grab') && a.targetId === targetId) this.actions.splice(i, 1);
+        if ((a.kind === 'pull' || a.kind === 'grab' || a.kind === 'lift') && a.targetId === targetId)
+          this.actions.splice(i, 1);
       }
       this.actions.push({
         kind: 'pull',
@@ -1204,12 +1264,16 @@ export class AbilityWorld {
                 ? this.stepAssault(a, dtS, host)
                 : a.kind === 'judgement'
                   ? this.stepJudgement(a, dtS, host)
-                  : this.stepGrab(a, dtS, host);
+                  : a.kind === 'lift'
+                    ? this.stepLift(a, dtS, host)
+                    : a.kind === 'whirl'
+                      ? this.stepWhirl(a, dtS, host)
+                      : this.stepGrab(a, dtS, host);
       if (finished) {
         // The action may have been removed meanwhile (a new pull on the same target).
         const at = this.actions.indexOf(a);
         if (at >= 0) this.actions.splice(at, 1);
-        host.drive(a.kind === 'pull' || a.kind === 'grab' ? a.targetId : a.casterId, null, 0);
+        host.drive(a.kind === 'pull' || a.kind === 'grab' || a.kind === 'lift' ? a.targetId : a.casterId, null, 0);
       }
     }
   }
@@ -1230,6 +1294,96 @@ export class AbilityWorld {
     return false;
   }
 
+  /** A tornado shot has caught someone: it carries them up (they cannot act), then lets them fall. */
+  private startLift(p: Projectile, f: AbilityTarget, host: AbilityHost): void {
+    const d = p.def.delivery;
+    if (d.type !== 'projectile' || !d.lift) return;
+    for (let i = this.actions.length - 1; i >= 0; i--) {
+      const a = this.actions[i]!;
+      if (a.kind === 'lift' && a.targetId === f.id) this.actions.splice(i, 1);
+    }
+    host.hold?.(f.id, d.lift.liftS + LIFT_FALL_S + 0.2);
+    this.actions.push({
+      kind: 'lift',
+      casterId: p.casterId,
+      targetId: f.id,
+      def: p.def,
+      dir: p.dir,
+      ageS: 0,
+      x: f.x,
+      y: f.y,
+    });
+  }
+
+  /** Rise for `liftS`, then (the funnel gone) fall over `LIFT_FALL_S`; the fall hurts. */
+  private stepLift(a: LiftAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'projectile' || !d.lift) return true;
+    a.ageS += dtS;
+    const target = host.fighters().find((f) => f.id === a.targetId);
+    if (!target?.hittable) return true;
+    a.x = target.x;
+    a.y = target.y;
+    const { liftS, liftM, fallDamage } = d.lift;
+    const rise = Math.min(1, a.ageS / liftS);
+    const fall = Math.max(0, (a.ageS - liftS) / LIFT_FALL_S);
+    const height = fall > 0 ? liftM * (1 - fall * fall) : liftM * rise * (2 - rise);
+    host.drive(a.targetId, { x: 0, y: 0 }, Math.max(0, height));
+    if (fall < 1) return false;
+    host.drive(a.targetId, null, 0);
+    // The landing: the fall's damage, a knockdown, and a puff of wind where they hit the floor.
+    this.hit(
+      host,
+      a.casterId,
+      a.targetId,
+      { ...a.def.payload, damage: fallDamage, heavy: true, knockbackMps: 2, noFlinch: false },
+      a.dir,
+      a.def.look?.hitFlash,
+    );
+    host.emit({
+      kind: 'impact',
+      ability: a.def.id,
+      look: a.def.look,
+      vfx: a.def.vfx,
+      sfx: a.def.sfx.impact,
+      x: target.x,
+      y: target.y,
+      radiusM: 1.6,
+    });
+    return true;
+  }
+
+  /** A spin: every tick, each enemy in reach is cut by the wings and pushed away. */
+  private stepWhirl(a: WhirlAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'whirl') return true;
+    a.ageS += dtS;
+    a.sinceTickS += dtS;
+    const me = host.position(a.casterId);
+    while (a.sinceTickS >= d.tickS) {
+      a.sinceTickS -= d.tickS;
+      for (const f of host.fighters()) {
+        if (this.friendly(f, a.casterId, host) || !f.hittable) continue;
+        const gap = Math.hypot(f.x - me.x, f.y - me.y);
+        if (gap > d.radiusM + f.radiusM) continue;
+        const away = gap > 1e-6 ? { x: (f.x - me.x) / gap, y: (f.y - me.y) / gap } : { x: 1, y: 0 };
+        if (this.hit(host, a.casterId, f.id, a.def.payload, away, a.def.look?.hitFlash))
+          host.emit({
+            kind: 'impact',
+            ability: a.def.id,
+            look: a.def.look,
+            vfx: 'wing-slash',
+            sfx: a.def.sfx.impact,
+            x: f.x,
+            y: f.y,
+            radiusM: 0.5,
+          });
+      }
+      host.hitEnvironment(a.casterId, me, d.radiusM, a.def.payload, { x: 0, y: 0 }, false);
+    }
+    return a.ageS >= d.durationS;
+  }
+
   /** Hoist the seized target overhead in front of the caster, then slam it down. */
   private stepGrab(a: GrabAction, dtS: number, host: AbilityHost): boolean {
     const d = a.def.delivery;
@@ -1241,7 +1395,7 @@ export class AbilityWorld {
     // Keep the target held just in front of the caster, rising overhead.
     // A small gap off the grabber's body, so the two circles never touch: held exactly at the sum of
     // the radii they pushed each other apart every step and the target jittered (master plan B9).
-    const gapM = d.cyclone ? d.cyclone.holdM : caster.radiusM + target.radiusM + GRAB_HOLD_GAP_M;
+    const gapM = caster.radiusM + target.radiusM + GRAB_HOLD_GAP_M;
     const hold = { x: caster.x + a.dir.x * gapM, y: caster.y + a.dir.y * gapM };
     const lift = d.liftM * Math.min(1, a.ageS / d.liftS);
     // Close the distance smoothly: a speed that eases off near the hold point and never exceeds the cap.
@@ -1251,26 +1405,7 @@ export class AbilityWorld {
     const speed =
       dist < GRAB_SETTLE_M ? 0 : Math.min(GRAB_MAX_SPEED_MPS, dist / Math.max(dtS, 1e-3), dist * GRAB_GAIN_PER_S);
     host.drive(a.targetId, dist > 1e-6 ? { x: (dx / dist) * speed, y: (dy / dist) * speed } : { x: 0, y: 0 }, lift);
-    a.x = hold.x;
-    a.y = hold.y;
     if (a.ageS < d.liftS) return false;
-    if (d.cyclone) {
-      // The tornado lets go: the target is flung straight away from the caster.
-      this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
-      host.drive(a.targetId, null, 0);
-      host.hitFighter(a.casterId, a.targetId, a.def.payload, a.dir, a.def.look?.hitFlash);
-      host.emit({
-        kind: 'impact',
-        ability: a.def.id,
-        look: a.def.look,
-        vfx: a.def.vfx,
-        sfx: a.def.sfx.impact,
-        x: target.x,
-        y: target.y,
-        radiusM: d.slamRadiusM,
-      });
-      return true;
-    }
     // The slam: down in front, with the full payload and a dust blast.
     this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
     host.drive(a.targetId, null, 0);
@@ -1579,7 +1714,8 @@ export class AbilityWorld {
       if (ti >= 0) this.telegraphs.splice(ti, 1);
       return true;
     }
-    const v = { x: (a.to.x - a.from.x) / d.airS, y: (a.to.y - a.from.y) / d.airS };
+    const k = d.swoop ? swoopSpeedFactor(Math.min(1, a.t / d.airS)) : 1;
+    const v = { x: ((a.to.x - a.from.x) / d.airS) * k, y: ((a.to.y - a.from.y) / d.airS) * k };
     host.drive(a.casterId, v, this.liftOf(a.casterId));
     return false;
   }

@@ -9,3 +9,4 @@
 - Each source folder keeps a short `README.md` stating purpose, owner and key interfaces. Update it when the folder's contract changes.
 - Dates DD/MM/YYYY, metric units, any real-money amounts in MYR.
 - Never claim something was verified, inspected or watched unless it actually was. State limitations explicitly.
+- Ability descriptions describe only what the ability does. An alternative (fifth) ability's description never says it is an alternative to, replaces or takes the place of another ability (the details screen already tags it); `tests/unit/abilities/ability-text.test.ts` enforces this for every kit (owner, 21/11/2026).

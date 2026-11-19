@@ -875,3 +875,6 @@ Done: Aerion playable (winged skin, hover, combo, heavy, passive, five abilities
 
 ## 21/11/2026: Kenshiro (TD-124)
 Done: Kenshiro playable (samurai skin, two katana, combo, overhead heavy, Sword Mastery, Perfect Parry, Twin Fang, Blade Tempest, Focus Stance, Iaido Draw, Final Judgement). Gate: biome, typecheck, vitest 1009, menu and front-end e2e 18 passed. Next: deploy, owner review, then Psion, Geargrind, Reson, Chronos.
+
+## 21/11/2026: Aerion rework (TD-125)
+Done: Sky Dive flight arc, Tornado Surge, spinning Wind Blade, description wording rule and test. Gate: biome, typecheck, vitest. Next: deploy, owner review, then Psion, Geargrind, Reson, Chronos.

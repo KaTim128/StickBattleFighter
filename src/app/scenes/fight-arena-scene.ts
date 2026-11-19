@@ -14,7 +14,7 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose, judgementPose, stalkPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose, judgementPose, stalkPose, swoopPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -3165,7 +3165,11 @@ export class FightArenaScene implements ArenaScene {
       zones: world.zones,
       clouds: world.clouds,
       grenades: world.grenades,
-      cyclones: world.cyclones,
+      funnels: world.funnels,
+      whirls: this.fighters.flatMap((f) => {
+        const w = world.whirlOf(f.name);
+        return w ? [{ x: f.x, y: f.y, ...w, palette: f.caster?.cast?.def.look?.palette ?? null }] : [];
+      }),
       parries: world.parries.flatMap((p) => {
         const c = this.fighterByName(p.casterId);
         return c ? [{ x: c.x, y: c.y, k: p.leftS / p.totalS, palette: p.def.look?.palette ?? null }] : [];
@@ -3279,6 +3283,8 @@ export class FightArenaScene implements ArenaScene {
       );
       const assault = this.abilities?.world.assaultOf(f.name);
       if (assault) pose = assaultPose(pose, assault, cast.def.id);
+      const swoop = this.abilities?.world.swoopOf(f.name);
+      if (swoop !== null && swoop !== undefined) pose = swoopPose(pose, swoop);
       const judgement = this.abilities?.world.judgementOf(f.name);
       if (judgement) pose = judgementPose(pose, judgement);
       // A slashing knife leaves its red ribbon (Rending Flurry).
@@ -3358,6 +3364,9 @@ export class FightArenaScene implements ArenaScene {
       f.focusNow += (target - f.focusNow) * smoothing(8, frameDtS);
       f.view.focus = f.focusNow;
     }
+    // Wind Blade: the whole body turns, and the wings stay spread and beating hard.
+    const whirl = this.abilities?.world.whirlOf(f.name);
+    f.view.spinAngle = whirl ? whirl.ageS * Math.PI * 2 * 3.2 : 0;
     // Winged fighters (Aerion) hover a little off the floor while standing, bobbing gently, and their wings follow what
     // they do: folded close for Feather Guard, wide in the air or under Tailwind, beating harder with momentum.
     let hoverLift = 0;
@@ -3376,10 +3385,12 @@ export class FightArenaScene implements ArenaScene {
             : air > 0.25
               ? 0.9
               : 0.5 + 0.3 * moving;
-      const flapTarget =
-        air > 0.25
+      const flapTarget = whirl
+        ? 1
+        : air > 0.25
           ? 0.7
           : Math.min(1, moving * 0.4 + c.momentumStacks * 0.14 + (f.buffSourceId === 'tailwind' ? 0.3 : 0));
+      if (whirl) f.wingSpreadNow = 1;
       f.wingSpreadNow += (spreadTarget - f.wingSpreadNow) * smoothing(9, frameDtS);
       f.wingFlapNow += (flapTarget - f.wingFlapNow) * smoothing(7, frameDtS);
       f.view.wingSpread = f.wingSpreadNow;

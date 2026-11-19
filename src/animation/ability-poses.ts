@@ -331,20 +331,31 @@ const SHAPES: Record<string, CastShape> = {
       legBack: limb(10, -10),
     },
   },
-  // Wind Blade: one arm drawn across the chest, then flung out in a slicing sweep.
+  // Wind Blade: the wings thrown wide and the arms with them, held out level while he turns on the spot (the spin itself
+  // is the view's turn and the wing blades the effects draw).
   windBlade: {
-    windup: { lean: deg(6), head: deg(-4), armFront: limb(-30, 100), armBack: limb(70, 80), legFront: limb(24, -26) },
-    release: { lean: deg(-18), head: deg(8), armFront: limb(96, 6), armBack: limb(-10, 50), legFront: limb(38, -30) },
-    settle: 0.45,
+    windup: { lean: deg(6), head: deg(-4), armFront: limb(70, 60), armBack: limb(70, 60), legFront: limb(24, -26) },
+    release: {
+      lean: deg(-4),
+      head: deg(0),
+      armFront: limb(90, 6),
+      armBack: limb(-90, 6),
+      legFront: limb(26, -24),
+      legBack: limb(-18, -18),
+    },
+    settle: 0.25,
   },
-  // Cyclone Lift: the arm spun round overhead gathering the wind, then both hands pushing the tornado forward; the
-  // target hangs in it (hold), then flung (slam). A miss: the arms close on empty air.
-  cycloneLift: {
-    windup: { lean: deg(4), head: deg(-6), armFront: limb(170, 40), armBack: limb(40, 100), legFront: limb(26, -24) },
-    release: { lean: deg(-14), head: deg(6), armFront: limb(100, 14), armBack: limb(90, 20), legFront: limb(34, -28) },
-    slam: { lean: deg(-24), head: deg(12), armFront: limb(84, 4), armBack: limb(70, 8), legFront: limb(44, -36) },
-    miss: { lean: deg(-28), head: deg(16), armFront: limb(90, 40), armBack: limb(70, 60), legFront: limb(50, -40) },
-    settle: 0.4,
+  // Tornado Surge: both hands drawn back to the hip, a whirl gathering between them, then thrown forward together.
+  tornadoSurge: {
+    windup: {
+      lean: deg(10),
+      head: deg(-4),
+      armFront: limb(-20, 100),
+      armBack: limb(-30, 100),
+      legFront: limb(26, -26),
+    },
+    release: { lean: deg(-18), head: deg(6), armFront: limb(96, 6), armBack: limb(92, 10), legFront: limb(38, -30) },
+    settle: 0.45,
   },
   // Tailwind: arms thrown back and chest out as the wings spread and the wind gathers.
   tailwind: {
@@ -714,6 +725,43 @@ export function judgementPose(
     return { ...base, ...c.strike };
   }
   return { ...base, lean: deg(2), head: deg(2), armFront: limb(14, 70), armBack: limb(8, 80), legFront: limb(24, -26) };
+}
+
+/**
+ * Sky Dive's flight, `u` 0..1: the climb (arms swept up and back, legs trailing, body laid out), the bend over the top
+ * (curled, wings beating), and the dive (head first, arms pinned back, legs together). Blended through the curve.
+ */
+export function swoopPose(base: Pose, u: number): Pose {
+  const climb: Pose = {
+    ...base,
+    lean: deg(18),
+    head: deg(-16),
+    armFront: limb(150, 12),
+    armBack: limb(140, 12),
+    legFront: limb(-20, -20),
+    legBack: limb(-30, -14),
+  };
+  const top: Pose = {
+    ...base,
+    lean: deg(-8),
+    head: deg(4),
+    armFront: limb(100, 20),
+    armBack: limb(-100, 20),
+    legFront: limb(10, -40),
+    legBack: limb(-10, -50),
+  };
+  const dive: Pose = {
+    ...base,
+    lean: deg(-70),
+    head: deg(22),
+    armFront: limb(-30, 4),
+    armBack: limb(-40, 4),
+    legFront: limb(-20, -6),
+    legBack: limb(-26, -6),
+  };
+  if (u < 0.28) return blendPose(climb, top, ease(u / 0.28));
+  if (u < 0.5) return blendPose(top, dive, ease((u - 0.28) / 0.22));
+  return dive;
 }
 
 /** One slash of the Flurry: snap through in the first 55% of its time, follow through, and flow into the next. */

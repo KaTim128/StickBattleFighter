@@ -132,12 +132,21 @@ export interface AbilityVfxInput {
     readonly k: number;
     readonly palette: Palette | null;
   }[];
-  /** Miniature tornadoes holding an enemy (Aerion's Cyclone Lift). */
-  readonly cyclones?: readonly {
+  /** Tornado funnels (Aerion's Tornado Surge): the shot in flight (small) and the one carrying a target up. */
+  readonly funnels?: readonly {
     readonly x: number;
     readonly y: number;
     readonly ageS: number;
-    readonly liftS: number;
+    readonly size: number;
+    readonly palette: Palette | null;
+  }[];
+  /** Spins in progress (Aerion's Wind Blade): the wings sweep round as blades. */
+  readonly whirls?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly ageS: number;
+    readonly durationS: number;
+    readonly radiusM: number;
     readonly palette: Palette | null;
   }[];
   readonly telegraphs: readonly Telegraph[];
@@ -298,19 +307,37 @@ export class AbilityVfx {
       if (look?.flight) this.flightTrail(p, look, dtS);
       else this.emitAt(p.x, p.y, BOLT_HEIGHT_M, 2, 0.6, 0.3, 0.09);
     }
-    for (const cy of input.cyclones ?? []) {
-      const n = this.count(30 * dtS);
+    for (const cy of input.funnels ?? []) {
+      const n = this.count(30 * cy.size * dtS);
       for (let i = 0; i < n; i++) {
         const ang = this.rand() * Math.PI * 2;
+        const r = 0.5 * cy.size;
         this.emitAt(
-          cy.x + Math.cos(ang) * 0.5,
-          cy.y + Math.sin(ang) * 0.5,
-          this.rand() * 2.2,
+          cy.x + Math.cos(ang) * r,
+          cy.y + Math.sin(ang) * r,
+          this.rand() * 2.2 * cy.size,
           1,
           0.8,
           0.5,
           0.07,
           cy.palette ?? undefined,
+        );
+      }
+    }
+    for (const w of input.whirls ?? []) {
+      const n = this.count(60 * dtS);
+      for (let i = 0; i < n; i++) {
+        const ang = this.rand() * Math.PI * 2;
+        const r = w.radiusM * (0.5 + 0.5 * this.rand());
+        this.emitAt(
+          w.x + Math.cos(ang) * r,
+          w.y + Math.sin(ang) * r,
+          0.5 + this.rand() * 1.0,
+          1,
+          0.4,
+          0.35,
+          0.06,
+          w.palette ?? undefined,
         );
       }
     }
@@ -1229,10 +1256,10 @@ export class AbilityVfx {
       }
     }
 
-    // Cyclone Lift: a funnel of stacked, turning rings widening upward, with streaks flung off it.
-    for (const cy of input.cyclones ?? []) {
+    // Tornado Surge: a funnel of stacked, turning rings widening upward, with streaks flung off it.
+    for (const cy of input.funnels ?? []) {
       const pal = cy.palette ?? FIRE;
-      const grow = Math.min(1, cy.ageS / 0.25);
+      const grow = Math.min(1, cy.ageS / 0.25) * cy.size;
       const levels = 9;
       for (let i = 0; i < levels; i++) {
         const k = i / (levels - 1);
@@ -1251,6 +1278,51 @@ export class AbilityVfx {
         }
       }
       f.circle(cy.x, cy.y, 0.7 * grow).fill({ color: pal.hot, alpha: 0.18 });
+    }
+
+    // Wind Blade: two wing-blades sweep round him on the spot, each a fan of long feathers with a pale trailing arc.
+    for (const w of input.whirls ?? []) {
+      const pal = w.palette ?? FIRE;
+      const spin = w.ageS * Math.PI * 2 * 3.2;
+      const fade = Math.min(1, w.ageS / 0.12) * Math.min(1, (w.durationS - w.ageS) / 0.15 + 0.2);
+      const rad = w.radiusM * 0.95;
+      const mid = iso(w.x, w.y, 1.05);
+      g.ellipse(mid.x, mid.y, rad, rad * ISO_T).stroke({ width: 0.04, color: pal.bright, alpha: 0.3 * fade });
+      for (const base of [0, Math.PI]) {
+        // The trailing arc behind each blade.
+        for (let k = 0; k < 7; k++) {
+          const a0 = spin + base - k * 0.16;
+          const a1 = spin + base - (k + 1) * 0.16;
+          g.moveTo(mid.x + Math.cos(a0) * rad, mid.y + Math.sin(a0) * rad * ISO_T)
+            .lineTo(mid.x + Math.cos(a1) * rad, mid.y + Math.sin(a1) * rad * ISO_T)
+            .stroke({ width: 0.2 * (1 - k / 7), color: pal.hot, alpha: 0.35 * (1 - k / 7) * fade, cap: 'round' });
+        }
+        // The wing itself: feathers fanning from the shoulder out to the rim.
+        for (let k = 0; k < 6; k++) {
+          const a = spin + base - k * 0.07;
+          const reach = rad * (1 - 0.1 * k);
+          const tipX = mid.x + Math.cos(a) * reach;
+          const tipY = mid.y + Math.sin(a) * reach * ISO_T;
+          const sx = mid.x + Math.cos(a) * 0.35;
+          const sy = mid.y + Math.sin(a) * 0.35 * ISO_T;
+          const nx = -Math.sin(a) * 0.1;
+          const ny = Math.cos(a) * 0.1 * ISO_T;
+          const pts = [
+            sx + nx,
+            sy + ny,
+            (sx + tipX) / 2 + nx * 1.6,
+            (sy + tipY) / 2 + ny * 1.6,
+            tipX,
+            tipY,
+            (sx + tipX) / 2 - nx,
+            (sy + tipY) / 2 - ny,
+            sx - nx,
+            sy - ny,
+          ];
+          g.poly(pts).fill({ color: k % 2 === 0 ? 0xf2f8ff : 0xcfe3f6, alpha: 0.95 * fade });
+          g.poly(pts).stroke({ width: 0.014, color: 0x2f4157, alpha: 0.8 * fade });
+        }
+      }
     }
 
     // Grenades: a shadow on the floor, then the olive body tumbling through its arc (or sitting, or stuck to someone),
@@ -1662,6 +1734,8 @@ export class AbilityVfx {
       this.flyingJar(g, c, p, pal, t);
       return;
     }
+    // A tornado shot is drawn as its funnel (see `funnels`), not as a bolt.
+    if (look.flight?.tornado) return;
     const tail = P(p.x - p.dir.x * 1.3, p.y - p.dir.y * 1.3, BOLT_HEIGHT_M + 0.1);
     const len = Math.hypot(tail.x - c.x, tail.y - c.y) || 1;
     const nx = -(tail.y - c.y) / len;

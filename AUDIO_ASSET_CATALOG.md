@@ -151,7 +151,7 @@ Ability names come from the master plan (section 4 and "Mandatory unique fifth a
 | 3 | Necro | 3 + plunge | Soul Drain, Death Eruption, Curse of Decay, Grave Chains, Soul Tether | Undead Army | 1 |
 | 4 | Shroud | **5** (B15) | Bloodfade, Stalker Lunge, Behind You, Rending Flurry, Umbral Feint | Hunting Frenzy | 1 |
 | 5 | Vexoris | 4 + poison splash | Venom Spray, Toxic Jar, Chemical Trap, Vapor Step, Corrosive Filter | Plague Bloom | 3 |
-| 6 | Aerion | per spec | Sky Dive, Wind Blade, Cyclone Lift, Tailwind, Featherguard | Celestial Tempest | 3 |
+| 6 | Aerion | per spec | Sky Dive, Wind Blade, Tornado Surge, Tailwind, Feather Guard | Celestial Tempest | 3 |
 | 7 | Arcstrike | per spec | Thunder Dash, Volt Punch, Chain Lightning, Voltage Surge, Static Snare | Stormbreaker | 3 |
 | 8 | Frostweld | per spec | Crystal Shards, Geode Shield, Prism Cage, Crystal Spike, Prism Mirror | Crystal Cataclysm | 3 |
 | 9 | Reson | per spec | Sonic Boom, Vibration Punch, Resonance Barrier, Resonance Dash, Feedback Pulse | Shatterwave | 3 |
