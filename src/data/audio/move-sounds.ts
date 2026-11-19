@@ -574,66 +574,61 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sine', 1320, 660, 0.35, 0.08),
     noise('bandpass', 3000, 1500, 0.35, 0.06, 5, 0, { attack: 0.2 }),
   ],
-  'haste-start': [
-    tone('sine', 330, 1320, 0.3, 0.3),
-    tone('triangle', 660, 1980, 0.25, 0.12),
-    noise('bandpass', 2200, 5000, 0.25, 0.1, 2),
+  'rewind-mark': [
+    tone('sine', 660, 330, 0.3, 0.3),
+    tone('triangle', 1320, 660, 0.25, 0.12),
+    noise('bandpass', 3000, 1500, 0.2, 0.15, 3),
   ],
-  'echo-throw': [
-    tone('sine', 120, 60, 0.3, 0.55),
-    noise('bandpass', 1400, 500, 0.2, 0.4, 1.4),
-    tone('sine', 1000, 500, 0.3, 0.1, 0.05),
-  ],
-  'echo-hit': [
+  'rewind-snap': [
     tone('sine', 200, 70, 0.3, 0.5),
-    tone('sine', 900, 450, 0.45, 0.2, 0.08),
-    noise('bandpass', 1800, 800, 0.15, 0.3, 2),
+    tone('sine', 1800, 900, 0.25, 0.15, 0.03),
+    noise('bandpass', 1500, 600, 0.15, 0.3, 2),
   ],
-  'collapse-open': [
-    tone('sine', 520, 130, 0.6, 0.3),
-    tone('triangle', 1040, 260, 0.5, 0.12),
-    noise('lowpass', 1600, 200, 0.5, 0.25),
+  'snare-open': [
+    tone('sine', 560, 140, 0.6, 0.3),
+    tone('triangle', 1120, 280, 0.5, 0.12),
+    noise('lowpass', 1800, 200, 0.5, 0.25),
+    tone('square', 1500, 1500, 0.04, 0.1, 0.3),
   ],
-  'collapse-tick': [tone('square', 1500, 1500, 0.04, 0.12), noise('highpass', 6000, 4000, 0.03, 0.12)],
-  'rewind-whoosh': [
-    tone('sine', 1500, 200, 0.4, 0.3),
-    tone('triangle', 3000, 400, 0.35, 0.1),
-    noise('bandpass', 4000, 800, 0.35, 0.25, 1.2),
+  'snare-tick': [tone('square', 1500, 1500, 0.04, 0.12), noise('highpass', 6000, 4000, 0.03, 0.12)],
+  'slash-cut': [
+    noise('bandpass', 3800, 900, 0.3, 0.45, 1.8),
+    tone('sine', 900, 300, 0.3, 0.2),
+    tone('triangle', 2400, 600, 0.2, 0.12),
   ],
-  'rewind-land': [
-    tone('sine', 300, 120, 0.2, 0.4),
-    noise('bandpass', 1500, 700, 0.12, 0.25, 2),
-    tone('sine', 1200, 1800, 0.15, 0.1),
+  'slash-land': [
+    noise('bandpass', 2600, 800, 0.15, 0.4, 2),
+    tone('sine', 220, 80, 0.25, 0.45),
+    tone('sine', 1500, 700, 0.25, 0.15, 0.04),
   ],
-  'decoy-shift': [tone('sine', 700, 1400, 0.2, 0.25), noise('bandpass', 3000, 6000, 0.18, 0.2, 1.4)],
-  'decoy-fade': [tone('sine', 1400, 600, 0.25, 0.15), noise('highpass', 7000, 4000, 0.2, 0.1)],
-  'end-start': [
-    tone('sine', 55, 220, 0.9, 0.3),
-    tone('sine', 110, 880, 0.9, 0.12),
-    noise('bandpass', 400, 3000, 0.9, 0.18, 2, 0, { attack: 0.5 }),
+  'image-dash': [
+    tone('sine', 500, 1500, 0.25, 0.3),
+    noise('bandpass', 2800, 900, 0.25, 0.3, 1.2),
+    tone('sine', 120, 80, 0.2, 0.3),
   ],
-  'end-hit-1': [
-    tone('sine', 170, 60, 0.2, 0.5),
-    tone('sine', 1500, 800, 0.2, 0.15),
-    noise('highpass', 4000, 2000, 0.06, 0.3),
+  'image-cut': [noise('bandpass', 4200, 1800, 0.1, 0.35, 2.2), tone('sine', 700, 350, 0.12, 0.25)],
+  'age-rush': [
+    tone('sine', 90, 400, 0.6, 0.25),
+    tone('triangle', 180, 800, 0.6, 0.1),
+    noise('bandpass', 500, 2500, 0.6, 0.18, 2, 0, { attack: 0.3 }),
   ],
-  'end-hit-2': [
-    tone('sine', 190, 65, 0.2, 0.5),
-    tone('sine', 1800, 900, 0.2, 0.15),
-    noise('highpass', 4500, 2200, 0.06, 0.3),
-    tone('triangle', 500, 250, 0.1, 0.2),
+  'age-creak': [
+    tone('sawtooth', 160, 90, 0.4, 0.25, 0, 2),
+    noise('bandpass', 900, 400, 0.4, 0.3, 3, 0, { flutter: 12 }),
+    tone('sine', 55, 45, 0.5, 0.3),
   ],
-  'end-hit-3': [
-    tone('sine', 210, 70, 0.22, 0.55),
-    tone('sine', 2100, 1000, 0.2, 0.15),
-    noise('bandpass', 2200, 800, 0.12, 0.35, 1.6),
+  'time-stop-start': [
+    tone('sine', 880, 55, 1.0, 0.45),
+    tone('sine', 1760, 110, 0.9, 0.2),
+    noise('bandpass', 4000, 300, 0.9, 0.3, 1.2),
+    tone('square', 1500, 1500, 0.05, 0.2, 0.9),
   ],
-  'end-shockwave': [
-    tone('sine', 60, 24, 0.9, 0.85),
-    noise('lowpass', 3200, 160, 0.8, 0.8, 0.7),
-    tone('sine', 2200, 400, 0.6, 0.3),
-    tone('sine', 1100, 200, 0.7, 0.3, 0.1),
-    noise('bandpass', 5000, 1200, 0.5, 0.35, 1.2, 0.05),
+  'time-resume': [
+    tone('sine', 55, 440, 0.4, 0.3),
+    noise('bandpass', 300, 5000, 0.5, 0.45, 1.2, 0, { attack: 0.15 }),
+    tone('sine', 70, 28, 0.9, 0.9, 0.35),
+    noise('lowpass', 3200, 150, 0.8, 0.8, 0.7, 0.35),
+    tone('sine', 2200, 400, 0.6, 0.3, 0.4),
   ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),

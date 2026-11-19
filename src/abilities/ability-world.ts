@@ -108,6 +108,10 @@ export interface AbilityHost {
   barrier?(casterId: string, hp: number, durationS: number): void;
   /** Hold a target in a scream: for `seconds` it cannot walk toward the caster (`awayX/awayY` is the direction from the caster). Optional. */
   pin?(targetId: string, away: Vec2, seconds: number): void;
+  /** Heal a fighter by `amount` (never above its maximum); returns false if it is down and nothing was done. Optional. */
+  heal?(targetId: string, amount: number): boolean;
+  /** Time Stop begins (`true`) or ends (`false`): the host freezes or releases everything but the caster. Optional. */
+  timeStop?(casterId: string, on: boolean): void;
   /** Tug loose metal props within `radiusM` of `at` toward it (a magnetic mine, one step's worth). Optional. */
   attract?(at: Vec2, radiusM: number, strength: number): void;
   /** How much longer this caster's parry stance lasts right now (Focus Stance: 1.5); 1 when nothing changes it. */
@@ -234,16 +238,6 @@ interface FistAction {
 }
 
 /** A combat drone hovering by its owner (see `DroneDelivery`). */
-/** A delayed copy of a strike waiting to land (see `StrikeDelivery.echo`). */
-export interface Echo {
-  readonly casterId: string;
-  readonly def: AbilityDef;
-  readonly from: Vec2;
-  readonly dir: Vec2;
-  dueS: number;
-  readonly createdS: number;
-}
-
 /** A harmless afterimage left behind (see `DashDelivery.decoy`). */
 export interface Decoy {
   readonly casterId: string;
@@ -324,6 +318,37 @@ export interface Telegraph {
   volleysFired?: number;
 }
 
+/** Rewind Time in progress (see `RewindTimeDelivery`): where he started, the damage really dealt since, and the path walked. */
+export interface RewindTrack {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly origin: Vec2;
+  ageS: number;
+  dealt: number;
+  readonly path: Vec2[];
+  sinceSampleS: number;
+  /** After the rewind: the path replays backwards over this long, for the effect and the cooldown. */
+  replayLeftS: number;
+  replayTotalS: number;
+}
+
+/** Age Acceleration running on a target (for the effect, and so the ability's cooldown waits for it). */
+export interface AgeTrack {
+  readonly casterId: string;
+  readonly targetId: string;
+  readonly def: AbilityDef;
+  ageS: number;
+  readonly durationS: number;
+}
+
+/** Time Stop running (see `TimeStopDelivery`). */
+export interface TimeStopState {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  leftS: number;
+  readonly totalS: number;
+}
+
 interface DashAction {
   readonly kind: 'dash';
   readonly casterId: string;
@@ -334,6 +359,8 @@ interface DashAction {
   ageS: number;
   readonly hit: Set<string>;
   sinceTrailM: number;
+  /** Metres since the last afterimage was left (Chronos's Afterimage). */
+  sinceImageM: number;
   lastX: number;
   lastY: number;
   /** How long the charge has been held up by something it is smashing (it stops if it never gives). */
@@ -465,8 +492,10 @@ const GRAB_GAIN_PER_S = 16;
 export class AbilityWorld {
   readonly projectiles: Projectile[] = [];
   readonly drones: Drone[] = [];
-  readonly echoes: Echo[] = [];
   readonly decoys: Decoy[] = [];
+  readonly rewinds: RewindTrack[] = [];
+  readonly ages: AgeTrack[] = [];
+  stop: TimeStopState | null = null;
   /** Where each fighter stood over the last few seconds (for Rewind Step), newest last. */
   private readonly history = new Map<string, { t: number; x: number; y: number }[]>();
   private historyDueS = 0;
@@ -479,7 +508,7 @@ export class AbilityWorld {
   private readonly liftImmuneUntilS = new Map<string, number>();
   private nowS = 0;
 
-  /** World seconds so far (presentation: how far an echo has come). */
+  /** World seconds so far. */
   get timeS(): number {
     return this.nowS;
   }
@@ -505,8 +534,27 @@ export class AbilityWorld {
    * beams, rings still warming up, and a Death Mark being stalked or waiting to be spent. Their cooldowns and
    * (for an ultimate) the meter's recharge must not start yet (owner, 20/11/2026).
    */
+  /** Damage really dealt by a fighter (hit points actually removed); Rewind Time adds it up while it is running. */
+  recordDealt(casterId: string, amount: number): void {
+    if (amount <= 0) return;
+    for (const r of this.rewinds) if (r.casterId === casterId && r.replayLeftS <= 0) r.dealt += amount;
+  }
+
+  /** Whose Time Stop is running, if any. */
+  stopOf(): TimeStopState | null {
+    return this.stop;
+  }
+
   executingIds(casterId: string): Set<string> {
     const ids = new Set<string>();
+    if (this.stop?.casterId === casterId) ids.add(this.stop.def.id);
+    for (const r of this.rewinds) if (r.casterId === casterId) ids.add(r.def.id);
+    for (const a of this.ages) if (a.casterId === casterId) ids.add(a.def.id);
+    // Abilities that hold their cooldown until what they left behind is gone: shots in flight, fields, afterimages.
+    for (const p of this.projectiles)
+      if (p.casterId === casterId && p.def.holdsCooldown) ids.add(p.def.id.replace(/-shot$/, ''));
+    for (const c of this.clouds) if (c.casterId === casterId && c.def.holdsCooldown && !c.mine) ids.add(c.def.id);
+    for (const dc of this.decoys) if (dc.casterId === casterId && dc.def.holdsCooldown) ids.add(dc.def.id);
     for (const b of this.beams) if (b.casterId === casterId) ids.add(b.def.id);
     for (const a of this.actions) {
       if (a.casterId !== casterId) continue;
@@ -766,42 +814,65 @@ export class AbilityWorld {
         );
         break;
       }
-      case 'rewind': {
-        const trail = this.history.get(casterId) ?? [];
-        const want = this.nowS - d.windowS;
-        // The sample closest to the wanted moment, but never less than half a second back.
-        const usable = trail.filter((p) => p.t <= this.nowS - 0.5);
-        const best = usable.reduce<{ t: number; x: number; y: number } | null>(
-          (acc, p) => (!acc || Math.abs(p.t - want) < Math.abs(acc.t - want) ? p : acc),
-          null,
-        );
-        const landed = best ? (host.teleport?.(casterId, { x: best.x, y: best.y }) ?? null) : null;
-        if (!landed) {
-          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
-          break;
+      case 'rewindTime': {
+        // A blow straight ahead first; then he remembers where he started and counts what he really deals.
+        const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
+        for (const f of host.fighters()) {
+          if (this.friendly(f, casterId, host) || !f.hittable) continue;
+          if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
+          if (this.hit(host, casterId, f.id, def.payload, dir, def.look?.hitFlash))
+            host.emit({
+              kind: 'impact',
+              ability: def.id,
+              look: def.look,
+              vfx: def.vfx,
+              sfx: def.sfx.impact,
+              x: f.x,
+              y: f.y,
+              radiusM: 0.8,
+            });
         }
-        host.emit({
-          kind: 'impact',
-          ability: def.id,
-          look: def.look,
-          vfx: 'rewind-from',
-          sfx: def.sfx.impact,
-          x: at.x,
-          y: at.y,
-          radiusM: 0.9,
-        });
-        host.emit({
-          kind: 'impact',
-          ability: def.id,
-          look: def.look,
-          vfx: 'rewind-to',
-          sfx: null,
-          x: landed.x,
-          y: landed.y,
-          radiusM: 0.9,
+        host.hitEnvironment(casterId, reach, d.radiusM, def.payload, dir, false);
+        this.rewinds.splice(0, this.rewinds.length, ...this.rewinds.filter((r) => r.casterId !== casterId));
+        this.rewinds.push({
+          casterId,
+          def,
+          origin: { x: at.x, y: at.y },
+          ageS: 0,
+          dealt: 0,
+          path: [{ x: at.x, y: at.y }],
+          sinceSampleS: 0,
+          replayLeftS: 0,
+          replayTotalS: 0,
         });
         break;
       }
+      case 'age': {
+        const foe = this.nearestEnemy(casterId, at, d.rangeM, host);
+        if (!foe) {
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+          break;
+        }
+        const toward = norm({ x: foe.x - at.x, y: foe.y - at.y });
+        if (!this.hit(host, casterId, foe.id, def.payload, toward, def.look?.hitFlash)) break;
+        const aging = def.payload.aging;
+        if (aging) this.ages.push({ casterId, targetId: foe.id, def, ageS: 0, durationS: aging.durationS });
+        host.emit({
+          kind: 'impact',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.impact,
+          x: foe.x,
+          y: foe.y,
+          radiusM: 1.0,
+        });
+        break;
+      }
+      case 'timeStop':
+        this.stop = { casterId, def, leftS: d.durationS, totalS: d.durationS };
+        host.timeStop?.(casterId, true);
+        break;
       case 'fist':
         this.actions.push({ kind: 'fist', casterId, def, dir, ageS: 0, extentM: 0, hit: new Set() });
         break;
@@ -884,7 +955,6 @@ export class AbilityWorld {
       }
       case 'dash': {
         if (d.leavesCloud) this.spawnCloud(casterId, def, { x: at.x, y: at.y }, d.leavesCloud, host);
-        if (d.decoy) this.decoys.push({ casterId, def, x: at.x, y: at.y, dir, ageS: 0, lifeS: d.decoy.lifeS });
         const dashDir = d.backwards ? { x: -dir.x, y: -dir.y } : dir;
         this.actions.push({
           kind: 'dash',
@@ -895,6 +965,7 @@ export class AbilityWorld {
           ageS: 0,
           hit: new Set(),
           sinceTrailM: TRAIL_SPACING_M,
+          sinceImageM: d.afterimages?.spacingM ?? 0,
           lastX: at.x,
           lastY: at.y,
           stuckS: 0,
@@ -1009,15 +1080,6 @@ export class AbilityWorld {
         break;
       }
       case 'assault': {
-        // A slow field where the rush begins (End of Time): it only slows, it never hurts.
-        if (d.field)
-          this.spawnCloud(
-            casterId,
-            { ...def, payload: { ...def.payload, damage: 0 } },
-            { x: at.x, y: at.y },
-            d.field,
-            host,
-          );
         // Rush at the nearest enemy in range (or straight ahead), then stab, then maybe spring back.
         const foe = this.nearestEnemy(casterId, at, Math.max(def.aimRangeM, d.reachM), host);
         this.actions.push({
@@ -1053,15 +1115,6 @@ export class AbilityWorld {
             });
           }
         }
-        if (d.echo)
-          this.echoes.push({
-            casterId,
-            def,
-            from: { x: at.x, y: at.y },
-            dir,
-            dueS: this.nowS + d.echo.delayS,
-            createdS: this.nowS,
-          });
         host.hitEnvironment(casterId, reach, d.radiusM, def.payload, dir, false);
         if (!landed) {
           host.emit({
@@ -1210,6 +1263,26 @@ export class AbilityWorld {
 
   update(dtS: number, host: AbilityHost): void {
     this.nowS += dtS;
+    // Time Stop: only its own clock runs. Everything else in the ability world waits where it is.
+    if (this.stop) {
+      this.stop.leftS -= dtS;
+      if (this.stop.leftS <= 0) {
+        const st = this.stop;
+        this.stop = null;
+        host.timeStop?.(st.casterId, false);
+        host.emit({
+          kind: 'impact',
+          ability: st.def.id,
+          look: st.def.look,
+          vfx: 'time-resume',
+          sfx: 'time-resume',
+          x: host.position(st.casterId).x,
+          y: host.position(st.casterId).y,
+          radiusM: 6,
+        });
+      }
+      return;
+    }
     for (const g of this.grabOutcomes.values()) if (g.state === 'slam') g.sinceS += dtS;
     this.updateProjectiles(dtS, host);
     this.updateBeams(dtS, host);
@@ -1218,7 +1291,7 @@ export class AbilityWorld {
     this.updateZones(dtS, host);
     this.updateClouds(dtS, host);
     this.updateDrones(dtS, host);
-    this.updateEchoes(dtS, host);
+    this.updateTime(dtS, host);
     this.updateGrenades(dtS, host);
     for (let i = this.parries.length - 1; i >= 0; i--) {
       const p = this.parries[i]!;
@@ -1237,6 +1310,27 @@ export class AbilityWorld {
       const from = { x: p.x, y: p.y };
       const to = { x: p.x + p.dir.x * step, y: p.y + p.dir.y * step };
 
+      // An afterimage spends an enemy shot that reaches it (it is only an image: nothing passes through to hurt anyone).
+      const image = this.decoys.find(
+        (dc) =>
+          !this.friendly({ id: p.casterId, x: 0, y: 0, radiusM: 0, hittable: true }, dc.casterId, host) &&
+          Math.hypot(p.x - dc.x, p.y - dc.y) < 0.5,
+      );
+      if (image) {
+        this.projectiles.splice(i, 1);
+        host.emit({
+          kind: 'impact',
+          ability: image.def.id,
+          look: image.def.look,
+          vfx: 'afterimage-pop',
+          sfx: image.def.sfx.impact,
+          x: image.x,
+          y: image.y,
+          radiusM: 0.6,
+        });
+        image.ageS = image.lifeS; // the image is gone
+        continue;
+      }
       // Fighters first: anyone (except the caster) the shot passes through this step.
       let done = false;
       for (const f of host.fighters()) {
@@ -1685,6 +1779,22 @@ export class AbilityWorld {
         ageS: 0,
         burn: d.trail.burn,
       });
+    }
+    if (d.afterimages) {
+      // Afterimages left exactly along the path he really travels, one every spacingM metres.
+      a.sinceImageM += movedM;
+      if (a.sinceImageM >= d.afterimages.spacingM) {
+        a.sinceImageM = 0;
+        this.decoys.push({
+          casterId: a.casterId,
+          def: a.def,
+          x: at.x,
+          y: at.y,
+          dir: a.dir,
+          ageS: 0,
+          lifeS: d.afterimages.lifeS,
+        });
+      }
     }
     // A dash with no hit radius (Vapour Step) is a reposition: it hits nobody and nothing on the way.
     if (d.hitRadiusM <= 0) {
@@ -2173,8 +2283,8 @@ export class AbilityWorld {
     return a.ageS >= total;
   }
 
-  /** Time: record where everyone stands (for Rewind Step), let decoys fade, and land delayed echoes. */
-  private updateEchoes(dtS: number, host: AbilityHost): void {
+  /** Time: record where everyone stands, let afterimages fade, and run the Rewind Time and Age Acceleration timers. */
+  private updateTime(dtS: number, host: AbilityHost): void {
     this.historyDueS -= dtS;
     if (this.historyDueS <= 0) {
       this.historyDueS = 0.1;
@@ -2190,45 +2300,60 @@ export class AbilityWorld {
       dc.ageS += dtS;
       if (dc.ageS >= dc.lifeS) this.decoys.splice(i, 1);
     }
-    for (let i = this.echoes.length - 1; i >= 0; i--) {
-      const e = this.echoes[i]!;
-      if (this.nowS < e.dueS) continue;
-      this.echoes.splice(i, 1);
-      const d = e.def.delivery;
-      if (d.type !== 'strike' || !d.echo) continue;
-      const reach = { x: e.from.x + e.dir.x * d.reachM, y: e.from.y + e.dir.y * d.reachM };
-      const payload = {
-        ...e.def.payload,
-        damage: Math.round(e.def.payload.damage * d.echo.factor),
-        knockbackMps: e.def.payload.knockbackMps * d.echo.factor,
-      };
-      // Its own hit registration: whoever is in reach now is hit once by the echo, whatever the first blow did.
-      for (const f of host.fighters()) {
-        if (this.friendly(f, e.casterId, host) || !f.hittable) continue;
-        if (segmentDistance(e.from, reach, f) > d.radiusM + f.radiusM) continue;
-        if (this.hit(host, e.casterId, f.id, payload, e.dir, e.def.look?.hitFlash))
-          host.emit({
-            kind: 'impact',
-            ability: e.def.id,
-            look: e.def.look,
-            vfx: 'echo-strike',
-            sfx: 'echo-hit',
-            x: f.x,
-            y: f.y,
-            radiusM: 0.8,
-          });
+    for (let i = this.ages.length - 1; i >= 0; i--) {
+      const ag = this.ages[i]!;
+      ag.ageS += dtS;
+      const target = host.fighters().find((f) => f.id === ag.targetId);
+      if (ag.ageS >= ag.durationS || !target) this.ages.splice(i, 1);
+    }
+    for (let i = this.rewinds.length - 1; i >= 0; i--) {
+      const r = this.rewinds[i]!;
+      const d = r.def.delivery;
+      if (d.type !== 'rewindTime') continue;
+      if (r.replayLeftS > 0) {
+        r.replayLeftS -= dtS;
+        if (r.replayLeftS <= 0) this.rewinds.splice(i, 1);
+        continue;
       }
-      host.hitEnvironment(e.casterId, reach, d.radiusM, payload, e.dir, false);
+      r.ageS += dtS;
+      r.sinceSampleS += dtS;
+      if (r.sinceSampleS >= 0.1) {
+        r.sinceSampleS = 0;
+        const p = host.position(r.casterId);
+        r.path.push({ x: p.x, y: p.y });
+      }
+      if (r.ageS < d.durationS) continue;
+      // Time runs back: if he is still standing he returns to where he started and recovers part of what he dealt.
+      const here = host.position(r.casterId);
+      const alive = host.heal?.(r.casterId, Math.round(r.dealt * d.healFactor)) ?? false;
+      if (!alive) {
+        this.rewinds.splice(i, 1);
+        continue;
+      }
+      r.path.push({ x: here.x, y: here.y });
+      host.teleport?.(r.casterId, r.origin);
       host.emit({
         kind: 'impact',
-        ability: e.def.id,
-        look: e.def.look,
-        vfx: 'echo-strike',
-        sfx: null,
-        x: reach.x,
-        y: reach.y,
-        radiusM: 0.5,
+        ability: r.def.id,
+        look: r.def.look,
+        vfx: 'rewind-from',
+        sfx: r.def.sfx.impact,
+        x: here.x,
+        y: here.y,
+        radiusM: 1,
       });
+      host.emit({
+        kind: 'impact',
+        ability: r.def.id,
+        look: r.def.look,
+        vfx: 'rewind-to',
+        sfx: null,
+        x: r.origin.x,
+        y: r.origin.y,
+        radiusM: 1,
+      });
+      r.replayTotalS = 0.7;
+      r.replayLeftS = 0.7;
     }
   }
 

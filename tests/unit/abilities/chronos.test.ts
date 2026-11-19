@@ -5,18 +5,24 @@ import { CHRONOS_KIT } from '../../../src/data/abilities/chronos';
 import profile from '../../../src/data/characters/chronos/animation-profile.json';
 import set from '../../../src/data/characters/chronos/moveset.json';
 
-/** Chronos (master plan section 4, fighter 11): the time specialist; the owner's order after Reson, 21/11/2026. */
+/** Chronos (master plan section 4, fighter 11), reworked by the owner 21/11/2026. */
 function arena(foe = { x: 1.5, y: 0 }) {
   const me = { id: 'me', x: 0, y: 0, radiusM: 0.3, hittable: true };
   const them = { id: 'foe', ...foe, radiusM: 0.3, hittable: true };
-  const hits: { target: string; damage: number; t: number }[] = [];
-  const buffs: unknown[] = [];
+  const hits: { target: string; damage: number; slow: boolean; aging: boolean; stun: boolean }[] = [];
+  const healed: number[] = [];
+  const stops: boolean[] = [];
   const fogged: number[] = [];
-  let step = 0;
   const host: AbilityHost = {
     fighters: () => [me, them],
     hitFighter: (_c, target, payload) => {
-      hits.push({ target, damage: payload.damage, t: step });
+      hits.push({
+        target,
+        damage: payload.damage,
+        slow: payload.slow !== undefined,
+        aging: payload.aging !== undefined,
+        stun: (payload.stunS ?? 0) > 0,
+      });
       return true;
     },
     hitEnvironment: () => {},
@@ -26,121 +32,164 @@ function arena(foe = { x: 1.5, y: 0 }) {
       if (id === 'me' && v) me.x += v.x / 60;
     },
     burnFighter: () => {},
-    buff: (_id, b) => buffs.push(b),
+    buff: () => {},
     teleport: (_id, to) => {
       me.x = to.x;
       me.y = to.y;
       return to;
     },
+    heal: (_id, amount) => {
+      healed.push(amount);
+      return true;
+    },
+    timeStop: (_id, on) => stops.push(on),
     fogFighter: (_id, f) => fogged.push(f.speedFactor),
     emit: () => {},
   };
   const world = new AbilityWorld();
   const run = (seconds: number) => {
-    for (let i = 0; i < Math.round(seconds * 60); i++) {
-      step++;
-      world.update(1 / 60, host);
-    }
+    for (let i = 0; i < Math.round(seconds * 60); i++) world.update(1 / 60, host);
   };
-  return { me, them, hits, buffs, fogged, host, world, run };
+  return { me, them, hits, healed, stops, fogged, host, world, run };
 }
 
 describe('Chronos kit', () => {
-  it('has five distinct abilities and End of Time, with Temporal Momentum', () => {
+  it('has the owners five abilities and Time Stop, and every ability holds its cooldown until its effects end', () => {
     const all = [CHRONOS_KIT.a1, CHRONOS_KIT.a2, CHRONOS_KIT.a3, CHRONOS_KIT.a4, CHRONOS_KIT.a5!];
-    expect(new Set(all.map((a) => a.id)).size).toBe(5);
-    expect(CHRONOS_KIT.ult.id).toBe('endOfTime');
+    expect(all.map((a) => a.id)).toEqual(['rewindTime', 'timeSnare', 'chronoSlash', 'afterimage', 'ageAcceleration']);
+    expect(CHRONOS_KIT.ult.id).toBe('timeStop');
+    for (const a of all) expect(a.holdsCooldown, a.id).toBe(true);
     expect(CHRONOS_KIT.passive?.id).toBe('temporal');
   });
 
-  it('Temporal Acceleration speeds him up and shortens dodge recovery, but never protects him or shortens cooldowns', () => {
-    const d = CHRONOS_KIT.a1.delivery;
-    if (d.type !== 'buff') throw new Error('a buff');
-    expect(d.speedFactor).toBeGreaterThan(1.2);
-    expect(d.dodgeRecoveryFactor).toBeLessThan(1);
-    expect(d.damageTakenFactor).toBe(1);
-    expect(d.cooldownFactor).toBeUndefined();
-    expect(d.afterimages).toBe(true);
-  });
-
-  it('Echo Strike hits now and again 0.6 s later, with its own hit registration', () => {
+  it('Rewind Time returns him to where he started after 4 s and heals 50% of the damage really dealt, never attempted damage', () => {
     const a = arena({ x: 1.5, y: 0 });
-    a.world.release('me', CHRONOS_KIT.a2, { x: 1.5, y: 0 }, a.host);
-    expect(a.hits).toHaveLength(1);
-    a.run(0.4);
-    expect(a.hits).toHaveLength(1); // not yet
-    a.run(0.3);
-    expect(a.hits).toHaveLength(2);
-    expect(a.hits[1]!.damage).toBe(Math.round(CHRONOS_KIT.a2.payload.damage * 0.8));
+    a.world.release('me', CHRONOS_KIT.a1, { x: 1.5, y: 0 }, a.host);
+    expect(a.hits).toHaveLength(1); // the blow
+    a.me.x = 5;
+    a.world.recordDealt('me', 30); // the host reports hit points actually removed
     a.run(1);
-    expect(a.hits).toHaveLength(2); // exactly one echo
+    a.world.recordDealt('me', 20);
+    a.run(2.8);
+    expect(a.healed).toHaveLength(0); // not yet
+    expect(a.me.x).toBeGreaterThan(4);
+    a.run(0.5);
+    expect(a.me.x).toBe(0); // back where he started
+    expect(a.healed).toEqual([25]); // 50% of 50
   });
 
-  it('the echo lands from where the blow was thrown, even if he has moved, and misses someone who has stepped out of reach', () => {
-    const a = arena({ x: 1.5, y: 0 });
-    a.world.release('me', CHRONOS_KIT.a2, { x: 1.5, y: 0 }, a.host);
-    a.me.x = -4; // he has moved away
-    a.them.x = 5; // and the foe has left
-    a.run(0.8);
-    expect(a.hits).toHaveLength(1); // only the first blow
+  it('Rewind Time heals nothing when nothing was really dealt, and its blow is the only attempt counted by the host, not the world', () => {
+    const a = arena({ x: 40, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a1, { x: 40, y: 0 }, a.host);
+    a.run(4.2);
+    expect(a.healed).toEqual([0]);
   });
 
-  it('Temporal Collapse lays a slow field that only slows (no damage, no sight loss)', () => {
+  it('Rewind Time holds the ability open for the 4 s and the replay, then lets the cooldown start', () => {
+    const a = arena({ x: 40, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a1, { x: 40, y: 0 }, a.host);
+    a.run(3.5);
+    expect(a.world.executingIds('me').has('rewindTime')).toBe(true);
+    a.run(0.6); // 4.1 s: rewound, replay still showing
+    expect(a.world.executingIds('me').has('rewindTime')).toBe(true);
+    a.run(1);
+    expect(a.world.executingIds('me').has('rewindTime')).toBe(false);
+  });
+
+  it('Time Snare slows by 60% for 3 seconds', () => {
     const a = arena({ x: 3, y: 0 });
-    a.world.release('me', CHRONOS_KIT.a3, { x: 3, y: 0 }, a.host);
+    a.world.release('me', CHRONOS_KIT.a2, { x: 3, y: 0 }, a.host);
     a.run(1);
     expect(a.fogged.length).toBeGreaterThan(0);
-    expect(a.fogged.every((s) => s < 0.7)).toBe(true);
-    expect(a.hits).toHaveLength(0);
-    const d = CHRONOS_KIT.a3.delivery;
-    expect(d.type === 'cloud' && d.fog?.chipDps).toBe(0);
-    expect(d.type === 'cloud' && d.fog?.sightM).toBe(Number.POSITIVE_INFINITY);
-  });
-
-  it('Rewind Step returns him to where he stood about 2.5 s ago and does nothing else', () => {
-    const a = arena({ x: 40, y: 0 });
-    for (let k = 0; k < 6; k++) {
-      a.me.x = k * 1; // walks right, a metre every half second
-      a.run(0.5);
-    }
-    const before = a.me.x;
-    a.world.release('me', CHRONOS_KIT.a4, { x: 0, y: 0 }, a.host);
-    expect(a.me.x).toBeLessThan(before - 1.5);
-    expect(a.me.x).toBeGreaterThanOrEqual(0);
-    expect(a.hits).toHaveLength(0);
-    expect(CHRONOS_KIT.a4.payload.damage).toBe(0);
-  });
-
-  it('Rewind Step does nothing when he has no recent past to return to', () => {
-    const a = arena({ x: 40, y: 0 });
-    a.world.release('me', CHRONOS_KIT.a4, { x: 0, y: 0 }, a.host);
-    expect(a.me.x).toBe(0);
-  });
-
-  it('Afterimage Decoy shifts him and leaves a decoy that lasts 3 s and never deals damage', () => {
-    const a = arena({ x: 1, y: 0 });
-    a.world.release('me', CHRONOS_KIT.a5!, { x: 4, y: 0 }, a.host);
-    expect(a.world.decoys).toHaveLength(1);
-    a.run(0.5);
-    expect(a.me.x).toBeGreaterThan(2);
-    expect(a.world.decoys).toHaveLength(1);
+    expect(a.fogged.every((s) => s === 0.4)).toBe(true);
+    expect(a.world.executingIds('me').has('timeSnare')).toBe(true);
     a.run(3);
-    expect(a.world.decoys).toHaveLength(0);
+    expect(a.world.clouds).toHaveLength(0);
+    expect(a.world.executingIds('me').has('timeSnare')).toBe(false);
+  });
+
+  it('Chrono Slash is a travelling slash that staggers what it hits', () => {
+    const a = arena({ x: 4, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a3, { x: 4, y: 0 }, a.host);
+    expect(a.world.executingIds('me').has('chronoSlash')).toBe(true); // in flight
+    a.run(1);
+    expect(a.hits).toHaveLength(1);
+    expect(a.hits[0]!.stun).toBe(true);
+    expect(a.hits[0]!.damage).toBe(CHRONOS_KIT.a3.payload.damage);
+    expect(CHRONOS_KIT.a3.look?.flight?.crescent).toBe(true);
+  });
+
+  it('Afterimage leaves afterimages along the path he really ran, and hurts and slows whoever he passes through once', () => {
+    const a = arena({ x: 2.5, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a4, { x: 6, y: 0 }, a.host);
+    a.run(0.6);
+    expect(a.world.decoys.length).toBeGreaterThanOrEqual(4);
+    for (let i = 1; i < a.world.decoys.length; i++) {
+      expect(a.world.decoys[i]!.x).toBeGreaterThan(a.world.decoys[i - 1]!.x); // in order along his path
+      expect(Math.abs(a.world.decoys[i]!.y)).toBeLessThan(0.01); // exactly on it
+    }
+    expect(a.hits).toHaveLength(1);
+    expect(a.hits[0]).toMatchObject({ slow: true });
+    expect(CHRONOS_KIT.a4.payload.slow).toEqual({ durationS: 1, speedFactor: 0.6 });
+  });
+
+  it('an enemy shot that reaches an afterimage is spent on it, and the afterimage cannot hurt anyone', () => {
+    const a = arena({ x: 40, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a4, { x: 5, y: 0 }, a.host);
+    a.run(0.4);
+    const image = a.world.decoys[0]!;
+    a.world.projectiles.push({
+      casterId: 'foe',
+      def: { ...CHRONOS_KIT.a3, payload: { ...CHRONOS_KIT.a3.payload, damage: 30 } },
+      x: image.x,
+      y: image.y,
+      dir: { x: -1, y: 0 },
+      travelledM: 0,
+      trail: [],
+    });
+    const before = a.hits.length;
+    a.run(0.05);
+    expect(a.world.projectiles.filter((p) => p.casterId === 'foe')).toHaveLength(0);
+    expect(a.hits.length).toBe(before);
+  });
+
+  it('Age Acceleration ages the nearest enemy: damage over time and a 25% defence cut for 4 seconds', () => {
+    const a = arena({ x: 4, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a5!, { x: 4, y: 0 }, a.host);
+    expect(a.hits).toHaveLength(1);
+    expect(a.hits[0]!.aging).toBe(true);
+    expect(CHRONOS_KIT.a5!.payload.aging).toEqual({ durationS: 4, dps: 14, defenceFactor: 0.75 });
+    expect(a.world.executingIds('me').has('ageAcceleration')).toBe(true);
+    a.run(4.2);
+    expect(a.world.executingIds('me').has('ageAcceleration')).toBe(false);
+  });
+
+  it('Age Acceleration fizzles with nobody in range', () => {
+    const a = arena({ x: 40, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a5!, { x: 0, y: 0 }, a.host);
     expect(a.hits).toHaveLength(0);
   });
 
-  it('End of Time lays a slow field, hits six times, and ends with a far bigger shockwave', () => {
-    const a = arena({ x: 4, y: 0 });
-    a.world.release('me', CHRONOS_KIT.ult, { x: 4, y: 0 }, a.host);
-    a.run(0.3);
-    expect(a.world.clouds.some((c) => c.fog)).toBe(true);
-    a.run(4);
-    expect(a.hits).toHaveLength(6);
-    expect(a.hits[5]!.damage).toBeGreaterThanOrEqual(a.hits[0]!.damage * 2.4);
+  it('Time Stop holds the ability world for 4 seconds, keeps its cooldown closed, and then resumes everything', () => {
+    const a = arena({ x: 8, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a3, { x: 8, y: 0 }, a.host); // a slash in flight
+    const shot = a.world.projectiles[0]!;
+    a.world.release('me', CHRONOS_KIT.ult, { x: 0, y: 0 }, a.host);
+    expect(a.stops).toEqual([true]);
+    const x = shot.x;
+    a.run(3.9);
+    expect(a.stops).toEqual([true]); // still stopped
+    expect(shot.x).toBe(x); // the shot has not moved
+    expect(a.world.executingIds('me').has('timeStop')).toBe(true);
+    a.run(0.2);
+    expect(a.stops).toEqual([true, false]); // exactly one resume
+    expect(a.world.stopOf()).toBeNull();
+    a.run(0.1);
+    expect(shot.x).toBeGreaterThan(x); // it flies on from exactly where it was
   });
 });
 
-describe('Dodge recovery and the passive', () => {
+describe('Combatant effects', () => {
   const STATS: CombatStats = {
     maxHp: 1000,
     maxStamina: 100,
@@ -152,21 +201,27 @@ describe('Dodge recovery and the passive', () => {
     critMultiplier: 1,
     knockbackResistance: 0,
   };
-  it('a faster dodge recovery shortens the cooldown after a dodge', () => {
-    const slow = new Combatant(STATS);
-    const fast = new Combatant(STATS);
-    fast.dodgeRecoveryScale = 0.6;
-    slow.tryDodge();
-    fast.tryDodge();
-    const total = (c: Combatant): number => {
-      let n = 0;
-      for (let i = 0; i < 600 && c.dodgeReadiness < 1; i++) {
-        c.update(1 / 60);
-        n++;
-      }
-      return n;
-    };
-    expect(total(fast)).toBeLessThan(total(slow));
+  const hit = { baseDamage: 40, attackerPower: 1, heavy: false, fromFront: true, critRoll: 0.99 };
+
+  it('aging wears a target down over 4 seconds and really lowers its defence, then ends', () => {
+    const plain = new Combatant(STATS);
+    const aged = new Combatant(STATS);
+    aged.age(4, 14, 0.75);
+    expect(aged.receive(hit).damage / plain.receive(hit).damage).toBeCloseTo(1 / 0.75, 1);
+    const before = aged.hp;
+    for (let i = 0; i < 4 * 60; i++) aged.update(1 / 60);
+    expect(before - aged.hp).toBeGreaterThan(45);
+    expect(before - aged.hp).toBeLessThanOrEqual(60);
+    expect(aged.ageLeftS).toBeLessThan(0.01);
+  });
+
+  it('a slow lasts its duration and is only a slow', () => {
+    const c = new Combatant(STATS);
+    c.slow(1, 0.6);
+    expect(c.slowed).toBe(true);
+    expect(c.canAct).toBe(true);
+    for (let i = 0; i < 1.1 * 60; i++) c.update(1 / 60);
+    expect(c.slowed).toBe(false);
   });
 
   it('five landed hits sharpen the next temporal ability by 25%, then it is spent', () => {

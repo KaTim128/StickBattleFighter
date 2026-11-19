@@ -131,8 +131,6 @@ export class Combatant {
   decayEnded = false;
   private dodgeS = 0;
   private dodgeCooldownS = 0;
-  /** Multiplies the cooldown a dodge starts (Temporal Acceleration shortens it); set by the scene each step. */
-  dodgeRecoveryScale = 1;
   /** Dodges in the current chain (0 when rested) and time since the last one. */
   private dodgeChain = 0;
   private lastDodgeCooldownS = 1;
@@ -215,8 +213,7 @@ export class Combatant {
     this.dodgeS = DEFENCE.dodgeDurationS;
     const k = DEFENCE.dodgeChainInvuln[Math.min(chain, DEFENCE.dodgeChainInvuln.length - 1)]!;
     if (k > 0) this.invulnS = Math.max(this.invulnS, DEFENCE.dodgeInvulnS * k);
-    this.dodgeCooldownS =
-      this.dodgeCooldownTotalS * (1 + DEFENCE.dodgeChainCooldownStep * chain) * this.dodgeRecoveryScale;
+    this.dodgeCooldownS = this.dodgeCooldownTotalS * (1 + DEFENCE.dodgeChainCooldownStep * chain);
     this.lastDodgeCooldownS = this.dodgeCooldownS;
     this.dodgeChain = chain + 1;
     this.sinceDodgeReadyS = 0;
@@ -580,6 +577,29 @@ export class Combatant {
 
   get shatterLeftS(): number {
     return this.status.leftS('shatter');
+  }
+
+  /** Afterimage: slowed for `seconds` (movement and ability use); a longer one replaces a shorter one. */
+  slow(seconds: number, speedFactor: number): void {
+    if (this.koAgeS >= 0) return;
+    this.status.apply('slow', seconds, { speedFactor });
+  }
+
+  /** How fast its ability wind-ups and cooldowns run: 1 normally, slower while slowed, 0 while time is stopped around it. */
+  abilityPace = 1;
+
+  get slowed(): boolean {
+    return this.status.has('slow');
+  }
+
+  /** Age Acceleration: damage over time and a defence cut for `seconds`. */
+  age(seconds: number, dps: number, defenceFactor: number): void {
+    if (this.koAgeS >= 0) return;
+    this.status.apply('aging', seconds, { dps, defenceFactor });
+  }
+
+  get ageLeftS(): number {
+    return this.status.leftS('aging');
   }
 
   get disrupted(): boolean {

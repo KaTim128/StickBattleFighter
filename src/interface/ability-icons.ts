@@ -38,7 +38,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   psi: ['#f4eaff', '#7a3fd0', '#0d0618'],
   gear: ['#fff1d6', '#d9650f', '#15171b'],
   sonic: ['#eafcff', '#0e8fa8', '#04141a'],
-  time: ['#f0fdff', '#2a7f93', '#0a1418'],
+  time: ['#fff4cf', '#1f4fa8', '#07142a'],
 };
 
 const MATERIALS = `
@@ -519,36 +519,6 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 16, '#eafcff', 0.25),
     `<g filter="url(#ds)"><rect x="4" y="18" width="12" height="12" rx="3" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/><rect x="32" y="18" width="12" height="12" rx="3" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/></g><g fill="none" stroke="#eafcff" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><path d="M18 14 C22 20 22 28 18 34 M30 14 C26 20 26 28 30 34"/></g>`,
   ),
-  'temporal-acceleration': icon(
-    'time',
-    rays(24, 24, 16, '#f0fdff', 0.25),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#b98a4a" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#8defff" stroke-width="1.6" opacity=".6"/></g><g stroke="#f0fdff" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M24 24 V13 M24 24 L32 28"/></g><g fill="none" stroke="#8defff" stroke-width="2.4" stroke-linecap="round" opacity=".8"><path d="M4 18 H12 M2 26 H10 M6 34 H14"/></g>`,
-  ),
-  'echo-strike': icon(
-    'time',
-    rays(24, 24, 14, '#f0fdff', 0.2),
-    `<g filter="url(#ds)"><rect x="8" y="17" width="16" height="14" rx="4" fill="#4a525c" stroke="#8defff" stroke-width="2"/></g><g fill="none" stroke="#8defff" stroke-width="2.4" stroke-linecap="round" filter="url(#gl)" opacity=".7"><rect x="22" y="17" width="16" height="14" rx="4"/><path d="M42 18 V30"/></g>`,
-  ),
-  'temporal-collapse': icon(
-    'time',
-    rays(24, 24, 16, '#f0fdff', 0.2),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#b98a4a" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#8defff" stroke-width="1.6" opacity=".6"/></g><g stroke="#8defff" stroke-width="2" stroke-linecap="round" fill="none"><path d="M24 24 L24 14 M24 24 L18 28"/><path d="M10 10 L16 16 M38 10 L32 16 M10 38 L16 32 M38 38 L32 32" opacity=".7"/></g>`,
-  ),
-  'rewind-step': icon(
-    'time',
-    rays(24, 24, 14, '#f0fdff', 0.2),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#b98a4a" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#8defff" stroke-width="1.6" opacity=".6"/></g><g fill="none" stroke="#f0fdff" stroke-width="2.6" stroke-linecap="round"><path d="M32 18 A10 10 0 1 0 34 26"/><path d="M32 12 V19 H25"/></g>`,
-  ),
-  'afterimage-decoy': icon(
-    'time',
-    rays(24, 24, 14, '#f0fdff', 0.2),
-    `<g fill="none" stroke="#8defff" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><circle cx="30" cy="12" r="4"/><path d="M30 16 V28 M30 28 L26 38 M30 28 L35 38 M30 20 L38 24"/></g><g fill="none" stroke="#b98a4a" stroke-width="2.2" stroke-linecap="round" opacity=".55"><circle cx="16" cy="14" r="4"/><path d="M16 18 V30 M16 30 L12 40 M16 30 L21 40 M16 22 L24 26"/></g>`,
-  ),
-  'end-of-time': icon(
-    'time',
-    rays(24, 24, 20, '#f0fdff', 0.35),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#b98a4a" stroke-width="3"/><circle cx="24" cy="24" r="11" stroke="#8defff" stroke-width="2.4" stroke-dasharray="5 3"/></g><g stroke="#f0fdff" stroke-width="3" stroke-linecap="round" fill="none"><path d="M24 24 V10 M24 24 L33 30"/></g><g stroke="#f0fdff" stroke-width="2.4" stroke-linecap="round"><path d="M24 2 V6 M24 42 V46 M2 24 H6 M42 24 H46"/></g>`,
-  ),
   'time-combo': icon(
     'time',
     rays(24, 24, 14, '#f0fdff', 0.15),
@@ -558,6 +528,36 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'time',
     rays(24, 24, 16, '#f0fdff', 0.25),
     `<g filter="url(#ds)"><rect x="14" y="16" width="20" height="16" rx="5" fill="#4a525c" stroke="#8defff" stroke-width="2.2"/></g><g fill="none" stroke="#b98a4a" stroke-width="2.6" stroke-linecap="round"><circle cx="24" cy="24" r="12" opacity=".8"/><path d="M24 24 V15"/></g>`,
+  ),
+  'rewind-time': icon(
+    'time',
+    rays(24, 24, 16, '#fff4cf', 0.25),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#ffd36a" stroke-width="2.8"/><circle cx="24" cy="24" r="11" stroke="#2f7bff" stroke-width="1.8" opacity=".7"/></g><g fill="none" stroke="#fff4cf" stroke-width="2.8" stroke-linecap="round"><path d="M17 20 A9 9 0 1 1 15 28"/><path d="M12 14 V22 H20"/></g>`,
+  ),
+  'time-snare': icon(
+    'time',
+    rays(24, 24, 16, '#fff4cf', 0.2),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#ffd36a" stroke-width="2.8"/><circle cx="24" cy="24" r="12" stroke="#2f7bff" stroke-width="2" stroke-dasharray="4 3"/></g><g stroke="#fff4cf" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M24 24 V13 M24 24 L31 29"/><path d="M10 10 L15 15 M38 10 L33 15 M10 38 L15 33 M38 38 L33 33" opacity=".7"/></g>`,
+  ),
+  'chrono-slash': icon(
+    'time',
+    rays(24, 24, 16, '#fff4cf', 0.25),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M8 38 C14 14 30 8 42 10" stroke="#2f7bff" stroke-width="5" opacity=".8"/><path d="M8 38 C14 14 30 8 42 10" stroke="#ffd36a" stroke-width="2.4"/><path d="M14 40 C20 22 32 16 44 18" stroke="#fff4cf" stroke-width="1.6" opacity=".7"/></g><circle cx="42" cy="10" r="2.6" fill="#fff4cf" filter="url(#gl)"/>`,
+  ),
+  afterimage: icon(
+    'time',
+    rays(24, 24, 14, '#fff4cf', 0.2),
+    `<g fill="none" stroke-linecap="round" stroke-width="2.6"><g stroke="#2f7bff" opacity=".4"><circle cx="9" cy="13" r="3.4"/><path d="M9 17 V28 M9 28 L5 37 M9 28 L14 37 M9 21 L16 25"/></g><g stroke="#ffd36a" opacity=".65"><circle cx="21" cy="13" r="3.4"/><path d="M21 17 V28 M21 28 L17 37 M21 28 L26 37 M21 21 L28 25"/></g><g stroke="#fff4cf" filter="url(#gl)"><circle cx="34" cy="13" r="3.4"/><path d="M34 17 V28 M34 28 L30 37 M34 28 L39 37 M34 21 L42 25"/></g></g>`,
+  ),
+  'age-acceleration': icon(
+    'time',
+    rays(24, 24, 15, '#fff4cf', 0.2),
+    `<g filter="url(#ds)"><path d="M13 6 H35 M13 42 H35" stroke="#ffd36a" stroke-width="3" stroke-linecap="round"/><path d="M15 7 C15 18 24 20 24 24 C24 28 15 30 15 41 H33 C33 30 24 28 24 24 C24 20 33 18 33 7 Z" fill="#2a3f6a" stroke="#fff4cf" stroke-width="2"/></g><path d="M18 38 H30 L24 31 Z" fill="#ffd36a"/><path d="M24 24 V31" stroke="#ffd36a" stroke-width="1.6"/>`,
+  ),
+  'time-stop': icon(
+    'time',
+    rays(24, 24, 20, '#fff4cf', 0.35),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#ffd36a" stroke-width="3"/><circle cx="24" cy="24" r="11" stroke="#2f7bff" stroke-width="2.4" stroke-dasharray="5 3"/></g><g fill="#fff4cf" filter="url(#gl)"><rect x="17" y="15" width="5" height="18" rx="1.5"/><rect x="26" y="15" width="5" height="18" rx="1.5"/></g><g stroke="#fff4cf" stroke-width="2.4" stroke-linecap="round"><path d="M24 2 V6 M24 42 V46 M2 24 H6 M42 24 H46"/></g>`,
   ),
   'plague-bloom': icon(
     'toxin',

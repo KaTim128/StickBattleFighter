@@ -689,3 +689,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Vibration Punch launches a light fighter (Chronos, Psion) clearly further than a heavy one (Rampage).
 - [ ] Resonance Break: a thin screech flies out; the victim shows a crossed speaker for 4 s, cannot use abilities, and takes about 43% more damage from hits for those 4 s.
 - [ ] Select screen: Reson stands upright, Aerion's hands are attached.
+
+### Chronos rework (21/11/2026, TD-135)
+- [ ] Rewind Time: a blow, a gold home mark for 4 s, then ghosts run back along his path and he is back at the mark with 50% of the damage he really dealt restored.
+- [ ] Time Snare (blue and gold clock field) slows opponents 60% for 3 s; Chrono Slash is a wide crescent that staggers; Afterimage leaves gold afterimages along the dash and hurts and slows whoever he passes through; Age Acceleration greys and hunches the target for 4 s, drains it and lowers its defence.
+- [ ] Time Stop: the screen drains to blue and gold, opponents, their cooldowns, projectiles and furniture stop; blows struck meanwhile are held and all land together when time resumes; nothing stays frozen.

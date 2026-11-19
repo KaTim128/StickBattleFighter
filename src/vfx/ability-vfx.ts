@@ -149,12 +149,30 @@ export interface AbilityVfxInput {
     readonly hitS: number;
     readonly palette: Palette | null;
   }[];
+  /** Rewind Time replaying backwards: the path he walked and how far (0..1) the rewind has run. */
+  readonly rewindTrails?: readonly {
+    readonly path: readonly { x: number; y: number }[];
+    readonly k: number;
+    readonly palette: Palette | null;
+  }[];
+  /** Where a Rewind Time started, and how far (0..1) the four seconds have run. */
+  readonly rewindMarks?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly k: number;
+    readonly palette: Palette | null;
+  }[];
   /** Fighters muted and/or with shattered defence (Reson's Resonance Break): seconds left of each. */
   readonly afflicted?: readonly {
     readonly x: number;
     readonly y: number;
     readonly muteS: number;
     readonly shatterS: number;
+    /** Seconds of Age Acceleration left (Chronos). */
+    readonly ageS: number;
+    /** Held by Time Stop, and how many blows are waiting to land on it. */
+    readonly frozen: boolean;
+    readonly heldHits: number;
     readonly heightM: number;
   }[];
   /** Temporal afterimages trailing a fast-moving fighter (Chronos): where, facing, age and lifetime. */
@@ -1550,6 +1568,74 @@ export class AbilityVfx {
         .stroke({ width: 0.05, color: pal.core, alpha: 0.9, cap: 'round' });
     }
 
+    // Chronos: an aging target is wrapped in falling sand; a target held by Time Stop wears a gold clock ring, with one gold tick
+    // above its head for every blow waiting to land.
+    for (const af of input.afflicted ?? []) {
+      if (af.ageS > 0) {
+        const fade = Math.min(1, af.ageS / 0.8);
+        for (let i = 0; i < 6; i++) {
+          const ph = (t * 0.9 + i / 6) % 1;
+          const c = P(af.x + Math.sin(i * 2.1) * 0.35, af.y + Math.cos(i * 1.7) * 0.2, af.heightM * (1 - ph));
+          g.circle(c.x, c.y, 0.03).fill({ color: 0xffd36a, alpha: 0.85 * fade * (1 - ph * 0.4) });
+        }
+        f.circle(af.x, af.y, 0.55).stroke({ width: 0.04, color: 0xffd36a, alpha: 0.5 * fade });
+        const h0 = P(af.x, af.y, af.heightM + 0.2);
+        g.poly([
+          h0.x - 0.07,
+          h0.y - 0.1,
+          h0.x + 0.07,
+          h0.y - 0.1,
+          h0.x,
+          h0.y,
+          h0.x + 0.07,
+          h0.y + 0.1,
+          h0.x - 0.07,
+          h0.y + 0.1,
+          h0.x,
+          h0.y,
+        ]).fill({ color: 0xffd36a, alpha: 0.8 * fade });
+      }
+      if (af.frozen) {
+        const pulse = 0.6 + 0.2 * Math.sin(t * 3);
+        f.circle(af.x, af.y, 0.7).stroke({ width: 0.05, color: 0xffd36a, alpha: pulse });
+        f.circle(af.x, af.y, 0.7).fill({ color: 0x2f7bff, alpha: 0.12 });
+        for (let i = 0; i < 12; i++) {
+          const a0 = (i * Math.PI) / 6;
+          f.moveTo(af.x + Math.cos(a0) * 0.62, af.y + Math.sin(a0) * 0.62)
+            .lineTo(af.x + Math.cos(a0) * 0.7, af.y + Math.sin(a0) * 0.7)
+            .stroke({ width: 0.03, color: 0xfff4cf, alpha: 0.9 });
+        }
+        for (let i = 0; i < Math.min(12, af.heldHits); i++) {
+          const c = P(af.x + (i - Math.min(12, af.heldHits) / 2) * 0.09, af.y, af.heightM + 0.35);
+          g.circle(c.x, c.y, 0.035).fill({ color: 0xffd36a, alpha: 0.95 });
+        }
+      }
+    }
+    // Rewind Time: while it runs, a pulsing home mark where he started; when it fires, ghosts of him run back along the path he walked.
+    for (const m of input.rewindMarks ?? []) {
+      const pal = m.palette ?? FIRE;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 6);
+      f.circle(m.x, m.y, 0.5).stroke({ width: 0.04, color: pal.bright, alpha: 0.5 + 0.3 * pulse });
+      f.circle(m.x, m.y, 0.5 * (1 - m.k)).fill({ color: pal.hot, alpha: 0.2 });
+      const a0 = -Math.PI / 2 + m.k * Math.PI * 2;
+      f.moveTo(m.x, m.y)
+        .lineTo(m.x + Math.cos(a0) * 0.5, m.y + Math.sin(a0) * 0.5)
+        .stroke({ width: 0.05, color: pal.core, alpha: 0.9, cap: 'round' });
+    }
+    for (const rt of input.rewindTrails ?? []) {
+      const pal = rt.palette ?? FIRE;
+      const n = rt.path.length;
+      const reached = 1 - rt.k;
+      for (let i = 0; i < n; i++) {
+        // The path replays from its end back to its start: points near the head of the rewind are brightest.
+        const u = i / Math.max(1, n - 1);
+        if (u < reached - 0.0001) continue;
+        const near = Math.max(0, 1 - Math.abs(u - reached) * 4);
+        const p = rt.path[i]!;
+        silhouette(p.x, p.y, 1, 0.1 + 0.32 * near, pal.bright, pal.hot);
+        f.circle(p.x, p.y, 0.12 + 0.2 * near).stroke({ width: 0.03, color: pal.core, alpha: 0.5 * near });
+      }
+    }
     // Rocket Fist: the arm extends from the shoulder as a segmented steel cable with a spiked-knuckle fist and a rocket flame behind it.
     for (const fs of input.fists ?? []) {
       const pal = fs.palette ?? FIRE;
@@ -2160,6 +2246,35 @@ export class AbilityVfx {
     if (look.flight?.wave) {
       // A sonic boom: three nested crescents of sound opening toward where it is going, with a bright leading edge.
       const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);
+      if (look.flight.crescent) {
+        // Chrono Slash: one wide, thin crescent of time cutting across the way it travels, gold on its edge and blue behind it,
+        // with a second fainter one trailing and a bright point at each tip.
+        for (let i = 0; i < 2; i++) {
+          const back = 0.25 + i * 0.5;
+          const cx = c.x - Math.cos(ang) * back;
+          const cy = c.y - Math.sin(ang) * back * ISO_T;
+          const r = 1.0 - i * 0.1;
+          g.arc(cx, cy, r, ang - 1.2, ang + 1.2).stroke({
+            width: 0.14 - i * 0.05,
+            color: pal.hot,
+            alpha: 0.6 - i * 0.25,
+            cap: 'round',
+          });
+          g.arc(cx, cy, r, ang - 1.2, ang + 1.2).stroke({
+            width: 0.06 - i * 0.02,
+            color: i === 0 ? pal.bright : pal.core,
+            alpha: 0.95 - i * 0.3,
+            cap: 'round',
+          });
+        }
+        for (const sgn of [-1, 1])
+          g.circle(
+            c.x - Math.cos(ang) * 0.25 + Math.cos(ang + sgn * 1.2) * 1.0,
+            c.y - Math.sin(ang) * 0.25 * ISO_T + Math.sin(ang + sgn * 1.2) * 1.0,
+            0.07,
+          ).fill({ color: pal.core, alpha: 0.95 });
+        return;
+      }
       if (look.flight.screech) {
         // A screech: five thin, tight rings packed close and shivering, a piercing needle at the front.
         for (let i = 0; i < 5; i++) {

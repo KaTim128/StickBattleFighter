@@ -338,9 +338,36 @@ export class ArenaProps {
       // Strikes land once per attack already; a sliding body touching for several steps is one blow.
       if (hit.blow === 'knockback' && !prop.canTakeHit(this.timeS)) continue;
       n++;
+      // Time Stop: the blow is recorded against the prop, not applied; it lands when time resumes.
+      if (this.frozen) {
+        this.held.push({ prop, hit });
+        continue;
+      }
       if (this.applyHit(prop, hit)) broke++;
     }
     return { hit: n, broke };
+  }
+
+  /** True while time is stopped: blows are held, not applied (see `freeze`). */
+  private frozen = false;
+  private readonly held: { prop: ArenaProp; hit: PropHit }[] = [];
+
+  /** Time Stop begins: nothing changes, but every blow struck is remembered with the prop it struck. */
+  freeze(): void {
+    this.frozen = true;
+  }
+
+  /** Time resumes: every held blow lands now, in the order it was struck. Returns how many props broke. */
+  thaw(): number {
+    this.frozen = false;
+    let broke = 0;
+    for (const h of this.held.splice(0, this.held.length)) if (!h.prop.broken && this.applyHit(h.prop, h.hit)) broke++;
+    return broke;
+  }
+
+  /** How many blows are being held (presentation: marks over the frozen furniture). */
+  get heldBlows(): number {
+    return this.held.length;
   }
 
   /** A magnet's tug: loose metal props within `radiusM` of `at` are drawn toward it (one step's worth of `strength`). */

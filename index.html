@@ -48,6 +48,16 @@
           rgba(26, 13, 38, 0.92) 30%, rgba(10, 4, 18, 0.97) 100%);
         transition: opacity 0.15s linear;
       }
+      /* Time Stop (Chronos, owner 21/11/2026): the world drains to a washed-out blue and gold; a gold flash marks time resuming. */
+      .time-stop-veil {
+        position: fixed; inset: 0; pointer-events: none; z-index: 4; --flare: 0;
+        background: radial-gradient(circle at 50% 50%, rgba(255, 224, 140, calc(var(--flare) * 0.55)) 0, rgba(47, 123, 255, calc(var(--flare) * 0.25)) 60%, rgba(11, 42, 90, 0) 100%);
+        backdrop-filter: none; transition: backdrop-filter 0.25s linear, background-color 0.25s linear;
+      }
+      .time-stop-veil.stopped {
+        backdrop-filter: grayscale(0.8) sepia(0.35) hue-rotate(185deg) contrast(1.08);
+        background-color: rgba(30, 60, 120, 0.12);
+      }
       /* Lights out (owner, 12/11/2026, Hunting Frenzy): the darkened player sees only a small circle. */
       .dark-veil {
         position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 5; display: none;

@@ -69,6 +69,8 @@ export class StickmanView {
   shieldFlare = 0;
   /** 0..1 a fury buff is on (Rampage Mode): a muscle body's hide flushes red. */
   rage = 0;
+  /** 0..1 how aged the body looks right now (Chronos's Age Acceleration): pale grey and drained. */
+  aged = 0;
   /** 0..1 Blue Inferno is on: Inferno's body goes dark with blue flames (eased by the scene). */
   blueFire = 0;
   /**
@@ -420,7 +422,12 @@ export class StickmanView {
         w,
         headRadius: this.bones.headRadius,
         motion: this.motion,
-        tint: this.rage > 0 && muscled ? { colour: BRUTE.rage, k: this.rage * 0.3 } : undefined,
+        tint:
+          this.aged > 0
+            ? { colour: 0xcfc8b0, k: this.aged * 0.55 }
+            : this.rage > 0 && muscled
+              ? { colour: BRUTE.rage, k: this.rage * 0.3 }
+              : undefined,
         drawHead,
         bodyWidthK: 1 + 0.6 * this.turn,
         eyeGlow: this.eyeGlow,

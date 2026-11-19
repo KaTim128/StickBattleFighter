@@ -15,7 +15,8 @@ function castDamage(a: AbilityDef): number {
   if (d.type === 'beam') return (a.payload.damage * Math.round(d.durationS / d.tickS)) / 2; // half the ticks connect
   if (d.type === 'whirl') return a.payload.damage * Math.round(d.durationS / d.tickS);
   if (d.type === 'drone') return (d.shot.payload.damage * (d.durationS / d.intervalS)) / 2; // half its shots land
-  if (d.type === 'strike' && d.echo) return a.payload.damage * (1 + d.echo.factor); // the blow and its echo
+  if (d.type === 'dash' && d.afterimages) return a.payload.damage;
+  if (a.payload.aging) return a.payload.damage + a.payload.aging.dps * a.payload.aging.durationS;
   return a.payload.damage;
 }
 

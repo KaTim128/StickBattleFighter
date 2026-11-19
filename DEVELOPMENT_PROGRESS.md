@@ -67,6 +67,9 @@ Done: Chronos fighter and kit, echo/rewind/decoy/slow-field/dodge-recovery engin
 ## Reson update (21/11/2026, TD-134)
 Done: scream (beam with pin), weight-scaled Vibration Punch, Resonance Break (mute, shatter) replacing Resonance Dash, new sounds, icons, poses, effects, tests (1168); Reson and Aerion select stances fixed; Reson idle/walk/run straightened. Known: checked in still screenshots only; the scream also takes beam steering input. Next: Arcstrike, Tidebreaker, remaining fighters, then Colosseum.
 
+## Chronos rework (21/11/2026, TD-135)
+Done: new kit (Rewind Time, Time Snare, Chrono Slash, Afterimage, Age Acceleration, Time Stop), time-stop machinery across scene, physics, props, walls and doors, held-cooldown rule, veil, sounds, icons, poses, tests (1180). Known: afterimages absorb shots but not melee; rewind counts blows, not damage over time; checked in screenshots and a scene test. Next: stance redesign (owner 21/11/2026), then Arcstrike, Tidebreaker, the rest, Colosseum.
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

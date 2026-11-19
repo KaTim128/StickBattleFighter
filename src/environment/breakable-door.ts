@@ -142,6 +142,11 @@ export class BreakableDoor {
 
   /** Apply a blow. Returns true if this impact broke the door. */
   applyImpact(impact: Impact): boolean {
+    // Time Stop: the blow is held and lands when time resumes.
+    if (this.frozen) {
+      this.heldImpacts.push(impact);
+      return false;
+    }
     if (this.broken || !impactBreaksDoor(impact, this.spec.breakStrength)) return false;
     this.brokenBy = impact.kind;
     this.open = false;
@@ -170,6 +175,21 @@ export class BreakableDoor {
       });
     }
     return true;
+  }
+
+  private frozen = false;
+  private readonly heldImpacts: Impact[] = [];
+
+  freeze(): void {
+    this.frozen = true;
+  }
+
+  /** Time resumes: every held blow lands now. Returns true if one broke the door. */
+  thaw(): boolean {
+    this.frozen = false;
+    let broke = false;
+    for (const i of this.heldImpacts.splice(0, this.heldImpacts.length)) if (this.applyImpact(i)) broke = true;
+    return broke;
   }
 
   /** Advance the splinters' fall to the floor (their floor-plane motion is physics). */

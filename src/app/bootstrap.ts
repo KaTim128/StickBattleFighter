@@ -47,6 +47,7 @@ import { keepLandscape, showHomeScreenHint } from '../interface/landscape';
 import { enterFullscreen, keepFullscreen, MainMenu, type MenuFighter, type MenuOpponent } from '../interface/main-menu';
 import { SettingsPanel } from '../interface/settings-panel';
 import { TeamHud } from '../interface/team-hud';
+import { TimeStopVeil } from '../interface/time-stop-veil';
 import { TopHud, UltimateShowcase } from '../interface/top-hud';
 import { TutorialOverlay } from '../interface/tutorial-overlay';
 import { inTheDark, VisionVeil, viewAfflictions } from '../interface/vision-veil';
@@ -268,6 +269,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // The fighter this page plays has its own key layout, saved for the player's profile (Phase 1 A3).
   settings.activate(playerName, params.get('character') ?? DEFAULT_CAST.player);
   const blindVeil = new BlindVeil(document.body);
+  const timeStopVeil = new TimeStopVeil(document.body);
   const visionVeil = new VisionVeil(document.body);
   const aimHint = new AimHint(document.body);
   const fightIntro = new FightIntro(document.body);
@@ -525,6 +527,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         showStickAiming(document.body, debug.player.beamAiming);
         const seen = viewAfflictions(debug.player, scene.match?.spectate === true);
         blindVeil.update(seen.blindS);
+        timeStopVeil.update(scene.timeStopView.active, scene.timeStopView.resumeS);
         {
           // Lights out: the circle the player can still see, centred on their body, in screen pixels.
           const p = seen;

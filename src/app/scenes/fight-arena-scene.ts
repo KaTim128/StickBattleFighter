@@ -848,6 +848,7 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
     this.abilities.summonRoom = (f, spec) => this.summons.room(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
+    this.abilities.onTimeStop = (casterId, on) => (on ? this.beginTimeStop(casterId) : this.endTimeStop());
     this.view = buildArenaView(arena);
     this.debrisView = new DebrisView(this.view.actors);
     this.occlusion = new OcclusionFader();
@@ -903,6 +904,7 @@ export class FightArenaScene implements ArenaScene {
 
     this.simTimeS += stepS;
     for (const f of this.fighters) {
+      if (this.isFrozen(f)) continue; // Time Stop: its timers, statuses, cooldowns and meters wait where they are
       if (f.scriptedAttack) {
         f.scriptedAttack.t += stepS;
         if (f.scriptedAttack.t >= attackDuration(f.scriptedAttack.timing)) f.scriptedAttack = null;
@@ -943,7 +945,7 @@ export class FightArenaScene implements ArenaScene {
       if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS && !f.summon && !this.match) f.respawn();
     }
 
-    if (this.teams && !this.intro && !this.matchResult) this.teams.step(stepS);
+    if (this.teams && !this.intro && !this.matchResult && !this.stopOwner) this.teams.step(stepS);
     if (this.match) this.decideMatch();
     this.climbing?.refresh();
     if (this.intro) {
@@ -953,21 +955,29 @@ export class FightArenaScene implements ArenaScene {
       this.dropPlayerInputs();
       for (const f of this.fighters) this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
       if (this.intro.t >= FIGHT_INTRO.combatAtS) this.intro = null;
-    } else if (!this.clashes.step(stepS, this.simTimeS)) {
+    } else if (this.stopOwner || !this.clashes.step(stepS, this.simTimeS)) {
+      // Time Stop: only the one who stopped time acts; everyone else is held (their inputs and AI do not run).
+      const stopped = this.stopOwner !== null;
       // Watching an AI battle (Tournament spectator mode): the AI plays both sides.
-      if (this.match?.spectate) this.controlAi(this.playerFighter, stepS, this.dummyFighter);
-      else this.controlPlayer(this.playerFighter, stepS);
+      if (this.match?.spectate) {
+        if (!this.isFrozen(this.playerFighter)) this.controlAi(this.playerFighter, stepS, this.dummyFighter);
+      } else if (!this.isFrozen(this.playerFighter)) this.controlPlayer(this.playerFighter, stepS);
+      else this.dropPlayerInputs();
       this.trackLastAction();
       // A fighter opponent (one with an ability kit) is played by the fighter AI; the training
       // dummy keeps its own behaviour (owner, 13/11/2026).
-      if (this.dummyFighter.caster) this.controlAi(this.dummyFighter, stepS);
-      else this.controlDummy(this.dummyFighter, stepS);
-      this.summons.update(stepS);
-      this.clashes.maybeStart(this.simTimeS);
+      if (!this.isFrozen(this.dummyFighter)) {
+        if (this.dummyFighter.caster) this.controlAi(this.dummyFighter, stepS);
+        else this.controlDummy(this.dummyFighter, stepS);
+      }
+      if (!stopped) {
+        this.summons.update(stepS);
+        this.clashes.maybeStart(this.simTimeS);
+      }
     }
     if (this.abilities) this.abilities.world.update(stepS, this.abilities);
-    for (const f of this.fighters) this.checkDoorImpact(f, stepS);
-    if (this.doors.length > 0) {
+    if (!this.stopOwner) for (const f of this.fighters) this.checkDoorImpact(f, stepS);
+    if (this.doors.length > 0 && !this.stopOwner) {
       const traffic = this.fighters.map((f) => ({
         x: f.x,
         y: f.y,
@@ -978,9 +988,11 @@ export class FightArenaScene implements ArenaScene {
       }));
       for (const door of this.doors) door.updateTraffic(traffic, stepS);
     }
-    for (const door of this.doors) door.update(stepS);
-    this.checkThrownHits();
-    this.props?.update(stepS);
+    if (!this.stopOwner) {
+      for (const door of this.doors) door.update(stepS);
+      this.checkThrownHits();
+      this.props?.update(stepS);
+    }
     this.propFeedback();
 
     for (const f of this.fighters) {
@@ -992,6 +1004,7 @@ export class FightArenaScene implements ArenaScene {
     this.physics.step(stepS);
     for (const f of this.fighters) {
       // Never stand inside a wall or planted furniture (B3); climbing fighters are placed on purpose.
+      if (this.isFrozen(f)) continue;
       if (f.body && !f.climb) this.physics.depenetrate(f.body, f.def.body.footRadiusM, f.overFurniture);
       const p = f.body?.translation();
       if (p) Object.assign(f.curr, { x: p.x, y: p.y });
@@ -1600,6 +1613,79 @@ export class FightArenaScene implements ArenaScene {
     if (block || (slot !== 'ult' && f.combatant.stamina < f.caster.def(slot).staminaCost)) return;
     const start = { x: f.x + f.aim.x * 3, y: f.y + f.aim.y * 3 };
     this.pointAim = { slot, spot: this.clampToReach(f, slot, this.insideMap(start)) };
+  }
+
+  /** Time Stop (Chronos): who stopped it (null = time runs), the blows held for when it resumes, and how many per target. */
+  private stopOwner: string | null = null;
+  private stopQueue: {
+    attacker: FighterEntity;
+    target: FighterEntity;
+    s: Parameters<FightArenaScene['applyStrike']>[2];
+  }[] = [];
+  private stopHits = new Map<string, number>();
+  /** Seconds since time resumed (presentation: the flash of the world catching up), or a large number. */
+  resumeFlashS = 99;
+
+  /** Is time stopped for this fighter (everyone but the one who stopped it)? */
+  private isFrozen(f: FighterEntity): boolean {
+    return this.stopOwner !== null && f.name !== this.stopOwner;
+  }
+
+  /** The screen effect for Time Stop: is it on, and how long since it ended. */
+  get timeStopView(): { active: boolean; resumeS: number } {
+    return { active: this.stopOwner !== null, resumeS: this.resumeFlashS };
+  }
+
+  private beginTimeStop(ownerName: string): void {
+    const owner = this.fighterByName(ownerName);
+    this.stopOwner = ownerName;
+    this.stopQueue = [];
+    this.stopHits.clear();
+    for (const f of this.fighters) if (f.name !== ownerName) f.pinned = null;
+    // Every moving body but the owner's is held where it stands (velocities remembered); queues start for furniture and walls.
+    this.physics?.freeze(owner?.body ? [owner.body] : []);
+    this.props?.freeze();
+    this.walls?.freeze();
+    for (const d of this.doors) d.freeze();
+    this.dropPlayerInputs();
+    this.shake.addTrauma(0.5);
+  }
+
+  private endTimeStop(): void {
+    if (this.stopOwner === null) return;
+    const ownerName = this.stopOwner;
+    this.stopOwner = null;
+    // Everything resumes with the speed it had, then every held blow lands at once: fighters take all their damage and the sum
+    // of their knockback, furniture, walls and doors take theirs.
+    this.physics?.thaw();
+    const queued = this.stopQueue.splice(0, this.stopQueue.length);
+    const push = new Map<FighterEntity, { x: number; y: number }>();
+    for (const q of queued) {
+      const landed = this.applyStrike(q.attacker, q.target, q.s);
+      const after = q.target.body?.linvel();
+      if (landed && after && !q.target.combatant.isKo) {
+        const acc = push.get(q.target) ?? { x: 0, y: 0 };
+        // The push this blow gave is added to the pushes of the others.
+        acc.x += after.x;
+        acc.y += after.y;
+        push.set(q.target, acc);
+      }
+    }
+    for (const [f, v] of push) {
+      const len = Math.hypot(v.x, v.y);
+      const cap = 26; // the sum of many blows is still a fall through the air, not a teleport
+      const k = len > cap ? cap / len : 1;
+      f.body?.setLinvel({ x: v.x * k, y: v.y * k }, true);
+      f.knockFlightS = len * k >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : f.knockFlightS;
+    }
+    this.stopHits.clear();
+    const broke = (this.props?.thaw() ?? 0) + (this.walls?.thaw() ?? 0) + this.doors.filter((d) => d.thaw()).length;
+    if (broke > 0) this.shake.addTrauma(0.35);
+    this.resumeFlashS = 0;
+    this.shake.addTrauma(0.95);
+    this.shake.punch(0.12);
+    this.hitstopS = Math.max(this.hitstopS, 0.12);
+    void ownerName;
   }
 
   /** Temporal afterimages (Chronos): the live ones, aged by this frame. */
@@ -2311,6 +2397,12 @@ export class FightArenaScene implements ArenaScene {
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
+    // Time Stop: a blow on anything the stop holds is not applied; it is recorded and lands when time resumes.
+    if (this.isFrozen(target)) {
+      this.stopQueue.push({ attacker, target, s });
+      this.stopHits.set(target.name, (this.stopHits.get(target.name) ?? 0) + 1);
+      return true;
+    }
     const t = target.body.translation();
     // A block only works when facing the attacker.
     // In front: the attacker is on the side the target faces (any direction in the 2.5D view).
@@ -2325,6 +2417,7 @@ export class FightArenaScene implements ArenaScene {
     }
     // A charged Death Mark triples the attacker's next landed blow (owner, 20/11/2026).
     const markFactor = this.abilities?.world.markFactor(attacker.name) ?? 1;
+    const hpBefore = target.combatant.hp;
     const result = target.combatant.receive(
       {
         baseDamage: s.damage * markFactor,
@@ -2338,6 +2431,8 @@ export class FightArenaScene implements ArenaScene {
       attacker.def.stats.critChance,
       attacker.def.stats.critMultiplier,
     );
+    // Rewind Time counts the hit points a blow really removed (never the damage it attempted).
+    this.abilities?.world.recordDealt(attacker.name, Math.max(0, hpBefore - target.combatant.hp));
     if (result.outcome === 'ignored') return false;
     this.events.push({
       kind: result.outcome,
@@ -3193,6 +3288,7 @@ export class FightArenaScene implements ArenaScene {
     const dust = this.frameDust.splice(0, this.frameDust.length);
     const limbFlames = this.frameFlames.splice(0, this.frameFlames.length);
     this.limbFlameStrength = limbFlames.reduce((m, l) => Math.max(m, l.strength), 0);
+    this.resumeFlashS += frameDtS;
     this.vfx.update(frameDtS, {
       limbFlames,
       aim: this.ultAim ?? this.pointAimState ?? this.throwAim,
@@ -3206,18 +3302,44 @@ export class FightArenaScene implements ArenaScene {
       cages: world.cages,
       ghosts: this.ghostsNow(frameDtS),
       afflicted: this.fighters.flatMap((o) =>
-        o.combatant.muteLeftS > 0 || o.combatant.shatterLeftS > 0
-          ? [{ x: o.x, y: o.y, muteS: o.combatant.muteLeftS, shatterS: o.combatant.shatterLeftS, heightM: headTop(o) }]
+        o.combatant.muteLeftS > 0 || o.combatant.shatterLeftS > 0 || o.combatant.ageLeftS > 0 || this.isFrozen(o)
+          ? [
+              {
+                x: o.x,
+                y: o.y,
+                muteS: o.combatant.muteLeftS,
+                shatterS: o.combatant.shatterLeftS,
+                ageS: o.combatant.ageLeftS,
+                frozen: this.isFrozen(o),
+                heldHits: this.stopHits.get(o.name) ?? 0,
+                heightM: headTop(o),
+              },
+            ]
           : [],
       ),
-      echoes: world.echoes.map((e) => ({
-        x: e.from.x,
-        y: e.from.y,
-        dirX: e.dir.x,
-        dirY: e.dir.y,
-        k: Math.min(1, (world.timeS - e.createdS) / Math.max(0.1, e.dueS - e.createdS)),
-        palette: e.def.look?.palette ?? null,
-      })),
+      rewindTrails: world.rewinds.flatMap((r) =>
+        r.replayLeftS > 0
+          ? [
+              {
+                path: r.path,
+                k: 1 - r.replayLeftS / Math.max(0.01, r.replayTotalS),
+                palette: r.def.look?.palette ?? null,
+              },
+            ]
+          : [],
+      ),
+      rewindMarks: world.rewinds.flatMap((r) =>
+        r.replayLeftS <= 0
+          ? [
+              {
+                x: r.origin.x,
+                y: r.origin.y,
+                k: r.ageS / Math.max(0.1, r.def.delivery.type === 'rewindTime' ? r.def.delivery.durationS : 4),
+                palette: r.def.look?.palette ?? null,
+              },
+            ]
+          : [],
+      ),
       decoys: world.decoys.map((d) => ({
         x: d.x,
         y: d.y,
@@ -3319,7 +3441,7 @@ export class FightArenaScene implements ArenaScene {
     f.calmS = fighting ? 0 : f.calmS + frameDtS;
     f.calmHp = c.hp;
     const charging = f.driveVelocity !== null && f.caster?.cast?.def.delivery.type === 'dash';
-    let pose = f.animator.update(frameDtS, {
+    let pose = f.animator.update(this.isFrozen(f) ? 0 : frameDtS, {
       speedMps: down || c.state === 'stunned' || c.state === 'gettingUp' || f.climb ? 0 : Math.hypot(v.x, v.y),
       maxSpeedMps: f.def.movement.maxSpeedMps,
       // Jump height over what the feet stand on: standing on a desk is not being in the air.
@@ -3366,6 +3488,13 @@ export class FightArenaScene implements ArenaScene {
         false,
       );
     }
+    // Age Acceleration: the body ages in front of you (greys and hunches over about 0.7 s), holds, then comes back to normal.
+    {
+      const left = f.combatant.ageLeftS;
+      f.agePeakS = left > 0 ? Math.max(f.agePeakS, left) : 0;
+      f.view.aged = left > 0 ? Math.min(1, (f.agePeakS - left) / 0.7, left / 0.9) : 0;
+    }
+    if (f.view.aged > 0) pose = { ...pose, lean: pose.lean + f.view.aged * 0.35, head: pose.head + f.view.aged * 0.25 };
     f.view.tickSlash(frameDtS);
     const cast = f.caster?.cast;
     if (cast && f.caster) {
@@ -3553,10 +3682,9 @@ export class FightArenaScene implements ArenaScene {
     f.view.stunned = c.state === 'stunned';
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
-    // Temporal Acceleration: dodges recover faster; and afterimages trail a fighter who is moving fast under it (or in End of Time).
-    c.dodgeRecoveryScale = f.buff?.dodgeRecoveryFactor ?? 1;
+    // Afterimage: temporal ghosts trail a fighter who is being driven by an ability that leaves them.
     const afterimageLook = f.caster?.cast?.def.look?.afterimages === true && f.driveVelocity !== null;
-    if ((f.buff?.afterimages || afterimageLook) && !c.isKo && (f.view.motion > 0.15 || afterimageLook)) {
+    if (afterimageLook && !c.isKo) {
       f.ghostS -= frameDtS;
       if (f.ghostS <= 0) {
         f.ghostS = 0.06;

@@ -93,8 +93,41 @@ export class BreakableWalls {
       const d = (s: WallSection) => Math.hypot((s.spec.x0 + s.spec.x1) / 2 - at.x, (s.spec.y0 + s.spec.y1) / 2 - at.y);
       targets = [targets.reduce((a, b) => (d(b) < d(a) ? b : a))];
     }
+    if (this.frozen) {
+      for (const s of targets) {
+        n++;
+        this.held.push({ section: s, hit });
+      }
+      return { hit: n, broke: 0 };
+    }
     for (const s of targets) {
       n++;
+      if (this.chip(s, hit)) broke++;
+    }
+    return { hit: n, broke };
+  }
+
+  /** True while time is stopped (Chronos's Time Stop): blows are held, not applied. */
+  private frozen = false;
+  private readonly held: { section: WallSection; hit: WallHit }[] = [];
+
+  freeze(): void {
+    this.frozen = true;
+  }
+
+  /** Time resumes: every held blow lands now. Returns how many sections broke. */
+  thaw(): number {
+    this.frozen = false;
+    let broke = 0;
+    for (const h of this.held.splice(0, this.held.length))
+      if (!h.section.broken && this.chip(h.section, h.hit)) broke++;
+    return broke;
+  }
+
+  /** One blow on one section; true if it broke. */
+  private chip(s: WallSection, hit: WallHit): boolean {
+    let broke = false;
+    {
       const raw = hit.damage * (hit.blast ? WALL_BLAST_MULTIPLIER : 1);
       s.hp = Math.max(0, s.hp - raw * WALL_TOUGHNESS);
       const at = { x: (s.spec.x0 + s.spec.x1) / 2, y: (s.spec.y0 + s.spec.y1) / 2 };
@@ -102,7 +135,7 @@ export class BreakableWalls {
         s.broken = true;
         if (s.collider) this.physics.removeStatic(s.collider);
         s.collider = null;
-        broke++;
+        broke = true;
         this.pending.push({ kind: 'break', index: s.index, ...at, dir: hit.direction, left: 0, fire: hit.fire });
       } else {
         this.pending.push({
@@ -115,7 +148,7 @@ export class BreakableWalls {
         });
       }
     }
-    return { hit: n, broke };
+    return broke;
   }
 
   /** Chips and breaks since the last call (sounds, dust, cracks, rubble). */

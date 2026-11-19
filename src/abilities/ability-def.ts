@@ -65,6 +65,10 @@ export interface AbilityPayload {
    * never stuns and never cancels an attack.
    */
   readonly disrupt?: { readonly durationS: number };
+  /** Slows the target's movement by `speedFactor` and its ability use (wind-ups and cooldowns) for `durationS` (Chronos's Afterimage). */
+  readonly slow?: { readonly durationS: number; readonly speedFactor: number };
+  /** Aging (Chronos's Age Acceleration): damage over time and a defence cut for `durationS`. */
+  readonly aging?: { readonly durationS: number; readonly dps: number; readonly defenceFactor: number };
   /**
    * Finishing bonus (Kenshiro's Sliding Slice): against a target at or below `belowHp` of its health (0..1) the blow
    * deals `bonus` more damage (0.6 = 60% more).
@@ -213,8 +217,11 @@ export interface DashDelivery {
   readonly backwards?: boolean;
   /** Leaves this cloud at the starting position (Vapour Step's mist); a dash with no hit radius hits nobody on the way. */
   readonly leavesCloud?: CloudSpec;
-  /** Leaves a harmless afterimage where he started (Chronos's Afterimage Decoy); it deals no damage and lasts `lifeS`. */
-  readonly decoy?: { readonly lifeS: number };
+  /**
+   * Leaves harmless afterimages along the path (Chronos's Afterimage): one every `spacingM` metres travelled, each lasting
+   * `lifeS`. They deal no damage, cannot be hurt, and enemy shots that reach one are spent on it.
+   */
+  readonly afterimages?: { readonly spacingM: number; readonly lifeS: number };
 }
 
 /**
@@ -300,12 +307,35 @@ export interface TeleportDelivery {
 }
 
 /**
- * Rewind Step (Chronos): the caster returns to where he stood `windowS` seconds ago (or the oldest place recorded, at least
- * half a second back). It restores nothing: no health, no cooldowns, no undone damage.
+ * Rewind Time (Chronos): a blow straight ahead, and from then on the caster's start position is remembered and every
+ * point of damage he really deals (hit points actually removed, never attempted damage) is added up for `durationS`
+ * seconds. Then time runs back: he returns to where he started and recovers `healFactor` of that total.
  */
-export interface RewindDelivery {
-  readonly type: 'rewind';
-  readonly windowS: number;
+export interface RewindTimeDelivery {
+  readonly type: 'rewindTime';
+  readonly durationS: number;
+  readonly healFactor: number;
+  readonly reachM: number;
+  readonly radiusM: number;
+}
+
+/**
+ * Age Acceleration (Chronos): the nearest enemy within `rangeM` is aged: for the payload's `aging` duration it takes
+ * damage over time and has its defence cut. The ability is the spell itself; the payload's own damage is the first blow.
+ */
+export interface AgeDelivery {
+  readonly type: 'age';
+  readonly rangeM: number;
+}
+
+/**
+ * Time Stop (Chronos's ultimate): the whole arena stops for `durationS` seconds except the caster. Everything else is held:
+ * fighters, their cooldown and ultimate timers, projectiles, furniture, doors, walls and physics. Blows struck meanwhile
+ * are not applied but recorded, and when time resumes they all take effect at once.
+ */
+export interface TimeStopDelivery {
+  readonly type: 'timeStop';
+  readonly durationS: number;
 }
 
 export interface SummonDelivery extends SummonSpec {
@@ -394,8 +424,6 @@ export function beamRampFactor(ramp: BeamDelivery['ramp'], contactS: number): nu
  */
 export interface AssaultDelivery {
   readonly type: 'assault';
-  /** A slow field laid down where the rush begins (Chronos's End of Time); it never damages by itself. */
-  readonly field?: CloudSpec;
   readonly approachSpeedMps: number;
   /** The rush gives up after this long (nobody reached): the stabs still come, at the air. */
   readonly maxApproachS: number;
@@ -521,11 +549,6 @@ export interface StrikeDelivery {
   readonly type: 'strike';
   readonly reachM: number;
   readonly radiusM: number;
-  /**
-   * A delayed temporal copy of the blow (Chronos's Echo Strike): `delayS` later the same strike lands again from where
-   * it was thrown, with its own hit registration (it can hit anyone in reach then, once), at `factor` of the damage.
-   */
-  readonly echo?: { readonly delayS: number; readonly factor: number };
 }
 
 /**
@@ -563,10 +586,6 @@ export interface BuffDelivery {
   readonly darkensFoes?: { readonly visibleM: number };
   /** The caster is drawn with dark skin and blue flames while it lasts (Inferno's Blue Inferno). */
   readonly blueFlames?: boolean;
-  /** Temporal afterimages follow the caster's movements while it lasts (Chronos's Temporal Acceleration). */
-  readonly afterimages?: boolean;
-  /** Dodges recover this much faster while it lasts (1 = normal; 0.6 = 40% shorter cooldown). */
-  readonly dodgeRecoveryFactor?: number;
   /** Armour plates extend over the caster while it lasts (Geargrind's Reinforced Plating, Overdrive). */
   readonly plating?: boolean;
   /** The caster is drawn this much bigger while it lasts (Rampage Mode, owner 13/11/2026: 1.1). */
@@ -612,7 +631,9 @@ export type Delivery =
   | LiftDelivery
   | BarrierDelivery
   | FistDelivery
-  | RewindDelivery
+  | RewindTimeDelivery
+  | AgeDelivery
+  | TimeStopDelivery
   | DroneDelivery
   | JudgementDelivery
   | GrenadeDelivery
@@ -657,6 +678,8 @@ export interface MagicLook {
     readonly wave?: boolean;
     /** The wave drawn as tight, thin, fast rings (Reson's Resonance Break). */
     readonly screech?: boolean;
+    /** Drawn as a wide horizontal crescent of light cutting across the way it travels (Chronos's Chrono Slash). */
+    readonly crescent?: boolean;
   };
   /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
   readonly impact?: {
@@ -711,6 +734,11 @@ export interface MagicLook {
 }
 
 export interface AbilityDef {
+  /**
+   * Its cooldown waits for everything it left behind to end (a field, a shot in flight, afterimages, a running effect on a
+   * target), not only the cast itself. Off by default so older abilities keep their timing.
+   */
+  readonly holdsCooldown?: boolean;
   readonly id: string;
   readonly name: string;
   /** Short label for buttons and the ability bar. */

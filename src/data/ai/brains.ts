@@ -222,23 +222,22 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   },
   // Chronos: a slippery duellist. Slows the target, hits with echoes, rewinds out of trouble, hastes to close in or flee.
   'chronos-ai': {
-    style:
-      'Time duellist: collapses time round the target, echo-strikes, rewinds out of trouble, hastes to close the gap.',
-    preferredRangeM: [1.6, 3.5],
+    style: 'Time duellist: snares the target, slashes, ages and stops time; rewinds after a trade of blows.',
+    preferredRangeM: [2, 4.5],
     movement: 'circle',
-    meleeBias: 0.55,
+    meleeBias: 0.5,
     heavyBias: 0.25,
     defence: 'dodge',
     retreatBelowHp: 0.3,
     hitAndRunS: 1,
     tactics: {
-      a1: { role: 'gapClose', minM: 3, maxM: 8, weight: 1.1 },
-      a2: { role: 'burst', minM: 0, maxM: 2, weight: 1.3 },
-      a3: { role: 'zone', minM: 1.5, maxM: 6, weight: 1.1 },
-      a4: { role: 'escape', minM: 0, maxM: 3, weight: 1.0, when: { selfHpBelow: 0.55 } },
-      ult: { role: 'burst', minM: 0, maxM: 6, weight: 1.3 },
+      a1: { role: 'burst', minM: 0, maxM: 2, weight: 1.2 },
+      a2: { role: 'zone', minM: 1.5, maxM: 6, weight: 1.1 },
+      a3: { role: 'poke', minM: 2, maxM: 8, weight: 1.2 },
+      a4: { role: 'gapClose', minM: 2.5, maxM: 6, weight: 1.0 },
+      ult: { role: 'burst', minM: 0, maxM: 7, weight: 1.3 },
     },
-    combos: [['a3', 'a2']],
+    combos: [['a2', 'a1']],
   },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
@@ -355,8 +354,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   featherGuard: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.6 } },
   // Iaido Draw: a lightning cut to close the gap.
   iaidoDraw: { role: 'gapClose', minM: 2, maxM: 6, weight: 1.2 },
-  // Afterimage Decoy: a short shift away when crowded.
-  afterimageDecoy: { role: 'escape', minM: 0, maxM: 2.5, weight: 1.0 },
+  // Age Acceleration: wear down a target in sight.
+  ageAcceleration: { role: 'curse', minM: 1.5, maxM: 6, weight: 1.0 },
   // Feedback Pulse: shoves crowders off and scrambles their steps.
   feedbackPulse: { role: 'escape', minM: 0, maxM: 3, weight: 1.1 },
   // Arc Coil: a close jolt when something is on top of him.

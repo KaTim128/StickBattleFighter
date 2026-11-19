@@ -352,6 +352,34 @@ export class PhysicsWorld {
 
   private readonly depenetrateBalls = new Map<number, RapierModule.Ball>();
 
+  private frozenBodies: { body: RapierModule.RigidBody; lin: Vec2; ang: number }[] = [];
+
+  /**
+   * Time Stop: every moving body except `keep` is made immovable where it stands (it still blocks everything that is not
+   * frozen) and its velocity is remembered. Nothing is lost: `thaw` puts every body back exactly as it was.
+   */
+  freeze(keep: readonly RapierModule.RigidBody[]): void {
+    if (this.frozenBodies.length > 0) return;
+    const type = rapier().RigidBodyType;
+    this.world.forEachRigidBody((b) => {
+      if (keep.includes(b) || b.bodyType() !== type.Dynamic) return;
+      this.frozenBodies.push({ body: b, lin: { ...b.linvel() }, ang: b.angvel() });
+      b.setLinvel({ x: 0, y: 0 }, true);
+      b.setAngvel(0, true);
+      b.setBodyType(type.Fixed, true);
+    });
+  }
+
+  /** Time resumes: the frozen bodies move again with the velocity they had. */
+  thaw(): void {
+    const type = rapier().RigidBodyType;
+    for (const f of this.frozenBodies.splice(0, this.frozenBodies.length)) {
+      f.body.setBodyType(type.Dynamic, true);
+      f.body.setLinvel(f.lin, true);
+      f.body.setAngvel(f.ang, true);
+    }
+  }
+
   /** Advance the simulation by one fixed step. */
   step(stepS: number): void {
     this.world.timestep = stepS;

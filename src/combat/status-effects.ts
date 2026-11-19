@@ -18,7 +18,9 @@ export type StatusId =
   | 'momentum'
   | 'disrupt'
   | 'mute'
-  | 'shatter';
+  | 'shatter'
+  | 'slow'
+  | 'aging';
 
 /** How a new application meets one already running. */
 export type StatusStacking =
@@ -71,6 +73,9 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   // Reson's Resonance Break: mute (no abilities) and shattered defence, each its own timer so nothing else can renew or soften them.
   mute: { stacking: 'strongest', tickIntervalS: 0 },
   shatter: { stacking: 'strongest', tickIntervalS: 0 },
+  // Chronos: a short slow, and the aging that wears a target down (its own timer, defence cut and damage over time).
+  slow: { stacking: 'strongest', tickIntervalS: 0 },
+  aging: { stacking: 'strongest', tickIntervalS: 0.5 },
   decay: { stacking: 'strongest', tickIntervalS: 0 },
   dark: { stacking: 'strongest', tickIntervalS: 0 },
   // Vexoris's Plague Bloom fog: renewed every step while inside it, so it lapses a moment after leaving.

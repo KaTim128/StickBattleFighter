@@ -92,6 +92,8 @@ export class SceneAbilities implements AbilityHost {
     const caster = f.caster;
     if (!caster) return 'unavailable';
     const c = f.combatant;
+    // Time Stop: nobody casts while the world is stopped.
+    if (this.world.stopOf()) return 'busy';
     // Resonance Break: a muted fighter cannot use abilities (blows, blocks and dodges are unaffected).
     if (c.muted) return 'muted';
     const block = caster.check(slot, {
@@ -128,7 +130,8 @@ export class SceneAbilities implements AbilityHost {
     // Cooldowns, and the ultimate's recharge, wait for everything an ability set going to finish (owner, 20/11/2026).
     const ongoing = this.world.executingIds(f.name);
     if (f.buff && f.buffSourceId) ongoing.add(f.buffSourceId);
-    const ev = caster.update(stepS, this.world.driving(f.name), ongoing);
+    // Chronos's Afterimage slows a target's ability use: its wind-ups and its cooldowns run slower for a moment.
+    const ev = caster.update(stepS * f.combatant.abilityPace, this.world.driving(f.name), ongoing);
     if (ev.released) {
       const def = ev.released;
       if (def.delivery.type === 'leap') f.combatant.grantInvulnerability(def.delivery.airS + 0.1); // airborne: untouchable
@@ -262,6 +265,9 @@ export class SceneAbilities implements AbilityHost {
       attacker.combatant.gainMastery(1, attacker.caster.kit.passive.maxStacks);
     // Soul Drain: the target is blinded for a while.
     if (landed && payload.blindS) target.combatant.blind(payload.blindS);
+    if (landed && payload.slow) target.combatant.slow(payload.slow.durationS, payload.slow.speedFactor);
+    if (landed && payload.aging)
+      target.combatant.age(payload.aging.durationS, payload.aging.dps, payload.aging.defenceFactor);
     if (landed && payload.mute) target.combatant.mute(payload.mute.durationS);
     if (landed && payload.shatter) target.combatant.shatter(payload.shatter.durationS, payload.shatter.defenceFactor);
     if (landed && payload.disrupt) target.combatant.disrupt(payload.disrupt.durationS);
@@ -276,6 +282,21 @@ export class SceneAbilities implements AbilityHost {
       c.hp = Math.min(c.stats.maxHp, c.hp + damage * payload.lifesteal);
     }
     return landed;
+  }
+
+  heal(targetId: string, amount: number): boolean {
+    const f = this.byName(targetId);
+    if (!f || f.combatant.isKo) return false;
+    const c = f.combatant;
+    c.hp = Math.min(c.stats.maxHp, c.hp + amount);
+    return true;
+  }
+
+  /** Set by the scene: Time Stop begins or ends. */
+  onTimeStop: ((casterId: string, on: boolean) => void) | null = null;
+
+  timeStop(casterId: string, on: boolean): void {
+    this.onTimeStop?.(casterId, on);
   }
 
   pin(targetId: string, away: Vec2, seconds: number): void {
