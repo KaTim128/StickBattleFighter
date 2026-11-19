@@ -314,7 +314,9 @@ export async function renderIdleStrips(
       view.clockOverrideS = (i * spanS) / frames;
       view.draw(poseAt(0.5 - 0.5 * Math.cos((2 * Math.PI * i) / frames)), -1, 0);
       view.root.scale.set(px);
-      view.root.position.set(i * pitch + cellW / 2, floorY);
+      // A floating fighter hangs above the floor and bobs a little with the breath.
+      const lift = (stance?.floatM ?? 0) * (1 + 0.14 * Math.sin((2 * Math.PI * i) / frames)) * px;
+      view.root.position.set(i * pitch + cellW / 2, floorY - lift);
       sheet.addChild(view.root);
     }
     try {

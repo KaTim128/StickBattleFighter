@@ -70,6 +70,9 @@ Done: scream (beam with pin), weight-scaled Vibration Punch, Resonance Break (mu
 ## Chronos rework (21/11/2026, TD-135)
 Done: new kit (Rewind Time, Time Snare, Chrono Slash, Afterimage, Age Acceleration, Time Stop), time-stop machinery across scene, physics, props, walls and doors, held-cooldown rule, veil, sounds, icons, poses, tests (1180). Known: afterimages absorb shots but not melee; rewind counts blows, not damage over time; checked in screenshots and a scene test. Next: stance redesign (owner 21/11/2026), then Arcstrike, Tidebreaker, the rest, Colosseum.
 
+## Stance redesign (21/11/2026, TD-136)
+Done: new idle bases and select stances for Vexoris, Aerion, Psion (floating), Geargrind, Reson and Chronos; Psion hover 0.3. Tests: 1175. Known: checked in screenshots only; attack clips are unchanged but start from the new idle pose.
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

@@ -375,7 +375,7 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     fragments: { colour: 0xb88cff, glow: 0x8a4fe0 },
     psyEye: 0xe4d2ff,
     handGlow: 0xc7a1ff,
-    hoverM: 0.2,
+    hoverM: 0.3,
   },
   // Geargrind (master plan section 4): a dark steel and orange combat engineer. One arm is a machine, a tool backpack rides on his
   // back, and plates extend from it on command. Compact and a little broad, bolts and hydraulics rather than a generic robot.

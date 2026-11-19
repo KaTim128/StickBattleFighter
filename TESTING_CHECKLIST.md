@@ -694,3 +694,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Rewind Time: a blow, a gold home mark for 4 s, then ghosts run back along his path and he is back at the mark with 50% of the damage he really dealt restored.
 - [ ] Time Snare (blue and gold clock field) slows opponents 60% for 3 s; Chrono Slash is a wide crescent that staggers; Afterimage leaves gold afterimages along the dash and hurts and slows whoever he passes through; Age Acceleration greys and hunches the target for 4 s, drains it and lowers its defence.
 - [ ] Time Stop: the screen drains to blue and gold, opponents, their cooldowns, projectiles and furniture stop; blows struck meanwhile are held and all land together when time resumes; nothing stays frozen.
+
+### Distinct stances (21/11/2026, TD-136)
+- [ ] Standing side by side, each of the eleven fighters has a different silhouette; Vexoris's face is clear (front hand low, back hand up); Psion floats with a visible gap under his feet in the arena and on the select screen and keeps floating through movement and combat.

@@ -195,8 +195,8 @@ function samuraiIdle(timeS: number, bones: BoneLengths, lowered = 0): Pose {
 }
 
 /**
- * KARATE (Vexoris, a disciplined hard style): a deep, grounded front stance, the lead hand open and forward at chest height
- * guarding the line, the rear fist drawn to the hip ready to drive, hips low and square, no bounce: a slow, controlled breath
+ * KARATE (Vexoris, a disciplined hard style): a deep, grounded front stance, the lead hand low and forward by the belt, the rear
+ * hand raised beside the head with the face clear, hips low and square, no bounce: a slow, controlled breath
  * and a small rock forward and back.
  */
 function karateIdle(timeS: number, bones: BoneLengths): Pose {
@@ -205,8 +205,9 @@ function karateIdle(timeS: number, bones: BoneLengths): Pose {
   return {
     lean: deg(-5 + breath * 1),
     head: deg(5),
-    armFront: armIk(0.34, 0.22 + breath * 0.01, bones.upperArm, bones.foreArm),
-    armBack: armIk(0.02, 0.5, bones.upperArm, bones.foreArm),
+    // The front hand low and forward by the belt, the back hand raised beside the temple: the face stays clear (owner, 21/11/2026).
+    armFront: { root: deg(44 + breath * 1.5), bend: deg(26) },
+    armBack: { root: deg(104 + breath * 2), bend: deg(70) },
     legFront: legIk(0.42 + rock, 0.6 - breath * 0.008, bones.thigh, bones.shin),
     legBack: legIk(-0.36 + rock, 0.6 - breath * 0.008, bones.thigh, bones.shin),
   };
@@ -223,8 +224,8 @@ function aerialIdle(timeS: number, bones: BoneLengths): Pose {
   return {
     lean: deg(-2 + sway * 1.5),
     head: deg(-3),
-    armFront: { root: deg(34 + drift * 3), bend: deg(24) },
-    armBack: { root: deg(-26 - drift * 3), bend: deg(20) },
+    armFront: { root: deg(58 + drift * 3), bend: deg(14) },
+    armBack: { root: deg(-54 - drift * 3), bend: deg(12) },
     legFront: legIk(0.12 + sway * 0.015, legs * 0.97 + drift * 0.01, bones.thigh, bones.shin),
     legBack: legIk(-0.22, legs * 0.97 + drift * 0.01 - 0.07, bones.thigh, bones.shin),
   };
@@ -259,10 +260,12 @@ function psychicIdle(timeS: number, bones: BoneLengths): Pose {
   return {
     lean: deg(-1 + sway * 1.5),
     head: deg(8),
-    armFront: { root: deg(34 + drift * 4), bend: deg(40) },
-    armBack: { root: deg(-14 - drift * 4), bend: deg(46) },
-    legFront: legIk(0.06 + sway * 0.012, legs * 0.93 + drift * 0.008, bones.thigh, bones.shin),
-    legBack: legIk(-0.09, legs * 0.9 + drift * 0.008, bones.thigh, bones.shin),
+    // Floating: the legs hang loose and a little bent under him, well short of the floor (the render lift adds the gap), the
+    // hands raised and open in front as if holding something up.
+    armFront: { root: deg(74 + drift * 4), bend: deg(30) },
+    armBack: { root: deg(52 - drift * 4), bend: deg(38) },
+    legFront: legIk(0.05 + sway * 0.02, legs * 0.8 + drift * 0.012, bones.thigh, bones.shin),
+    legBack: legIk(-0.1 - sway * 0.02, legs * 0.74 + drift * 0.012, bones.thigh, bones.shin),
   };
 }
 
@@ -277,10 +280,11 @@ function mechanicIdle(timeS: number, bones: BoneLengths): Pose {
   return {
     lean: deg(-2 + pulse * 1.0),
     head: deg(0),
-    armFront: { root: deg(72 + pulse * 4 + tick), bend: deg(84) },
-    armBack: { root: deg(8 - pulse * 3), bend: deg(104) },
-    legFront: legIk(0.16, legs * 0.97 - pulse * 0.01, bones.thigh, bones.shin),
-    legBack: legIk(-0.2, legs * 0.97 - pulse * 0.01, bones.thigh, bones.shin),
+    // The machine arm out straight in front like a gun barrel, the other hand on his hip, the feet planted wide and straight.
+    armFront: { root: deg(88 + pulse * 2 + tick), bend: deg(14) },
+    armBack: { root: deg(-26 - pulse * 2), bend: deg(112) },
+    legFront: legIk(0.24, legs * 0.97 - pulse * 0.01, bones.thigh, bones.shin),
+    legBack: legIk(-0.3, legs * 0.97 - pulse * 0.01, bones.thigh, bones.shin),
   };
 }
 
@@ -293,12 +297,14 @@ function sonicIdle(timeS: number, bones: BoneLengths): Pose {
   const pulse = 0.5 + 0.5 * Math.sin(timeS * TAU * 2.0);
   const legs = bones.thigh + bones.shin;
   return {
-    lean: deg(-1 + beat * 1.2),
-    head: deg(0 + beat * 1.0),
-    armFront: { root: deg(62 + pulse * 5), bend: deg(112) },
-    armBack: { root: deg(44 - pulse * 4), bend: deg(120) },
-    legFront: legIk(0.16 + beat * 0.02, legs * 0.96 - pulse * 0.014, bones.thigh, bones.shin),
-    legBack: legIk(-0.2 + beat * 0.02, legs * 0.96 - (1 - pulse) * 0.014, bones.thigh, bones.shin),
+    // Leaning back on the rear leg like a DJ, the front foot out and tapping, one gauntlet thrust out toward the opponent, the
+    // other hand up at the ear.
+    lean: deg(4 + beat * 1.2),
+    head: deg(-4 + beat * 1.0),
+    armFront: { root: deg(84 + pulse * 4), bend: deg(12) },
+    armBack: { root: deg(140 - pulse * 3), bend: deg(122) },
+    legFront: legIk(0.36 + beat * 0.02, legs * 0.97 - pulse * 0.02, bones.thigh, bones.shin),
+    legBack: legIk(-0.1 + beat * 0.02, legs * 0.88 - (1 - pulse) * 0.014, bones.thigh, bones.shin),
   };
 }
 
@@ -312,12 +318,14 @@ function temporalIdle(timeS: number, bones: BoneLengths): Pose {
   const tick = Math.round(timeS * 4) % 2 === 0 ? 1 : 0; // the small, exact flick of a ticking dial
   const legs = bones.thigh + bones.shin;
   return {
-    lean: deg(-2 + swing * 2.5),
-    head: deg(0),
-    armFront: { root: deg(74 + tick * 1.5), bend: deg(70) },
-    armBack: { root: deg(-14), bend: deg(112) },
-    legFront: legIk(0.14 + swing * 0.05, legs * 0.93, bones.thigh, bones.shin),
-    legBack: legIk(-0.2 + swing * 0.05, legs * 0.93, bones.thigh, bones.shin),
+    // Standing tall with the feet together, the dial arm held across the chest as if reading a watch, the other hand clasped
+    // behind the back, the head bowed to the dial; he sways like a pendulum.
+    lean: deg(-1 + swing * 2.5),
+    head: deg(10),
+    armFront: { root: deg(28 + tick * 1.5), bend: deg(112) },
+    armBack: { root: deg(-36), bend: deg(18) },
+    legFront: legIk(0.07 + swing * 0.03, legs * 0.99, bones.thigh, bones.shin),
+    legBack: legIk(-0.08 + swing * 0.03, legs * 0.99, bones.thigh, bones.shin),
   };
 }
 

@@ -19,6 +19,8 @@ export interface SelectStance {
   readonly rearFoot: number;
   readonly lean: number;
   readonly head: number;
+  /** Hangs this far above the floor (metres), bobbing a little (Psion floats). */
+  readonly floatM?: number;
   /** Near hand (the knife hand). `elbowOut`: the elbow points forward instead of back (hands on hips). */
   readonly front: { readonly x: number; readonly y: number; readonly elbowOut?: boolean };
   /** Far hand (the staff hand). */
@@ -102,8 +104,9 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     rearFoot: -0.34,
     lean: -6,
     head: 4,
-    front: { x: 0.5, y: -0.18 },
-    back: { x: 0.34, y: 0.5 },
+    // The front hand low and forward, the back hand raised beside the head: the face is clear (owner, 21/11/2026).
+    front: { x: 0.6, y: 0.66 },
+    back: { x: -0.32, y: 0.1 },
     turn: 0.6,
     scale: 1,
     breath: { lean: 1, pelvis: 0.008, hands: 0.025 },
@@ -112,13 +115,14 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   aerion: {
     title: 'The Sky Sovereign',
     style: 'Aerial wind warrior: dives, wind blades, lifts enemies and outruns everything',
-    pelvis: 0.95,
-    leadFoot: 0.16,
-    rearFoot: -0.2,
-    lean: -2,
-    head: 4,
-    front: { x: 0.34, y: 0.8 },
-    back: { x: -0.2, y: 0.84 },
+    pelvis: 0.96,
+    leadFoot: 0.1,
+    rearFoot: -0.14,
+    lean: -1,
+    head: -4,
+    // Tall on straight legs with the arms spread low and open like wings settling.
+    front: { x: 0.62, y: 0.5 },
+    back: { x: -0.55, y: 0.46 },
     turn: 0.6,
     scale: 1,
     breath: { lean: 1.2, pelvis: 0.01, hands: 0.03 },
@@ -142,13 +146,15 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   psion: {
     title: 'The Quiet Storm',
     style: 'Telekinetic controller: crushes, hurls and holds from range, shields himself',
-    pelvis: 0.84,
-    leadFoot: 0.12,
-    rearFoot: -0.16,
-    lean: -2,
-    head: 4,
-    front: { x: 0.46, y: 0.12 },
-    back: { x: 0.3, y: 0.18 },
+    pelvis: 0.96,
+    leadFoot: 0.05,
+    rearFoot: -0.1,
+    lean: -1,
+    head: 8,
+    // Floating: he hangs above the floor with the legs loose, the hands raised and open in front of him.
+    floatM: 0.3,
+    front: { x: 0.5, y: 0.2 },
+    back: { x: 0.34, y: 0.3 },
     turn: 0.6,
     scale: 1,
     breath: { lean: 1, pelvis: 0.012, hands: 0.04 },
@@ -157,13 +163,14 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   geargrind: {
     title: 'The Field Engineer',
     style: 'Combat engineer: fires a rocket fist, flies a drone, lays magnetic mines, plates up',
-    pelvis: 0.72,
+    pelvis: 0.92,
     leadFoot: 0.3,
-    rearFoot: -0.34,
-    lean: -5,
-    head: -2,
-    front: { x: 0.5, y: 0.5 },
-    back: { x: 0.12, y: 0.34 },
+    rearFoot: -0.36,
+    lean: -3,
+    head: 0,
+    // The machine arm straight out in front like a gun barrel, the other hand on the hip, the feet wide and planted.
+    front: { x: 0.92, y: 0.1 },
+    back: { x: 0.1, y: 0.56, elbowOut: true },
     turn: 0.5,
     scale: 1,
     breath: { lean: 1, pelvis: 0.01, hands: 0.02 },
@@ -172,13 +179,14 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   reson: {
     title: 'The Tuned Fist',
     style: 'Sonic specialist: a scream, launching punches, defence-breaking screeches and a shattering ultimate',
-    pelvis: 0.94,
-    leadFoot: 0.16,
-    rearFoot: -0.2,
-    lean: -2,
-    head: 0,
-    front: { x: 0.4, y: 0.3 },
-    back: { x: 0.24, y: 0.22 },
+    pelvis: 0.9,
+    leadFoot: 0.36,
+    rearFoot: -0.1,
+    lean: 4,
+    head: -4,
+    // Leaning back on the rear leg, one gauntlet thrust out toward you, the other hand raised at the ear.
+    front: { x: 0.92, y: 0.2 },
+    back: { x: 0.18, y: -0.04 },
     turn: 0.55,
     scale: 1,
     breath: { lean: 1.5, pelvis: 0.018, hands: 0.03 },
@@ -186,14 +194,15 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   // Chronos: poised and exact, the dial arm raised out in front, the other folded behind.
   chronos: {
     title: 'The Second Hand',
-    style: 'Time specialist: haste, echo strikes, slowing fields, rewinds and decoys',
-    pelvis: 0.82,
-    leadFoot: 0.14,
-    rearFoot: -0.2,
-    lean: -2,
-    head: 0,
-    front: { x: 0.44, y: 0.64 },
-    back: { x: -0.02, y: 0.46 },
+    style: 'Time specialist: slowing fields, rewinds, afterimages, ageing and a world-stopping ultimate',
+    pelvis: 0.97,
+    leadFoot: 0.07,
+    rearFoot: -0.08,
+    lean: -1,
+    head: 10,
+    // Feet together and upright, the dial arm across the chest as if reading a watch, the other hand behind the back.
+    front: { x: 0.34, y: 0.34 },
+    back: { x: -0.22, y: 0.52 },
     turn: 0.55,
     scale: 1,
     breath: { lean: 1.5, pelvis: 0.01, hands: 0.02 },
