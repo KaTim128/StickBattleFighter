@@ -123,7 +123,7 @@
       "category": "punch",
       "heavy": true,
       "aerial": false,
-      "startupS": 0.3,
+      "startupS": 0.36,
       "activeS": 0.1,
       "recoveryS": 0.4,
       "cancelAt": 1,

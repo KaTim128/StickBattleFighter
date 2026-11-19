@@ -12,3 +12,15 @@ describe('Hunting Frenzy darkness and spectators (master plan B10)', () => {
     expect(inTheDark(0.1, true)).toBe(false);
   });
 });
+
+describe('spectators are never blinded (owner, 21/11/2026)', () => {
+  const afflicted = { blindS: 3, darkS: 4, fogS: 2, nightVisionS: 1, x: 5 };
+  it('a watched AI battle shows every sight affliction as nothing', async () => {
+    const { viewAfflictions } = await import('../../../src/interface/vision-veil');
+    expect(viewAfflictions(afflicted, true)).toEqual({ blindS: 0, darkS: 0, fogS: 0, nightVisionS: 0, x: 5 });
+  });
+  it('the fighter someone is playing keeps them', async () => {
+    const { viewAfflictions } = await import('../../../src/interface/vision-veil');
+    expect(viewAfflictions(afflicted, false)).toBe(afflicted);
+  });
+});

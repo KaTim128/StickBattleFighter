@@ -2,6 +2,18 @@
  * Whether the screen should go dark (Hunting Frenzy, master plan B10): the fighter someone is playing
  * is in the dark, but spectators of a watched AI battle are not affected.
  */
+/**
+ * What the screen shows of a fighter's sight afflictions (owner, 21/11/2026: blinds such as Necro's Soul Drain, Shroud's
+ * Hunting Frenzy darkness, Vexoris's fog, and any future one, never work on spectators). Every view effect is read through
+ * this one function, so a spectator of a watched AI battle (the fighter is AI-played) always sees clearly.
+ */
+export function viewAfflictions<T extends { blindS: number; darkS: number; fogS: number; nightVisionS: number }>(
+  p: T,
+  spectating: boolean,
+): T {
+  return spectating ? { ...p, blindS: 0, darkS: 0, fogS: 0, nightVisionS: 0 } : p;
+}
+
 export function inTheDark(darkS: number, spectating: boolean): boolean {
   return darkS > 0 && !spectating;
 }

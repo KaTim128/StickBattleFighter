@@ -3430,7 +3430,10 @@ export class FightArenaScene implements ArenaScene {
       const air = heightM + lift + f.abilityLift;
       const standing = air < 0.05 && !c.isKo && c.state !== 'knockdown' && c.state !== 'dodging' && !f.climb;
       f.hoverNow += ((standing ? 1 : 0) - f.hoverNow) * smoothing(8, frameDtS);
-      hoverLift = hoverM * f.hoverNow * (1 + 0.22 * Math.sin(this.simTimeS * 2.4));
+      hoverLift =
+        hoverM *
+        f.hoverNow *
+        (1 + 0.22 * Math.sin(this.simTimeS * 2.4) + 0.3 * f.view.motion * Math.sin(this.simTimeS * 4.2));
       const moving = f.view.motion;
       const spreadTarget =
         f.buffSourceId === 'featherGuard'
@@ -3444,7 +3447,7 @@ export class FightArenaScene implements ArenaScene {
         ? 1
         : air > 0.25
           ? 0.7
-          : Math.min(1, moving * 0.4 + c.momentumStacks * 0.14 + (f.buffSourceId === 'tailwind' ? 0.3 : 0));
+          : Math.min(0.5, moving * 0.15 + c.momentumStacks * 0.05 + (f.buffSourceId === 'tailwind' ? 0.15 : 0));
       if (whirl) f.wingSpreadNow = 1;
       f.wingSpreadNow += (spreadTarget - f.wingSpreadNow) * smoothing(9, frameDtS);
       f.wingFlapNow += (flapTarget - f.wingFlapNow) * smoothing(7, frameDtS);

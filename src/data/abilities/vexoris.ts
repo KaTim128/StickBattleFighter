@@ -29,7 +29,7 @@ export const VEXORIS_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 22,
+      damage: 28,
       knockbackMps: 1,
       heavy: false,
       strength: 200,
@@ -65,7 +65,7 @@ export const VEXORIS_KIT: AbilityKit = {
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 26,
+      damage: 32,
       knockbackMps: 1.2,
       heavy: false,
       strength: 220,
@@ -114,7 +114,7 @@ export const VEXORIS_KIT: AbilityKit = {
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 30,
+      damage: 38,
       knockbackMps: 3,
       heavy: false,
       strength: 300,

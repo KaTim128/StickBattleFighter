@@ -76,7 +76,13 @@ export class StickmanAnimator {
       (strideAt(Math.max(motion.speedMps, RUN_FULL_MPS)) - walkStrideAt(motion.speedMps)) * this.runWeight;
     this.walkPhase = (this.walkPhase + (motion.speedMps * dtS) / stride) % 1;
     // A footfall at the start and middle of each cycle (footstep sounds).
-    if (motion.speedMps > 0.5 && (this.walkPhase < before || (before < 0.5 && this.walkPhase >= 0.5))) this.footfalls++;
+    if (
+      this.idleStyle !== 'psychic' &&
+      this.idleStyle !== 'aerial' &&
+      motion.speedMps > 0.5 &&
+      (this.walkPhase < before || (before < 0.5 && this.walkPhase >= 0.5))
+    )
+      this.footfalls++;
 
     // Start stepping almost at once (responsive), and ease into the run as speed builds.
     const walkTarget = Math.min(1, motion.speedMps / (motion.maxSpeedMps * 0.2));

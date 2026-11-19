@@ -940,7 +940,7 @@ export class PremiumModel {
     };
     const feathers = 7;
     for (const far of [true, false]) {
-      const beat = Math.sin(t * (4 + flap * 10) + (far ? 0.9 : 0)) * (0.05 + flap * 0.22);
+      const beat = Math.sin(t * (1.6 + flap * 5) + (far ? 0.9 : 0)) * (0.07 + flap * 0.2);
       // Angle from straight up, turning backward (so 180 degrees hangs straight down).
       const lead =
         ((165 - 105 * Math.max(0, spread)) * Math.PI) / 180 +

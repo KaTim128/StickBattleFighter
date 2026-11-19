@@ -271,12 +271,12 @@ function mechanicIdle(timeS: number, bones: BoneLengths): Pose {
   const tick = Math.sin(timeS * TAU * 2.2) * 0.4;
   const legs = bones.thigh + bones.shin;
   return {
-    lean: deg(-5 + pulse * 1.2),
-    head: deg(-2),
+    lean: deg(-2 + pulse * 1.0),
+    head: deg(0),
     armFront: { root: deg(72 + pulse * 4 + tick), bend: deg(84) },
     armBack: { root: deg(8 - pulse * 3), bend: deg(104) },
-    legFront: legIk(0.3, legs * 0.9 - pulse * 0.012, bones.thigh, bones.shin),
-    legBack: legIk(-0.34, legs * 0.9 - pulse * 0.012, bones.thigh, bones.shin),
+    legFront: legIk(0.16, legs * 0.97 - pulse * 0.01, bones.thigh, bones.shin),
+    legBack: legIk(-0.2, legs * 0.97 - pulse * 0.01, bones.thigh, bones.shin),
   };
 }
 
@@ -411,6 +411,37 @@ function gaitPose(
 }
 
 /**
+ * HOVER (Psion, Aerion; owner 21/11/2026): they never walk. The legs hang loose and trail a little behind the body, swaying
+ * slowly instead of stepping, the body leaning gently into the way it floats, the arms resting open. `phase` only drives
+ * the slow sway (it advances with distance, so the motion follows how fast they float); `speed` 0..1 leans them further
+ * into a fast glide. The vertical bobbing itself is the render lift (`hoverLift`), the same in every direction.
+ */
+function hoverGait(phase: number, bones: BoneLengths, style: IdleStyle, speed: number): Pose {
+  const sway = Math.sin(phase * TAU);
+  const sway2 = Math.sin(phase * TAU + 1.3);
+  const legs = bones.thigh + bones.shin;
+  const wingy = style === 'aerial';
+  return {
+    lean: deg(-4 - speed * 9 + sway * 1.2),
+    head: deg(wingy ? -3 : 6),
+    armFront: { root: deg((wingy ? 30 : 30) + sway * 5), bend: deg(wingy ? 22 : 40) },
+    armBack: { root: deg((wingy ? -34 : -14) - sway * 5 - speed * 12), bend: deg(wingy ? 20 : 46) },
+    legFront: legIk(
+      0.04 - speed * 0.1 + sway * 0.05,
+      legs * (0.9 - speed * 0.03) + sway2 * 0.012,
+      bones.thigh,
+      bones.shin,
+    ),
+    legBack: legIk(
+      -0.12 - speed * 0.16 - sway * 0.05,
+      legs * (0.86 - speed * 0.04) - sway2 * 0.012,
+      bones.thigh,
+      bones.shin,
+    ),
+  };
+}
+
+/**
  * CONFIDENT WALK (owner, 11/11/2026: "strong and confident", replacing the
  * crouched guard-up shuffle, SUP-06): tall hips, chest up and nearly upright,
  * head level, long steps, and loose fists swinging freely opposite the legs
@@ -420,35 +451,22 @@ function gaitPose(
 export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer', strideM = WALK_STRIDE_M): Pose {
   // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
+  if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0);
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
   if (style === 'mechanic') {
-    // A heavy industrial march: short planted steps, the machine arm held up ready, the other swinging a little.
+    // An upright industrial march (owner, 21/11/2026: not crouched): the legs nearly straight, lifted like pistons and set down
+    // square, the torso held tall and still, the machine arm raised ready, the other swinging a little.
     return gaitPose(phase, bones, {
-      pelvisM: 0.68,
-      bob: 0.03,
+      pelvisM: 0.84,
+      bob: 0.018,
       leadX: 0.1,
       rearX: -0.14,
-      reach: 0.12 * k,
-      lift: 0.07,
-      lean: -5,
-      sway: 1.2,
-      head: -2,
+      reach: 0.14 * k,
+      lift: 0.09,
+      lean: -1,
+      sway: 0.4,
+      head: 0,
       arms: { lead: { x: 0.26, y: 0.56 }, rear: { x: -0.06, y: 0.42 }, swingX: 0.04, swingY: 0.02 },
-    });
-  }
-  if (style === 'psychic') {
-    // A glide: the feet barely move, the body floats forward upright, the hands held open at his sides.
-    return gaitPose(phase, bones, {
-      pelvisM: 0.7,
-      bob: 0.01,
-      leadX: 0.04,
-      rearX: -0.08,
-      reach: 0.1 * k,
-      lift: 0.03,
-      lean: -4,
-      sway: 0.5,
-      head: 6,
-      arms: { lead: { x: 0.18, y: 0.46 }, rear: { x: -0.04, y: 0.48 }, swingX: 0.03, swingY: 0.01 },
     });
   }
   if (style === 'samurai') {
@@ -769,15 +787,15 @@ const PSYCHIC_RUN: RunStyle = {
 
 /** MECHANIC RUN: a heavy, driving charge, shoulders forward, the machine arm held out in front like a ram. */
 const MECHANIC_RUN: RunStyle = {
-  pelvisM: 0.66,
-  bob: 0.035,
-  reachM: 0.3,
-  pushM: 0.34,
-  stance: 0.4,
-  swingLiftM: 0.26,
-  lean: -14,
-  drive: 5,
-  head: -4,
+  pelvisM: 0.8,
+  bob: 0.03,
+  reachM: 0.28,
+  pushM: 0.3,
+  stance: 0.36,
+  swingLiftM: 0.28,
+  lean: -6,
+  drive: 3,
+  head: -1,
   pumpFront: { shoulder: 70, elbow: 70 },
   pumpBack: { shoulder: -40, elbow: 90 },
 };
@@ -801,11 +819,13 @@ const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
 
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0.7);
   return runningPose(phase, bones, runStyleFor(style, false));
 }
 
 /** SPRINT: the running cycle at full effort. */
 export function sprintPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 1);
   return runningPose(phase, bones, runStyleFor(style, true));
 }
 

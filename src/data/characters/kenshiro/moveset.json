@@ -10,13 +10,13 @@
   "moves": [
     {
       "id": "slash-1",
-      "displayName": "Horizontal slash",
+      "displayName": "High horizontal slash",
       "animationState": "Jab",
       "category": "punch",
       "heavy": false,
       "aerial": false,
       "startupS": 0.2,
-      "activeS": 0.09,
+      "activeS": 0.13,
       "recoveryS": 0.34,
       "cancelAt": 0.55,
       "hitbox": {
@@ -39,13 +39,13 @@
     },
     {
       "id": "slash-2",
-      "displayName": "Second horizontal slash",
+      "displayName": "Mid diagonal slash",
       "animationState": "Hook",
       "category": "punch",
       "heavy": false,
       "aerial": false,
       "startupS": 0.22,
-      "activeS": 0.09,
+      "activeS": 0.13,
       "recoveryS": 0.34,
       "cancelAt": 0.55,
       "hitbox": {
@@ -63,18 +63,18 @@
       "requires": ["canPunch", "canUseCombos"],
       "effect": "sword-hit",
       "next": {
-        "tap": "rising-slash"
+        "tap": "low-sweep"
       }
     },
     {
-      "id": "rising-slash",
-      "displayName": "Rising diagonal slash",
+      "id": "low-sweep",
+      "displayName": "Low sweeping slash",
       "animationState": "Uppercut",
       "category": "punch",
       "heavy": true,
       "aerial": false,
       "startupS": 0.26,
-      "activeS": 0.1,
+      "activeS": 0.13,
       "recoveryS": 0.5,
       "cancelAt": 0.3,
       "hitbox": {

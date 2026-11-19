@@ -181,7 +181,7 @@
       "category": "punch",
       "heavy": true,
       "aerial": false,
-      "startupS": 0.28,
+      "startupS": 0.34,
       "activeS": 0.08,
       "recoveryS": 0.38,
       "cancelAt": 1,

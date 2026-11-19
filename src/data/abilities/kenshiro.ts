@@ -40,7 +40,7 @@ export const KENSHIRO_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 34,
+      damage: 38,
       knockbackMps: 0.4,
       heavy: false,
       strength: 360,
@@ -103,7 +103,7 @@ export const KENSHIRO_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: {
-      damage: 14,
+      damage: 16,
       knockbackMps: 1.2,
       heavy: false,
       strength: 300,
@@ -185,7 +185,7 @@ export const KENSHIRO_KIT: AbilityKit = {
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 30,
+      damage: 34,
       knockbackMps: 0,
       heavy: false,
       strength: 320,

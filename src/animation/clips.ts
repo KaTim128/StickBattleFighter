@@ -264,20 +264,22 @@ const STRIKES = {
 
   // ---- Kenshiro's sword clips (owner 21/11/2026): one katana held in both hands, only the lead arm is posed (the view puts
   // the rear hand on the hilt). Each cut is its own motion; none is shared with another fighter.
-  // 1. Horizontal slash: from the right hip, a flat cut level across the body.
+  // The tap combo (owner, 21/11/2026): three lateral sword swings across the fighting plane, never a thrust toward the camera.
+  // Each travels from behind him through the opponent to the front, at its own height, with the body turning into it.
+  // 1. High swing: the blade starts raised above the shoulder and is brought through at head height in a wide arc, the chest turning.
   'kenshiro.slash-1': strike(
-    { lean: deg(8), head: deg(0), armFront: limb(-40, 60), legFront: limb(26, -30), legBack: limb(-22, -20) },
-    { lean: deg(-30), head: deg(8), armFront: limb(100, 4), legFront: limb(46, -40), legBack: limb(-34, -10) },
+    { lean: deg(10), head: deg(-6), armFront: limb(150, 50), legFront: limb(22, -28), legBack: limb(-26, -22) },
+    { lean: deg(-26), head: deg(10), armFront: limb(96, 2), legFront: limb(42, -36), legBack: limb(-36, -12) },
   ),
-  // 2. Second horizontal slash: straight back the other way, a backhand cut swept past the hip.
+  // 2. Mid-height diagonal swing: from low behind the hip, up and across the body on a rising diagonal, standing tall.
   'kenshiro.slash-2': strike(
-    { lean: deg(-24), head: deg(6), armFront: limb(96, 6), legFront: limb(46, -40), legBack: limb(-34, -10) },
-    { lean: deg(14), head: deg(-4), armFront: limb(-46, 14), legFront: limb(30, -34), legBack: limb(-40, -22) },
+    { lean: deg(-14), head: deg(4), armFront: limb(-82, 50), legFront: limb(40, -36), legBack: limb(-34, -12) },
+    { lean: deg(16), head: deg(-4), armFront: limb(72, 4), legFront: limb(30, -34), legBack: limb(-42, -22) },
   ),
-  // 3. Rising diagonal slash: from low by the hip, up and across to above the head, the body lifting with it.
-  'kenshiro.rising': strike(
-    { lean: deg(-32), head: deg(10), armFront: limb(-10, 40), legFront: limb(52, -90), legBack: limb(-20, -70) },
-    { lean: deg(-6), head: deg(-4), armFront: limb(166, 6), legFront: limb(26, -22), legBack: limb(-18, -14) },
+  // 3. Low sweeping strike: sunk into a deep step, the blade drawn back low behind the hip and swept forward along the floor.
+  'kenshiro.low-sweep': strike(
+    { lean: deg(22), head: deg(8), armFront: limb(-72, 40), legFront: limb(44, -80), legBack: limb(-34, -70) },
+    { lean: deg(36), head: deg(14), armFront: limb(30, 2), legFront: limb(62, -86), legBack: limb(-52, -50) },
   ),
   // Heavy: a slow, deliberate overhead slice from a high stance, the blade drawn back behind the head, held, then dropped through the target in a deep step.
   'kenshiro.overhead': strike(

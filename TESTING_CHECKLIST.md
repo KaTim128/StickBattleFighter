@@ -668,3 +668,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Geargrind: dark steel/orange body with machine arm and backpack; Reinforced Plating plates slide out and lock, then fold away.
 - [ ] Rocket Fist extends on a cable and retracts; Combat Drone hovers, shoots for 10 s and can be shot down; Magnetic Mine pulls metal props and drags in a foe before bursting; Overdrive rushes, hits four times and ends in a big blast.
 - [ ] Admin menu scrolls to the arena buttons on a small landscape phone.
+
+### Animation and balance batch (21/11/2026, TD-131)
+- [ ] Kenshiro's J chain: a high swing, a rising mid diagonal, then a low sweep, each travelling across the opponent, none a forward poke.
+- [ ] Psion and Aerion float in every direction (legs hang, body bobs, no footsteps); Aerion's wings beat slowly.
+- [ ] Geargrind walks and runs upright, clearly unlike Kenshiro's low stance.
+- [ ] Watching an AI battle in Tournament: Soul Drain, Hunting Frenzy and fog never darken the spectator's screen.

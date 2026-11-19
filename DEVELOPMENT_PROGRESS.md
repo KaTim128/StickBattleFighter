@@ -55,6 +55,9 @@ Done: Psion fighter (data, kit, animation, premium look, sounds, icons, AI), sha
 ## Geargrind batch (21/11/2026, TD-130)
 Done: Geargrind fighter and kit, fist/drone/magnet/plating engine support, mechanic body skin, clips, sounds, icons, AI, stance, balance, tests (1108 passed | 2 skipped), admin-menu scroll fix. Known: drone is hurt only by projectiles; plating shown on a small figure; no bespoke hit-reaction clips. Next: Reson, then Chronos.
 
+## Animation and balance batch (21/11/2026, TD-131)
+Done: Kenshiro three-swing tap, hover locomotion for Psion and Aerion, upright Geargrind, spectator sight fix, ability and melee balance pass plus `ability-balance.test.ts`. Tests: 1114 passed | 2 skipped. Known: the swing arcs and floating were checked only in still screenshots; balance is estimated, not simulated. Next: Reson, then Chronos, then Arcstrike and Tidebreaker; Colosseum after all remaining fighters (owner, 21/11/2026).
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

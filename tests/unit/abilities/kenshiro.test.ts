@@ -199,14 +199,14 @@ describe('Kenshiro combo, heavy and Sword Mastery', () => {
     knockbackResistance: 0,
   };
 
-  it("a slower three-slash tap (horizontal, second horizontal, rising diagonal) that hits harder than other fighters' taps, and a slow overhead slice heavy", () => {
+  it("a slower three-slash tap (high swing, rising mid diagonal, low sweep) that hits harder than other fighters' taps, and a slow overhead slice heavy", () => {
     const chain: string[] = [];
     let id: string | undefined = set.starters.tap;
     while (id && !chain.includes(id)) {
       chain.push(id);
       id = (set.moves.find((m) => m.id === id) as { next?: { tap?: string } } | undefined)?.next?.tap;
     }
-    expect(chain).toEqual(['slash-1', 'slash-2', 'rising-slash']);
+    expect(chain).toEqual(['slash-1', 'slash-2', 'low-sweep']);
     for (const m of set.moves.filter((x) => chain.includes(x.id)))
       expect(states[m.animationState]).toMatch(/^kenshiro\./);
     expect(set.starters.heavy).toBe('overhead-cut');
