@@ -926,3 +926,6 @@ Prismor taps and heavy need body contact (fist-end test and fist-only environmen
 
 ## 22/11/2026: thorns shortened
 Crystal Slide thorn spikes drawn at half their former height (`crystal-thorns` h 1.2 → 0.6 m). Hit area unchanged. Typecheck clean, vitest 1208 passed, production build OK.
+
+## 22/11/2026: volley damage up, thorns faster
+Shard Volley per-shard damage 8 → 14. Crystal Slide thorns warn 0.45 s → 0.12 s, so they erupt right as the slide stops. Tests: typecheck clean, vitest 1208 passed, build OK.

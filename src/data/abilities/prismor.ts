@@ -70,7 +70,7 @@ export const PRISMOR_KIT: AbilityKit = {
         trailLifeS: 2.5,
         thorns: {
           radiusM: 1.7,
-          warnS: 0.45,
+          warnS: 0.12,
           payload: { damage: 32, knockbackMps: 6, heavy: false, strength: 500, impact: 'knuckle-heavy' },
         },
       },
@@ -95,7 +95,7 @@ export const PRISMOR_KIT: AbilityKit = {
     aimRangeM: 8,
     moveFactor: 0.5,
     interruptible: true,
-    payload: { damage: 8, knockbackMps: 1.2, heavy: false, strength: 120, impact: 'knuckle-light' },
+    payload: { damage: 14, knockbackMps: 1.2, heavy: false, strength: 120, impact: 'knuckle-light' },
     delivery: {
       type: 'projectile',
       speedMps: 16,

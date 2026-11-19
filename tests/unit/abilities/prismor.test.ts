@@ -177,12 +177,17 @@ describe('Crystal Slide', () => {
     const w = new AbilityWorld();
     const slide = PRISMOR_KIT.a2;
     w.release('me', slide, { x: 9, y: 0 }, host);
-    run(w, host, 0.6);
+    // The thorns come up right as the slide stops: the moment the slide ends, they are already warning (a short beat, then they erupt).
+    let thorn: (typeof w.telegraphs)[number] | undefined;
+    for (let i = 0; i < 120 && !thorn; i++) {
+      w.update(1 / 60, host);
+      thorn = w.telegraphs[0];
+    }
+    expect(thorn).toBeDefined();
     expect(log.me.x).toBeGreaterThan(6); // it covered the ground
     expect(w.slideTrail.length).toBeGreaterThan(3); // and left a trail
-    expect(w.telegraphs).toHaveLength(1); // thorns are warning where it stopped
-    const thorn = w.telegraphs[0]!;
-    expect(Math.hypot(thorn.x - log.me.x, thorn.y - log.me.y)).toBeLessThan(0.5);
+    expect(Math.hypot(thorn!.x - log.me.x, thorn!.y - log.me.y)).toBeLessThan(0.5);
+    expect(thorn!.durationS).toBeLessThanOrEqual(0.15);
     log.hits.length = 0;
     // The foe stands at the stopping point: the thorns are a real blast with their own damage.
     run(w, host, 0.6);
@@ -276,7 +281,7 @@ describe('Shard Volley', () => {
     expect(w.projectiles).toHaveLength(9);
     const angles = new Set(w.projectiles.map((p) => Math.round(Math.atan2(p.dir.y, p.dir.x) * 100)));
     expect(angles.size).toBeGreaterThan(5); // spread across the cone
-    expect(PRISMOR_KIT.a3.payload.damage).toBeLessThanOrEqual(10); // each one is small
+    expect(PRISMOR_KIT.a3.payload.damage).toBeLessThanOrEqual(16); // each one is still small
   });
 });
 
