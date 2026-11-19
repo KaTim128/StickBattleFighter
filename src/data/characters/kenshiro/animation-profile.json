@@ -2,10 +2,16 @@
   "id": "kenshiro-animation",
   "extends": "style-taekwondo",
   "states": {
-    "Jab": "kenshiro.slash",
-    "Hook": "kenshiro.reverse",
-    "SideKick": "kenshiro.dual",
+    "Jab": "kenshiro.slash-1",
+    "Hook": "kenshiro.slash-2",
     "RoundhouseKick": "kenshiro.finish",
-    "HeavyAttack": "kenshiro.overhead"
+    "HeavyAttack": "kenshiro.overhead",
+    "Idle": "proc.idle.samurai",
+    "FightingStance": "proc.idle.samurai",
+    "Turn": "proc.idle.samurai",
+    "Uppercut": "kenshiro.rising",
+    "FrontKick": "kenshiro.thrust",
+    "JumpingFrontKick": "kenshiro.air-slash",
+    "DownwardAerialKick": "kenshiro.plunge"
   }
 }

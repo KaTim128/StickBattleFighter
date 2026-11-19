@@ -7,6 +7,16 @@
     "ClashFinisher": "inferno.flame-uppercut",
     "ClashWin": "inferno.flame-uppercut",
     "Dodge": "proc.dodge.flame",
-    "HeavyAttack": "inferno.blazing-axe-kick"
+    "HeavyAttack": "inferno.blazing-axe-kick",
+    "Idle": "proc.idle.pyro",
+    "FightingStance": "proc.idle.pyro",
+    "Turn": "proc.idle.pyro",
+    "Jab": ["inferno.jab-1", "inferno.jab-2"],
+    "StraightPunch": "inferno.cross",
+    "Hook": ["inferno.hook-1", "inferno.hook-2"],
+    "FrontKick": "inferno.front-kick",
+    "SideKick": "inferno.side-kick",
+    "SpinningKick": "inferno.spin-kick",
+    "JumpingFrontKick": "inferno.jump-kick"
   }
 }

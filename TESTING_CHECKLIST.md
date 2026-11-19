@@ -641,3 +641,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] E Wind Blade: he spins with his wings spread as blades and cuts everyone close four times.
 - [ ] F Tornado Surge: a tornado leaves his hands, lifts the enemy it hits, vanishes, and they fall and take damage.
 - [ ] No ability description anywhere says it is an alternative to another ability.
+
+### Kenshiro stance and combo, unique idles and attacks (21/11/2026, TD-126)
+- [ ] Kenshiro carries one katana, held in both hands, blade pointing forward at the belly in idle; walking glides with the sword steady; relaxed it lowers.
+- [ ] J combo: horizontal slash, second horizontal slash back the other way, rising diagonal slash, then a downward finishing cut that knocks down.
+- [ ] Vexoris (karate), Aerion (airy), Inferno (restless bounce), Kenshiro (samurai) each stand differently, and no two fighters share an attack animation.

@@ -46,9 +46,9 @@ describe('2. Inferno: fire element, taekwondo style, its own profiles', () => {
     expect(d.combatStyle).toBe('taekwondo');
     expect(d.animation.clipIds.RoundhouseKick).toEqual(['inferno.fire-roundhouse']); // Inferno-specific
     expect(d.animation.source.RoundhouseKick).toBe('character');
-    expect(d.animation.clipIds.FrontKick).toEqual(['tkd.front-kick']); // taekwondo style
-    expect(d.animation.source.FrontKick).toBe('style');
-    expect(d.animation.clipIds.Idle).toEqual(['proc.idle.taekwondo']);
+    expect(d.animation.clipIds.FrontKick).toEqual(['inferno.front-kick']); // Inferno-specific (no fighter shares a clip)
+    expect(d.animation.source.FrontKick).toBe('character');
+    expect(d.animation.clipIds.Idle).toEqual(['proc.idle.pyro']); // its own idle stance
     expect(d.animation.clipIds.ClashFinisher).toEqual(['inferno.flame-uppercut']);
     expect(d.animation.source.Uppercut).toBe('default');
   });

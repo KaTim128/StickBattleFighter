@@ -160,14 +160,14 @@ describe('Kenshiro combo, heavy and Sword Mastery', () => {
     knockbackResistance: 0,
   };
 
-  it('a four-hit sword combo ending in a powerful finishing cut, and an overhead slash heavy', () => {
+  it('three slashes (horizontal, second horizontal, rising diagonal) then a powerful downward finishing cut, and an overhead slash heavy', () => {
     const chain: string[] = [];
     let id: string | undefined = set.starters.tap;
     while (id && !chain.includes(id)) {
       chain.push(id);
       id = (set.moves.find((m) => m.id === id) as { next?: { tap?: string } } | undefined)?.next?.tap;
     }
-    expect(chain).toEqual(['katana-slash', 'reverse-slash', 'dual-strike', 'finishing-cut']);
+    expect(chain).toEqual(['slash-1', 'slash-2', 'rising-slash', 'finishing-cut']);
     for (const m of set.moves.filter((x) => chain.includes(x.id)))
       expect(states[m.animationState]).toMatch(/^kenshiro\./);
     expect(set.starters.heavy).toBe('overhead-cut');

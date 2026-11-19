@@ -6,6 +6,12 @@
     "SideKick": "aerion.spin-kick",
     "Hook": "aerion.wing-slash",
     "RoundhouseKick": "aerion.rising-strike",
-    "HeavyAttack": "aerion.wing-smash"
+    "HeavyAttack": "aerion.wing-smash",
+    "Idle": "proc.idle.aerial",
+    "FightingStance": "proc.idle.aerial",
+    "Turn": "proc.idle.aerial",
+    "FrontKick": "aerion.front-kick",
+    "JumpingFrontKick": "aerion.jump-kick",
+    "DownwardAerialKick": "aerion.dive-kick"
   }
 }

@@ -116,7 +116,16 @@ export const HEAVYWEIGHT_STANCE = {
 } as const;
 
 /** Movement style: the stance, walk and run a fighter's Animation Profile picks (via its Idle clip). */
-export type IdleStyle = 'boxer' | 'taekwondo' | 'heavyweight' | 'mage' | 'stalker';
+export type IdleStyle =
+  | 'boxer'
+  | 'taekwondo'
+  | 'heavyweight'
+  | 'mage'
+  | 'stalker'
+  | 'samurai'
+  | 'karate'
+  | 'aerial'
+  | 'pyro';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -124,6 +133,10 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.heavyweight') return 'heavyweight';
   if (clipId === 'proc.idle.mage') return 'mage';
   if (clipId === 'proc.idle.stalker') return 'stalker';
+  if (clipId === 'proc.idle.samurai') return 'samurai';
+  if (clipId === 'proc.idle.karate') return 'karate';
+  if (clipId === 'proc.idle.aerial') return 'aerial';
+  if (clipId === 'proc.idle.pyro') return 'pyro';
   return 'boxer';
 }
 
@@ -150,7 +163,87 @@ function stalkerIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * SAMURAI (Kenshiro, owner 21/11/2026: a proper samurai stance, the single katana held in both hands with the blade
+ * pointing forward): chudan-no-kamae. Upright and calm, the hands together at the belly on the hilt, the blade levelled at
+ * the opponent's throat, the front foot ahead and the weight settled between the feet. Nothing bounces; only a slow
+ * breath and the blade tip's tiny float. `lowered` (0..1) drops the blade toward the floor: the relaxed gedan carry.
+ */
+export const SAMURAI_STANCE = { leadFootX: 0.3, rearFootX: -0.3, pelvisM: 0.7, lean: -3, head: 2 } as const;
+
+function samuraiIdle(timeS: number, bones: BoneLengths, lowered = 0): Pose {
+  const s = SAMURAI_STANCE;
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.3);
+  const float = Math.sin(timeS * TAU * 0.5) * 0.008;
+  return {
+    lean: deg(s.lean + breath * 0.8),
+    head: deg(s.head),
+    // The lead hand at the belly, in front of the body; the rear hand is placed on the hilt by the view.
+    armFront: armIk(0.3 - lowered * 0.06, 0.4 + lowered * 0.2 + float, bones.upperArm, bones.foreArm),
+    armBack: armIk(0.22, 0.44, bones.upperArm, bones.foreArm),
+    legFront: legIk(s.leadFootX, s.pelvisM - breath * 0.006, bones.thigh, bones.shin),
+    legBack: legIk(s.rearFootX, s.pelvisM - breath * 0.006, bones.thigh, bones.shin),
+  };
+}
+
+/**
+ * KARATE (Vexoris, a disciplined hard style): a deep, grounded front stance, the lead hand open and forward at chest height
+ * guarding the line, the rear fist drawn to the hip ready to drive, hips low and square, no bounce: a slow, controlled breath
+ * and a small rock forward and back.
+ */
+function karateIdle(timeS: number, bones: BoneLengths): Pose {
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.4);
+  const rock = Math.sin(timeS * TAU * 0.25) * 0.012;
+  return {
+    lean: deg(-5 + breath * 1),
+    head: deg(5),
+    armFront: armIk(0.34, 0.22 + breath * 0.01, bones.upperArm, bones.foreArm),
+    armBack: armIk(0.02, 0.5, bones.upperArm, bones.foreArm),
+    legFront: legIk(0.42 + rock, 0.6 - breath * 0.008, bones.thigh, bones.shin),
+    legBack: legIk(-0.36 + rock, 0.6 - breath * 0.008, bones.thigh, bones.shin),
+  };
+}
+
+/**
+ * AERIAL (Aerion): weightless and tall, almost on his toes, the legs long and close, the rear foot trailing, the arms
+ * held a little out from the body like wings settling, the head high; he drifts gently up and down and side to side.
+ */
+function aerialIdle(timeS: number, bones: BoneLengths): Pose {
+  const drift = Math.sin(timeS * TAU * 0.55);
+  const sway = Math.sin(timeS * TAU * 0.27);
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-2 + sway * 1.5),
+    head: deg(-3),
+    armFront: { root: deg(34 + drift * 3), bend: deg(24) },
+    armBack: { root: deg(-26 - drift * 3), bend: deg(20) },
+    legFront: legIk(0.12 + sway * 0.015, legs * 0.97 + drift * 0.01, bones.thigh, bones.shin),
+    legBack: legIk(-0.22, legs * 0.97 + drift * 0.01 - 0.07, bones.thigh, bones.shin),
+  };
+}
+
+/**
+ * PYRO (Inferno): a restless, bouncy stance, quicker than any other: the weight flicking from foot to foot, both hands
+ * low and open at the sides like they are holding heat, palms forward, the chin up and the shoulders rolling.
+ */
+function pyroIdle(timeS: number, bones: BoneLengths): Pose {
+  const hop = 0.5 + 0.5 * Math.sin(timeS * TAU * 3);
+  const shift = Math.sin(timeS * TAU * 1.5);
+  return {
+    lean: deg(-6 + shift * 2),
+    head: deg(12),
+    armFront: { root: deg(62 + hop * 6), bend: deg(54) },
+    armBack: { root: deg(30 - hop * 4), bend: deg(64) },
+    legFront: legIk(0.24 + shift * 0.03, 0.69 - hop * 0.045, bones.thigh, bones.shin),
+    legBack: legIk(-0.32 - shift * 0.03, 0.69 - hop * 0.045, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'samurai') return samuraiIdle(timeS, bones);
+  if (style === 'karate') return karateIdle(timeS, bones);
+  if (style === 'aerial') return aerialIdle(timeS, bones);
+  if (style === 'pyro') return pyroIdle(timeS, bones);
   if (style === 'stalker') return stalkerIdle(timeS, bones);
   if (style === 'mage') {
     // MAGE STANCE (owner, 12/11/2026, Necro: "a straight, confident idle stance, using the staff as
@@ -285,6 +378,22 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'samurai') {
+    // Suriashi: a gliding, level walk, the hips steady and low, the feet barely leaving the floor, the sword held still in
+    // front of the belly the whole way.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.68,
+      bob: 0.004,
+      leadX: 0.1,
+      rearX: -0.12,
+      reach: 0.19 * k,
+      lift: 0.025,
+      lean: -3,
+      sway: 0.4,
+      head: 2,
+      arms: { lead: { x: 0.3, y: 0.4 }, rear: { x: 0.22, y: 0.44 }, swingX: 0.0, swingY: 0.0 },
+    });
+  }
   if (style === 'stalker') {
     // A creeping prowl: bent over, knees soft, feet kept low, the knife hand low in front barely
     // moving while the free arm swings loose and limp.
@@ -337,7 +446,9 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
  */
 export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
   // The mage keeps his staff stance; the stalker never stands up straight.
-  if (style === 'mage' || style === 'stalker') return idlePose(timeS, bones, style);
+  if (style === 'mage' || style === 'stalker' || style === 'karate' || style === 'aerial' || style === 'pyro')
+    return idlePose(timeS, bones, style);
+  if (style === 'samurai') return samuraiIdle(timeS, bones, 1);
   const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.3);
   const shift = Math.sin(timeS * TAU * 0.11);
   const legs = bones.thigh + bones.shin;
@@ -545,16 +656,33 @@ const STALKER_RUN: RunStyle = {
   pumpBack: { shoulder: -40, elbow: 40 },
 };
 
+/** SAMURAI RUN: upright and level, a long low stride, the sword carried steady in both hands in front of the body. */
+const SAMURAI_RUN: RunStyle = {
+  pelvisM: 0.66,
+  bob: 0.02,
+  reachM: 0.34,
+  pushM: 0.36,
+  stance: 0.42,
+  swingLiftM: 0.3,
+  lean: -9,
+  drive: 3,
+  head: 3,
+  pumpFront: { shoulder: 66, elbow: 92 },
+  pumpBack: { shoulder: 62, elbow: 96 },
+};
+
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'heavyweight'
-    ? sprint
-      ? HEAVY_SPRINT
-      : HEAVY_RUN
-    : style === 'stalker'
-      ? STALKER_RUN
-      : sprint
-        ? SPRINT_STYLE
-        : RUN;
+  style === 'samurai'
+    ? SAMURAI_RUN
+    : style === 'heavyweight'
+      ? sprint
+        ? HEAVY_SPRINT
+        : HEAVY_RUN
+      : style === 'stalker'
+        ? STALKER_RUN
+        : sprint
+          ? SPRINT_STYLE
+          : RUN;
 
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {

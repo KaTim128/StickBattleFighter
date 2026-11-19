@@ -878,3 +878,6 @@ Done: Kenshiro playable (samurai skin, two katana, combo, overhead heavy, Sword 
 
 ## 21/11/2026: Aerion rework (TD-125)
 Done: Sky Dive flight arc, Tornado Surge, spinning Wind Blade, description wording rule and test. Gate: biome, typecheck, vitest. Next: deploy, owner review, then Psion, Geargrind, Reson, Chronos.
+
+## 21/11/2026: Kenshiro single katana and combo, unique idles and attacks (TD-126)
+Done: one two-handed katana, samurai idle/walk/run, new three slashes plus downward finisher, thrust/aerial/plunge, new idle styles for Kenshiro/Vexoris/Aerion/Inferno, unique clips for all, uniqueness test. Gate: biome, typecheck, vitest 1054, menu and front-end e2e 18 passed. Next: deploy, owner review, then Psion.

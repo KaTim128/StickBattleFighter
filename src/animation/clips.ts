@@ -37,6 +37,10 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.mage',
   'proc.idle.heavyweight',
   'proc.idle.stalker',
+  'proc.idle.samurai',
+  'proc.idle.karate',
+  'proc.idle.aerial',
+  'proc.idle.pyro',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -256,81 +260,205 @@ const STRIKES = {
     { lean: deg(-4), head: deg(-4), armFront: limb(120, 40), armBack: limb(120, 40), legFront: limb(26, -22) },
   ),
 
-  // ---- Kenshiro's sword combo (spec section 4): precise, economical cuts with the blade in the lead hand.
-  // 1. Horizontal katana slash: a flat draw cut from the hip across the body.
-  'kenshiro.slash': strike(
-    { lean: deg(-6), head: deg(4), armFront: limb(-30, 80), armBack: limb(40, 110), legFront: limb(28, -30) },
-    {
-      lean: deg(-28),
-      head: deg(8),
-      armFront: limb(98, 4),
-      armBack: limb(20, 120),
-      legFront: limb(44, -36),
-      legBack: limb(-30, -10),
-    },
+  // ---- Kenshiro's sword clips (owner 21/11/2026): one katana held in both hands, only the lead arm is posed (the view puts
+  // the rear hand on the hilt). Each cut is its own motion; none is shared with another fighter.
+  // 1. Horizontal slash: from the right hip, a flat cut level across the body.
+  'kenshiro.slash-1': strike(
+    { lean: deg(8), head: deg(0), armFront: limb(-40, 60), legFront: limb(26, -30), legBack: limb(-22, -20) },
+    { lean: deg(-30), head: deg(8), armFront: limb(100, 4), legFront: limb(46, -40), legBack: limb(-34, -10) },
   ),
-  // 2. Reverse diagonal slash: back up across the same line, high to low.
-  'kenshiro.reverse': strike(
-    { lean: deg(-22), head: deg(10), armFront: limb(130, 40), armBack: limb(30, 110), legFront: limb(34, -34) },
-    {
-      lean: deg(-10),
-      head: deg(2),
-      armFront: limb(30, 6),
-      armBack: limb(60, 100),
-      legFront: limb(30, -26),
-      legBack: limb(-34, -14),
-    },
+  // 2. Second horizontal slash: straight back the other way, a backhand cut swept past the hip.
+  'kenshiro.slash-2': strike(
+    { lean: deg(-24), head: deg(6), armFront: limb(96, 6), legFront: limb(46, -40), legBack: limb(-34, -10) },
+    { lean: deg(14), head: deg(-4), armFront: limb(-46, 14), legFront: limb(30, -34), legBack: limb(-40, -22) },
   ),
-  // 3. Dual blade strike: both swords cross the body together in a scissoring cut.
-  'kenshiro.dual': strike(
-    { lean: deg(-14), head: deg(8), armFront: limb(-40, 60), armBack: limb(140, 60), legFront: limb(30, -32) },
-    {
-      lean: deg(-30),
-      head: deg(10),
-      armFront: limb(100, 4),
-      armBack: limb(90, 8),
-      legFront: limb(48, -40),
-      legBack: limb(-34, -12),
-    },
+  // 3. Rising diagonal slash: from low by the hip, up and across to above the head, the body lifting with it.
+  'kenshiro.rising': strike(
+    { lean: deg(-32), head: deg(10), armFront: limb(-10, 40), legFront: limb(52, -90), legBack: limb(-20, -70) },
+    { lean: deg(-6), head: deg(-4), armFront: limb(166, 6), legFront: limb(26, -22), legBack: limb(-18, -14) },
   ),
-  // 4. Powerful finishing cut: a deep lunge, the whole body behind one diagonal cut.
+  // 4. Powerful finishing cut: sword high overhead, then a deep stepping lunge and one great downward cut.
   'kenshiro.finish': strike(
+    { lean: deg(14), head: deg(-8), armFront: limb(176, 10), legFront: limb(28, -30), legBack: limb(-24, -22) },
+    { lean: deg(-52), head: deg(24), armFront: limb(62, 4), legFront: limb(66, -54), legBack: limb(-50, -14) },
+  ),
+  // Heavy: a deliberate overhead cut from a high stance, the blade drawn back behind the head, held, then dropped.
+  'kenshiro.overhead': strike(
+    { lean: deg(18), head: deg(-12), armFront: limb(150, 80), legFront: limb(24, -26), legBack: limb(-20, -18) },
+    { lean: deg(-44), head: deg(20), armFront: limb(76, 4), legFront: limb(58, -56), legBack: limb(-44, -16) },
+    { lean: deg(8), head: deg(-6), armFront: limb(168, 30), legFront: limb(26, -24) },
+  ),
+  // Forward tap: a lunging thrust straight at the throat.
+  'kenshiro.thrust': strike(
+    { lean: deg(-6), head: deg(2), armFront: limb(30, 110), legFront: limb(22, -26), legBack: limb(-20, -18) },
+    { lean: deg(-50), head: deg(16), armFront: limb(92, 0), legFront: limb(64, -48), legBack: limb(-48, -10) },
+  ),
+  // In the air: a diagonal cut carried through the jump.
+  'kenshiro.air-slash': strike(
+    { lean: deg(-10), head: deg(4), armFront: limb(150, 30), legFront: limb(60, -110), legBack: limb(30, -100) },
+    { lean: deg(-34), head: deg(14), armFront: limb(76, 4), legFront: limb(50, -90), legBack: limb(10, -80) },
+  ),
+  // Falling: the blade driven straight down, point first.
+  'kenshiro.plunge': strike(
+    { lean: deg(-8), head: deg(0), armFront: limb(172, 20), legFront: limb(50, -100), legBack: limb(20, -90) },
+    { lean: deg(-26), head: deg(16), armFront: limb(14, 0), legFront: limb(30, -80), legBack: limb(-6, -70) },
+  ),
+
+  // ---- Inferno's fire style (spec REQ-ANI-7: no fighter shares a clip): hot, direct, explosive.
+  'inferno.jab-1': strike(
+    { lean: deg(-4), armFront: limb(60, 120), armBack: limb(40, 130), legFront: limb(24, -26) },
+    {
+      lean: deg(-26),
+      head: deg(6),
+      armFront: limb(94, 2),
+      armBack: limb(30, 130),
+      legFront: limb(40, -32),
+      legBack: limb(-26, -10),
+    },
+  ),
+  'inferno.jab-2': strike(
+    { lean: deg(0), armFront: limb(30, 110), armBack: limb(50, 120), legFront: limb(20, -24) },
+    {
+      lean: deg(-22),
+      head: deg(4),
+      armFront: limb(104, 10),
+      armBack: limb(36, 126),
+      legFront: limb(36, -30),
+      legBack: limb(-20, -8),
+    },
+  ),
+  'inferno.cross': strike(
     {
       lean: deg(8),
-      head: deg(-6),
-      armFront: limb(160, 30),
-      armBack: limb(140, 50),
-      legFront: limb(30, -36),
-      legBack: limb(-24, -24),
+      armFront: limb(40, 120),
+      armBack: limb(-20, 100),
+      legFront: limb(22, -24),
+      legBack: limb(-26, -26),
     },
     {
-      lean: deg(-48),
-      head: deg(22),
-      armFront: limb(56, 4),
-      armBack: limb(30, 40),
-      legFront: limb(64, -50),
-      legBack: limb(-48, -14),
+      lean: deg(-34),
+      head: deg(10),
+      armFront: limb(54, 124),
+      armBack: limb(96, 2),
+      legFront: limb(36, -26),
+      legBack: limb(-34, -6),
     },
   ),
-  // Heavy: a deliberate overhead cut: both hands high, held, then down through the target.
-  'kenshiro.overhead': strike(
+  'inferno.hook-1': strike(
+    { lean: deg(-18), armFront: limb(30, 90), armBack: limb(70, 100), legFront: limb(30, -30) },
     {
-      lean: deg(12),
+      lean: deg(16),
+      head: deg(-6),
+      armFront: limb(100, 60),
+      armBack: limb(44, 120),
+      legFront: limb(36, -30),
+      legBack: limb(-30, -18),
+    },
+  ),
+  'inferno.hook-2': strike(
+    { lean: deg(-22), armFront: limb(-10, 80), armBack: limb(60, 100), legFront: limb(28, -28) },
+    {
+      lean: deg(20),
       head: deg(-8),
-      armFront: limb(176, 14),
-      armBack: limb(170, 18),
-      legFront: limb(28, -30),
-      legBack: limb(-22, -20),
+      armFront: limb(110, 50),
+      armBack: limb(40, 120),
+      legFront: limb(40, -32),
+      legBack: limb(-36, -16),
+    },
+  ),
+  'inferno.front-kick': strike(
+    { lean: deg(6), legFront: limb(70, -120), armFront: limb(80, 100), armBack: limb(30, 120) },
+    { lean: deg(-18), legFront: limb(96, -4), legBack: limb(-8, -10), armFront: limb(60, 110), armBack: limb(20, 130) },
+  ),
+  'inferno.side-kick': strike(
+    { lean: deg(-8), legFront: limb(80, -118), armFront: limb(90, 100), armBack: limb(20, 120) },
+    {
+      lean: deg(-26),
+      legFront: limb(92, -2),
+      legBack: limb(-14, -16),
+      armFront: limb(100, 90),
+      armBack: limb(-10, 120),
+    },
+  ),
+  'inferno.spin-kick': strike(
+    {
+      lean: deg(-32),
+      head: deg(20),
+      legFront: limb(26, -50),
+      legBack: limb(-30, -60),
+      armFront: limb(-30, 90),
+      armBack: limb(60, 90),
     },
     {
-      lean: deg(-42),
-      head: deg(20),
-      armFront: limb(70, 4),
-      armBack: limb(60, 8),
-      legFront: limb(58, -56),
-      legBack: limb(-44, -16),
+      lean: deg(22),
+      head: deg(-14),
+      legFront: limb(30, -20),
+      legBack: limb(104, -6),
+      armFront: limb(110, 40),
+      armBack: limb(-60, 40),
     },
-    { lean: deg(6), head: deg(-4), armFront: limb(150, 30), armBack: limb(146, 34), legFront: limb(26, -26) },
+  ),
+  'inferno.jump-kick': strike(
+    {
+      lean: deg(-6),
+      legFront: limb(76, -120),
+      legBack: limb(40, -110),
+      armFront: limb(80, 100),
+      armBack: limb(40, 120),
+    },
+    {
+      lean: deg(-22),
+      legFront: limb(98, -6),
+      legBack: limb(34, -100),
+      armFront: limb(60, 110),
+      armBack: limb(20, 130),
+    },
+  ),
+
+  // ---- Vexoris's karate: grounded, short, hard.
+  'vexoris.front-kick': strike(
+    { lean: deg(-4), legFront: limb(60, -110), armFront: limb(84, 40), armBack: limb(-2, 130) },
+    { lean: deg(-14), legFront: limb(88, -2), legBack: limb(-10, -8), armFront: limb(70, 40), armBack: limb(0, 130) },
+  ),
+  'vexoris.jump-kick': strike(
+    { lean: deg(-4), legFront: limb(70, -116), legBack: limb(34, -104), armFront: limb(90, 50), armBack: limb(0, 120) },
+    { lean: deg(-18), legFront: limb(94, -2), legBack: limb(30, -96), armFront: limb(80, 50), armBack: limb(4, 124) },
+  ),
+  'vexoris.stomp': strike(
+    { lean: deg(-6), legFront: limb(50, -118), legBack: limb(24, -100), armFront: limb(70, 60), armBack: limb(0, 120) },
+    { lean: deg(-20), legFront: limb(70, -6), legBack: limb(10, -80), armFront: limb(60, 70), armBack: limb(0, 124) },
+  ),
+
+  // ---- Aerion's air style: light, sweeping, with the wings.
+  'aerion.front-kick': strike(
+    { lean: deg(4), legFront: limb(64, -112), armFront: limb(120, 40), armBack: limb(-50, 40) },
+    {
+      lean: deg(-16),
+      legFront: limb(92, -4),
+      legBack: limb(-14, -14),
+      armFront: limb(140, 30),
+      armBack: limb(-70, 30),
+    },
+  ),
+  'aerion.jump-kick': strike(
+    {
+      lean: deg(8),
+      legFront: limb(72, -118),
+      legBack: limb(40, -108),
+      armFront: limb(130, 40),
+      armBack: limb(-60, 40),
+    },
+    { lean: deg(-12), legFront: limb(98, -6), legBack: limb(20, -90), armFront: limb(150, 30), armBack: limb(-80, 30) },
+  ),
+  'aerion.dive-kick': strike(
+    { lean: deg(0), legFront: limb(50, -100), legBack: limb(26, -90), armFront: limb(150, 30), armBack: limb(-60, 30) },
+    {
+      lean: deg(-44),
+      legFront: limb(30, -10),
+      legBack: limb(14, -12),
+      armFront: limb(-30, 20),
+      armBack: limb(-40, 20),
+    },
   ),
 
   // ---- Standard kicks (shared default: a plain, readable version of each).

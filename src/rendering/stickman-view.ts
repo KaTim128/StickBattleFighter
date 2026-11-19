@@ -43,6 +43,9 @@ const FLAME = { glow: 0xff5a14, ember: 0x6a1404, deep: 0xd8320c, core: 0xffd56a 
 
 /** How far Shroud's knife is cocked up from the forearm (radians). */
 const KNIFE_TILT_RAD = (50 * Math.PI) / 180;
+/** The katana's line is the lead forearm tilted this far up (counter-clockwise on screen), and its length, metres. */
+const KATANA_TILT_RAD = (-14 * Math.PI) / 180;
+const KATANA_LENGTH_M = 0.95;
 
 export class StickmanView {
   private last: { s: ReturnType<typeof solveSkeleton>; facing: 1 | -1; heightM: number; rot: number } | null = null;
@@ -207,10 +210,12 @@ export class StickmanView {
     flashColour = 0xffffff,
     dodge: DodgeLook = {},
   ): void {
-    const s =
+    const solved =
       this.turn > 0
         ? turnSkeleton(solveSkeleton(pose, this.bones), this.bones, this.turn, this.shoulderSpread)
         : solveSkeleton(pose, this.bones);
+    // A katana is always held in both hands: the rear hand follows the lead hand onto the hilt.
+    const s = this.held === 'katana' ? this.gripHilt(solved) : solved;
     this.last = { s, facing, heightM, rot: -facing * tiltRad };
     const { limbWidthM: w, outlineWidthM: o } = this.look;
     const limb = toward(this.look.limb, flashColour, flash);
@@ -974,58 +979,112 @@ export class StickmanView {
    * guard, and a red stain toward the tip.
    */
   /**
-   * A katana: a wrapped hilt in the fist, a round guard, and a long, slim, slightly curved blade with a bright edge and a
-   * darker spine, cocked `tilt` radians up from the forearm line. `len` is the blade's length, metres.
+   * Puts the rear hand on the hilt behind the lead hand (a two-handed grip): the sword's line is the lead forearm's
+   * direction tilted up a little, the rear hand sits 0.17 m back along it, and the rear arm bends to reach it.
    */
-  private drawKatana(g: Graphics, hand: Point, fx: number, fy: number, tilt: number, len: number, o: number): void {
-    const c = Math.cos(tilt);
-    const sn = Math.sin(tilt);
-    const ux = fx * c - fy * sn;
-    const uy = fx * sn + fy * c;
+  private gripHilt(s: ReturnType<typeof solveSkeleton>): ReturnType<typeof solveSkeleton> {
+    const [, e, h] = s.armFront;
+    const fx = h.x - e.x;
+    const fy = h.y - e.y;
+    const len = Math.hypot(fx, fy) || 1;
+    const c = Math.cos(KATANA_TILT_RAD);
+    const sn = Math.sin(KATANA_TILT_RAD);
+    const ux = (fx / len) * c - (fy / len) * sn;
+    const uy = (fx / len) * sn + (fy / len) * c;
+    const shoulder = s.armBack[0];
+    const target = { x: h.x - ux * 0.17, y: h.y - uy * 0.17 };
+    const l1 = this.bones.upperArm;
+    const l2 = this.bones.foreArm;
+    let dx = target.x - shoulder.x;
+    let dy = target.y - shoulder.y;
+    let d = Math.hypot(dx, dy);
+    const reach = l1 + l2 - 0.002;
+    if (d > reach) {
+      dx *= reach / d;
+      dy *= reach / d;
+      d = reach;
+    }
+    const hand = { x: shoulder.x + dx, y: shoulder.y + dy };
+    // The elbow: the point l1 from the shoulder and l2 from the hand, on the lower side of the line (elbow down).
+    const a = (l1 * l1 - l2 * l2 + d * d) / (2 * Math.max(d, 1e-6));
+    const hh = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+    const mx = shoulder.x + (dx / Math.max(d, 1e-6)) * a;
+    const my = shoulder.y + (dy / Math.max(d, 1e-6)) * a;
+    const nx = -dy / Math.max(d, 1e-6);
+    const ny = dx / Math.max(d, 1e-6);
+    const sign = ny > 0 ? 1 : -1; // pick the normal that points down the screen
+    const elbow = { x: mx + nx * hh * sign, y: my + ny * hh * sign };
+    return { ...s, armBack: [shoulder, elbow, hand] } as ReturnType<typeof solveSkeleton>;
+  }
+
+  /**
+   * The katana (Kenshiro): one sword held in both hands. A dark wrapped hilt runs from behind the rear hand through the
+   * lead hand, a round gold-rimmed guard sits just beyond it, and a long, slim, slightly curved blade carries on in the line of
+   * the hands. A subtle crimson glow runs along the blade under Focus Stance.
+   */
+  private drawKatana(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number): void {
+    const [, e, front] = s.armFront;
+    const rear = s.armBack[2];
+    const fx = front.x - rear.x;
+    const fy = front.y - rear.y;
+    const fl = Math.hypot(fx, fy);
+    // The sword's line: through both hands when they are apart, else along the lead forearm.
+    const ax = fl > 0.03 ? fx / fl : front.x - e.x;
+    const ay = fl > 0.03 ? fy / fl : front.y - e.y;
+    const al = Math.hypot(ax, ay) || 1;
+    const ux = ax / al;
+    const uy = ay / al;
     const nx = -uy;
     const ny = ux;
-    const at = (k: number, side: number) => ({ x: hand.x + ux * k + nx * side, y: hand.y + uy * k + ny * side });
-    // The hilt: dark wrap with crimson ties.
-    g.moveTo(at(-0.16, 0).x, at(-0.16, 0).y)
+    const len = KATANA_LENGTH_M;
+    const at = (k: number, side: number) => ({ x: front.x + ux * k + nx * side, y: front.y + uy * k + ny * side });
+    // Hilt: from just behind the rear hand through the lead hand.
+    const pommel = { x: rear.x - ux * 0.05, y: rear.y - uy * 0.05 };
+    g.moveTo(pommel.x, pommel.y)
       .lineTo(at(0.03, 0).x, at(0.03, 0).y)
       .stroke({ width: 0.05 + o * 2, color: 0x0a0204, cap: 'round' });
-    g.moveTo(at(-0.16, 0).x, at(-0.16, 0).y)
+    g.moveTo(pommel.x, pommel.y)
       .lineTo(at(0.03, 0).x, at(0.03, 0).y)
       .stroke({ width: 0.04, color: 0x3a0c14, cap: 'round' });
-    for (const k of [-0.12, -0.07, -0.02]) {
-      g.moveTo(at(k, -0.02).x, at(k, -0.02).y)
-        .lineTo(at(k + 0.02, 0.02).x, at(k + 0.02, 0.02).y)
+    for (let k = 0; k < 4; k++) {
+      const t0 = k / 4;
+      const px = pommel.x + (front.x + ux * 0.03 - pommel.x) * t0;
+      const py = pommel.y + (front.y + uy * 0.03 - pommel.y) * t0;
+      g.moveTo(px - nx * 0.022, py - ny * 0.022)
+        .lineTo(px + ux * 0.02 + nx * 0.022, py + uy * 0.02 + ny * 0.022)
         .stroke({ width: 0.01, color: 0xb8202e, cap: 'round' });
     }
-    // The blade: slim, with a slight upward curve (the tip lifts toward the edge side).
-    const bow = len * 0.04;
+    // The blade.
+    const bow = len * 0.035;
     const blade = [
-      at(0.04, 0.022),
+      at(0.06, 0.022),
       at(len * 0.5, 0.02 + bow),
       at(len, bow * 1.4),
       at(len * 0.5, -0.012 + bow * 0.6),
-      at(0.04, -0.016),
+      at(0.06, -0.016),
     ];
     const flat = blade.flatMap((q) => [q.x, q.y]);
     g.poly(flat).fill(0x2a2f38);
     g.poly(flat).stroke({ width: o * 1.5 + 0.006, color: 0x0a0204, join: 'round' });
     const edge = [
-      at(0.05, 0.02),
+      at(0.07, 0.02),
       at(len * 0.5, 0.018 + bow),
       at(len * 0.98, bow * 1.4),
       at(len * 0.5, 0.004 + bow),
-      at(0.05, 0.004),
+      at(0.07, 0.004),
     ];
     g.poly(edge.flatMap((q) => [q.x, q.y])).fill(0xdfe6ee);
-    g.moveTo(at(0.06, 0.012).x, at(0.06, 0.012).y)
+    g.moveTo(at(0.08, 0.012).x, at(0.08, 0.012).y)
       .lineTo(at(len * 0.92, 0.012 + bow * 1.2).x, at(len * 0.92, 0.012 + bow * 1.2).y)
       .stroke({ width: 0.007, color: 0xffffff, alpha: 0.95, cap: 'round' });
-    // The guard (tsuba): a small round disc, gold-rimmed.
-    g.circle(at(0.04, 0).x, at(0.04, 0).y, 0.045).fill(0x1a0a0c);
-    g.circle(at(0.04, 0).x, at(0.04, 0).y, 0.045).stroke({ width: 0.012, color: 0xc9a34a });
-    // A subtle crimson glow runs along the blade while a Focus Stance is held.
+    // The guard (tsuba).
+    g.circle(at(0.05, 0).x, at(0.05, 0).y, 0.048).fill(0x1a0a0c);
+    g.circle(at(0.05, 0).x, at(0.05, 0).y, 0.048).stroke({ width: 0.012, color: 0xc9a34a });
+    // The rear fist on the hilt.
+    g.circle(rear.x, rear.y, 0.04).fill(0x1b1315);
+    g.circle(rear.x, rear.y, 0.04).stroke({ width: 0.01, color: 0x0a0204 });
     if (this.focus > 0.01) {
-      g.moveTo(at(0.06, 0.005).x, at(0.06, 0.005).y)
+      g.moveTo(at(0.08, 0.005).x, at(0.08, 0.005).y)
         .lineTo(at(len, bow * 1.4).x, at(len, bow * 1.4).y)
         .stroke({ width: 0.05, color: 0xff3a48, alpha: 0.28 * this.focus, cap: 'round' });
     }
@@ -1426,13 +1485,7 @@ export class StickmanView {
       return;
     }
     if (this.held === 'katana') {
-      // Two swords (Kenshiro): a long katana in the lead hand pointing forward and a little up, and a shorter companion blade cocked back in the rear hand.
-      this.drawKatana(g, hand, ux, uy, -0.22, 1.2, o);
-      const [, be, bh] = s.armBack;
-      const bx = bh.x - be.x;
-      const by = bh.y - be.y;
-      const bl = Math.hypot(bx, by) || 1;
-      this.drawKatana(g, bh, bx / bl, by / bl, -0.5, 0.62, o);
+      this.drawKatana(g, s, o);
       return;
     }
     // Grave blade: one clean tapered blade of dark violet obsidian with a pale cutting edge (it
