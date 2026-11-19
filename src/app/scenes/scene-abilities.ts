@@ -3,13 +3,10 @@ import {
   type AbilityDef,
   type AbilityPayload,
   type AbilitySlot,
-  type ArsenalDelivery,
   type BuffEffect,
   type Burn,
   finisherFactor,
-  type ShieldSpec,
   type SummonSpec,
-  type WeaponKind,
 } from '../../abilities/ability-def';
 import {
   type AbilityFx,
@@ -18,7 +15,7 @@ import {
   AbilityWorld,
   type Vec2,
 } from '../../abilities/ability-world';
-import { ARSENAL_MOVESETS } from '../../data/abilities/crystal-arsenal';
+import { FISTS_MOVESET } from '../../data/abilities/crystal-arsenal';
 import type { ImpactId } from '../../data/combat/impacts';
 import type { ArenaProps } from '../../environment/arena-props';
 import { type BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
@@ -64,10 +61,6 @@ const MOVEMENT_DELIVERIES: ReadonlySet<string> = new Set([
   'assault',
   'judgement',
 ]);
-/** A Crystal Guard has no timer (it ends when spent, broken by a blow, or replaced), so its clock is simply long. */
-const GUARD_FOREVER_S = 1e9;
-/** How fast he walks behind a held Crystal Guard. */
-const GUARD_MOVE_FACTOR = 0.8;
 
 export class SceneAbilities implements AbilityHost {
   readonly world = new AbilityWorld();
@@ -353,7 +346,6 @@ export class SceneAbilities implements AbilityHost {
     // or its own drive and the grab's would fight and fling both round the arena. The stun keeps it
     // from starting anything new until it is slammed down.
     f.caster?.interrupt(true);
-    f.guardBurst = null; // a grabbed guard just breaks: no burst
     f.combatant.dropCrystalShield(); // a grab ignores a shield: it shatters
     this.world.cancel(f.name, this);
     f.scriptedAttack = null;
@@ -455,8 +447,6 @@ export class SceneAbilities implements AbilityHost {
         seconds: buff.durationS,
         heavyFactor: 1,
       });
-      f.guardBurst = null; // the Sovereign's small shield just breaks
-      f.shieldMove = 1;
     }
     // Hunting Frenzy puts the lights out on every enemy for as long as it lasts.
     if (buff?.darkensFoes)
@@ -464,62 +454,21 @@ export class SceneAbilities implements AbilityHost {
         if (o.team !== f.team && !o.combatant.isKo) o.combatant.darken(buff.durationS, buff.darkensFoes.visibleM);
   }
 
-  shield(casterId: string, spec: ShieldSpec | null): void {
+  /** Crystal Arsenal: the fists turn to crystal for `durationS`; the moveset swap is the fists' own. */
+  arm(casterId: string, durationS: number): void {
     const f = this.byName(casterId);
     if (!f) return;
-    if (!spec) {
-      f.combatant.dropCrystalShield();
-      f.guardBurst = null;
-      f.shieldMove = 1;
-      return;
-    }
-    // The guard lasts until its durability is spent, he is hurt, or he uses another ability: no timer.
-    f.combatant.raiseCrystalShield({ hp: spec.hp, hits: 0, seconds: GUARD_FOREVER_S, heavyFactor: spec.heavyFactor });
-    f.guardBurst = spec.burst;
-    f.shieldMove = GUARD_MOVE_FACTOR;
+    f.heldWeapon = 'fists';
+    f.weaponLeftS = durationS;
+    f.combo.useMoveset(FISTS_MOVESET.moves, FISTS_MOVESET.starters);
   }
 
-  arm(casterId: string, kind: WeaponKind, d: ArsenalDelivery): void {
-    const f = this.byName(casterId);
-    if (!f) return;
-    this.disarm(f);
-    f.heldWeapon = kind;
-    const set = ARSENAL_MOVESETS[kind];
-    f.combo.useMoveset(set.moves, set.starters);
-    if (kind === 'guard') this.shield(casterId, { hp: d.guardHp, heavyFactor: 2, burst: d.guardBurst });
-  }
-
-  /** The crystal weapon in his hands is gone (it shattered, or he used another ability): his own taps and heavy return at once. */
+  /** The fists end (time out, a KO, or another ability): his own punches come back at once. */
   disarm(f: FighterEntity): void {
     if (!f.heldWeapon) return;
-    if (f.heldWeapon === 'guard') this.shield(f.name, null);
     f.heldWeapon = null;
+    f.weaponLeftS = 0;
     f.combo.resetMoveset();
-  }
-
-  trap(targetId: string, seconds: number): void {
-    const f = this.byName(targetId);
-    if (!f) return;
-    f.combatant.trapLegs(seconds);
-    if (seconds > 0) {
-      // Held where it stands: whatever it was doing with its legs stops (a charge, a dash, a leap).
-      this.world.cancel(f.name, this);
-      f.combo.interrupt();
-    }
-  }
-
-  legTrapState(targetId: string): { heightM: number; flies: boolean; trappedS: number } {
-    const f = this.byName(targetId);
-    if (!f) return { heightM: 0, flies: false, trappedS: 0 };
-    return {
-      heightM: f.hop.heightM + f.abilityLift,
-      flies: (f.view?.hoverM ?? 0) > 0 || f.abilityLift > 0.05,
-      trappedS: f.combatant.trapLeftS,
-    };
-  }
-
-  standable(at: Vec2): boolean {
-    return this.standableSource(at);
   }
 
   burnFighter(targetId: string, burn: Burn): void {

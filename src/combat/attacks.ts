@@ -63,12 +63,26 @@ export interface AttackDef {
   /** The target bounces off the floor. */
   readonly groundBounce: boolean;
   /**
-   * More blows after the first, at these seconds from the start of the move (a multi-slash heavy attack): each one checks
-   * the hit area again, so every slash can land.
+   * The blow counts only when the fist's own end touches the target's body, not anywhere along the swept reach (Prismor's
+   * moves, owner 22/11/2026). Absent = the swept area, as for every other fighter.
    */
-  readonly extraHits?: readonly number[];
-  /** A crystal weapon's swing (Prismor's Crystal Arsenal): which weapon, and which blow of its table the body poses as. */
-  readonly swing?: { readonly weapon: string; readonly index: number };
+  readonly contact?: boolean;
+}
+
+/**
+ * Does this blow touch a target whose body centre is (tx, ty) with half-width `footRadiusM`? A contact move counts only at the
+ * fist's end, so a target a little beyond the fist is not hit; every other move keeps the swept hit area.
+ */
+export function blowTouches(capsule: HitCapsule, a: AttackDef, tx: number, ty: number, footRadiusM: number): boolean {
+  if (a.contact) return Math.hypot(tx - capsule.bx, ty - capsule.by) <= a.hitRadiusM * 0.5 + footRadiusM;
+  return distanceToCapsule(capsule, tx, ty) <= a.hitRadiusM + footRadiusM;
+}
+
+/** The area a blow checks against walls, doors and furniture: the whole swept capsule, or just the fist for a contact move. */
+export function blowBox(capsule: HitCapsule, a: AttackDef): HitCapsule {
+  return a.contact
+    ? { ax: capsule.bx, ay: capsule.by, bx: capsule.bx, by: capsule.by, radius: a.hitRadiusM * 0.5 }
+    : capsule;
 }
 
 export function attackDuration(a: {

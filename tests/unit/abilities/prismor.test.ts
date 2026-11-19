@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { WEAPON_KINDS, type WeaponKind } from '../../../src/abilities/ability-def';
 import { type AbilityHost, type AbilityTarget, AbilityWorld } from '../../../src/abilities/ability-world';
 import { BUILT_IN_LIBRARY } from '../../../src/characters/library';
 import { resolveCharacter } from '../../../src/characters/resolve';
+import { type AttackDef, blowBox, blowTouches, hitCapsule } from '../../../src/combat/attacks';
 import { Combatant } from '../../../src/combat/combatant';
 import { MoveController } from '../../../src/combat/moves';
-import { ARSENAL_MOVESETS } from '../../../src/data/abilities/crystal-arsenal';
+import { FISTS_MOVESET } from '../../../src/data/abilities/crystal-arsenal';
 import { PRISMOR_KIT } from '../../../src/data/abilities/prismor';
 import prismorMoveset from '../../../src/data/characters/prismor/moveset.json';
 
@@ -14,7 +14,7 @@ import prismorMoveset from '../../../src/data/characters/prismor/moveset.json';
 /** A scripted arena: Prismor ("me") at the origin and one enemy, with every host call recorded. */
 function arena(opts: { foe?: Partial<AbilityTarget> & { heightM?: number; flies?: boolean } } = {}) {
   const log = {
-    armed: [] as WeaponKind[],
+    armed: [] as number[],
     hits: [] as { target: string; damage: number }[],
     trapped: [] as number[],
     fx: [] as string[],
@@ -41,7 +41,7 @@ function arena(opts: { foe?: Partial<AbilityTarget> & { heightM?: number; flies?
     burnFighter: () => {},
     buff: () => {},
     emit: (fx) => log.fx.push(fx.vfx),
-    arm: (_id, kind) => log.armed.push(kind),
+    arm: (_id, durationS) => log.armed.push(durationS),
     trap: (_id, seconds) => {
       log.trapped.push(seconds);
       log.trapLeft = seconds;
@@ -58,75 +58,57 @@ const run = (w: AbilityWorld, h: AbilityHost, s: number, onStep?: () => void) =>
   }
 };
 
-describe('Crystal Arsenal', () => {
+describe('Crystal Fists (Crystal Arsenal)', () => {
   it('has the five abilities and the ultimate, none of them an unarmed tap', () => {
     const ids = [PRISMOR_KIT.a1, PRISMOR_KIT.a2, PRISMOR_KIT.a3, PRISMOR_KIT.a4, PRISMOR_KIT.a5!].map((a) => a.id);
     expect(ids).toEqual(['crystalArsenal', 'crystalSlide', 'shardVolley', 'crystalPrison', 'crystalGroundstrike']);
     expect(PRISMOR_KIT.ult.id).toBe('crystalSovereign');
-    // The unarmed taps are standard combat controls: they live in the moveset, not in the ability kit.
-    for (const a of [PRISMOR_KIT.a1, PRISMOR_KIT.a2, PRISMOR_KIT.a3, PRISMOR_KIT.a4, PRISMOR_KIT.a5!])
-      expect(['arsenal', 'dash', 'projectile', 'legTrap', 'eruptions']).toContain(a.delivery.type);
   });
 
-  it('randomly generates all five weapons', () => {
+  it('casting it turns the fists to crystal for 8 seconds', () => {
     const { host, log } = arena();
-    const w = new AbilityWorld(mulberry(7));
-    for (let i = 0; i < 200; i++) w.release('me', PRISMOR_KIT.a1, { x: 3, y: 0 }, host);
-    expect(new Set(log.armed)).toEqual(new Set(WEAPON_KINDS));
-    expect(WEAPON_KINDS).toHaveLength(5);
+    const w = new AbilityWorld();
+    w.release('me', PRISMOR_KIT.a1, { x: 3, y: 0 }, host);
+    expect(log.armed).toEqual([8]);
+    const d = PRISMOR_KIT.a1.delivery;
+    expect(d.type === 'arsenal' && d.durationS).toBe(8);
   });
 
-  it('each weapon has its specified tap combo count and its own heavy attack', () => {
-    const wanted: Record<WeaponKind, number> = { greatsword: 2, warhammer: 2, lance: 3, dualBlades: 5, guard: 2 };
-    for (const kind of WEAPON_KINDS) {
-      const set = ARSENAL_MOVESETS[kind];
-      let id: string | undefined = set.starters.tap;
-      const chain: string[] = [];
-      while (id) {
-        chain.push(id);
-        id = set.moves[id]?.next.tap;
-      }
-      expect(chain.length, kind).toBe(wanted[kind]);
-      expect(set.taps).toBe(wanted[kind]);
-      const heavy = set.moves[set.starters.heavy!]!;
-      expect(heavy, kind).toBeDefined();
-      expect(heavy.swing?.weapon).toBe(kind);
+  it('the fists are a heavy moveset: a two-punch tap chain and a heavy smash, each hitting hard', () => {
+    const m = FISTS_MOVESET.moves;
+    let id: string | undefined = FISTS_MOVESET.starters.tap;
+    const chain: string[] = [];
+    while (id) {
+      chain.push(id);
+      id = m[id]?.next.tap;
     }
+    expect(chain).toHaveLength(2);
+    const heavy = m[FISTS_MOVESET.starters.heavy!]!;
+    expect(heavy.heavy).toBe(true);
+    for (const id of chain) expect(m[id]!.damage).toBeGreaterThanOrEqual(25);
+    expect(heavy.damage).toBeGreaterThan(m[chain[0]!]!.damage * 2);
   });
 
-  it('every weapon move is its own: no two share an id or a name, and the weapons differ in speed, reach and damage', () => {
-    const ids = new Set<string>();
-    const names = new Set<string>();
-    for (const kind of WEAPON_KINDS)
-      for (const m of Object.values(ARSENAL_MOVESETS[kind].moves)) {
-        expect(ids.has(m.id), m.id).toBe(false);
-        expect(names.has(m.label), m.label).toBe(false);
-        ids.add(m.id);
-        names.add(m.label);
-      }
-    const firstTap = (k: WeaponKind) => ARSENAL_MOVESETS[k].moves[ARSENAL_MOVESETS[k].starters.tap!]!;
-    expect(firstTap('dualBlades').windupS).toBeLessThan(firstTap('lance').windupS); // blades are the fastest
-    expect(firstTap('lance').windupS).toBeLessThan(firstTap('greatsword').windupS);
-    expect(firstTap('greatsword').windupS).toBeLessThan(firstTap('warhammer').windupS); // the hammer is the slowest
-    expect(firstTap('lance').reachM).toBeGreaterThan(firstTap('greatsword').reachM); // the lance reaches furthest
-    expect(firstTap('warhammer').damage).toBeGreaterThan(firstTap('dualBlades').damage * 3);
+  it('fist moves only hit when the fist touches a body (contact)', () => {
+    for (const mv of Object.values(FISTS_MOVESET.moves)) expect(mv.contact, mv.id).toBe(true);
   });
 
-  it("the Guard's second tap is a shield bash that knocks opponents back harder than anything else of its set", () => {
-    const g = ARSENAL_MOVESETS.guard;
-    const bash = g.moves[g.moves[g.starters.tap!]!.next.tap!]!;
-    expect(bash.label).toBe('Shield bash');
-    expect(bash.knockbackSpeedMps).toBeGreaterThan(g.moves[g.starters.tap!]!.knockbackSpeedMps * 3);
-  });
-
-  it("the Dual Blades' heavy is a multi-slash that hits again and again", () => {
-    const flurry = ARSENAL_MOVESETS.dualBlades.moves[ARSENAL_MOVESETS.dualBlades.starters.heavy!]!;
-    expect(flurry.extraHits?.length).toBeGreaterThanOrEqual(4);
-    const c = new MoveController({ [flurry.id]: flurry }, { heavy: flurry.id });
-    c.pressHeavy({ airborne: false, falling: false, forward: false });
-    let hits = 0;
-    for (let i = 0; i < 120; i++) if (c.update(1 / 60, false).hit) hits++;
-    expect(hits).toBe(1 + (flurry.extraHits?.length ?? 0));
+  it('a held fist moveset replaces his unarmed taps, and ending it brings the punches straight back', () => {
+    const own = resolveCharacter('prismor', BUILT_IN_LIBRARY) as unknown as {
+      moves: Record<string, never>;
+      starters: Record<string, string>;
+    };
+    const c = new MoveController(own.moves, own.starters);
+    const ctx = { airborne: false, falling: false, forward: false };
+    c.press(ctx);
+    expect(c.attack?.id).toBe('lead-punch');
+    c.useMoveset(FISTS_MOVESET.moves, FISTS_MOVESET.starters);
+    expect(c.attack).toBeNull();
+    c.press(ctx);
+    expect(c.attack?.id).toBe('fist-jab');
+    c.resetMoveset();
+    c.press(ctx);
+    expect(c.attack?.id).toBe('lead-punch');
   });
 });
 
@@ -144,7 +126,7 @@ describe('unarmed taps are standard combat controls, never an ability', () => {
       expect(unarmed.moves.some((m) => m.id === a.id)).toBe(false);
   });
 
-  it('his taps hit a little lighter than other fighters', () => {
+  it('his buffed taps are on par with the roster: no lighter than the lightest of the others', () => {
     const taps = ['lead-punch', 'rear-cross', 'swinging-hook'].map(
       (id) => unarmed.moves.find((m) => m.id === id)!.damage,
     );
@@ -155,62 +137,37 @@ describe('unarmed taps are standard combat controls, never an ability', () => {
       };
       return d.moves[d.starters.tap]!.damage;
     });
-    expect(Math.max(...taps)).toBeLessThanOrEqual(Math.min(...others) + 1);
-    expect(taps[0]).toBeLessThan(Math.min(...others));
+    expect(Math.min(...taps)).toBeGreaterThanOrEqual(Math.min(...others));
   });
 
-  it('a held weapon swaps his taps for its own, and shattering brings the punches straight back', () => {
-    const set = ARSENAL_MOVESETS.greatsword;
-    const own = resolveCharacter('prismor', BUILT_IN_LIBRARY) as unknown as {
-      moves: Record<string, never>;
-      starters: Record<string, string>;
-    };
-    const c = new MoveController(own.moves, own.starters);
-    const ctx = { airborne: false, falling: false, forward: false };
-    c.press(ctx);
-    expect(c.attack?.id).toBe('lead-punch');
-    c.useMoveset(set.moves, set.starters);
-    expect(c.attack).toBeNull(); // the swap stops what was running
-    c.press(ctx);
-    expect(c.attack?.id).toBe('gs-sweep');
-    c.resetMoveset();
-    c.press(ctx);
-    expect(c.attack?.id).toBe('lead-punch');
+  it('every unarmed tap and heavy counts only on contact with the body', () => {
+    for (const m of unarmed.moves.filter((x) =>
+      ['lead-punch', 'rear-cross', 'swinging-hook', 'heavy-overhand'].includes(x.id),
+    ))
+      expect((m as { contact?: boolean }).contact, m.id).toBe(true);
   });
 });
 
-describe('Crystal Guard', () => {
-  const raise = (c: Combatant) => c.raiseCrystalShield({ hp: 110, hits: 0, seconds: 1e9, heavyFactor: 2 });
-  const hit = { baseDamage: 40, attackerPower: 1, heavy: false, fromFront: true, critRoll: 1, staggers: true };
+describe('contact moves touch the body, not the air beside it', () => {
+  // A fist reaching 1.3 m from the caster's centre (Prismor's lead punch), with a 0.5 m half-width.
+  const fist = prismorLeadPunch();
+  const capsule = hitCapsule({ x: 0, y: 0 }, { x: 1, y: 0 }, fist);
+  const foot = 0.3;
 
-  it('absorbs frontal blows without touching his HP, and wears down on its own durability', () => {
-    const c = new Combatant({ maxHp: 1000, defence: 1 } as never);
-    const hp = c.hp;
-    raise(c);
-    c.receive(hit, 0, 1);
-    expect(c.hp).toBe(hp);
-    expect(c.crystalShieldHp).toBeLessThan(110);
-    const before = c.crystalShieldHp;
-    c.receive({ ...hit, heavy: true }, 0, 1);
-    expect(before - c.crystalShieldHp).toBeGreaterThan(40); // a heavy blow wears it down faster
+  it('hits a body the fist reaches', () => {
+    expect(blowTouches(capsule, fist, 1.3, 0, foot)).toBe(true);
+    expect(blowTouches(capsule, fist, 1.5, 0.1, foot)).toBe(true);
   });
 
-  it('shatters at zero durability and says so (the scene makes the explosion)', () => {
-    const c = new Combatant({ maxHp: 1000, defence: 1 } as never);
-    raise(c);
-    for (let i = 0; i < 6; i++) c.receive(hit, 0, 1);
-    expect(c.crystalShieldLeftS).toBe(0);
-    expect(c.takeCrystalBreaks().shield).toBe(true);
-    const burst = PRISMOR_KIT.a1.delivery;
-    expect(burst.type === 'arsenal' && burst.guardBurst.payload.damage).toBeGreaterThan(0);
+  it('does not hit a body standing beyond the fist (the old swept area reached about 2 m)', () => {
+    expect(blowTouches(capsule, fist, 2.0, 0, foot)).toBe(false);
+    expect(blowTouches(capsule, fist, 1.9, 0.6, foot)).toBe(false);
   });
 
-  it('does nothing against blows from behind', () => {
-    const c = new Combatant({ maxHp: 1000, defence: 1 } as never);
-    raise(c);
-    const hp = c.hp;
-    c.receive({ ...hit, fromFront: false }, 0, 1);
-    expect(c.hp).toBeLessThan(hp);
+  it('does not touch walls, doors or furniture beyond the fist either', () => {
+    const box = blowBox(capsule, fist);
+    expect(box.ax).toBeCloseTo(1.3);
+    expect(box.radius).toBeLessThan(fist.hitRadiusM);
   });
 });
 
@@ -322,6 +279,13 @@ describe('Shard Volley', () => {
     expect(PRISMOR_KIT.a3.payload.damage).toBeLessThanOrEqual(10); // each one is small
   });
 });
+
+/** Prismor's own lead punch as an attack (a contact move), for the hit-rule tests. */
+function prismorLeadPunch(): AttackDef {
+  return (resolveCharacter('prismor', BUILT_IN_LIBRARY) as unknown as { moves: Record<string, AttackDef> }).moves[
+    'lead-punch'
+  ]!;
+}
 
 /** A small deterministic random source. */
 function mulberry(seed: number): () => number {

@@ -1,6 +1,5 @@
 import type { WebGLRenderer } from 'pixi.js';
 import type { AbilityHudState } from '../abilities/ability-caster';
-import { WEAPON_KINDS, type WeaponKind } from '../abilities/ability-def';
 import { ABILITY_KITS } from '../abilities/kits';
 import { applyLoadout, loadoutAfterSwap } from '../abilities/loadout';
 import { LoadoutStore } from '../abilities/loadout-store';
@@ -117,8 +116,6 @@ export interface EngineDebugInfo {
   startClash(): void;
   /** Practice/testing: fill the player's ultimate meter. */
   fillMeter(): void;
-  /** Practice/testing: put a Crystal Arsenal weapon (greatsword, warhammer, lance, dualBlades, guard) in Prismor's hands now. */
-  armWeapon(kind: string): void;
   /** Tests: chip an interior wall section (by its index) as if struck; damage before toughness. */
   damageWall(index: number, damage: number, fire?: boolean): void;
   /** Props summary: how many are broken, and how many are moving right now. */
@@ -463,7 +460,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     clash: null,
     startClash() {}, // replaced once the scene exists
     fillMeter() {}, // replaced once the scene exists
-    armWeapon() {}, // replaced once the scene exists
     damageWall() {}, // replaced once the scene exists
     assetFailures,
     debugOverlay: { enabled: false, segments: 0, fps: 0 },
@@ -633,12 +629,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   if (scene instanceof FightArenaScene) {
     debug.startClash = () => scene.startClash();
     debug.fillMeter = () => scene.playerFighter.caster?.fillMeter();
-    debug.armWeapon = (kind: string) => {
-      const f = scene.playerFighter;
-      const d = f.caster?.def('a1').delivery;
-      if (d?.type === 'arsenal' && (WEAPON_KINDS as readonly string[]).includes(kind))
-        scene.abilities?.arm(f.name, kind as WeaponKind, d);
-    };
     debug.damageWall = (index, damage, fire = false) => {
       const r = scene.arena.interiorWalls?.[index];
       if (r) scene.walls?.hitWhere((w) => w === r, { damage, direction: { x: 1, y: 0 }, fire });

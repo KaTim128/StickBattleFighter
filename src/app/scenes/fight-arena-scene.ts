@@ -14,14 +14,7 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import {
-  abilityPose,
-  assaultPose,
-  judgementPose,
-  stalkPose,
-  swoopPose,
-  weaponMovePose,
-} from '../../animation/ability-poses';
+import { abilityPose, assaultPose, judgementPose, stalkPose, swoopPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -50,8 +43,9 @@ import type { AudioProfile, CharacterLibrary } from '../../characters/schema';
 import {
   type AttackDef,
   attackDuration,
+  blowBox,
+  blowTouches,
   capsuleTouchesRect,
-  distanceToCapsule,
   hitCapsule,
 } from '../../combat/attacks';
 import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
@@ -948,6 +942,12 @@ export class FightArenaScene implements ArenaScene {
           f.combatant.damageTakenScale = 1;
           if (f.caster) f.caster.cooldownScale = 1;
         }
+      }
+      // Crystal Fists last a few seconds; a KO or another ability ends them early. A hit does not.
+      if (f.heldWeapon) {
+        f.weaponLeftS -= stepS;
+        const castingOther = f.caster?.cast != null && f.caster.cast.def.delivery.type !== 'arsenal';
+        if (f.weaponLeftS <= 0 || f.combatant.isKo || castingOther) this.abilities?.disarm(f);
       }
       f.recoilS = Math.max(0, f.recoilS - stepS);
       f.appearS = Math.max(0, f.appearS - stepS);
@@ -2315,9 +2315,7 @@ export class FightArenaScene implements ArenaScene {
           : attack && !air
             ? attack.moveFactor
             : 1;
-      // Behind a Crystal Guard shield he walks slower.
-      const shieldSlow = c.crystalShieldLeftS > 0 ? f.shieldMove : 1;
-      move = { x: move.x * factor * shieldSlow, y: move.y * factor * shieldSlow };
+      move = { x: move.x * factor, y: move.y * factor };
       // Sonic Boom: held in the scream, it cannot walk toward the one screaming (it can still back away or sidestep).
       if (f.pinned) {
         f.pinned.leftS -= stepS;
@@ -2391,34 +2389,6 @@ export class FightArenaScene implements ArenaScene {
     }
 
     if (ev.hit) this.resolveHit(f, ev.hit);
-  }
-
-  /** A spent Crystal Guard bursts: everyone near takes the burst's blow, pushed away, with a crystal explosion. */
-  private guardBurst(owner: FighterEntity, burst: NonNullable<FighterEntity['guardBurst']>): void {
-    this.abilities?.emit({
-      kind: 'impact',
-      ability: 'crystalArsenal',
-      look: owner.caster?.def('a1').look,
-      vfx: 'guard-burst',
-      sfx: 'guard-burst',
-      x: owner.x,
-      y: owner.y,
-      radiusM: burst.radiusM,
-    });
-    for (const foe of this.fighters) {
-      if (foe.team === owner.team || foe.combatant.isKo) continue;
-      const away = Math.hypot(foe.x - owner.x, foe.y - owner.y);
-      if (away > burst.radiusM + foe.def.body.footRadiusM) continue;
-      const d = Math.max(0.01, away);
-      this.applyStrike(owner, foe, {
-        damage: burst.payload.damage,
-        heavy: burst.payload.heavy,
-        knockbackMps: burst.payload.knockbackMps,
-        dir: { x: (foe.x - owner.x) / d, y: (foe.y - owner.y) / d },
-        melee: false,
-        impact: burst.payload.impact ?? 'knuckle-heavy',
-      });
-    }
   }
 
   /**
@@ -2508,7 +2478,6 @@ export class FightArenaScene implements ArenaScene {
     if (result.outcome === 'dodged') return false;
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
     // A crystal weapon in his hands shatters the moment a blow gets through (a guard that held is not a hit).
-    if (!guarded && result.damage > 0 && target.heldWeapon) this.abilities?.disarm(target);
     if (!guarded && this.abilities) {
       // Being hit breaks a stalk; a landed blow spends a charged mark.
       this.abilities.world.cancelStalk(target.name, this.abilities);
@@ -2745,6 +2714,8 @@ export class FightArenaScene implements ArenaScene {
     const dir = { x: attacker.aim.x, y: attacker.aim.y };
     const p = body.translation();
     const capsule = hitCapsule(p, dir, a);
+    // A contact move reaches walls, doors and furniture only with its fist, as it reaches bodies.
+    const box = blowBox(capsule, a);
     let connected = false;
     let hitFighter = false; // fighter contacts shake through their impact profile
     let reachedFighter = false; // the blow reached someone (even if blocked or dodged): not a miss
@@ -2757,7 +2728,7 @@ export class FightArenaScene implements ArenaScene {
     for (const target of this.fighters) {
       if (target.team === attacker.team || !target.body || target.combatant.isKo) continue;
       const t = target.body.translation();
-      if (distanceToCapsule(capsule, t.x, t.y) > a.hitRadiusM + target.def.body.footRadiusM) continue;
+      if (!blowTouches(capsule, a, t.x, t.y, target.def.body.footRadiusM)) continue;
       reachedFighter = true;
       // Knocked back along the blow, nudged a little toward where the target actually stands.
       const tx = t.x - p.x;
@@ -2789,7 +2760,7 @@ export class FightArenaScene implements ArenaScene {
     }
 
     for (const door of this.doors) {
-      if (door.broken || !capsuleTouchesRect(capsule, door.spec)) continue;
+      if (door.broken || !capsuleTouchesRect(box, door.spec)) continue;
       connected = true;
       const broke = door.applyImpact({
         kind: a.blow === 'kick' ? 'kick' : 'strike',
@@ -2805,7 +2776,7 @@ export class FightArenaScene implements ArenaScene {
     // Breakable wall sections: every blow chips the section it lands on (owner, 11/11/2026).
     // Damage builds up on the one section the blow lands on (wall-break power: Inferno's flaming fists
     // crack stone far faster, owner 12/11/2026).
-    const wallHit = this.walls?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
+    const wallHit = this.walls?.hitWhere((r) => capsuleTouchesRect(box, r), {
       damage:
         a.damage * MELEE_OBJECT_DAMAGE_SCALE * attacker.def.stats.power * (attacker.def.objects.wallBreakPower ?? 1),
       direction: { x: dir.x, y: dir.y },
@@ -2815,7 +2786,7 @@ export class FightArenaScene implements ArenaScene {
     if (wallHit && wallHit.hit > 0) connected = true;
 
     // Furniture: moves or breaks depending on its durability.
-    const props = this.props?.hitWhere((r) => capsuleTouchesRect(capsule, r), {
+    const props = this.props?.hitWhere((r) => capsuleTouchesRect(box, r), {
       blow: a.blow === 'kick' ? 'kick' : 'strike',
       damage: a.damage * MELEE_OBJECT_DAMAGE_SCALE * attacker.def.stats.power,
       strength: a.strength,
@@ -3521,11 +3492,7 @@ export class FightArenaScene implements ArenaScene {
     // Hanging and pulling up a ledge (owner, 12/11/2026).
     if (f.climb) pose = climbPose(f.climb.shown + (f.climb.stepUp?.t ?? 0), this.simTimeS);
     const attack = f.combo.attack;
-    if (attack?.swing)
-      // A crystal weapon blow (Crystal Arsenal): the body swings to the weapon's own pose row instead of a punch clip.
-      pose = weaponMovePose(pose, { ...attack, swing: attack.swing }, f.combo.progress * attackDuration(attack));
-    else if (attack)
-      pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
+    if (attack) pose = strikePose(pose, f.strikeClip(attack.animationState, f.combo.variant), f.combo.progress, attack);
     // The poison jar comes out of the coat pocket part-way through the heavy's wind-up and is gone at the smash.
     {
       const total = attack ? attack.windupS + attack.activeS + attack.recoveryS : 1;
@@ -3662,16 +3629,11 @@ export class FightArenaScene implements ArenaScene {
       f.focusNow += (target - f.focusNow) * smoothing(8, frameDtS);
       f.view.focus = f.focusNow;
     }
-    // Prismor's crystal weapons (Crystal Arsenal): a held weapon grows into his hands, stays while he fights with it, and shatters
-    // into crystal fragments the moment it is lost.
+    // Prismor's crystal fists (Crystal Arsenal) grow over his hands while they last and shatter when they end; a bright crystal
+    // shell grows round the body for Sovereign.
     {
-      const cast = f.caster?.cast;
       const broke = c.takeCrystalBreaks();
-      // A Crystal Guard worn down to nothing bursts and hurts everyone close.
-      if (broke.shield && f.guardBurst) this.guardBurst(f, f.guardBurst);
-      if (f.heldWeapon && cast && cast.def.delivery.type !== 'arsenal') this.abilities?.disarm(f); // another ability: it shatters
-      // A guard that was spent, broken by a blow or dropped by a grab is gone with its shield.
-      if (f.heldWeapon === 'guard' && c.crystalShieldLeftS <= 0) this.abilities?.disarm(f);
+      const cast = f.caster?.cast;
       let kind: string | null = null;
       let target = 0;
       if (f.heldWeapon) {
@@ -3680,19 +3642,16 @@ export class FightArenaScene implements ArenaScene {
       } else if (f.buff?.sovereign) {
         kind = 'sovereign';
         target = 1;
-      } else if (c.crystalShieldLeftS > 0) {
-        kind = 'guard';
-        target = 1;
       }
       if (kind) {
-        if (f.weaponKind !== kind) f.weaponForm = 0; // a new weapon grows from nothing
+        if (f.weaponKind !== kind) f.weaponForm = 0; // a new crystal grows from nothing
         f.weaponKind = kind;
         f.weaponForm =
           target >= f.weaponForm
             ? Math.min(1, f.weaponForm + frameDtS * 4)
             : f.weaponForm + (target - f.weaponForm) * smoothing(10, frameDtS);
       } else if (f.weaponKind) {
-        // It is over: the weapon shatters into crystal fragments at his hands.
+        // It is over: the crystal shatters into fragments at his hands.
         this.abilities?.emit({
           kind: 'impact',
           ability: 'crystal',

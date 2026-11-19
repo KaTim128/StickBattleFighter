@@ -129,6 +129,8 @@ export interface MoveDef {
   readonly cancelAt: number;
   /** Capsule hit area from the body to reach. */
   readonly hitbox: { readonly reachM: number; readonly radiusM: number };
+  /** Counts only when the fist touches the body (see AttackDef.contact). */
+  readonly contact?: boolean;
   readonly damage: number;
   /** Impact strength for doors and furniture. */
   readonly strength: number;

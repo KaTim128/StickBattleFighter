@@ -718,3 +718,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Shard Volley fires a fan of shards; Crystal Groundstrike marks exactly four zones, then erupts four times.
 - [ ] Crystal Prison: a grounded foe that jumps in time escapes; otherwise legs are held exactly 4 s (also a flier or hoverer, dragged down); hits do not free them; the cuffs shatter at 4 s.
 - [ ] The Sovereign armour looks like one fitted crystal suit (chest, shoulders, forearms, legs, boots, helm) and forms in stages.
+
+## Prismor contact and Crystal Fists (22/11/2026)
+- [ ] Prismor's taps and heavy hit only when the fist touches a body; a foe a step beyond the fist takes no damage and no hit sound.
+- [ ] Crystal Fists: crystal knuckles appear, every punch is heavy, and they end after 8 s.
+- [ ] Being hit does not end the fists; another ability or a KO does.

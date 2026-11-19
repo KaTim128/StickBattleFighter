@@ -1169,3 +1169,13 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 - Removed: the `weapon` delivery and `ShieldDelivery` ability type (now `ShieldSpec`), `weaponOf`, the auto shield bash, and the old weapon sounds and icons.
 **Disclosed limits.** The Sovereign's sword is still a visual with `meleeDamageFactor`, not its own moveset. A flier is caught by the legTrap even while it hovers a long way up. The guard shield has no time limit, as the brief gives none.
 **Status.** Accepted.
+
+## TD-142: Contact moves, buffed taps and Crystal Fists (22/11/2026)
+**Context.** Owner: Prismor's taps and heavy should only deal damage when they touch the body (they registered at about 2 m, past where the fist visibly stops); buff his default tap; Crystal Arsenal becomes crystal fists with sharp knuckles that hit heavily for 8 seconds, and a hit must not end them.
+**Decision.**
+- `AttackDef.contact` (moveset field `contact`): such a blow counts only when the fist's end is within half the hit radius plus the target's foot radius of the target's centre (`blowTouches`). Walls, doors and furniture are checked only at the fist (`blowBox`). All seven of Prismor's taps and heavies are contact moves. Other fighters keep the swept area unchanged.
+- Unarmed taps buffed: lead punch 11 → 16, rear cross 12 → 18, swinging hook 13 → 20 (roster-level, not the old "lighter" band).
+- Crystal Arsenal is now Crystal Fists (`FISTS_MOVESET`): an 8 s swap of his taps and heavy to a two-punch chain (26, 32) and a heavy smash (64). The five-weapon table, the Crystal Guard shield from Arsenal, the auto-bash, the multi-slash `extraHits`, the per-blow `swing` poses and the weapon drawings are removed, since nothing uses them now.
+- The fists end when the 8 s run out, on a KO, or when he casts another ability (the earlier owner rule). A hit does not end them: `applyStrike` no longer disarms.
+**Trade-offs.** The heavy smash deals 64 at a cost of a 0.4 s recovery; the fists are PROVISIONAL (OQ-05). Crystal Guard as a shield is gone, so Prismor has no shield ability now; the Sovereign still has its own shield. The fists' cooldown (7 s) is shorter than their 8 s duration, so they can be re-armed as they end.
+**Status.** Accepted.

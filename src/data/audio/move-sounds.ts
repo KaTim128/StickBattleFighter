@@ -642,34 +642,6 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('triangle', 1200, 3600, 0.45, 0.1),
     noise('highpass', 6000, 9000, 0.4, 0.1, 1, 0, { attack: 0.25 }),
   ],
-  'greatsword-hit': [
-    tone('sine', 110, 45, 0.35, 0.6),
-    tone('triangle', 2400, 800, 0.3, 0.25),
-    noise('highpass', 4500, 2500, 0.18, 0.4),
-  ],
-  'shield-hit': [
-    tone('triangle', 1700, 900, 0.18, 0.35),
-    tone('sine', 2600, 1500, 0.15, 0.18),
-    noise('highpass', 6000, 3000, 0.1, 0.25),
-  ],
-  'shield-bash': [
-    tone('sine', 140, 55, 0.3, 0.55),
-    noise('highpass', 4000, 2000, 0.12, 0.4),
-    tone('triangle', 1400, 500, 0.2, 0.2),
-  ],
-  'blades-flash': [noise('bandpass', 5000, 2000, 0.12, 0.35, 2.2), tone('sine', 2200, 1200, 0.1, 0.18)],
-  'blades-cut': [noise('bandpass', 4200, 1800, 0.1, 0.32, 2.4), tone('triangle', 3000, 1400, 0.1, 0.16)],
-  'lance-pierce': [
-    tone('sine', 180, 60, 0.28, 0.5),
-    noise('highpass', 5500, 2500, 0.15, 0.4),
-    tone('triangle', 2800, 1200, 0.2, 0.2),
-  ],
-  'hammer-smash': [
-    tone('sine', 70, 26, 0.6, 0.85),
-    noise('lowpass', 2800, 160, 0.6, 0.7, 0.7),
-    tone('triangle', 2200, 500, 0.4, 0.3),
-    noise('highpass', 5000, 2000, 0.3, 0.45, 1, 0.03),
-  ],
   'sovereign-form': [
     tone('sine', 100, 800, 0.9, 0.3),
     tone('triangle', 300, 2400, 0.8, 0.12),
@@ -750,12 +722,6 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('bandpass', 2600, 900, 0.34, 0.5, 1.2),
     tone('triangle', 2100, 700, 0.3, 0.3),
     tone('sine', 105, 48, 0.3, 0.5),
-  ],
-  'guard-burst': [
-    noise('lowpass', 2600, 200, 0.5, 0.7, 0.7),
-    noise('highpass', 6200, 2600, 0.4, 0.45, 1, 0.02),
-    tone('sine', 92, 40, 0.5, 0.7),
-    tone('triangle', 2800, 600, 0.35, 0.22, 0.04),
   ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),

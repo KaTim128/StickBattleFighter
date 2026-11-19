@@ -7,10 +7,7 @@ import {
   type CloudSpec,
   type MagicLook,
   payloadAt,
-  type ShieldSpec,
   type SummonSpec,
-  WEAPON_KINDS,
-  type WeaponKind,
 } from './ability-def';
 
 /**
@@ -111,10 +108,8 @@ export interface AbilityHost {
   barrier?(casterId: string, hp: number, durationS: number): void;
   /** Hold a target in a scream: for `seconds` it cannot walk toward the caster (`awayX/awayY` is the direction from the caster). Optional. */
   pin?(targetId: string, away: Vec2, seconds: number): void;
-  /** Grow (or, with null, drop) a crystal shield on a caster (Prismor's Crystal Guard). Optional. */
-  shield?(casterId: string, spec: ShieldSpec | null): void;
-  /** Put a crystal weapon in a caster's hands (Crystal Arsenal), replacing any it held: its moveset takes over his taps. Optional. */
-  arm?(casterId: string, kind: WeaponKind, guard: Extract<AbilityDef['delivery'], { type: 'arsenal' }>): void;
+  /** Crystal Arsenal: the caster's fists turn to crystal for `durationS` seconds (replacing its unarmed moves). Optional. */
+  arm?(casterId: string, durationS: number): void;
   /** Hold a fighter's legs in crystal for `seconds` (0 frees them): no walking, jumping, dodging or flying, and a flier is dragged down. Optional. */
   trap?(targetId: string, seconds: number): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
@@ -956,10 +951,8 @@ export class AbilityWorld {
           y: at.y,
         });
         break;
-      case 'arsenal': {
-        // A random one of the five weapons; one he already holds is shattered and replaced (it may come up again).
-        const kind = WEAPON_KINDS[Math.floor(this.rng() * WEAPON_KINDS.length)] as WeaponKind;
-        host.arm?.(casterId, kind, d);
+      case 'arsenal':
+        host.arm?.(casterId, d.durationS);
         host.emit({
           kind: 'impact',
           ability: def.id,
@@ -971,7 +964,6 @@ export class AbilityWorld {
           radiusM: 1.2,
         });
         break;
-      }
       case 'legTrap': {
         const foe = this.nearestEnemy(casterId, at, d.rangeM, host);
         if (!foe) {

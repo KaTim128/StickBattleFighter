@@ -22,13 +22,13 @@ const shards = (n: number, ring: number, shake = 0.3) => ({
 export const PRISMOR_KIT: AbilityKit = {
   comboIcon: 'crystal-combo',
   heavyIcon: 'crystal-crush',
-  // A1 (Q): Crystal Arsenal. One of five crystal weapons grows into his hands; its tap combo and heavy attack replace his punches.
+  // A1 (Q): Crystal Arsenal. His fists turn to crystal for a few seconds: every punch is heavy.
   a1: {
     id: 'crystalArsenal',
     name: 'Crystal Arsenal',
     label: 'ARSENAL',
     description:
-      'Grows one random crystal weapon into his hands: a Great Sword, War Hammer, Lance, a pair of Dual Blades or a Crystal Guard shield. Each brings its own tap combo and heavy attack until it is gone, and his punches return when it shatters. A weapon shatters the moment he is hit or uses another ability. The shield takes blows from the front and bursts when its durability runs out. Use it again for a new weapon.',
+      'Turns both of his fists into sharp crystal knuckles for 8 seconds. While they last, every punch and heavy blow hits heavily, and his normal punches are set aside. A hit does not end it. Using another ability, or being knocked out, does.',
     icon: 'crystal-arsenal',
     slot: 'a1',
     staminaCost: 28,
@@ -39,14 +39,7 @@ export const PRISMOR_KIT: AbilityKit = {
     moveFactor: 0.5,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: {
-      type: 'arsenal',
-      guardHp: 110,
-      guardBurst: {
-        radiusM: 2.4,
-        payload: { damage: 40, knockbackMps: 9, heavy: true, strength: 700, impact: 'knuckle-heavy' },
-      },
-    },
+    delivery: { type: 'arsenal', durationS: 8 },
     vfx: 'crystal-arsenal',
     sfx: { cast: 'crystal-grow', release: 'arsenal-roll', impact: 'arsenal-form' },
     look: { palette: CRYSTAL, impact: shards(14, 1.8), hitFlash: 0xe9e2ff },

@@ -516,28 +516,13 @@ export interface BarrierDelivery {
   readonly durationS: number;
 }
 
-/** The five crystal weapons Crystal Arsenal can grow into his hands (Prismor). */
-export type WeaponKind = 'greatsword' | 'warhammer' | 'lance' | 'dualBlades' | 'guard';
-export const WEAPON_KINDS: readonly WeaponKind[] = ['greatsword', 'warhammer', 'lance', 'dualBlades', 'guard'];
-
 /**
- * Crystal Arsenal (Prismor): a random one of the five crystal weapons grows into his hands and replaces his unarmed taps with
- * its own tap combo and heavy attack (src/data/abilities/crystal-arsenal.ts). It shatters the moment he is hurt or uses
- * another ability. The guard's shield has `guardHp` durability and bursts when it is spent.
+ * Crystal Arsenal (Prismor): his fists turn to crystal for `durationS` seconds, every punch heavy (src/data/abilities/crystal-arsenal.ts).
+ * A hit does not end it; the time running out, a KO or another ability does.
  */
 export interface ArsenalDelivery {
   readonly type: 'arsenal';
-  readonly guardHp: number;
-  /** The burst when a guard shield is spent: radius (metres) and the damage it deals to everyone near. */
-  readonly guardBurst: { readonly radiusM: number; readonly payload: AbilityPayload };
-}
-
-/** A crystal shield held in front of the body: it takes frontal damage up to `hp` and bursts when it is spent (Crystal Guard). */
-export interface ShieldSpec {
-  readonly hp: number;
-  /** Heavy blows wear it down this many times as fast. */
-  readonly heavyFactor: number;
-  readonly burst: { readonly radiusM: number; readonly payload: AbilityPayload };
+  readonly durationS: number;
 }
 
 /**

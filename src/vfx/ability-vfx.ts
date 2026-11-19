@@ -338,7 +338,6 @@ const BOLT_HEIGHT_M = 1.0;
 const CRYSTAL_ERUPTIONS: Readonly<Record<string, { count: number; h: number; ring?: boolean }>> = {
   'crystal-groundstrike': { count: 9, h: 1.45 },
   'crystal-thorns': { count: 8, h: 1.2 },
-  'guard-burst': { count: 12, h: 1.1, ring: true },
   'prison-lock': { count: 8, h: 0.7, ring: true },
 };
 /** Grave Chains run at the staff's height. */

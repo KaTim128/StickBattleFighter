@@ -749,7 +749,12 @@ export class PremiumModel {
     if (this.skin.soundGear) this.soundGear(g, fire, s);
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
     if ((this.st.crystalArmour ?? 0) > 0.02) this.crystalArmourOverlay(g, fire, s);
-    if (this.st.weapon) this.crystalWeapon(g, fire, s);
+    const wp = this.st.weapon;
+    if (wp?.kind === 'fists') this.crystalFists(g, fire, s, wp.form);
+    else if (wp?.kind === 'sovereign') {
+      this.crystalShield(g, fire, s, 0.62, wp.form);
+      this.crystalBlade(g, fire, s.armBack[2]!, -0.75, 1.05, 0.2, wp.form);
+    }
     if ((this.st.plating ?? 0) > 0.02) this.platingOverlay(g, fire, s);
     if (this.skin.handGlow !== undefined) this.handGlow(fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, true);
@@ -1015,160 +1020,49 @@ export class PremiumModel {
         .fill({ color: 0x9fd8ff, alpha: 0.5 * (1 - form) + 0.1 });
   }
 
-  /** A crystal-wrapped shaft from `a` to `b`: a dark core, a lilac sheen and glinting rings. */
-  private crystalShaft(g: Graphics, a: Point, b: Point, wid: number): void {
-    const { w } = this.st;
-    const { ux, uy, l } = frame(a, b);
-    sleeveQuad(g, a, b, wid * 0.6, wid * 0.6, 0x120d38);
-    sleeveQuad(g, a, b, wid * 0.4, wid * 0.4, 0x4338c9);
-    sleeveQuad(g, lerp(a, b, 0.02), lerp(a, b, 0.98), wid * 0.13, wid * 0.13, 0xb9b0ff, 0.8);
-    for (let i = 1; i < 5; i++) {
-      const c = { x: a.x + ux * l * (i / 5), y: a.y + uy * l * (i / 5) };
-      g.circle(c.x, c.y, wid * 0.52).stroke({ width: w * 0.07, color: 0x9f8cff, alpha: 0.9 });
-    }
-  }
-
   /** The direction a forearm points, radians. */
   private armAngle(pts: readonly Point[]): number {
     const [, el, hand] = pts as [Point, Point, Point];
     return Math.atan2(hand.y - el.y, hand.x - el.x);
   }
 
-  /** Crystal weapons (Crystal Arsenal), each grown in his ordinary hands and held in them. */
-  private crystalWeapon(g: Graphics, fire: Graphics, s: Skel): void {
-    const wp = this.st.weapon;
-    if (!wp) return;
-    const f = wp.form;
-    const handF = s.armFront[2]!;
-    const handB = s.armBack[2]!;
-    const angF = this.armAngle(s.armFront);
-    const angB = this.armAngle(s.armBack);
-    // The line through both hands (a two-handed grip), or the lead forearm when they are together.
-    const apart = Math.hypot(handF.x - handB.x, handF.y - handB.y);
-    const grip = apart > 0.12 ? Math.atan2(handF.y - handB.y, handF.x - handB.x) : angF;
-    const { w } = this.st;
-    switch (wp.kind) {
-      case 'greatsword': {
-        // Grip behind the hands (a pommel), a crystal crossguard in front of them, then the long blade.
-        const ux = Math.cos(grip);
-        const uy = Math.sin(grip);
-        const pommel = { x: handB.x - ux * 0.22 * f, y: handB.y - uy * 0.22 * f };
-        const guard = { x: handF.x + ux * 0.1 * f, y: handF.y + uy * 0.1 * f };
-        this.crystalShaft(g, pommel, guard, w * 1.1);
-        const nx = -uy;
-        const ny = ux;
-        this.crystal(
-          g,
-          fire,
-          [
-            { x: guard.x + nx * 0.3 * f, y: guard.y + ny * 0.3 * f },
-            { x: guard.x + ux * 0.14 + nx * 0.12, y: guard.y + uy * 0.14 + ny * 0.12 },
-            { x: guard.x + ux * 0.14 - nx * 0.12, y: guard.y + uy * 0.14 - ny * 0.12 },
-            { x: guard.x - nx * 0.3 * f, y: guard.y - ny * 0.3 * f },
-            { x: guard.x - ux * 0.06, y: guard.y - uy * 0.06 },
-          ],
-          0x6f64ff,
-          0x4aa8ff,
-          0.95,
-        );
-        this.crystalBlade(g, fire, guard, grip, 1.75, 0.34, f);
-        break;
+  /**
+   * Crystal fists (Crystal Arsenal): each fist wears a faceted crystal knuckle plate with four sharp spikes pointing out past
+   * the knuckles along its forearm. They grow in over the first moments and hold while they last.
+   */
+  private crystalFists(g: Graphics, fire: Graphics, s: Skel, form: number): void {
+    const hands: [Point, number][] = [
+      [s.armFront[2]!, this.armAngle(s.armFront)],
+      [s.armBack[2]!, this.armAngle(s.armBack)],
+    ];
+    for (const [hand, ang] of hands) {
+      const ux = Math.cos(ang);
+      const uy = Math.sin(ang);
+      const nx = -uy;
+      const ny = ux;
+      const q = (a: number, b: number): Point => ({
+        x: hand.x + ux * a * form + nx * b * form,
+        y: hand.y + uy * a * form + ny * b * form,
+      });
+      // The knuckle plate: a dark edge, a violet body and a lit upper facet.
+      this.crystal(
+        g,
+        fire,
+        [q(-0.06, -0.14), q(0.06, -0.16), q(0.12, -0.08), q(0.13, 0.07), q(0.06, 0.15), q(-0.06, 0.13)],
+        0x6f64ff,
+        0x4aa8ff,
+        0.95,
+      );
+      this.crystal(g, fire, [q(0.02, -0.15), q(0.12, -0.08), q(0.1, -0.01)], 0xb9b0ff, 0xe9e2ff, 0.9);
+      // Four sharp knuckle spikes, longest in the middle.
+      for (const [b, len] of [
+        [-0.12, 0.34],
+        [-0.04, 0.42],
+        [0.04, 0.42],
+        [0.12, 0.34],
+      ] as const) {
+        this.crystal(g, fire, [q(0.08, b - 0.03), q(0.08 + len, b * 0.3), q(0.08, b + 0.03)], 0x9f8cff, 0x4aa8ff, 0.95);
       }
-      case 'dualBlades':
-        this.crystalBlade(g, fire, handF, angF, 0.92, 0.16, f);
-        this.crystalBlade(g, fire, handB, angB, 0.92, 0.16, f);
-        for (const [h, a] of [
-          [handF, angF],
-          [handB, angB],
-        ] as const)
-          this.crystal(
-            g,
-            fire,
-            [
-              { x: h.x + Math.sin(a) * 0.12 * f, y: h.y - Math.cos(a) * 0.12 * f },
-              { x: h.x + Math.cos(a) * 0.1, y: h.y + Math.sin(a) * 0.1 },
-              { x: h.x - Math.sin(a) * 0.12 * f, y: h.y + Math.cos(a) * 0.12 * f },
-            ],
-            0x6f64ff,
-            0x4aa8ff,
-            0.95,
-          );
-        break;
-      case 'lance': {
-        // A long shaft through both hands ending in a slim, many-faceted spearhead with a flared collar.
-        const ux = Math.cos(grip);
-        const uy = Math.sin(grip);
-        const tail = { x: handB.x - ux * 0.5 * f, y: handB.y - uy * 0.5 * f };
-        const collar = { x: handF.x + ux * 1.5 * f, y: handF.y + uy * 1.5 * f };
-        this.crystalShaft(g, tail, collar, w * 0.95);
-        const nx = -uy;
-        const ny = ux;
-        this.crystal(
-          g,
-          fire,
-          [
-            { x: collar.x + nx * 0.16 * f, y: collar.y + ny * 0.16 * f },
-            { x: collar.x + ux * 0.16, y: collar.y + uy * 0.16 },
-            { x: collar.x - nx * 0.16 * f, y: collar.y - ny * 0.16 * f },
-            { x: collar.x - ux * 0.06, y: collar.y - uy * 0.06 },
-          ],
-          0x4aa8ff,
-          0x7b5cff,
-          0.95,
-        );
-        this.crystalBlade(g, fire, collar, grip, 0.85, 0.26, f);
-        break;
-      }
-      case 'warhammer': {
-        // A long crystal haft and a heavy double-faced head at its end, one face blunt and one cut into a spike.
-        const ux = Math.cos(grip);
-        const uy = Math.sin(grip);
-        const nx = -uy;
-        const ny = ux;
-        const tail = { x: handB.x - ux * 0.3 * f, y: handB.y - uy * 0.3 * f };
-        const top = { x: handF.x + ux * 0.9 * f, y: handF.y + uy * 0.9 * f };
-        this.crystalShaft(g, tail, top, w * 1.2);
-        const q = (a: number, b: number): Point => ({
-          x: top.x + (ux * a + nx * b) * f,
-          y: top.y + (uy * a + ny * b) * f,
-        });
-        this.crystal(
-          g,
-          fire,
-          [
-            q(-0.12, -0.34),
-            q(0.2, -0.46),
-            q(0.42, -0.4),
-            q(0.46, -0.1),
-            q(0.46, 0.1),
-            q(0.42, 0.4),
-            q(0.2, 0.46),
-            q(-0.12, 0.34),
-            q(-0.2, 0),
-          ],
-          0x5a4bbf,
-          0x4aa8ff,
-          0.94,
-        );
-        this.crystal(
-          g,
-          fire,
-          [q(0.42, -0.34), q(0.66, -0.12), q(0.9, 0), q(0.66, 0.12), q(0.42, 0.34)],
-          0x9f8cff,
-          0x7b5cff,
-          0.95,
-        );
-        g.moveTo(q(-0.1, 0).x, q(-0.1, 0).y)
-          .lineTo(q(0.82, 0).x, q(0.82, 0).y)
-          .stroke({ width: w * 0.08, color: 0xe9e2ff, alpha: 0.7 });
-        break;
-      }
-      case 'guard':
-      case 'sovereign':
-        this.crystalShield(g, fire, s, wp.kind === 'sovereign' ? 0.62 : 1, f);
-        // The Sovereign's sword is held up and forward in the back hand, ready, whatever the arm is doing.
-        if (wp.kind === 'sovereign') this.crystalBlade(g, fire, handB, -0.75, 1.05, 0.2, f);
-        break;
     }
   }
 

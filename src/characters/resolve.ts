@@ -190,6 +190,7 @@ export function resolveMoves(
       chainAtRecovery: m.cancelAt,
       reachM: m.hitbox.reachM,
       hitRadiusM: m.hitbox.radiusM,
+      ...(m.contact ? { contact: true } : {}),
       damage: m.damage * damageMult,
       heavy: m.heavy,
       strength: m.strength,

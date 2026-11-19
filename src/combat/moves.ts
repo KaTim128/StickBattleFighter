@@ -35,7 +35,6 @@ export class MoveController {
   private current: AttackDef | null = null;
   private t = 0;
   private hitDone = false;
-  private extraDone = 0;
   private buffered: MoveInput | null = null;
   private chainIndex = 0;
   private airMoveUsed = false;
@@ -130,7 +129,6 @@ export class MoveController {
     this.t = 0;
     this.buffered = null;
     this.chainIndex = 0;
-    this.extraDone = 0;
   }
 
   /** Call when the fighter lands, so the next jump allows another aerial move. */
@@ -147,14 +145,6 @@ export class MoveController {
     this.t += stepS;
     if (!this.hitDone && this.t >= a.windupS) {
       this.hitDone = true;
-      hit = a;
-    } else if (
-      this.hitDone &&
-      a.extraHits &&
-      this.extraDone < a.extraHits.length &&
-      this.t >= a.extraHits[this.extraDone]!
-    ) {
-      this.extraDone++;
       hit = a;
     }
 
@@ -185,7 +175,6 @@ export class MoveController {
     this.current = a;
     this.t = 0;
     this.hitDone = false;
-    this.extraDone = 0;
     this.buffered = null;
   }
 }

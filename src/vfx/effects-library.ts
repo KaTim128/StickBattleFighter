@@ -162,25 +162,6 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 1.8, colour: 0x7b5cff },
     dust: [0x7b5cff, 0x4aa8ff],
   },
-  // Crystal Arsenal weapon blows: each its own burst (long slash glints, a quake of dust, a thin spear spray, quick blade nicks, a shield crack).
-  'crystal-slash': { sparks: { count: 16, speedMps: 7, colour: 0xb9b0ff }, ring: { sizeM: 1.2, colour: 0x7b5cff } },
-  'crystal-smash': {
-    sparks: { count: 24, speedMps: 8, colour: 0xe9e2ff },
-    ring: { sizeM: 1.7, colour: 0x4aa8ff },
-    dust: [0x7b5cff, 0xb9b0ff],
-  },
-  'crystal-quake': {
-    sparks: { count: 34, speedMps: 10, colour: 0xe9e2ff },
-    ring: { sizeM: 2.6, colour: 0x7b5cff },
-    dust: [0x5a4bbf, 0x4aa8ff, 0xb9b0ff],
-  },
-  'crystal-pierce': { sparks: { count: 10, speedMps: 11, colour: 0x4aa8ff }, ring: { sizeM: 0.5, colour: 0xe9e2ff } },
-  'crystal-cut': { sparks: { count: 6, speedMps: 6, colour: 0xe9e2ff }, ring: { sizeM: 0.4, colour: 0x4aa8ff } },
-  'crystal-bash': {
-    sparks: { count: 14, speedMps: 6, colour: 0x9f8cff },
-    ring: { sizeM: 1.0, colour: 0xe9e2ff },
-    dust: [0x4aa8ff],
-  },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },

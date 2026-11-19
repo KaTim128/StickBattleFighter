@@ -23,7 +23,7 @@
         "reachM": 1.3,
         "radiusM": 0.55
       },
-      "damage": 11,
+      "damage": 16,
       "strength": 340,
       "knockbackMps": 1.8,
       "lungeMps": 1.0,
@@ -35,7 +35,8 @@
       "next": {
         "tap": "rear-cross"
       },
-      "effect": "crystal-hit"
+      "effect": "crystal-hit",
+      "contact": true
     },
     {
       "id": "rear-cross",
@@ -52,7 +53,7 @@
         "reachM": 1.2,
         "radiusM": 0.6
       },
-      "damage": 12,
+      "damage": 18,
       "strength": 340,
       "knockbackMps": 2.2,
       "lungeMps": 1.0,
@@ -64,7 +65,8 @@
       "next": {
         "tap": "swinging-hook"
       },
-      "effect": "crystal-hit"
+      "effect": "crystal-hit",
+      "contact": true
     },
     {
       "id": "swinging-hook",
@@ -81,7 +83,7 @@
         "reachM": 1.4,
         "radiusM": 0.7
       },
-      "damage": 13,
+      "damage": 20,
       "strength": 340,
       "knockbackMps": 2.8,
       "lungeMps": 1.0,
@@ -90,7 +92,8 @@
       "shake": 0.15,
       "zoomPunch": 0.013,
       "requires": ["canUseCombos"],
-      "effect": "crystal-hit"
+      "effect": "crystal-hit",
+      "contact": true
     },
     {
       "id": "shoulder-shove",
@@ -116,7 +119,8 @@
       "shake": 0.15,
       "zoomPunch": 0.013,
       "requires": ["canPunch", "canUseCombos"],
-      "effect": "crystal-hit"
+      "effect": "crystal-hit",
+      "contact": true
     },
     {
       "id": "rising-uppercut",
@@ -142,7 +146,8 @@
       "shake": 0.15,
       "zoomPunch": 0.013,
       "requires": ["canUseAerialPunches"],
-      "effect": "crystal-wave"
+      "effect": "crystal-wave",
+      "contact": true
     },
     {
       "id": "hammer-fist-drop",
@@ -168,7 +173,8 @@
       "shake": 0.15,
       "zoomPunch": 0.013,
       "requires": ["canUseAerialPunches"],
-      "effect": "crystal-wave"
+      "effect": "crystal-wave",
+      "contact": true
     },
     {
       "id": "heavy-overhand",
@@ -195,7 +201,8 @@
       "zoomPunch": 0.013,
       "requires": ["canPunch", "canUseCombos"],
       "effect": "crystal-wave",
-      "sfx": "hit-prismor-crush"
+      "sfx": "hit-prismor-crush",
+      "contact": true
     }
   ]
 }
