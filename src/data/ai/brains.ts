@@ -239,6 +239,26 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     },
     combos: [['a2', 'a1']],
   },
+  // Prismor: a front-line weapon fighter. Walks straight in; raises Prism Guard when hurt; a different weapon for each range and moment.
+  'prismor-ai': {
+    style:
+      'Crystal weaponsmith: walks in, guards when hurt, lances from range, hammers and slashes up close, Sovereign in a brawl.',
+    preferredRangeM: [1.4, 3.4],
+    movement: 'direct',
+    meleeBias: 0.5,
+    heavyBias: 0.3,
+    defence: 'block',
+    retreatBelowHp: 0,
+    hitAndRunS: 0,
+    tactics: {
+      a1: { role: 'burst', minM: 0, maxM: 2.4, weight: 1.2 },
+      a2: { role: 'buff', minM: 0, maxM: 5, weight: 0.9, when: { selfHpBelow: 0.7 } },
+      a3: { role: 'burst', minM: 0, maxM: 1.8, weight: 1.2 },
+      a4: { role: 'poke', minM: 1.6, maxM: 4.2, weight: 1.2 },
+      ult: { role: 'buff', minM: 0, maxM: 6, weight: 1.2 },
+    },
+    combos: [['a4', 'a3']],
+  },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
   'rampage-ai': {
@@ -356,6 +376,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   iaidoDraw: { role: 'gapClose', minM: 2, maxM: 6, weight: 1.2 },
   // Age Acceleration: wear down a target in sight.
   ageAcceleration: { role: 'curse', minM: 1.5, maxM: 6, weight: 1.0 },
+  // Crystal Warhammer: a smash on anyone right in front of him.
+  crystalWarhammer: { role: 'burst', minM: 0, maxM: 2.3, weight: 1.1 },
   // Feedback Pulse: shoves crowders off and scrambles their steps.
   feedbackPulse: { role: 'escape', minM: 0, maxM: 3, weight: 1.1 },
   // Arc Coil: a close jolt when something is on top of him.

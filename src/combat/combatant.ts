@@ -344,6 +344,29 @@ export class Combatant {
       if (this.barrierHp <= 0) this.endBarrier();
       if (raw <= 0.01) return none('blocked');
     }
+    // Crystal shield (Prism Guard, Crystal Sovereign): frontal blows only. A count shield stops whole blows; a Prism Guard soaks
+    // damage up to its durability, heavy blows wearing it faster. Blows from behind pass it by.
+    if (this.crystalShieldLeftS > 0 && hit.fromFront) {
+      this.crystalShieldHitS = 0;
+      if (this.crystalShieldHits > 0) {
+        this.crystalShieldHits--;
+        if (this.crystalShieldHits <= 0) this.endCrystalShield();
+        return none('blocked');
+      }
+      const drain = raw * (hit.heavy ? this.crystalShieldHeavy : 1);
+      const taken = Math.min(this.crystalShieldHp, drain);
+      this.crystalShieldHp -= taken;
+      raw *= drain > 0 ? 1 - taken / drain : 1;
+      if (this.crystalShieldHp <= 0) this.endCrystalShield();
+      if (raw <= 0.01) return none('blocked');
+    }
+    // Crystal armour (Crystal Sovereign): the next few blows of any kind and from any side are absorbed whole.
+    if (this.crystalArmourHits > 0) {
+      this.crystalArmourHits--;
+      this.crystalArmourHitS = 0;
+      if (this.crystalArmourHits <= 0) this.armourBreakPending = true;
+      return none('blocked');
+    }
     const kbKeep = 1 - this.stats.knockbackResistance;
 
     if (this.guardUp && hit.fromFront) {
@@ -471,6 +494,63 @@ export class Combatant {
   fog(chipDps: number, speedFactor: number, sightM: number): void {
     if (this.koAgeS >= 0) return;
     this.status.apply('fog', 0.35, { dps: chipDps, speedFactor, sightM });
+  }
+
+  /** Prismor's crystal shield: durability left (a hit count for the Sovereign's), seconds left, and seconds since it was last struck. */
+  crystalShieldHp = 0;
+  crystalShieldMaxHp = 0;
+  crystalShieldHits = 0;
+  crystalShieldLeftS = 0;
+  crystalShieldHitS = 9;
+  private crystalShieldHeavy = 2;
+  private shieldBreakPending = false;
+  /** Crystal armour: blows it will still absorb, and seconds since it last took one. */
+  crystalArmourHits = 0;
+  crystalArmourHitS = 9;
+  private armourBreakPending = false;
+
+  /** Grow a crystal shield: `hp` durability (or `hits` blows) for `seconds`, heavy blows costing `heavyFactor` times as much. */
+  raiseCrystalShield(spec: { hp: number; hits: number; seconds: number; heavyFactor: number }): void {
+    if (this.koAgeS >= 0) return;
+    this.crystalShieldHp = spec.hp;
+    this.crystalShieldMaxHp = spec.hp;
+    this.crystalShieldHits = spec.hits;
+    this.crystalShieldLeftS = spec.seconds;
+    this.crystalShieldHeavy = spec.heavyFactor;
+    this.crystalShieldHitS = 9;
+  }
+
+  /** The shield is gone by choice or by force (a grab, another weapon): it shatters. */
+  dropCrystalShield(): void {
+    if (this.crystalShieldLeftS > 0) this.endCrystalShield();
+  }
+
+  private endCrystalShield(): void {
+    this.crystalShieldLeftS = 0;
+    this.crystalShieldHp = 0;
+    this.crystalShieldHits = 0;
+    this.shieldBreakPending = true;
+  }
+
+  /** Put crystal armour on: it absorbs the next `hits` blows whole. */
+  raiseCrystalArmour(hits: number): void {
+    if (this.koAgeS >= 0) return;
+    this.crystalArmourHits = hits;
+    this.crystalArmourHitS = 9;
+  }
+
+  /** The armour is taken off (the Sovereign ends): it shatters if it was still on. */
+  dropCrystalArmour(): void {
+    if (this.crystalArmourHits > 0) this.armourBreakPending = true;
+    this.crystalArmourHits = 0;
+  }
+
+  /** Whether the shield and the armour broke since the last call (presentation: the shattering burst). */
+  takeCrystalBreaks(): { shield: boolean; armour: boolean } {
+    const out = { shield: this.shieldBreakPending, armour: this.armourBreakPending };
+    this.shieldBreakPending = false;
+    this.armourBreakPending = false;
+    return out;
   }
 
   /** Psion's Psychic Barrier: damage it can still absorb, its starting value, seconds left, and seconds since it was last struck. */
@@ -612,6 +692,10 @@ export class Combatant {
       this.status.clear('burn');
       this.status.clear('bleed');
       this.status.clear('toxicity');
+      this.crystalShieldLeftS = 0;
+      this.crystalShieldHp = 0;
+      this.crystalShieldHits = 0;
+      this.crystalArmourHits = 0;
     }
     this.dotTaken = 0;
     this.masteryEmpoweredS = Math.max(0, this.masteryEmpoweredS - dtS);
@@ -620,6 +704,12 @@ export class Combatant {
       this.barrierLeftS -= dtS;
       if (this.barrierLeftS <= 0) this.endBarrier();
     }
+    if (this.crystalShieldLeftS > 0) {
+      this.crystalShieldHitS += dtS;
+      this.crystalShieldLeftS -= dtS;
+      if (this.crystalShieldLeftS <= 0) this.endCrystalShield();
+    }
+    this.crystalArmourHitS += dtS;
     this.status.tick(dtS, this.dotSink);
     const burned = this.dotTaken;
     this.decayEnded = this.status.endedLastTick('decay');

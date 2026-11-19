@@ -911,3 +911,6 @@ Done: batched portrait read-back, four-per-row scrollable picker, Kenshiro slash
 
 ## 21/11/2026: Select layout and Kenshiro slow strikes (TD-128)
 Done: stickman/picker layout, larger stance frames, three-slash slower heavier tap, slow overhead heavy. Gate: biome, typecheck, vitest 1058, front-end and menu e2e. Next: deploy, owner review, then Psion.
+
+## 21/11/2026: Prismor, stance guard pass, Sonic Boom
+Done: Prismor fighter (TD-137); guard stances and Kenshiro grip, Sonic Boom from the mouth (TD-138). Tests: typecheck clean, vitest 1187 passed. Limits: Sovereign sword is a visual (disclosed); Prismor weapons verified by unit tests and only partly in the browser; in-game idle poses for Aerion/Reson/Chronos not changed beyond the select screen. Next: Arcstrike, then Frostweld, Solstice, Tidebreaker, Quakor; Colosseum after all.

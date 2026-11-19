@@ -506,6 +506,55 @@ export interface BarrierDelivery {
   readonly durationS: number;
 }
 
+export type WeaponKind = 'greatsword' | 'dualBlades' | 'lance' | 'warhammer';
+
+/** One blow of a crystal weapon: when it lands after the release, where it reaches, and how hard it hits. */
+export interface WeaponHit {
+  readonly atS: number;
+  /** `arc`: a sector in front of him; `line`: a narrow thrust that goes through everyone in line; `circle`: all round him; `smash`: a point ahead, then a ring round it. */
+  readonly shape: 'arc' | 'line' | 'circle' | 'smash';
+  readonly reachM: number;
+  /** Half-width of the blow: the half-angle (radians) of an arc, or the half-width (metres) of a line or smash. */
+  readonly widthM: number;
+  readonly damageFactor: number;
+  readonly knockbackFactor: number;
+  readonly heavy?: boolean;
+}
+
+/**
+ * A crystal weapon grown from his arms (Prismor): a timeline of blows. Each blow hits everyone in its shape once (no target
+ * is hit twice by one blow), re-aimed at the nearest enemy in reach. A lance goes through everyone in line, each one after
+ * the first taking `pierceFalloff` of the one before. A smash also sends a ring of crystal out round where it lands. If no
+ * blow connects at all he stays exposed for `missRecoveryS` more.
+ */
+export interface WeaponDelivery {
+  readonly type: 'weapon';
+  readonly weapon: WeaponKind;
+  readonly hits: readonly WeaponHit[];
+  readonly pierceFalloff?: number;
+  readonly shockwave?: { readonly radiusM: number; readonly damageFactor: number; readonly knockbackFactor: number };
+  readonly missRecoveryS: number;
+}
+
+/**
+ * A crystal shield grown from the oversized forearm (Prismor's Prism Guard): it takes frontal damage up to `hp` for
+ * `durationS`, heavy blows wear it down `heavyFactor` times as fast, a melee blow it stops answers with a bash, and he
+ * moves at `moveFactor` while it is up. Blows from behind and grabs ignore it.
+ */
+export interface ShieldDelivery {
+  readonly type: 'shield';
+  readonly hp: number;
+  readonly durationS: number;
+  readonly heavyFactor: number;
+  readonly moveFactor: number;
+  readonly bash: {
+    readonly damage: number;
+    readonly knockbackMps: number;
+    readonly reachM: number;
+    readonly cooldownS: number;
+  };
+}
+
 /**
  * A spinning attack on the spot (Aerion's Wind Blade): for `durationS`, every `tickS` seconds, each enemy within `radiusM`
  * takes the payload, pushed away from the caster. The caster's wings are the blades: the view spreads them and turns him.
@@ -586,6 +635,12 @@ export interface BuffDelivery {
   readonly darkensFoes?: { readonly visibleM: number };
   /** The caster is drawn with dark skin and blue flames while it lasts (Inferno's Blue Inferno). */
   readonly blueFlames?: boolean;
+  /**
+   * Crystal Sovereign (Prismor): a full set of crystal armour that absorbs the next `armourHits` blows of any kind, and a small
+   * shield that stops the next `shieldHits` frontal blows; both shatter when they run out or when the buff ends. A balanced
+   * one-handed sword is in his hand meanwhile (`meleeDamageFactor` is its edge).
+   */
+  readonly sovereign?: { readonly armourHits: number; readonly shieldHits: number };
   /** Armour plates extend over the caster while it lasts (Geargrind's Reinforced Plating, Overdrive). */
   readonly plating?: boolean;
   /** The caster is drawn this much bigger while it lasts (Rampage Mode, owner 13/11/2026: 1.1). */
@@ -628,6 +683,8 @@ export type Delivery =
   | NovaDelivery
   | ParryDelivery
   | WhirlDelivery
+  | WeaponDelivery
+  | ShieldDelivery
   | LiftDelivery
   | BarrierDelivery
   | FistDelivery

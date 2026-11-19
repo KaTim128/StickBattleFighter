@@ -45,6 +45,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.mechanic',
   'proc.idle.sonic',
   'proc.idle.temporal',
+  'proc.idle.crystal',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -1038,6 +1039,154 @@ const STRIKES = {
       armBack: limb(12, 8),
       legFront: limb(26, -30),
       legBack: limb(-8, -26),
+    },
+  ),
+
+  // ---- Prismor's crystal style: heavy shouldered blows, the oversized crystal arm leading and swinging like a wrecking beam.
+  // 1. Crystal jab: the big forearm driven straight out from the shoulder.
+  'prism.jab': strike(
+    {
+      lean: deg(-2),
+      head: deg(-3),
+      armFront: limb(38, 30),
+      armBack: limb(-14, 40),
+      legFront: limb(22, -26),
+      legBack: limb(-28, -24),
+    },
+    {
+      lean: deg(-14),
+      head: deg(-4),
+      armFront: limb(90, 4),
+      armBack: limb(-20, 44),
+      legFront: limb(30, -30),
+      legBack: limb(-30, -22),
+    },
+  ),
+  // 2. Geode hook: the big arm swung round in a wide flat arc.
+  'prism.hook': strike(
+    {
+      lean: deg(8),
+      head: deg(0),
+      armFront: limb(-40, 90),
+      armBack: limb(20, 60),
+      legFront: limb(24, -28),
+      legBack: limb(-30, -26),
+    },
+    {
+      lean: deg(-24),
+      head: deg(-4),
+      armFront: limb(100, 70),
+      armBack: limb(-30, 50),
+      legFront: limb(34, -32),
+      legBack: limb(-34, -24),
+    },
+  ),
+  // 3. Faceted elbow: shoulder dropped and the crystal elbow driven in.
+  'prism.elbow': strike(
+    {
+      lean: deg(-6),
+      head: deg(2),
+      armFront: limb(-30, 140),
+      armBack: limb(10, 60),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -28),
+    },
+    {
+      lean: deg(18),
+      head: deg(-6),
+      armFront: limb(90, 130),
+      armBack: limb(-20, 50),
+      legFront: limb(34, -34),
+      legBack: limb(-34, -26),
+    },
+  ),
+  // 4. Oversized arm smash: the arm hauled high and brought down on a slant.
+  'prism.smash': strike(
+    {
+      lean: deg(10),
+      head: deg(-6),
+      armFront: limb(150, 50),
+      armBack: limb(20, 60),
+      legFront: limb(26, -32),
+      legBack: limb(-32, -28),
+    },
+    {
+      lean: deg(-32),
+      head: deg(10),
+      armFront: limb(60, 6),
+      armBack: limb(-20, 50),
+      legFront: limb(40, -42),
+      legBack: limb(-40, -22),
+    },
+  ),
+  // Heavy: the whole arm raised and held, the crystal glinting, then a crushing downward blow.
+  'prism.crush': strike(
+    {
+      lean: deg(16),
+      head: deg(-12),
+      armFront: limb(170, 40),
+      armBack: limb(30, 60),
+      legFront: limb(24, -36),
+      legBack: limb(-30, -32),
+    },
+    {
+      lean: deg(-42),
+      head: deg(16),
+      armFront: limb(36, 4),
+      armBack: limb(-30, 50),
+      legFront: limb(56, -56),
+      legBack: limb(-44, -28),
+    },
+    { lean: deg(-6), head: deg(-4), armFront: limb(120, 50), armBack: limb(10, 60), legFront: limb(24, -30) },
+  ),
+  // Forward tap: a shoulder charge, the big arm braced across the body.
+  'prism.shove': strike(
+    { lean: deg(2), head: deg(-2), armFront: limb(50, 90), armBack: limb(10, 60), legFront: limb(22, -28) },
+    {
+      lean: deg(-28),
+      head: deg(-4),
+      armFront: limb(70, 100),
+      armBack: limb(-10, 50),
+      legFront: limb(36, -32),
+      legBack: limb(-34, -20),
+    },
+  ),
+  // In the air: the crystal arm thrust up and forward like a spire.
+  'prism.air-spike': strike(
+    {
+      lean: deg(-4),
+      head: deg(0),
+      armFront: limb(40, 70),
+      armBack: limb(-20, 60),
+      legFront: limb(26, -50),
+      legBack: limb(0, -40),
+    },
+    {
+      lean: deg(-18),
+      head: deg(-4),
+      armFront: limb(120, 6),
+      armBack: limb(-30, 50),
+      legFront: limb(30, -46),
+      legBack: limb(-6, -36),
+    },
+  ),
+  // Falling: the big fist driven straight down like a pile driver.
+  'prism.drop': strike(
+    {
+      lean: deg(0),
+      head: deg(-4),
+      armFront: limb(160, 60),
+      armBack: limb(20, 60),
+      legFront: limb(24, -44),
+      legBack: limb(-2, -40),
+    },
+    {
+      lean: deg(-24),
+      head: deg(10),
+      armFront: limb(10, 6),
+      armBack: limb(-20, 50),
+      legFront: limb(30, -38),
+      legBack: limb(-8, -34),
     },
   ),
 

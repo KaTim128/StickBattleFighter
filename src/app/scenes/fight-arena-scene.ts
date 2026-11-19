@@ -14,7 +14,14 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose, judgementPose, stalkPose, swoopPose } from '../../animation/ability-poses';
+import {
+  abilityPose,
+  assaultPose,
+  judgementPose,
+  stalkPose,
+  swoopPose,
+  weaponPose,
+} from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -930,6 +937,11 @@ export class FightArenaScene implements ArenaScene {
       if (f.buff) {
         f.buff.leftS -= stepS;
         if (f.buff.leftS <= 0 || f.combatant.isKo) {
+          // Crystal Sovereign ends: the armour and the shield shatter.
+          if (f.buff.sovereign) {
+            f.combatant.dropCrystalArmour();
+            f.combatant.dropCrystalShield();
+          }
           f.buff = null;
           f.buffSourceId = null;
           f.combatant.damageTakenScale = 1;
@@ -937,6 +949,7 @@ export class FightArenaScene implements ArenaScene {
         }
       }
       f.recoilS = Math.max(0, f.recoilS - stepS);
+      if (f.bash) f.bash.readyS = Math.max(0, f.bash.readyS - stepS);
       f.appearS = Math.max(0, f.appearS - stepS);
       f.knockFlightS = Math.max(0, f.knockFlightS - stepS);
       f.attackCooldownS = Math.max(0, f.attackCooldownS - stepS);
@@ -2282,7 +2295,9 @@ export class FightArenaScene implements ArenaScene {
           : attack && !air
             ? attack.moveFactor
             : 1;
-      move = { x: move.x * factor, y: move.y * factor };
+      // Behind a Prism Guard shield he walks slowly.
+      const shieldSlow = c.crystalShieldLeftS > 0 && f.bash ? f.bash.moveFactor : 1;
+      move = { x: move.x * factor * shieldSlow, y: move.y * factor * shieldSlow };
       // Sonic Boom: held in the scream, it cannot walk toward the one screaming (it can still back away or sidestep).
       if (f.pinned) {
         f.pinned.leftS -= stepS;
@@ -2448,6 +2463,36 @@ export class FightArenaScene implements ArenaScene {
       // Being hit breaks a stalk; a landed blow spends a charged mark.
       this.abilities.world.cancelStalk(target.name, this.abilities);
       if (markFactor > 1) this.abilities.world.consumeMark(attacker.name, this.abilities);
+    }
+    // Prism Guard: a melee blow the crystal shield stops is answered with a bash on the attacker, once in a while.
+    if (guarded && s.melee && target.bash && target.bash.readyS <= 0 && target.combatant.crystalShieldLeftS > 0) {
+      const b = target.bash;
+      const away = Math.hypot(attacker.x - target.x, attacker.y - target.y);
+      if (away <= b.reachM + attacker.def.body.footRadiusM) {
+        b.readyS = b.cooldownS;
+        const dirB = {
+          x: (attacker.x - target.x) / Math.max(0.01, away),
+          y: (attacker.y - target.y) / Math.max(0.01, away),
+        };
+        this.applyStrike(target, attacker, {
+          damage: b.damage,
+          heavy: false,
+          knockbackMps: b.knockbackMps,
+          dir: dirB,
+          melee: false,
+          impact: 'knuckle-heavy',
+          stunS: 0.5,
+        });
+        this.abilities?.emit({
+          kind: 'impact',
+          ability: 'prismGuard',
+          vfx: 'shield-bash',
+          sfx: 'shield-bash',
+          x: attacker.x,
+          y: attacker.y,
+          radiusM: 1,
+        });
+      }
     }
     if (guarded)
       target.shieldS = SHIELD_FLARE_S; // the guard flares where it took the blow (PRS-5)
@@ -3509,6 +3554,8 @@ export class FightArenaScene implements ArenaScene {
       );
       const assault = this.abilities?.world.assaultOf(f.name);
       if (assault) pose = assaultPose(pose, assault, cast.def.id);
+      const swing = this.abilities?.world.weaponOf(f.name);
+      if (swing) pose = weaponPose(pose, swing);
       const swoop = this.abilities?.world.swoopOf(f.name);
       if (swoop !== null && swoop !== undefined) pose = swoopPose(pose, swoop);
       const judgement = this.abilities?.world.judgementOf(f.name);
@@ -3591,6 +3638,58 @@ export class FightArenaScene implements ArenaScene {
               : 0;
       f.focusNow += (target - f.focusNow) * smoothing(8, frameDtS);
       f.view.focus = f.focusNow;
+    }
+    // Prismor's crystal weapons: grown out of his arms through the wind-up, held while they are used, shattered when they end.
+    {
+      const cast = f.caster?.cast;
+      const d = cast?.def.delivery;
+      let kind: string | null = null;
+      let target = 0;
+      if (d?.type === 'weapon') {
+        kind = d.weapon;
+        target = cast?.phase === 'windup' ? Math.min(1, (f.caster?.phaseProgress ?? 0) * 1.25) : 1;
+      } else if (f.buff?.sovereign) {
+        kind = 'sovereign';
+        target = 1;
+      } else if (c.crystalShieldLeftS > 0) {
+        kind = 'shield';
+        target = 1;
+      }
+      if (kind) {
+        f.weaponKind = kind;
+        f.weaponForm =
+          target >= f.weaponForm ? target : f.weaponForm + (target - f.weaponForm) * smoothing(10, frameDtS);
+      } else if (f.weaponKind) {
+        // It is over: the weapon shatters into crystal fragments at his hands.
+        this.abilities?.emit({
+          kind: 'impact',
+          ability: 'crystal',
+          look: f.caster?.def('ult').look,
+          vfx: 'crystal-shatter',
+          sfx: 'crystal-shatter',
+          x: f.x + f.facing * 0.5,
+          y: f.y,
+          radiusM: 1.2,
+        });
+        f.weaponKind = null;
+        f.weaponForm = 0;
+      }
+      f.view.weapon = f.weaponKind ? { kind: f.weaponKind, form: f.weaponForm } : null;
+      const armourTarget = c.crystalArmourHits > 0 ? 1 : 0;
+      f.view.crystalArmour += (armourTarget - f.view.crystalArmour) * smoothing(armourTarget > 0 ? 9 : 30, frameDtS);
+      if (Math.abs(f.view.crystalArmour - armourTarget) < 0.01) f.view.crystalArmour = armourTarget;
+      const broke = c.takeCrystalBreaks();
+      if (broke.armour || broke.shield)
+        this.abilities?.emit({
+          kind: 'impact',
+          ability: 'crystal',
+          look: f.caster?.def('ult').look,
+          vfx: 'crystal-shatter',
+          sfx: 'crystal-shatter',
+          x: f.x,
+          y: f.y,
+          radiusM: 1.6,
+        });
     }
     // Psychic Barrier: when it breaks (or runs out) it bursts into floating fragments where he stands.
     if (c.takeBarrierBreak() && f.caster) {
@@ -3696,6 +3795,8 @@ export class FightArenaScene implements ArenaScene {
     {
       const sl = f.caster?.cast?.def.look?.shout;
       const screaming = this.abilities?.world.beams.some((b) => b.casterId === f.name && b.def.look?.shout) ?? false;
+      // The whole view trembles for as long as the scream pours (owner, 21/11/2026: a shaking feel).
+      if (screaming) this.shake.addTrauma(Math.max(0, 0.4 - this.shake.trauma));
       f.view.shout = sl
         ? { kind: sl, k: f.caster?.cast?.phase === 'windup' ? Math.min(1, 0.3 + f.caster.phaseProgress) : 1 }
         : screaming

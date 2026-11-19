@@ -151,6 +151,17 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 1.9, colour: 0x8defff },
     mist: 4,
   },
+  // Prismor's crystal: purple and blue glints, a bright ring on every touch, a heavy burst on the crush.
+  'crystal-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x1b1450, hot: 0x7b5cff, bright: 0x4aa8ff, core: 0xe9e2ff },
+  },
+  'crystal-hit': { sparks: { count: 10, speedMps: 5, colour: 0x9f8cff }, ring: { sizeM: 0.55, colour: 0x4aa8ff } },
+  'crystal-wave': {
+    sparks: { count: 22, speedMps: 8, colour: 0xe9e2ff },
+    ring: { sizeM: 1.8, colour: 0x7b5cff },
+    dust: [0x7b5cff, 0x4aa8ff],
+  },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },

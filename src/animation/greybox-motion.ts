@@ -129,7 +129,8 @@ export type IdleStyle =
   | 'psychic'
   | 'mechanic'
   | 'sonic'
-  | 'temporal';
+  | 'temporal'
+  | 'crystal';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -145,6 +146,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.mechanic') return 'mechanic';
   if (clipId === 'proc.idle.sonic') return 'sonic';
   if (clipId === 'proc.idle.temporal') return 'temporal';
+  if (clipId === 'proc.idle.crystal') return 'crystal';
   return 'boxer';
 }
 
@@ -177,7 +179,7 @@ function stalkerIdle(timeS: number, bones: BoneLengths): Pose {
  * the opponent's throat, the front foot ahead and the weight settled between the feet. Nothing bounces; only a slow
  * breath and the blade tip's tiny float. `lowered` (0..1) drops the blade toward the floor: the relaxed gedan carry.
  */
-export const SAMURAI_STANCE = { leadFootX: 0.3, rearFootX: -0.3, pelvisM: 0.7, lean: -3, head: 2 } as const;
+export const SAMURAI_STANCE = { leadFootX: 0.3, rearFootX: -0.34, pelvisM: 0.68, lean: -3, head: 2 } as const;
 
 function samuraiIdle(timeS: number, bones: BoneLengths, lowered = 0): Pose {
   const s = SAMURAI_STANCE;
@@ -187,8 +189,8 @@ function samuraiIdle(timeS: number, bones: BoneLengths, lowered = 0): Pose {
     lean: deg(s.lean + breath * 0.8),
     head: deg(s.head),
     // The lead hand at the belly, in front of the body; the rear hand is placed on the hilt by the view.
-    armFront: armIk(0.3 - lowered * 0.06, 0.4 + lowered * 0.2 + float, bones.upperArm, bones.foreArm),
-    armBack: armIk(0.22, 0.44, bones.upperArm, bones.foreArm),
+    armFront: armIk(0.3 - lowered * 0.06, 0.22 + lowered * 0.38 + float, bones.upperArm, bones.foreArm),
+    armBack: armIk(0.22, 0.34, bones.upperArm, bones.foreArm),
     legFront: legIk(s.leadFootX, s.pelvisM - breath * 0.006, bones.thigh, bones.shin),
     legBack: legIk(s.rearFootX, s.pelvisM - breath * 0.006, bones.thigh, bones.shin),
   };
@@ -329,7 +331,28 @@ function temporalIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * CRYSTAL (Prismor): broad and immovable like a monument. The feet wide and planted, the chest out, the head high under the
+ * crown; the oversized crystal arm hangs heavy and a little forward, the other hand loosely open, flexing now and then as if
+ * a blade were about to grow out of it. He barely moves; the weight shifts slowly from one foot to the other.
+ */
+function crystalIdle(timeS: number, bones: BoneLengths): Pose {
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.3);
+  const shift = Math.sin(timeS * TAU * 0.12);
+  const flex = Math.max(0, Math.sin(timeS * TAU * 0.35)) ** 3;
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-1 + shift * 1.2),
+    head: deg(-3),
+    armFront: { root: deg(38 + breath * 2), bend: deg(18) },
+    armBack: { root: deg(-14 + flex * 14), bend: deg(36 + flex * 22) },
+    legFront: legIk(0.26 + shift * 0.02, legs * 0.96 - breath * 0.008, bones.thigh, bones.shin),
+    legBack: legIk(-0.3 - shift * 0.02, legs * 0.96 - breath * 0.008, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'crystal') return crystalIdle(timeS, bones);
   if (style === 'temporal') return temporalIdle(timeS, bones);
   if (style === 'sonic') return sonicIdle(timeS, bones);
   if (style === 'mechanic') return mechanicIdle(timeS, bones);
@@ -504,6 +527,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0);
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'crystal') {
+    // A heavy, unhurried tread: long planted steps, the chest out, the big arm swinging low and slow.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.8,
+      bob: 0.03,
+      leadX: 0.12,
+      rearX: -0.16,
+      reach: 0.14 * k,
+      lift: 0.07,
+      lean: -2,
+      sway: 0.8,
+      head: -2,
+      arms: { lead: { x: 0.2, y: 0.74 }, rear: { x: -0.1, y: 0.7 }, swingX: 0.04, swingY: 0.02 },
+    });
+  }
   if (style === 'temporal') {
     // Even, exact steps like a metronome: upright, the feet set down neatly, the device arm held out, the other folded.
     return gaitPose(phase, bones, {
@@ -627,7 +665,8 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
     style === 'psychic' ||
     style === 'mechanic' ||
     style === 'sonic' ||
-    style === 'temporal'
+    style === 'temporal' ||
+    style === 'crystal'
   )
     return idlePose(timeS, bones, style);
   if (style === 'samurai') return samuraiIdle(timeS, bones, 1);
@@ -913,26 +952,43 @@ const TEMPORAL_RUN: RunStyle = {
   pumpBack: { shoulder: -30, elbow: 100 },
 };
 
+/** CRYSTAL RUN: a heavy shouldered charge, the big arm held low and forward. */
+const CRYSTAL_RUN: RunStyle = {
+  pelvisM: 0.76,
+  bob: 0.035,
+  reachM: 0.3,
+  pushM: 0.32,
+  stance: 0.38,
+  swingLiftM: 0.26,
+  lean: -9,
+  drive: 4,
+  head: -2,
+  pumpFront: { shoulder: 50, elbow: 40 },
+  pumpBack: { shoulder: -30, elbow: 80 },
+};
+
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'temporal'
-    ? TEMPORAL_RUN
-    : style === 'sonic'
-      ? SONIC_RUN
-      : style === 'mechanic'
-        ? MECHANIC_RUN
-        : style === 'psychic'
-          ? PSYCHIC_RUN
-          : style === 'samurai'
-            ? SAMURAI_RUN
-            : style === 'heavyweight'
-              ? sprint
-                ? HEAVY_SPRINT
-                : HEAVY_RUN
-              : style === 'stalker'
-                ? STALKER_RUN
-                : sprint
-                  ? SPRINT_STYLE
-                  : RUN;
+  style === 'crystal'
+    ? CRYSTAL_RUN
+    : style === 'temporal'
+      ? TEMPORAL_RUN
+      : style === 'sonic'
+        ? SONIC_RUN
+        : style === 'mechanic'
+          ? MECHANIC_RUN
+          : style === 'psychic'
+            ? PSYCHIC_RUN
+            : style === 'samurai'
+              ? SAMURAI_RUN
+              : style === 'heavyweight'
+                ? sprint
+                  ? HEAVY_SPRINT
+                  : HEAVY_RUN
+                : style === 'stalker'
+                  ? STALKER_RUN
+                  : sprint
+                    ? SPRINT_STYLE
+                    : RUN;
 
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {

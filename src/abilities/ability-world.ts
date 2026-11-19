@@ -7,7 +7,9 @@ import {
   type CloudSpec,
   type MagicLook,
   payloadAt,
+  type ShieldDelivery,
   type SummonSpec,
+  type WeaponHit,
 } from './ability-def';
 
 /**
@@ -108,6 +110,8 @@ export interface AbilityHost {
   barrier?(casterId: string, hp: number, durationS: number): void;
   /** Hold a target in a scream: for `seconds` it cannot walk toward the caster (`awayX/awayY` is the direction from the caster). Optional. */
   pin?(targetId: string, away: Vec2, seconds: number): void;
+  /** Grow (or, with null, drop) a crystal shield on a caster (Prismor's Prism Guard). Optional. */
+  shield?(casterId: string, spec: ShieldDelivery | null): void;
   /** Heal a fighter by `amount` (never above its maximum); returns false if it is down and nothing was done. Optional. */
   heal?(targetId: string, amount: number): boolean;
   /** Time Stop begins (`true`) or ends (`false`): the host freezes or releases everything but the caster. Optional. */
@@ -260,6 +264,19 @@ export interface Drone {
   /** Where it last aimed, for the view. */
   aimX: number;
   aimY: number;
+}
+
+/** A crystal weapon's blows under way (see `WeaponDelivery`). */
+interface WeaponAction {
+  readonly kind: 'weapon';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly dir: Vec2;
+  ageS: number;
+  /** How many blows have landed their timeline slot. */
+  done: number;
+  /** Any blow connected with a fighter. */
+  landed: boolean;
 }
 
 /** A spin in progress (see `WhirlDelivery`). */
@@ -431,6 +448,7 @@ type Action =
   | JudgementAction
   | LiftAction
   | FistAction
+  | WeaponAction
   | WhirlAction;
 
 /** How a grab turned out, for the caster's animation. */
@@ -624,7 +642,9 @@ export class AbilityWorld {
     return (
       this.beams.some((b) => b.casterId === casterId) ||
       this.actions.some(
-        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault') && a.casterId === casterId,
+        (a) =>
+          (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'weapon') &&
+          a.casterId === casterId,
       )
     );
   }
@@ -904,6 +924,24 @@ export class AbilityWorld {
           sfx: def.sfx.release,
           x: at.x,
           y: at.y,
+        });
+        break;
+      case 'weapon':
+        // A new weapon replaces a shield he was holding: the shield shatters.
+        host.shield?.(casterId, null);
+        this.actions.push({ kind: 'weapon', casterId, def, dir, ageS: 0, done: 0, landed: false });
+        break;
+      case 'shield':
+        host.shield?.(casterId, d);
+        host.emit({
+          kind: 'impact',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: null,
+          x: at.x,
+          y: at.y,
+          radiusM: 1.2,
         });
         break;
       case 'whirl':
@@ -1572,11 +1610,13 @@ export class AbilityWorld {
                   ? this.stepJudgement(a, dtS, host)
                   : a.kind === 'lift'
                     ? this.stepLift(a, dtS, host)
-                    : a.kind === 'fist'
-                      ? this.stepFist(a, dtS, host)
-                      : a.kind === 'whirl'
-                        ? this.stepWhirl(a, dtS, host)
-                        : this.stepGrab(a, dtS, host);
+                    : a.kind === 'weapon'
+                      ? this.stepWeapon(a, dtS, host)
+                      : a.kind === 'fist'
+                        ? this.stepFist(a, dtS, host)
+                        : a.kind === 'whirl'
+                          ? this.stepWhirl(a, dtS, host)
+                          : this.stepGrab(a, dtS, host);
       if (finished) {
         // The action may have been removed meanwhile (a new pull on the same target).
         const at = this.actions.indexOf(a);
@@ -2236,6 +2276,160 @@ export class AbilityWorld {
         });
       }
     }
+  }
+
+  /** A crystal weapon's animation state for the caster: which blow, how far through the wind-up to it, and whether it is recovering. */
+  weaponOf(casterId: string): { weapon: string; index: number; t: number; total: number; recovering: boolean } | null {
+    const a = this.actions.find((x) => x.kind === 'weapon' && x.casterId === casterId) as WeaponAction | undefined;
+    const d = a?.def.delivery;
+    if (!a || d?.type !== 'weapon') return null;
+    const last = d.hits[d.hits.length - 1]!;
+    if (a.done >= d.hits.length) {
+      const tail = a.landed ? 0.25 : d.missRecoveryS;
+      return {
+        weapon: d.weapon,
+        index: d.hits.length,
+        t: Math.min(1, (a.ageS - last.atS) / Math.max(0.01, tail)),
+        total: d.hits.length,
+        recovering: true,
+      };
+    }
+    const from = a.done === 0 ? 0 : d.hits[a.done - 1]!.atS;
+    const to = d.hits[a.done]!.atS;
+    return {
+      weapon: d.weapon,
+      index: a.done,
+      t: Math.min(1, Math.max(0, (a.ageS - from) / Math.max(0.01, to - from))),
+      total: d.hits.length,
+      recovering: false,
+    };
+  }
+
+  /** The blows of a crystal weapon: each lands once at its time, on everyone in its shape, re-aimed at the nearest enemy. */
+  private stepWeapon(a: WeaponAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'weapon') return true;
+    a.ageS += dtS;
+    host.drive(a.casterId, { x: 0, y: 0 }, 0); // planted while he swings (his move factor also slows the cast)
+    while (a.done < d.hits.length && a.ageS >= d.hits[a.done]!.atS) {
+      const hit = d.hits[a.done]!;
+      if (a.done > 0)
+        host.emit({
+          kind: 'release',
+          ability: a.def.id,
+          look: a.def.look,
+          vfx: a.def.vfx,
+          sfx: a.def.sfx.release,
+          x: host.position(a.casterId).x,
+          y: host.position(a.casterId).y,
+        });
+      if (this.weaponBlow(a, d, hit, host)) a.landed = true;
+      a.done++;
+    }
+    if (a.done < d.hits.length) return false;
+    const last = d.hits[d.hits.length - 1]!;
+    return a.ageS >= last.atS + (a.landed ? 0.25 : d.missRecoveryS);
+  }
+
+  /** One blow: returns whether it connected with a fighter. */
+  private weaponBlow(
+    a: WeaponAction,
+    d: Extract<AbilityDef['delivery'], { type: 'weapon' }>,
+    hit: WeaponHit,
+    host: AbilityHost,
+  ): boolean {
+    const at = host.position(a.casterId);
+    const near = this.nearestEnemy(a.casterId, at, hit.reachM * 1.3, host);
+    const dir = near ? norm({ x: near.x - at.x, y: near.y - at.y }) : a.dir;
+    const payloadFor = (damageFactor: number, knockbackFactor: number): AbilityPayload => ({
+      ...a.def.payload,
+      damage: Math.max(1, Math.round(a.def.payload.damage * damageFactor)),
+      knockbackMps: a.def.payload.knockbackMps * knockbackFactor,
+      ...(hit.heavy !== undefined ? { heavy: hit.heavy } : {}),
+    });
+    const struck = new Set<string>();
+    let landed = false;
+    const strike = (f: AbilityTarget, damageFactor: number, knockbackFactor: number, push: Vec2): void => {
+      if (struck.has(f.id)) return;
+      if (!this.hit(host, a.casterId, f.id, payloadFor(damageFactor, knockbackFactor), push, a.def.look?.hitFlash))
+        return;
+      struck.add(f.id);
+      landed = true;
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: a.def.sfx.impact,
+        x: f.x,
+        y: f.y,
+        radiusM: 0.8,
+        dirX: dir.x,
+        dirY: dir.y,
+      });
+    };
+    const foes = host.fighters().filter((f) => !this.friendly(f, a.casterId, host) && f.hittable);
+    let envAt = at;
+    let envR = hit.reachM * 0.5;
+    if (hit.shape === 'arc' || hit.shape === 'circle') {
+      for (const f of foes) {
+        const dist = Math.hypot(f.x - at.x, f.y - at.y);
+        if (dist > hit.reachM + f.radiusM) continue;
+        if (hit.shape === 'arc') {
+          const ang = Math.acos(
+            Math.max(-1, Math.min(1, ((f.x - at.x) * dir.x + (f.y - at.y) * dir.y) / Math.max(0.001, dist))),
+          );
+          if (ang > hit.widthM) continue;
+        }
+        strike(f, hit.damageFactor, hit.knockbackFactor, norm({ x: f.x - at.x, y: f.y - at.y }));
+      }
+      envAt = hit.shape === 'circle' ? at : { x: at.x + dir.x * hit.reachM * 0.6, y: at.y + dir.y * hit.reachM * 0.6 };
+      envR = hit.shape === 'circle' ? hit.reachM : hit.reachM * 0.55;
+    } else if (hit.shape === 'line') {
+      const tip = { x: at.x + dir.x * hit.reachM, y: at.y + dir.y * hit.reachM };
+      const inLine = foes
+        .filter((f) => segmentDistance(at, tip, f) <= hit.widthM + f.radiusM)
+        .sort((p, q) => Math.hypot(p.x - at.x, p.y - at.y) - Math.hypot(q.x - at.x, q.y - at.y));
+      inLine.forEach((f, i) => strike(f, hit.damageFactor * (d.pierceFalloff ?? 1) ** i, hit.knockbackFactor, dir));
+      envAt = tip;
+      envR = hit.widthM + 0.2;
+    } else {
+      const c = { x: at.x + dir.x * hit.reachM, y: at.y + dir.y * hit.reachM };
+      for (const f of foes)
+        if (Math.hypot(f.x - c.x, f.y - c.y) <= hit.widthM + f.radiusM)
+          strike(f, hit.damageFactor, hit.knockbackFactor, norm({ x: f.x - c.x, y: f.y - c.y }));
+      const sw = d.shockwave;
+      if (sw) {
+        for (const f of foes)
+          if (Math.hypot(f.x - c.x, f.y - c.y) <= sw.radiusM + f.radiusM)
+            strike(f, sw.damageFactor, sw.knockbackFactor, norm({ x: f.x - c.x, y: f.y - c.y }));
+        envR = sw.radiusM;
+        host.emit({
+          kind: 'impact',
+          ability: a.def.id,
+          look: a.def.look,
+          vfx: 'crystal-shockwave',
+          sfx: null,
+          x: c.x,
+          y: c.y,
+          radiusM: sw.radiusM,
+        });
+      }
+      envAt = c;
+    }
+    host.hitEnvironment(a.casterId, envAt, envR, payloadFor(hit.damageFactor, hit.knockbackFactor), dir, false);
+    if (!landed)
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: 'crystal-whiff',
+        sfx: null,
+        x: envAt.x,
+        y: envAt.y,
+        radiusM: 0.5,
+      });
+    return landed;
   }
 
   /** The fist: out along the aim, one blow to each enemy it passes, a beat at full reach, then back. */

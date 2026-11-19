@@ -156,6 +156,18 @@ export class FighterEntity {
   stalkAmount = 0;
   /** Presentation (winged fighters): how far the hover has lifted it, and the wings' spread and beat. */
   hoverNow = 0;
+  /** Prism Guard: the bash its shield answers a melee blow with, how long until it may again, and how slowly he moves behind it. */
+  bash: {
+    damage: number;
+    knockbackMps: number;
+    reachM: number;
+    cooldownS: number;
+    readyS: number;
+    moveFactor: number;
+  } | null = null;
+  /** Presentation: how fully grown his crystal weapon is (0..1), and which one. */
+  weaponForm = 0;
+  weaponKind: string | null = null;
   /** Presentation: the most seconds of Age Acceleration seen on it this time (to time the aging and the recovery). */
   agePeakS = 0;
   /** Held in a scream: it cannot walk toward the caster (the direction away from him is awayX/awayY) for leftS more seconds. */

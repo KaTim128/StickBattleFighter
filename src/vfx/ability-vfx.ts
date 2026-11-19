@@ -311,6 +311,9 @@ const FIRE: Palette = { deep: 0xd8320c, hot: 0xff6a00, bright: 0xffa53a, core: 0
 const DECAY_FLAKES: Palette = { deep: 0x1c2410, hot: 0x5d8a1e, bright: 0xa8d84c, core: 0xd8eaa0 };
 /** A beam pours at chest height. */
 const BEAM_HEIGHT_M = 1.05;
+/** Where a scream leaves the head: the mouth, about this high (metres) and a little ahead of the body. */
+const MOUTH_HEIGHT_M = 1.58;
+const MOUTH_AHEAD_M = 0;
 const SMOKE = 0x2c2420;
 
 /** Fire spreading across the floor from a big impact (Eruption). */
@@ -1872,24 +1875,48 @@ export class AbilityVfx {
           b.to.x + Math.cos(ang + Math.PI / 2) * d.widthM * 0.5,
           b.to.y + Math.sin(ang + Math.PI / 2) * d.widthM * 0.5,
         ]).fill({ color: pal.deep, alpha: 0.16 * amount });
-        for (let i = 0; i < 8; i++) {
-          const ph = (t * 1.7 + i / 8) % 1;
-          const r = 0.5 + ph * (len - 0.5);
-          const spread = half * (0.7 + 0.5 * ph) + 0.12;
-          f.arc(b.from.x, b.from.y, r, ang - spread, ang + spread).stroke({
+        // Twenty rings in flight at once, each drawn as a doubled, wobbling arc that jitters sideways as it travels, so the sound
+        // reads as a violent shake rather than a calm ripple. Every arc starts with its own moveTo: an arc continues the last path
+        // point otherwise, which drew a stray line across the screen.
+        const RINGS = 20;
+        for (let i = 0; i < RINGS; i++) {
+          const ph = (t * 2.6 + i / RINGS) % 1;
+          const r = MOUTH_AHEAD_M + ph * (len - MOUTH_AHEAD_M);
+          const spread = half * (0.3 + 1.1 * ph) + 0.1;
+          const shake = Math.sin(t * 58 + i * 2.3) * 0.07 * (0.4 + ph);
+          const rr = r + shake;
+          const wid = 0.13 * (1 - ph * 0.45);
+          const col = i % 2 === 0 ? pal.bright : pal.core;
+          const alpha = (1 - ph * 0.75) * amount;
+          for (const [k, w, a] of [
+            [1, wid * 0.7, alpha * 0.3],
+            [1.16, wid * 0.4, alpha * 0.18],
+          ] as const) {
+            const a0 = ang - spread + Math.sin(t * 41 + i) * 0.05;
+            const a1 = ang + spread + Math.sin(t * 37 + i * 1.7) * 0.05;
+            f.moveTo(b.from.x + Math.cos(a0) * rr * k, b.from.y + Math.sin(a0) * rr * k);
+            f.arc(b.from.x, b.from.y, rr * k, a0, a1).stroke({ width: w, color: col, alpha: a, cap: 'round' });
+          }
+          const c = P(b.from.x + Math.cos(ang) * rr, b.from.y + Math.sin(ang) * rr, MOUTH_HEIGHT_M);
+          const sa = Math.atan2(dy * ISO_T, dx);
+          const gr = 0.1 + 0.8 * ph;
+          g.moveTo(c.x + Math.cos(sa - 1.1) * gr, c.y + Math.sin(sa - 1.1) * gr);
+          g.arc(c.x, c.y, gr, sa - 1.1, sa + 1.1).stroke({
             width: 0.09 * (1 - ph * 0.5),
-            color: i % 2 === 0 ? pal.bright : pal.core,
-            alpha: (1 - ph * 0.8) * amount,
-            cap: 'round',
-          });
-          const c = P(b.from.x + Math.cos(ang) * r, b.from.y + Math.sin(ang) * r, BEAM_HEIGHT_M);
-          g.arc(c.x, c.y, 0.2 + 0.5 * ph, Math.atan2(dy * ISO_T, dx) - 1.1, Math.atan2(dy * ISO_T, dx) + 1.1).stroke({
-            width: 0.06 * (1 - ph * 0.6),
             color: pal.core,
-            alpha: (1 - ph) * 0.9 * amount,
+            alpha: (1 - ph) * 0.95 * amount,
             cap: 'round',
           });
         }
+        // The burst at the mouth where the sound leaves, pulsing with the shake.
+        const mouth = P(
+          b.from.x + Math.cos(ang) * MOUTH_AHEAD_M,
+          b.from.y + Math.sin(ang) * MOUTH_AHEAD_M,
+          MOUTH_HEIGHT_M,
+        );
+        const pulse = 1 + 0.25 * Math.sin(t * 52);
+        g.circle(mouth.x, mouth.y, 0.2 * pulse).fill({ color: pal.hot, alpha: 0.35 * amount });
+        g.circle(mouth.x, mouth.y, 0.1 * pulse).fill({ color: pal.core, alpha: 0.8 * amount });
         continue;
       }
       const amount = Math.min(1, b.ageS / 0.08, (d.durationS - b.ageS) / 0.15);

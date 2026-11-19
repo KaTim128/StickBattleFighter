@@ -21,7 +21,8 @@ type Theme =
   | 'psi'
   | 'gear'
   | 'sonic'
-  | 'time';
+  | 'time'
+  | 'crystal';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -39,6 +40,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   gear: ['#fff1d6', '#d9650f', '#15171b'],
   sonic: ['#eafcff', '#0e8fa8', '#04141a'],
   time: ['#fff4cf', '#1f4fa8', '#07142a'],
+  crystal: ['#e9e2ff', '#5a4bbf', '#0e0a2c'],
 };
 
 const MATERIALS = `
@@ -558,6 +560,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'time',
     rays(24, 24, 20, '#fff4cf', 0.35),
     `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#ffd36a" stroke-width="3"/><circle cx="24" cy="24" r="11" stroke="#2f7bff" stroke-width="2.4" stroke-dasharray="5 3"/></g><g fill="#fff4cf" filter="url(#gl)"><rect x="17" y="15" width="5" height="18" rx="1.5"/><rect x="26" y="15" width="5" height="18" rx="1.5"/></g><g stroke="#fff4cf" stroke-width="2.4" stroke-linecap="round"><path d="M24 2 V6 M24 42 V46 M2 24 H6 M42 24 H46"/></g>`,
+  ),
+  'crystal-greatsword': icon(
+    'crystal',
+    rays(24, 24, 16, '#e9e2ff', 0.25),
+    `<g filter="url(#ds)"><path d="M24 3 L30 12 L28 32 L24 36 L20 32 L18 12 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.8"/></g><g stroke="#4aa8ff" stroke-width="2" stroke-linecap="round" fill="none"><path d="M24 6 V32"/><path d="M12 34 L36 34"/><path d="M24 36 V45"/></g>`,
+  ),
+  'prism-guard': icon(
+    'crystal',
+    rays(24, 24, 15, '#e9e2ff', 0.2),
+    `<g filter="url(#ds)"><path d="M24 4 L38 11 L35 30 L24 44 L13 30 L10 11 Z" fill="#6f64ff" fill-opacity=".8" stroke="#e9e2ff" stroke-width="2.2"/></g><g fill="none" stroke="#4aa8ff" stroke-width="1.6" opacity=".9"><path d="M24 4 V44 M10 11 L35 30 M38 11 L13 30"/></g>`,
+  ),
+  'crystal-dual-blades': icon(
+    'crystal',
+    rays(24, 24, 15, '#e9e2ff', 0.2),
+    `<g filter="url(#ds)"><path d="M8 40 L14 10 L20 14 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.6"/><path d="M40 40 L34 10 L28 14 Z" fill="#4aa8ff" stroke="#e9e2ff" stroke-width="1.6"/></g><path d="M6 42 L22 30 M42 42 L26 30" stroke="#e9e2ff" stroke-width="2.4" stroke-linecap="round"/>`,
+  ),
+  'crystal-lance': icon(
+    'crystal',
+    rays(24, 24, 16, '#e9e2ff', 0.2),
+    `<g filter="url(#ds)"><path d="M4 28 L36 24 L46 24 L36 28 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.6"/><path d="M36 20 L46 24 L36 28" fill="#4aa8ff" stroke="#e9e2ff" stroke-width="1.6"/></g><g fill="#5a4bbf" stroke="#e9e2ff" stroke-width="1.6"><path d="M4 22 L14 20 L16 32 L6 34 Z"/></g>`,
+  ),
+  'crystal-warhammer': icon(
+    'crystal',
+    rays(24, 24, 16, '#e9e2ff', 0.25),
+    `<g filter="url(#ds)"><path d="M22 18 H26 V44 H22 Z" fill="#453a9c" stroke="#e9e2ff" stroke-width="1.6"/><path d="M8 6 L22 3 L40 6 L42 16 L26 20 L10 16 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="2"/></g><g stroke="#4aa8ff" stroke-width="1.6" fill="none"><path d="M10 8 L24 12 L40 8 M24 12 V19"/></g>`,
+  ),
+  'crystal-sovereign': icon(
+    'crystal',
+    rays(24, 24, 20, '#e9e2ff', 0.35),
+    `<g filter="url(#ds)"><path d="M14 18 L24 8 L34 18 L32 38 L24 44 L16 38 Z" fill="#6f64ff" fill-opacity=".85" stroke="#e9e2ff" stroke-width="2.2"/></g><g fill="#e9e2ff" filter="url(#gl)"><path d="M16 12 L18 4 L21 11 Z"/><path d="M27 11 L30 4 L32 12 Z"/><path d="M21 10 L24 1 L27 10 Z"/></g><path d="M24 16 V38" stroke="#4aa8ff" stroke-width="2"/>`,
+  ),
+  'crystal-combo': icon(
+    'crystal',
+    rays(24, 24, 14, '#e9e2ff', 0.15),
+    `<g filter="url(#ds)" fill="#6f64ff" stroke="#e9e2ff" stroke-width="1.6"><path d="M5 30 L11 24 L17 30 L11 38 Z"/><path d="M17 20 L24 12 L31 20 L24 30 Z"/><path d="M29 12 L37 5 L44 12 L37 21 Z"/></g>`,
+  ),
+  'crystal-crush': icon(
+    'crystal',
+    rays(24, 24, 16, '#e9e2ff', 0.25),
+    `<g filter="url(#ds)"><path d="M12 6 L36 6 L40 22 L24 30 L8 22 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="2"/></g><g stroke="#4aa8ff" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M6 40 L16 34 M42 40 L32 34 M24 44 V34"/></g>`,
   ),
   'plague-bloom': icon(
     'toxin',

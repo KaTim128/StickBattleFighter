@@ -27,6 +27,7 @@ export const ULTIMATE_POWER = {
   overdrive: 1.2,
   shatterwave: 1.25,
   timeStop: 1.5,
+  crystalSovereign: 1.3,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

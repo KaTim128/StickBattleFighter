@@ -44,7 +44,7 @@ const FLAME = { glow: 0xff5a14, ember: 0x6a1404, deep: 0xd8320c, core: 0xffd56a 
 /** How far Shroud's knife is cocked up from the forearm (radians). */
 const KNIFE_TILT_RAD = (50 * Math.PI) / 180;
 /** The katana's line is the lead forearm tilted this far up (counter-clockwise on screen), and its length, metres. */
-const KATANA_TILT_RAD = (-14 * Math.PI) / 180;
+const KATANA_TILT_RAD = (-8 * Math.PI) / 180;
 const KATANA_LENGTH_M = 0.95;
 
 export class StickmanView {
@@ -123,6 +123,10 @@ export class StickmanView {
   wingSpread = 0.3;
   /** 0..1 how far the armour plates have extended (Reinforced Plating). */
   plating = 0;
+  /** A crystal weapon grown from his arms (Prismor), and how fully it has formed. */
+  weapon: { kind: string; form: number } | null = null;
+  /** 0..1 how fully the crystal armour covers him. */
+  crystalArmour = 0;
   /** The mouth is open in a shout (Reson's Sonic Boom, Resonance Break), with how wide. */
   shout: { kind: 'scream' | 'screech'; k: number } | null = null;
   /** 0..1 how strongly a Focus Stance glows along the blades (Kenshiro). */
@@ -433,6 +437,8 @@ export class StickmanView {
         eyeGlow: this.eyeGlow,
         wingSpread: this.wingSpread,
         plating: this.plating,
+        weapon: this.weapon,
+        crystalArmour: this.crystalArmour,
         shout: this.shout,
         wingFlap: this.wingFlap,
       });
@@ -1012,7 +1018,7 @@ export class StickmanView {
     const ux = (fx / len) * c - (fy / len) * sn;
     const uy = (fx / len) * sn + (fy / len) * c;
     const shoulder = s.armBack[0];
-    const target = { x: h.x - ux * 0.17, y: h.y - uy * 0.17 };
+    const target = { x: h.x - ux * 0.26, y: h.y - uy * 0.26 };
     const l1 = this.bones.upperArm;
     const l2 = this.bones.foreArm;
     let dx = target.x - shoulder.x;

@@ -283,6 +283,7 @@ export const BODY_STYLES = [
   'mechanic',
   'sonic',
   'temporal',
+  'crystal',
 ] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
 export const HELD_ITEMS = ['staff', 'bone-sword', 'knife', 'katana'] as const;

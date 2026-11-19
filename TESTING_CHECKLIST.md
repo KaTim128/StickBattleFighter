@@ -697,3 +697,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 
 ### Distinct stances (21/11/2026, TD-136)
 - [ ] Standing side by side, each of the eleven fighters has a different silhouette; Vexoris's face is clear (front hand low, back hand up); Psion floats with a visible gap under his feet in the arena and on the select screen and keeps floating through movement and combat.
+
+## Prismor, stances and Sonic Boom (21/11/2026)
+- [ ] Prismor: each weapon visibly grows from the right arm or hand, stays attached through attack, block and walk, and shatters at the end.
+- [ ] Prism Guard blocks only frontal damage, drains faster on heavy blows, is bypassed by grabs; Crystal Sovereign armour and shield break after a few hits.
+- [ ] Select screen: Vexoris, Aerion, Reson, Chronos show both arms in a guard; Kenshiro holds the katana in both hands, blade diagonal.
+- [ ] Sonic Boom leaves the mouth, many strong shaking rings, camera trembles, no stray line.

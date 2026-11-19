@@ -4,6 +4,7 @@ import { GEARGRIND_KIT } from '../data/abilities/geargrind';
 import { INFERNO_KIT } from '../data/abilities/inferno';
 import { KENSHIRO_KIT } from '../data/abilities/kenshiro';
 import { NECRO_KIT } from '../data/abilities/necro';
+import { PRISMOR_KIT } from '../data/abilities/prismor';
 import { PSION_KIT } from '../data/abilities/psion';
 import { RAMPAGE_KIT } from '../data/abilities/rampage';
 import { RESON_KIT } from '../data/abilities/reson';
@@ -22,6 +23,7 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'kenshiro-kit': KENSHIRO_KIT,
   'chronos-kit': CHRONOS_KIT,
   'geargrind-kit': GEARGRIND_KIT,
+  'prismor-kit': PRISMOR_KIT,
   'psion-kit': PSION_KIT,
   'reson-kit': RESON_KIT,
 };

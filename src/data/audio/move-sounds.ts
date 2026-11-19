@@ -630,6 +630,82 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('lowpass', 3200, 150, 0.8, 0.8, 0.7, 0.35),
     tone('sine', 2200, 400, 0.6, 0.3, 0.4),
   ],
+  // Prismor's crystal: glassy chimes that ring and shatter, heavy glassy thuds, bright high ticks as facets grow.
+  'hit-prismor-crush': [
+    tone('sine', 90, 36, 0.4, 0.65),
+    tone('triangle', 1800, 600, 0.3, 0.2),
+    noise('highpass', 5000, 2500, 0.2, 0.35, 1.4),
+    noise('bandpass', 900, 250, 0.3, 0.4, 1.6),
+  ],
+  'crystal-grow': [
+    tone('sine', 600, 2400, 0.5, 0.18),
+    tone('triangle', 1200, 3600, 0.45, 0.1),
+    noise('highpass', 6000, 9000, 0.4, 0.1, 1, 0, { attack: 0.25 }),
+  ],
+  'greatsword-swing': [
+    noise('bandpass', 1400, 400, 0.4, 0.5, 1.2),
+    tone('sine', 160, 70, 0.35, 0.3),
+    tone('triangle', 2000, 900, 0.3, 0.12),
+  ],
+  'greatsword-hit': [
+    tone('sine', 110, 45, 0.35, 0.6),
+    tone('triangle', 2400, 800, 0.3, 0.25),
+    noise('highpass', 4500, 2500, 0.18, 0.4),
+  ],
+  'shield-grow': [
+    tone('sine', 300, 1100, 0.4, 0.25),
+    tone('triangle', 900, 2400, 0.35, 0.12),
+    noise('bandpass', 2800, 5000, 0.3, 0.12, 3),
+  ],
+  'shield-hit': [
+    tone('triangle', 1700, 900, 0.18, 0.35),
+    tone('sine', 2600, 1500, 0.15, 0.18),
+    noise('highpass', 6000, 3000, 0.1, 0.25),
+  ],
+  'shield-bash': [
+    tone('sine', 140, 55, 0.3, 0.55),
+    noise('highpass', 4000, 2000, 0.12, 0.4),
+    tone('triangle', 1400, 500, 0.2, 0.2),
+  ],
+  'blades-flash': [noise('bandpass', 5000, 2000, 0.12, 0.35, 2.2), tone('sine', 2200, 1200, 0.1, 0.18)],
+  'blades-cut': [noise('bandpass', 4200, 1800, 0.1, 0.32, 2.4), tone('triangle', 3000, 1400, 0.1, 0.16)],
+  'lance-thrust': [
+    noise('bandpass', 2200, 700, 0.25, 0.45, 1.4),
+    tone('sine', 220, 120, 0.2, 0.3),
+    tone('triangle', 3400, 1600, 0.2, 0.12),
+  ],
+  'lance-pierce': [
+    tone('sine', 180, 60, 0.28, 0.5),
+    noise('highpass', 5500, 2500, 0.15, 0.4),
+    tone('triangle', 2800, 1200, 0.2, 0.2),
+  ],
+  'hammer-lift': [
+    tone('sine', 70, 200, 0.7, 0.3),
+    tone('triangle', 400, 1200, 0.6, 0.12),
+    noise('bandpass', 600, 2400, 0.6, 0.15, 2, 0, { attack: 0.4 }),
+  ],
+  'hammer-smash': [
+    tone('sine', 70, 26, 0.6, 0.85),
+    noise('lowpass', 2800, 160, 0.6, 0.7, 0.7),
+    tone('triangle', 2200, 500, 0.4, 0.3),
+    noise('highpass', 5000, 2000, 0.3, 0.45, 1, 0.03),
+  ],
+  'sovereign-form': [
+    tone('sine', 100, 800, 0.9, 0.3),
+    tone('triangle', 300, 2400, 0.8, 0.12),
+    noise('bandpass', 500, 5000, 0.8, 0.2, 2, 0, { attack: 0.5 }),
+  ],
+  'sovereign-hit': [
+    tone('sine', 120, 50, 0.3, 0.55),
+    tone('triangle', 2000, 700, 0.25, 0.22),
+    noise('highpass', 5000, 2500, 0.15, 0.35),
+  ],
+  'crystal-shatter': [
+    noise('highpass', 4000, 9000, 0.5, 0.55, 1),
+    tone('triangle', 3200, 600, 0.4, 0.25),
+    tone('sine', 1800, 300, 0.45, 0.2, 0.05),
+    noise('bandpass', 2500, 800, 0.35, 0.3, 1.5),
+  ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),
     noise('lowpass', 1200, 400, 0.26, 0.25, 1, 0.02),

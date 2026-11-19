@@ -107,6 +107,10 @@ export interface PremiumSkin {
   readonly clockDisc?: { readonly bronze: number; readonly cyan: number };
   /** A temporal device on the near forearm: a bronze dial with cyan hands and a glowing crystal (Chronos). */
   readonly dial?: { readonly bronze: number; readonly cyan: number };
+  /** The near arm is an oversized crystal limb: a huge faceted forearm and fist, a shoulder crystal (Prismor). */
+  readonly crystalArm?: { readonly body: number; readonly edge: number; readonly glow: number };
+  /** A crystal crown of sharp points on the head (Prismor). */
+  readonly crown?: { readonly body: number; readonly glow: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
   readonly hoverM?: number;
 }
@@ -481,6 +485,41 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     dial: { bronze: 0xb98a4a, cyan: 0x8defff },
     fragments: { colour: 0xb98a4a, glow: 0x19b8d6 },
   },
+  // Prismor (owner 21/11/2026): a crystal weapon specialist in translucent purple and blue, with one oversized crystalline arm and a
+  // crown of sharp points. No ice, no snow: faceted, glassy, internal light. Not Frostweld.
+  crystal: {
+    palette: {
+      outline: 0x120d38,
+      skin: 0x5a4bbf,
+      skinLit: 0x9f8cff,
+      skinShade: 0x2f2680,
+      skinBack: 0x453a9c,
+      rim: 0xc9bfff,
+      armour: 0x453a9c,
+      armourLit: 0x8f86ff,
+      armourEdge: 0x120d38,
+      seam: 0x4aa8ff,
+      lava: 0xe9e2ff,
+      glow: 0x7b5cff,
+      hand: 0x5a4bbf,
+    },
+    bulk: 1.2,
+    muscle: 0.7,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'trousers',
+      kneeGuards: true,
+      shinGuards: true,
+      feet: 'boots',
+      belt: true,
+      joints: true,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'own',
+    crystalArm: { body: 0x7b6cff, edge: 0x2a2266, glow: 0x4aa8ff },
+    crown: { body: 0x9f8cff, glow: 0x4aa8ff },
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -539,6 +578,10 @@ export interface PremiumDrawState {
   readonly wingFlap?: number;
   /** 0..1 how far the armour plates have extended and locked (Reinforced Plating); 0 = folded away. */
   readonly plating?: number;
+  /** A crystal weapon grown from his arms (Prismor): which one, and how fully formed (0..1). */
+  readonly weapon?: { readonly kind: string; readonly form: number } | null;
+  /** 0..1 how fully the crystal armour has grown over his body (Prismor's Crystal Sovereign). */
+  readonly crystalArmour?: number;
   /** The mouth is open in a roar or a thin screech (Reson), with how wide (0..1). */
   readonly shout?: { readonly kind: 'scream' | 'screech'; readonly k: number } | null;
   /**
@@ -700,6 +743,7 @@ export class PremiumModel {
       st.drawHead?.();
       if (this.skin.helm) this.helm(g, s);
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
+      if (this.skin.crown) this.crown(g, fire, s);
       if (this.st.shout) this.shoutMouth(g, fire, s);
     }
     this.arm(g, fire, s.armFront, false);
@@ -707,6 +751,9 @@ export class PremiumModel {
     if (this.skin.dial) this.dial(g, fire, s.armFront);
     if (this.skin.soundGear) this.soundGear(g, fire, s);
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
+    if (this.skin.crystalArm) this.crystalArm(g, fire, s.armFront);
+    if ((this.st.crystalArmour ?? 0) > 0.02) this.crystalArmourOverlay(g, fire, s);
+    if (this.st.weapon) this.crystalWeapon(g, fire, s);
     if ((this.st.plating ?? 0) > 0.02) this.platingOverlay(g, fire, s);
     if (this.skin.handGlow !== undefined) this.handGlow(fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, true);
@@ -869,6 +916,301 @@ export class PremiumModel {
       fire
         .arc(mx, my, r * (0.5 + ph * 1.4), -0.7, 0.7)
         .stroke({ width: w * 0.12, color: this.P.glow ?? 0x19c4e0, alpha: sh.k * 0.7 * (1 - ph) });
+    }
+  }
+
+  /** One faceted crystal piece: a translucent purple-blue body, a lit facet, a dark edge and a pale inner highlight. */
+  private crystal(g: Graphics, fire: Graphics, pts: readonly Point[], body: number, glow: number, alpha = 0.82): void {
+    const flat = pts.flatMap((p) => [p.x, p.y]);
+    const { w } = this.st;
+    g.poly(flat).fill({ color: body, alpha });
+    // The lit facet: the first half of the points, lighter.
+    const half = pts.slice(0, Math.max(3, Math.ceil(pts.length / 2)));
+    const c = pts.reduce((a, p) => ({ x: a.x + p.x / pts.length, y: a.y + p.y / pts.length }), { x: 0, y: 0 });
+    g.poly([c.x, c.y, ...half.flatMap((p) => [p.x, p.y])]).fill({ color: 0xe9e2ff, alpha: 0.28 });
+    g.poly(flat).stroke({ width: w * 0.12, color: 0x1b1450, alpha: 0.95, join: 'round' });
+    fire.poly(flat).fill({ color: glow, alpha: 0.12 });
+  }
+
+  /** A blade grown from `at` along `ang`: faceted, tapering to a point, `len` long when full, `wid` wide. */
+  private crystalBlade(
+    g: Graphics,
+    fire: Graphics,
+    at: Point,
+    ang: number,
+    len: number,
+    wid: number,
+    form: number,
+  ): void {
+    const L = len * form;
+    if (L < 0.03) return;
+    const ux = Math.cos(ang);
+    const uy = Math.sin(ang);
+    const nx = -uy;
+    const ny = ux;
+    const q = (a: number, b: number): Point => ({ x: at.x + ux * a + nx * b, y: at.y + uy * a + ny * b });
+    this.crystal(
+      g,
+      fire,
+      [
+        q(0, -wid / 2),
+        q(L * 0.18, -wid * 0.62),
+        q(L * 0.92, -wid * 0.2),
+        q(L, 0),
+        q(L * 0.92, wid * 0.2),
+        q(L * 0.18, wid * 0.62),
+        q(0, wid / 2),
+      ],
+      0x6f64ff,
+      0x4aa8ff,
+    );
+    g.moveTo(q(L * 0.05, 0).x, q(L * 0.05, 0).y)
+      .lineTo(q(L * 0.95, 0).x, q(L * 0.95, 0).y)
+      .stroke({ width: this.st.w * 0.08, color: 0xe9e2ff, alpha: 0.7 });
+    // The growing tip glows while the blade is still forming.
+    if (form < 0.98)
+      fire
+        .circle(q(L, 0).x, q(L, 0).y, wid * (0.6 + (1 - form)))
+        .fill({ color: 0x9fd8ff, alpha: 0.5 * (1 - form) + 0.1 });
+  }
+
+  /** The direction a forearm points, radians. */
+  private armAngle(pts: readonly Point[]): number {
+    const [, el, hand] = pts as [Point, Point, Point];
+    return Math.atan2(hand.y - el.y, hand.x - el.x);
+  }
+
+  /** Crystal weapons, each grown from the arm or arms it belongs to and held in them (Prismor). */
+  private crystalWeapon(g: Graphics, fire: Graphics, s: Skel): void {
+    const wp = this.st.weapon;
+    if (!wp) return;
+    const { w } = this.st;
+    const f = wp.form;
+    const handF = s.armFront[2]!;
+    const handB = s.armBack[2]!;
+    const angF = this.armAngle(s.armFront);
+    const angB = this.armAngle(s.armBack);
+    const mid = { x: (handF.x + handB.x) / 2, y: (handF.y + handB.y) / 2 };
+    // Both hands carry one blade: the average of the two forearm directions.
+    const both = Math.atan2(Math.sin(angF) + Math.sin(angB), Math.cos(angF) + Math.cos(angB));
+    switch (wp.kind) {
+      case 'greatsword': {
+        this.crystalBlade(g, fire, mid, both, 1.6, 0.3, f);
+        // A crossguard of two crystal wings where the hands grip, and both fists wrapped round the hilt.
+        const nx = -Math.sin(both);
+        const ny = Math.cos(both);
+        this.crystal(
+          g,
+          fire,
+          [
+            { x: mid.x + nx * 0.28 * f, y: mid.y + ny * 0.28 * f },
+            { x: mid.x + Math.cos(both) * 0.1, y: mid.y + Math.sin(both) * 0.1 },
+            { x: mid.x - nx * 0.28 * f, y: mid.y - ny * 0.28 * f },
+          ],
+          0x4aa8ff,
+          0x7b5cff,
+          0.9,
+        );
+        break;
+      }
+      case 'dualBlades':
+        this.crystalBlade(g, fire, handF, angF, 0.8, 0.14, f);
+        this.crystalBlade(g, fire, handB, angB, 0.8, 0.14, f);
+        break;
+      case 'lance': {
+        const el = s.armFront[1]!;
+        const start = { x: el.x + (handF.x - el.x) * 0.4, y: el.y + (handF.y - el.y) * 0.4 };
+        const reach = Math.hypot(handF.x - start.x, handF.y - start.y);
+        this.crystalBlade(g, fire, start, angF, (reach + 1.9) * 1, 0.2, f);
+        break;
+      }
+      case 'warhammer': {
+        const el = s.armFront[1]!;
+        const ux = Math.cos(angF);
+        const uy = Math.sin(angF);
+        const nx = -uy;
+        const ny = ux;
+        const hs = { x: el.x + (handF.x - el.x) * 0.25, y: el.y + (handF.y - el.y) * 0.25 };
+        const he = { x: handF.x + ux * 0.5 * f, y: handF.y + uy * 0.5 * f };
+        g.moveTo(hs.x, hs.y)
+          .lineTo(he.x, he.y)
+          .stroke({ width: w * 0.5, color: 0x1b1450, cap: 'round' });
+        g.moveTo(hs.x, hs.y)
+          .lineTo(he.x, he.y)
+          .stroke({ width: w * 0.32, color: 0x8a7cff, alpha: 0.9, cap: 'round' });
+        const q = (a: number, b: number): Point => ({
+          x: handF.x + ux * a * f + nx * b * f,
+          y: handF.y + uy * a * f + ny * b * f,
+        });
+        // The head forms round the fist: a heavy faceted block.
+        this.crystal(
+          g,
+          fire,
+          [
+            q(-0.2, -0.42),
+            q(0.12, -0.5),
+            q(0.42, -0.34),
+            q(0.46, 0.0),
+            q(0.42, 0.34),
+            q(0.12, 0.5),
+            q(-0.2, 0.42),
+            q(-0.28, 0),
+          ],
+          0x6f64ff,
+          0x4aa8ff,
+          0.88,
+        );
+        break;
+      }
+      case 'shield':
+      case 'sovereign':
+        this.crystalShield(g, fire, s, wp.kind === 'sovereign' ? 0.62 : 1, f);
+        if (wp.kind === 'sovereign') this.crystalBlade(g, fire, handB, angB, 1.05, 0.17, f);
+        break;
+    }
+  }
+
+  /** A large angular shield growing from the oversized forearm, standing across the way the arm points. */
+  private crystalShield(g: Graphics, fire: Graphics, s: Skel, size: number, form: number): void {
+    const [, el, hand] = s.armFront as [Point, Point, Point];
+    const ang = Math.atan2(hand.y - el.y, hand.x - el.x);
+    const ux = Math.cos(ang);
+    const uy = Math.sin(ang);
+    const nx = -uy;
+    const ny = ux;
+    const k = size * form;
+    const c = { x: hand.x + ux * 0.04, y: hand.y + uy * 0.04 };
+    const q = (a: number, b: number): Point => ({ x: c.x + ux * a * k + nx * b * k, y: c.y + uy * a * k + ny * b * k });
+    this.crystal(
+      g,
+      fire,
+      [q(0.2, 0.64), q(0.3, 0.2), q(0.22, -0.52), q(0.02, -0.68), q(-0.12, -0.05), q(0, 0.56)],
+      0x6f64ff,
+      0x4aa8ff,
+      0.8,
+    );
+    g.moveTo(q(0.12, 0.5).x, q(0.12, 0.5).y)
+      .lineTo(q(0.18, -0.55).x, q(0.18, -0.55).y)
+      .stroke({ width: this.st.w * 0.08, color: 0xe9e2ff, alpha: 0.6 });
+  }
+
+  /** The oversized crystal arm: a thick faceted upper arm, a huge forearm and a fist of crystal, a crystal at the shoulder. */
+  private crystalArm(g: Graphics, fire: Graphics, pts: readonly Point[]): void {
+    const ca = this.skin.crystalArm;
+    if (!ca) return;
+    const [sh, el, hand] = pts as [Point, Point, Point];
+    const { w, t } = this.st;
+    sleeveQuad(g, lerp(sh, el, 0.05), lerp(sh, el, 0.95), w * 1.3, w * 1.2, 0x1b1450);
+    sleeveQuad(g, lerp(sh, el, 0.05), lerp(sh, el, 0.95), w * 1.05, w * 0.95, ca.body, 0.9);
+    sleeveQuad(g, lerp(el, hand, 0.0), lerp(el, hand, 0.8), w * 1.8, w * 1.6, 0x1b1450);
+    sleeveQuad(g, lerp(el, hand, 0.0), lerp(el, hand, 0.8), w * 1.5, w * 1.3, ca.body, 0.9);
+    const ang = Math.atan2(hand.y - el.y, hand.x - el.x);
+    const q = (a: number, b: number): Point => ({
+      x: hand.x + Math.cos(ang) * a - Math.sin(ang) * b,
+      y: hand.y + Math.sin(ang) * a + Math.cos(ang) * b,
+    });
+    this.crystal(
+      g,
+      fire,
+      [q(-0.12, -0.2), q(0.1, -0.26), q(0.26, -0.1), q(0.28, 0.12), q(0.1, 0.26), q(-0.12, 0.2)],
+      ca.edge,
+      ca.glow,
+      0.92,
+    );
+    this.crystal(
+      g,
+      fire,
+      [
+        { x: sh.x - w * 0.2, y: sh.y - w * 1.6 },
+        { x: sh.x + w * 0.9, y: sh.y - w * 0.2 },
+        { x: sh.x - w * 0.6, y: sh.y + w * 0.2 },
+      ],
+      ca.edge,
+      ca.glow,
+      0.9,
+    );
+    // Light turning slowly inside the crystal.
+    const lit = lerp(el, hand, 0.4 + 0.2 * Math.sin(t * 1.5));
+    fire.circle(lit.x, lit.y, w * 1.1).fill({ color: ca.glow, alpha: 0.18 });
+  }
+
+  /** Crystal armour grown over the body: a chest crystal, shoulder crystals and thigh plates, flashing where it takes a blow. */
+  private crystalArmourOverlay(g: Graphics, fire: Graphics, s: Skel): void {
+    const k = Math.min(1, this.st.crystalArmour ?? 0);
+    const { w } = this.st;
+    const c = { x: (s.chest.x + s.pelvis.x) / 2, y: (s.chest.y + s.pelvis.y) / 2 };
+    const sc = (p: Point, o: Point): Point => ({
+      x: c.x + (p.x - c.x) * k + o.x * k,
+      y: c.y + (p.y - c.y) * k + o.y * k,
+    });
+    this.crystal(
+      g,
+      fire,
+      [
+        sc(c, { x: 0, y: -0.34 }),
+        sc(c, { x: 0.2, y: -0.1 }),
+        sc(c, { x: 0.12, y: 0.22 }),
+        sc(c, { x: -0.12, y: 0.22 }),
+        sc(c, { x: -0.2, y: -0.1 }),
+      ],
+      0x6f64ff,
+      0x4aa8ff,
+      0.7,
+    );
+    for (const arm of [s.armFront, s.armBack]) {
+      const sh = arm[0]!;
+      this.crystal(
+        g,
+        fire,
+        [
+          { x: sh.x - w * 0.9 * k, y: sh.y - w * 1.5 * k },
+          { x: sh.x + w * 0.9 * k, y: sh.y - w * 0.3 * k },
+          { x: sh.x - w * 0.5 * k, y: sh.y + w * 0.5 * k },
+        ],
+        0x6f64ff,
+        0x4aa8ff,
+        0.8,
+      );
+    }
+    for (const leg of [s.legFront, s.legBack]) {
+      const th = lerp(leg[0]!, leg[1]!, 0.5);
+      this.crystal(
+        g,
+        fire,
+        [
+          { x: th.x - w * 0.9 * k, y: th.y - w * 1.2 * k },
+          { x: th.x + w * 0.9 * k, y: th.y },
+          { x: th.x - w * 0.4 * k, y: th.y + w * 1.2 * k },
+        ],
+        0x4aa8ff,
+        0x7b5cff,
+        0.7,
+      );
+    }
+  }
+
+  /** The crystal crown: five sharp points rising from the head. */
+  private crown(g: Graphics, fire: Graphics, s: Skel): void {
+    const cr = this.skin.crown;
+    if (!cr) return;
+    const { headRadius: r } = this.st;
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i - 2) * 0.42;
+      const base = { x: s.head.x + Math.cos(a) * r * 0.95, y: s.head.y + Math.sin(a) * r * 0.95 };
+      const tip = {
+        x: s.head.x + Math.cos(a) * r * (1.55 + (i % 2 === 0 ? 0.35 : 0)),
+        y: s.head.y + Math.sin(a) * r * (1.55 + (i % 2 === 0 ? 0.35 : 0)),
+      };
+      const nx = -Math.sin(a) * r * 0.2;
+      const ny = Math.cos(a) * r * 0.2;
+      this.crystal(
+        g,
+        fire,
+        [{ x: base.x - nx, y: base.y - ny }, tip, { x: base.x + nx, y: base.y + ny }],
+        cr.body,
+        cr.glow,
+        0.88,
+      );
     }
   }
 

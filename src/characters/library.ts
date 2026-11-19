@@ -44,6 +44,13 @@ import necroCharacter from '../data/characters/necro/character.json';
 import necroEffects from '../data/characters/necro/effects.json';
 import necroMoveset from '../data/characters/necro/moveset.json';
 import necroStats from '../data/characters/necro/stats.json';
+import prismorAi from '../data/characters/prismor/ai.json';
+import prismorAnimation from '../data/characters/prismor/animation-profile.json';
+import prismorAudio from '../data/characters/prismor/audio.json';
+import prismorCharacter from '../data/characters/prismor/character.json';
+import prismorEffects from '../data/characters/prismor/effects.json';
+import prismorMoveset from '../data/characters/prismor/moveset.json';
+import prismorStats from '../data/characters/prismor/stats.json';
 import psionAi from '../data/characters/psion/ai.json';
 import psionAnimation from '../data/characters/psion/animation-profile.json';
 import psionAudio from '../data/characters/psion/audio.json';
@@ -124,6 +131,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionCharacter,
     kenshiroCharacter,
     psionCharacter,
+    prismorCharacter,
     geargrindCharacter,
     resonCharacter,
     chronosCharacter,
@@ -143,6 +151,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionAnimation,
     kenshiroAnimation,
     psionAnimation,
+    prismorAnimation,
     geargrindAnimation,
     resonAnimation,
     chronosAnimation,
@@ -157,6 +166,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionMoveset,
     kenshiroMoveset,
     psionMoveset,
+    prismorMoveset,
     geargrindMoveset,
     resonMoveset,
     chronosMoveset,
@@ -172,6 +182,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionStats,
     kenshiroStats,
     psionStats,
+    prismorStats,
     geargrindStats,
     resonStats,
     chronosStats,
@@ -188,6 +199,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionEffects,
     kenshiroEffects,
     psionEffects,
+    prismorEffects,
     geargrindEffects,
     resonEffects,
     chronosEffects,
@@ -203,6 +215,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionAudio,
     kenshiroAudio,
     psionAudio,
+    prismorAudio,
     geargrindAudio,
     resonAudio,
     chronosAudio,
@@ -219,6 +232,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     aerionAi,
     kenshiroAi,
     psionAi,
+    prismorAi,
     geargrindAi,
     resonAi,
     chronosAi,

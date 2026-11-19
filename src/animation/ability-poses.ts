@@ -857,6 +857,133 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.45,
   },
 
+  // ---- Prismor's crystal weapons: the wind-up is the weapon growing, hands and arm gathering the crystal.
+  // Crystal Greatsword: both hands brought together low in front, palms up, the blade growing up out of them.
+  crystalGreatsword: {
+    windup: {
+      lean: deg(4),
+      head: deg(-4),
+      armFront: limb(70, 70),
+      armBack: limb(60, 80),
+      legFront: limb(26, -34),
+      legBack: limb(-30, -30),
+    },
+    tremble: deg(1.2),
+    release: {
+      lean: deg(-4),
+      head: deg(-4),
+      armFront: limb(120, 50),
+      armBack: limb(112, 56),
+      legFront: limb(28, -36),
+      legBack: limb(-32, -30),
+    },
+    settle: 0.1,
+  },
+  // Prism Guard: the oversized forearm raised and the other hand pressing against it as the shield grows from it.
+  prismGuard: {
+    windup: {
+      lean: deg(6),
+      head: deg(2),
+      armFront: limb(70, 100),
+      armBack: limb(60, 110),
+      legFront: limb(24, -36),
+      legBack: limb(-28, -32),
+    },
+    release: {
+      lean: deg(-8),
+      head: deg(2),
+      armFront: limb(92, 70),
+      armBack: limb(30, 110),
+      legFront: limb(30, -34),
+      legBack: limb(-30, -28),
+    },
+    settle: 0.1,
+  },
+  // Crystal Dual Blades: both fists clenched at the hips as a blade grows from each, then lifted crossed.
+  crystalDualBlades: {
+    windup: {
+      lean: deg(8),
+      head: deg(0),
+      armFront: limb(20, 110),
+      armBack: limb(10, 112),
+      legFront: limb(26, -34),
+      legBack: limb(-30, -30),
+    },
+    tremble: deg(1),
+    release: {
+      lean: deg(-6),
+      head: deg(-2),
+      armFront: limb(88, 40),
+      armBack: limb(70, 44),
+      legFront: limb(28, -34),
+      legBack: limb(-30, -28),
+    },
+    settle: 0.1,
+  },
+  // Crystal Lance: the oversized forearm drawn back, the lance growing along it past the fist.
+  crystalLance: {
+    windup: {
+      lean: deg(10),
+      head: deg(0),
+      armFront: limb(-30, 90),
+      armBack: limb(40, 100),
+      legFront: limb(30, -40),
+      legBack: limb(-34, -34),
+    },
+    tremble: deg(1.2),
+    release: {
+      lean: deg(8),
+      head: deg(0),
+      armFront: limb(-44, 70),
+      armBack: limb(40, 100),
+      legFront: limb(30, -40),
+      legBack: limb(-34, -34),
+    },
+    settle: 0.1,
+  },
+  // Crystal Warhammer: the arm lifted high and the crystal piling up round the fist as the handle grows.
+  crystalWarhammer: {
+    windup: {
+      lean: deg(8),
+      head: deg(-8),
+      armFront: limb(150, 60),
+      armBack: limb(60, 100),
+      legFront: limb(26, -36),
+      legBack: limb(-30, -32),
+    },
+    tremble: deg(2),
+    release: {
+      lean: deg(12),
+      head: deg(-10),
+      armFront: limb(166, 40),
+      armBack: limb(70, 100),
+      legFront: limb(26, -38),
+      legBack: limb(-30, -32),
+    },
+    settle: 0.1,
+  },
+  // Crystal Sovereign: both arms flung out and up as armour grows over the whole body, then a firm plant.
+  crystalSovereign: {
+    windup: {
+      lean: deg(0),
+      head: deg(-8),
+      armFront: limb(130, 20),
+      armBack: limb(-120, 20),
+      legFront: limb(22, -34),
+      legBack: limb(-26, -30),
+    },
+    tremble: deg(2),
+    release: {
+      lean: deg(-4),
+      head: deg(0),
+      armFront: limb(70, 60),
+      armBack: limb(30, 80),
+      legFront: limb(28, -36),
+      legBack: limb(-30, -30),
+    },
+    settle: 0.25,
+  },
+
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.
@@ -1194,4 +1321,155 @@ export function stalkPose(base: Pose, amount: number): Pose {
 /** Abilities with an animation (tests check every kit ability has one). */
 export function hasAbilityPose(abilityId: string): boolean {
   return abilityId in SHAPES;
+}
+
+/** A crystal weapon's swing state for the caster's animation (see `AbilityWorld.weaponOf`). */
+export interface WeaponSwing {
+  readonly weapon: string;
+  readonly index: number;
+  readonly t: number;
+  readonly total: number;
+  readonly recovering: boolean;
+}
+
+interface SwingKey {
+  readonly wind: Partial<Pose>;
+  readonly strike: Partial<Pose>;
+}
+
+/** Both hands on one weapon: the two arms are given the same direction a few degrees apart so the hands meet on the hilt. */
+const twoHands = (a: number, b: number, bendF: number, bendB = bendF): Partial<Pose> => ({
+  armFront: limb(a, bendF),
+  armBack: limb(a + 6, bendB),
+});
+
+const SWINGS: Readonly<Record<string, readonly SwingKey[]>> = {
+  // Greatsword: a wide horizontal sweep, the sweep back, then a huge overhead chop.
+  greatsword: [
+    {
+      wind: { lean: deg(14), head: deg(-4), ...twoHands(-70, 0, 40), legFront: limb(28, -36), legBack: limb(-34, -32) },
+      strike: {
+        lean: deg(-26),
+        head: deg(8),
+        ...twoHands(100, 0, 6),
+        legFront: limb(44, -40),
+        legBack: limb(-40, -20),
+      },
+    },
+    {
+      wind: { lean: deg(-22), head: deg(6), ...twoHands(110, 0, 20), legFront: limb(44, -40), legBack: limb(-40, -20) },
+      strike: {
+        lean: deg(18),
+        head: deg(-4),
+        ...twoHands(-54, 0, 10),
+        legFront: limb(30, -36),
+        legBack: limb(-44, -26),
+      },
+    },
+    {
+      wind: {
+        lean: deg(16),
+        head: deg(-12),
+        ...twoHands(168, 0, 50),
+        legFront: limb(26, -34),
+        legBack: limb(-30, -30),
+      },
+      strike: {
+        lean: deg(-42),
+        head: deg(16),
+        ...twoHands(46, 0, 4),
+        legFront: limb(60, -62),
+        legBack: limb(-44, -30),
+      },
+    },
+  ],
+  // Dual blades: right, left, right crossing, then the spinning cross.
+  dualBlades: [
+    {
+      wind: { lean: deg(-6), armFront: limb(140, 40), armBack: limb(-20, 90), legFront: limb(26, -34) },
+      strike: { lean: deg(-22), armFront: limb(34, 6), armBack: limb(-30, 90), legFront: limb(40, -38) },
+    },
+    {
+      wind: { lean: deg(-6), armBack: limb(140, 40), armFront: limb(-20, 90), legFront: limb(26, -34) },
+      strike: { lean: deg(-22), armBack: limb(34, 6), armFront: limb(-30, 90), legFront: limb(40, -38) },
+    },
+    {
+      wind: { lean: deg(8), armFront: limb(-50, 40), armBack: limb(60, 100), legFront: limb(30, -36) },
+      strike: { lean: deg(-26), armFront: limb(96, 4), armBack: limb(40, 100), legFront: limb(42, -40) },
+    },
+    {
+      wind: {
+        lean: deg(-30),
+        head: deg(12),
+        armFront: limb(-70, 20),
+        armBack: limb(70, 20),
+        legFront: limb(30, -50),
+        legBack: limb(-34, -46),
+      },
+      strike: {
+        lean: deg(30),
+        head: deg(-12),
+        armFront: limb(100, 4),
+        armBack: limb(-90, 4),
+        legFront: limb(44, -40),
+        legBack: limb(-44, -20),
+      },
+    },
+  ],
+  // Lance: the arm drawn all the way back, then a dead-straight thrust.
+  lance: [
+    {
+      wind: {
+        lean: deg(12),
+        armFront: limb(-50, 80),
+        armBack: limb(40, 100),
+        legFront: limb(34, -44),
+        legBack: limb(-40, -36),
+      },
+      strike: {
+        lean: deg(-30),
+        head: deg(-4),
+        armFront: limb(90, 0),
+        armBack: limb(30, 100),
+        legFront: limb(54, -50),
+        legBack: limb(-46, -14),
+      },
+    },
+  ],
+  // Warhammer: lifted high and held, then a huge overhead smash into a deep crouch.
+  warhammer: [
+    {
+      wind: {
+        lean: deg(18),
+        head: deg(-14),
+        armFront: limb(172, 40),
+        armBack: limb(70, 100),
+        legFront: limb(24, -34),
+        legBack: limb(-30, -30),
+      },
+      strike: {
+        lean: deg(-46),
+        head: deg(20),
+        armFront: limb(34, 4),
+        armBack: limb(50, 100),
+        legFront: limb(66, -70),
+        legBack: limb(-46, -34),
+      },
+    },
+  ],
+};
+
+/** Overlays a crystal weapon's blows on the cast pose: each blow winds up from the last, lands, and the last one recovers slowly. */
+export function weaponPose(base: Pose, w: WeaponSwing): Pose {
+  const keys = SWINGS[w.weapon];
+  if (!keys) return base;
+  if (w.recovering) {
+    const last = keys[keys.length - 1]!;
+    return blendPose({ ...base, ...last.strike }, base, ease(w.t));
+  }
+  const key = keys[Math.min(w.index, keys.length - 1)]!;
+  const prev = w.index > 0 ? { ...base, ...keys[Math.min(w.index - 1, keys.length - 1)]!.strike } : base;
+  const wind = { ...base, ...key.wind };
+  const strike = { ...base, ...key.strike };
+  return w.t < 0.62 ? blendPose(prev, wind, ease(w.t / 0.62)) : blendPose(wind, strike, ease((w.t - 0.62) / 0.38));
 }

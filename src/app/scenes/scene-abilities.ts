@@ -6,6 +6,7 @@ import {
   type BuffEffect,
   type Burn,
   finisherFactor,
+  type ShieldDelivery,
   type SummonSpec,
 } from '../../abilities/ability-def';
 import {
@@ -331,6 +332,7 @@ export class SceneAbilities implements AbilityHost {
     // or its own drive and the grab's would fight and fling both round the arena. The stun keeps it
     // from starting anything new until it is slammed down.
     f.caster?.interrupt(true);
+    f.combatant.dropCrystalShield(); // a grab ignores a shield: it shatters
     this.world.cancel(f.name, this);
     f.scriptedAttack = null;
     f.combo.interrupt();
@@ -422,10 +424,33 @@ export class SceneAbilities implements AbilityHost {
       f.caster.cooldownScale = buff?.cooldownFactor ?? 1;
       if (buff?.cooldownFactor) f.caster.scaleCooldowns(buff.cooldownFactor);
     }
+    // Crystal Sovereign: armour that takes the next few blows, and a small shield for the next few frontal ones.
+    if (buff?.sovereign) {
+      f.combatant.raiseCrystalArmour(buff.sovereign.armourHits);
+      f.combatant.raiseCrystalShield({
+        hp: 0,
+        hits: buff.sovereign.shieldHits,
+        seconds: buff.durationS,
+        heavyFactor: 1,
+      });
+      f.bash = null;
+    }
     // Hunting Frenzy puts the lights out on every enemy for as long as it lasts.
     if (buff?.darkensFoes)
       for (const o of this.fightersOf())
         if (o.team !== f.team && !o.combatant.isKo) o.combatant.darken(buff.durationS, buff.darkensFoes.visibleM);
+  }
+
+  shield(casterId: string, spec: ShieldDelivery | null): void {
+    const f = this.byName(casterId);
+    if (!f) return;
+    if (!spec) {
+      f.combatant.dropCrystalShield();
+      f.bash = null;
+      return;
+    }
+    f.combatant.raiseCrystalShield({ hp: spec.hp, hits: 0, seconds: spec.durationS, heavyFactor: spec.heavyFactor });
+    f.bash = { ...spec.bash, readyS: 0, moveFactor: spec.moveFactor };
   }
 
   burnFighter(targetId: string, burn: Burn): void {
