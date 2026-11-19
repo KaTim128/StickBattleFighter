@@ -884,3 +884,6 @@ Done: one two-handed katana, samurai idle/walk/run, new three slashes plus downw
 
 ## 21/11/2026: Portraits, picker, Kenshiro rework (TD-127)
 Done: batched portrait read-back, four-per-row scrollable picker, Kenshiro slash-only tap, Sliding Slice, charging Iaido. Gate: biome, typecheck, vitest 1058, front-end and menu e2e. Next: deploy, owner review, then Psion.
+
+## 21/11/2026: Select layout and Kenshiro slow strikes (TD-128)
+Done: stickman/picker layout, larger stance frames, three-slash slower heavier tap, slow overhead heavy. Gate: biome, typecheck, vitest 1058, front-end and menu e2e. Next: deploy, owner review, then Psion.

@@ -1066,3 +1066,13 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 - *Balance.* Even Sliding Slice's bonus (54) stays under the parry counter (50 times the 1.3 mastery factor); Iaido is lighter per target than the slice; both cost real stamina and have 8 s and 11 s cooldowns; neither shares the parry's or the ultimate's role. A test pins these relations. Both dashes draw the steel slash ribbon along the real blade.
 **Not verified.** The 60% bonus through the live scene (the factor is unit-tested and applied in `hitFighter`); feel of the slide at full speed; the AI's use of the new dashes (tactics retuned); the scrolling picker on a real phone beyond the e2e mobile profile.
 **Status.** ACCEPTED, owner to review in play.
+
+### TD-128: Select screen layout; Kenshiro's slower three-slash tap and slow overhead slice heavy (owner 21/11/2026) — ACCEPTED
+**Owner requests.** On the fighter select screen put the stickman on the left and the fighter picker beside it on the right, so the stickman can be bigger; Kenshiro's tap attack becomes a slower three-slash movement that hits harder than other fighters' taps, and his heavy a slow, big-damage slice.
+**Decisions.**
+- *Layout.* `.fe-select` is now three columns: the info panel, the stickman stage (the largest), and the picker on the right (four tiles to a row, scrolling for the rest); the stickman's frames are rendered larger (440 px tall, was 300) so the bigger figure stays sharp.
+- *Tap.* Three slashes: horizontal (30 damage, 0.20 s start), second horizontal (34, 0.22 s) and a rising diagonal slash (46, 0.26 s, knocks down); each is slower than every other fighter's taps (0.06 to 0.16 s) and stronger per blow than any of them except Titan's finishers. The old fourth cut is removed.
+- *Heavy.* The overhead katana slice: 72 damage, 0.72 s start, 0.65 s recovery, knockback 7, knocks down: the slow, big, punishable blow (the downward finishing cut now lives here).
+- Test: `tests/unit/abilities/kenshiro.test.ts` checks the chain, that the taps are at least 0.2 s to start and 30 damage each, and that the heavy is slow and at least twice a tap.
+**Not verified.** Feel and fight length against the other fighters in play (the damage-per-second of the slow taps is lower than the fast fighters', their per-blow damage higher; provisional, OQ-05); the layout on a real phone beyond the screenshot.
+**Status.** ACCEPTED, owner to review in play.

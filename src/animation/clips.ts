@@ -277,12 +277,7 @@ const STRIKES = {
     { lean: deg(-32), head: deg(10), armFront: limb(-10, 40), legFront: limb(52, -90), legBack: limb(-20, -70) },
     { lean: deg(-6), head: deg(-4), armFront: limb(166, 6), legFront: limb(26, -22), legBack: limb(-18, -14) },
   ),
-  // 4. Powerful finishing cut: sword high overhead, then a deep stepping lunge and one great downward cut.
-  'kenshiro.finish': strike(
-    { lean: deg(14), head: deg(-8), armFront: limb(176, 10), legFront: limb(28, -30), legBack: limb(-24, -22) },
-    { lean: deg(-52), head: deg(24), armFront: limb(62, 4), legFront: limb(66, -54), legBack: limb(-50, -14) },
-  ),
-  // Heavy: a deliberate overhead cut from a high stance, the blade drawn back behind the head, held, then dropped.
+  // Heavy: a slow, deliberate overhead slice from a high stance, the blade drawn back behind the head, held, then dropped through the target in a deep step.
   'kenshiro.overhead': strike(
     { lean: deg(18), head: deg(-12), armFront: limb(150, 80), legFront: limb(24, -26), legBack: limb(-20, -18) },
     { lean: deg(-44), head: deg(20), armFront: limb(76, 4), legFront: limb(58, -56), legBack: limb(-44, -16) },

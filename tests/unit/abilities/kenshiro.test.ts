@@ -199,17 +199,27 @@ describe('Kenshiro combo, heavy and Sword Mastery', () => {
     knockbackResistance: 0,
   };
 
-  it('three slashes (horizontal, second horizontal, rising diagonal) then a powerful downward finishing cut, and an overhead slash heavy', () => {
+  it("a slower three-slash tap (horizontal, second horizontal, rising diagonal) that hits harder than other fighters' taps, and a slow overhead slice heavy", () => {
     const chain: string[] = [];
     let id: string | undefined = set.starters.tap;
     while (id && !chain.includes(id)) {
       chain.push(id);
       id = (set.moves.find((m) => m.id === id) as { next?: { tap?: string } } | undefined)?.next?.tap;
     }
-    expect(chain).toEqual(['slash-1', 'slash-2', 'rising-slash', 'finishing-cut']);
+    expect(chain).toEqual(['slash-1', 'slash-2', 'rising-slash']);
     for (const m of set.moves.filter((x) => chain.includes(x.id)))
       expect(states[m.animationState]).toMatch(/^kenshiro\./);
     expect(set.starters.heavy).toBe('overhead-cut');
+    // Slower than a normal tap and stronger per blow.
+    const taps = chain.map((id) => set.moves.find((m) => m.id === id)!);
+    for (const t of taps) {
+      expect(t.startupS, t.id).toBeGreaterThanOrEqual(0.2); // slower than every other fighter's taps (0.06 to 0.16 s)
+      expect(t.damage, t.id).toBeGreaterThanOrEqual(30); // and stronger per blow than all but Titan's finishers
+    }
+    const heavy = set.moves.find((m) => m.id === 'overhead-cut')!;
+    expect(heavy.startupS).toBeGreaterThanOrEqual(0.6); // slow
+    expect(heavy.damage).toBeGreaterThanOrEqual(2 * taps[0]!.damage); // big
+    expect(heavy.heavy).toBe(true);
     expect(states.HeavyAttack).toBe('kenshiro.overhead');
   });
 

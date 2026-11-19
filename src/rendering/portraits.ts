@@ -266,7 +266,7 @@ export async function renderIdleStrips(
   /** The fighter's select stance, if it has one (owner, 13/11/2026); otherwise its idle is used. */
   stanceFor: (def: FighterDef) => SelectStance | undefined = () => undefined,
   frames = 30,
-  cellH = 300,
+  cellH = 440,
 ): Promise<IdleStrip[]> {
   const out: IdleStrip[] = [];
   for (const def of defs) {

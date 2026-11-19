@@ -4,7 +4,6 @@
   "states": {
     "Jab": "kenshiro.slash-1",
     "Hook": "kenshiro.slash-2",
-    "RoundhouseKick": "kenshiro.finish",
     "HeavyAttack": "kenshiro.overhead",
     "Idle": "proc.idle.samurai",
     "FightingStance": "proc.idle.samurai",

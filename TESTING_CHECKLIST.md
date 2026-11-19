@@ -652,3 +652,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Kenshiro's tap: slash, second slash, rising diagonal slash, downward finishing cut; forward and air taps are slashes too, nothing pokes.
 - [ ] Q Sliding Slice slides a very short way, cutting through everyone in the path; a target at 15% health or less takes 60% more.
 - [ ] The fifth ability Iaido rushes forward cutting every opponent in the line without knocking anyone back.
+
+### Select layout and Kenshiro's slow strikes (21/11/2026, TD-128)
+- [ ] Select screen: stats on the left, a big stickman in the middle, the four-per-row picker on the right.
+- [ ] Kenshiro's J chain is three slow slashes (horizontal, horizontal back, rising diagonal) that hit hard; heavy is a slow overhead slice with big damage.
