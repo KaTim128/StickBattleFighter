@@ -18,7 +18,7 @@ test('admin panel: pick Titan and the training yard, play, then leave the game b
   await expect(menu).toBeVisible();
   // The Admin Panel lists every character (owner, master plan 16/11/2026): the five fighters first,
   // then the skeleton warrior and the training dummy.
-  await expect(menu.locator('[data-fighter]')).toHaveCount(9);
+  await expect(menu.locator('[data-fighter]')).toHaveCount(10);
   for (const id of [
     'inferno',
     'rampage',

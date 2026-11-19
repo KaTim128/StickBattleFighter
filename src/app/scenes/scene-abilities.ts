@@ -225,7 +225,7 @@ export class SceneAbilities implements AbilityHost {
     const mastery = attacker.caster?.kit.passive?.mastery;
     // Finishing bonus (Sliding Slice): a target already nearly beaten takes more.
     damage *= finisherFactor(payload, target.combatant.hp / Math.max(1, target.combatant.stats.maxHp));
-    if (payload.sword && mastery)
+    if ((payload.sword || payload.psi) && mastery)
       damage *= attacker.combatant.swordFactor(mastery.threshold, mastery.damageFactor, mastery.windowS);
     const landed = this.strike(attacker, target, {
       damage,
@@ -243,6 +243,9 @@ export class SceneAbilities implements AbilityHost {
     if (landed && payload.bleed) target.combatant.bleed();
     // Vexoris's poison: toxicity stacks.
     if (landed && payload.poison) target.combatant.poison(payload.poison);
+    // Mental Focus (Psion): every ability that lands builds focus.
+    if (landed && attacker.caster?.kit.passive?.id === 'focus')
+      attacker.combatant.gainMastery(1, attacker.caster.kit.passive.maxStacks);
     // Soul Drain: the target is blinded for a while.
     if (landed && payload.blindS) target.combatant.blind(payload.blindS);
     // Curse of Decay: weaker blows and weaker defence for a while.
@@ -256,6 +259,10 @@ export class SceneAbilities implements AbilityHost {
       c.hp = Math.min(c.stats.maxHp, c.hp + damage * payload.lifesteal);
     }
     return landed;
+  }
+
+  barrier(casterId: string, hp: number, durationS: number): void {
+    this.byName(casterId)?.combatant.raiseBarrier(hp, durationS);
   }
 
   parryWindowFactor(casterId: string): number {

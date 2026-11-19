@@ -15,7 +15,7 @@
     "footRadiusM": 0.3,
     "massKg": 66
   },
-  "power": 1.0,
+  "power": 0.97,
   "defence": 1.08,
   "critChance": 0.14,
   "critMultiplier": 1.6,

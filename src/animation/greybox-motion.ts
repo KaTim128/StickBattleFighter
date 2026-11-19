@@ -125,7 +125,8 @@ export type IdleStyle =
   | 'samurai'
   | 'karate'
   | 'aerial'
-  | 'pyro';
+  | 'pyro'
+  | 'psychic';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -137,6 +138,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.karate') return 'karate';
   if (clipId === 'proc.idle.aerial') return 'aerial';
   if (clipId === 'proc.idle.pyro') return 'pyro';
+  if (clipId === 'proc.idle.psychic') return 'psychic';
   return 'boxer';
 }
 
@@ -239,7 +241,27 @@ function pyroIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * PSYCHIC (Psion): levitating calm. The legs hang loose and slightly crossed under him (the skin lifts him off the floor),
+ * the arms rest a little out from the body with the palms turned forward and open, the head tilted down as if listening.
+ * He drifts on a slow breath and sways side to side.
+ */
+function psychicIdle(timeS: number, bones: BoneLengths): Pose {
+  const drift = Math.sin(timeS * TAU * 0.4);
+  const sway = Math.sin(timeS * TAU * 0.22);
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-1 + sway * 1.5),
+    head: deg(8),
+    armFront: { root: deg(34 + drift * 4), bend: deg(40) },
+    armBack: { root: deg(-14 - drift * 4), bend: deg(46) },
+    legFront: legIk(0.06 + sway * 0.012, legs * 0.93 + drift * 0.008, bones.thigh, bones.shin),
+    legBack: legIk(-0.09, legs * 0.9 + drift * 0.008, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'psychic') return psychicIdle(timeS, bones);
   if (style === 'samurai') return samuraiIdle(timeS, bones);
   if (style === 'karate') return karateIdle(timeS, bones);
   if (style === 'aerial') return aerialIdle(timeS, bones);
@@ -378,6 +400,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'psychic') {
+    // A glide: the feet barely move, the body floats forward upright, the hands held open at his sides.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.7,
+      bob: 0.01,
+      leadX: 0.04,
+      rearX: -0.08,
+      reach: 0.1 * k,
+      lift: 0.03,
+      lean: -4,
+      sway: 0.5,
+      head: 6,
+      arms: { lead: { x: 0.18, y: 0.46 }, rear: { x: -0.04, y: 0.48 }, swingX: 0.03, swingY: 0.01 },
+    });
+  }
   if (style === 'samurai') {
     // Suriashi: a gliding, level walk, the hips steady and low, the feet barely leaving the floor, the sword held still in
     // front of the belly the whole way.
@@ -446,7 +483,14 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
  */
 export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
   // The mage keeps his staff stance; the stalker never stands up straight.
-  if (style === 'mage' || style === 'stalker' || style === 'karate' || style === 'aerial' || style === 'pyro')
+  if (
+    style === 'mage' ||
+    style === 'stalker' ||
+    style === 'karate' ||
+    style === 'aerial' ||
+    style === 'pyro' ||
+    style === 'psychic'
+  )
     return idlePose(timeS, bones, style);
   if (style === 'samurai') return samuraiIdle(timeS, bones, 1);
   const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.3);
@@ -671,18 +715,35 @@ const SAMURAI_RUN: RunStyle = {
   pumpBack: { shoulder: 62, elbow: 96 },
 };
 
+/** PSYCHIC RUN: a low, fast glide, leaning into it with the legs trailing and the hands thrown back. */
+const PSYCHIC_RUN: RunStyle = {
+  pelvisM: 0.7,
+  bob: 0.02,
+  reachM: 0.16,
+  pushM: 0.3,
+  stance: 0.3,
+  swingLiftM: 0.2,
+  lean: -16,
+  drive: 2,
+  head: 8,
+  pumpFront: { shoulder: -20, elbow: 40 },
+  pumpBack: { shoulder: -50, elbow: 40 },
+};
+
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'samurai'
-    ? SAMURAI_RUN
-    : style === 'heavyweight'
-      ? sprint
-        ? HEAVY_SPRINT
-        : HEAVY_RUN
-      : style === 'stalker'
-        ? STALKER_RUN
-        : sprint
-          ? SPRINT_STYLE
-          : RUN;
+  style === 'psychic'
+    ? PSYCHIC_RUN
+    : style === 'samurai'
+      ? SAMURAI_RUN
+      : style === 'heavyweight'
+        ? sprint
+          ? HEAVY_SPRINT
+          : HEAVY_RUN
+        : style === 'stalker'
+          ? STALKER_RUN
+          : sprint
+            ? SPRINT_STYLE
+            : RUN;
 
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {

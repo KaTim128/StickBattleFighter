@@ -331,10 +331,19 @@ export class Combatant {
     if (this.isKo) return none('ignored');
     if (this.invulnS > 0) return none('dodged');
 
-    const raw =
+    let raw =
       ((hit.baseDamage * hit.attackerPower) / (this.stats.defence * this.defenceFactor)) *
       this.damageTakenScale *
       this.status.damageTakenFactor;
+    // Psychic Barrier: the shield takes the blow first; a blow it fully absorbs does nothing else (no flinch, no push).
+    if (this.barrierHp > 0) {
+      const taken = Math.min(this.barrierHp, raw);
+      this.barrierHp -= taken;
+      raw -= taken;
+      this.barrierHitS = 0;
+      if (this.barrierHp <= 0) this.endBarrier();
+      if (raw <= 0.01) return none('blocked');
+    }
     const kbKeep = 1 - this.stats.knockbackResistance;
 
     if (this.guardUp && hit.fromFront) {
@@ -464,6 +473,34 @@ export class Combatant {
     this.status.apply('fog', 0.35, { dps: chipDps, speedFactor, sightM });
   }
 
+  /** Psion's Psychic Barrier: damage it can still absorb, its starting value, seconds left, and seconds since it was last struck. */
+  barrierHp = 0;
+  barrierMaxHp = 0;
+  barrierLeftS = 0;
+  barrierHitS = 9;
+  private barrierBreakPending = false;
+
+  raiseBarrier(hp: number, seconds: number): void {
+    if (this.koAgeS >= 0) return;
+    this.barrierHp = hp;
+    this.barrierMaxHp = hp;
+    this.barrierLeftS = seconds;
+    this.barrierHitS = 9;
+  }
+
+  /** True once after the barrier broke or ran out (the fragments fly); resets on read. */
+  takeBarrierBreak(): boolean {
+    const b = this.barrierBreakPending;
+    this.barrierBreakPending = false;
+    return b;
+  }
+
+  private endBarrier(): void {
+    this.barrierHp = 0;
+    this.barrierLeftS = 0;
+    this.barrierBreakPending = true;
+  }
+
   /** Sword Mastery (Kenshiro's passive): stacks built by landed blows and parries; spent by the next sword ability. */
   masteryStacks = 0;
   /** Seconds left of an enhancement already unlocked (it covers all of that ability's hits). */
@@ -521,6 +558,11 @@ export class Combatant {
     }
     this.dotTaken = 0;
     this.masteryEmpoweredS = Math.max(0, this.masteryEmpoweredS - dtS);
+    if (this.barrierLeftS > 0) {
+      this.barrierHitS += dtS;
+      this.barrierLeftS -= dtS;
+      if (this.barrierLeftS <= 0) this.endBarrier();
+    }
     this.status.tick(dtS, this.dotSink);
     const burned = this.dotTaken;
     this.decayEnded = this.status.endedLastTick('decay');

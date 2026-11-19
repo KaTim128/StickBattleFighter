@@ -49,6 +49,9 @@ Check this table before assigning work. No two active assignments may share a pa
 - **B10 done (TD-080, TD-081).** Round-robin balance (72 fights, noisy): Shroud now about 50%; Titan was dominant (72-92%); nerfed per TD-083 to about 63% (ability damage -30%, health 1160, heavy and finisher trimmed); B17 re-measures all four.
 - **Next:** B11 jumping, B13 fifth abilities and loadout, B14 loadout UI, B15 Shroud combo, B16 dodge, B17 fight length, B18 audio.
 
+## Psion batch (21/11/2026, TD-129)
+Done: Psion fighter (data, kit, animation, premium look, sounds, icons, AI), shared lift/barrier/volley/telekinetic framework, uniqueness test, renamed Vexoris/Aerion moves. Tests: 1085 passed | 2 skipped; typecheck clean. Known: visuals checked in screenshots for Mind Crush/Throw/Mindstorm only; Barrier and Prison not re-shot centred. Next: Geargrind, then Reson, Chronos.
+
 ## Completed work
 
 ### 17/11/2026: Phase 0 (master plan): inspection and planning, no gameplay changes

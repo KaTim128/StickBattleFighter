@@ -104,6 +104,8 @@ export interface AbilityHost {
   teleport?(casterId: string, to: Vec2): Vec2 | null;
   /** Keep a fighter helpless for this long (seized by a grab). Optional. */
   hold?(targetId: string, seconds: number): void;
+  /** Put a telekinetic barrier round a caster: it absorbs `hp` damage over at most `durationS` seconds. Optional. */
+  barrier?(casterId: string, hp: number, durationS: number): void;
   /** How much longer this caster's parry stance lasts right now (Focus Stance: 1.5); 1 when nothing changes it. */
   parryWindowFactor?(casterId: string): number;
   /**
@@ -205,6 +207,12 @@ interface LiftAction {
   /** Where the target is, for the funnel. */
   x: number;
   y: number;
+  readonly spec: {
+    readonly liftS: number;
+    readonly liftM: number;
+    readonly fallDamage: number;
+    readonly immuneS: number;
+  };
 }
 
 /** A spin in progress (see `WhirlDelivery`). */
@@ -259,6 +267,8 @@ export interface Telegraph {
   readonly onCaster: boolean;
   /** A ring placed at a spot (aimed nova): it erupts there when its warning ends. */
   readonly erupts?: boolean;
+  /** Shots already loosed while this ring built (Mindstorm). */
+  volleysFired?: number;
 }
 
 interface DashAction {
@@ -405,6 +415,9 @@ export class AbilityWorld {
   readonly clouds: Cloud[] = [];
   readonly grenades: Grenade[] = [];
   readonly parries: Parry[] = [];
+  /** A lifted target cannot be lifted again until this time (Floating Prison's anti-lock rule), world seconds. */
+  private readonly liftImmuneUntilS = new Map<string, number>();
+  private nowS = 0;
   readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -560,9 +573,25 @@ export class AbilityWorld {
         out.push({ x: p.x, y: p.y, ageS: p.travelledM / d.speedMps, size: 0.6, palette: p.def.look.palette });
     }
     for (const a of this.actions) {
-      const d = a.kind === 'lift' ? a.def.delivery : null;
-      if (a.kind === 'lift' && d?.type === 'projectile' && d.lift && a.ageS < d.lift.liftS)
+      if (a.kind === 'lift' && a.def.look?.flight?.tornado && a.ageS < a.spec.liftS)
         out.push({ x: a.x, y: a.y, ageS: a.ageS + 0.3, size: 1, palette: a.def.look?.palette ?? null });
+    }
+    return out;
+  }
+
+  /** Cages of turning rings round targets lifted by Floating Prison: where, how far into the lift, and the palette. */
+  get cages(): { x: number; y: number; ageS: number; heightM: number; palette: MagicLook['palette'] | null }[] {
+    const out: { x: number; y: number; ageS: number; heightM: number; palette: MagicLook['palette'] | null }[] = [];
+    for (const a of this.actions) {
+      if (a.kind !== 'lift' || !a.def.look?.cage) continue;
+      const rise = Math.min(1, a.ageS / a.spec.liftS);
+      out.push({
+        x: a.x,
+        y: a.y,
+        ageS: a.ageS,
+        heightM: a.spec.liftM * rise * (2 - rise),
+        palette: a.def.look.palette,
+      });
     }
     return out;
   }
@@ -648,6 +677,35 @@ export class AbilityWorld {
         });
         break;
       }
+      case 'lift': {
+        // The nearest enemy in reach; a target lifted a moment ago cannot be lifted again yet.
+        const foe = this.nearestEnemy(casterId, at, d.reachM, host);
+        if (!foe || (this.liftImmuneUntilS.get(foe.id) ?? 0) > this.nowS) {
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+          break;
+        }
+        this.beginLift(
+          casterId,
+          def,
+          dir,
+          foe,
+          { liftS: d.liftS, liftM: d.liftM, fallDamage: d.fallDamage, immuneS: d.immuneS },
+          host,
+        );
+        break;
+      }
+      case 'barrier':
+        host.barrier?.(casterId, d.hp, d.durationS);
+        host.emit({
+          kind: 'release',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.release,
+          x: at.x,
+          y: at.y,
+        });
+        break;
       case 'whirl':
         this.actions.push({ kind: 'whirl', casterId, def, ageS: 0, sinceTickS: d.tickS });
         break;
@@ -1003,6 +1061,7 @@ export class AbilityWorld {
   }
 
   update(dtS: number, host: AbilityHost): void {
+    this.nowS += dtS;
     for (const g of this.grabOutcomes.values()) if (g.state === 'slam') g.sinceS += dtS;
     this.updateProjectiles(dtS, host);
     this.updateBeams(dtS, host);
@@ -1298,48 +1357,51 @@ export class AbilityWorld {
   private startLift(p: Projectile, f: AbilityTarget, host: AbilityHost): void {
     const d = p.def.delivery;
     if (d.type !== 'projectile' || !d.lift) return;
+    this.beginLift(p.casterId, p.def, p.dir, f, { ...d.lift, immuneS: 0 }, host);
+  }
+
+  /** Carry a target up and, after the rise, let it fall (the shared lift behind Tornado Surge and Floating Prison). */
+  private beginLift(
+    casterId: string,
+    def: AbilityDef,
+    dir: Vec2,
+    f: AbilityTarget,
+    spec: LiftAction['spec'],
+    host: AbilityHost,
+  ): void {
     for (let i = this.actions.length - 1; i >= 0; i--) {
       const a = this.actions[i]!;
       if (a.kind === 'lift' && a.targetId === f.id) this.actions.splice(i, 1);
     }
-    host.hold?.(f.id, d.lift.liftS + LIFT_FALL_S + 0.2);
-    this.actions.push({
-      kind: 'lift',
-      casterId: p.casterId,
-      targetId: f.id,
-      def: p.def,
-      dir: p.dir,
-      ageS: 0,
-      x: f.x,
-      y: f.y,
-    });
+    host.hold?.(f.id, spec.liftS + LIFT_FALL_S + 0.2);
+    this.actions.push({ kind: 'lift', casterId, targetId: f.id, def, dir, ageS: 0, x: f.x, y: f.y, spec });
   }
 
   /** Rise for `liftS`, then (the funnel gone) fall over `LIFT_FALL_S`; the fall hurts. */
   private stepLift(a: LiftAction, dtS: number, host: AbilityHost): boolean {
-    const d = a.def.delivery;
-    if (d.type !== 'projectile' || !d.lift) return true;
     a.ageS += dtS;
     const target = host.fighters().find((f) => f.id === a.targetId);
     if (!target?.hittable) return true;
     a.x = target.x;
     a.y = target.y;
-    const { liftS, liftM, fallDamage } = d.lift;
+    const { liftS, liftM, fallDamage, immuneS } = a.spec;
     const rise = Math.min(1, a.ageS / liftS);
     const fall = Math.max(0, (a.ageS - liftS) / LIFT_FALL_S);
     const height = fall > 0 ? liftM * (1 - fall * fall) : liftM * rise * (2 - rise);
     host.drive(a.targetId, { x: 0, y: 0 }, Math.max(0, height));
     if (fall < 1) return false;
     host.drive(a.targetId, null, 0);
-    // The landing: the fall's damage, a knockdown, and a puff of wind where they hit the floor.
-    this.hit(
-      host,
-      a.casterId,
-      a.targetId,
-      { ...a.def.payload, damage: fallDamage, heavy: true, knockbackMps: 2, noFlinch: false },
-      a.dir,
-      a.def.look?.hitFlash,
-    );
+    if (immuneS > 0) this.liftImmuneUntilS.set(a.targetId, this.nowS + immuneS);
+    // The landing: the fall's damage (if any), a knockdown, and a puff where they land.
+    if (fallDamage > 0)
+      this.hit(
+        host,
+        a.casterId,
+        a.targetId,
+        { ...a.def.payload, damage: fallDamage, heavy: true, knockbackMps: 2, noFlinch: false },
+        a.dir,
+        a.def.look?.hitFlash,
+      );
     host.emit({
       kind: 'impact',
       ability: a.def.id,
@@ -1398,6 +1460,25 @@ export class AbilityWorld {
     const gapM = caster.radiusM + target.radiusM + GRAB_HOLD_GAP_M;
     const hold = { x: caster.x + a.dir.x * gapM, y: caster.y + a.dir.y * gapM };
     const lift = d.liftM * Math.min(1, a.ageS / d.liftS);
+    if (d.telekinetic) {
+      // Raised where it stands, then hurled along the aim: nothing is slammed, nothing is pulled in.
+      host.drive(a.targetId, { x: 0, y: 0 }, lift);
+      if (a.ageS < d.liftS) return false;
+      this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
+      host.drive(a.targetId, null, 0);
+      host.hitFighter(a.casterId, a.targetId, a.def.payload, a.dir, a.def.look?.hitFlash);
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: a.def.sfx.impact,
+        x: target.x,
+        y: target.y,
+        radiusM: d.slamRadiusM,
+      });
+      return true;
+    }
     // Close the distance smoothly: a speed that eases off near the hold point and never exceeds the cap.
     const dx = hold.x - target.x;
     const dy = hold.y - target.y;
@@ -1720,6 +1801,56 @@ export class AbilityWorld {
     return false;
   }
 
+  /**
+   * Mindstorm: while the ring builds, objects hurled from the field fly at enemies inside it, evenly from half a second in
+   * to a fifth of a second before the end (each aimed at an enemy in the ring, round by round, or outward if there is none).
+   */
+  private stepVolley(t: Telegraph, host: AbilityHost): void {
+    const d = t.def.delivery;
+    if (d.type !== 'nova' || !d.volley) return;
+    const v = d.volley;
+    const from = 0.5;
+    const until = Math.max(from, t.durationS - 0.2);
+    while ((t.volleysFired ?? 0) < v.count) {
+      const k = t.volleysFired ?? 0;
+      if (t.ageS < from + ((until - from) * k) / Math.max(1, v.count - 1)) return;
+      t.volleysFired = k + 1;
+      const foes = host
+        .fighters()
+        .filter(
+          (f) => !this.friendly(f, t.casterId, host) && f.hittable && Math.hypot(f.x - t.x, f.y - t.y) <= t.radiusM + 1,
+        );
+      const ang = (k * 2.399) % (Math.PI * 2); // spread the launch points round the ring
+      const origin = { x: t.x + Math.cos(ang) * t.radiusM * 0.6, y: t.y + Math.sin(ang) * t.radiusM * 0.6 };
+      const target = foes.length > 0 ? foes[k % foes.length]! : undefined;
+      const dir = target
+        ? norm({ x: target.x - origin.x, y: target.y - origin.y })
+        : { x: Math.cos(ang), y: Math.sin(ang) };
+      this.projectiles.push({
+        casterId: t.casterId,
+        def: {
+          ...t.def,
+          payload: v.payload,
+          delivery: { type: 'projectile', speedMps: v.speedMps, radiusM: v.radiusM, maxRangeM: v.maxRangeM },
+        },
+        x: origin.x,
+        y: origin.y,
+        dir,
+        travelledM: 0,
+        trail: [],
+      });
+      host.emit({
+        kind: 'release',
+        ability: t.def.id,
+        look: t.def.look,
+        vfx: 'mindstorm-launch',
+        sfx: t.def.sfx.release,
+        x: origin.x,
+        y: origin.y,
+      });
+    }
+  }
+
   private updateTelegraphs(dtS: number, host: AbilityHost): void {
     for (let i = this.telegraphs.length - 1; i >= 0; i--) {
       // A blast can cancel other casters' telegraphs, so the list may shrink by more than one entry.
@@ -1731,6 +1862,7 @@ export class AbilityWorld {
         t.x = at.x;
         t.y = at.y;
       }
+      this.stepVolley(t, host);
       // Leap telegraphs are resolved by the leap itself; rings erupt when their warning ends.
       if ((!t.onCaster && !t.erupts) || t.ageS < t.durationS) continue;
       this.telegraphs.splice(i, 1);

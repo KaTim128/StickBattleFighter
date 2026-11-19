@@ -18,6 +18,7 @@ const AI: Record<string, string> = {
   'vexoris-kit': 'vexoris-ai',
   'aerion-kit': 'aerion-ai',
   'kenshiro-kit': 'kenshiro-ai',
+  'psion-kit': 'psion-ai',
 };
 
 describe('five abilities, four equipped, any one on the bench (master plan B13, B14)', () => {

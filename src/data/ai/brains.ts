@@ -157,6 +157,29 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a4', 'a3'],
     ],
   },
+  // Psion: a ranged controller. Keeps his distance, crushes and hurls from range, holds a target in the air, shields when
+  // hurt and rooted for his ultimate; the force wave and palm strikes only when something gets close.
+  'psion-ai': {
+    style: 'Telekinetic controller: crushes and hurls from range, holds targets, shields when hurt, backs away.',
+    preferredRangeM: [3, 6],
+    movement: 'circle',
+    meleeBias: 0.35,
+    heavyBias: 0.25,
+    defence: 'dodge',
+    retreatBelowHp: 0.3,
+    hitAndRunS: 1,
+    tactics: {
+      a1: { role: 'zone', minM: 2, maxM: 8, weight: 1.3 },
+      a2: { role: 'control', minM: 1.5, maxM: 6, weight: 1.2 },
+      a3: { role: 'buff', minM: 0, maxM: 5, weight: 0.9, when: { selfHpBelow: 0.75 } },
+      a4: { role: 'control', minM: 2, maxM: 6, weight: 1.1 },
+      ult: { role: 'burst', minM: 0, maxM: 6, weight: 1.3 },
+    },
+    combos: [
+      ['a4', 'a1'],
+      ['a2', 'a1'],
+    ],
+  },
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
   'rampage-ai': {
@@ -272,6 +295,8 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   featherGuard: { role: 'buff', minM: 0, maxM: 3, weight: 1.1, when: { selfHpBelow: 0.6 } },
   // Iaido Draw: a lightning cut to close the gap.
   iaidoDraw: { role: 'gapClose', minM: 2, maxM: 6, weight: 1.2 },
+  // Repulse: shove everyone off when crowded.
+  repulse: { role: 'escape', minM: 0, maxM: 2.4, weight: 1.2 },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
   deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };

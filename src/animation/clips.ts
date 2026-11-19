@@ -41,6 +41,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.karate',
   'proc.idle.aerial',
   'proc.idle.pyro',
+  'proc.idle.psychic',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -453,6 +454,140 @@ const STRIKES = {
       legBack: limb(14, -12),
       armFront: limb(-30, 20),
       armBack: limb(-40, 20),
+    },
+  ),
+
+  // ---- Psion's psychic style: spare, slow-burning movements, the hands glowing, the body floating through them.
+  // 1. Psychic palm strike: one open palm pushed out.
+  'psion.palm': strike(
+    { lean: deg(4), head: deg(6), armFront: limb(50, 90), armBack: limb(-20, 70), legFront: limb(14, -20) },
+    {
+      lean: deg(-18),
+      head: deg(10),
+      armFront: limb(96, 4),
+      armBack: limb(-30, 60),
+      legFront: limb(26, -26),
+      legBack: limb(-18, -20),
+    },
+  ),
+  // 2. Telekinetic elbow: the elbow driven forward and the hand turning over.
+  'psion.elbow': strike(
+    { lean: deg(8), head: deg(4), armFront: limb(-20, 130), armBack: limb(30, 100), legFront: limb(16, -22) },
+    {
+      lean: deg(-22),
+      head: deg(12),
+      armFront: limb(86, 118),
+      armBack: limb(-20, 80),
+      legFront: limb(30, -30),
+      legBack: limb(-24, -24),
+    },
+  ),
+  // 3. Floating spin kick: he turns in the air, the rear leg swept round with nothing under him.
+  'psion.spin-kick': strike(
+    {
+      lean: deg(-24),
+      head: deg(16),
+      armFront: limb(60, 60),
+      armBack: limb(-40, 70),
+      legFront: limb(16, -50),
+      legBack: limb(-30, -70),
+    },
+    {
+      lean: deg(18),
+      head: deg(-12),
+      armFront: limb(110, 40),
+      armBack: limb(-70, 30),
+      legFront: limb(20, -24),
+      legBack: limb(96, -8),
+    },
+  ),
+  // 4. Double palm energy blast: both palms drawn to the hip then thrust out together.
+  'psion.double-palm': strike(
+    {
+      lean: deg(12),
+      head: deg(4),
+      armFront: limb(-10, 100),
+      armBack: limb(-10, 100),
+      legFront: limb(16, -26),
+      legBack: limb(-22, -22),
+    },
+    {
+      lean: deg(-34),
+      head: deg(14),
+      armFront: limb(94, 2),
+      armBack: limb(88, 4),
+      legFront: limb(34, -32),
+      legBack: limb(-30, -14),
+    },
+  ),
+  // Heavy: the hands gathered high and together, the energy built, then both arms swept out and down in a wide wave.
+  'psion.force-wave': strike(
+    {
+      lean: deg(6),
+      head: deg(-6),
+      armFront: limb(150, 90),
+      armBack: limb(146, 92),
+      legFront: limb(14, -24),
+      legBack: limb(-18, -22),
+    },
+    {
+      lean: deg(-30),
+      head: deg(10),
+      armFront: limb(84, 4),
+      armBack: limb(70, 8),
+      legFront: limb(30, -30),
+      legBack: limb(-30, -16),
+    },
+    { lean: deg(-4), head: deg(-2), armFront: limb(120, 70), armBack: limb(116, 72), legFront: limb(16, -22) },
+  ),
+  // Forward tap: a flat push, the palm striking the air in front of him.
+  'psion.push': strike(
+    { lean: deg(0), head: deg(4), armFront: limb(60, 100), armBack: limb(-10, 90), legFront: limb(14, -22) },
+    {
+      lean: deg(-26),
+      head: deg(10),
+      armFront: limb(100, 6),
+      armBack: limb(-20, 70),
+      legFront: limb(30, -28),
+      legBack: limb(-26, -18),
+    },
+  ),
+  // In the air: a downward-angled palm thrust.
+  'psion.air-palm': strike(
+    {
+      lean: deg(-6),
+      head: deg(6),
+      armFront: limb(90, 80),
+      armBack: limb(-30, 70),
+      legFront: limb(30, -60),
+      legBack: limb(10, -50),
+    },
+    {
+      lean: deg(-22),
+      head: deg(12),
+      armFront: limb(60, 4),
+      armBack: limb(-40, 60),
+      legFront: limb(36, -50),
+      legBack: limb(0, -40),
+    },
+  ),
+  // Falling: both palms pressed down, driving the air beneath him.
+  'psion.down-slam': strike(
+    {
+      lean: deg(-4),
+      head: deg(6),
+      armFront: limb(130, 60),
+      armBack: limb(120, 60),
+      legFront: limb(20, -50),
+      legBack: limb(0, -44),
+    },
+    {
+      lean: deg(-20),
+      head: deg(14),
+      armFront: limb(20, 4),
+      armBack: limb(10, 6),
+      legFront: limb(30, -44),
+      legBack: limb(-6, -40),
     },
   ),
 

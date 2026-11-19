@@ -659,3 +659,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Open Zone: the opponent is a dropdown; choosing a fighter in it starts that fight.
 - [ ] Open Zone: the opponent is a dropdown; choosing a fighter in it starts that fight.
 - [ ] Select screens: Arena, Opponent and Difficulty are dropdowns, defaulting to Colosseum and Easy.
+
+### Psion and uniqueness (21/11/2026, TD-129)
+- [ ] Psion: Mind Crush ring closes in then hits; Telekinetic Throw lifts then hurls; Psychic Barrier dome absorbs and breaks into fragments; Floating Prison cage lifts, drops, and cannot be re-cast on the same foe for 4 s; Mindstorm flings eight objects then detonates.
+- [ ] Some fighters have no passive; no two fighters share any move or ability.

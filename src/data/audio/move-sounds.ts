@@ -361,6 +361,41 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('triangle', 1800, 600, 0.3, 0.3),
     noise('lowpass', 1500, 200, 0.5, 0.4, 0.8, 0.05),
   ],
+  // Psion's mind: low pulsing hums, glassy compressions, soft thuds of released force.
+  'hit-psion-force-wave': [
+    tone('sine', 90, 40, 0.4, 0.6),
+    noise('lowpass', 1800, 200, 0.5, 0.4, 0.8),
+    tone('triangle', 800, 300, 0.25, 0.25),
+  ],
+  'psi-gather': [
+    tone('sine', 140, 260, 0.45, 0.25),
+    tone('triangle', 420, 520, 0.4, 0.14),
+    noise('bandpass', 1200, 2200, 0.4, 0.12, 2, 0, { attack: 0.25 }),
+  ],
+  'psi-compress': [tone('sine', 260, 90, 0.45, 0.35), noise('bandpass', 2400, 600, 0.45, 0.2, 1.4, 0, { attack: 0.2 })],
+  'psi-crush': [
+    tone('sine', 110, 40, 0.35, 0.65),
+    noise('lowpass', 2000, 250, 0.4, 0.5, 0.8),
+    tone('triangle', 900, 260, 0.2, 0.3),
+  ],
+  'psi-lift': [tone('sine', 160, 360, 0.5, 0.3), noise('bandpass', 900, 1800, 0.45, 0.14, 1.6, 0, { attack: 0.15 })],
+  'prison-lift': [tone('sine', 120, 300, 0.7, 0.28), tone('triangle', 600, 900, 0.5, 0.12), noise('bandpass', 700, 1500, 0.6, 0.12, 1.6, 0, { attack: 0.3 })],
+  'psi-hurl': [noise('bandpass', 1800, 500, 0.3, 0.5, 1), tone('sine', 120, 50, 0.3, 0.55)],
+  'psi-drop': [tone('sine', 140, 60, 0.25, 0.4), noise('lowpass', 1200, 300, 0.2, 0.3, 0.9)],
+  'barrier-up': [tone('sine', 200, 480, 0.4, 0.3), tone('triangle', 800, 1200, 0.3, 0.14)],
+  'barrier-hit': [tone('triangle', 1400, 800, 0.12, 0.25), noise('bandpass', 3000, 1500, 0.1, 0.25, 2)],
+  'barrier-break': [
+    noise('bandpass', 3400, 1200, 0.3, 0.45, 1.6),
+    tone('triangle', 1800, 400, 0.3, 0.3),
+    tone('sine', 120, 50, 0.25, 0.4),
+  ],
+  'repulse-burst': [noise('lowpass', 2200, 200, 0.4, 0.6, 0.8), tone('sine', 100, 38, 0.35, 0.6)],
+  'mindstorm-launch': [noise('bandpass', 2000, 800, 0.2, 0.32, 1.4), tone('sine', 150, 90, 0.15, 0.25)],
+  'mindstorm-blast': [
+    noise('lowpass', 2600, 150, 0.9, 0.8, 0.7),
+    tone('sine', 80, 30, 0.7, 0.7),
+    tone('triangle', 1200, 300, 0.4, 0.3),
+  ],
   'venom-spray-burst': [
     noise('bandpass', 2200, 1000, 0.3, 0.45, 0.9, 0, { attack: 0.02 }),
     noise('lowpass', 1200, 400, 0.26, 0.25, 1, 0.02),

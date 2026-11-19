@@ -1,0 +1,17 @@
+{
+  "id": "psion-effects",
+  "punchImpact": "psi-hit",
+  "kickImpact": "psi-hit",
+  "heavyImpact": "psi-wave",
+  "blockImpact": "block-guard",
+  "limbTrail": "psi-limbs",
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#c7a1ff",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "psychic"
+}

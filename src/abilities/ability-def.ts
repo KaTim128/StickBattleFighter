@@ -43,6 +43,8 @@ export interface AbilityPayload {
   readonly noFlinch?: boolean;
   /** A sword ability (Kenshiro): eligible for Sword Mastery's enhancement. */
   readonly sword?: boolean;
+  /** A psychic ability (Psion): eligible for Mental Focus's enhancement. */
+  readonly psi?: boolean;
   /**
    * Finishing bonus (Kenshiro's Sliding Slice): against a target at or below `belowHp` of its health (0..1) the blow
    * deals `bonus` more damage (0.6 = 60% more).
@@ -211,6 +213,18 @@ export interface NovaDelivery {
    * instead of around the caster (Death Eruption, owner 12/11/2026).
    */
   readonly atTarget?: boolean;
+  /**
+   * Shots loosed while the warning builds (Psion's Mindstorm: objects float up, then fly at his enemies): `count`
+   * shots between half a second in and the end, each at an enemy inside the ring (or outward if none), carrying
+   * `payload`. The ring's own blast at the end is the ability's payload.
+   */
+  readonly volley?: {
+    readonly count: number;
+    readonly payload: AbilityPayload;
+    readonly speedMps: number;
+    readonly radiusM: number;
+    readonly maxRangeM: number;
+  };
 }
 
 /**
@@ -363,6 +377,30 @@ export interface MarkDelivery {
 }
 
 /**
+ * Lifts the nearest enemy in reach into the air without touching them (Psion's Floating Prison): they rise `liftM` over
+ * `liftS`, hang helpless, then drift down over a short fall and take `fallDamage`. The same enemy cannot be lifted
+ * again for `immuneS` after landing, so it can never be chained into a lock.
+ */
+export interface LiftDelivery {
+  readonly type: 'lift';
+  readonly reachM: number;
+  readonly liftS: number;
+  readonly liftM: number;
+  readonly fallDamage: number;
+  readonly immuneS: number;
+}
+
+/**
+ * A telekinetic shield round the caster (Psion's Psychic Barrier): it absorbs up to `hp` damage and lasts `durationS`.
+ * When it is spent or runs out it breaks into floating fragments.
+ */
+export interface BarrierDelivery {
+  readonly type: 'barrier';
+  readonly hp: number;
+  readonly durationS: number;
+}
+
+/**
  * A spinning attack on the spot (Aerion's Wind Blade): for `durationS`, every `tickS` seconds, each enemy within `radiusM`
  * takes the payload, pushed away from the caster. The caster's wings are the blades: the view spreads them and turns him.
  */
@@ -464,6 +502,11 @@ export interface GrabDelivery {
   readonly liftS: number;
   readonly liftM: number;
   readonly slamRadiusM: number;
+  /**
+   * Telekinetic (Psion's Telekinetic Throw): the target is raised where it stands (it is not pulled in), held a
+   * moment, then hurled along the caster's aim with the payload instead of slammed down.
+   */
+  readonly telekinetic?: boolean;
 }
 
 /** What a running buff does (the buff delivery without its summons). */
@@ -477,6 +520,8 @@ export type Delivery =
   | NovaDelivery
   | ParryDelivery
   | WhirlDelivery
+  | LiftDelivery
+  | BarrierDelivery
   | JudgementDelivery
   | GrenadeDelivery
   | LeapDelivery
@@ -514,6 +559,8 @@ export interface MagicLook {
     readonly jar?: boolean;
     /** Drawn as a spinning tornado funnel instead of a streaming bolt (Aerion's Tornado Surge). */
     readonly tornado?: boolean;
+    /** Drawn as a spinning chunk of debris (Psion's Mindstorm). */
+    readonly debris?: boolean;
   };
   /** On contact: a bright flash, then a burst of sparks and element particles, a ring, a scorch, smoke. */
   readonly impact?: {
@@ -536,6 +583,10 @@ export interface MagicLook {
   };
   /** The target's body flashes this colour on contact (white for the Fireball). */
   readonly hitFlash?: number;
+  /** A cage of turning geometric rings round a lifted target (Psion's Floating Prison). */
+  readonly cage?: boolean;
+  /** The warning ring closes in instead of filling (Psion's Mind Crush), and floating debris rises in a field (Mindstorm). */
+  readonly telegraph?: 'compress' | 'debris';
   /** What wraps the caster while a leap carries it: flames (default) or streaming wind (Aerion's dives). */
   readonly airBody?: 'flames' | 'wind';
   /**
@@ -624,7 +675,7 @@ export interface AbilityKit {
    * faster. All stacks lapse together when the time runs out.
    */
   readonly passive?: {
-    readonly id: 'momentum' | 'mastery';
+    readonly id: 'momentum' | 'mastery' | 'focus';
     readonly name: string;
     readonly description: string;
     readonly maxStacks: number;

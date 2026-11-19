@@ -7,7 +7,7 @@
  * deliberate shape. Original artwork; one per icon id (`AbilityDef.icon`, `AbilityKit.comboIcon`,
  * `AbilityKit.heavyIcon`).
  */
-type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin' | 'wind' | 'steel';
+type Theme = 'fire' | 'earth' | 'soul' | 'blood' | 'shade' | 'decay' | 'blue' | 'toxin' | 'wind' | 'steel' | 'psi';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -21,6 +21,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   toxin: ['#e8ffc8', '#2f8a12', '#06140a'],
   wind: ['#ffffff', '#3a78b8', '#06121f'],
   steel: ['#ffe9e9', '#a01826', '#1a0508'],
+  psi: ['#f4eaff', '#7a3fd0', '#0d0618'],
 };
 
 const MATERIALS = `
@@ -380,6 +381,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'steel',
     rays(24, 26, 16, '#ffffff', 0.25),
     `<path d="M24 4 V40" stroke="#ff6a72" stroke-width="4" opacity=".6" filter="url(#gl)"/><g filter="url(#ds)"><path d="M24 6 V38" stroke="#eef2f7" stroke-width="5" stroke-linecap="round"/><rect x="18" y="34" width="12" height="4" rx="1.5" fill="#6a1520" stroke="#1a0508" stroke-width="1.2"/></g><ellipse cx="24" cy="42" rx="14" ry="3" fill="#ff6a72" opacity=".4" filter="url(#bl)"/>`,
+  ),
+  'mind-crush': icon(
+    'psi',
+    rays(24, 24, 16, '#f4eaff', 0.25),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#8a4fe0" stroke-width="2" opacity=".6"/><circle cx="24" cy="24" r="11" stroke="#c7a1ff" stroke-width="2.4"/><circle cx="24" cy="24" r="5" stroke="#f4eaff" stroke-width="2.6"/></g><g stroke="#f4eaff" stroke-width="2" stroke-linecap="round"><path d="M24 3 V9 M24 45 V39 M3 24 H9 M45 24 H39"/></g>`,
+  ),
+  'telekinetic-throw': icon(
+    'psi',
+    rays(24, 24, 14, '#f4eaff', 0.2),
+    `<path d="M6 36 C14 20 28 12 42 10" stroke="#c7a1ff" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".8"/><g filter="url(#ds)"><circle cx="34" cy="14" r="5" fill="#2c2640" stroke="#c7a1ff" stroke-width="1.6"/><rect x="12" y="30" width="8" height="8" rx="1" fill="#2c2640" stroke="#8a4fe0" stroke-width="1.4" transform="rotate(-20 16 34)"/></g>`,
+  ),
+  'psychic-barrier': icon(
+    'psi',
+    rays(24, 24, 14, '#f4eaff', 0.2),
+    `<g filter="url(#ds)"><path d="M24 5 L40 12 V26 C40 35 33 41 24 44 C15 41 8 35 8 26 V12 Z" fill="#2a1650" fill-opacity=".7" stroke="#c7a1ff" stroke-width="2"/></g><g fill="none" stroke="#8a4fe0" stroke-width="1.4" opacity=".8"><path d="M24 12 L33 17 V27 L24 33 L15 27 V17 Z"/></g><circle cx="24" cy="23" r="3" fill="#f4eaff" filter="url(#gl)"/>`,
+  ),
+  'floating-prison': icon(
+    'psi',
+    rays(24, 28, 14, '#f4eaff', 0.2),
+    `<g fill="none" stroke="#c7a1ff" stroke-width="2.4" stroke-linecap="round" filter="url(#gl)"><ellipse cx="24" cy="14" rx="12" ry="4"/><ellipse cx="24" cy="24" rx="14" ry="5"/><ellipse cx="24" cy="34" rx="12" ry="4"/></g><g filter="url(#ds)"><circle cx="24" cy="22" r="4" fill="#2c2640" stroke="#f4eaff" stroke-width="1.6"/><path d="M24 26 V32" stroke="#f4eaff" stroke-width="2"/></g>`,
+  ),
+  repulse: icon(
+    'psi',
+    rays(24, 24, 16, '#f4eaff', 0.3),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="6" stroke="#f4eaff" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#c7a1ff" stroke-width="2.4" opacity=".8"/><circle cx="24" cy="24" r="18" stroke="#8a4fe0" stroke-width="2" opacity=".6"/></g><g stroke="#f4eaff" stroke-width="2.4" stroke-linecap="round"><path d="M24 14 V6 M24 34 V42 M14 24 H6 M34 24 H42"/></g>`,
+  ),
+  mindstorm: icon(
+    'psi',
+    rays(24, 24, 18, '#f4eaff', 0.3),
+    `<g filter="url(#ds)"><rect x="8" y="10" width="8" height="8" rx="1" fill="#2c2640" stroke="#c7a1ff" stroke-width="1.4" transform="rotate(18 12 14)"/><rect x="31" y="8" width="7" height="7" rx="1" fill="#2c2640" stroke="#c7a1ff" stroke-width="1.4" transform="rotate(-22 34 12)"/><rect x="10" y="32" width="9" height="7" rx="1" fill="#2c2640" stroke="#8a4fe0" stroke-width="1.4" transform="rotate(-12 14 35)"/><rect x="32" y="31" width="7" height="8" rx="1" fill="#2c2640" stroke="#8a4fe0" stroke-width="1.4" transform="rotate(26 35 35)"/></g><circle cx="24" cy="24" r="6" fill="#f4eaff" filter="url(#gl)"/><circle cx="24" cy="24" r="12" fill="none" stroke="#c7a1ff" stroke-width="2" opacity=".7"/>`,
+  ),
+  'psi-combo': icon(
+    'psi',
+    rays(24, 24, 14, '#f4eaff', 0.15),
+    `<g filter="url(#gl)" fill="#c7a1ff"><circle cx="14" cy="30" r="6"/><circle cx="32" cy="18" r="6" opacity=".8"/><circle cx="20" cy="12" r="3" opacity=".6"/></g><g fill="none" stroke="#f4eaff" stroke-width="2" stroke-linecap="round"><path d="M6 38 L22 24 M20 34 L38 12"/></g>`,
+  ),
+  'force-wave': icon(
+    'psi',
+    rays(24, 24, 16, '#f4eaff', 0.25),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M10 10 C26 14 26 34 10 38" stroke="#c7a1ff" stroke-width="3"/><path d="M18 10 C34 16 34 32 18 38" stroke="#8a4fe0" stroke-width="3" opacity=".8"/><path d="M26 12 C40 18 40 30 26 36" stroke="#f4eaff" stroke-width="2.6" opacity=".7"/></g>`,
   ),
   'plague-bloom': icon(
     'toxin',

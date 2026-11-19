@@ -30,6 +30,13 @@ import necroCharacter from '../data/characters/necro/character.json';
 import necroEffects from '../data/characters/necro/effects.json';
 import necroMoveset from '../data/characters/necro/moveset.json';
 import necroStats from '../data/characters/necro/stats.json';
+import psionAi from '../data/characters/psion/ai.json';
+import psionAnimation from '../data/characters/psion/animation-profile.json';
+import psionAudio from '../data/characters/psion/audio.json';
+import psionCharacter from '../data/characters/psion/character.json';
+import psionEffects from '../data/characters/psion/effects.json';
+import psionMoveset from '../data/characters/psion/moveset.json';
+import psionStats from '../data/characters/psion/stats.json';
 import rampageAi from '../data/characters/rampage/ai.json';
 import rampageAnimation from '../data/characters/rampage/animation-profile.json';
 import rampageAudio from '../data/characters/rampage/audio.json';
@@ -95,6 +102,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     vexorisCharacter,
     aerionCharacter,
     kenshiroCharacter,
+    psionCharacter,
     skeletonCharacter,
     dummyCharacter,
   ]),
@@ -110,6 +118,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     vexorisAnimation,
     aerionAnimation,
     kenshiroAnimation,
+    psionAnimation,
   ]),
   moveset: byId<MovesetProfile>([
     baseMoveset,
@@ -120,6 +129,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     vexorisMoveset,
     aerionMoveset,
     kenshiroMoveset,
+    psionMoveset,
     skeletonMoveset,
   ]),
   stats: byId<StatsProfile>([
@@ -131,6 +141,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     vexorisStats,
     aerionStats,
     kenshiroStats,
+    psionStats,
     skeletonStats,
     dummyStats,
   ]),
@@ -143,6 +154,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     vexorisEffects,
     aerionEffects,
     kenshiroEffects,
+    psionEffects,
     skeletonEffects,
   ]),
   audio: byId<AudioProfile>([
@@ -154,6 +166,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     vexorisAudio,
     aerionAudio,
     kenshiroAudio,
+    psionAudio,
   ]),
   ai: byId<AiProfile>([
     defaultAi,
@@ -166,6 +179,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     vexorisAi,
     aerionAi,
     kenshiroAi,
+    psionAi,
   ]),
 };
 

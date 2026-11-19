@@ -140,6 +140,22 @@ export interface AbilityVfxInput {
     readonly size: number;
     readonly palette: Palette | null;
   }[];
+  /** Telekinetic barriers up (Psion's Psychic Barrier): where, how much is left (0..1), and seconds since the last hit. */
+  readonly barriers?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly k: number;
+    readonly hitS: number;
+    readonly palette: Palette | null;
+  }[];
+  /** Cages round targets Floating Prison has lifted. */
+  readonly cages?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly ageS: number;
+    readonly heightM: number;
+    readonly palette: Palette | null;
+  }[];
   /** Spins in progress (Aerion's Wind Blade): the wings sweep round as blades. */
   readonly whirls?: readonly {
     readonly x: number;
@@ -1186,10 +1202,40 @@ export class AbilityVfx {
       const k = Math.min(1, tg.ageS / tg.durationS);
       const pulse = 0.75 + 0.25 * Math.sin(t * 22);
       // The ring takes its element's colour for wind dives; everything else keeps the warning orange.
-      const tp = tg.def.look?.airBody === 'wind' ? tg.def.look.palette : FIRE;
+      const tp = tg.def.look?.airBody === 'wind' || tg.def.look?.telegraph ? tg.def.look.palette : FIRE;
+      if (tg.def.look?.telegraph === 'compress') {
+        // Mind Crush: the ring closes in on the target, brightening as it squeezes.
+        const r = tg.radiusM * (1 - 0.8 * k);
+        f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.03, color: tp.hot, alpha: 0.3 });
+        f.circle(tg.x, tg.y, r).fill({ color: tp.deep, alpha: 0.12 + 0.2 * k });
+        f.circle(tg.x, tg.y, r).stroke({ width: 0.07 + 0.05 * k, color: tp.bright, alpha: pulse });
+        for (let i = 0; i < 6; i++) {
+          const a0 = t * 2 + (i * Math.PI) / 3;
+          f.moveTo(tg.x + Math.cos(a0) * r * 1.1, tg.y + Math.sin(a0) * r * 1.1)
+            .lineTo(tg.x + Math.cos(a0) * r * 0.7, tg.y + Math.sin(a0) * r * 0.7)
+            .stroke({ width: 0.04, color: tp.core, alpha: 0.7 });
+        }
+        continue;
+      }
       f.circle(tg.x, tg.y, tg.radiusM).fill({ color: tp.deep, alpha: 0.14 });
       f.circle(tg.x, tg.y, tg.radiusM * k).fill({ color: tp.hot, alpha: 0.22 });
       f.circle(tg.x, tg.y, tg.radiusM).stroke({ width: 0.07, color: tp.bright, alpha: pulse });
+      if (tg.def.look?.telegraph === 'debris') {
+        // Mindstorm: objects drift up out of the floor and orbit inside the ring before they are flung.
+        for (let i = 0; i < 14; i++) {
+          const ang = t * (0.8 + (i % 3) * 0.2) + i * 1.7;
+          const rad = tg.radiusM * (0.35 + 0.55 * ((i * 0.37) % 1));
+          const rise = Math.min(1, k * 1.6) * (0.6 + 1.6 * ((i * 0.53) % 1));
+          const c = iso(tg.x + Math.cos(ang) * rad, tg.y + Math.sin(ang) * rad, rise);
+          const sz = 0.1 + 0.07 * ((i * 0.29) % 1);
+          const sp = t * 3 + i;
+          const pts = [-1, -1, 1, -1, 1, 1, -1, 1].map((v, n) =>
+            n % 2 === 0 ? c.x + (v * Math.cos(sp) - (n % 2 === 0 ? -1 : 1) * 0) * sz : c.y + v * sz * ISO_T * 1.6,
+          );
+          g.poly(pts).fill({ color: i % 2 === 0 ? tp.deep : 0x3a3548, alpha: 0.95 });
+          g.poly(pts).stroke({ width: 0.012, color: tp.bright, alpha: 0.9 });
+        }
+      }
     }
 
     // Death Mark (owner, 20/11/2026): a red sigil, a ringed eye with a blade through it, turning slowly over the
@@ -1254,6 +1300,56 @@ export class AbilityVfx {
           .lineTo(c.x + 0.28, c.y + 0.28 * sgn)
           .stroke({ width: 0.03, color: pal.core, alpha: 0.55 * pulse, cap: 'round' });
       }
+    }
+
+    // Psychic Barrier: a translucent dome of faint hexagonal facets that flares and ripples where it was struck.
+    for (const bar of input.barriers ?? []) {
+      const pal = bar.palette ?? FIRE;
+      const flare = Math.max(0, 1 - bar.hitS / 0.35);
+      const c = iso(bar.x, bar.y, 1.0);
+      const rx = 0.95;
+      g.ellipse(c.x, c.y, rx, rx * 1.05).fill({ color: pal.deep, alpha: 0.12 + 0.12 * bar.k });
+      g.ellipse(c.x, c.y, rx, rx * 1.05).stroke({
+        width: 0.03 + 0.03 * flare,
+        color: pal.bright,
+        alpha: 0.35 + 0.5 * flare,
+      });
+      for (let i = 0; i < 6; i++) {
+        const a0 = t * 0.6 + (i * Math.PI) / 3;
+        const px = c.x + Math.cos(a0) * rx * 0.62;
+        const py = c.y + Math.sin(a0) * rx * 0.62 * 1.05;
+        const hex = Array.from({ length: 6 }, (_, n) => [
+          px + Math.cos((n * Math.PI) / 3) * 0.2,
+          py + Math.sin((n * Math.PI) / 3) * 0.2,
+        ]).flat();
+        g.poly(hex).stroke({ width: 0.012, color: pal.core, alpha: 0.18 + 0.4 * flare });
+      }
+      if (flare > 0)
+        g.ellipse(c.x, c.y, rx * (1.02 + 0.1 * (1 - flare)), rx * 1.07).stroke({
+          width: 0.05,
+          color: pal.core,
+          alpha: 0.6 * flare,
+        });
+    }
+
+    // Floating Prison: a cage of turning rings round the lifted target.
+    for (const cg of input.cages ?? []) {
+      const pal = cg.palette ?? FIRE;
+      const grow = Math.min(1, cg.ageS / 0.25);
+      for (let i = 0; i < 3; i++) {
+        const c = iso(cg.x, cg.y, cg.heightM + 0.35 + i * 0.45);
+        const r = (0.6 - Math.abs(i - 1) * 0.12) * grow;
+        const turn = t * (2 + i) * (i % 2 === 0 ? 1 : -1);
+        g.ellipse(c.x, c.y, r, r * ISO_T).stroke({ width: 0.04, color: pal.bright, alpha: 0.7 });
+        for (let n = 0; n < 4; n++) {
+          const a0 = turn + (n * Math.PI) / 2;
+          g.circle(c.x + Math.cos(a0) * r, c.y + Math.sin(a0) * r * ISO_T, 0.04).fill({ color: pal.core, alpha: 0.95 });
+        }
+      }
+      const base = iso(cg.x, cg.y, cg.heightM);
+      g.moveTo(base.x, base.y)
+        .lineTo(base.x, base.y - 1.3 * grow)
+        .stroke({ width: 0.02, color: pal.hot, alpha: 0.4 });
     }
 
     // Tornado Surge: a funnel of stacked, turning rings widening upward, with streaks flung off it.
@@ -1736,6 +1832,18 @@ export class AbilityVfx {
     }
     // A tornado shot is drawn as its funnel (see `funnels`), not as a bolt.
     if (look.flight?.tornado) return;
+    if (look.flight?.debris) {
+      // A flung object: a dark chunk with a violet edge, tumbling.
+      const sp = t * 12 + p.x * 3;
+      const sz = 0.17;
+      const pts = [-1, -1, 1, -1, 1, 1, -1, 1].map((v, n) =>
+        n % 2 === 0 ? c.x + v * sz * Math.cos(sp) : c.y + v * sz * 0.8,
+      );
+      g.circle(c.x, c.y, sz * 2.2).fill({ color: pal.hot, alpha: 0.18 });
+      g.poly(pts).fill(0x2c2838);
+      g.poly(pts).stroke({ width: 0.02, color: pal.bright, alpha: 0.9 });
+      return;
+    }
     const tail = P(p.x - p.dir.x * 1.3, p.y - p.dir.y * 1.3, BOLT_HEIGHT_M + 0.1);
     const len = Math.hypot(tail.x - c.x, tail.y - c.y) || 1;
     const nx = -(tail.y - c.y) / len;

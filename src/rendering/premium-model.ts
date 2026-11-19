@@ -87,6 +87,14 @@ export interface PremiumSkin {
   readonly helm?: { readonly armour: number; readonly trim: number };
   /** Waist cloth: two flaps of cloth from the belt to the thighs, with a trimmed hem (Kenshiro). */
   readonly tassets?: { readonly cloth: number; readonly shade: number; readonly trim: number };
+  /** A circular structure floating behind the upper body, turning slowly (Psion). */
+  readonly halo?: { readonly ring: number; readonly glow: number };
+  /** Geometric fragments orbiting the body (Psion). */
+  readonly fragments?: { readonly colour: number; readonly glow: number };
+  /** One glowing eye on the head (profile view shows one), in this colour (Psion). */
+  readonly psyEye?: number;
+  /** A soft psychic glow round both hands (Psion). */
+  readonly handGlow?: number;
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
   readonly hoverM?: number;
 }
@@ -320,6 +328,43 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     helm: { armour: 0x1b1315, trim: 0xc9a34a },
     tassets: { cloth: 0x9c1d2c, shade: 0x5a0f18, trim: 0xc9a34a },
   },
+  // Psion (master plan section 4): a slim dark purple psychic warrior, one glowing violet eye, psychic light round the hands, geometric
+  // fragments orbiting his body and a turning ring behind his shoulders. Not Necro: no hood, no bones, no robe, no death.
+  psychic: {
+    palette: {
+      outline: 0x0d0618,
+      skin: 0x3d2468,
+      skinLit: 0x6a45a8,
+      skinShade: 0x24133f,
+      skinBack: 0x2e1a52,
+      rim: 0xc7a1ff,
+      armour: 0x1f1236,
+      armourLit: 0x4c3380,
+      armourEdge: 0x0a0414,
+      seam: 0x9a66ff,
+      lava: 0xe4d2ff,
+      glow: 0x8a4fe0,
+      hand: 0x3d2468,
+    },
+    bulk: 1.05,
+    muscle: 0.2,
+    gear: {
+      shoulder: 'none',
+      bracers: true,
+      legs: 'trousers',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'bare',
+      belt: false,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'own',
+    halo: { ring: 0xc7a1ff, glow: 0x8a4fe0 },
+    fragments: { colour: 0xb88cff, glow: 0x8a4fe0 },
+    psyEye: 0xe4d2ff,
+    handGlow: 0xc7a1ff,
+    hoverM: 0.2,
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -500,6 +545,8 @@ export class PremiumModel {
     this.st = { ...st, w: st.w * this.skin.bulk };
     this.lx = -0.55 * st.facing;
     this.ly = -0.83;
+    if (this.skin.halo) this.halo(g, fire, s);
+    if (this.skin.fragments) this.fragments(g, fire, s, false);
     if (this.skin.wings) this.wings(g, fire, s);
     this.arm(g, fire, s.armBack, true);
     const coated = this.skin.garment?.hem === 'coat';
@@ -529,8 +576,101 @@ export class PremiumModel {
       this.neck(g, s);
       st.drawHead?.();
       if (this.skin.helm) this.helm(g, s);
+      if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
     }
     this.arm(g, fire, s.armFront, false);
+    if (this.skin.handGlow !== undefined) this.handGlow(fire, s);
+    if (this.skin.fragments) this.fragments(g, fire, s, true);
+  }
+
+  /** The ring behind the shoulders: two turning rings with tick marks and a core glow, always facing us. */
+  private halo(g: Graphics, fire: Graphics, s: Skel): void {
+    const h = this.skin.halo;
+    if (!h) return;
+    const { t, w } = this.st;
+    const cx = s.chest.x - 0.1;
+    const cy = s.chest.y - 0.08;
+    const r = 0.48;
+    fire.circle(cx, cy, r * 1.15).fill({ color: h.glow, alpha: 0.12 });
+    g.circle(cx, cy, r).stroke({ width: w * 0.2, color: this.c(h.ring), alpha: 0.9 });
+    g.circle(cx, cy, r * 0.82).stroke({ width: w * 0.12, color: this.c(h.glow), alpha: 0.8 });
+    fire.circle(cx, cy, r).stroke({ width: w * 0.35, color: h.glow, alpha: 0.3 });
+    // Tick marks turning on the outer ring, and three segments turning the other way on the inner one.
+    for (let i = 0; i < 12; i++) {
+      const a = t * 0.5 + (i * Math.PI) / 6;
+      g.moveTo(cx + Math.cos(a) * r * 0.92, cy + Math.sin(a) * r * 0.92)
+        .lineTo(cx + Math.cos(a) * r * 1.08, cy + Math.sin(a) * r * 1.08)
+        .stroke({ width: w * 0.1, color: this.c(h.ring), alpha: 0.9 });
+    }
+    for (let i = 0; i < 3; i++) {
+      const a = -t * 0.8 + (i * Math.PI * 2) / 3;
+      const pts: number[] = [];
+      for (let k = 0; k <= 6; k++)
+        pts.push(cx + Math.cos(a + k * 0.12) * r * 0.62, cy + Math.sin(a + k * 0.12) * r * 0.62);
+      g.poly(pts, false).stroke({ width: w * 0.16, color: this.c(h.glow), alpha: 0.9 });
+    }
+  }
+
+  /** Geometric fragments (small triangles and diamonds) orbiting the body, half behind it and half in front. */
+  private fragments(g: Graphics, fire: Graphics, s: Skel, front: boolean): void {
+    const f = this.skin.fragments;
+    if (!f) return;
+    const { t, w } = this.st;
+    const cx = (s.pelvis.x + s.chest.x) / 2;
+    const cy = (s.pelvis.y + s.chest.y) / 2;
+    for (let i = 0; i < 8; i++) {
+      const ang = t * (0.7 + (i % 3) * 0.15) + (i * Math.PI * 2) / 8;
+      const inFront = Math.cos(ang) > 0;
+      if (inFront !== front) continue;
+      const rad = 0.5 + 0.12 * Math.sin(t * 1.3 + i);
+      const px = cx + Math.sin(ang) * rad * 0.9;
+      const py = cy + Math.cos(t * 0.9 + i * 1.7) * 0.42 - 0.05;
+      const sz = w * (0.55 + 0.25 * ((i * 0.37) % 1));
+      const rot = t * 1.4 + i;
+      const pts = (i % 2 === 0 ? [0, -1, 0.9, 0.8, -0.9, 0.8] : [0, -1, 0.8, 0, 0, 1, -0.8, 0]).map((v, n) =>
+        n % 2 === 0 ? px + (v * Math.cos(rot) - 0) * sz : py + v * sz,
+      );
+      fire.circle(px, py, sz * 1.6).fill({ color: f.glow, alpha: 0.18 });
+      g.poly(pts).fill({ color: this.c(f.colour), alpha: 0.95 });
+      g.poly(pts).stroke({ width: w * 0.1, color: this.c(this.P.outline), alpha: 0.9 });
+    }
+  }
+
+  /** One glowing slanted eye on the head, towards the facing side. */
+  private psyEye(g: Graphics, fire: Graphics, s: Skel): void {
+    const colour = this.skin.psyEye;
+    if (colour === undefined) return;
+    const { headRadius: r, w } = this.st;
+    const ex = s.head.x + r * 0.42;
+    const ey = s.head.y - r * 0.1;
+    fire.circle(ex, ey, r * 0.55).fill({ color: this.P.glow ?? 0x8a4fe0, alpha: 0.35 });
+    g.poly([
+      ex - r * 0.28,
+      ey + r * 0.06,
+      ex + r * 0.3,
+      ey - r * 0.16,
+      ex + r * 0.24,
+      ey + r * 0.04,
+      ex - r * 0.2,
+      ey + r * 0.14,
+    ]).fill(colour);
+    fire.circle(ex + r * 0.04, ey - r * 0.04, r * 0.18).fill({ color: 0xffffff, alpha: 0.8 });
+    g.moveTo(ex - r * 0.3, ey + r * 0.06)
+      .lineTo(ex + r * 0.32, ey - r * 0.17)
+      .stroke({ width: w * 0.1, color: this.c(this.P.outline) });
+  }
+
+  /** Psychic light pulsing round both hands. */
+  private handGlow(fire: Graphics, s: Skel): void {
+    const colour = this.skin.handGlow;
+    if (colour === undefined) return;
+    const { t, w } = this.st;
+    for (const arm of [s.armFront, s.armBack]) {
+      const h = arm[arm.length - 1]!;
+      const pulse = 0.7 + 0.3 * Math.sin(t * 5 + h.x * 9);
+      fire.circle(h.x, h.y, w * 1.9 * pulse).fill({ color: colour, alpha: 0.22 });
+      fire.circle(h.x, h.y, w * 0.9 * pulse).fill({ color: 0xf4eaff, alpha: 0.5 });
+    }
   }
 
   /** The kabuto: a domed bowl with a peak, a flaring neck guard behind, and two crescent horns on the brow. */

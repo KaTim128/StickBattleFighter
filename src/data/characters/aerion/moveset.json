@@ -2,9 +2,9 @@
   "id": "aerion-moveset",
   "starters": {
     "tap": "palm-strike",
-    "tap-forward": "front-kick",
-    "air-tap": "jumping-front-kick",
-    "falling-tap": "boot-stomp",
+    "tap-forward": "wing-kick",
+    "air-tap": "soaring-kick",
+    "falling-tap": "diving-heel-drop",
     "heavy": "wing-smash"
   },
   "moves": [
@@ -31,7 +31,9 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canPunch"],
+      "requires": [
+        "canPunch"
+      ],
       "next": {
         "tap": "spin-kick"
       }
@@ -59,7 +61,10 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canKick", "canUseCombos"],
+      "requires": [
+        "canKick",
+        "canUseCombos"
+      ],
       "next": {
         "tap": "wing-slash"
       }
@@ -87,7 +92,10 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canPunch", "canUseCombos"],
+      "requires": [
+        "canPunch",
+        "canUseCombos"
+      ],
       "next": {
         "tap": "rising-strike"
       }
@@ -115,12 +123,15 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canKick", "canUseCombos"],
+      "requires": [
+        "canKick",
+        "canUseCombos"
+      ],
       "effect": "wind-launch"
     },
     {
-      "id": "front-kick",
-      "displayName": "Front kick",
+      "id": "wing-kick",
+      "displayName": "Wind-assisted kick",
       "animationState": "FrontKick",
       "category": "kick",
       "heavy": false,
@@ -141,11 +152,13 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canKick"]
+      "requires": [
+        "canKick"
+      ]
     },
     {
-      "id": "jumping-front-kick",
-      "displayName": "Jumping front kick",
+      "id": "soaring-kick",
+      "displayName": "Soaring kick",
       "animationState": "JumpingFrontKick",
       "category": "kick",
       "heavy": true,
@@ -166,11 +179,13 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canUseAerialKicks"]
+      "requires": [
+        "canUseAerialKicks"
+      ]
     },
     {
-      "id": "boot-stomp",
-      "displayName": "Boot stomp",
+      "id": "diving-heel-drop",
+      "displayName": "Diving heel drop",
       "animationState": "DownwardAerialKick",
       "category": "kick",
       "heavy": true,
@@ -191,7 +206,9 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canUseAerialKicks"]
+      "requires": [
+        "canUseAerialKicks"
+      ]
     },
     {
       "id": "wing-smash",
@@ -216,7 +233,9 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canPunch"],
+      "requires": [
+        "canPunch"
+      ],
       "effect": "wind-smash",
       "sfx": "hit-aerion-wing-smash"
     }

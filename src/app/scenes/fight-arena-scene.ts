@@ -2643,7 +2643,8 @@ export class FightArenaScene implements ArenaScene {
       const passive = attacker.caster?.kit.passive;
       if (hitFighter && passive?.id === 'momentum')
         attacker.combatant.gainMomentum(passive.speedPerStack, passive.maxStacks, passive.durationS);
-      if (hitFighter && passive?.id === 'mastery') attacker.combatant.gainMastery(1, passive.maxStacks);
+      if (hitFighter && (passive?.id === 'mastery' || passive?.id === 'focus'))
+        attacker.combatant.gainMastery(1, passive.maxStacks);
       if (!hitFighter) this.shake.addTrauma(a.trauma);
       this.shake.punch(a.zoomPunch);
     }
@@ -3166,6 +3167,23 @@ export class FightArenaScene implements ArenaScene {
       clouds: world.clouds,
       grenades: world.grenades,
       funnels: world.funnels,
+      cages: world.cages,
+      barriers: this.fighters.flatMap((f) => {
+        const c = f.combatant;
+        if (c.barrierHp <= 0) return [];
+        const look = f.caster
+          ? ABILITY_SLOTS.map((sl) => f.caster!.def(sl)).find((d) => d.delivery.type === 'barrier')?.look
+          : undefined;
+        return [
+          {
+            x: f.x,
+            y: f.y,
+            k: c.barrierHp / Math.max(1, c.barrierMaxHp),
+            hitS: c.barrierHitS,
+            palette: look?.palette ?? null,
+          },
+        ];
+      }),
       whirls: this.fighters.flatMap((f) => {
         const w = world.whirlOf(f.name);
         return w ? [{ x: f.x, y: f.y, ...w, palette: f.caster?.cast?.def.look?.palette ?? null }] : [];
@@ -3365,6 +3383,21 @@ export class FightArenaScene implements ArenaScene {
               : 0;
       f.focusNow += (target - f.focusNow) * smoothing(8, frameDtS);
       f.view.focus = f.focusNow;
+    }
+    // Psychic Barrier: when it breaks (or runs out) it bursts into floating fragments where he stands.
+    if (c.takeBarrierBreak() && f.caster) {
+      const bd = ABILITY_SLOTS.map((sl) => f.caster!.def(sl)).find((d) => d.delivery.type === 'barrier');
+      if (bd)
+        this.abilities?.emit({
+          kind: 'impact',
+          ability: bd.id,
+          look: bd.look,
+          vfx: 'barrier-break',
+          sfx: 'barrier-break',
+          x: f.x,
+          y: f.y,
+          radiusM: 1.4,
+        });
     }
     // Wind Blade: the whole body turns, and the wings stay spread and beating hard.
     const whirl = this.abilities?.world.whirlOf(f.name);

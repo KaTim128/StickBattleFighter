@@ -2,9 +2,9 @@
   "id": "vexoris-moveset",
   "starters": {
     "tap": "knife-hand",
-    "tap-forward": "front-kick",
-    "air-tap": "jumping-front-kick",
-    "falling-tap": "boot-stomp",
+    "tap-forward": "karate-front-kick",
+    "air-tap": "karate-jump-kick",
+    "falling-tap": "karate-boot-stomp",
     "heavy": "jar-smash"
   },
   "moves": [
@@ -31,7 +31,9 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canPunch"],
+      "requires": [
+        "canPunch"
+      ],
       "next": {
         "tap": "spinning-backfist"
       }
@@ -59,14 +61,17 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canPunch", "canUseCombos"],
+      "requires": [
+        "canPunch",
+        "canUseCombos"
+      ],
       "next": {
-        "tap": "side-kick"
+        "tap": "karate-side-kick"
       }
     },
     {
-      "id": "side-kick",
-      "displayName": "Side kick",
+      "id": "karate-side-kick",
+      "displayName": "Karate side kick",
       "animationState": "SideKick",
       "category": "kick",
       "heavy": false,
@@ -87,7 +92,10 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canKick", "canUseCombos"],
+      "requires": [
+        "canKick",
+        "canUseCombos"
+      ],
       "next": {
         "tap": "roundhouse-kick"
       }
@@ -115,14 +123,17 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canKick", "canUseCombos"],
+      "requires": [
+        "canKick",
+        "canUseCombos"
+      ],
       "status": {
         "poison": 1
       }
     },
     {
-      "id": "front-kick",
-      "displayName": "Front kick",
+      "id": "karate-front-kick",
+      "displayName": "Karate front kick",
       "animationState": "FrontKick",
       "category": "kick",
       "heavy": false,
@@ -143,11 +154,13 @@
       "impact": "knuckle-light",
       "shake": 0.15,
       "zoomPunch": 0.013,
-      "requires": ["canKick"]
+      "requires": [
+        "canKick"
+      ]
     },
     {
-      "id": "jumping-front-kick",
-      "displayName": "Jumping front kick",
+      "id": "karate-jump-kick",
+      "displayName": "Karate jump kick",
       "animationState": "JumpingFrontKick",
       "category": "kick",
       "heavy": true,
@@ -168,11 +181,13 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canUseAerialKicks"]
+      "requires": [
+        "canUseAerialKicks"
+      ]
     },
     {
-      "id": "boot-stomp",
-      "displayName": "Boot stomp",
+      "id": "karate-boot-stomp",
+      "displayName": "Karate boot stomp",
       "animationState": "DownwardAerialKick",
       "category": "kick",
       "heavy": true,
@@ -193,7 +208,9 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canUseAerialKicks"]
+      "requires": [
+        "canUseAerialKicks"
+      ]
     },
     {
       "id": "jar-smash",
@@ -218,7 +235,9 @@
       "impact": "knuckle-heavy",
       "shake": 0.3,
       "zoomPunch": 0.03,
-      "requires": ["canPunch"],
+      "requires": [
+        "canPunch"
+      ],
       "effect": "toxic-smash",
       "status": {
         "poison": 1

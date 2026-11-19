@@ -454,6 +454,45 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.5,
   },
 
+  // ---- Psion (master plan section 4): gestures, not blows. The hands do the work and the body hardly moves.
+  // Mind Crush: both hands out, fingers spread, then slowly closed to fists.
+  mindCrush: {
+    windup: { lean: deg(0), head: deg(4), armFront: limb(96, 10), armBack: limb(86, 14), legFront: limb(14, -22) },
+    release: { lean: deg(-6), head: deg(6), armFront: limb(92, 100), armBack: limb(84, 104), legFront: limb(16, -24) },
+    settle: 0.4,
+  },
+  // Telekinetic Throw: one hand raised palm-up to lift, then flung forward and down.
+  telekineticThrow: {
+    windup: { lean: deg(2), head: deg(2), armFront: limb(120, 20), armBack: limb(30, 80), legFront: limb(14, -22) },
+    release: { lean: deg(-18), head: deg(8), armFront: limb(100, 4), armBack: limb(-20, 70), legFront: limb(26, -26) },
+    settle: 0.45,
+  },
+  // Psychic Barrier: both arms drawn round in a circle and held wide.
+  psychicBarrier: {
+    windup: { lean: deg(0), head: deg(0), armFront: limb(30, 60), armBack: limb(-20, 60), legFront: limb(14, -22) },
+    release: { lean: deg(0), head: deg(2), armFront: limb(80, 20), armBack: limb(-60, 20), legFront: limb(16, -24) },
+    settle: 0.35,
+  },
+  // Floating Prison: one hand lifted with the fingers curled, the other drawing a circle in the air.
+  floatingPrison: {
+    windup: { lean: deg(-2), head: deg(4), armFront: limb(130, 40), armBack: limb(40, 70), legFront: limb(14, -22) },
+    release: { lean: deg(-8), head: deg(6), armFront: limb(150, 90), armBack: limb(60, 60), legFront: limb(16, -24) },
+    settle: 0.4,
+  },
+  // Repulse: both arms crossed at the chest, then flung wide in one motion.
+  repulse: {
+    windup: { lean: deg(8), head: deg(-2), armFront: limb(60, 130), armBack: limb(70, 130), legFront: limb(14, -22) },
+    release: { lean: deg(-8), head: deg(6), armFront: limb(96, 6), armBack: limb(-96, 6), legFront: limb(20, -24) },
+    settle: 0.3,
+  },
+  // Mindstorm: both arms raised overhead, fingers spread, held there trembling as the room lifts.
+  mindstorm: {
+    windup: { lean: deg(6), head: deg(-10), armFront: limb(120, 40), armBack: limb(110, 44), legFront: limb(14, -22) },
+    tremble: deg(2),
+    release: { lean: deg(4), head: deg(-14), armFront: limb(168, 12), armBack: limb(160, 14), legFront: limb(14, -22) },
+    settle: 0.5,
+  },
+
   // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
   // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
   // caught enemy in.

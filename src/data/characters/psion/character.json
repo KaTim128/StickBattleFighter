@@ -1,0 +1,66 @@
+{
+  "id": "psion",
+  "template": "base-stickman",
+  "displayName": "Psion",
+  "description": "Psion has never raised his voice, or his hands, in anger. The arena is quiet around him in a way that has nothing to do with fear: things that were on the floor are no longer on the floor. He fights the way he thinks, from a distance and without hurry, and those who have faced him describe a pressure behind the eyes before anything has touched them.",
+  "characterType": "fighter",
+  "element": "psychic",
+  "combatStyle": "telekinesis",
+  "profiles": {
+    "animation": "psion-animation",
+    "moveset": "psion-moveset",
+    "stats": "psion-stats",
+    "effects": "psion-effects",
+    "audio": "psion-audio",
+    "ai": "psion-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.44,
+      "shin": 0.44
+    },
+    "colour": "#3b2166",
+    "colourBack": "#271445",
+    "outline": "#0d0618",
+    "limbWidthM": 0.07,
+    "outlineWidthM": 0.03,
+    "spine": 0.55
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": true,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "psion-kit"
+}

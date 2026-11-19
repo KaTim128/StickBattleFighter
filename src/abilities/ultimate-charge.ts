@@ -13,6 +13,7 @@ import type { UltimateCharge } from './ability-def';
  * - Plague Bloom 1.2: a huge toxic burst, but its strength is two stacks of poison, and a full second of warning.
  * - Celestial Tempest 1.25: untouchable for 2.4 s, up to thirty blades across the battlefield and a 90 damage dive.
  * - Final Judgement 1.3: untouchable for about 2 s and a 112 damage blow that cannot be dodged once the rush starts.
+ * - Mindstorm 1.3: a 2.2 s field of eight flung objects and a 60 damage explosion, but he is rooted and exposed throughout.
  * - Rampage Mode 1.3: 8 s of 40% more defence, cooldowns 25% sooner, 15% faster and a shockwave.
  * - Blue Inferno 1.4: 10 s of +70% damage, cooldowns 30% sooner and 15% faster.
  */
@@ -22,6 +23,7 @@ export const ULTIMATE_POWER = {
   undeadArmy: 1.0,
   celestialTempest: 1.25,
   finalJudgement: 1.3,
+  mindstorm: 1.3,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

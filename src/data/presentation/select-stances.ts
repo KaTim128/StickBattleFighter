@@ -138,6 +138,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 0.6, pelvis: 0.006, hands: 0.012 },
   },
+  // Psion: floating, still, both hands open and raised at his sides, palms forward, as if holding the room in place.
+  psion: {
+    title: 'The Quiet Storm',
+    style: 'Telekinetic controller: crushes, hurls and holds from range, shields himself',
+    pelvis: 0.84,
+    leadFoot: 0.12,
+    rearFoot: -0.16,
+    lean: -2,
+    head: 4,
+    front: { x: 0.46, y: 0.12 },
+    back: { x: 0.3, y: 0.18 },
+    turn: 0.6,
+    scale: 1,
+    breath: { lean: 1, pelvis: 0.012, hands: 0.04 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

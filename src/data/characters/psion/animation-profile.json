@@ -1,0 +1,17 @@
+{
+  "id": "psion-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Idle": "proc.idle.psychic",
+    "FightingStance": "proc.idle.psychic",
+    "Turn": "proc.idle.psychic",
+    "Jab": "psion.palm",
+    "Hook": "psion.elbow",
+    "SideKick": "psion.spin-kick",
+    "RoundhouseKick": "psion.double-palm",
+    "FrontKick": "psion.push",
+    "JumpingFrontKick": "psion.air-palm",
+    "DownwardAerialKick": "psion.down-slam",
+    "HeavyAttack": "psion.force-wave"
+  }
+}

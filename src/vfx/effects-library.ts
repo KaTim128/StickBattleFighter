@@ -106,6 +106,18 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
   // Kenshiro's steel: a clean white flash and a few bright sparks on every cut, a crimson ring on the heavy.
   'sword-hit': { sparks: { count: 14, speedMps: 7, colour: 0xffe9e9 }, ring: { sizeM: 0.4, colour: 0xff6a72 } },
   'sword-heavy': { sparks: { count: 24, speedMps: 9, colour: 0xffffff }, ring: { sizeM: 1, colour: 0xff4a55 } },
+  // Psion's psychic force: violet motes on the hands, a soft ring on every touch, a wide shockwave on the force wave.
+  'psi-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x2a1650, hot: 0x8a4fe0, bright: 0xc7a1ff, core: 0xf4eaff },
+  },
+  'psi-hit': { sparks: { count: 10, speedMps: 5, colour: 0xc7a1ff }, ring: { sizeM: 0.5, colour: 0x8a4fe0 } },
+  'psi-blast': {
+    sparks: { count: 20, speedMps: 8, colour: 0xf4eaff },
+    ring: { sizeM: 1.1, colour: 0xc7a1ff },
+    mist: 6,
+  },
+  'psi-wave': { sparks: { count: 24, speedMps: 8, colour: 0xe8d8ff }, ring: { sizeM: 2.2, colour: 0xc7a1ff }, mist: 8 },
   'dust-grey': { dust: [0xd9d4c7, 0xb8b2a6] },
   'ember-ash': { dust: [0xff7a2e, 0xffb04d, 0x4a4a4a, 0x8a8580], embers: 30 },
   'flame-limbs': { limbFlames: true },
