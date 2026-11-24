@@ -170,6 +170,8 @@ export interface CloudSpec {
     readonly speedFactor: number;
     readonly chipDps: number;
     readonly stackAfterS: number;
+    /** Chip damage ramps with continuous exposure: x(1 + perS per second inside), up to `maxFactor`; leaving for `resetS` resets it. */
+    readonly ramp?: { readonly perS: number; readonly maxFactor: number; readonly resetS: number };
   };
 }
 

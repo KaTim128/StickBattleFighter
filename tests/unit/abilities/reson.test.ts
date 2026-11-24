@@ -46,11 +46,11 @@ describe('Reson kit', () => {
       expect(a.payload.sonic, a.id).toBe(true);
   });
 
-  it('Sonic Boom is a 3 second scream that pins what it hits, interrupting it once only', () => {
+  it('Sonic Boom (RS1) is a wide, steerable 3 second scream that never pins what it hits, interrupting it once only', () => {
     const a = arena([{ x: 3, y: 0 }]);
     const pins: number[] = [];
     const flinch: boolean[] = [];
-    a.host.pin = (_id, away, secs) => pins.push(away.x * secs);
+    a.host.pin = (_id, away, secs) => pins.push(away.x * secs); // must never be called
     a.host.hitFighter = (_c, target, payload) => {
       a.hits.push({ target, damage: payload.damage, disrupt: false });
       flinch.push(payload.noFlinch !== true);
@@ -63,8 +63,9 @@ describe('Reson kit', () => {
     a.world.release('me', RESON_KIT.a1, { x: 7, y: 0 }, a.host);
     run(a, 3.5);
     expect(a.hits.length).toBeGreaterThanOrEqual(8);
-    expect(pins.length).toBe(a.hits.length); // every tick pins it
-    expect(pins.every((p) => p > 0)).toBe(true); // away from the caster
+    expect(pins).toEqual([]); // nothing is immobilised
+    expect(d.widthM).toBeGreaterThanOrEqual(4.5);
+    expect(d.turnRadPerS).toBeGreaterThan(0); // steerable like Fire Beam
     expect(flinch[0]).toBe(true);
     expect(flinch.slice(1).every((x) => !x)).toBe(true);
     expect(a.world.beams).toHaveLength(0); // it ends on time

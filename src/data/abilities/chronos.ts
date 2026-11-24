@@ -202,7 +202,7 @@ export const CHRONOS_KIT: AbilityKit = {
     name: 'Time Stop',
     label: 'TIME STOP',
     description:
-      'Freezes the entire arena for 4 seconds: opponents and their cooldowns, furniture, objects and physics all stop. Only Chronos can move. Everything he hits while time is stopped is held back, and when time resumes every blow, push and break lands at once.',
+      'Freezes the entire arena for 4 seconds: opponents and their cooldowns, furniture, objects and physics all stop. Only Chronos can move. Everything he hits while time is stopped is held back, and when time resumes every blow, push and break lands at once. Blows on the same opponent stack: each one lands 12% harder than the last, up to double.',
     icon: 'time-stop',
     slot: 'ult',
     staminaCost: 0,

@@ -942,3 +942,6 @@ Done: hold 6 s, activation window 0.4 s, grounded targets only (real height > 0.
 
 ## 24/11/2026: Psion Toss and Slam (PS1-PS3, TD-152)
 Done: Telekinetic Toss (E) and Psychic Slam (F) replace Throw and Barrier; refusals, HUD text, AI brain, icons, poses, tests. Tests: typecheck clean, vitest 1219 passed. Browser: filing cabinet lifted, slam knocked the dummy down. Not done: bespoke VFX (reuses Psion's palette effects), sounds reuse existing psi sounds.
+
+## 24/11/2026: Batch 2 remainder (RS1, IF1, VX1-3, CH1/CH2, PR4)
+Done: Sonic Boom 4.5 m wide, 8.5 m, steerable, no pin; Fire Beam falloff full within 1 m to 35 % at the tip; Toxic Jar splashes on the floor at range end, 3 stacks (jar and trap), toxicity cap 40 with +4 % tick damage per extra stack (max x2.5), Plague Bloom chip damage ramps +15 %/s up to x3 and resets after 1 s outside; Time Stop held blows stack +12 % each up to x2; Chronos AI casts Time Stop in melee reach. Tests: typecheck clean, unit and fire-beam tests green; last full suite had 1 failure (fire-beam damage threshold), fixed by a 35 % falloff floor. Not browser-checked: Sonic Boom steering, jar splash, fog ramp, Time Stop stacking.

@@ -235,7 +235,8 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       a2: { role: 'zone', minM: 1.5, maxM: 6, weight: 1.1 },
       a3: { role: 'poke', minM: 2, maxM: 8, weight: 1.2 },
       a4: { role: 'gapClose', minM: 2.5, maxM: 6, weight: 1.0 },
-      ult: { role: 'burst', minM: 0, maxM: 7, weight: 1.3 },
+      // CH2: Time Stop pays only if he can chain blows into a frozen foe, so he casts it in melee reach.
+      ult: { role: 'burst', minM: 0, maxM: 2.6, weight: 1.6 },
     },
     combos: [['a2', 'a1']],
   },

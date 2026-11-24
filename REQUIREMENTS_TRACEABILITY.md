@@ -13,14 +13,14 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | N1/N2 | 4 skeletons; 15 % of actual HP removed | P1, MS11 | 0–1 | necro.ts, scene-abilities.ts | integration tests | build-verified | necro.test.ts: 4 skeletons, heal = 15% of HP actually removed |
 | C1 | Clash shows the winner's name | MS16 | 1 | scene-clash.ts, clash-hud.ts | unit + e2e | build-verified | clash.test.ts: "<NAME> WON!" banner; not browser-verified |
 | PR1–3 | Shard Blade swords, 5-hit combo, piercing finale, hammer heavy | P1, MS10 | 2 | shard-blade.ts, clips.ts, premium-model.ts | tests + screenshots | implemented | swords, 5-hit chain, hammer heavy: crystal-prison.test.ts (real scene) + browser screenshots 24/11/2026; finale/hammer forms drawn; per-hit animation polish pending |
-| PR4 | Crystal Armour ultimate integrated | P2, MS10.4 | 0, 2 | premium-model.ts | 6-pose screenshots | todo | |
+| PR4 | Crystal Armour ultimate integrated | P2, MS10.4 | 0, 2 | premium-model.ts | 6-pose screenshots | gameplay-verified | browser screenshot 24/11/2026: plated armour, helmet, shield and sword read cleanly standing; moving poses not captured |
 | PR5 | Prison v2: 6 s, grounded-only, two leg formations | P8 | 2 | ability-world.ts, stickman-view.ts, prismor.ts | integration + screenshots | gameplay-verified | prismor.test.ts (6 s hold, grounded only, hover=grounded, launched misses), crystal-prison.test.ts real scene, browser screenshot 24/11/2026 (two formations with leg holes) |
 | PR6 | Prismor animation variety | P2 | 2–3 | clips.ts, ability-poses.ts | screenshots | todo | |
 | PS1–3 | Telekinetic Toss + Psychic Slam with real props | P3, MS14 | 2 | ability-world.ts, arena-props.ts, psion.ts | integration + browser | gameplay-verified | psion-toss.test.ts (real scene: refusals spend nothing, chair lifted then slammed), unit tests, browser 24/11/2026 (filing cabinet lifted then slam knocks the dummy down). AI: psion-ai uses Toss then Slam |
-| RS1 | Sonic Boom wide, steerable, no pin | P6 | 2 | reson.ts, ability-world.ts | unit + browser | todo | |
-| IF1 | Fire Beam proximity scaling | P6 | 2 | inferno.ts | unit | todo | |
-| VX1–3 | Jar ground splash, heavier stacking, ramping fog | P6 | 2 | ability-world.ts, toxicity.ts, vexoris.ts | unit | todo | |
-| CH1/CH2 | Time Stop stacking; AI uses the ultimate well | P6 | 2, 4 | fight-arena-scene.ts, brains.ts, fighter-brain.ts | unit + harness | todo | |
+| RS1 | Sonic Boom wide, steerable, no pin | P6 | 2 | reson.ts, ability-world.ts | unit + browser | implemented | reson.test.ts: width 4.5 m, range 8.5 m, steerable, never pins; not browser-checked |
+| IF1 | Fire Beam proximity scaling | P6 | 2 | inferno.ts | unit | build-verified | contact-hits.test.ts proximity test, fire-beam integration test |
+| VX1–3 | Jar ground splash, heavier stacking, ramping fog | P6 | 2 | ability-world.ts, toxicity.ts, vexoris.ts | unit | build-verified | vexoris-hazards.test.ts (3 stacks, jar ground splash, fog ramp x3 reset 1 s), toxicity.test.ts (cap 40, +4%/stack) |
+| CH1/CH2 | Time Stop stacking; AI uses the ultimate well | P6 | 2, 4 | fight-arena-scene.ts, brains.ts, fighter-brain.ts | unit + harness | implemented | held blows stack x(1+0.12(n-1)) max x2 in endTimeStop; AI casts Time Stop within 2.6 m; no dedicated stacking test, not browser-checked |
 | W1 | Natural walks for new fighters; original four unchanged | P2, MS13 | 3 | greybox-motion.ts | elbow test + screenshots | todo | |
 | A1–A6 | Stat-, health- and opponent-aware AI; ability purpose; adaptation; performance | MS3 | 4 | fighter-brain.ts, brains.ts | unit + harness | todo | |
 | B1–B3 | Full-roster matrix, framework doc and tests, rebalance incl. Necro/Titan/Shroud | P2, MS2, MS12 | 5 | harness.ts, stats JSON, kits | matrix report | todo | |

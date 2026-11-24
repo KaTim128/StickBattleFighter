@@ -21,3 +21,16 @@ describe('universal contact hits (HD)', () => {
     });
   }
 });
+
+describe('Fire Beam proximity (IF1)', () => {
+  it('damage rises steadily as the target gets closer to Inferno', async () => {
+    const { INFERNO_KIT } = await import('../../../src/data/abilities/inferno');
+    const { payloadAt } = await import('../../../src/abilities/ability-def');
+    const p = INFERNO_KIT.a3.payload;
+    const at = (d: number) => payloadAt(p, d, 7).damage;
+    expect(at(0.5)).toBe(at(1)); // full strength up close
+    expect(at(2)).toBeGreaterThan(at(4));
+    expect(at(4)).toBeGreaterThan(at(6.5));
+    expect(at(6.5) / at(1)).toBeLessThan(0.45);
+  });
+});

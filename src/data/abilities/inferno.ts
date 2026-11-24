@@ -115,7 +115,8 @@ export const INFERNO_KIT: AbilityKit = {
       strength: 320,
       burn: { dps: 10, durationS: 2 },
       ignites: true,
-      falloff: { fullWithinM: 1.5, minFactor: 0.45 },
+      // IF1 (owner, 20/11/2026): clearly proximity-driven. Full strength within 1 m of him, falling to 35% at the beam's tip.
+      falloff: { fullWithinM: 1, minFactor: 0.35 },
     },
     // Owner, 12/11/2026: holding the beam on someone builds the damage up. Master plan B4 (17/11/2026):
     // 1 s longer and more damage in total, without being excessive: the ramp is gentler (after 1 s of

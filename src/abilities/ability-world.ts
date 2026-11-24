@@ -196,6 +196,8 @@ export interface Cloud {
   /** A fog (Plague Bloom): its per-fighter seconds spent inside, and its rules. */
   fog?: NonNullable<CloudSpec['fog']>;
   readonly dwellS: Map<string, number>;
+  /** Seconds each target has spent outside a fog since leaving it (its damage ramp resets after the fog's `ramp.resetS`). */
+  readonly outS: Map<string, number>;
 }
 
 /** A lobbed grenade in flight, lying where it landed, or stuck to an enemy (see `GrenadeDelivery`). */
@@ -1478,7 +1480,10 @@ export class AbilityWorld {
       p.travelledM += step;
       if (p.travelledM >= d.maxRangeM) {
         this.projectiles.splice(i, 1);
-        host.emit({ kind: 'fizzle', ability: p.def.id, look: p.def.look, vfx: p.def.vfx, sfx: null, x: p.x, y: p.y });
+        // A jar that lands on the floor still shatters and splashes (VX1); anything else just fades out.
+        if (d.cloud) this.impact(p, { x: p.x, y: p.y }, host);
+        else
+          host.emit({ kind: 'fizzle', ability: p.def.id, look: p.def.look, vfx: p.def.vfx, sfx: null, x: p.x, y: p.y });
       }
     }
   }
@@ -1570,7 +1575,6 @@ export class AbilityWorld {
         }
         b.contact.set(f.id, contactS);
         b.touching.push(f.id);
-        if (d.scream) host.pin?.(f.id, b.dir, d.tickS * 2);
         host.emit({
           kind: 'impact',
           ability: b.def.id,
@@ -2299,6 +2303,7 @@ export class AbilityWorld {
       ageS: 0,
       hit: new Set(alreadyHitId ? [alreadyHitId] : []),
       dwellS: new Map(),
+      outS: new Map(),
       ...(spec.fog ? { fog: spec.fog } : {}),
       ...(spec.mine ? { mine: { ...spec.mine, dormantS: 0 } } : {}),
     });
@@ -2788,14 +2793,19 @@ export class AbilityWorld {
     for (const f of host.fighters()) {
       if (this.friendly(f, c.casterId, host) || !f.hittable) continue;
       if (Math.hypot(f.x - c.x, f.y - c.y) > c.radiusM + f.radiusM * 0.5) {
-        c.dwellS.delete(f.id);
+        // Out of the fog: the exposure (and its damage ramp) is forgotten only after `resetS` outside (VX3).
+        const out = (c.outS.get(f.id) ?? 0) + dtS;
+        c.outS.set(f.id, out);
+        if (out >= (fog.ramp?.resetS ?? 0)) c.dwellS.delete(f.id);
         continue;
       }
+      c.outS.delete(f.id);
       const inside = (c.dwellS.get(f.id) ?? 0) + dtS;
       c.dwellS.set(f.id, inside);
       const stack = inside >= fog.stackAfterS && !c.hit.has(f.id);
       if (stack) c.hit.add(f.id);
-      host.fogFighter?.(f.id, { sightM: fog.sightM, speedFactor: fog.speedFactor, chipDps: fog.chipDps, stack });
+      const k = fog.ramp ? Math.min(fog.ramp.maxFactor, 1 + fog.ramp.perS * inside) : 1;
+      host.fogFighter?.(f.id, { sightM: fog.sightM, speedFactor: fog.speedFactor, chipDps: fog.chipDps * k, stack });
     }
   }
 

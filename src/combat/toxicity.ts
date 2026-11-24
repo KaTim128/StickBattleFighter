@@ -19,10 +19,13 @@ export interface PoisonConfig {
   readonly tickDamageSpecHp: readonly number[];
   /** The project's health runs about ten times the spec's HP numbers (990 base health), so spec HP is scaled. */
   readonly hpPerSpecHp: number;
+  /** Each stack above the first adds this to the damage factor of every tick (VX2), up to `maxDamageFactor`. */
+  readonly damagePerStack: number;
+  readonly maxDamageFactor: number;
 }
 
 export const POISON: PoisonConfig = {
-  maxStacks: 25,
+  maxStacks: 40,
   slowLadder: [
     [1, 0.02],
     [5, 0.04],
@@ -33,6 +36,8 @@ export const POISON: PoisonConfig = {
   tickIntervalS: 3,
   tickDamageSpecHp: [1, 2, 3, 4],
   hpPerSpecHp: 10,
+  damagePerStack: 0.04,
+  maxDamageFactor: 2.5,
 };
 
 /** The movement-speed multiplier for a toxicity level (1 = none). */
@@ -60,7 +65,9 @@ export class Toxicity {
   /** The next tick's damage, in project HP. */
   get nextTickDamage(): number {
     const ladder = this.config.tickDamageSpecHp;
-    return (ladder[Math.min(this.tickIndex, ladder.length - 1)] ?? 0) * this.config.hpPerSpecHp;
+    const base = (ladder[Math.min(this.tickIndex, ladder.length - 1)] ?? 0) * this.config.hpPerSpecHp;
+    const k = Math.min(this.config.maxDamageFactor, 1 + this.config.damagePerStack * Math.max(0, this.stacksNow - 1));
+    return base * k;
   }
 
   get speedFactor(): number {

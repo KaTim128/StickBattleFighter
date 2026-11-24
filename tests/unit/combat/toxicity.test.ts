@@ -49,7 +49,8 @@ describe('toxicity', () => {
     t.apply(1);
     expect(t.stacks).toBe(5);
     const later = run(t, 6); // the next ticks at 9 s and 12 s: 3 then 4, only two of them
-    expect(later).toEqual([spec(3), spec(4)]);
+    // Ticks climb 3 then 4 and, with five stacks, each is 16% heavier (VX2: +4% per stack above the first).
+    expect(later.map((x) => Math.round(x * 100) / 100)).toEqual([spec(3) * 1.16, spec(4) * 1.16]);
   });
 
   it('does nothing without stacks, and clearing stops it', () => {
@@ -73,7 +74,7 @@ describe('poison on a fighter', () => {
     expect(c.status.speedFactor).toBeCloseTo(0.96);
     let taken = 0;
     for (let i = 0; i < 60 * 3.1; i++) taken += c.update(1 / 60);
-    expect(taken).toBeCloseTo(spec(1), 5);
+    expect(taken).toBeCloseTo(spec(1) * 1.16, 5); // five stacks: +16% (VX2)
     c.reset();
     expect(c.toxicityStacks).toBe(0);
     expect(c.status.speedFactor).toBe(1);

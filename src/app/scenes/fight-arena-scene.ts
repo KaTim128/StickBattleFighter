@@ -1721,8 +1721,13 @@ export class FightArenaScene implements ArenaScene {
     this.physics?.thaw();
     const queued = this.stopQueue.splice(0, this.stopQueue.length);
     const push = new Map<FighterEntity, { x: number; y: number }>();
+    // CH1 (owner 20/11/2026): the held blows stack. On each target, blow n lands for x(1 + 0.12 (n - 1)), at most x2.
+    const blowsOn = new Map<FighterEntity, number>();
     for (const q of queued) {
-      const landed = this.applyStrike(q.attacker, q.target, q.s);
+      const n = (blowsOn.get(q.target) ?? 0) + 1;
+      blowsOn.set(q.target, n);
+      const stacked = Math.min(2, 1 + 0.12 * (n - 1));
+      const landed = this.applyStrike(q.attacker, q.target, { ...q.s, damage: q.s.damage * stacked });
       const after = q.target.body?.linvel();
       if (landed && after && !q.target.combatant.isKo) {
         const acc = push.get(q.target) ?? { x: 0, y: 0 };

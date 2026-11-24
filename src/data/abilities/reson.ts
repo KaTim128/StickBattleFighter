@@ -21,20 +21,20 @@ export const RESON_KIT: AbilityKit = {
     mastery: { threshold: 6, damageFactor: 1.3, windowS: 3 },
   },
   // A1 (Q): Sonic Boom. He roars for three seconds, rooted, sending rings of sound out toward the enemy. Anyone it connects with is
-  // interrupted once and cannot walk toward him for as long as the scream holds them.
+  // interrupted once; it no longer pins them (owner, 20/11/2026), and he steers it like Fire Beam.
   a1: {
     id: 'sonicBoom',
     name: 'Sonic Boom',
     label: 'SCREAM',
     description:
-      'Takes a deep breath and unleashes a powerful voice screech for 3 seconds, sending rings of sound toward the enemy. Opponents it hits are interrupted and cannot walk forward while the sound holds them. He stays rooted while he screams.',
+      'Takes a deep breath and unleashes a powerful voice screech for 3 seconds, sending rings of sound toward the enemy. A wide wave that he steers with the mouse or a swipe while it pours. Opponents it hits are interrupted once but can still move freely. He stays rooted while he screams.',
     icon: 'sonic-boom',
     slot: 'a1',
     staminaCost: 32,
     cooldownS: 12,
     castS: 0.5,
     recoveryS: 0.6, // the scream holds the cast open while it lasts; this is only the tail after it ends
-    aimRangeM: 7,
+    aimRangeM: 8.5,
     moveFactor: 0,
     interruptible: true,
     breaksOnHit: true,
@@ -47,7 +47,7 @@ export const RESON_KIT: AbilityKit = {
       sonic: true,
       falloff: { fullWithinM: 2, minFactor: 0.6 },
     },
-    delivery: { type: 'beam', rangeM: 7, widthM: 2.6, durationS: 3, tickS: 0.3, scream: true },
+    delivery: { type: 'beam', rangeM: 8.5, widthM: 4.5, durationS: 3, tickS: 0.3, turnRadPerS: 3.5, scream: true },
     vfx: 'sonic-boom',
     sfx: { cast: 'scream-breath', release: 'sonic-scream', impact: 'scream-hit' },
     look: {
