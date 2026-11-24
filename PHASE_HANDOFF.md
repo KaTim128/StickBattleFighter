@@ -1,5 +1,19 @@
 # Phase handoff
 
+## Current handoff (24/11/2026): planning complete, implementation not started
+
+- **Plan:** `STICKMAN_ARENA_IMPLEMENTATION_PLAN.md`, batches 0 to 10, with owner decisions D1 to D8 recorded 24/11/2026.
+- **Traceability:** `REQUIREMENTS_TRACEABILITY.md`, every row `todo`.
+- **Spec:** `docs/references/master-plan/STICKMAN_ARENA_MASTER_DEVELOPMENT_UPDATE.md`.
+- **Reference images:** `docs/references/ui/` (occlusion 1–2, pixel-art office 1–2) and `docs/references/master-plan/` (tournament draw, practice cards).
+- **Start here:** Batch 0.
+  - The working tree holds uncommitted, half-done Shard Blade / Crystal Monster / Necro edits that do not type-check. Repair them first (R0.1).
+  - Crystal Prison is broken in the deployed game: restore `trap`, `legTrapState` and `standable` (R0.2).
+- **Protocol:**
+  - one batch at a time, each ending with checks, commit, push, a preview deploy and a short report;
+  - only browser-checked rows become `gameplay-verified`;
+  - after a worker restart, resume from this file plus the traceability file, `git status` and `git log`.
+
 ## Current phase
 
 **Phase 0: inspection and planning. Complete; awaiting the owner's approval.** No gameplay was changed in Phase 0.
