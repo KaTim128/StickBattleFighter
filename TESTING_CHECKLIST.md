@@ -729,3 +729,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Crystal Sovereign: armour absorbs blows and breaks after its hits; no Crystal Monster anywhere.
 - [ ] Necro Undead Army raises exactly four skeletons.
 - [ ] Fighters squeezed against a fixed prop end each frame within 3 cm (`furniture-collision.test.ts`).
+
+## Batch 1 combat correctness (24/11/2026)
+- [ ] Punching a target a visible gap beyond the fist does nothing; touching it hits (all fighters).
+- [ ] Combos still chain at normal standing distance (about 0.75 m gap).
+- [ ] No fighter regains HP by waiting or tagging; Soul Drain heals only what it removed.
+- [ ] Clash banner reads "<WINNER> WON!".

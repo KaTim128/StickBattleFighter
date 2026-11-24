@@ -47,6 +47,7 @@ import {
   blowTouches,
   capsuleTouchesRect,
   hitCapsule,
+  touchReachM,
 } from '../../combat/attacks';
 import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
 import { dodgeDirection, type IncomingShot } from '../../combat/dodge-direction';
@@ -251,8 +252,6 @@ const MATCH_END_PAUSE_S = 2.5;
 const TEAM_TIME_LIMIT_S = 300;
 /** Ability slots the fighter AI may use, in order. */
 const AI_SLOTS = ['a1', 'a2', 'a3', 'a4', 'ult'] as const;
-/** How close the AI must be to its target for a punch to land (body radii plus reach), metres. */
-const AI_MELEE_REACH_M = 1.3;
 const GROUND = { airborne: false, falling: false, forward: false } as const;
 const CLASH_BEAT_TIMING = { windupS: 0.06, activeS: 0.07, recoveryS: 0.17 } as const;
 /** Sound for a prop being hit or breaking, by material (src/audio recipes). */
@@ -1239,7 +1238,7 @@ export class FightArenaScene implements ArenaScene {
         distM: Math.hypot(o.x - f.x, o.y - f.y),
         hpFrac: o.combatant.hp / o.combatant.stats.maxHp,
       })),
-      { reachM: AI_MELEE_REACH_M * (f.def.sizeScale ?? 1), currentId: f.aiTargetId, heldS: f.aiTargetS },
+      { reachM: this.aiMeleeReachM(f), currentId: f.aiTargetId, heldS: f.aiTargetS },
     );
     if (id !== f.aiTargetId) {
       f.aiTargetId = id;
@@ -1459,7 +1458,18 @@ export class FightArenaScene implements ArenaScene {
         const target = this.fighters[i]!;
         if (i === flight.by || flight.hit.has(i) || target.combatant.isKo || !target.body) continue;
         if (this.fighters[flight.by]?.team === target.team) continue; // never the thrower's own side
-        if (!circleTouchesRect(target, target.def.body.footRadiusM + 0.1, prop.rect)) continue;
+        // Real contact only (HD), swept: the prop's rect now and where it was a step ago, so a fast throw cannot tunnel.
+        const r = prop.rect;
+        const back = { x: v.x / 60, y: v.y / 60 };
+        const prev = { x0: r.x0 - back.x, y0: r.y0 - back.y, x1: r.x1 - back.x, y1: r.y1 - back.y };
+        const mid = { x0: r.x0 - back.x / 2, y0: r.y0 - back.y / 2, x1: r.x1 - back.x / 2, y1: r.y1 - back.y / 2 };
+        const reach = target.def.body.footRadiusM + 0.1;
+        if (
+          !circleTouchesRect(target, reach, r) &&
+          !circleTouchesRect(target, reach, mid) &&
+          !circleTouchesRect(target, reach, prev)
+        )
+          continue;
         const thrower = this.fighters[flight.by] ?? target;
         const mass = prop.kind.massKg;
         const dir = { x: v.x / speed, y: v.y / speed };
@@ -2063,7 +2073,7 @@ export class FightArenaScene implements ArenaScene {
             toxicity: p.combatant.toxicityStacks,
           }
         : null,
-      meleeReachM: AI_MELEE_REACH_M * (f.def.sizeScale ?? 1),
+      meleeReachM: this.aiMeleeReachM(f),
       canClimb: f.def.capabilities.canJump,
       abilities,
       profile: f.def.ai,
@@ -2705,6 +2715,11 @@ export class FightArenaScene implements ArenaScene {
     this.events.push({ kind: 'burn', target: f.name, x: f.x, y: f.y - headTop(f), amount: Math.round(f.burnShown) });
     f.burnShown = 0;
     f.burnTextS = 0.5;
+  }
+
+  /** Where the AI closes to for its ordinary blows: the distance they really touch at (HD), 10 % inside it so they land. */
+  private aiMeleeReachM(f: FighterEntity): number {
+    return touchReachM(Object.values(f.def.moves), f.def.body.footRadiusM) * 0.9;
   }
 
   /** An attack reached its active window: check its hit capsule against other fighters and doors. */

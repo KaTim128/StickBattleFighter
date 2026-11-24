@@ -15,7 +15,6 @@ export const TEAM = {
   /** The incoming fighter cannot be hit for this long (a fair entrance). */
   tagInvulnS: 0.6,
   /** Health a resting fighter gets back per second, as a share of its maximum. */
-  benchRegenPerS: 0.02,
   /** After a KO, the next teammate enters this long after (the KO plays out). */
   koSwapDelayS: 2,
   /** The AI tags out below this share of health, if a teammate has at least `aiFreshHp`. */
@@ -36,11 +35,6 @@ export function nextStanding(members: readonly Member[], active: number): number
     if (!members[i]!.ko && members[i]!.hpFrac > 0) return i;
   }
   return null;
-}
-
-/** Health a resting fighter has after `dtS` on the bench. */
-export function benchHp(hp: number, maxHp: number, dtS: number): number {
-  return Math.min(maxHp, hp + maxHp * TEAM.benchRegenPerS * dtS);
 }
 
 /** Is every member down? */

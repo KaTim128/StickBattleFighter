@@ -166,7 +166,7 @@ describe('office door (owner request, 11/11/2026)', () => {
     const dummyAt = { x: DOOR.x0 - 1.4, y: DOOR_Y };
     scene.respawnDummy(dummyAt);
     intents.setMove('t', { x: 1, y: 0 });
-    runUntil(() => scene.player.x > scene.dummy.x - 1.15);
+    runUntil(() => scene.player.x > scene.dummy.x - 0.85);
     intents.setMove('t', { x: 0, y: 0 });
     run(0.3);
     for (const step of ['jab', 'cross', 'hook', 'heavy']) {

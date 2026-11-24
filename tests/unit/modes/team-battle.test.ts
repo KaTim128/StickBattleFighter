@@ -3,7 +3,6 @@ import { seededRandom } from '../../../src/combat/combatant';
 import {
   aiTeam,
   aiWantsTag,
-  benchHp,
   draftPool,
   nextStanding,
   TEAM,
@@ -38,11 +37,6 @@ describe('3 vs 3 tag team', () => {
     expect(nextStanding([m(1), m(0, true), m(0.4)], 0)).toBe(2);
     expect(nextStanding([m(0.2), m(1), m(1)], 2)).toBe(0);
     expect(nextStanding([m(1), m(0, true), m(0, true)], 0)).toBeNull();
-  });
-
-  it('resting fighters recover slowly, never past their maximum', () => {
-    expect(benchHp(500, 1000, 1)).toBeCloseTo(500 + 1000 * TEAM.benchRegenPerS);
-    expect(benchHp(995, 1000, 10)).toBe(1000);
   });
 
   it('a team is beaten when all three are down; on time, the healthier team wins', () => {

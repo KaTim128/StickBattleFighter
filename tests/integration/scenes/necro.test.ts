@@ -71,7 +71,7 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scenes.clear();
   });
 
-  it('Soul Drain: a projectile that hurts the target, gives Necro back half the damage and blinds it', async () => {
+  it('Soul Drain: a projectile that hurts the target, gives Necro back 15% of the damage and blinds it', async () => {
     const { scene, scenes, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
     scene.playerFighter.combatant.hp = 600;
     cast('a1');
@@ -81,6 +81,19 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     expect(scene.player.hp).toBeGreaterThan(600);
     expect(scene.player.hp - 600).toBeCloseTo(K.a1.payload.damage * K.a1.payload.lifesteal!, 0);
     expect(scene.dummyFighter.combatant.blinded).toBe(true); // blinded for 3 s
+    scenes.clear();
+  });
+
+  it('Soul Drain heals 15% of the HP actually removed, not of the nominal damage (HL, N2)', async () => {
+    const { scene, scenes, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
+    scene.playerFighter.combatant.hp = 600;
+    scene.dummyFighter.combatant.hp = 10; // the bolt can remove only 10 of its 60
+    cast('a1');
+    runUntil(() => scene.dummy.hp < 10, 3);
+    const removed = 10 - scene.dummy.hp;
+    expect(removed).toBeGreaterThan(0);
+    expect(removed).toBeLessThan(K.a1.payload.damage);
+    expect(scene.player.hp - 600).toBeCloseTo(removed * K.a1.payload.lifesteal!, 5);
     scenes.clear();
   });
 
@@ -101,7 +114,7 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     cast('a1');
     runUntil(() => scene.dummyFighter.combatant.blinded, 3);
     scene.dummyAttacks = true;
-    scene.playerFighter.placeAt({ x: 16.9, y: 13 }); // right in its jab's reach
+    scene.playerFighter.placeAt({ x: 17.2, y: 13 }); // right in its jab's reach
     const hp = scene.player.hp;
     run(2.4);
     expect(scene.player.hp).toBe(hp); // it never swung at him while blind
@@ -123,7 +136,7 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     expect(scene.playerFighter.caster!.cooldown('a3')).toBeGreaterThan(K.a3.cooldownS - 2);
     // Its blows on Necro land 30% lighter.
     scene.dummyAttacks = true;
-    scene.playerFighter.placeAt({ x: 16.9, y: 13 });
+    scene.playerFighter.placeAt({ x: 17.2, y: 13 });
     const hp = scene.player.hp;
     runUntil(() => scene.player.hp < hp, 3);
     const cursedBlow = hp - scene.player.hp;

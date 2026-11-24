@@ -90,7 +90,7 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
 
   it('jab then hook breaks the chair (60 durability) into pieces, clearing the way', async () => {
     const { intents, scene, scenes, run, runUntil, prop, combo } = await setup([
-      { kind: 'office-chair', x: 6.1, y: 5 },
+      { kind: 'office-chair', x: 5.9, y: 5 },
     ]);
     combo(2);
     expect(prop('office-chair').broken).toBe(true);
@@ -105,8 +105,8 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
 
   it('office tables are tough (owner): one full combo does not break one, a second does; the keyboard on it falls', async () => {
     const { scene, scenes, run, prop, combo, approach } = await setup([
-      { kind: 'desk', x: 6.6, y: 5 },
-      { kind: 'keyboard', x: 7.0, y: 5.1, elevationM: 0.75, sortY: 5.4 }, // out of the fists' reach
+      { kind: 'desk', x: 6.5, y: 5.4 },
+      { kind: 'keyboard', x: 7.1, y: 5.5, elevationM: 0.75, sortY: 5.4 }, // out of the fists' reach
     ]);
     combo(4); // one full combo
     expect(prop('desk').broken).toBe(false);
@@ -124,8 +124,8 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
 
   it('a punch shatters the monitor on a desk into glass shards (owner: computers are breakable)', async () => {
     const { scene, scenes, prop, combo } = await setup([
-      { kind: 'desk', x: 6.6, y: 5 },
-      { kind: 'computer', x: 6.0, y: 4.85, elevationM: 0.75, sortY: 5.4 }, // near the desk's edge, in reach
+      { kind: 'desk', x: 6.85, y: 5 },
+      { kind: 'computer', x: 6.1, y: 5.2, elevationM: 0.75, sortY: 5.4 }, // near the desk's edge, in reach
     ]);
     scene.drainSounds();
     combo(1);
@@ -138,8 +138,8 @@ describe('furniture moves or breaks depending on durability (owner, 11/11/2026)'
 
   it('a desk item that survives a blow is knocked off the desk', async () => {
     const { scene, scenes, run } = await setup([
-      { kind: 'desk', x: 6.6, y: 5 },
-      { kind: 'mouse', x: 6.6, y: 5, elevationM: 0.75, sortY: 5.4 },
+      { kind: 'desk', x: 6.2, y: 5 },
+      { kind: 'mouse', x: 6.2, y: 5, elevationM: 0.75, sortY: 5.4 },
     ]);
     scene.props!.hitWhere(() => true, { blow: 'strike', damage: 1, strength: 150, direction: { x: 1, y: 0 } });
     const mouse = scene.props!.props.find((p) => p.placement.kind === 'mouse')!;

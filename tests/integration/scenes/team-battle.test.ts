@@ -61,14 +61,14 @@ describe('3 vs 3 tag team', () => {
     scenes.clear();
   });
 
-  it('a resting fighter gets health back on the bench', async () => {
+  it('a resting fighter gets no health back on the bench (HL: no passive healing)', async () => {
     const { scene, scenes, intents, run } = await setup(false, TRAINING_YARD);
     run(4);
     const inferno = scene.playerFighter;
     inferno.combatant.hp = inferno.combatant.stats.maxHp * 0.5;
     intents.pressTag();
     run(5);
-    expect(inferno.combatant.hp / inferno.combatant.stats.maxHp).toBeGreaterThan(0.5 + TEAM.benchRegenPerS * 4);
+    expect(inferno.combatant.hp).toBe(inferno.combatant.stats.maxHp * 0.5);
     scenes.clear();
   });
 

@@ -62,7 +62,9 @@ export interface ClashHudState {
 }
 
 export interface ClashBanner {
-  readonly text: 'CLASH WON!' | 'CLASH LOST!' | 'STALEMATE!';
+  /** "<WINNER NAME> WON!" (C1), or STALEMATE! */
+  readonly text: string;
+  readonly kind: 'win' | 'lose' | 'tie';
   ageS: number;
 }
 
@@ -300,7 +302,7 @@ export class SceneClash {
       this.host.effect(b, 'clash', mid.x, mid.y, { x: a.aim.x, y: a.aim.y }, 1.5);
       this.host.shake(0.65, 0.07);
       this.host.hitstop(0.08);
-      this.banner = { text: 'STALEMATE!', ageS: 0 };
+      this.banner = { text: 'STALEMATE!', kind: 'tie', ageS: 0 };
       return;
     }
 
@@ -326,6 +328,11 @@ export class SceneClash {
     this.host.characterSound(winner, 'finisher', 1 + 0.5 * g);
     this.host.effect(winner, 'finisher', loser.x, loser.y, { x: winner.aim.x, y: winner.aim.y }, 0.7 + 0.6 * g);
     this.host.shake(0, 0.06 + 0.05 * g);
-    this.banner = { text: result.winner === 'a' ? 'CLASH WON!' : 'CLASH LOST!', ageS: 0 };
+    // C1 (spec §16): the banner names the fighter who won, whichever side the viewer is on.
+    this.banner = {
+      text: `${winner.def.displayName.toUpperCase()} WON!`,
+      kind: result.winner === 'a' ? 'win' : 'lose',
+      ageS: 0,
+    };
   }
 }

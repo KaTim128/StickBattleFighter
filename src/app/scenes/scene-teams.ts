@@ -1,4 +1,4 @@
-import { aiWantsTag, benchHp, type Member, nextStanding, TEAM, teamHealth, wiped } from '../../modes/team/team-battle';
+import { aiWantsTag, type Member, nextStanding, TEAM, teamHealth, wiped } from '../../modes/team/team-battle';
 import type { FighterEntity } from './fighter-entity';
 
 export type TeamSide = 'player' | 'opponent';
@@ -48,14 +48,10 @@ export class SceneTeams {
     return this.members[side].map((f) => ({ hpFrac: f.combatant.hp / f.combatant.stats.maxHp, ko: f.combatant.isKo }));
   }
 
-  /** Every fixed step: cooldowns, the bench recovering, a KO'd fighter replaced after a beat. */
+  /** Every fixed step: cooldowns, a KO'd fighter replaced after a beat. */
   step(dtS: number): void {
     for (const side of ['player', 'opponent'] as const) {
       this.cooldownS[side] = Math.max(0, this.cooldownS[side] - dtS);
-      this.members[side].forEach((f, i) => {
-        if (i === this.active[side] || f.combatant.isKo) return;
-        f.combatant.hp = benchHp(f.combatant.hp, f.combatant.stats.maxHp, dtS);
-      });
       const active = this.activeFighter(side);
       if (active.combatant.isKo && this.koSwapS[side] === null) {
         if (nextStanding(this.view(side), this.active[side]) !== null) this.koSwapS[side] = TEAM.koSwapDelayS;

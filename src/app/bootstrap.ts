@@ -634,7 +634,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       if (r) scene.walls?.hitWhere((w) => w === r, { damage, direction: { x: 1, y: 0 }, fire });
     };
     debug.setDummyHp = (hp: number) => {
-      scene.dummyFighter.combatant.hp = Math.max(1, Math.min(scene.dummyFighter.combatant.stats.maxHp, hp));
+      scene.dummyFighter.combatant.setHpForDebug(hp);
     };
   }
   // Slow motion for reviewing animations, e.g. ?slowmo=0.25 (debug; clamped so the game never stalls by URL).

@@ -780,6 +780,20 @@ export class Combatant {
     return damage;
   }
 
+  /**
+   * The only way HP goes up during a fight (HL, owner 22/11/2026): nothing heals passively, from waiting
+   * or from tagging out. Callers are abilities that are defined as healing, and never revive a KO.
+   */
+  heal(amount: number): void {
+    if (this.hp <= 0 || amount <= 0) return;
+    this.hp = Math.min(this.stats.maxHp, this.hp + amount);
+  }
+
+  /** Debug hook only (`__stickmanDebug.setDummyHp`): sets HP directly, never below 1 or above the maximum. */
+  setHpForDebug(hp: number): void {
+    this.hp = Math.max(1, Math.min(this.stats.maxHp, hp));
+  }
+
   /** Back on its feet at full health and stamina (KO respawn, Practice Zone). */
   reset(): void {
     this.status.clearAll();

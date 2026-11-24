@@ -70,19 +70,37 @@ export interface AttackDef {
 }
 
 /**
- * Does this blow touch a target whose body centre is (tx, ty) with half-width `footRadiusM`? A contact move counts only at the
- * fist's end, so a target a little beyond the fist is not hit; every other move keeps the swept hit area.
+ * Does this blow touch a target whose body centre is (tx, ty) with half-width `footRadiusM`? (HD, owner 19/11/2026: damage only
+ * on real physical contact, for every fighter.) The fist or weapon itself, half the move's hit radius wide, must reach the
+ * target's body: a contact move counts only at the end of the reach, every other move along the swept path of the swing. A
+ * target a visible gap beyond the fist is not hit.
  */
 export function blowTouches(capsule: HitCapsule, a: AttackDef, tx: number, ty: number, footRadiusM: number): boolean {
-  if (a.contact) return Math.hypot(tx - capsule.bx, ty - capsule.by) <= a.hitRadiusM * 0.5 + footRadiusM;
-  return distanceToCapsule(capsule, tx, ty) <= a.hitRadiusM + footRadiusM;
+  const reach = a.hitRadiusM * 0.5 + footRadiusM;
+  if (a.contact) return Math.hypot(tx - capsule.bx, ty - capsule.by) <= reach;
+  return distanceToCapsule(capsule, tx, ty) <= reach;
 }
 
-/** The area a blow checks against walls, doors and furniture: the whole swept capsule, or just the fist for a contact move. */
+/**
+ * How far from a target's centre a fighter's ordinary strikes actually touch (HD): the mean over its non-aerial, non-heavy moves
+ * of the fist's reach plus the fist and body half-widths. The AI closes to this distance, never to a looser guess.
+ */
+export function touchReachM(moves: Iterable<AttackDef>, footRadiusM: number): number {
+  let sum = 0;
+  let n = 0;
+  for (const a of moves) {
+    if (a.aerial || a.heavy) continue;
+    sum += a.reachM + a.hitRadiusM * 0.5 + footRadiusM;
+    n++;
+  }
+  return n === 0 ? 1.3 : sum / n;
+}
+
+/** The area a blow checks against walls, doors and furniture: the swept path (or just the fist for a contact move), fist-wide. */
 export function blowBox(capsule: HitCapsule, a: AttackDef): HitCapsule {
   return a.contact
     ? { ax: capsule.bx, ay: capsule.by, bx: capsule.bx, by: capsule.by, radius: a.hitRadiusM * 0.5 }
-    : capsule;
+    : { ...capsule, radius: a.hitRadiusM * 0.5 };
 }
 
 export function attackDuration(a: {

@@ -77,7 +77,8 @@ describe('Punch Clash in the arena (owner, 11/11/2026)', () => {
     expect(result.winner).toBe('a');
     expect(result.powerA).toBeGreaterThan(result.powerB);
     expect(closest).toBeLessThan(CLASH.cameraEndShortSideM + 0.5); // zoomed right in
-    expect(scene.clashHud.banner?.text).toBe('CLASH WON!');
+    expect(scene.clashHud.banner?.text).toBe(`${scene.playerFighter.def.displayName.toUpperCase()} WON!`);
+    expect(scene.clashHud.banner?.kind).toBe('win');
     expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(CLASH.finishDamage.min);
     expect(scene.player.hp).toBe(1000);
     run(1);
@@ -94,7 +95,8 @@ describe('Punch Clash in the arena (owner, 11/11/2026)', () => {
     run(CLASH.introS + CLASH.mashS + 0.4);
     expect(scene.clashes.lastResult?.winner).toBe('b');
     expect(scene.player.hp).toBeLessThan(1000);
-    expect(scene.clashHud.banner?.text).toBe('CLASH LOST!');
+    expect(scene.clashHud.banner?.text).toBe(`${scene.dummyFighter.def.displayName.toUpperCase()} WON!`);
+    expect(scene.clashHud.banner?.kind).toBe('lose');
     scenes.clear();
   });
 

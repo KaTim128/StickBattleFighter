@@ -10,7 +10,7 @@ import { initPhysics } from '../../../src/physics/physics-world';
 const STEP = 1 / 60;
 
 /** Inferno in the training yard, a given spot from the dummy at (19, 13). */
-async function setup(at = { x: 17.95, y: 13 }) {
+async function setup(at = { x: 18.25, y: 13 }) {
   const intents = new PlayerIntents();
   const scene = new FightArenaScene({ ...TRAINING_YARD, playerStart: at }, new Container(), intents, () => ({
     width: 1280,

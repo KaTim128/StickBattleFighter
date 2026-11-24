@@ -253,6 +253,7 @@ export class SceneAbilities implements AbilityHost {
       ? payload.knockbackMps *
         Math.min(byWeight.maxK, Math.max(byWeight.minK, byWeight.refKg / Math.max(1, target.def.body.massKg)))
       : payload.knockbackMps;
+    const hpBefore = target.combatant.hp;
     const landed = this.strike(attacker, target, {
       damage,
       heavy: payload.heavy,
@@ -291,10 +292,10 @@ export class SceneAbilities implements AbilityHost {
       const d = payload.decay;
       target.combatant.decay(d.durationS, d.attackFactor, d.defenceFactor);
     }
-    // Soul Drain: the caster takes back a share of the life it drained.
+    // Soul Drain (HL, N2): the caster takes back a share of the HP the blow actually removed; a blocked,
+    // absorbed or missed blow removes none, so it heals none.
     if (landed && payload.lifesteal && !attacker.combatant.isKo) {
-      const c = attacker.combatant;
-      c.hp = Math.min(c.stats.maxHp, c.hp + damage * payload.lifesteal);
+      attacker.combatant.heal((hpBefore - target.combatant.hp) * payload.lifesteal);
     }
     return landed;
   }
@@ -302,8 +303,7 @@ export class SceneAbilities implements AbilityHost {
   heal(targetId: string, amount: number): boolean {
     const f = this.byName(targetId);
     if (!f || f.combatant.isKo) return false;
-    const c = f.combatant;
-    c.hp = Math.min(c.stats.maxHp, c.hp + amount);
+    f.combatant.heal(amount);
     return true;
   }
 

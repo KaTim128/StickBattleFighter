@@ -13,7 +13,7 @@ export interface ClashHudInput {
     readonly final: boolean;
     readonly intensity: number;
   } | null;
-  readonly banner: { readonly text: string; readonly ageS: number } | null;
+  readonly banner: { readonly text: string; readonly kind: 'win' | 'lose' | 'tie'; readonly ageS: number } | null;
 }
 
 export class ClashHud {
@@ -69,7 +69,7 @@ export class ClashHud {
     this.banner.hidden = b === null;
     if (b) {
       this.setText(this.banner, b.text);
-      this.banner.dataset.kind = b.text === 'STALEMATE!' ? 'tie' : b.text === 'CLASH WON!' ? 'win' : 'lose';
+      this.banner.dataset.kind = b.kind;
     }
   }
 
