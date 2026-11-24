@@ -16,7 +16,10 @@ export type CastBlock =
   | 'airborne'
   | 'limit'
   | 'muted'
-  | 'trapped';
+  | 'trapped'
+  /** Telekinetic Toss: nothing liftable in reach. Psychic Slam: nothing held to hurl. Refused before stamina or cooldown is spent. */
+  | 'noObject'
+  | 'noHeld';
 
 export interface CastContext {
   /** The fighter can act (free or guarding) and is not mid-attack. */

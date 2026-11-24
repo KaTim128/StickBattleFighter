@@ -113,6 +113,10 @@ export interface AbilityHost {
   /** Hold a fighter's legs in crystal for `seconds` (0 frees them): no walking, jumping, dodging or flying, and a flier is dragged down. Optional. */
   trap?(targetId: string, seconds: number): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
+  /** Telekinetic Toss: lift the nearest prop within `rangeM` to the caster's hand; false if there is none. */
+  telekineticToss?(casterId: string, rangeM: number): boolean;
+  /** Psychic Slam: hurl the held prop along the caster's aim; false if nothing is held. */
+  telekineticSlam?(casterId: string, speedFactor: number, powerFactor: number): boolean;
   legTrapState?(targetId: string): { heightM: number; trappedS: number };
   /** Can a body stand here (inside the arena, clear of walls and furniture)? Optional (everywhere counts when absent). */
   standable?(at: Vec2): boolean;
@@ -936,6 +940,32 @@ export class AbilityWorld {
           fireInS: 0.5,
           aimX: dir.x,
           aimY: dir.y,
+        });
+        break;
+      }
+      case 'toss': {
+        const ok = host.telekineticToss?.(casterId, d.rangeM) ?? false;
+        host.emit({
+          kind: ok ? 'release' : 'fizzle',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: ok ? def.sfx.release : null,
+          x: at.x,
+          y: at.y,
+        });
+        break;
+      }
+      case 'slam': {
+        const ok = host.telekineticSlam?.(casterId, d.speedFactor, d.powerFactor) ?? false;
+        host.emit({
+          kind: ok ? 'release' : 'fizzle',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: ok ? def.sfx.release : null,
+          x: at.x,
+          y: at.y,
         });
         break;
       }

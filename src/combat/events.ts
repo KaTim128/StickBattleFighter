@@ -10,7 +10,7 @@ export interface CombatEvent {
    * A hit outcome, 'burn' for damage over time from fire, 'combo' when consecutive hits chain
    * (amount = the hit count), or 'miss' when a swing finds nothing (PRS-4).
    */
-  readonly kind: Exclude<HitOutcome, 'ignored'> | 'burn' | 'combo' | 'miss';
+  readonly kind: Exclude<HitOutcome, 'ignored'> | 'burn' | 'combo' | 'miss' | 'noObject' | 'noHeld';
   readonly target: string;
   readonly x: number;
   readonly y: number;

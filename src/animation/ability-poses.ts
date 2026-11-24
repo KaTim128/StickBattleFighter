@@ -461,17 +461,17 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-6), head: deg(6), armFront: limb(92, 100), armBack: limb(84, 104), legFront: limb(16, -24) },
     settle: 0.4,
   },
-  // Telekinetic Throw: one hand raised palm-up to lift, then flung forward and down.
-  telekineticThrow: {
-    windup: { lean: deg(2), head: deg(2), armFront: limb(120, 20), armBack: limb(30, 80), legFront: limb(14, -22) },
-    release: { lean: deg(-18), head: deg(8), armFront: limb(100, 4), armBack: limb(-20, 70), legFront: limb(26, -26) },
-    settle: 0.45,
+  // Telekinetic Toss: one hand reaching out, palm up, then drawn up as if lifting.
+  telekineticToss: {
+    windup: { lean: deg(2), head: deg(2), armFront: limb(70, 20), armBack: limb(30, 80), legFront: limb(14, -22) },
+    release: { lean: deg(-4), head: deg(6), armFront: limb(130, 30), armBack: limb(30, 80), legFront: limb(16, -24) },
+    settle: 0.3,
   },
-  // Psychic Barrier: both arms drawn round in a circle and held wide.
-  psychicBarrier: {
-    windup: { lean: deg(0), head: deg(0), armFront: limb(30, 60), armBack: limb(-20, 60), legFront: limb(14, -22) },
-    release: { lean: deg(0), head: deg(2), armFront: limb(80, 20), armBack: limb(-60, 20), legFront: limb(16, -24) },
-    settle: 0.35,
+  // Psychic Slam: the raised hand flung forward and down.
+  psychicSlam: {
+    windup: { lean: deg(4), head: deg(2), armFront: limb(140, 40), armBack: limb(30, 80), legFront: limb(14, -22) },
+    release: { lean: deg(-18), head: deg(8), armFront: limb(100, 4), armBack: limb(-20, 70), legFront: limb(26, -26) },
+    settle: 0.4,
   },
   // Floating Prison: one hand lifted with the fingers curled, the other drawing a circle in the air.
   floatingPrison: {

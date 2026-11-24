@@ -740,3 +740,7 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Two crystal formations with a hole each rise round both legs; they hold a grounded foe for exactly 6 s, then shatter.
 - [ ] Jumping, leaping or being launched when the crystals lock misses; a hovering fighter (Aerion, Psion) is caught.
 - [ ] While held: no walking, jumping, dodging or movement abilities; other abilities and damage work.
+
+## Psion Toss and Slam (24/11/2026)
+- [ ] E with nothing in reach shows "NO OBJECT IN REACH" and costs nothing; F with nothing held shows "NOTHING HELD".
+- [ ] E lifts a chair, monitor or desk to his hand; F hurls it and hurts only where it hits; heavier hits harder.

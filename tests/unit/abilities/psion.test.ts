@@ -62,17 +62,22 @@ describe('Psion kit', () => {
     expect(PSION_KIT.a1.look?.telegraph).toBe('compress');
   });
 
-  it('Telekinetic Throw lifts the target where it stands, then hurls it along the aim', () => {
+  it('Telekinetic Toss lifts a prop at his hand; Psychic Slam hurls it (PS1, PS2)', () => {
     const a = arena({ x: 3, y: 0 });
+    const log: string[] = [];
+    (a.host as unknown as Record<string, unknown>).telekineticToss = (_id: string, range: number) => {
+      log.push(`toss:${range}`);
+      return true;
+    };
+    (a.host as unknown as Record<string, unknown>).telekineticSlam = (_id: string, speed: number) => {
+      log.push(`slam:${speed}`);
+      return true;
+    };
     a.world.release('me', PSION_KIT.a2, { x: 6, y: 0 }, a.host);
-    run(a, 0.5);
-    expect(Math.max(0, ...a.lifts)).toBeGreaterThan(1); // raised
-    expect(a.them.x).toBe(3); // not pulled in
-    expect(a.hits).toHaveLength(0);
-    run(a, 0.4);
-    expect(a.hits).toHaveLength(1);
-    expect(a.hits[0]?.dirX).toBeGreaterThan(0.9); // hurled away along the aim
-    expect(PSION_KIT.a2.payload.knockbackMps).toBeGreaterThanOrEqual(12);
+    a.world.release('me', PSION_KIT.a3, { x: 6, y: 0 }, a.host);
+    expect(log).toEqual(['toss:6', 'slam:1.35']);
+    expect(PSION_KIT.a2.delivery.type).toBe('toss');
+    expect(PSION_KIT.a3.delivery.type).toBe('slam');
   });
 
   it('Floating Prison lifts the nearest foe, holds it, lets it down, and cannot lift it again for 4 seconds', () => {
@@ -116,7 +121,7 @@ describe('Psion kit', () => {
   });
 });
 
-describe('Psychic Barrier', () => {
+describe('Barrier shield (shared combat rule)', () => {
   const STATS: CombatStats = {
     maxHp: 1000,
     maxStamina: 100,
@@ -129,12 +134,6 @@ describe('Psychic Barrier', () => {
     knockbackResistance: 0,
   };
   const hit = { baseDamage: 40, attackerPower: 1, heavy: false, fromFront: true, critRoll: 0.99 };
-
-  it('is raised by the ability for its hp and duration', () => {
-    const a = arena();
-    a.world.release('me', PSION_KIT.a3, { x: 3, y: 0 }, a.host);
-    expect(a.barriers).toEqual([{ hp: 70, durationS: 6 }]);
-  });
 
   it('absorbs damage up to its limit with no flinch, then breaks and lets the rest through', () => {
     const c = new Combatant(STATS);

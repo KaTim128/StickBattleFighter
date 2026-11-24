@@ -939,3 +939,6 @@ Done: universal contact melee, swept thrown-prop hits, AI closes to the real tou
 
 ## 24/11/2026: Crystal Prison v2 (PR5)
 Done: hold 6 s, activation window 0.4 s, grounded targets only (real height > 0.25 m at the window or at the lock misses; cosmetic hover counts as grounded, D3; the flier-dragged-down rule is gone from the world), two leg formations with holes drawn per leg, new description. Tests: prismor unit tests updated, real-scene test, typecheck clean. Browser: formations visible. Not checked: the shatter at the end in the browser, phone feel.
+
+## 24/11/2026: Psion Toss and Slam (PS1-PS3, TD-152)
+Done: Telekinetic Toss (E) and Psychic Slam (F) replace Throw and Barrier; refusals, HUD text, AI brain, icons, poses, tests. Tests: typecheck clean, vitest 1219 passed. Browser: filing cabinet lifted, slam knocked the dummy down. Not done: bespoke VFX (reuses Psion's palette effects), sounds reuse existing psi sounds.

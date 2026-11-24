@@ -16,7 +16,7 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | PR4 | Crystal Armour ultimate integrated | P2, MS10.4 | 0, 2 | premium-model.ts | 6-pose screenshots | todo | |
 | PR5 | Prison v2: 6 s, grounded-only, two leg formations | P8 | 2 | ability-world.ts, stickman-view.ts, prismor.ts | integration + screenshots | gameplay-verified | prismor.test.ts (6 s hold, grounded only, hover=grounded, launched misses), crystal-prison.test.ts real scene, browser screenshot 24/11/2026 (two formations with leg holes) |
 | PR6 | Prismor animation variety | P2 | 2–3 | clips.ts, ability-poses.ts | screenshots | todo | |
-| PS1–3 | Telekinetic Toss + Psychic Slam with real props | P3, MS14 | 2 | ability-world.ts, arena-props.ts, psion.ts | integration + browser | todo | |
+| PS1–3 | Telekinetic Toss + Psychic Slam with real props | P3, MS14 | 2 | ability-world.ts, arena-props.ts, psion.ts | integration + browser | gameplay-verified | psion-toss.test.ts (real scene: refusals spend nothing, chair lifted then slammed), unit tests, browser 24/11/2026 (filing cabinet lifted then slam knocks the dummy down). AI: psion-ai uses Toss then Slam |
 | RS1 | Sonic Boom wide, steerable, no pin | P6 | 2 | reson.ts, ability-world.ts | unit + browser | todo | |
 | IF1 | Fire Beam proximity scaling | P6 | 2 | inferno.ts | unit | todo | |
 | VX1–3 | Jar ground splash, heavier stacking, ramping fog | P6 | 2 | ability-world.ts, toxicity.ts, vexoris.ts | unit | todo | |

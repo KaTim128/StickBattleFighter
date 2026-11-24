@@ -118,6 +118,15 @@ export class SceneAbilities implements AbilityHost {
     });
     if (block) return block;
     const def = caster.def(slot);
+    // Psion's Toss and Slam are refused with a message before anything is spent (PS1, PS2).
+    if (def.delivery.type === 'toss' && (f.carrying || !this.tossTarget?.(f, def.delivery.rangeM))) {
+      this.onBlocked?.(f, 'noObject');
+      return 'noObject';
+    }
+    if (def.delivery.type === 'slam' && !f.carrying) {
+      this.onBlocked?.(f, 'noHeld');
+      return 'noHeld';
+    }
     // A fifth skeleton is refused before anything is spent (master plan B5).
     if (def.delivery.type === 'summon' && this.summonRoom(f, def.delivery) <= 0) return 'limit';
     if (slot !== 'ult' && !c.spendStamina(def.staminaCost)) return 'stamina';
@@ -305,6 +314,24 @@ export class SceneAbilities implements AbilityHost {
     if (!f || f.combatant.isKo) return false;
     f.combatant.heal(amount);
     return true;
+  }
+
+  /** Set by the scene: is there a prop within reach for Telekinetic Toss? */
+  tossTarget: ((f: FighterEntity, rangeM: number) => boolean) | null = null;
+  /** Set by the scene: lift the nearest prop (Toss) / hurl the held one (Slam). */
+  tossSource: ((f: FighterEntity, rangeM: number) => boolean) | null = null;
+  slamSource: ((f: FighterEntity, speedFactor: number, powerFactor: number) => boolean) | null = null;
+  /** Set by the scene: a Toss or Slam was refused (shows a message). */
+  onBlocked: ((f: FighterEntity, block: CastBlock) => void) | null = null;
+
+  telekineticToss(casterId: string, rangeM: number): boolean {
+    const f = this.byName(casterId);
+    return f ? (this.tossSource?.(f, rangeM) ?? false) : false;
+  }
+
+  telekineticSlam(casterId: string, speedFactor: number, powerFactor: number): boolean {
+    const f = this.byName(casterId);
+    return f ? (this.slamSource?.(f, speedFactor, powerFactor) ?? false) : false;
   }
 
   /** Set by the scene: Time Stop begins or ends. */

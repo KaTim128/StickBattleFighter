@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AbilityDef } from '../../../src/abilities/ability-def';
 import { ABILITY_KITS } from '../../../src/abilities/kits';
 import { BUILT_IN_LIBRARY } from '../../../src/characters/library';
+import { THROWING } from '../../../src/data/combat/throwing';
 
 /** Owner, 21/11/2026: every fighter balanced across abilities, ultimates and attacks. Rough bands, not a simulation. */
 const FIGHTERS = Object.values(BUILT_IN_LIBRARY.characters).filter(
@@ -11,6 +12,8 @@ const FIGHTERS = Object.values(BUILT_IN_LIBRARY.characters).filter(
 /** Total damage of one cast against one target standing in it, for the deliveries that hit more than once. */
 function castDamage(a: AbilityDef): number {
   const d = a.delivery;
+  // Psychic Slam deals the damage of the prop it hurls (thrown-body rules); count a typical 8 kg prop.
+  if (d.type === 'slam') return THROWING.damageFor(8, THROWING.speedFor(8) * d.speedFactor) * d.powerFactor;
   if (d.type === 'assault') return a.payload.damage * (d.stabs + (d.finalFactor ? d.finalFactor - 1 : 0));
   if (d.type === 'beam') return (a.payload.damage * Math.round(d.durationS / d.tickS)) / 2; // half the ticks connect
   if (d.type === 'whirl') return a.payload.damage * Math.round(d.durationS / d.tickS);

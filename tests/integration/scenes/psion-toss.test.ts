@@ -1,0 +1,66 @@
+import { Container } from 'pixi.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
+import { SceneManager } from '../../../src/core/scene';
+import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
+import { PlayerIntents } from '../../../src/input/intents';
+import { initPhysics } from '../../../src/physics/physics-world';
+
+const STEP = 1 / 60;
+
+async function setup(props: { kind: string; x: number; y: number }[]) {
+  const intents = new PlayerIntents();
+  const scene = new FightArenaScene(
+    { ...TRAINING_YARD, props, playerStart: { x: 10, y: 13 }, dummyStart: { x: 16, y: 13 } } as never,
+    new Container(),
+    intents,
+    () => ({ width: 1280, height: 720 }),
+    false,
+    { player: 'psion' },
+  );
+  const scenes = new SceneManager();
+  await scenes.switchTo(() => scene);
+  const run = (s: number) => {
+    for (let i = 0; i < Math.round(s / STEP); i++) {
+      scenes.update(STEP);
+      scenes.render(1, STEP);
+    }
+  };
+  run(0.3);
+  return { intents, scene, scenes, run };
+}
+
+describe('Psion Telekinetic Toss and Psychic Slam (PS1, PS2)', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
+  it('Toss with nothing in reach and Slam with nothing held are refused and spend nothing', async () => {
+    const { intents, scene, scenes, run } = await setup([]);
+    const stamina = scene.playerFighter.combatant.stamina;
+    intents.pressAbility('a2');
+    run(0.3);
+    expect(scene.lastAbilityBlock).toBe('noObject');
+    intents.pressAbility('a3');
+    run(0.3);
+    expect(scene.lastAbilityBlock).toBe('noHeld');
+    expect(scene.playerFighter.combatant.stamina).toBeGreaterThanOrEqual(stamina - 0.001);
+    expect(scene.playerFighter.caster!.cooldown('a2')).toBe(0);
+    expect(scene.drainEvents().some((e) => e.kind === 'noObject')).toBe(true);
+    scenes.clear();
+  });
+
+  it('Toss lifts a real chair to his hand, then Slam hurls it into the foe, who takes damage only on the collision', async () => {
+    const { intents, scene, scenes, run } = await setup([{ kind: 'office-chair', x: 12, y: 13.4 }]);
+    intents.pressAbility('a2');
+    run(0.8);
+    expect(scene.playerFighter.carrying?.placement.kind).toBe('office-chair');
+    run(0.6);
+    expect(scene.dummy.hp).toBe(1000); // lifting does no damage
+    intents.pressAbility('a3');
+    run(2.5);
+    expect(scene.playerFighter.carrying).toBeNull();
+    expect(scene.dummy.hp).toBeLessThan(1000);
+    scenes.clear();
+  });
+});

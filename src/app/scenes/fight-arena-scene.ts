@@ -848,6 +848,17 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
     this.abilities.summonRoom = (f, spec) => this.summons.room(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
+    this.abilities.tossTarget = (f, rangeM) => this.tossCandidate(f, rangeM) !== null;
+    this.abilities.tossSource = (f, rangeM) => this.telekineticToss(f, rangeM);
+    this.abilities.slamSource = (f, speed, power) => this.telekineticSlam(f, speed, power);
+    this.abilities.onBlocked = (f, block) =>
+      this.events.push({
+        kind: block === 'noHeld' ? 'noHeld' : 'noObject',
+        target: f.name,
+        x: f.x,
+        y: f.y - headTop(f),
+        amount: 0,
+      });
     this.abilities.standableSource = (p) => this.standableAt(p);
     this.abilities.onTimeStop = (casterId, on) => (on ? this.beginTimeStop(casterId) : this.endTimeStop());
     this.view = buildArenaView(arena);
@@ -1036,7 +1047,10 @@ export class FightArenaScene implements ArenaScene {
     if (f.carrying) {
       // Hands full: the combat buttons do nothing until it is thrown or put down (CONTROL_SCHEME §2).
       this.intents.consumeMeleeEdges();
-      this.intents.consumeAbility();
+      // The one exception (PS2): Psychic Slam hurls the object his mind is holding, once it is up.
+      const pressed = this.intents.consumeAbility();
+      if (pressed && f.liftS <= 0 && f.caster?.def(pressed).delivery.type === 'slam')
+        this.lastAbilityBlock = this.abilities?.tryCast(f, pressed) ?? null;
       this.intents.consumeAimCancel();
       this.intents.consumeHeavy();
       if (c.state === 'guarding') c.setGuard(false);
@@ -1247,6 +1261,30 @@ export class FightArenaScene implements ArenaScene {
     return foes.find((o) => o.name === id) ?? main;
   }
 
+  /** The prop Telekinetic Toss would lift: the nearest within `rangeM`, any mass (PS1). */
+  private tossCandidate(f: FighterEntity, rangeM: number): ArenaProp | null {
+    return this.props?.pickupCandidate(f.x, f.y, f.aim, rangeM, 99, Number.POSITIVE_INFINITY, true) ?? null;
+  }
+
+  /** Telekinetic Toss: his mind lifts the nearest prop to float at his hand, quickly whatever its weight. */
+  private telekineticToss(f: FighterEntity, rangeM: number): boolean {
+    if (f.carrying) return false;
+    const prop = this.tossCandidate(f, rangeM);
+    if (!prop) return false;
+    this.liftProp(f, prop);
+    f.liftTotalS = 0.4;
+    f.liftS = f.liftTotalS;
+    return true;
+  }
+
+  /** Psychic Slam: hurl the floating prop as a real thrown body, faster and harder than a hand throw. */
+  private telekineticSlam(f: FighterEntity, speedFactor: number, powerFactor: number): boolean {
+    if (!f.carrying) return false;
+    f.liftS = 0;
+    this.throwCarried(f, speedFactor, powerFactor);
+    return true;
+  }
+
   /** Lift a prop overhead (the player's pickup press and the AI's pickup share this). */
   private liftProp(f: FighterEntity, grab: ArenaProp): void {
     this.props?.pickUp(grab, this.fighters.indexOf(f), this.holdPoint(f));
@@ -1376,11 +1414,11 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /** Throw the carried object (TD-044) in the fighter's own style (TD-047: power, fire). */
-  private throwCarried(f: FighterEntity): void {
+  private throwCarried(f: FighterEntity, speedFactor = 1, powerFactor = 1): void {
     const prop = f.carrying;
     if (!prop || !this.props) return;
     const dir = this.throwDir(f);
-    const speed = this.throwSpeed(f, prop);
+    const speed = this.throwSpeed(f, prop) * speedFactor;
     f.faceToward(dir.x, dir.y);
     const fire = !!f.def.objects.ignitesThrown && f.def.capabilities.usesFireEffects;
     this.props.release(
@@ -1390,7 +1428,7 @@ export class FightArenaScene implements ArenaScene {
       THROWING.launchUpMps,
       true,
       {
-        power: f.def.objects.throwPower,
+        power: f.def.objects.throwPower * powerFactor,
         fire,
       },
     );

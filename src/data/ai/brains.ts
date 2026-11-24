@@ -157,10 +157,10 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a4', 'a3'],
     ],
   },
-  // Psion: a ranged controller. Keeps his distance, crushes and hurls from range, holds a target in the air, shields when
-  // hurt and rooted for his ultimate; the force wave and palm strikes only when something gets close.
+  // Psion: a ranged controller. Keeps his distance, crushes from range, lifts furniture with his mind and slams it at the target, holds a target in the air,
+  // and rooted for his ultimate; the force wave and palm strikes only when something gets close.
   'psion-ai': {
-    style: 'Telekinetic controller: crushes and hurls from range, holds targets, shields when hurt, backs away.',
+    style: 'Telekinetic controller: crushes from range, tosses and slams furniture, holds targets, backs away.',
     preferredRangeM: [3, 6],
     movement: 'circle',
     meleeBias: 0.35,
@@ -170,14 +170,14 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     hitAndRunS: 1,
     tactics: {
       a1: { role: 'zone', minM: 2, maxM: 8, weight: 1.3 },
-      a2: { role: 'control', minM: 1.5, maxM: 6, weight: 1.2 },
-      a3: { role: 'buff', minM: 0, maxM: 5, weight: 0.9, when: { selfHpBelow: 0.75 } },
+      a2: { role: 'buff', minM: 0, maxM: 9, weight: 1.1 },
+      a3: { role: 'burst', minM: 2, maxM: 8, weight: 1.5 },
       a4: { role: 'control', minM: 2, maxM: 6, weight: 1.1 },
       ult: { role: 'burst', minM: 0, maxM: 6, weight: 1.3 },
     },
     combos: [
+      ['a2', 'a3'],
       ['a4', 'a1'],
-      ['a2', 'a1'],
     ],
   },
   // Geargrind: a gadget fighter. Sets a drone and mines first, plates up when hurt, punches with the rocket fist at range and

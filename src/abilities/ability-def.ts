@@ -539,6 +539,26 @@ export interface LegTrapDelivery {
 }
 
 /**
+ * Telekinetic Toss (Psion, PS1): the nearest real prop within `rangeM` (any mass the props system carries) is lifted by his mind
+ * and floats at his hand. Nothing in reach: the cast is refused before stamina or cooldown is spent ('noObject').
+ */
+export interface TossDelivery {
+  readonly type: 'toss';
+  readonly rangeM: number;
+}
+
+/**
+ * Psychic Slam (Psion, PS2): hurls the prop he holds along his aim as a real thrown body, `speedFactor` times a normal throw's
+ * speed and `powerFactor` times its power. Damage and knockback come from the prop's mass and speed through the throwing rules and
+ * land only on a real collision. Nothing held: refused before anything is spent ('noHeld').
+ */
+export interface SlamDelivery {
+  readonly type: 'slam';
+  readonly speedFactor: number;
+  readonly powerFactor: number;
+}
+
+/**
  * Crystal Groundstrike (Prismor): he plants a hand and `count` separate eruption zones appear, each at its own random spot
  * within `spreadM` of the nearest enemy (or of him), kept inside the arena and apart from each other. Each shows a warning
  * for `warnS`, then erupts as its own blast with the ability's payload. `staggerS` delays each zone after the last.
@@ -699,6 +719,8 @@ export type Delivery =
   | SummonDelivery
   | TeleportDelivery
   | GrabDelivery
+  | TossDelivery
+  | SlamDelivery
   | AssaultDelivery;
 
 /**
