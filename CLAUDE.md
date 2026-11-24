@@ -52,5 +52,6 @@ After meaningful work, update `DEVELOPMENT_PROGRESS.md` (completed work, files, 
 
 ## Scope control and approvals
 - Do not start a later milestone while a critical dependency or acceptance test of the current one is unresolved.
-- Owner approval is required for: deployment, purchases or paid services, production data changes, deleting major folders or assets, changing the approved rendering or physics architecture, touching Froggy, and publishing secrets or personal data.
+- **Auto-deploy (owner, 24/11/2026):** pushing to branch `ccr-6b7ad8fe-whr1i5` deploys the GitHub Pages preview automatically (`.github/workflows/deploy-pages.yml`). Whenever a task is finished and typecheck, tests and the production build pass, stage, commit and push to the current branch straight away; do not wait for a manual deployment. Never push a red tree, and never push to any other branch without permission.
+- Owner approval is required for: deployment (except the preview auto-deploy above), purchases or paid services, production data changes, deleting major folders or assets, changing the approved rendering or physics architecture, touching Froggy, and publishing secrets or personal data.
 - Dates use DD/MM/YYYY and units are metric. Any real-money figure is shown in MYR.

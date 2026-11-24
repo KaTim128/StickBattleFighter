@@ -1,10 +1,14 @@
 # Publishes the game to GitHub Pages (TD-017).
-# MANUAL ONLY: public deployment needs the owner's approval (spec §19), so this
-# never runs on push. Before the first run, the owner enables Pages in the
-# repository settings (Settings → Pages → Source: GitHub Actions).
+# Owner decision 24/11/2026 (spec §19 approval given): every push to the working branch
+# deploys the preview automatically; it can still be started by hand. Before the first
+# run, the owner enables Pages in the repository settings (Settings → Pages → Source:
+# GitHub Actions).
 name: Deploy to GitHub Pages
 
 on:
+  push:
+    branches:
+      - ccr-6b7ad8fe-whr1i5
   workflow_dispatch:
 
 permissions:
@@ -13,8 +17,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build:
