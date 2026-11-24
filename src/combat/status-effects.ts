@@ -251,11 +251,13 @@ export class StatusEffects<Id extends string = StatusId> {
       else this.immune.set(id, left - dtS);
     }
     for (let n = this.list.length - 1; n >= 0; n--) {
-      const i = this.list[n] as Instance;
+      const i = this.list[n];
+      // A damage tick can knock the fighter out, which clears every effect and shortens the list under this loop.
+      if (!i) continue;
       const step = Math.min(dtS, i.leftS);
       i.leftS -= step;
       if (i.dps > 0) this.dealDot(i, step, sink);
-      if (i.leftS <= 0) {
+      if (i.leftS <= 0 && this.list[n] === i) {
         this.endedIds.push(i.id);
         this.list.splice(n, 1);
       }

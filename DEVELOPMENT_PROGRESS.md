@@ -951,3 +951,6 @@ Done: crystal (Prismor), temporal (Chronos), sonic (Reson), mechanic (Geargrind)
 
 ## 24/11/2026: ability uniqueness audit (TD-153)
 Redesigned Gravity Well (Psion), Dissonance and line-shaped Shatterwave (Reson), standing quick-draw Iaido (Kenshiro). Tests updated; typecheck clean; full suite green before the last damage tweak, unit tests green after. Browser: Shatterwave's line of fractures ran away from Reson and hit the dummy (multiple zones can overlap one target; zone damage set to 45). Not checked in the browser: Gravity Well, Dissonance wobble, Iaido.
+
+## 24/11/2026: Batch 4 intelligent AI (A1-A6, CH2, TD-154)
+Done: posture reading (stats, health, phase), recovery punishing, rhythm reads, ability hit-chance, Time Stop aggression, boxed-in escape, status-effects crash fix. Tests: typecheck clean, vitest 1246 passed. Not done: watching AI fights in the browser, measuring AI frame cost with four AI fighters (the evaluation is cached at 0.15 s), per-decision logging in the balance harness. Next: Batch 5 (balance framework and rebalance).

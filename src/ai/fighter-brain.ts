@@ -12,6 +12,13 @@ import type { Difficulty } from '../data/ai/difficulty';
  */
 export type BrainSlot = AbilitySlot;
 
+/** How the fight is going for one side (A5). */
+export type FightPhase = 'opening' | 'even' | 'ahead' | 'behind' | 'critical';
+
+const POSTURE_EVERY_S = 0.15;
+/** The first seconds of a fight, before anything has happened. */
+const OPENING_S = 5;
+
 export interface Vec2 {
   readonly x: number;
   readonly y: number;
@@ -31,6 +38,8 @@ export interface BrainView {
     readonly hanging: boolean;
     /** Health as a share of its maximum. */
     readonly hpFrac: number;
+    /** Its own maximum health (A1: a fragile fighter plays more carefully). */
+    readonly maxHp?: number;
   };
   /** The opponent, or null when it cannot be seen (blinded, in the dark, gone). */
   readonly target: {
@@ -47,6 +56,12 @@ export interface BrainView {
     /** Swinging or casting at the moment. */
     readonly attacking: boolean;
     readonly cursed: boolean;
+    /** Its maximum health, as its health bar shows it (observable, A1). */
+    readonly maxHp?: number;
+    /** In the recovery of a blow it has already thrown: an opening (A3). */
+    readonly recovering?: boolean;
+    /** Frozen by Time Stop: nothing it does matters until time resumes (CH2). */
+    readonly frozen?: boolean;
     /** Toxicity stacks it carries (Vexoris's poison). */
     readonly toxicity: number;
   } | null;
@@ -127,6 +142,49 @@ export class FighterBrain {
   private lastHeavyS = 0;
   private lastStringS = 0;
   private nextReadS = 0;
+  /** A5: where the fight stands, re-read a few times a second (A6: cheap per-step decisions, the evaluation cached). */
+  private phase: FightPhase = 'opening';
+  private fragile = false;
+  private sturdy = false;
+  private nextPostureS = 0;
+  /** Backed against something: a retreat that gets nowhere turns into a fight (never stands idle). */
+  private cornerSince: { x: number; y: number; atS: number } | null = null;
+  private corneredUntilS = 0;
+
+  /** The current reading of the fight (for tests and tuning). */
+  get fightPhase(): FightPhase {
+    return this.phase;
+  }
+
+  /**
+   * Stat, health and opponent awareness (A1, A2, A5), from what a player can see too: both health bars, their sizes and
+   * how the fight is going. Smarter tiers only; Easy keeps playing from its design alone.
+   */
+  private readPosture(v: BrainView): void {
+    const now = v.timeS;
+    if (now < this.nextPostureS) return;
+    this.nextPostureS = now + POSTURE_EVERY_S;
+    const s = v.self;
+    const t = v.target;
+    if (!t || v.difficulty.punishSkill < 0.35) {
+      this.phase = 'even';
+      this.fragile = false;
+      this.sturdy = false;
+      return;
+    }
+    const selfMax = s.maxHp ?? 1000;
+    const foeMax = t.maxHp ?? selfMax;
+    const toughness = selfMax / Math.max(1, foeMax);
+    this.fragile = toughness < 0.85;
+    this.sturdy = toughness > 1.2;
+    const selfHp = s.hpFrac * selfMax;
+    const foeHp = t.hpFrac * foeMax;
+    if (now < OPENING_S && s.hpFrac > 0.95 && t.hpFrac > 0.95) this.phase = 'opening';
+    else if (s.hpFrac < 0.25 || selfHp < foeHp * 0.4) this.phase = 'critical';
+    else if (selfHp < foeHp * 0.7) this.phase = 'behind';
+    else if (selfHp > foeHp * 1.35) this.phase = 'ahead';
+    else this.phase = 'even';
+  }
 
   /** Which abilities it has used, for tests and tuning. */
   get used(): ReadonlySet<AbilitySlot> {
@@ -209,6 +267,7 @@ export class FighterBrain {
     this.lastSeen = { x: t.x, y: t.y, atS: now };
     const diff = v.difficulty;
     const d = v.design;
+    this.readPosture(v);
     const dx = t.x - s.x;
     const dy = t.y - s.y;
     const dist = Math.hypot(dx, dy) || 1e-6;
@@ -233,12 +292,34 @@ export class FighterBrain {
         this.nextReadS = now + 1.5; // then back on the attack before reading again
       }
     }
+    // A3: a player who swings on a steady beat is met just before the next swing (a read, not a reaction).
+    if (
+      diff.adapts &&
+      this.playerSwings.length >= 3 &&
+      now >= this.nextReadS &&
+      !s.busy &&
+      dist < v.meleeReachM * 1.7
+    ) {
+      const n = this.playerSwings.length;
+      const i1 = this.playerSwings[n - 1]! - this.playerSwings[n - 2]!;
+      const i2 = this.playerSwings[n - 2]! - this.playerSwings[n - 3]!;
+      const due = this.playerSwings[n - 1]! + i1;
+      if (Math.abs(i1 - i2) < 0.25 && i1 > 0.35 && now >= due - 0.2 && now <= due + 0.05) {
+        this.nextReadS = now + 1.2;
+        if (v.random() < diff.defendSkill * 0.7) {
+          if (d.defence === 'block' || (d.defence === 'mixed' && v.random() < 0.5)) this.guardUntilS = now + 0.5;
+          else out.dodge = true;
+        }
+      }
+    }
     // Reading an incoming blow: after its reaction time, it may dodge or block (by personality).
     if (t.attacking && dist < 2.4) {
       if (this.threatSeenS < 0) this.threatSeenS = now;
       if (!this.threatHandled && now - this.threatSeenS >= diff.reactionS) {
         this.threatHandled = true;
-        if (v.random() < diff.defendSkill) {
+        // A2/A5: hurt and behind it defends harder; well ahead it can afford to trade.
+        const care = this.phase === 'critical' ? 1.25 : this.phase === 'ahead' ? 0.85 : this.fragile ? 1.1 : 1;
+        if (v.random() < Math.min(1, diff.defendSkill * care)) {
           const block = d.defence === 'block' || (d.defence === 'mixed' && v.random() < 0.5);
           if (block) this.guardUntilS = now + 0.55;
           else out.dodge = true;
@@ -268,14 +349,26 @@ export class FighterBrain {
 
     // Seeing an opening takes its reaction time; spotting it at all takes skill.
     let punishing = false;
-    if (t.helpless) {
+    const opening = t.helpless || (diff.punishSkill >= 0.35 && t.recovering === true && dist <= v.meleeReachM * 2.2);
+    if (t.frozen)
+      punishing = true; // CH2: a foe frozen in Time Stop cannot answer: pile every blow in
+    else if (opening) {
       if (this.openingSeenS < 0) this.openingSeenS = v.random() < diff.punishSkill ? now : Number.POSITIVE_INFINITY;
       punishing = now - this.openingSeenS >= diff.reactionS;
     } else this.openingSeenS = -1;
 
     // Where it wants to stand: its design's range, pushed out when hurt or (adapting) when rushed.
     let [lo, hi] = d.preferredRangeM;
-    if (d.retreatBelowHp > 0 && s.hpFrac < d.retreatBelowHp) lo = hi;
+    // A1/A2: a fragile fighter keeps further off, a sturdy one presses in; hurt and behind, even a brawler gives ground.
+    if (this.fragile) {
+      lo += 0.8;
+      hi += 0.8;
+    } else if (this.sturdy) {
+      lo = Math.max(1, lo - 0.5);
+      hi = Math.max(lo, hi - 0.5);
+    }
+    const retreatBelow = d.retreatBelowHp + (this.fragile ? 0.1 : 0) + (this.phase === 'critical' ? 0.1 : 0);
+    if (retreatBelow > 0 && s.hpFrac < retreatBelow && !t.frozen) lo = hi;
     if (diff.adapts && d.movement === 'kite' && this.playerClose > 0.5) {
       lo += 1;
       hi += 1;
@@ -329,7 +422,8 @@ export class FighterBrain {
     // ---------------------------------------------------------------- melee
     // Its fighting phase: brutes always brawl; others go in and out by their love of melee.
     if (now >= this.nextPhaseS) {
-      this.brawl = d.movement === 'direct' || v.random() < d.meleeBias;
+      const push = this.phase === 'ahead' || this.sturdy ? 0.15 : this.phase === 'critical' || this.fragile ? -0.15 : 0;
+      this.brawl = d.movement === 'direct' || v.random() < d.meleeBias + push;
       this.nextPhaseS = now + 2.5 + v.random() * 2.5;
     }
     // Melee-minded fighters close in to punish an opening; casters punish with their spells.
@@ -461,6 +555,16 @@ export class FighterBrain {
         if (when.targetAttacking !== undefined && unmet(t.attacking, 3)) continue;
       }
       if (punishing && (tac.role === 'burst' || tac.role === 'control')) w *= 1.8;
+      // A4: expect the ability to connect. Far off its band's centre or aimed at a quick mover it is a poor bet; a smart
+      // planner saves it, others just use it less.
+      const chance = hitChance(tac, dist, t);
+      if (diff.cooldownPlanning && chance < 0.3 && tac.role !== 'buff' && tac.role !== 'escape') continue;
+      w *= 0.4 + 0.6 * chance;
+      // A5: how the fight is going shapes what it reaches for.
+      if (this.phase === 'opening' && tac.role === 'burst') w *= 0.7;
+      if ((this.phase === 'behind' || this.phase === 'critical') && tac.role === 'burst') w *= 1.3;
+      if (this.phase === 'critical' && (tac.role === 'escape' || tac.role === 'buff')) w *= 1.5;
+      if (this.phase === 'ahead' && (tac.role === 'poke' || tac.role === 'zone')) w *= 1.15;
       // Rotation: an ability waiting longer becomes more likely.
       const since = now - (this.lastUsed.get(a.slot) ?? -30);
       w *= 1 + Math.min(2, since / 6);
@@ -475,4 +579,23 @@ export class FighterBrain {
     }
     return weighted[weighted.length - 1]!;
   }
+}
+
+/**
+ * A4: how likely an ability is to connect now (0..1), from where the target stands in the ability's own range band, how fast it
+ * is moving and whether it is open. A guess from what a player could also see, never the target's hidden state.
+ */
+export function hitChance(
+  tac: AbilityTactic,
+  dist: number,
+  t: { readonly vx: number; readonly vy: number; readonly helpless: boolean; readonly frozen?: boolean },
+): number {
+  if (t.frozen) return 1;
+  const span = Math.max(0.5, (tac.maxM - tac.minM) / 2);
+  const centre = (tac.minM + tac.maxM) / 2;
+  let p = 1 - 0.45 * Math.min(1, Math.abs(dist - centre) / span);
+  // Projectiles and zones can be walked out of; bursts and control land on whoever is close.
+  if (tac.role === 'poke' || tac.role === 'zone') p *= 1 - Math.min(0.5, Math.hypot(t.vx, t.vy) / 12);
+  if (t.helpless) p = Math.min(1, p * 1.4);
+  return Math.max(0, Math.min(1, p));
 }

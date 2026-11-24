@@ -19,6 +19,21 @@ const sink = () => {
 };
 
 describe('StatusEffects registry (B8)', () => {
+  it('survives a damage tick that knocks the fighter out and clears every effect mid-tick (regression)', () => {
+    const fx = new StatusEffects<TestId>(defs);
+    fx.apply('slow', 2, {});
+    fx.apply('pulse', 2, { dps: 5 });
+    fx.apply('burn', 2, { dps: 10 }); // the last one applied is visited first
+    // The first damage tick is the fatal one: the fighter is down, so every effect is cleared under the loop.
+    expect(() =>
+      fx.tick(0.1, () => {
+        fx.clearAll();
+        return 0;
+      }),
+    ).not.toThrow();
+    expect(fx.has('burn')).toBe(false);
+  });
+
   it('deals damage over time continuously and ends on time', () => {
     const fx = new StatusEffects<TestId>(defs);
     const s = sink();

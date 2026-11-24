@@ -208,6 +208,10 @@ export class FighterEntity {
   aiTargetId: string | null = null;
   aiTargetS = 0;
   aiLastPos: { x: number; y: number } | null = null;
+  /** When the last unstick slide began (game seconds): a second one soon after means it is boxed in, so it heads for the target. */
+  aiLastUnstickS = -10;
+  /** Slides in a row that got nowhere: three in quick succession mean it is walled into a pocket (see `controlAi`). */
+  aiBoxedCount = 0;
   aiUnstick: { x: number; y: number; leftS: number } | null = null;
   /** Smoothed presentation values. */
   tilt = 0;

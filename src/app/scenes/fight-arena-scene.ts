@@ -2099,6 +2099,7 @@ export class FightArenaScene implements ArenaScene {
         busy: f.combo.attack !== null || (caster?.cast ?? null) !== null,
         hanging: f.climb !== null,
         hpFrac: c.hp / c.stats.maxHp,
+        maxHp: c.stats.maxHp,
       },
       target: sees
         ? {
@@ -2113,6 +2114,12 @@ export class FightArenaScene implements ArenaScene {
             helpless: pc === 'stunned' || p.combatant.blinded || p.landHoldS > 0,
             attacking: p.combo.attack !== null || (p.caster?.cast ?? null) !== null,
             cursed: p.combatant.decayLeftS > 0,
+            maxHp: p.combatant.stats.maxHp,
+            // In the recovery of a blow it has thrown (A3): past the active frames of its attack.
+            recovering:
+              p.combo.attack !== null &&
+              p.combo.progress * attackDuration(p.combo.attack) > p.combo.attack.windupS + p.combo.attack.activeS,
+            frozen: this.isFrozen(p),
             toxicity: p.combatant.toxicityStacks,
           }
         : null,
@@ -2158,7 +2165,21 @@ export class FightArenaScene implements ArenaScene {
       const r = f.def.body.footRadiusM;
       const open = (d: { x: number; y: number }) =>
         !this.physics || this.physics.isFree({ x: f.x + d.x * 0.6, y: f.y + d.y * 0.6 }, r);
-      const pick = options.find(open) ?? options[2]!;
+      // Boxed in again soon after the last slide (a corner with furniture): stop sliding about and go for the target.
+      if (this.simTimeS - f.aiLastUnstickS < 3) {
+        const tl = Math.hypot(p.x - f.x, p.y - f.y) || 1;
+        options.unshift({ x: (p.x - f.x) / tl, y: (p.y - f.y) / tl });
+      }
+      f.aiBoxedCount = this.simTimeS - f.aiLastUnstickS < 6 ? f.aiBoxedCount + 1 : 1;
+      f.aiLastUnstickS = this.simTimeS;
+      if (f.aiBoxedCount >= 3) {
+        // Walled into a pocket of furniture and walls: set down in the nearest free spot toward the target (never stuck).
+        const tl = Math.hypot(p.x - f.x, p.y - f.y) || 1;
+        const spot = this.freeSpotNear(f, { x: f.x + ((p.x - f.x) / tl) * 2.2, y: f.y + ((p.y - f.y) / tl) * 2.2 });
+        if (spot) f.placeAt(spot);
+        f.aiBoxedCount = 0;
+      }
+      const pick = options.find(open) ?? options[options.length - 1]!;
       f.aiUnstick = { x: pick.x, y: pick.y, leftS: AI_UNSTICK_S };
       f.aiStuckS = 0;
       f.aiRouteAgeS = AI_ROUTE_EVERY_S; // re-plan the way round
