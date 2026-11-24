@@ -29,6 +29,11 @@ import {
 
 /** Which states play keyframed strikes (the rest are procedural motions). */
 export const STRIKE_STATES: ReadonlySet<AnimationState> = new Set<AnimationState>([
+  'BladeSlashA',
+  'BladeSlashB',
+  'BladeCross',
+  'BladeFinale',
+  'BladeHammer',
   'Jab',
   'HeavyAttack',
   'StraightPunch',

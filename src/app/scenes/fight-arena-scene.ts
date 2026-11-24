@@ -3629,27 +3629,18 @@ export class FightArenaScene implements ArenaScene {
       f.focusNow += (target - f.focusNow) * smoothing(8, frameDtS);
       f.view.focus = f.focusNow;
     }
-    // Prismor's crystal fists (Crystal Arsenal) grow over his hands while they last and shatter when they end; a bright crystal
-    // shell grows round the body for Sovereign.
+    // Prismor's Shard Blade: two crystal swords grow from his hands while it lasts and shatter when it ends; the blade finale and the
+    // hammer slam show their own transformation through `weaponStrike`. Crystal Sovereign (his ultimate) grows a suit of crystal armour.
     {
       const broke = c.takeCrystalBreaks();
       const cast = f.caster?.cast;
       let kind: string | null = null;
-      let target = 0;
-      if (f.heldWeapon) {
-        kind = f.heldWeapon;
-        target = 1;
-      } else if (f.buff?.sovereign) {
-        kind = 'sovereign';
-        target = 1;
-      }
+      if (f.heldWeapon) kind = 'blades';
+      else if (f.buff?.sovereign) kind = 'sovereign';
       if (kind) {
         if (f.weaponKind !== kind) f.weaponForm = 0; // a new crystal grows from nothing
         f.weaponKind = kind;
-        f.weaponForm =
-          target >= f.weaponForm
-            ? Math.min(1, f.weaponForm + frameDtS * 4)
-            : f.weaponForm + (target - f.weaponForm) * smoothing(10, frameDtS);
+        f.weaponForm = Math.min(1, f.weaponForm + frameDtS * 4);
       } else if (f.weaponKind) {
         // It is over: the crystal shatters into fragments at his hands.
         this.abilities?.emit({
@@ -3666,6 +3657,13 @@ export class FightArenaScene implements ArenaScene {
         f.weaponForm = 0;
       }
       f.view.weapon = f.weaponKind ? { kind: f.weaponKind, form: f.weaponForm } : null;
+      const strikeId = f.combo.attack?.id;
+      f.view.weaponStrike =
+        strikeId === 'shard-finale'
+          ? { kind: 'finale', k: f.combo.progress }
+          : strikeId === 'shard-hammer'
+            ? { kind: 'hammer', k: f.combo.progress }
+            : null;
       // Crystal Prison: the crystal climbs both legs while it forms, and is solid once locked.
       const prison = this.abilities?.world.prisons.find((p) => p.targetId === f.name);
       const prisonD = prison?.def.delivery;

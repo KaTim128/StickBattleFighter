@@ -161,7 +161,7 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scene.playerFighter.caster!.fillMeter();
     cast('ult');
     runUntil(() => scene.summonStates.length > 0, 3);
-    expect(scene.summonStates).toHaveLength(2);
+    expect(scene.summonStates).toHaveLength(4);
     for (const s of scene.summonStates) {
       // In front of it (owner, 13/11/2026): on the side it faces, never behind or round it...
       expect(s.x).toBeLessThan(18 - 1);
@@ -180,8 +180,8 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
       scene as unknown as { summons: { list: { name: string; combatant: { expire(): void } }[] } }
     ).summons.list.find((m) => m.name === victim)!;
     f.combatant.expire();
-    runUntil(() => scene.summonStates.length === 1, 3);
-    expect(scene.summonStates).toHaveLength(1);
+    runUntil(() => scene.summonStates.length === 3, 3);
+    expect(scene.summonStates).toHaveLength(3);
     // Time's up at 10 s: the rest crumble on their own.
     run(10.5);
     expect(scene.summonStates.every((s) => s.ko)).toBe(true);

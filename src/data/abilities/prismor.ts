@@ -22,13 +22,13 @@ const shards = (n: number, ring: number, shake = 0.3) => ({
 export const PRISMOR_KIT: AbilityKit = {
   comboIcon: 'crystal-combo',
   heavyIcon: 'crystal-crush',
-  // A1 (Q): Crystal Arsenal. His fists turn to crystal for a few seconds: every punch is heavy.
+  // A1 (Q): Shard Blade. Two crystal swords grow from his hands for a few seconds; the taps become a dual-sword combo and the heavy a hammer slam.
   a1: {
-    id: 'crystalArsenal',
-    name: 'Crystal Arsenal',
-    label: 'ARSENAL',
+    id: 'shardBlade',
+    name: 'Shard Blade',
+    label: 'BLADE',
     description:
-      'Turns both of his fists into sharp crystal knuckles for 8 seconds. While they last, every punch and heavy blow hits heavily, and his normal punches are set aside. A hit does not end it. Using another ability, or being knocked out, does.',
+      'Grows a crystal sword from each hand for 8 seconds. The taps become a four-blow dual-sword combo, and the last blow turns his back hand into a sharp crystal blade for a powerful punch. The heavy swells his front hand into a massive crystal hammer and slams it down. A hit does not end it; using another ability, or being knocked out, does.',
     icon: 'crystal-arsenal',
     slot: 'a1',
     staminaCost: 28,
@@ -40,7 +40,7 @@ export const PRISMOR_KIT: AbilityKit = {
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
     delivery: { type: 'arsenal', durationS: 8 },
-    vfx: 'crystal-arsenal',
+    vfx: 'shard-blade',
     sfx: { cast: 'crystal-grow', release: 'arsenal-roll', impact: 'arsenal-form' },
     look: { palette: CRYSTAL, impact: shards(14, 1.8), hitFlash: 0xe9e2ff },
   },

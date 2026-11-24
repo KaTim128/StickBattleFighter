@@ -66,6 +66,11 @@ export const ANIMATION_STATES = [
   'Faint',
   'Defeat',
   'Disintegration',
+  'BladeSlashA',
+  'BladeSlashB',
+  'BladeCross',
+  'BladeFinale',
+  'BladeHammer',
 ] as const;
 export type AnimationState = (typeof ANIMATION_STATES)[number];
 

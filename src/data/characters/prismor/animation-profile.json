@@ -11,6 +11,11 @@
     "FrontKick": "prism.shove",
     "JumpingFrontKick": "prism.air-spike",
     "DownwardAerialKick": "prism.drop",
+    "BladeSlashA": "prism.blade-a",
+    "BladeSlashB": "prism.blade-b",
+    "BladeCross": "prism.blade-cross",
+    "BladeFinale": "prism.blade-finale",
+    "BladeHammer": "prism.hammer",
     "HeavyAttack": "prism.crush"
   }
 }

@@ -22,6 +22,8 @@ export const GROUP = { WORLD: 0x1, FIGHTER: 0x2, DEBRIS: 0x4, FURNITURE: 0x8 } a
 const groups = (member: number, filter: number): number => (member << 16) | filter;
 /** The most a fighter is pushed out of a solid in one step (never enough to cross a thin wall). */
 const MAX_DEPENETRATE_M = 0.35;
+/** Overlap that needs no extra depenetration passes, metres. */
+const SETTLED_M = 0.02;
 /** Still this deep after the passes: the fighter is wedged and is placed at the nearest spot that fits, metres. */
 const WEDGED_M = 0.1;
 
@@ -245,7 +247,7 @@ export class PhysicsWorld {
    * Push a grounded fighter back out of walls and planted furniture it has sunk into (master plan
    * Phase 1 B3: fighters must never stand inside solid objects). The solver is soft: a fast dash or
    * knock, or a heavy fighter shoving another against a wall, can leave a body 0.1-0.3 m deep.
-   * Moves it along the contact normal by the overlap (at most `MAX_DEPENETRATE_M` a pass, three passes, so it can
+   * Moves it along the contact normal by the overlap (at most `MAX_DEPENETRATE_M` a pass, six passes, so it can
    * never be thrown through a thin wall) and drops the velocity that drives it into the surface.
    * Returns the metres moved. `overFurniture` fighters ignore furniture, as in `setOverFurniture`.
    */
@@ -253,9 +255,13 @@ export class PhysicsWorld {
     let total = 0;
     // Up to three passes: in a corner two solids push in different directions and one pass can leave
     // part of the overlap (found by the long soak).
-    for (let pass = 0; pass < 3; pass++) {
+    // A squeeze (a fixed prop on one side, several bodies shoving on the other) can leave a few cm after
+    // those three: up to three more passes run only while more than SETTLED_M is left, so ordinary
+    // fights keep their exact behaviour.
+    for (let pass = 0; pass < 6; pass++) {
       const at = body.translation();
-      if (this.pushOut(at, radiusM, overFurniture) <= 0) break;
+      const depth = this.pushOut(at, radiusM, overFurniture);
+      if (depth <= 0 || (pass >= 3 && depth <= SETTLED_M)) break;
       const moved = Math.hypot(this.push.x, this.push.y);
       const scale = moved > MAX_DEPENETRATE_M ? MAX_DEPENETRATE_M / moved : 1;
       body.setTranslation({ x: at.x + this.push.x * scale, y: at.y + this.push.y * scale }, true);

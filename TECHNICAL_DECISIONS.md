@@ -1179,3 +1179,6 @@ The owner reduced Titan's ultimate defence from +40% (master plan B9, TD-079) to
 - The fists end when the 8 s run out, on a KO, or when he casts another ability (the earlier owner rule). A hit does not end them: `applyStrike` no longer disarms.
 **Trade-offs.** The heavy smash deals 64 at a cost of a 0.4 s recovery; the fists are PROVISIONAL (OQ-05). Crystal Guard as a shield is gone, so Prismor has no shield ability now; the Sovereign still has its own shield. The fists' cooldown (7 s) is shorter than their 8 s duration, so they can be re-armed as they end.
 **Status.** Accepted.
+
+## TD-143: Prismor ultimate stays Crystal Sovereign; Arsenal becomes timed Shard Blade (24/11/2026)
+Context: the owner asked for a Crystal Monster ultimate, then on 24/11/2026 withdrew it. Decision: the ultimate is Crystal Sovereign (armour that absorbs blows until it breaks); Crystal Arsenal/Fists (TD-142) is replaced by the 8 s Shard Blade (dual crystal swords, five-hit combo, hammer heavy). Alternatives: Monster summon (rejected by owner). Status: accepted; supersedes the Crystal Fists and Monster parts of TD-142 (record in spec §22).

@@ -1171,6 +1171,89 @@ const STRIKES = {
     },
   ),
 
+  // ---- Prismor's Shard Blade (owner 22/11/2026): a four-blow dual-sword combo and a crystal hammer slam.
+  // Blade A: the right blade swept down across the body from high on the left.
+  'prism.blade-a': strike(
+    {
+      lean: deg(-6),
+      head: deg(-4),
+      armFront: limb(150, 60),
+      armBack: limb(40, 100),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -26),
+    },
+    {
+      lean: deg(14),
+      head: deg(-4),
+      armFront: limb(20, 20),
+      armBack: limb(70, 60),
+      legFront: limb(36, -34),
+      legBack: limb(-36, -22),
+    },
+  ),
+  // Blade B: the left blade swept back across from high on the right.
+  'prism.blade-b': strike(
+    {
+      lean: deg(-8),
+      head: deg(-2),
+      armBack: limb(150, 60),
+      armFront: limb(40, 100),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -26),
+    },
+    {
+      lean: deg(-12),
+      head: deg(-4),
+      armBack: limb(20, 20),
+      armFront: limb(70, 60),
+      legFront: limb(34, -34),
+      legBack: limb(-38, -24),
+    },
+  ),
+  // Crossing blades: both arms wide, then the two blades cross in front of the chest.
+  'prism.blade-cross': strike(
+    { lean: deg(4), armFront: limb(-40, 80), armBack: limb(40, 80), legFront: limb(26, -32), legBack: limb(-30, -28) },
+    {
+      lean: deg(-10),
+      head: deg(-4),
+      armFront: limb(70, 40),
+      armBack: limb(-60, 40),
+      legFront: limb(34, -36),
+      legBack: limb(-36, -24),
+    },
+  ),
+  // Blade punch: the back fist drawn back, then driven straight out as the hand turns into a blade.
+  'prism.blade-finale': strike(
+    { lean: deg(6), armBack: limb(-60, 40), armFront: limb(10, 80), legFront: limb(26, -30), legBack: limb(-30, -28) },
+    {
+      lean: deg(-22),
+      head: deg(-6),
+      armBack: limb(90, 4),
+      armFront: limb(30, 60),
+      legFront: limb(40, -40),
+      legBack: limb(-40, -22),
+    },
+  ),
+  // Crystal hammer: both arms hauled high, then the front fist slammed down into a deep crouch.
+  'prism.hammer': strike(
+    {
+      lean: deg(14),
+      head: deg(-10),
+      armFront: limb(170, 40),
+      armBack: limb(170, 40),
+      legFront: limb(24, -34),
+      legBack: limb(-30, -30),
+    },
+    {
+      lean: deg(-40),
+      head: deg(16),
+      armFront: limb(40, 6),
+      armBack: limb(40, 6),
+      legFront: limb(60, -70),
+      legBack: limb(-46, -34),
+    },
+  ),
+
   // ---- Standard kicks (shared default: a plain, readable version of each).
   'std.front-kick': strike(
     { lean: deg(8), legFront: limb(80, -115), armFront: limb(70, 110), armBack: limb(50, 130) },

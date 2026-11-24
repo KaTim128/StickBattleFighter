@@ -15,7 +15,7 @@ import {
   AbilityWorld,
   type Vec2,
 } from '../../abilities/ability-world';
-import { FISTS_MOVESET } from '../../data/abilities/crystal-arsenal';
+import { SHARD_BLADE_MOVESET } from '../../data/abilities/shard-blade';
 import type { ImpactId } from '../../data/combat/impacts';
 import type { ArenaProps } from '../../environment/arena-props';
 import { type BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
@@ -454,21 +454,46 @@ export class SceneAbilities implements AbilityHost {
         if (o.team !== f.team && !o.combatant.isKo) o.combatant.darken(buff.durationS, buff.darkensFoes.visibleM);
   }
 
-  /** Crystal Arsenal: the fists turn to crystal for `durationS`; the moveset swap is the fists' own. */
+  /** Shard Blade: the dual swords grow for `durationS` and their moveset takes over his taps and heavy. */
   arm(casterId: string, durationS: number): void {
     const f = this.byName(casterId);
     if (!f) return;
-    f.heldWeapon = 'fists';
+    f.heldWeapon = 'blades';
     f.weaponLeftS = durationS;
-    f.combo.useMoveset(FISTS_MOVESET.moves, FISTS_MOVESET.starters);
+    f.combo.useMoveset(SHARD_BLADE_MOVESET.moves, SHARD_BLADE_MOVESET.starters);
   }
 
-  /** The fists end (time out, a KO, or another ability): his own punches come back at once. */
+  /** The swords end (time out, a KO, or another ability): his own punches come back at once. */
   disarm(f: FighterEntity): void {
     if (!f.heldWeapon) return;
     f.heldWeapon = null;
     f.weaponLeftS = 0;
     f.combo.resetMoveset();
+  }
+
+  trap(targetId: string, seconds: number): void {
+    const f = this.byName(targetId);
+    if (!f) return;
+    f.combatant.trapLegs(seconds);
+    if (seconds > 0) {
+      // Held where it stands: whatever it was doing with its legs stops (a charge, a dash, a leap).
+      this.world.cancel(f.name, this);
+      f.combo.interrupt();
+    }
+  }
+
+  legTrapState(targetId: string): { heightM: number; flies: boolean; trappedS: number } {
+    const f = this.byName(targetId);
+    if (!f) return { heightM: 0, flies: false, trappedS: 0 };
+    return {
+      heightM: f.hop.heightM + f.abilityLift,
+      flies: (f.view?.hoverM ?? 0) > 0 || f.abilityLift > 0.05,
+      trappedS: f.combatant.trapLeftS,
+    };
+  }
+
+  standable(at: Vec2): boolean {
+    return this.standableSource(at);
   }
 
   burnFighter(targetId: string, burn: Burn): void {

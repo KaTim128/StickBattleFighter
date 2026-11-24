@@ -723,3 +723,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Prismor's taps and heavy hit only when the fist touches a body; a foe a step beyond the fist takes no damage and no hit sound.
 - [ ] Crystal Fists: crystal knuckles appear, every punch is heavy, and they end after 8 s.
 - [ ] Being hit does not end the fists; another ability or a KO does.
+
+## Batch 0 stabilise (24/11/2026)
+- [ ] Crystal Prison cast in the real scene locks a grounded foe (`crystal-prison.test.ts`); browser: legs held, shatters at the end.
+- [ ] Crystal Sovereign: armour absorbs blows and breaks after its hits; no Crystal Monster anywhere.
+- [ ] Necro Undead Army raises exactly four skeletons.
+- [ ] Fighters squeezed against a fixed prop end each frame within 3 cm (`furniture-collision.test.ts`).

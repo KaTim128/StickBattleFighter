@@ -156,8 +156,8 @@ export class FighterEntity {
   stalkAmount = 0;
   /** Presentation (winged fighters): how far the hover has lifted it, and the wings' spread and beat. */
   hoverNow = 0;
-  /** Crystal Arsenal: his fists are crystal while `weaponLeftS` runs; their moveset has taken over his unarmed taps. */
-  heldWeapon: 'fists' | null = null;
+  /** Shard Blade: his crystal swords last while `weaponLeftS` runs; their moveset has taken over his unarmed taps. */
+  heldWeapon: 'blades' | null = null;
   weaponLeftS = 0;
   /** Presentation: how fully grown his crystal weapon is (0..1), and which one. */
   weaponForm = 0;

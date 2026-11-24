@@ -18,14 +18,14 @@ export const NECRO_KIT: AbilityKit = {
   comboIcon: 'staff-swing',
   heavyIcon: 'soul-rend',
   // A1: Soul Drain. A dark bolt of drawn souls flies from the staff; when it lands it tears life out
-  // of the target (half of it flows back to Necro) and blinds it for 3 s (owner, 12/11/2026).
+  // of the target (15% of the damage flows back to Necro as healing) and blinds it for 3 s (owner, 12/11/2026).
   a1: {
     id: 'soulDrain',
     name: 'Soul Drain',
     label: 'DRAIN',
     icon: 'soul-drain',
     description:
-      'A bolt of drawn souls. It drains life from the target, giving half back to Necro, and blinds it for 3 seconds.',
+      'A bolt of drawn souls. It drains life from the target, healing Necro for 15% of the damage dealt, and blinds it for 3 seconds.',
     slot: 'a1',
     staminaCost: 20,
     cooldownS: 4.5,
@@ -40,7 +40,7 @@ export const NECRO_KIT: AbilityKit = {
       heavy: false,
       strength: 200,
       impact: 'knuckle-light',
-      lifesteal: 0.5,
+      lifesteal: 0.15,
       blindS: 3,
     },
     delivery: { type: 'projectile', speedMps: 14, radiusM: 0.3, maxRangeM: 10 },
@@ -204,7 +204,7 @@ export const NECRO_KIT: AbilityKit = {
     label: 'ULT',
     icon: 'undead-army',
     description:
-      'Two skeleton warriors claw out of the ground around the enemy and fight for Necro for 10 seconds, then crumble.',
+      'Four skeleton warriors claw out of the ground around the enemy and fight for Necro for 10 seconds, then crumble.',
     slot: 'ult',
     staminaCost: 0,
     cooldownS: 1,
@@ -217,7 +217,7 @@ export const NECRO_KIT: AbilityKit = {
     delivery: {
       type: 'summon',
       character: 'skeleton-warrior',
-      count: 2,
+      count: 4,
       // Owner, 12/11/2026 (SUP-24): the skeletons are on a timer again, as Undead Army first was.
       lifeS: 6,
       maxAlive: 4,

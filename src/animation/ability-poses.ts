@@ -859,7 +859,7 @@ const SHAPES: Record<string, CastShape> = {
 
   // ---- Prismor (all crystal): hands gather crystal, a low slide, a fan of shards, legs pinned, a palm on the floor.
   // Crystal Arsenal: both hands cupped low at the chest as crystal gathers, then opened forward as the weapon grows.
-  crystalArsenal: {
+  shardBlade: {
     windup: {
       lean: deg(4),
       head: deg(-4),

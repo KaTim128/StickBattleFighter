@@ -8,6 +8,8 @@ Stickman Arena is an original, browser-based, **2D top-down, real-time, free-mov
 - One phase at a time: never start the next phase without the owner's approval; one consolidated review per phase.
 - Model names never go into committed files: use the role labels "planning/review model" and "implementation model".
 - Desktop first; existing phone play must keep working unless the owner decides otherwise (OQ-P0-4).
+- Owner update (24/11/2026): work from `STICKMAN_ARENA_IMPLEMENTATION_PLAN.md` batch by batch (commit, push, deploy, short report each) and track every requirement in `REQUIREMENTS_TRACEABILITY.md` (`todo` → `implemented` → `build-verified` → `gameplay-verified`; only a browser check earns the last).
+- UI and art: follow `UI_REFERENCE_GUIDE.md` and the images in `docs/references/ui/`. **Pixel-art mandate (owner 22/11/2026):** all new art and UI use the pixel pipeline and shared UI tokens.
 - Keep `FIGHTER_SYSTEM_DEVELOPMENT_GUIDE.md`, `FIGHTER_SYSTEM_CHANGELOG.md`, `AUDIO_ASSET_CATALOG.md` and `STICKMAN_ARENA_VISUAL_STYLE_GUIDE.md` current.
 
 ## Authority and role

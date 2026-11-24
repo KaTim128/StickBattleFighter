@@ -53,8 +53,7 @@ describe('Necro skeletons (B5)', () => {
     const { scene, scenes, summons, alive, run } = await setup({ x: 8, y: 13 }, { x: 18, y: 13 });
     const necro = scene.playerFighter;
     expect(SPEC.maxAlive).toBe(4);
-    expect(summons.spawn(necro, SPEC)).toBe(2);
-    expect(summons.spawn(necro, SPEC)).toBe(2);
+    expect(summons.spawn(necro, SPEC)).toBe(4);
     expect(alive(necro)).toHaveLength(4);
     expect(summons.room(necro, SPEC)).toBe(0);
     expect(summons.spawn(necro, SPEC)).toBe(0); // a fifth is rejected, and nobody crumbles to make room

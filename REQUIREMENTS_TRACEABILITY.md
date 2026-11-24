@@ -6,11 +6,11 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 
 | ID | Requirement | Source | Batch | Main files | Verification | Status | Evidence |
 |---|---|---|---|---|---|---|---|
-| R0.1 | Tree compiles; Monster path removed; armour restored | P2, MS10.4 | 0 | combatant.ts, prismor.ts, scene-abilities.ts | tsc, vitest | todo | |
-| R0.2 | Prison host methods restored; real-scene test | regression | 0 | scene-abilities.ts | integration test | todo | |
+| R0.1 | Tree compiles; Monster path removed; armour restored | P2, MS10.4 | 0 | combatant.ts, prismor.ts, scene-abilities.ts | tsc, vitest | build-verified | typecheck, full vitest, build (Batch 0 commit) |
+| R0.2 | Prison host methods restored; real-scene test | regression | 0 | scene-abilities.ts | integration test | build-verified | tests/integration/scenes/crystal-prison.test.ts (real FightArenaScene) |
 | HD | Contact-only damage for all attack types | P1, MS15 | 1 | attacks.ts, ability-world.ts, fight-arena-scene.ts | unit tests + browser | todo | |
 | HL | No passive or automatic healing; gated ability heals | P9 | 1 | combatant.ts, team-battle.ts, scene-teams.ts | unit tests | todo | |
-| N1/N2 | 4 skeletons; 15 % of actual HP removed | P1, MS11 | 0–1 | necro.ts, scene-abilities.ts | integration tests | todo | |
+| N1/N2 | 4 skeletons; 15 % of actual HP removed | P1, MS11 | 0–1 | necro.ts, scene-abilities.ts | integration tests | implemented | 4 skeletons + 0.15 lifesteal in tree; necro tests updated; actual-damage heal in Batch 1 |
 | C1 | Clash shows the winner's name | MS16 | 1 | scene-clash.ts, clash-hud.ts | unit + e2e | todo | |
 | PR1–3 | Shard Blade swords, 5-hit combo, piercing finale, hammer heavy | P1, MS10 | 2 | shard-blade.ts, clips.ts, premium-model.ts | tests + screenshots | todo | |
 | PR4 | Crystal Armour ultimate integrated | P2, MS10.4 | 0, 2 | premium-model.ts | 6-pose screenshots | todo | |

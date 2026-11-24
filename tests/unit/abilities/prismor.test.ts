@@ -3,10 +3,9 @@ import { type AbilityHost, type AbilityTarget, AbilityWorld } from '../../../src
 import { BUILT_IN_LIBRARY } from '../../../src/characters/library';
 import { resolveCharacter } from '../../../src/characters/resolve';
 import { type AttackDef, blowBox, blowTouches, hitCapsule } from '../../../src/combat/attacks';
-import { Combatant } from '../../../src/combat/combatant';
 import { MoveController } from '../../../src/combat/moves';
-import { FISTS_MOVESET } from '../../../src/data/abilities/crystal-arsenal';
 import { PRISMOR_KIT } from '../../../src/data/abilities/prismor';
+import { SHARD_BLADE_MOVESET } from '../../../src/data/abilities/shard-blade';
 import prismorMoveset from '../../../src/data/characters/prismor/moveset.json';
 
 /** Owner, 22/11/2026: Crystal Arsenal, Slide, Shard Volley, Crystal Prison, Crystal Groundstrike and the unarmed taps. */
@@ -58,14 +57,14 @@ const run = (w: AbilityWorld, h: AbilityHost, s: number, onStep?: () => void) =>
   }
 };
 
-describe('Crystal Fists (Crystal Arsenal)', () => {
+describe('Shard Blade', () => {
   it('has the five abilities and the ultimate, none of them an unarmed tap', () => {
     const ids = [PRISMOR_KIT.a1, PRISMOR_KIT.a2, PRISMOR_KIT.a3, PRISMOR_KIT.a4, PRISMOR_KIT.a5!].map((a) => a.id);
-    expect(ids).toEqual(['crystalArsenal', 'crystalSlide', 'shardVolley', 'crystalPrison', 'crystalGroundstrike']);
+    expect(ids).toEqual(['shardBlade', 'crystalSlide', 'shardVolley', 'crystalPrison', 'crystalGroundstrike']);
     expect(PRISMOR_KIT.ult.id).toBe('crystalSovereign');
   });
 
-  it('casting it turns the fists to crystal for 8 seconds', () => {
+  it('casting it grows the crystal swords for 8 seconds', () => {
     const { host, log } = arena();
     const w = new AbilityWorld();
     w.release('me', PRISMOR_KIT.a1, { x: 3, y: 0 }, host);
@@ -74,26 +73,26 @@ describe('Crystal Fists (Crystal Arsenal)', () => {
     expect(d.type === 'arsenal' && d.durationS).toBe(8);
   });
 
-  it('the fists are a heavy moveset: a two-punch tap chain and a heavy smash, each hitting hard', () => {
-    const m = FISTS_MOVESET.moves;
-    let id: string | undefined = FISTS_MOVESET.starters.tap;
+  it('the swords bring a tap chain ending in a heavy blow and a heavy hammer slam, each hitting hard (Batch 2 extends the chain to five)', () => {
+    const m = SHARD_BLADE_MOVESET.moves;
+    let id: string | undefined = SHARD_BLADE_MOVESET.starters.tap;
     const chain: string[] = [];
     while (id) {
       chain.push(id);
       id = m[id]?.next.tap;
     }
-    expect(chain).toHaveLength(2);
-    const heavy = m[FISTS_MOVESET.starters.heavy!]!;
+    expect(chain.length).toBeGreaterThanOrEqual(4);
+    const heavy = m[SHARD_BLADE_MOVESET.starters.heavy!]!;
     expect(heavy.heavy).toBe(true);
-    for (const id of chain) expect(m[id]!.damage).toBeGreaterThanOrEqual(25);
+    for (const id of chain) expect(m[id]!.damage).toBeGreaterThanOrEqual(20);
     expect(heavy.damage).toBeGreaterThan(m[chain[0]!]!.damage * 2);
   });
 
-  it('fist moves only hit when the fist touches a body (contact)', () => {
-    for (const mv of Object.values(FISTS_MOVESET.moves)) expect(mv.contact, mv.id).toBe(true);
+  it('sword moves only hit on contact with a body', () => {
+    for (const mv of Object.values(SHARD_BLADE_MOVESET.moves)) expect(mv.contact, mv.id).toBe(true);
   });
 
-  it('a held fist moveset replaces his unarmed taps, and ending it brings the punches straight back', () => {
+  it('a held sword moveset replaces his unarmed taps, and ending it brings the punches straight back', () => {
     const own = resolveCharacter('prismor', BUILT_IN_LIBRARY) as unknown as {
       moves: Record<string, never>;
       starters: Record<string, string>;
@@ -102,10 +101,10 @@ describe('Crystal Fists (Crystal Arsenal)', () => {
     const ctx = { airborne: false, falling: false, forward: false };
     c.press(ctx);
     expect(c.attack?.id).toBe('lead-punch');
-    c.useMoveset(FISTS_MOVESET.moves, FISTS_MOVESET.starters);
+    c.useMoveset(SHARD_BLADE_MOVESET.moves, SHARD_BLADE_MOVESET.starters);
     expect(c.attack).toBeNull();
     c.press(ctx);
-    expect(c.attack?.id).toBe('fist-jab');
+    expect(c.attack?.id).toBe('shard-slash-r');
     c.resetMoveset();
     c.press(ctx);
     expect(c.attack?.id).toBe('lead-punch');
