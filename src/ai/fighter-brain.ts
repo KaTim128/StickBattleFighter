@@ -24,6 +24,23 @@ export interface Vec2 {
   readonly y: number;
 }
 
+/**
+ * Something the opponent has put down or set going that hurts to stand in or cross: a warning ring about to burst, a lingering
+ * cloud or fog, an armed mine, a beam, a shot in flight. Everything here is visible on screen to a player too.
+ */
+export interface Hazard {
+  readonly kind: 'zone' | 'fog' | 'mine' | 'beam' | 'shot';
+  readonly x: number;
+  readonly y: number;
+  /** Its radius, or half its width for a beam or shot. */
+  readonly radiusM: number;
+  /** Seconds until it goes off (a warning ring); Infinity for what lingers. */
+  readonly leftS: number;
+  /** A beam's or shot's far end. */
+  readonly toX?: number;
+  readonly toY?: number;
+}
+
 export interface BrainView {
   readonly timeS: number;
   readonly self: {
@@ -65,6 +82,10 @@ export interface BrainView {
     /** Toxicity stacks it carries (Vexoris's poison). */
     readonly toxicity: number;
   } | null;
+  /** Hazards from the opponent's side (A: hazard sense). Absent = none known. */
+  readonly hazards?: readonly Hazard[];
+  /** The opponent is mid-cast: how far its ability reaches and whether it is its ultimate (cast awareness). */
+  readonly foeCast?: { readonly reachM: number; readonly ult: boolean } | null;
   readonly meleeReachM: number;
   readonly canClimb: boolean;
   readonly abilities: readonly { readonly slot: AbilitySlot; readonly ready: boolean }[];
@@ -95,6 +116,8 @@ const COMBO_WINDOW_S = 2.5;
 const BASIC_ROTATION_S = 12;
 /** A planner holds an ability for its moment at most this long, seconds. */
 const PLANNER_PATIENCE_S = 20;
+/** An ultimate held back for its moment is still used after this many seconds, so it never sits unused for good. */
+const ULT_PATIENCE_S = 40;
 /** How far ahead a projectile is aimed at full prediction, in seconds of the target's motion. */
 const LEAD_S = 0.5;
 
@@ -236,7 +259,104 @@ export class FighterBrain {
     return out;
   }
 
+  /** One decision, then the hazard sense: a smart opponent never walks into what the other side has set going. */
   think(v: BrainView): BrainOutput {
+    return this.avoidHazards(v, this.decide(v));
+  }
+
+  private hazardSeenS = -1;
+  private hazardBlind = false;
+  private nextCastReadS = 0;
+
+  /**
+   * Hazard sense (difficulty `hazardSense`): after its reaction time it steps out of a ring, cloud or beam it is standing in, and
+   * the better tiers also refuse to walk into one. Easy never notices them.
+   */
+  private avoidHazards(v: BrainView, out: BrainOutput): BrainOutput {
+    const hs = v.hazards;
+    const sense = v.difficulty.hazardSense;
+    if (!hs || hs.length === 0 || sense <= 0 || v.self.hanging) {
+      this.hazardSeenS = -1;
+      return out;
+    }
+    const s = v.self;
+    const now = v.timeS;
+    let px = 0;
+    let py = 0;
+    let threatened = false;
+    let urgent = false;
+    const inside = (x: number, y: number): { x: number; y: number; soon: boolean } | null => {
+      let ax = 0;
+      let ay = 0;
+      let hit = false;
+      let soon = false;
+      for (const h of hs) {
+        let cx = h.x;
+        let cy = h.y;
+        let d: number;
+        if ((h.kind === 'beam' || h.kind === 'shot') && h.toX !== undefined && h.toY !== undefined) {
+          const sx = h.toX - h.x;
+          const sy = h.toY - h.y;
+          const len2 = sx * sx + sy * sy || 1;
+          const k = Math.max(0, Math.min(1, ((x - h.x) * sx + (y - h.y) * sy) / len2));
+          cx = h.x + sx * k;
+          cy = h.y + sy * k;
+        }
+        d = Math.hypot(x - cx, y - cy);
+        const margin = h.radiusM + (h.kind === 'mine' ? 0.7 : 0.5);
+        if (d >= margin) continue;
+        // A ring that is not about to burst is only worth leaving once it nears; what lingers or flies is always worth it.
+        if (h.kind === 'zone' && h.leftS > 1.6) continue;
+        hit = true;
+        if (h.leftS < 0.8 || h.kind === 'beam' || h.kind === 'shot') soon = true;
+        const away = d < 1e-3 ? { x: 1, y: 0 } : { x: (x - cx) / d, y: (y - cy) / d };
+        ax += away.x * (margin - d + 0.3);
+        ay += away.y * (margin - d + 0.3);
+      }
+      return hit ? { x: ax, y: ay, soon } : null;
+    };
+    const here = inside(s.x, s.y);
+    if (here) {
+      threatened = true;
+      urgent = here.soon;
+      px = here.x;
+      py = here.y;
+    }
+    if (!threatened) {
+      // The better tiers also refuse to walk into one: the step it is about to take lands inside a hazard.
+      this.hazardSeenS = -1;
+      const mv = Math.hypot(out.move.x, out.move.y);
+      if (sense >= 0.7 && mv > 0.1 && !s.busy) {
+        const ahead = inside(s.x + (out.move.x / mv) * 1.1, s.y + (out.move.y / mv) * 1.1);
+        if (ahead) {
+          const tx = -ahead.y;
+          const ty = ahead.x; // slide along the edge rather than in
+          const dot = tx * out.move.x + ty * out.move.y;
+          const sgn = dot >= 0 ? 1 : -1;
+          const tl = Math.hypot(tx, ty) || 1;
+          out.move = { x: (tx / tl) * sgn, y: (ty / tl) * sgn };
+          out.sprint = false;
+        }
+      }
+      return out;
+    }
+    if (this.hazardSeenS < 0) {
+      this.hazardSeenS = now;
+      this.hazardBlind = v.random() >= sense; // misses it this time: the lower tiers keep standing there
+    }
+    if (this.hazardBlind || now - this.hazardSeenS < v.difficulty.reactionS) return out;
+    const l = Math.hypot(px, py) || 1;
+    out.move = { x: px / l, y: py / l };
+    out.sprint = true;
+    out.jump = false;
+    if (urgent) {
+      out.melee = false;
+      out.heavy = false;
+    }
+    return out;
+  }
+
+  private decide(v: BrainView): BrainOutput {
     const out: BrainOutput = {
       move: { x: 0, y: 0 },
       jump: false,
@@ -272,6 +392,16 @@ export class FighterBrain {
     const dy = t.y - s.y;
     const dist = Math.hypot(dx, dy) || 1e-6;
     const toward = { x: dx / dist, y: dy / dist };
+
+    // Cast awareness: it reads the opponent's wind-up. Inside its reach it gives ground before the ability goes off; a smart tier
+    // also gets in to interrupt an ultimate (see `pickAbility`), and one that cannot be seen coming is simply taken.
+    if (v.foeCast && diff.castAwareness > 0 && now >= this.nextCastReadS) {
+      this.nextCastReadS = now + Math.max(0.35, diff.reactionS * 2);
+      if (dist < v.foeCast.reachM + 1 && v.random() < diff.castAwareness * (v.foeCast.ult ? 0.8 : 0.5)) {
+        if (!(v.foeCast.ult && diff.castAwareness >= 0.6 && dist < 3.2))
+          this.retreatUntilS = now + 0.7 + diff.reactionS;
+      }
+    }
 
     // Adapting to the player (Hard and up): does the player rush in or keep away?
     if (diff.adapts) this.playerClose += ((dist < 2 ? 1 : 0) - this.playerClose) * Math.min(1, dtS / 5);
@@ -359,6 +489,9 @@ export class FighterBrain {
 
     // Where it wants to stand: its design's range, pushed out when hurt or (adapting) when rushed.
     let [lo, hi] = d.preferredRangeM;
+    // Movement skill: a novice holds its range loosely and wanders; an expert keeps the exact distance its design wants.
+    lo = Math.max(0.8, lo - 1.0 * (1 - diff.moveSkill));
+    hi += 1.5 * (1 - diff.moveSkill);
     // A1/A2: a fragile fighter keeps further off, a sturdy one presses in; hurt and behind, even a brawler gives ground.
     if (this.fragile) {
       lo += 0.8;
@@ -468,7 +601,7 @@ export class FighterBrain {
     // ---------------------------------------------------------------- movement
     if (now >= this.nextStrafeS) {
       this.strafe = v.random() < 0.5 ? -1 : 1;
-      this.nextStrafeS = now + 1 + v.random() * 1.5;
+      this.nextStrafeS = now + (1 + v.random() * 1.5) * (1.4 - 0.6 * diff.moveSkill);
     }
     const side = { x: -toward.y * this.strafe, y: toward.x * this.strafe };
     const away = (k: number, sideK: number): Vec2 => ({
@@ -486,12 +619,12 @@ export class FighterBrain {
     if (wantsClose) {
       out.move =
         dist > reach * 0.85 ? chase : dist < reach * 0.45 ? away(0.6, 0.3) : { x: side.x * 0.35, y: side.y * 0.35 };
-      out.sprint = dist > 5;
+      out.sprint = dist > 9 - 5 * diff.moveSkill;
       return out;
     }
     if (dist > hi) {
       out.move = chase;
-      out.sprint = dist > hi + 4;
+      out.sprint = dist > hi + 8 - 5 * diff.moveSkill;
     } else if (dist < lo) out.move = away(1, 0.35);
     else
       out.move = {
@@ -559,6 +692,18 @@ export class FighterBrain {
       // planner saves it, others just use it less.
       const chance = hitChance(tac, dist, t);
       if (diff.cooldownPlanning && chance < 0.3 && tac.role !== 'buff' && tac.role !== 'escape') continue;
+      // The ultimate is its big moment: a smarter tier fires it only when it should connect and there is a reason (an opening,
+      // a hurt foe, or it is losing), never just because the foe is standing there. It still never sits on it for good.
+      if (a.slot === 'ult' && now - (this.lastUsed.get('ult') ?? 0) < ULT_PATIENCE_S) {
+        if (chance < diff.ultPatience) continue;
+        const moment =
+          punishing || t.helpless || t.hpFrac < 0.5 || this.phase === 'behind' || this.phase === 'critical';
+        if (diff.ultNeedsMoment && !moment) continue;
+      }
+      // Interrupting an ultimate that is winding up (a smart tier closes in on it).
+      if (v.foeCast?.ult && diff.castAwareness >= 0.6 && (tac.role === 'burst' || tac.role === 'gapClose')) w *= 2.5;
+      // Movement abilities (dashes, teleports) are used readily only by those who move well.
+      if (tac.role === 'escape' || tac.role === 'gapClose') w *= 0.4 + 0.9 * diff.moveSkill;
       w *= 0.4 + 0.6 * chance;
       // A5: how the fight is going shapes what it reaches for.
       if (this.phase === 'opening' && tac.role === 'burst') w *= 0.7;

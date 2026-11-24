@@ -35,4 +35,20 @@ describe('AI brain designs', () => {
     }
     for (const d of order) for (const k of Object.keys(d)) expect(k).not.toMatch(/damage|health|hp|attackSpeed/i);
   });
+
+  it('every capability rises step by step: hazards, cast reading, ultimate patience, movement and furniture', () => {
+    const order = [DIFFICULTIES.easy, DIFFICULTIES.normal, DIFFICULTIES.hard, DIFFICULTIES.expert];
+    for (let i = 1; i < order.length; i++) {
+      const [a, b] = [order[i - 1]!, order[i]!];
+      expect(b.hazardSense, `${b.id} hazardSense`).toBeGreaterThan(a.hazardSense);
+      expect(b.castAwareness, `${b.id} castAwareness`).toBeGreaterThan(a.castAwareness);
+      expect(b.ultPatience, `${b.id} ultPatience`).toBeGreaterThan(a.ultPatience);
+      expect(b.moveSkill, `${b.id} moveSkill`).toBeGreaterThan(a.moveSkill);
+      expect(b.propThrowPerS, `${b.id} propThrowPerS`).toBeGreaterThan(a.propThrowPerS);
+    }
+    expect(DIFFICULTIES.easy.hazardSense).toBe(0); // Easy walks into danger
+    expect(DIFFICULTIES.easy.ultNeedsMoment).toBe(false);
+    expect(DIFFICULTIES.hard.ultNeedsMoment).toBe(true);
+    expect(DIFFICULTIES.expert.ultNeedsMoment).toBe(true);
+  });
 });

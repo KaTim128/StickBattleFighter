@@ -57,3 +57,5 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | 67–73 Psion | PS1–3 |
 | 74–77 Combat and Clash | HD, C1 |
 | 78–81 Integrity | QA |
+
+| A7 | Difficulty tiers differ in hazard sense, cast reading, ultimate patience, movement and furniture use (owner 24/11/2026) | owner | 4 | difficulty.ts, fighter-brain.ts, fight-arena-scene.ts | brain-designs.test.ts, intelligent-ai.test.ts | build-verified | TD-155; not watched in a browser |

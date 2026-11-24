@@ -134,4 +134,93 @@ describe('intelligent AI (Batch 4)', () => {
     const out = run(b, v, 20);
     expect(out.move.x).toBeGreaterThanOrEqual(0); // never backs away from a frozen foe, even when hurt
   });
+
+  it('hazard sense: Easy stands in a ring about to burst; Expert steps out of it, sprinting away from its centre', () => {
+    const hazards = [{ kind: 'zone' as const, x: 0, y: 0, radiusM: 2.5, leftS: 0.5 }];
+    const act = (difficulty: 'easy' | 'expert') => {
+      const b = new FighterBrain();
+      const v = { ...view({ self: {}, target: { x: 6, y: 0 }, difficulty }), hazards };
+      v.self = { ...v.self, x: 0.4, y: 0 };
+      return run(b, { ...v, abilities: [] }, 12);
+    };
+    const easy = act('easy');
+    const expert = act('expert');
+    expect(expert.sprint).toBe(true);
+    expect(expert.move.x).toBeGreaterThan(0.8); // straight out of the ring (away from its centre)
+    expect(expert.melee || expert.heavy).toBe(false);
+    // Easy plays the same as with no hazard at all.
+    const plain = run(
+      new FighterBrain(),
+      { ...view({ target: { x: 6, y: 0 }, difficulty: 'easy' }), self: { ...view({}).self, x: 0.4 }, abilities: [] },
+      12,
+    );
+    expect(easy.move).toEqual(plain.move);
+  });
+
+  it('hazard sense: a smart tier will not walk into a mine on its way; Easy does', () => {
+    const hazards = [{ kind: 'mine' as const, x: 1.5, y: 0, radiusM: 0.7, leftS: Number.POSITIVE_INFINITY }];
+    const next = (difficulty: 'easy' | 'hard') => {
+      const b = new FighterBrain();
+      const v = { ...view({ target: { x: 9, y: 0 }, difficulty }), hazards, abilities: [] };
+      return run(b, v, 12);
+    };
+    const plainEasy = run(
+      new FighterBrain(),
+      { ...view({ target: { x: 9, y: 0 }, difficulty: 'easy' }), abilities: [] },
+      12,
+    );
+    expect(next('easy').move).toEqual(plainEasy.move); // Easy plays as if the mine were not there
+    expect(Math.abs(next('hard').move.y)).toBeGreaterThan(0.5); // slides round the edge
+  });
+
+  it('ultimate patience: Expert holds an ultimate with no reason to fire; Easy fires it as soon as it is in range', () => {
+    const fires = (difficulty: 'easy' | 'expert') => {
+      let n = 0;
+      for (let seed = 1; seed <= 25; seed++) {
+        const v = {
+          ...view({ target: { x: 3 }, difficulty, timeS: 5 }),
+          random: rng(seed),
+          abilities: [{ slot: 'ult' as const, ready: true }],
+        };
+        const b = new FighterBrain();
+        for (let i = 0; i < 40; i++) if (b.think({ ...v, timeS: 5 + i * 0.5 }).ability?.slot === 'ult') n++;
+      }
+      return n;
+    };
+    expect(fires('easy')).toBeGreaterThan(0);
+    expect(fires('expert')).toBe(0);
+  });
+
+  it('ultimate patience: Expert does fire it at a helpless foe', () => {
+    let n = 0;
+    for (let seed = 1; seed <= 25; seed++) {
+      const v = {
+        ...view({ target: { x: 3, helpless: true }, difficulty: 'expert', timeS: 5 }),
+        random: rng(seed),
+        abilities: [{ slot: 'ult' as const, ready: true }],
+      };
+      const b = new FighterBrain();
+      for (let i = 0; i < 40; i++) if (b.think({ ...v, timeS: 5 + i * 0.5 }).ability?.slot === 'ult') n++;
+    }
+    expect(n).toBeGreaterThan(0);
+  });
+
+  it('cast awareness: Expert gives ground when the foe winds up a wide ability; Easy does not read it', () => {
+    const backed = (difficulty: 'easy' | 'expert') => {
+      let n = 0;
+      for (let seed = 1; seed <= 30; seed++) {
+        const v = {
+          ...view({ target: { x: 2.2 }, difficulty, design: 'psion-ai' }),
+          random: rng(seed),
+          foeCast: { reachM: 4, ult: false },
+          abilities: [],
+        };
+        const b = new FighterBrain();
+        const o = run(b, v, 10);
+        if (o.move.x < -0.3) n++;
+      }
+      return n;
+    };
+    expect(backed('expert')).toBeGreaterThan(backed('easy'));
+  });
 });

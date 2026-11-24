@@ -9,7 +9,7 @@ import {
 } from '../../abilities/ability-def';
 import type { Parry } from '../../abilities/ability-world';
 import { applyLoadout, type Loadout } from '../../abilities/loadout';
-import { FighterBrain } from '../../ai/fighter-brain';
+import { FighterBrain, type Hazard } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
@@ -2123,6 +2123,8 @@ export class FightArenaScene implements ArenaScene {
             toxicity: p.combatant.toxicityStacks,
           }
         : null,
+      hazards: this.hazardsAgainst(f),
+      foeCast: this.foeCastOf(p),
       meleeReachM: this.aiMeleeReachM(f),
       canClimb: f.def.capabilities.canJump,
       abilities,
@@ -2779,6 +2781,56 @@ export class FightArenaScene implements ArenaScene {
     this.events.push({ kind: 'burn', target: f.name, x: f.x, y: f.y - headTop(f), amount: Math.round(f.burnShown) });
     f.burnShown = 0;
     f.burnTextS = 0.5;
+  }
+
+  /** What the other side has set going that hurts `f` to stand in or cross: warning rings, clouds, mines, beams and shots. */
+  private hazardsAgainst(f: FighterEntity): Hazard[] {
+    const world = this.abilities?.world;
+    if (!world) return [];
+    const foe = (casterId: string): boolean => {
+      const c = this.fighterByName(casterId);
+      return c !== undefined && c.team !== f.team;
+    };
+    const out: Hazard[] = [];
+    for (const t of world.telegraphs)
+      if (foe(t.casterId))
+        out.push({ kind: 'zone', x: t.x, y: t.y, radiusM: t.radiusM, leftS: Math.max(0, t.durationS - t.ageS) });
+    for (const c of world.clouds) {
+      if (!foe(c.casterId)) continue;
+      if (c.mine)
+        out.push({ kind: 'mine', x: c.x, y: c.y, radiusM: c.mine.triggerRadiusM, leftS: Number.POSITIVE_INFINITY });
+      else
+        out.push({ kind: c.fog ? 'fog' : 'zone', x: c.x, y: c.y, radiusM: c.radiusM, leftS: Number.POSITIVE_INFINITY });
+    }
+    for (const b of world.beams) {
+      const d = b.def.delivery;
+      if (foe(b.casterId) && d.type === 'beam')
+        out.push({ kind: 'beam', x: b.from.x, y: b.from.y, radiusM: d.widthM / 2, leftS: 0, toX: b.to.x, toY: b.to.y });
+    }
+    for (const p of world.projectiles) {
+      const d = p.def.delivery;
+      if (foe(p.casterId) && d.type === 'projectile')
+        out.push({
+          kind: 'shot',
+          x: p.x,
+          y: p.y,
+          radiusM: d.radiusM,
+          leftS: 0,
+          toX: p.x + p.dir.x * 7,
+          toY: p.y + p.dir.y * 7,
+        });
+    }
+    return out;
+  }
+
+  /** The opponent's cast under way, as a player can see it: how far it reaches and whether it is the ultimate. */
+  private foeCastOf(p: FighterEntity): { reachM: number; ult: boolean } | null {
+    const cast = p.caster?.cast;
+    if (!cast) return null;
+    const d = cast.def.delivery;
+    const reach =
+      d.type === 'nova' ? d.radiusM + (d.atTarget ? cast.def.aimRangeM : 0) : Math.max(2.5, cast.def.aimRangeM);
+    return { reachM: reach, ult: cast.def.slot === 'ult' };
   }
 
   /** Where the AI closes to for its ordinary blows: the distance they really touch at (HD), 10 % inside it so they land. */

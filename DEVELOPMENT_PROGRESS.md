@@ -954,3 +954,6 @@ Redesigned Gravity Well (Psion), Dissonance and line-shaped Shatterwave (Reson),
 
 ## 24/11/2026: Batch 4 intelligent AI (A1-A6, CH2, TD-154)
 Done: posture reading (stats, health, phase), recovery punishing, rhythm reads, ability hit-chance, Time Stop aggression, boxed-in escape, status-effects crash fix. Tests: typecheck clean, vitest 1246 passed. Not done: watching AI fights in the browser, measuring AI frame cost with four AI fighters (the evaluation is cached at 0.15 s), per-decision logging in the balance harness. Next: Batch 5 (balance framework and rebalance).
+
+## 24/11/2026: difficulty capability tiers (A7, TD-155)
+Done: hazard sense, cast awareness, ultimate patience and moment, movement skill and furniture use now differ clearly by tier; the scene passes the opponent's rings, clouds, mines, beams, shots and cast to the brain. Tests: typecheck clean, vitest 1252 passed. Not checked: watching Easy and Expert fights in the browser; the tuning numbers are first values and may need a pass after the Batch 5 matrix.

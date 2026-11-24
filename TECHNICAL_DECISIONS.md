@@ -1194,3 +1194,17 @@ Context: owner asked that new fighters have genuinely unique abilities, not near
 
 ## TD-154: Intelligent AI posture (24/11/2026)
 Context: spec §3 asks for AI that reads stats, health and the opponent. Decision: `FighterBrain` re-reads a cheap "posture" every 0.15 s (A6): a fragile fighter (max HP under 85 % of the foe's, both bars are visible to a player) keeps 0.8 m further off, a sturdy one (over 120 %) presses in; the fight phase (opening, even, ahead, behind, critical) comes from absolute HP and changes how often it defends, brawls, retreats and reaches for bursts or escapes. It punishes the recovery of a blow, not only a stun (A3), and meets a steady swing rhythm just before the next swing. Each ability's expected hit chance (band position, the target's speed, openness) scales its weight, and planning tiers skip one that cannot connect (A4). Against a foe frozen in Time Stop it never retreats and piles blows in (CH2). Easy keeps playing from its design alone. No hidden information is read (only what the HUD shows). Side fixes found by the suites: a fighter walled into a pocket of furniture is set down at the nearest free spot after three failed slides; `StatusEffects.tick` no longer crashes when a damage tick knocks the fighter out and clears the list (regression test added). Status: accepted.
+
+## TD-155: Difficulty tiers differ in capability, not stats (24/11/2026)
+Context: owner asked that each difficulty have noticeably different AI capability, ability, environment and movement use, ultimate use and awareness of the opponent's abilities, so it does not wander into danger just because the opponent is there. Decision: difficulty stays intelligence only (REQ-AI-4: no health, damage or speed changes; a test enforces it). Five new capability knobs, each rising step by step, join the existing ones:
+
+| Knob | Easy | Normal | Hard | Expert |
+|---|---|---|---|---|
+| hazardSense (steps out of rings, clouds, mines, beams and shots; Hard+ also will not walk into one) | 0 (ignores them) | 0.35 | 0.75 | 0.97 |
+| castAwareness (reads the foe's wind-up and gives ground; Hard+ interrupts an ultimate) | 0 | 0.25 | 0.6 | 0.9 |
+| ultPatience (least hit chance before it fires the ultimate) | any | 0.3 | 0.5 | 0.7 |
+| ultNeedsMoment (only at an opening, a hurt foe, or when losing; never held past 40 s) | no | no | yes | yes |
+| moveSkill (sprint to close or open a gap, tight spacing, strafe reversals, dashes and teleports) | 0.1 | 0.4 | 0.7 | 1 |
+| propThrowPerS (uses furniture) | 0.05 | 0.25 | 0.55 | 0.95 |
+
+Plus the earlier knobs: reaction time, mistakes, combos, punishing, defending, aim lead, ability hit-chance sense and phase reading (Normal and above), rhythm reads (Hard+). Everything the AI reacts to is visible to a player: warning rings, clouds, mines, beams, shots and the opponent's cast. Watched AI-vs-AI battles still play at least Hard (showmanship). Status: accepted.
