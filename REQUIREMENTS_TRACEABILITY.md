@@ -21,7 +21,7 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | IF1 | Fire Beam proximity scaling | P6 | 2 | inferno.ts | unit | build-verified | contact-hits.test.ts proximity test, fire-beam integration test |
 | VX1–3 | Jar ground splash, heavier stacking, ramping fog | P6 | 2 | ability-world.ts, toxicity.ts, vexoris.ts | unit | build-verified | vexoris-hazards.test.ts (3 stacks, jar ground splash, fog ramp x3 reset 1 s), toxicity.test.ts (cap 40, +4%/stack) |
 | CH1/CH2 | Time Stop stacking; AI uses the ultimate well | P6 | 2, 4 | fight-arena-scene.ts, brains.ts, fighter-brain.ts | unit + harness | implemented | held blows stack x(1+0.12(n-1)) max x2 in endTimeStop; AI casts Time Stop within 2.6 m; no dedicated stacking test, not browser-checked |
-| W1 | Natural walks for new fighters; original four unchanged | P2, MS13 | 3 | greybox-motion.ts | elbow test + screenshots | todo | |
+| W1 | Natural walks for new fighters; original four unchanged | P2, MS13 | 3 | greybox-motion.ts | elbow test + screenshots | gameplay-verified | natural-walk.test.ts (elbow 25-105 deg walk and run for 8 styles, original four byte-identical), browser screenshots 24/11/2026 (Prismor, Geargrind walking) |
 | A1–A6 | Stat-, health- and opponent-aware AI; ability purpose; adaptation; performance | MS3 | 4 | fighter-brain.ts, brains.ts | unit + harness | todo | |
 | B1–B3 | Full-roster matrix, framework doc and tests, rebalance incl. Necro/Titan/Shroud | P2, MS2, MS12 | 5 | harness.ts, stats JSON, kits | matrix report | todo | |
 | T1–T3 | Regulation, overtime, deterministic fallback, Skip Battle, integrity | MS1 | 6 | tournament-rules.ts, fight-arena-scene.ts, tournament-flow.ts | unit + e2e | todo | |

@@ -498,8 +498,8 @@ function hoverGait(phase: number, bones: BoneLengths, style: IdleStyle, speed: n
   return {
     lean: deg(-4 - speed * 9 + sway * 1.2),
     head: deg(wingy ? -3 : 6),
-    armFront: { root: deg((wingy ? 30 : 30) + sway * 5), bend: deg(wingy ? 22 : 40) },
-    armBack: { root: deg((wingy ? -34 : -14) - sway * 5 - speed * 12), bend: deg(wingy ? 20 : 46) },
+    armFront: { root: deg((wingy ? 30 : 30) + sway * 5), bend: deg((wingy ? 34 : 40) + sway2 * 6) },
+    armBack: { root: deg((wingy ? -34 : -14) - sway * 5 - speed * 12), bend: deg((wingy ? 32 : 46) - sway2 * 6) },
     legFront: legIk(
       0.04 - speed * 0.1 + sway * 0.05,
       legs * (0.9 - speed * 0.03) + sway2 * 0.012,
@@ -539,7 +539,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
       lean: -2,
       sway: 0.8,
       head: -2,
-      arms: { lead: { x: 0.2, y: 0.74 }, rear: { x: -0.1, y: 0.7 }, swingX: 0.04, swingY: 0.02 },
+      arms: { lead: { x: 0.26, y: 0.44 }, rear: { x: -0.1, y: 0.48 }, swingX: 0.1, swingY: 0.03 },
     });
   }
   if (style === 'temporal') {
@@ -554,7 +554,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
       lean: -3,
       sway: 0.5,
       head: 0,
-      arms: { lead: { x: 0.32, y: 0.6 }, rear: { x: -0.06, y: 0.46 }, swingX: 0.0, swingY: 0.01 },
+      arms: { lead: { x: 0.3, y: 0.4 }, rear: { x: -0.04, y: 0.44 }, swingX: 0.07, swingY: 0.02 },
     });
   }
   if (style === 'sonic') {
@@ -569,7 +569,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
       lean: -2,
       sway: 1.4,
       head: 0,
-      arms: { lead: { x: 0.3, y: 0.62 }, rear: { x: 0.16, y: 0.58 }, swingX: 0.02, swingY: 0.04 },
+      arms: { lead: { x: 0.3, y: 0.44 }, rear: { x: 0.12, y: 0.46 }, swingX: 0.07, swingY: 0.04 },
     });
   }
   if (style === 'mechanic') {
@@ -585,7 +585,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
       lean: -1,
       sway: 0.4,
       head: 0,
-      arms: { lead: { x: 0.26, y: 0.56 }, rear: { x: -0.06, y: 0.42 }, swingX: 0.04, swingY: 0.02 },
+      arms: { lead: { x: 0.28, y: 0.44 }, rear: { x: -0.04, y: 0.46 }, swingX: 0.08, swingY: 0.02 },
     });
   }
   if (style === 'samurai') {

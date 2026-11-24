@@ -945,3 +945,6 @@ Done: Telekinetic Toss (E) and Psychic Slam (F) replace Throw and Barrier; refus
 
 ## 24/11/2026: Batch 2 remainder (RS1, IF1, VX1-3, CH1/CH2, PR4)
 Done: Sonic Boom 4.5 m wide, 8.5 m, steerable, no pin; Fire Beam falloff full within 1 m to 35 % at the tip; Toxic Jar splashes on the floor at range end, 3 stacks (jar and trap), toxicity cap 40 with +4 % tick damage per extra stack (max x2.5), Plague Bloom chip damage ramps +15 %/s up to x3 and resets after 1 s outside; Time Stop held blows stack +12 % each up to x2; Chronos AI casts Time Stop in melee reach. Tests: typecheck clean, unit and fire-beam tests green; last full suite had 1 failure (fire-beam damage threshold), fixed by a 35 % falloff floor. Not browser-checked: Sonic Boom steering, jar splash, fog ramp, Time Stop stacking.
+
+## 24/11/2026: Batch 3 natural walks (W1)
+Done: crystal (Prismor), temporal (Chronos), sonic (Reson), mechanic (Geargrind) walks now hold fists within reach so the elbows bend 25-105 degrees and swing against the legs; Aerion/Psion hover drift gets bent, gently moving elbows. New `tests/unit/animation/natural-walk.test.ts` guards elbow bends and that the original four (pyro, heavyweight, mage, stalker) are numerically unchanged. Browser: Prismor and Geargrind walking show bent elbows. Not checked: Chronos/Reson/Kenshiro walks on screen, phone.
