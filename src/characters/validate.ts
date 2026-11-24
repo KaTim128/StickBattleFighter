@@ -168,7 +168,8 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
         errors.push(`Required animation state ${state} has no clip anywhere in its fallback chain.`);
     }
     for (const state of ANIMATION_STATES) {
-      if (resolved.source[state] === 'safe' && !REQUIRED_STATES.includes(state)) {
+      // Shard Blade's strikes exist only for Prismor; every other fighter never plays them, so no warning.
+      if (resolved.source[state] === 'safe' && !REQUIRED_STATES.includes(state) && !state.startsWith('Blade')) {
         warnings.push(`[animation fallback] ${state} uses the safe fallback clip.`);
       }
     }

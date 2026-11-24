@@ -73,7 +73,7 @@ describe('Shard Blade', () => {
     expect(d.type === 'arsenal' && d.durationS).toBe(8);
   });
 
-  it('the swords bring a tap chain ending in a heavy blow and a heavy hammer slam, each hitting hard (Batch 2 extends the chain to five)', () => {
+  it('the swords bring a tap chain ending in a heavy blow and a heavy hammer slam, each hitting hard', () => {
     const m = SHARD_BLADE_MOVESET.moves;
     let id: string | undefined = SHARD_BLADE_MOVESET.starters.tap;
     const chain: string[] = [];
@@ -81,7 +81,9 @@ describe('Shard Blade', () => {
       chain.push(id);
       id = m[id]?.next.tap;
     }
-    expect(chain.length).toBeGreaterThanOrEqual(4);
+    // PR2: five taps, the fifth being the crystal piercing punch; the heavy is the crystal hammer.
+    expect(chain).toEqual(['shard-slash-r', 'shard-slash-l', 'shard-cross', 'shard-thrust', 'shard-finale']);
+    expect(SHARD_BLADE_MOVESET.starters.heavy).toBe('shard-hammer');
     const heavy = m[SHARD_BLADE_MOVESET.starters.heavy!]!;
     expect(heavy.heavy).toBe(true);
     for (const id of chain) expect(m[id]!.damage).toBeGreaterThanOrEqual(20);

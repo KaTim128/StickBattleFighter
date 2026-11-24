@@ -3,7 +3,7 @@ import type { AttackDef } from '../../combat/attacks';
 
 /**
  * Shard Blade (Prismor, owner 22/11/2026): for a few seconds two crystal swords grow straight out of his hands. While they last the
- * blade moves replace his unarmed taps and heavy. The taps are a four-blow dual-sword combo; the last blow turns his back hand into a
+ * blade moves replace his unarmed taps and heavy. The taps are a five-blow dual-sword combo; the fifth blow turns his back hand into a
  * sharp crystal blade and lands a powerful punch. The heavy swells his front hand into a massive crystal hammer and slams it down.
  * Every blow counts only when it touches a body (`contact`). Values are PROVISIONAL (OQ-05).
  */
@@ -89,6 +89,28 @@ export const SHARD_BLADE_MOVESET: ShardBladeMoveset = {
       trauma: 0.2,
       zoomPunch: 0.015,
       animationState: 'BladeCross',
+      next: { tap: 'shard-thrust' },
+      effect: 'crystal-slash',
+    },
+    'shard-thrust': {
+      ...base,
+      id: 'shard-thrust',
+      label: 'Twin thrust',
+      windupS: 0.1,
+      activeS: 0.07,
+      recoveryS: 0.18,
+      reachM: 1.6,
+      hitRadiusM: 0.4,
+      strength: 880,
+      damage: 30,
+      heavy: false,
+      knockbackSpeedMps: 5.5,
+      moveFactor: 0.45,
+      lungeMps: 1.5,
+      impact: 'knuckle-light',
+      trauma: 0.22,
+      zoomPunch: 0.016,
+      animationState: 'BladeThrust',
       next: { tap: 'shard-finale' },
       effect: 'crystal-slash',
     },

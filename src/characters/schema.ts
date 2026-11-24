@@ -69,6 +69,7 @@ export const ANIMATION_STATES = [
   'BladeSlashA',
   'BladeSlashB',
   'BladeCross',
+  'BladeThrust',
   'BladeFinale',
   'BladeHammer',
 ] as const;

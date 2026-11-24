@@ -12,7 +12,7 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | HL | No passive or automatic healing; gated ability heals | P9 | 1 | combatant.ts, team-battle.ts, scene-teams.ts | unit tests | build-verified | Combatant.heal gate, bench regen removed; healing-paths.test.ts, team-battle tests |
 | N1/N2 | 4 skeletons; 15 % of actual HP removed | P1, MS11 | 0–1 | necro.ts, scene-abilities.ts | integration tests | build-verified | necro.test.ts: 4 skeletons, heal = 15% of HP actually removed |
 | C1 | Clash shows the winner's name | MS16 | 1 | scene-clash.ts, clash-hud.ts | unit + e2e | build-verified | clash.test.ts: "<NAME> WON!" banner; not browser-verified |
-| PR1–3 | Shard Blade swords, 5-hit combo, piercing finale, hammer heavy | P1, MS10 | 2 | shard-blade.ts, clips.ts, premium-model.ts | tests + screenshots | todo | |
+| PR1–3 | Shard Blade swords, 5-hit combo, piercing finale, hammer heavy | P1, MS10 | 2 | shard-blade.ts, clips.ts, premium-model.ts | tests + screenshots | implemented | swords, 5-hit chain, hammer heavy: crystal-prison.test.ts (real scene) + browser screenshots 24/11/2026; finale/hammer forms drawn; per-hit animation polish pending |
 | PR4 | Crystal Armour ultimate integrated | P2, MS10.4 | 0, 2 | premium-model.ts | 6-pose screenshots | todo | |
 | PR5 | Prison v2: 6 s, grounded-only, two leg formations | P8 | 2 | ability-world.ts, stickman-view.ts, prismor.ts | integration + screenshots | todo | |
 | PR6 | Prismor animation variety | P2 | 2–3 | clips.ts, ability-poses.ts | screenshots | todo | |

@@ -1222,6 +1222,18 @@ const STRIKES = {
       legBack: limb(-36, -24),
     },
   ),
+  // Forward double thrust: both swords drawn back to the hip, then driven straight ahead together.
+  'prism.blade-thrust': strike(
+    { lean: deg(4), armFront: limb(-30, 70), armBack: limb(-50, 70), legFront: limb(24, -30), legBack: limb(-28, -26) },
+    {
+      lean: deg(-16),
+      head: deg(-6),
+      armFront: limb(86, 6),
+      armBack: limb(72, 12),
+      legFront: limb(40, -42),
+      legBack: limb(-38, -22),
+    },
+  ),
   // Blade punch: the back fist drawn back, then driven straight out as the hand turns into a blade.
   'prism.blade-finale': strike(
     { lean: deg(6), armBack: limb(-60, 40), armFront: limb(10, 80), legFront: limb(26, -30), legBack: limb(-30, -28) },

@@ -32,6 +32,7 @@ export const STRIKE_STATES: ReadonlySet<AnimationState> = new Set<AnimationState
   'BladeSlashA',
   'BladeSlashB',
   'BladeCross',
+  'BladeThrust',
   'BladeFinale',
   'BladeHammer',
   'Jab',
