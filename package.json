@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "balance:matrix": "BALANCE_MATRIX=1 vitest run tests/integration/balance/matrix.probe.test.ts",
     "e2e": "playwright test",
     "lint": "biome check .",
     "format": "biome check --write ."

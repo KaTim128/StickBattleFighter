@@ -142,3 +142,19 @@ export function summarise(fights: readonly FightStats[]): Summary {
     longestCombo: Math.max(...fights.map((f) => f.longestCombo)),
   };
 }
+
+/** Every playable fighter (B1): the full roster the balance matrix covers. */
+export const ALL_PLAYABLE = [
+  'inferno',
+  'rampage',
+  'necro',
+  'shroud',
+  'vexoris',
+  'aerion',
+  'kenshiro',
+  'psion',
+  'geargrind',
+  'reson',
+  'chronos',
+  'prismor',
+] as const;
