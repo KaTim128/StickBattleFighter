@@ -1,6 +1,6 @@
 {
   "id": "skeleton-stats",
-  "maxHp": 67,
+  "maxHp": 15,
   "maxStamina": 100,
   "staminaRegenPerS": 30,
   "staminaRegenDelayS": 0.7,
