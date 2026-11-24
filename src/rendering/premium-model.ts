@@ -577,6 +577,8 @@ export interface PremiumDrawState {
   readonly plating?: number;
   /** A crystal weapon grown from his arms (Prismor): which one, and how fully formed (0..1). */
   readonly weapon?: { readonly kind: string; readonly form: number } | null;
+  /** Shard Blade's crystal piercing punch (`finale`) or crystal hammer slam (`hammer`), and how far through it (0..1). */
+  readonly weaponStrike?: { readonly kind: 'finale' | 'hammer'; readonly k: number } | null;
   /** 0..1 how fully the crystal armour has grown over his body (Prismor's Crystal Sovereign). */
   readonly crystalArmour?: number;
   /** The mouth is open in a roar or a thin screech (Reson), with how wide (0..1). */
@@ -751,6 +753,7 @@ export class PremiumModel {
     if ((this.st.crystalArmour ?? 0) > 0.02) this.crystalArmourOverlay(g, fire, s);
     const wp = this.st.weapon;
     if (wp?.kind === 'fists') this.crystalFists(g, fire, s, wp.form);
+    else if (wp?.kind === 'blades') this.shardBlades(g, fire, s, wp.form);
     else if (wp?.kind === 'sovereign') {
       this.crystalShield(g, fire, s, 0.62, wp.form);
       this.crystalBlade(g, fire, s.armBack[2]!, -0.75, 1.05, 0.2, wp.form);
@@ -1064,6 +1067,62 @@ export class PremiumModel {
         this.crystal(g, fire, [q(0.08, b - 0.03), q(0.08 + len, b * 0.3), q(0.08, b + 0.03)], 0x9f8cff, 0x4aa8ff, 0.95);
       }
     }
+  }
+
+  /**
+   * Shard Blade (PR1-PR3): a crystal sword grows from each hand along the forearm. On the fifth hit the front sword fuses into a long
+   * crystal piercing punch, and on the heavy both swords merge into one massive crystal hammer (head at the far end of the shaft).
+   */
+  private shardBlades(g: Graphics, fire: Graphics, s: Skel, form: number): void {
+    const strike = this.st.weaponStrike;
+    const front = s.armFront[2]!;
+    const back = s.armBack[2]!;
+    const fa = this.armAngle(s.armFront);
+    const ba = this.armAngle(s.armBack);
+    if (strike?.kind === 'hammer') {
+      // The shaft grows from the front hand, the head swells at its end as the blow comes down.
+      const grow = Math.min(1, 0.4 + strike.k * 1.6);
+      this.crystalBlade(g, fire, front, fa, 1.25 * grow, 0.16, form);
+      const L = 1.25 * grow * form;
+      const ux = Math.cos(fa);
+      const uy = Math.sin(fa);
+      const hx = front.x + ux * L;
+      const hy = front.y + uy * L;
+      const q = (a: number, b: number): Point => ({ x: hx + ux * a - uy * b, y: hy + uy * a + ux * b });
+      const sz = form * grow;
+      this.crystal(
+        g,
+        fire,
+        [
+          q(-0.1 * sz, -0.42 * sz),
+          q(0.5 * sz, -0.34 * sz),
+          q(0.62 * sz, 0),
+          q(0.5 * sz, 0.34 * sz),
+          q(-0.1 * sz, 0.42 * sz),
+        ],
+        0x6f64ff,
+        0x4aa8ff,
+        0.96,
+      );
+      this.crystal(
+        g,
+        fire,
+        [q(0, -0.4 * sz), q(0.5 * sz, -0.32 * sz), q(0.48 * sz, -0.05 * sz), q(0, -0.1 * sz)],
+        0xb9b0ff,
+        0xe9e2ff,
+        0.92,
+      );
+      this.crystalBlade(g, fire, back, ba, 0.45, 0.12, form * 0.6);
+      return;
+    }
+    if (strike?.kind === 'finale') {
+      // The forearm turns into a long, narrow crystal that pierces forward; the back sword stays.
+      this.crystalBlade(g, fire, front, fa, 1.5, 0.13, Math.min(1, 0.5 + strike.k * 1.2) * form);
+      this.crystalBlade(g, fire, back, ba, 0.9, 0.18, form);
+      return;
+    }
+    this.crystalBlade(g, fire, back, ba, 0.9, 0.18, form);
+    this.crystalBlade(g, fire, front, fa, 0.95, 0.18, form);
   }
 
   /**

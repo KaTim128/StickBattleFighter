@@ -442,6 +442,7 @@ export class StickmanView {
         wingSpread: this.wingSpread,
         plating: this.plating,
         weapon: this.weapon,
+        weaponStrike: this.weaponStrike,
         crystalArmour: this.crystalArmour,
         shout: this.shout,
         wingFlap: this.wingFlap,
