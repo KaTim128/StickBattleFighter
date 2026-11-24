@@ -7,7 +7,7 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | ID | Requirement | Source | Batch | Main files | Verification | Status | Evidence |
 |---|---|---|---|---|---|---|---|
 | R0.1 | Tree compiles; Monster path removed; armour restored | P2, MS10.4 | 0 | combatant.ts, prismor.ts, scene-abilities.ts | tsc, vitest | build-verified | typecheck, full vitest, build (Batch 0 commit) |
-| R0.2 | Prison host methods restored; real-scene test | regression | 0 | scene-abilities.ts | integration test | build-verified | tests/integration/scenes/crystal-prison.test.ts (real FightArenaScene) |
+| R0.2 | Prison host methods restored; real-scene test | regression | 0 | scene-abilities.ts | integration test | gameplay-verified | crystal-prison.test.ts + browser screenshot 24/11/2026: crystals grow round the dummy legs |
 | HD | Contact-only damage for all attack types | P1, MS15 | 1 | attacks.ts, ability-world.ts, fight-arena-scene.ts | unit tests + browser | implemented | melee + thrown props contact-only (attacks.ts blowTouches, swept thrown test); ability deliveries already circle-vs-volume, unchanged; contact-hits.test.ts; NOT browser-verified |
 | HL | No passive or automatic healing; gated ability heals | P9 | 1 | combatant.ts, team-battle.ts, scene-teams.ts | unit tests | build-verified | Combatant.heal gate, bench regen removed; healing-paths.test.ts, team-battle tests |
 | N1/N2 | 4 skeletons; 15 % of actual HP removed | P1, MS11 | 0–1 | necro.ts, scene-abilities.ts | integration tests | build-verified | necro.test.ts: 4 skeletons, heal = 15% of HP actually removed |
