@@ -479,8 +479,8 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-8), head: deg(6), armFront: limb(150, 90), armBack: limb(60, 60), legFront: limb(16, -24) },
     settle: 0.4,
   },
-  // Repulse: both arms crossed at the chest, then flung wide in one motion.
-  repulse: {
+  // Gravity Well: both arms flung wide, then drawn in hard to the chest.
+  gravityWell: {
     windup: { lean: deg(8), head: deg(-2), armFront: limb(60, 130), armBack: limb(70, 130), legFront: limb(14, -22) },
     release: { lean: deg(-8), head: deg(6), armFront: limb(96, 6), armBack: limb(-96, 6), legFront: limb(20, -24) },
     settle: 0.3,
@@ -692,7 +692,7 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.35,
   },
   // Feedback Pulse: both fists clenched in against the chest, then both hands thrown open and the body rocked back.
-  feedbackPulse: {
+  dissonance: {
     windup: {
       lean: deg(10),
       head: deg(2),

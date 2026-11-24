@@ -421,10 +421,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 28, 14, '#f4eaff', 0.2),
     `<g fill="none" stroke="#c7a1ff" stroke-width="2.4" stroke-linecap="round" filter="url(#gl)"><ellipse cx="24" cy="14" rx="12" ry="4"/><ellipse cx="24" cy="24" rx="14" ry="5"/><ellipse cx="24" cy="34" rx="12" ry="4"/></g><g filter="url(#ds)"><circle cx="24" cy="22" r="4" fill="#2c2640" stroke="#f4eaff" stroke-width="1.6"/><path d="M24 26 V32" stroke="#f4eaff" stroke-width="2"/></g>`,
   ),
-  repulse: icon(
+  'gravity-well': icon(
     'psi',
     rays(24, 24, 16, '#f4eaff', 0.3),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="6" stroke="#f4eaff" stroke-width="2.6"/><circle cx="24" cy="24" r="12" stroke="#c7a1ff" stroke-width="2.4" opacity=".8"/><circle cx="24" cy="24" r="18" stroke="#8a4fe0" stroke-width="2" opacity=".6"/></g><g stroke="#f4eaff" stroke-width="2.4" stroke-linecap="round"><path d="M24 14 V6 M24 34 V42 M14 24 H6 M34 24 H42"/></g>`,
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="4" stroke="#f4eaff" stroke-width="3"/><path d="M24 4 L24 14 M20 10 L24 14 L28 10 M24 44 L24 34 M20 38 L24 34 L28 38 M4 24 L14 24 M10 20 L14 24 L10 28 M44 24 L34 24 M38 20 L34 24 L38 28" stroke="#c7a1ff" stroke-width="2.6"/></g>`,
   ),
   mindstorm: icon(
     'psi',
@@ -501,10 +501,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 14, '#eafcff', 0.2),
     `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M6 24 H20" stroke="#eafcff" stroke-width="2.4"/><path d="M12 18 C16 22 16 26 12 30" stroke="#7ae8ff" stroke-width="2"/></g><g filter="url(#ds)"><path d="M28 18 H33 L38 13 V35 L33 30 H28 Z" fill="#2b2f35" stroke="#7ae8ff" stroke-width="2"/></g><path d="M25 38 L43 10" stroke="#ff5a5a" stroke-width="3" stroke-linecap="round"/><path d="M30 36 l3 -6 l-3 -2 l4 -5" fill="none" stroke="#eafcff" stroke-width="1.8" stroke-linecap="round"/>`,
   ),
-  'feedback-pulse': icon(
+  dissonance: icon(
     'sonic',
     rays(24, 24, 16, '#eafcff', 0.3),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="5" stroke="#eafcff" stroke-width="3"/><circle cx="24" cy="24" r="11" stroke="#7ae8ff" stroke-width="2.4" stroke-dasharray="4 3"/><circle cx="24" cy="24" r="17" stroke="#19c4e0" stroke-width="2" stroke-dasharray="3 4" opacity=".7"/></g>`,
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M4 24 C10 10 14 38 20 24 C26 10 30 38 36 24 C40 16 42 20 44 24" stroke="#eafcff" stroke-width="3"/><path d="M4 30 C10 18 14 44 20 30 C26 18 30 44 36 30" stroke="#19c4e0" stroke-width="2" opacity=".7"/></g>`,
   ),
   shatterwave: icon(
     'sonic',

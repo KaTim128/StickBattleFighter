@@ -94,28 +94,29 @@ describe('Kenshiro kit', () => {
       expect(def.payload.finisher, def.id).toBeUndefined();
   });
 
-  it('Iaido (the fifth ability) is a forward charge: it cuts everyone in the line once, with no knockback and no launch', () => {
-    const a = arena({ x: 3, y: 0 });
-    const second = { id: 'foe2', x: 5, y: 0.2, radiusM: 0.3, hittable: true };
+  it('Iaido (the fifth ability) is a standing quick-draw: one long thin cut at the first enemy in line, no knockback, no movement', () => {
+    const a = arena({ x: 3.5, y: 0 });
+    const far = { id: 'foe2', x: 7, y: 0, radiusM: 0.3, hittable: true };
     const fighters = a.host.fighters();
-    a.host.fighters = () => [...fighters, second];
+    a.host.fighters = () => [...fighters, far];
     a.world.release('me', KENSHIRO_KIT.a5!, { x: 6, y: 0 }, a.host);
     run(a, 0.6);
-    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
-    expect(a.hits.filter((h) => h.target === 'foe2')).toHaveLength(1); // both enemies in the line
-    expect(a.me.x).toBeGreaterThan(5.5);
+    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1); // the enemy in reach
+    expect(a.hits.filter((h) => h.target === 'foe2')).toHaveLength(0); // beyond its 4.2 m reach
+    expect(a.me.x).toBeLessThan(0.5); // he stays where he stands (Sliding Slice is the one that travels)
     const p = KENSHIRO_KIT.a5!.payload;
     expect(p.knockbackMps).toBe(0);
-    expect(p.heavy).toBe(false);
     expect(p.noFlinch).toBe(true); // no stagger or knock-down either
+    expect(KENSHIRO_KIT.a5!.delivery.type).toBe('strike');
     expect(KENSHIRO_KIT.a5?.name).toBe('Iaido');
   });
 
-  it('is balanced: the new dashes are lighter per target than the ultimate and the parry counter, on real cooldowns', () => {
+  it('is balanced: the slice and the quick-draw are lighter than the parry counter and the ultimate, on real cooldowns', () => {
     const slice = KENSHIRO_KIT.a1;
     const iaido = KENSHIRO_KIT.a5!;
     expect(slice.payload.damage * 1.6).toBeLessThan(KENSHIRO_KIT.a2.payload.damage * 1.3); // even the bonus is below the parry counter
-    expect(iaido.payload.damage).toBeLessThan(slice.payload.damage); // a crowd charge is lighter per target
+    expect(iaido.payload.damage).toBeGreaterThan(slice.payload.damage); // one instant cut is heavier than a pass-through
+    expect(iaido.payload.damage).toBeLessThan(KENSHIRO_KIT.ult.payload.damage * 8); // still below the ultimate's eight cuts
     expect(slice.cooldownS).toBeGreaterThanOrEqual(7);
     expect(iaido.cooldownS).toBeGreaterThanOrEqual(10);
     for (const def of [slice, iaido]) {

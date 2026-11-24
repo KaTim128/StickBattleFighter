@@ -99,7 +99,7 @@ describe('Reson kit', () => {
     expect(a.hits[0]!.damage).toBe(p.damage);
   });
 
-  it('Feedback Pulse pushes everyone near, hurts a little, and disrupts without stunning', () => {
+  it('Dissonance never pushes or stuns: it only makes the way they move wobble, for 3.5 s (no copy of a shove)', () => {
     const a = arena([{ x: 1.5, y: 0 }]);
     a.world.release('me', RESON_KIT.a5!, { x: 0, y: 0 }, a.host);
     run(a, 0.5);
@@ -107,22 +107,30 @@ describe('Reson kit', () => {
     expect(a.hits[0]).toMatchObject({ disrupt: true });
     expect(a.hits[0]!.damage).toBeLessThanOrEqual(20);
     expect(RESON_KIT.a5!.payload.stunS).toBeUndefined();
-    expect(RESON_KIT.a5!.payload.knockbackMps).toBeGreaterThan(5);
+    expect(RESON_KIT.a5!.payload.knockbackMps).toBe(0);
+    expect(RESON_KIT.a5!.payload.disrupt?.durationS).toBeGreaterThanOrEqual(3);
   });
 
-  it('Shatterwave builds, then hits everyone in its ring with the biggest sonic blow', () => {
-    const a = arena([{ x: 2, y: 0 }]);
-    a.world.release('me', RESON_KIT.ult, { x: 0, y: 0 }, a.host);
+  it('Shatterwave is a line of fractures racing away in front of him, not a ring: only enemies on the line are hit, in order', () => {
+    const a = arena([
+      { x: 2.5, y: 0 },
+      { x: 6.5, y: 0 },
+      { x: 2.5, y: 5 }, // well off the line
+    ]);
+    a.world.release('me', RESON_KIT.ult, { x: 8, y: 0 }, a.host);
     run(a, 0.5);
-    expect(a.hits).toHaveLength(0);
-    run(a, 1);
-    expect(a.hits).toHaveLength(1);
-    expect(a.hits[0]!.damage).toBeGreaterThanOrEqual(70);
-    expect(RESON_KIT.ult.look?.impact?.rings).toBeGreaterThanOrEqual(3);
+    expect(a.hits).toHaveLength(0); // the fractures are still building
+    run(a, 2);
+    const hit = new Set(a.hits.map((h) => h.target));
+    expect(hit.has('foe0')).toBe(true);
+    expect(hit.has('foe1')).toBe(true);
+    expect(hit.has('foe2')).toBe(false);
+    expect(a.hits.every((h) => h.damage >= 40)).toBe(true);
+    expect(RESON_KIT.ult.delivery.type).toBe('eruptions');
   });
 });
 
-describe('Resonance Barrier and Feedback Pulse effects', () => {
+describe('Resonance Barrier and Dissonance effects', () => {
   const STATS: CombatStats = {
     maxHp: 1000,
     maxStamina: 100,

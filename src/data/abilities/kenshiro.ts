@@ -166,26 +166,25 @@ export const KENSHIRO_KIT: AbilityKit = {
       aura: 'quiet',
     },
   },
-  // A5 (fifth, B13): Iaido. A forward charge with the sword already drawn: he rushes 6 metres in a blink, cutting every
-  // enemy in the line once as he passes. It pushes nobody back and launches nobody, so it works on a crowd; each cut is
-  // lighter than a single-target blow.
+  // A5 (fifth): Iaido. A quick draw: he stays where he stands and cuts once, instantly, along a long thin line. Heavy damage on the first
+  // enemy it reaches and no knockback; the opposite of Sliding Slice, which travels and cuts through everything on the way.
   a5: {
     id: 'iaidoDraw',
     name: 'Iaido',
     label: 'IAIDO',
     description:
-      'Rushes forward with his sword drawn, slicing every opponent in his path. It cuts through a crowd without knocking anyone back.',
+      'Stands his ground, then draws and cuts in a single instant: one long, thin slash that reaches 4 metres ahead and hits the first opponent in its line for heavy damage, with no knockback.',
     icon: 'iaido-draw',
     slot: 'a1',
     staminaCost: 26,
     cooldownS: 11,
-    castS: 0.2,
-    recoveryS: 0.4,
-    aimRangeM: 6,
-    moveFactor: 0.2,
+    castS: 0.3,
+    recoveryS: 0.35,
+    aimRangeM: 4.2,
+    moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 34,
+      damage: 56,
       knockbackMps: 0,
       heavy: false,
       strength: 320,
@@ -193,7 +192,7 @@ export const KENSHIRO_KIT: AbilityKit = {
       impact: 'knuckle-heavy',
       sword: true,
     },
-    delivery: { type: 'dash', distanceM: 6, speedMps: 30, hitRadiusM: 0.95 },
+    delivery: { type: 'strike', reachM: 4.2, radiusM: 0.5 },
     vfx: 'iaido-draw',
     sfx: { cast: 'katana-ready', release: 'iaido-draw', impact: 'iaido-hit' },
     look: {

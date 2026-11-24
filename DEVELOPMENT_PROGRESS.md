@@ -948,3 +948,6 @@ Done: Sonic Boom 4.5 m wide, 8.5 m, steerable, no pin; Fire Beam falloff full wi
 
 ## 24/11/2026: Batch 3 natural walks (W1)
 Done: crystal (Prismor), temporal (Chronos), sonic (Reson), mechanic (Geargrind) walks now hold fists within reach so the elbows bend 25-105 degrees and swing against the legs; Aerion/Psion hover drift gets bent, gently moving elbows. New `tests/unit/animation/natural-walk.test.ts` guards elbow bends and that the original four (pyro, heavyweight, mage, stalker) are numerically unchanged. Browser: Prismor and Geargrind walking show bent elbows. Not checked: Chronos/Reson/Kenshiro walks on screen, phone.
+
+## 24/11/2026: ability uniqueness audit (TD-153)
+Redesigned Gravity Well (Psion), Dissonance and line-shaped Shatterwave (Reson), standing quick-draw Iaido (Kenshiro). Tests updated; typecheck clean; full suite green before the last damage tweak, unit tests green after. Browser: Shatterwave's line of fractures ran away from Reson and hit the dummy (multiple zones can overlap one target; zone damage set to 45). Not checked in the browser: Gravity Well, Dissonance wobble, Iaido.

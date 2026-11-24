@@ -572,6 +572,11 @@ export interface EruptionsDelivery {
   readonly warnS: number;
   readonly staggerS: number;
   readonly spreadM: number;
+  /**
+   * A straight line of zones instead of random spots (Reson's Shatterwave): the first `startM` metres in front of the caster along
+   * the aim, the rest `radiusM * 1.6` apart, each going off `staggerS` after the one before, so a wave runs away across the floor.
+   */
+  readonly line?: { readonly startM: number };
 }
 
 /**

@@ -1016,7 +1016,7 @@ export class AbilityWorld {
         break;
       }
       case 'eruptions':
-        this.spawnEruptions(casterId, def, d, host);
+        this.spawnEruptions(casterId, def, d, host, dir);
         break;
       case 'whirl':
         this.actions.push({ kind: 'whirl', casterId, def, ageS: 0, sinceTickS: d.tickS });
@@ -2408,13 +2408,23 @@ export class AbilityWorld {
     def: AbilityDef,
     d: Extract<AbilityDef['delivery'], { type: 'eruptions' }>,
     host: AbilityHost,
+    dir: Vec2,
   ): void {
     const at = host.position(casterId);
     const foe = this.nearestEnemy(casterId, at, Math.max(def.aimRangeM, d.spreadM), host);
     const centre = foe ? { x: foe.x, y: foe.y } : at;
     const spots: Vec2[] = [];
     const apart = d.radiusM * 1.6;
-    for (let k = 0; k < d.count; k++) {
+    if (d.line) {
+      // A wave of fractures running straight away from him along his aim, stopping short of any wall.
+      for (let k = 0; k < d.count; k++) {
+        const reach = d.line.startM + k * apart;
+        const p = { x: at.x + dir.x * reach, y: at.y + dir.y * reach };
+        if (host.blocked(at, p) !== null || (host.standable && !host.standable(p))) break;
+        spots.push(p);
+      }
+    }
+    for (let k = 0; d.line === undefined && k < d.count; k++) {
       let spot: Vec2 | null = null;
       for (let tries = 0; tries < 64 && !spot; tries++) {
         // The first tries stay near the enemy; later ones widen, so four zones always fit.

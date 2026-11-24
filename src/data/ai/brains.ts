@@ -380,11 +380,11 @@ export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   // Crystal Groundstrike: four eruptions round a target in reach, best on one that cannot move.
   crystalGroundstrike: { role: 'burst', minM: 1.5, maxM: 5.5, weight: 1.2 },
   // Feedback Pulse: shoves crowders off and scrambles their steps.
-  feedbackPulse: { role: 'escape', minM: 0, maxM: 3, weight: 1.1 },
+  dissonance: { role: 'control', minM: 0, maxM: 3.2, weight: 1.1 },
   // Arc Coil: a close jolt when something is on top of him.
   arcCoil: { role: 'escape', minM: 0, maxM: 3, weight: 1.1 },
-  // Repulse: shove everyone off when crowded.
-  repulse: { role: 'escape', minM: 0, maxM: 2.4, weight: 1.2 },
+  // Gravity Well: when several are close, drag them in together.
+  gravityWell: { role: 'zone', minM: 1.5, maxM: 4, weight: 1.1 },
   // Death Mark: mark the prey from a distance and creep in; the AI holds its attacks until the stalk is charged.
   deathMark: { role: 'buff', minM: 3.5, maxM: 12, weight: 1.1 },
 };
