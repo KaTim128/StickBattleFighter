@@ -735,3 +735,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Combos still chain at normal standing distance (about 0.75 m gap).
 - [ ] No fighter regains HP by waiting or tagging; Soul Drain heals only what it removed.
 - [ ] Clash banner reads "<WINNER> WON!".
+
+## Crystal Prison v2 (24/11/2026)
+- [ ] Two crystal formations with a hole each rise round both legs; they hold a grounded foe for exactly 6 s, then shatter.
+- [ ] Jumping, leaping or being launched when the crystals lock misses; a hovering fighter (Aerion, Psion) is caught.
+- [ ] While held: no walking, jumping, dodging or movement abilities; other abilities and damage work.

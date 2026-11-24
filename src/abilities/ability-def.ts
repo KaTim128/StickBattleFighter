@@ -526,10 +526,10 @@ export interface ArsenalDelivery {
 }
 
 /**
- * Crystal Prison (Prismor): thick crystal grows round both of the nearest enemy's legs. For `reactS` seconds the crystals only
- * form; a grounded enemy that jumps clear in that time escapes. A fighter that flies, hovers or floats cannot: the crystals
- * reach its legs wherever they are, then drag it down to the floor. Once locked the legs are held for exactly `holdS` seconds
- * and nothing breaks them. Movement, jumping, dodging, flight and movement abilities are off; damage still lands.
+ * Crystal Prison v2 (Prismor, owner 21/11/2026): two crystal formations rise round both of the nearest enemy's legs, each with a
+ * hole the leg passes through. For `reactS` seconds they only form; a target that is really off the floor (a jump, leap or
+ * launch) in that window, or when they lock, is missed. Cosmetic hover counts as grounded. Once locked the legs are held for exactly
+ * `holdS` seconds and nothing breaks them: no walking, jumping, dodging or movement abilities; other abilities and damage still work.
  */
 export interface LegTrapDelivery {
   readonly type: 'legTrap';

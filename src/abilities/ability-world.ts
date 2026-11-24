@@ -113,7 +113,7 @@ export interface AbilityHost {
   /** Hold a fighter's legs in crystal for `seconds` (0 frees them): no walking, jumping, dodging or flying, and a flier is dragged down. Optional. */
   trap?(targetId: string, seconds: number): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
-  legTrapState?(targetId: string): { heightM: number; flies: boolean; trappedS: number };
+  legTrapState?(targetId: string): { heightM: number; trappedS: number };
   /** Can a body stand here (inside the arena, clear of walls and furniture)? Optional (everywhere counts when absent). */
   standable?(at: Vec2): boolean;
   /** Heal a fighter by `amount` (never above its maximum); returns false if it is down and nothing was done. Optional. */
@@ -2435,8 +2435,9 @@ export class AbilityWorld {
       }
       pr.ageS += dtS;
       if (pr.phase === 'form') {
-        // A grounded fighter that leaves the floor before the crystals lock gets clear; a flier cannot.
-        if (!state.flies && state.heightM > 0.25) pr.jumped = true;
+        // PR5 (owner 21/11/2026): grounded targets only. A real jump, leap or launch off the floor during the short
+        // activation window (or at the moment the crystals lock) misses; cosmetic hover is not height (D3).
+        if (state.heightM > 0.25) pr.jumped = true;
         if (pr.ageS < d.reactS) continue;
         if (pr.jumped) {
           host.emit({

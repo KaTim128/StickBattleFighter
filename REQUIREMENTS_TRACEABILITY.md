@@ -14,7 +14,7 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | C1 | Clash shows the winner's name | MS16 | 1 | scene-clash.ts, clash-hud.ts | unit + e2e | build-verified | clash.test.ts: "<NAME> WON!" banner; not browser-verified |
 | PR1–3 | Shard Blade swords, 5-hit combo, piercing finale, hammer heavy | P1, MS10 | 2 | shard-blade.ts, clips.ts, premium-model.ts | tests + screenshots | implemented | swords, 5-hit chain, hammer heavy: crystal-prison.test.ts (real scene) + browser screenshots 24/11/2026; finale/hammer forms drawn; per-hit animation polish pending |
 | PR4 | Crystal Armour ultimate integrated | P2, MS10.4 | 0, 2 | premium-model.ts | 6-pose screenshots | todo | |
-| PR5 | Prison v2: 6 s, grounded-only, two leg formations | P8 | 2 | ability-world.ts, stickman-view.ts, prismor.ts | integration + screenshots | todo | |
+| PR5 | Prison v2: 6 s, grounded-only, two leg formations | P8 | 2 | ability-world.ts, stickman-view.ts, prismor.ts | integration + screenshots | gameplay-verified | prismor.test.ts (6 s hold, grounded only, hover=grounded, launched misses), crystal-prison.test.ts real scene, browser screenshot 24/11/2026 (two formations with leg holes) |
 | PR6 | Prismor animation variety | P2 | 2–3 | clips.ts, ability-poses.ts | screenshots | todo | |
 | PS1–3 | Telekinetic Toss + Psychic Slam with real props | P3, MS14 | 2 | ability-world.ts, arena-props.ts, psion.ts | integration + browser | todo | |
 | RS1 | Sonic Boom wide, steerable, no pin | P6 | 2 | reson.ts, ability-world.ts | unit + browser | todo | |

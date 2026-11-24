@@ -482,12 +482,11 @@ export class SceneAbilities implements AbilityHost {
     }
   }
 
-  legTrapState(targetId: string): { heightM: number; flies: boolean; trappedS: number } {
+  legTrapState(targetId: string): { heightM: number; trappedS: number } {
     const f = this.byName(targetId);
-    if (!f) return { heightM: 0, flies: false, trappedS: 0 };
+    if (!f) return { heightM: 0, trappedS: 0 };
     return {
       heightM: f.hop.heightM + f.abilityLift,
-      flies: (f.view?.hoverM ?? 0) > 0 || f.abilityLift > 0.05,
       trappedS: f.combatant.trapLeftS,
     };
   }

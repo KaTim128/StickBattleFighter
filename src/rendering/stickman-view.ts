@@ -1634,12 +1634,14 @@ export class StickmanView {
    * - three small stars circling the head while stunned.
    */
   /**
-   * Crystal Prison: a thick, sock-shaped crystal grown round each lower leg, from the foot up toward the knee. Its length and
-   * width follow this fighter's own shin and limb width, so a slim fighter gets slim cuffs and a brute gets heavy ones.
+   * Crystal Prison v2: a crystal formation rises round each leg as a ring of faceted spikes with a hole in the middle that the
+   * shin passes through. The spikes grow up from the floor with `form` (0..1), longest at the back, and are sized from this
+   * fighter's own shin length and limb width. A dark rim and a pale lit rim mark the hole at the floor.
    */
   private drawLegTrap(s: ReturnType<typeof solveSkeleton>, form: number): void {
     const g = this.status;
     const w = this.look.limbWidthM;
+    const SPIKES = 8;
     for (const leg of [s.legBack, s.legFront]) {
       const knee = leg[1]!;
       const foot = leg[2]!;
@@ -1648,62 +1650,36 @@ export class StickmanView {
       const len = Math.hypot(dx, dy) || 1;
       const ux = dx / len;
       const uy = dy / len;
-      const nx = -uy;
-      const ny = ux;
-      const P = (a: number, b: number) => ({ x: foot.x + ux * a + nx * b, y: foot.y + uy * a + ny * b });
-      const rise = len * (0.18 + 0.92 * form);
-      const wb = w * (2.1 + 0.5 * form);
-      const wt = w * 1.75;
-      // The base: a crystal collar spreading on the floor round the ankle.
-      g.ellipse(foot.x, foot.y, wb * 1.5, wb * 0.55).fill({ color: 0x4aa8ff, alpha: 0.25 * form });
-      const outline = [
-        P(-0.03, -wb),
-        P(rise * 0.45, -wb * 1.08),
-        P(rise * 0.85, -wt),
-        P(rise, -wt * 0.55),
-        P(rise * 1.12, -wt * 0.1),
-        P(rise * 0.95, wt * 0.3),
-        P(rise * 0.85, wt),
-        P(rise * 0.45, wb * 1.08),
-        P(-0.03, wb),
-      ];
-      g.poly(outline.flatMap((p) => [p.x, p.y])).fill({ color: 0x6f64ff, alpha: 0.88 });
-      // A lit facet down one side, a dark edge, and a pale ridge up the middle.
-      g.poly(
-        [P(0, -wb), P(rise * 0.85, -wt), P(rise, -wt * 0.55), P(rise * 0.4, -wb * 0.15), P(0, -wb * 0.2)].flatMap(
-          (p) => [p.x, p.y],
-        ),
-      ).fill({
-        color: 0xe9e2ff,
-        alpha: 0.3,
-      });
-      g.poly(outline.flatMap((p) => [p.x, p.y])).stroke({
-        width: w * 0.16,
-        color: 0x1b1450,
-        alpha: 0.95,
-        join: 'round',
-      });
-      g.moveTo(P(0.04, 0).x, P(0.04, 0).y)
-        .lineTo(P(rise * 0.92, -wt * 0.1).x, P(rise * 0.92, -wt * 0.1).y)
-        .stroke({ width: w * 0.1, color: 0xe9e2ff, alpha: 0.65 });
-      // Jagged teeth at the top edge, growing last.
-      for (const [side, at] of [
-        [-0.55, 0.78],
-        [0.25, 0.9],
-        [0.62, 0.74],
-      ] as const) {
-        const base = P(rise * at, wt * side);
-        const tip = P(rise * (at + 0.34 * form), wt * side * 1.15);
-        g.poly([
-          base.x - nx * w * 0.5,
-          base.y - ny * w * 0.5,
-          tip.x,
-          tip.y,
-          base.x + nx * w * 0.5,
-          base.y + ny * w * 0.5,
-        ]).fill({
-          color: 0x9f8cff,
-          alpha: 0.9 * form,
+      const R = w * 2.3; // the hole's radius: the leg passes through it
+      // The floor base of the formation, with the hole cut through it.
+      g.ellipse(foot.x, foot.y, R * 1.9, R * 0.8).fill({ color: 0x4aa8ff, alpha: 0.28 * form });
+      g.ellipse(foot.x, foot.y, R * 1.15, R * 0.46).fill({ color: 0x0c0830, alpha: 0.7 * form });
+      g.ellipse(foot.x, foot.y, R * 1.15, R * 0.46).stroke({ width: w * 0.14, color: 0xe9e2ff, alpha: 0.6 * form });
+      for (let i = 0; i < SPIKES; i++) {
+        const th = (i / SPIKES) * Math.PI * 2 + 0.3;
+        const bx = foot.x + Math.cos(th) * R * 1.5;
+        const by = foot.y + Math.sin(th) * R * 0.62;
+        // Tallest at the back (negative sin), shorter at the front so the leg and its hole stay readable.
+        const tall = 0.55 + 0.45 * (0.5 - 0.5 * Math.sin(th)) + 0.18 * Math.sin(i * 2.7);
+        const h = len * (0.25 + 0.85 * form) * tall;
+        const lean = Math.cos(th) * w * 0.5;
+        const tipX = bx + ux * h + lean * 0.4;
+        const tipY = by + uy * h;
+        const half = w * (0.62 + 0.18 * Math.sin(i * 1.9));
+        const px = -uy * half;
+        const py = ux * half;
+        const front = Math.sin(th) > 0;
+        g.poly([bx - px, by - py, tipX, tipY, bx + px, by + py]).fill({
+          color: front ? 0x8f7dff : 0x5a4fe0,
+          alpha: 0.9,
+        });
+        // A lit facet and a dark edge give each spike its crystal look.
+        g.poly([bx - px, by - py, tipX, tipY, bx, by]).fill({ color: 0xe9e2ff, alpha: front ? 0.38 : 0.2 });
+        g.poly([bx - px, by - py, tipX, tipY, bx + px, by + py]).stroke({
+          width: w * 0.12,
+          color: 0x1b1450,
+          alpha: 0.95,
+          join: 'round',
         });
       }
     }

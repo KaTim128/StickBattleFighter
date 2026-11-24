@@ -45,7 +45,7 @@ function arena(opts: { foe?: Partial<AbilityTarget> & { heightM?: number; flies?
       log.trapped.push(seconds);
       log.trapLeft = seconds;
     },
-    legTrapState: () => ({ heightM: log.foeHeight, flies: opts.foe?.flies ?? false, trappedS: log.trapLeft }),
+    legTrapState: () => ({ heightM: log.foeHeight, trappedS: log.trapLeft }),
     standable: (p) => p.x > 0.5 && p.x < 12 && p.y > 0.5 && p.y < 12,
   };
   return { host, log, foe };
@@ -225,17 +225,17 @@ describe('Crystal Prison', () => {
   const cast = (w: AbilityWorld, h: AbilityHost) => w.release('me', PRISMOR_KIT.a4, { x: 3, y: 0 }, h);
   const react = (PRISMOR_KIT.a4.delivery.type === 'legTrap' && PRISMOR_KIT.a4.delivery.reactS) || 0;
 
-  it('traps a grounded opponent for exactly 4 seconds, and the legs free themselves then', () => {
+  it('traps a grounded opponent for exactly 6 seconds, and the legs free themselves then', () => {
     const { host, log } = arena();
     const w = new AbilityWorld();
     cast(w, host);
     run(w, host, react + 0.1);
-    expect(log.trapped).toEqual([4]);
+    expect(log.trapped).toEqual([6]);
     expect(w.prisons[0]?.phase).toBe('held');
     // The host counts the time down; while it holds nothing releases it, and when it ends the crystals shatter.
-    run(w, host, 2, () => (log.trapLeft = Math.max(0, log.trapLeft - 1 / 60)));
+    run(w, host, 3, () => (log.trapLeft = Math.max(0, log.trapLeft - 1 / 60)));
     expect(w.prisons).toHaveLength(1);
-    run(w, host, 2.1, () => (log.trapLeft = Math.max(0, log.trapLeft - 1 / 60)));
+    run(w, host, 3.1, () => (log.trapLeft = Math.max(0, log.trapLeft - 1 / 60)));
     expect(w.prisons).toHaveLength(0);
     expect(log.fx).toContain('prison-shatter');
   });
@@ -253,12 +253,17 @@ describe('Crystal Prison', () => {
     expect(w.prisons).toHaveLength(0);
   });
 
-  it('catches an opponent that flies or hovers, however high, and cannot be escaped by being airborne', () => {
-    const { host, log } = arena({ foe: { flies: true, heightM: 1.4 } });
-    const w = new AbilityWorld();
-    cast(w, host);
-    run(w, host, react + 0.1);
-    expect(log.trapped).toEqual([4]); // a flier is caught like anyone else (the scene drags it to the floor)
+  it('catches a hovering opponent (cosmetic hover is grounded, D3) but misses one launched into the air at activation', () => {
+    const hover = arena({ foe: { heightM: 0 } });
+    const w1 = new AbilityWorld();
+    cast(w1, hover.host);
+    run(w1, hover.host, react + 0.1);
+    expect(hover.log.trapped).toEqual([6]);
+    const launched = arena({ foe: { heightM: 1.4 } });
+    const w2 = new AbilityWorld();
+    cast(w2, launched.host);
+    run(w2, launched.host, react + 0.1);
+    expect(launched.log.trapped).toEqual([]); // really off the floor when the crystals lock: missed
   });
 
   it('cannot be broken by hits: nothing the world does shortens the hold', () => {
@@ -269,8 +274,8 @@ describe('Crystal Prison', () => {
     for (let i = 0; i < 20; i++)
       host.hitFighter('me', 'foe', { damage: 50, knockbackMps: 5, heavy: true, strength: 900 }, { x: 1, y: 0 });
     run(w, host, 1);
-    expect(log.trapped).toEqual([4]); // still the one hold, never released early
-    expect(log.trapLeft).toBe(4);
+    expect(log.trapped).toEqual([6]); // still the one hold, never released early
+    expect(log.trapLeft).toBe(6);
   });
 });
 

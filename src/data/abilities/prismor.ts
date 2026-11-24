@@ -112,13 +112,13 @@ export const PRISMOR_KIT: AbilityKit = {
       hitFlash: 0xe9e2ff,
     },
   },
-  // A4 (R): Crystal Prison. Thick crystal grows round both legs; a grounded foe can jump clear in time, a flier is dragged down.
+  // A4 (R): Crystal Prison. Two crystal formations rise round both legs and hold a grounded foe.
   a4: {
     id: 'crystalPrison',
     name: 'Crystal Prison',
     label: 'PRISON',
     description:
-      "Thick crystal grows from the ground round both of the nearest enemy's legs, fitted to their size. A grounded enemy that jumps clear before the crystals lock escapes. Fliers and hoverers cannot: the crystals reach their legs and drag them to the ground. Once locked, the legs are held for exactly 4 seconds and nothing breaks them: no walking, jumping, dodging, flying or movement abilities, but they can still be hurt.",
+      "Two crystal formations rise from the ground round both of the nearest enemy's legs, each with a hole the leg passes through. An enemy that is off the ground when they close (jumping, leaping or launched) is missed; one that stands or hovers is caught. Once locked, the legs are held for exactly 6 seconds and nothing breaks them: no walking, jumping, dodging or movement abilities, but other abilities still work and the enemy can still be hurt.",
     icon: 'crystal-prison',
     slot: 'a4',
     staminaCost: 34,
@@ -129,7 +129,7 @@ export const PRISMOR_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'legTrap', rangeM: 6.5, reactS: 0.75, holdS: 4 },
+    delivery: { type: 'legTrap', rangeM: 6.5, reactS: 0.4, holdS: 6 },
     vfx: 'crystal-prison',
     sfx: { cast: 'prison-grow', release: 'prison-grow', impact: 'prison-lock' },
     look: { palette: CRYSTAL, impact: shards(10, 1.3, 0.2) },

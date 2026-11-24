@@ -936,3 +936,6 @@ Known: premium model does not yet draw the Shard Blade swords or finale/hammer f
 
 ## 24/11/2026: Batch 1 combat correctness (HD, HL, N2, C1; TD-151)
 Done: universal contact melee, swept thrown-prop hits, AI closes to the real touch reach, `Combatant.heal` single gate + no bench regen, Soul Drain 15 % of actual removal, Clash banner names the winner. Tests: typecheck clean, vitest 1217 passed, build OK. Re-spaced tests (office-door, presentation, props, necro decay) because they encoded the old over-generous reach; ai-furniture now accepts any of three seeded matchups (one chaotic fight ended before the Titan reached a chair). Not done: browser check of punching at a gap; ability-delivery radii left as volumes. Auto-deploy on push is now on (workflow + CLAUDE.md). Next: Batch 2 (ability updates).
+
+## 24/11/2026: Crystal Prison v2 (PR5)
+Done: hold 6 s, activation window 0.4 s, grounded targets only (real height > 0.25 m at the window or at the lock misses; cosmetic hover counts as grounded, D3; the flier-dragged-down rule is gone from the world), two leg formations with holes drawn per leg, new description. Tests: prismor unit tests updated, real-scene test, typecheck clean. Browser: formations visible. Not checked: the shatter at the end in the browser, phone feel.
