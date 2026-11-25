@@ -174,7 +174,8 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
       lava: null,
       glow: null,
     },
-    bulk: 1.7,
+    // Slimmer than first drawn (owner, 25/11/2026: "cut Titan's wideness"): the chest and arms were wider than the body under them.
+    bulk: 1.5,
     muscle: 1.3,
     gear: {
       shoulder: 'none',

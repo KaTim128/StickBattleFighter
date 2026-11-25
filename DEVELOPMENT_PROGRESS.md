@@ -1061,3 +1061,5 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 ## 25/11/2026 — select stances (owner): Titan's shoulders spread only 10% with the turn so his chest is not wider than his body; Bohemeth's upper pair held up and back, lower pair low and forward (select screen and idle) so the four arms do not overlap. Screenshot-checked.
 
 ## 25/11/2026 — portraits (owner): Inkmaster, Magix and Bohemeth added to the premium portrait looks (they had none, so were cropped tight and looked bigger); Bohemeth's window widened for his second pair of arms and its hero pose set. Screenshot-checked on the select grid.
+
+## 25/11/2026 — Titan slimmer (premium muscle skin bulk 1.7 to 1.5, select scale 1.2) and Bohemeth's four arms fanned out clear of each other and of his face (select stance, idle, portrait). Screenshot-checked.

@@ -78,7 +78,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     turn: 0.6,
     // The shoulders spread only part of the way with the turn, so the chest does not look wider than the body under it (owner, 25/11/2026).
     shoulderSpread: 0.1,
-    scale: 1.3,
+    scale: 1.2,
     breath: { lean: 1.5, pelvis: 0.01, hands: 0.02 },
   },
   // Tall and dominant: nearly straight legs, chest up and chin raised, the skull staff planted in
@@ -267,11 +267,11 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     rearFoot: -0.4,
     lean: -6,
     head: 0,
-    // The upper fists are held up and a little back, the lower fists low and a little forward, so the four arms do not overlap: four clear arms, the face left open.
-    front: { x: 0.52, y: -0.36 },
-    back: { x: -0.5, y: -0.46 },
-    front2: { x: 1.0, y: 0.3 },
-    back2: { x: 0.2, y: 0.55 },
+    // The four arms fan out clear of each other and of the face: the near upper fist out front at shoulder height, the far upper fist back and up, the near lower fist low in front and the far lower fist low behind.
+    front: { x: 0.95, y: -0.12 },
+    back: { x: -0.62, y: -0.3 },
+    front2: { x: 0.8, y: 0.58 },
+    back2: { x: -0.28, y: 0.66 },
     turn: 0.58,
     scale: 1.04,
     breath: { lean: 1.5, pelvis: 0.012, hands: 0.025 },

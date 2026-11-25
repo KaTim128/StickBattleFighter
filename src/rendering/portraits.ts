@@ -44,7 +44,7 @@ function heroPose(def: FighterDef): Pose {
     cloak: { armFront: { root: rad(112), bend: rad(62) }, armBack: { root: rad(-30), bend: rad(60) }, lean: rad(-8) },
     solid: { armFront: { root: rad(55), bend: rad(110) }, armBack: { root: rad(30), bend: rad(120) } },
     // Bohemeth: the upper pair raised and back, the lower pair low and forward, so the four fists do not hide the face.
-    bohemeth: { armFront: { root: rad(44), bend: rad(118) }, armBack: { root: rad(22), bend: rad(122) }, lean: rad(-4) },
+    bohemeth: { armFront: { root: rad(78), bend: rad(80) }, armBack: { root: rad(-70), bend: rad(90) }, lean: rad(-4) },
   };
   const own = poses[body];
   return {
@@ -54,7 +54,7 @@ function heroPose(def: FighterDef): Pose {
     armFront: own?.armFront ?? { root: rad(38), bend: rad(95) },
     armBack: own?.armBack ?? { root: rad(-25), bend: rad(110) },
     ...(body === 'bohemeth'
-      ? { armFront2: { root: rad(54), bend: rad(60) }, armBack2: { root: rad(34), bend: rad(54) } }
+      ? { armFront2: { root: rad(54), bend: rad(60) }, armBack2: { root: rad(-14), bend: rad(50) } }
       : {}),
   };
 }
