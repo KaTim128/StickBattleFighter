@@ -97,7 +97,7 @@ export const INFERNO_KIT: AbilityKit = {
     name: 'Fire Beam',
     label: 'BEAM',
     description:
-      'After a 1-second charge, a roaring beam of fire pours from his hands for 2.4 seconds. It hits again and again, hurts more up close, burns, and hits harder the longer it stays on the same target. Any hit on Inferno puts it out at once.',
+      'After a 1-second charge, a roaring beam of fire pours from his hands for 2.4 seconds. It hits again and again, hurts more up close, burns, and hits harder the longer it stays on the same target. He can walk slowly while it pours and turns it slowly; whoever it hits can keep walking. Any hit on Inferno puts it out at once.',
     icon: 'fire-beam',
     slot: 'a3',
     staminaCost: 35,
@@ -105,7 +105,8 @@ export const INFERNO_KIT: AbilityKit = {
     castS: 1,
     recoveryS: 0.7, // the beam holds the cast open while it pours, so this is only the tail after it ends
     aimRangeM: 7,
-    moveFactor: 0,
+    // Owner, 25/11/2026: he can walk (slowly) while the beam charges and pours.
+    moveFactor: 0.4,
     interruptible: true,
     breaksOnHit: true,
     payload: {
@@ -129,7 +130,10 @@ export const INFERNO_KIT: AbilityKit = {
       widthM: 0.6,
       durationS: 2.4,
       tickS: 0.15,
-      turnRadPerS: 3.5,
+      // Owner, 25/11/2026: slower aiming while it pours (was 3.5 rad/s).
+      turnRadPerS: 1.8,
+      // Like Reson's Sonic Boom: only the first tick flinches, so whoever it hits can keep walking.
+      scream: true,
       ramp: { afterS: 1, startFactor: 1.1, perS: 0.2, maxFactor: 1.3 },
     },
     vfx: 'fire-beam',

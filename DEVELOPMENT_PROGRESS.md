@@ -1042,3 +1042,6 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 
 ## 25/11/2026 — crowd soundscape and menu tunnel ambience removed (owner)
 - Deleted the `colosseum` and `tunnel` ambience definitions, the crowd bed, the crowd events (applause, whistle, ooh, gasp, murmur-rise), the fight-reaction hook and `MENU_AMBIENCE_ID`. Remaining soundscapes: `office-empty` (also the Colosseum's) and `house-night`. Tests updated; not verified by ear.
+
+## 25/11/2026 — Inferno Fire Beam: walk while it pours, slower aim (owner)
+- `inferno.ts`: moveFactor 0 to 0.4, turnRadPerS 3.5 to 1.8, `scream: true` (only the first tick flinches, so the target keeps walking, as with Sonic Boom). Test timing adjusted. Not verified in a browser or on a phone (the touch stick now both aims and moves).

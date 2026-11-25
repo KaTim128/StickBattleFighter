@@ -420,8 +420,8 @@ export interface LeapDelivery {
 export interface BeamDelivery {
   readonly type: 'beam';
   /**
-   * A scream (Reson's Sonic Boom): the first tick on a target interrupts it (a flinch), and for as long as it stays in
-   * the sound it cannot walk toward the caster. Later ticks never flinch, so it cannot stunlock.
+   * A scream (Reson's Sonic Boom, Inferno's Fire Beam): the first tick on a target interrupts it (a flinch); later ticks never
+   * flinch it, so it can keep walking and cannot be stunlocked.
    */
   readonly scream?: boolean;
   readonly rangeM: number;

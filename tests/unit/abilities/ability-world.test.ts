@@ -89,7 +89,7 @@ describe('beam delivery', () => {
     const turned = Math.atan2(w.beams[0]!.dir.y, w.beams[0]!.dir.x);
     expect(turned).toBeGreaterThan(0); // turning toward the steer
     expect(turned).toBeLessThanOrEqual(d.turnRadPerS * (6 / 60) + 1e-6); // but not snapping
-    for (let i = 0; i < 40; i++) w.update(1 / 60, steering);
+    for (let i = 0; i < 60; i++) w.update(1 / 60, steering);
     expect(w.beams[0]!.dir.y).toBeCloseTo(1, 3); // got there
     expect(w.beams[0]!.to.y).toBeGreaterThan(5); // the beam itself now pours that way
     expect(faced.at(-1)!.y).toBeCloseTo(1, 3); // the caster faces along it
