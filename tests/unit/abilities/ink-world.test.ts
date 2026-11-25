@@ -9,11 +9,13 @@ function arena(foes: { x: number; y: number }[]) {
   const them = foes.map((f, i) => ({ id: `foe${i}`, ...f, radiusM: 0.3, hittable: true, team: 'b' }));
   const hits: { target: string; damage: number }[] = [];
   const nudges: { id: string; speed: number }[] = [];
-  const traps: { id: string; s: number }[] = [];
+  const binds: { id: string; s: number }[] = [];
+  const state = { dodge: false };
   const summons: string[] = [];
   const host: AbilityHost = {
     fighters: () => [me, ...them],
     hitFighter: (_c, target, payload: AbilityPayload) => {
+      if (state.dodge) return false; // a dodged blow lands nothing
       hits.push({ target, damage: payload.damage });
       return true;
     },
@@ -25,25 +27,49 @@ function arena(foes: { x: number; y: number }[]) {
     buff: () => {},
     emit: () => {},
     nudge: (id, v) => nudges.push({ id, speed: Math.hypot(v.x, v.y) }),
-    trap: (id, s) => traps.push({ id, s }),
+    bind: (id, s) => binds.push({ id, s }),
     summon: (_c, spec) => summons.push(spec.character),
   };
-  return { me, them, hits, nudges, traps, summons, host, world: new AbilityWorld() };
+  return { me, them, hits, nudges, binds, state, summons, host, world: new AbilityWorld() };
 }
 const run = (a: ReturnType<typeof arena>, seconds: number) => {
   for (let i = 0; i < Math.round(seconds * 60); i++) a.world.update(1 / 60, a.host);
 };
 
 describe('Ink Serpent', () => {
-  it('does nothing while it is drawn, then bites once and holds the legs for the short restrain time only', () => {
+  it('does nothing while it is drawn, then bites once and binds the target for exactly 4 seconds', () => {
     const a = arena([{ x: 4, y: 0 }]);
     a.world.release('me', INKMASTER_KIT.a2, { x: 4, y: 0 }, a.host);
     run(a, 0.6);
     expect(a.hits).toHaveLength(0);
     run(a, 3);
     expect(a.hits).toHaveLength(1);
-    expect(a.traps).toEqual([{ id: 'foe0', s: 5 }]); // held for 5 seconds
-    expect(INKMASTER_KIT.a2.delivery).toMatchObject({ restrainS: 5 });
+    expect(a.binds[0]).toEqual({ id: 'foe0', s: 4 }); // bound for 4 seconds
+    expect(INKMASTER_KIT.a2.delivery).toMatchObject({ restrainS: 4 });
+  });
+  it('lets go on its own after the hold: the binding is lifted and the serpent scatters', () => {
+    const a = arena([{ x: 4, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a2, { x: 4, y: 0 }, a.host);
+    run(a, 3.6);
+    expect(a.world.ink.serpents[0]?.phase).toBe('wrap');
+    run(a, 4.2);
+    expect(a.binds.at(-1)).toEqual({ id: 'foe0', s: 0 }); // released
+    run(a, 1);
+    expect(a.world.ink.serpents).toHaveLength(0);
+  });
+  it('a dodged bite binds nobody, and a target is never re-bound while it is still held or just freed', () => {
+    const dodged = arena([{ x: 4, y: 0 }]);
+    dodged.state.dodge = true;
+    dodged.world.release('me', INKMASTER_KIT.a2, { x: 4, y: 0 }, dodged.host);
+    run(dodged, 4);
+    expect(dodged.binds).toEqual([]);
+    // Two serpents in a row on the same target: only the first binds it.
+    const a = arena([{ x: 4, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a2, { x: 4, y: 0 }, a.host);
+    run(a, 3.6);
+    a.world.release('me', INKMASTER_KIT.a2, { x: 4, y: 0 }, a.host);
+    run(a, 9);
+    expect(a.binds.filter((b) => b.s > 0)).toHaveLength(1);
   });
   it('turns slowly: a target far off to the side is not caught at once', () => {
     const a = arena([{ x: 0, y: 6 }]);
@@ -53,93 +79,118 @@ describe('Ink Serpent', () => {
   });
 });
 
-describe('Ink Dragon', () => {
-  it('flies round, warns, lunges once at the opponent, bites them with the slow and ink splash, then vanishes', () => {
-    const a = arena([{ x: 5, y: 0 }]);
-    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
+describe('Ink Bull', () => {
+  const phasesOf = (a: ReturnType<typeof arena>, seconds: number, each?: () => void): string[] => {
     const phases: string[] = [];
-    for (let i = 0; i < 14 * 60; i++) {
+    for (let i = 0; i < seconds * 60; i++) {
       a.world.update(1 / 60, a.host);
-      const d = a.world.ink.dragons[0];
-      if (!d) break;
-      if (phases[phases.length - 1] !== d.phase) phases.push(d.phase);
+      each?.();
+      const b = a.world.ink.bulls[0];
+      if (!b) break;
+      if (phases[phases.length - 1] !== b.phase) phases.push(b.phase);
     }
-    expect(phases.indexOf('rear')).toBeGreaterThan(-1); // the warning
-    expect(phases.indexOf('lunge')).toBeGreaterThan(phases.indexOf('rear'));
-    expect(phases.filter((p) => p === 'lunge')).toHaveLength(1); // it charges once
-    run(a, 2);
-    expect(a.world.ink.dragons).toHaveLength(0);
-  });
-  it('a bite deals the payload once, with a 1.5 s slow and ink splash, and bursts the dragon', () => {
-    const a = arena([{ x: 5, y: 0 }]);
-    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    const p = INKMASTER_KIT.a3.payload;
-    expect(p.inkSplatS).toBe(1.5);
-    expect(p.slow).toEqual({ durationS: 1.5, speedFactor: 0.6 });
-    let burst = false;
-    for (let i = 0; i < 14 * 60; i++) {
-      a.world.update(1 / 60, a.host);
-      const d = a.world.ink.dragons[0];
-      if (!d) break;
-      if (d.phase === 'burst') burst = true;
-    }
-    expect(burst).toBe(true);
+    return phases;
+  };
+  it('rises from the ink, paws the ground, then charges once and rams the opponent, then scatters', () => {
+    const a = arena([{ x: 8, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 8, y: 0 }, a.host);
+    const phases = phasesOf(a, 14);
+    expect(phases.slice(0, 4)).toEqual(['form', 'paw', 'charge', 'ram']);
+    expect(phases.filter((p) => p === 'charge')).toHaveLength(1);
     expect(a.hits).toHaveLength(1);
+    expect(a.world.ink.bulls).toHaveLength(0);
   });
-  it('a lunge that finds nobody in the lane hits nobody and dissolves', () => {
-    const a = arena([{ x: 5, y: 0 }]);
-    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    let rearing = false;
-    for (let i = 0; i < 14 * 60; i++) {
-      a.world.update(1 / 60, a.host);
-      const d = a.world.ink.dragons[0];
-      if (!d) break;
-      if (d.phase === 'rear' && !rearing) {
-        rearing = true;
-        a.them[0]!.y = 6; // steps out of the locked lane during the warning
+  it('does nothing harmful while it forms and paws (the opponent has the whole warning to move)', () => {
+    const a = arena([{ x: 8, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 8, y: 0 }, a.host);
+    const spec = INKMASTER_KIT.a3.delivery as { formS: number; pawS: number };
+    run(a, spec.formS + spec.pawS - 0.05);
+    expect(a.hits).toHaveLength(0);
+    expect(a.world.ink.bulls[0]?.phase).toBe('paw');
+  });
+  it('curves toward an opponent who moves sideways, but never turns faster than its limit', () => {
+    const a = arena([{ x: 12, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 12, y: 0 }, a.host);
+    let maxTurn = 0;
+    let last: number | null = null;
+    let sideways = false;
+    const spec = INKMASTER_KIT.a3.delivery as { turnRadPerS: number };
+    phasesOf(a, 8, () => {
+      const b = a.world.ink.bulls[0];
+      if (!b || b.phase !== 'charge') return;
+      if (!sideways && b.phaseS > 0.4) {
+        sideways = true;
+        a.them[0]!.y = 5; // the opponent runs off to the side
       }
-    }
+      if (last !== null) {
+        const d = Math.atan2(Math.sin(b.heading - last), Math.cos(b.heading - last));
+        maxTurn = Math.max(maxTurn, Math.abs(d) * 60);
+      }
+      last = b.heading;
+    });
+    expect(maxTurn).toBeGreaterThan(0.3); // it does follow
+    expect(maxTurn).toBeLessThanOrEqual(spec.turnRadPerS * 1.15 + 1e-6); // but only so fast
+  });
+  it('can be sidestepped: an opponent who leaves its line at the last moment is missed, and it runs on, slows and scatters', () => {
+    const a = arena([{ x: 12, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 12, y: 0 }, a.host);
+    let stepped = false;
+    const phases = phasesOf(a, 14, () => {
+      const b = a.world.ink.bulls[0];
+      if (!b || b.phase !== 'charge') return;
+      if (!stepped && Math.hypot(a.them[0]!.x - b.x, a.them[0]!.y - b.y) < 3.2) {
+        stepped = true;
+        a.them[0]!.y += 3; // a hard sidestep once it has committed
+      }
+    });
+    expect(a.hits).toHaveLength(0);
+    expect(phases).toContain('slow');
+    expect(phases).not.toContain('ram');
+    expect(a.world.ink.bulls).toHaveLength(0);
+  });
+  it('a dodged hit lands nothing: it thunders past instead of ramming', () => {
+    const a = arena([{ x: 8, y: 0 }]);
+    a.state.dodge = true;
+    a.world.release('me', INKMASTER_KIT.a3, { x: 8, y: 0 }, a.host);
+    const phases = phasesOf(a, 14);
+    expect(a.hits).toHaveLength(0);
+    expect(phases).not.toContain('ram');
+  });
+  it('rams with heavy knockback, and never more than one opponent per charge', () => {
+    const a = arena([
+      { x: 8, y: 0 },
+      { x: 8.4, y: 0.2 },
+    ]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 8, y: 0 }, a.host);
+    phasesOf(a, 14);
+    expect(a.hits).toHaveLength(1);
+    expect(INKMASTER_KIT.a3.payload.heavy).toBe(true);
+    expect(INKMASTER_KIT.a3.payload.knockbackMps).toBeGreaterThanOrEqual(9);
+  });
+  it('splashes against a wall instead of passing through it', () => {
+    const a = arena([{ x: 12, y: 0 }]);
+    a.host.blocked = (from, to) => (to.x > 9 ? 0.5 : null);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 12, y: 0 }, a.host);
+    phasesOf(a, 8);
+    for (const b of a.world.ink.bulls) expect(b.x).toBeLessThan(9.2);
     expect(a.hits).toHaveLength(0);
   });
-  it('its head always faces the opponent while its trail follows the path it flew', () => {
-    const a = arena([{ x: 5, y: 0 }]);
-    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    run(a, 1.2);
-    let trailMoved = false;
-    for (let i = 0; i < 3 * 60; i++) {
-      a.world.update(1 / 60, a.host);
-      const d = a.world.ink.dragons[0]!;
-      if (d.phase !== 'fly') continue;
-      const want = Math.atan2(a.them[0]!.y - d.y, a.them[0]!.x - d.x);
-      expect(Math.abs(Math.atan2(Math.sin(d.heading - want), Math.cos(d.heading - want)))).toBeLessThan(0.05);
-      if (d.trail.length > 5) trailMoved = true;
-    }
-    expect(trailMoved).toBe(true);
-  });
-  it('a new dragon replaces the old one (one at a time)', () => {
-    const a = arena([{ x: 5, y: 0 }]);
-    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    expect(a.world.ink.dragons).toHaveLength(1);
-  });
-});
-
-describe('Ink Dragon stays on the map', () => {
-  it('never flies outside the arena, even when its opponent stands by a wall', () => {
+  it('a new bull replaces the old one (one at a time) and it never leaves the map', () => {
     const a = arena([{ x: 11.2, y: 0.5 }]);
     a.host.bounds = () => ({ w: 12, h: 8 });
     a.me.x = 6;
     a.me.y = 4;
     a.world.release('me', INKMASTER_KIT.a3, { x: 11, y: 1 }, a.host);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 11, y: 1 }, a.host);
+    expect(a.world.ink.bulls).toHaveLength(1);
     for (let i = 0; i < 14 * 60; i++) {
       a.world.update(1 / 60, a.host);
-      const d = a.world.ink.dragons[0];
-      if (!d) break;
-      if (d.phase === 'form') continue;
-      expect(d.x).toBeGreaterThanOrEqual(1.19);
-      expect(d.x).toBeLessThanOrEqual(12 - 1.19);
-      expect(d.y).toBeGreaterThanOrEqual(1.19);
-      expect(d.y).toBeLessThanOrEqual(8 - 1.19);
+      const b = a.world.ink.bulls[0];
+      if (!b) break;
+      expect(b.x).toBeGreaterThanOrEqual(0.99);
+      expect(b.x).toBeLessThanOrEqual(12 - 0.99);
+      expect(b.y).toBeGreaterThanOrEqual(0.99);
+      expect(b.y).toBeLessThanOrEqual(8 - 0.99);
     }
   });
 });

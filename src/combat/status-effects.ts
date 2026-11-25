@@ -22,7 +22,8 @@ export type StatusId =
   | 'shatter'
   | 'slow'
   | 'aging'
-  | 'trap';
+  | 'trap'
+  | 'bind';
 
 /** How a new application meets one already running. */
 export type StatusStacking =
@@ -81,6 +82,8 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   aging: { stacking: 'strongest', tickIntervalS: 0.5 },
   // Prismor's Crystal Prison: the legs held in crystal for an exact time (nothing refreshes it or cuts it short but the end).
   trap: { stacking: 'strongest', tickIntervalS: 0 },
+  // Ink Serpent: bound. No abilities, attacks, jumps or dodges, but walking is free. Its own timer, so nothing renews it early.
+  bind: { stacking: 'strongest', tickIntervalS: 0 },
   decay: { stacking: 'strongest', tickIntervalS: 0 },
   dark: { stacking: 'strongest', tickIntervalS: 0 },
   // Vexoris's Plague Bloom fog: renewed every step while inside it, so it lapses a moment after leaving.

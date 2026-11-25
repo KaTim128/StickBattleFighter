@@ -3,7 +3,7 @@ import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Inkmaster's kit: a Chinese ink painter whose brush draws weapons and creatures into the fight. Strength is versatility and tactical summons:
- * a wide slash, a hunting serpent that briefly holds, a circling dragon, a sword or bow clone, a vortex that ends in a collapse, and one
+ * a wide slash, a hunting serpent that briefly holds, a charging bull, a sword or bow clone, a vortex that ends in a collapse, and one
  * ultimate, The Masterpiece. His own stats are modest; the summons are help, not a second fighter. Values are PROVISIONAL (OQ-05).
  */
 const INK = { deep: 0x050505, hot: 0x24242b, bright: 0x6d6d78, core: 0xf2eee3 } as const;
@@ -62,7 +62,7 @@ export const INKMASTER_KIT: AbilityKit = {
     name: 'Ink Serpent',
     label: 'SERPENT',
     description:
-      'Draws a serpent in the air, stroke by stroke. It comes alive and hunts the nearest opponent, turning slowly enough to be dodged. If it catches them it bites and coils round their legs for 5 seconds, but they can still guard and use abilities.',
+      'Draws a serpent in the air, stroke by stroke. It comes alive and hunts the nearest opponent, turning slowly enough to be dodged. If it catches them it bites and coils round their body for 4 seconds: they cannot attack, use abilities, jump or dodge, but they can still walk and guard. Then it unwinds into ink.',
     icon: 'ink-serpent',
     slot: 'a2',
     staminaCost: 26,
@@ -80,7 +80,7 @@ export const INKMASTER_KIT: AbilityKit = {
       turnRadPerS: 2.4,
       lifeS: 4.2,
       radiusM: 0.5,
-      restrainS: 5,
+      restrainS: 4,
       immuneS: 4,
     },
     vfx: 'ink-serpent',
@@ -91,17 +91,17 @@ export const INKMASTER_KIT: AbilityKit = {
       hitFlash: 0x2a2a30,
     },
   },
-  // A3 (F): Ink Dragon. A sweeping stroke draws a flying dragon that circles his opponent and breathes ink.
+  // A3 (F): Ink Bull. A heavy stroke draws a bull of black ink that bursts out of the floor, readies itself and charges the opponent.
   a3: {
-    id: 'inkDragon',
-    name: 'Ink Dragon',
-    label: 'DRAGON',
+    id: 'inkBull',
+    name: 'Ink Bull',
+    label: 'BULL',
     description:
-      'Sweeps the brush across the air to draw a black ink dragon that circles the nearest opponent. It rears, warns with a red lane on the floor, then lunges along it with its jaws wide open. The bite damages, slows by 40% and splashes ink over the middle of their screen for 1.5 seconds as the dragon bursts into ink. A miss simply dissolves.',
-    icon: 'ink-dragon',
+      'Brushes a bull of black ink that bursts out of the floor in front of him. It lowers its head, paws the ground and snorts, then charges the nearest opponent, curving after them but only so fast, so a sidestep or a dodge throws it off. If its horns land it rams them hard into the target and launches them backwards. A miss thunders on, slows and scatters into ink.',
+    icon: 'ink-bull',
     slot: 'a3',
     staminaCost: 32,
-    cooldownS: 20,
+    cooldownS: 22,
     castS: 0.5,
     recoveryS: 0.7,
     aimRangeM: 12,
@@ -109,31 +109,31 @@ export const INKMASTER_KIT: AbilityKit = {
     interruptible: true,
     payload: {
       damage: 46,
-      knockbackMps: 3,
-      heavy: false,
-      strength: 300,
-      impact: 'knuckle-light',
-      noFlinch: true,
-      slow: { durationS: 1.5, speedFactor: 0.6 },
-      inkSplatS: 1.5,
+      knockbackMps: 11,
+      heavy: true,
+      strength: 340,
+      impact: 'knuckle-heavy',
+      noFlinch: false,
     },
     delivery: {
-      type: 'dragon',
+      type: 'bull',
       formS: 0.9,
-      durationS: 12,
-      speedMps: 5.5,
-      orbitM: 4.2,
-      lungeAfterS: 1.6,
-      windupS: 0.8,
-      lungeRangeM: 9,
-      lungeSpeedMps: 20,
-      biteWidthM: 1.8,
+      pawS: 1.1,
+      speedMps: 13,
+      accelMps2: 20,
+      turnRadPerS: 2.6,
+      commitM: 2.6,
+      chargeS: 2.6,
+      slowS: 0.9,
+      durationS: 9,
+      spawnM: 3.2,
+      radiusM: 0.85,
     },
-    vfx: 'ink-dragon',
-    sfx: { cast: 'ink-gather', release: 'ink-dragon', impact: 'ink-breath' },
+    vfx: 'ink-bull-ram',
+    sfx: { cast: 'ink-gather', release: 'bull-snort', impact: 'bull-ram' },
     look: {
       palette: INK,
-      impact: inkImpact(1.6, { shake: 0.15 }),
+      impact: inkImpact(2.1, { shake: 0.55 }),
       hitFlash: 0x2a2a30,
     },
   },

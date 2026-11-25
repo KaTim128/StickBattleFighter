@@ -800,19 +800,23 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('bandpass', 2600, 900, 0.12, 0.4, 2),
     tone('triangle', 900, 400, 0.1, 0.18, 0.02),
   ],
-  'ink-dragon': [
-    tone('sawtooth', 90, 160, 0.7, 0.2),
-    noise('lowpass', 900, 400, 0.8, 0.3, 1, 0, { attack: 0.3 }),
-    tone('triangle', 400, 700, 0.6, 0.1),
+  // Ink Bull: a wet snort, the hoof scraping the ground, the thunder of the charge and the crash of the horns.
+  'bull-snort': [
+    noise('bandpass', 500, 220, 0.5, 0.45, 1.1, 0, { attack: 0.1 }),
+    tone('sawtooth', 95, 70, 0.45, 0.22),
+    noise('highpass', 2800, undefined, 0.18, 0.15, 1, 0.05),
   ],
-  'ink-dragon-roar': [
-    tone('sawtooth', 120, 70, 0.9, 0.35, 0, 0.4),
-    noise('bandpass', 700, 300, 0.9, 0.4, 1.1, 0, { attack: 0.35 }),
+  'bull-paw': [noise('bandpass', 1200, 500, 0.16, 0.4, 1.6), tone('sine', 120, 70, 0.14, 0.4)],
+  'bull-charge': [
+    tone('sawtooth', 70, 110, 0.7, 0.3),
+    noise('lowpass', 800, 300, 0.8, 0.45, 1, 0, { flutter: 9, attack: 0.15 }),
+    tone('sine', 55, 40, 0.6, 0.5),
   ],
-  'ink-breath': [
-    noise('bandpass', 1300, 600, 0.55, 0.55, 0.9),
-    tone('sine', 90, 55, 0.5, 0.45),
-    noise('highpass', 3500, undefined, 0.3, 0.12, 1, 0.05),
+  'bull-ram': [
+    tone('sine', 90, 30, 0.45, 0.95),
+    noise('lowpass', 1800, 200, 0.45, 0.8, 0.9),
+    noise('bandpass', 1300, 400, 0.3, 0.5, 1.4, 0.03),
+    tone('triangle', 260, 90, 0.2, 0.4),
   ],
   'ink-pool': [
     noise('lowpass', 600, 200, 0.5, 0.4, 1),

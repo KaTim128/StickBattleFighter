@@ -180,10 +180,10 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a4', 'a1'],
     ],
   },
-  // Inkmaster: a versatile summoner. Holds mid range, slashes ink waves, sends the serpent to hold a runner, draws the dragon and a clone
+  // Inkmaster: a versatile summoner. Holds mid range, slashes ink waves, sends the serpent to hold a runner, draws the bull and a clone
   // early and lets them work while he keeps his distance, and draws the Masterpiece once the fight is on.
   'inkmaster-ai': {
-    style: 'Ink summoner: waves at range, a serpent to hold, a dragon and clone to help, a monster to finish.',
+    style: 'Ink summoner: waves at range, a serpent to hold, a bull and clone to help, a monster to finish.',
     preferredRangeM: [3, 6],
     movement: 'circle',
     meleeBias: 0.4,

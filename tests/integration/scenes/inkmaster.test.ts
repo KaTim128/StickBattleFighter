@@ -54,7 +54,7 @@ describe('Inkmaster', () => {
     scenes.clear();
   });
 
-  it('Ink Serpent: forms first, then hunts, bites and holds the legs for 5 seconds; the target can still guard', async () => {
+  it('Ink Serpent: forms first, then hunts, bites and binds the target for exactly 4 seconds', async () => {
     const { scene, scenes, run, runUntil, cast, world } = await setup('necro', 5);
     cast('a2');
     runUntil(() => world().serpents.length > 0, 2);
@@ -63,34 +63,75 @@ describe('Inkmaster', () => {
     expect(s.phase).toBe('form');
     run(0.3);
     expect(scene.dummy.hp).toBe(scene.dummyFighter.combatant.stats.maxHp); // it does nothing while it is being drawn
-    runUntil(() => scene.dummyFighter.combatant.trapped, 4);
-    expect(scene.dummyFighter.combatant.trapped).toBe(true);
-    expect(scene.dummy.hp).toBeLessThan(scene.dummyFighter.combatant.stats.maxHp);
-    // It holds for 5 seconds, then lets go.
-    run(4);
-    expect(scene.dummyFighter.combatant.trapped).toBe(true);
-    runUntil(() => !scene.dummyFighter.combatant.trapped, 3);
-    expect(scene.dummyFighter.combatant.trapped).toBe(false);
+    runUntil(() => scene.dummyFighter.combatant.bound, 4);
+    const c = scene.dummyFighter.combatant;
+    expect(c.bound).toBe(true);
+    expect(c.trapped).toBe(false); // wrapped, not frozen: its legs are free
+    expect(scene.dummy.hp).toBeLessThan(c.stats.maxHp);
+    expect(c.bindLeftS).toBeGreaterThan(3.8);
+    expect(c.bindLeftS).toBeLessThanOrEqual(4);
+    run(3.5);
+    expect(c.bound).toBe(true);
+    runUntil(() => !c.bound, 1.5);
+    expect(c.bound).toBe(false); // exactly four seconds, then it lets go
+    run(1);
+    expect(world().serpents).toHaveLength(0);
     scenes.clear();
   });
 
-  it('Ink Dragon: drawn, circles its target, warns, lunges once and bites', async () => {
-    const { scene, scenes, run, runUntil, cast, world } = await setup('necro', 5);
+  it('a bound fighter can walk but cannot attack, use abilities, jump or dodge; all of it returns the moment it lets go', async () => {
+    const { scene, scenes, intents, run } = await setup('training-dummy', 8);
+    const me = scene.playerFighter;
+    scene.abilities!.bind(me.name, 4);
+    expect(me.combatant.bound).toBe(true);
+    // Abilities are refused outright.
+    expect(scene.abilities!.tryCast(me, 'a1')).toBe('bound');
+    expect(scene.abilities!.tryCast(me, 'a3')).toBe('bound');
+    // Blows never start.
+    intents.pressMelee();
+    run(STEP * 3);
+    expect(me.combo.attack).toBeNull();
+    // It cannot jump or dodge.
+    const startY = me.y;
+    intents.pressJump();
+    run(0.3);
+    expect(me.airborne).toBe(false);
+    expect(me.combatant.tryDodge()).toBe(false);
+    // But it can walk.
+    intents.setMove('t', { x: 1, y: 0 });
+    run(1);
+    expect(Math.hypot(me.x - 13, me.y - startY)).toBeGreaterThan(1.5);
+    intents.setMove('t', { x: 0, y: 0 });
+    // It cannot be re-wrapped to extend it: the status runs out on its own clock.
+    run(3);
+    expect(me.combatant.bound).toBe(false);
+    expect(scene.abilities!.tryCast(me, 'a1')).not.toBe('bound');
+    expect(me.combatant.tryDodge()).toBe(true);
+    scenes.clear();
+  });
+
+  it('Ink Bull: bursts out, readies, charges and rams the opponent back with heavy knockback, then scatters', async () => {
+    const { scene, scenes, run, runUntil, cast, world } = await setup('necro', 9);
+    const foe = scene.dummyFighter;
+    const x0 = foe.x;
     cast('a3');
-    runUntil(() => world().dragons.length > 0, 2);
-    expect(world().dragons).toHaveLength(1);
+    runUntil(() => world().bulls.length > 0, 2);
+    expect(world().bulls).toHaveLength(1);
     const phases = new Set<string>();
     for (let i = 0; i < 14 / STEP; i++) {
       run(STEP);
-      const d = world().dragons[0];
-      if (!d) break;
-      phases.add(d.phase);
+      const b = world().bulls[0];
+      if (!b) break;
+      phases.add(b.phase);
     }
     expect(phases.has('form')).toBe(true);
-    expect(phases.has('rear')).toBe(true); // a visible warning before the lunge
-    expect(phases.has('lunge')).toBe(true);
-    runUntil(() => world().dragons.length === 0, 4);
-    expect(world().dragons).toHaveLength(0); // it dissolves when its time is up
+    expect(phases.has('paw')).toBe(true); // it readies itself first
+    expect(phases.has('charge')).toBe(true);
+    expect(phases.has('ram') || phases.has('slow')).toBe(true);
+    runUntil(() => world().bulls.length === 0, 4);
+    expect(world().bulls).toHaveLength(0); // it scatters when it is done
+    // If its horns landed, the opponent was hurt and driven back along the charge.
+    if (scene.dummy.hp < foe.combatant.stats.maxHp) expect(foe.x).toBeGreaterThan(x0);
     scenes.clear();
   });
 
@@ -173,18 +214,18 @@ describe('Inkmaster', () => {
     scenes.clear();
   }, 60_000);
 
-  it('everything he drew ends when he falls: no serpent, dragon, vortex or monster is left', async () => {
+  it('everything he drew ends when he falls: no serpent, bull, vortex or monster is left', async () => {
     const { scene, scenes, run, runUntil, cast, world } = await setup('rampage', 5);
     cast('a3');
-    runUntil(() => world().dragons.length > 0, 2);
+    runUntil(() => world().bulls.length > 0, 2);
     scene.playerFighter.caster!.fillMeter();
     run(1);
     scene.playerFighter.combatant.hp = 1;
     scene.playerFighter.combatant.takeUnguardedDamage(10);
     run(2);
-    expect(world().dragons.every((d) => d.phase === 'fade')).toBe(true);
+    expect(world().bulls.every((d) => d.phase === 'fade')).toBe(true);
     run(1);
-    expect(world().dragons).toHaveLength(0);
+    expect(world().bulls).toHaveLength(0);
     scenes.clear();
   });
 });

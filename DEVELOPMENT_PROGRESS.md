@@ -1006,3 +1006,8 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 - Files: `src/audio/music-director.ts` (new), `music.ts`, `src/app/bootstrap.ts`, `src/app/hide-seek-page.ts`, tests above.
 - Fixed a start-up error found by the e2e run (debug object used before it existed). Ambience beds are unchanged and not covered by the director.
 - Not verified: real-device audio on Android Chrome; Hide and Seek music has unit coverage through the director only (no browser audio probe).
+
+## 25/11/2026 — Ink Bull and Ink Serpent bind (TD-170)
+- Files: `src/abilities/ink-world.ts`, `ability-def.ts`, `ability-world.ts`, `src/vfx/ink-vfx.ts`, `src/data/abilities/inkmaster.ts`, `src/combat/{combatant,status-effects}.ts`, `src/app/scenes/{fight-arena-scene,scene-abilities}.ts`, `src/rendering/stickman-view.ts`, icons, sounds, poses, AI text, tests.
+- Checks: tsc and biome clean for the changed code; vitest 1311 passing. Browser: bull and serpent screenshots against the training dummy (bull rammed and knocked the dummy down; snake coil, seal and unwind seen).
+- Not verified: the AI Inkmaster's use of the Bull against a moving player in a long fight; real-device play; balance only reasoned (not matrix-run); the new bull sounds are synthesised and not heard by me.

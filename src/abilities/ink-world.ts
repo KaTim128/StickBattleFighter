@@ -1,6 +1,6 @@
 import type {
   AbilityDef,
-  DragonDelivery,
+  BullDelivery,
   MasterpieceDelivery,
   SerpentDelivery,
   SummonSpec,
@@ -11,23 +11,19 @@ import type { AbilityHost, AbilityTarget } from './ability-world';
 type Vec2 = { x: number; y: number };
 
 /**
- * Inkmaster's living ink (new fighter): the serpent, the dragon, the cyclone and the Masterpiece ritual. They are
+ * Inkmaster's living ink (new fighter): the serpent, the bull, the cyclone and the Masterpiece ritual. They are
  * simulated here and drawn from this state by the VFX layer, so they behave identically against human and AI fighters.
  * Every hit goes through `AbilityHost.hitFighter` (the shared combat engine); nothing here damages anyone directly.
  */
 
 /** The serpent's body is this many metres long, drawn along its recent path. */
 export const SERPENT_LENGTH_M = 3.4;
-/** How high the dragon flies above the floor (render height), metres. */
-export const DRAGON_HEIGHT_M = 2.1;
-/** How long the ink trail behind the dragon's head is, metres. */
-export const DRAGON_TRAIL_M = 4.6;
-/** The dragon never comes closer than this to the edge of the map, metres. */
-export const DRAGON_MARGIN_M = 1.2;
-/** After its bite lands the dragon holds as a bursting splash of ink this long. */
-export const DRAGON_BURST_S = 0.5;
-/** How high the lunging head flies at the start of its charge and where it ends (chest height of what it bites), metres. */
-export const DRAGON_LUNGE_END_HEIGHT_M = 1.0;
+/** The bull never comes closer than this to the edge of the map, metres. */
+export const BULL_MARGIN_M = 1.0;
+/** After its horns land the bull holds as a bursting splash of ink this long. */
+export const BULL_BURST_S = 0.55;
+/** How long the ink trail behind the bull is, metres. */
+export const BULL_TRAIL_M = 5;
 /** A bitten target's wrap and a missed bite both leave the serpent this long before it may bite again. */
 const BITE_PAUSE_S = 0.7;
 /** The serpent fades out over this long once it has finished. */
@@ -53,30 +49,31 @@ export interface Serpent {
   readonly trail: Vec2[];
 }
 
-export interface Dragon {
+export interface Bull {
   readonly casterId: string;
   readonly def: AbilityDef;
-  readonly spec: DragonDelivery;
+  readonly spec: BullDelivery;
   x: number;
   y: number;
   heading: number;
+  /** Metres per second along its heading (it builds up to a full charge and bleeds off again when it misses). */
+  speed: number;
+  /** -1..1: how hard it is turning right now (the body leans into the corner). */
+  lean: number;
+  /** How far its legs have cycled (grows with the ground it covers, so the gallop matches its speed). */
+  gait: number;
   ageS: number;
-  leftS: number;
-  phase: 'form' | 'fly' | 'rear' | 'lunge' | 'burst' | 'fade';
+  /** Rises from a burst of ink, paws the ground and snorts, charges, rams (a hit) or slows (a miss), then scatters into ink. */
+  phase: 'form' | 'paw' | 'charge' | 'ram' | 'slow' | 'fade';
   phaseS: number;
-  /** Seconds spent flying round the opponent since the last phase (the lunge comes when it reaches `lungeAfterS`). */
-  flownS: number;
-  orbit: number;
-  /** The lunge's lane: where it starts, its direction (locked when the warning starts) and how far it really reaches. */
-  lungeDir: Vec2;
-  lungeFrom: Vec2;
-  lungeReachM: number;
-  /** Where the bite landed (the burst), or null. */
-  burstAt: Vec2 | null;
-  /** Where it was drawn (the brush point). */
-  readonly home: Vec2;
   targetId: string | null;
-  /** Where its head has been, newest first: the ink trail follows this path behind the head. */
+  /** Fighters it has already swept past (a dodged charge does not hit the same one twice). */
+  readonly passed: Set<string>;
+  /** Where the horns landed, or null. */
+  burstAt: Vec2 | null;
+  /** Where it rose from. */
+  readonly home: Vec2;
+  /** Where its body has been, newest first: dust and ink follow this path behind it. */
   readonly trail: Vec2[];
 }
 
@@ -144,7 +141,7 @@ const angleDiff = (a: number, b: number): number => {
 
 export class InkWorld {
   readonly serpents: Serpent[] = [];
-  readonly dragons: Dragon[] = [];
+  readonly bulls: Bull[] = [];
   readonly vortices: Vortex[] = [];
   readonly masterpieces: Masterpiece[] = [];
   readonly figures: DrawnFigure[] = [];
@@ -196,30 +193,32 @@ export class InkWorld {
         });
         return true;
       }
-      case 'dragon': {
-        // One dragon per caster: a new drawing replaces the old one.
-        for (let i = this.dragons.length - 1; i >= 0; i--)
-          if (this.dragons[i]!.casterId === casterId) this.dragons.splice(i, 1);
-        const home = { x: at.x + dir.x * 0.8, y: at.y + dir.y * 0.8 };
-        this.dragons.push({
+      case 'bull': {
+        // One bull per caster: a new drawing replaces the old one.
+        for (let i = this.bulls.length - 1; i >= 0; i--)
+          if (this.bulls[i]!.casterId === casterId) this.bulls.splice(i, 1);
+        const want = d.spawnM;
+        const block = host.blocked(at, { x: at.x + dir.x * want, y: at.y + dir.y * want });
+        const reach = block === null ? want : Math.max(1, want * block - 0.6);
+        const home = { x: at.x + dir.x * reach, y: at.y + dir.y * reach };
+        const foe = this.nearestEnemy(casterId, home, 30, host);
+        this.bulls.push({
           casterId,
           def,
           spec: d,
           x: home.x,
           y: home.y,
-          heading: Math.atan2(dir.y, dir.x),
+          heading: foe ? Math.atan2(foe.y - home.y, foe.x - home.x) : Math.atan2(dir.y, dir.x),
+          speed: 0,
+          lean: 0,
+          gait: 0,
           ageS: 0,
-          leftS: d.durationS,
           phase: 'form',
           phaseS: 0,
-          flownS: 0,
-          orbit: Math.atan2(-dir.y, -dir.x),
-          lungeDir: dir,
-          lungeFrom: home,
-          lungeReachM: d.lungeRangeM,
+          targetId: foe?.id ?? null,
+          passed: new Set(),
           burstAt: null,
           home,
-          targetId: null,
           trail: [{ ...home }],
         });
         return true;
@@ -274,7 +273,7 @@ export class InkWorld {
   }
 
   clearOf(casterId: string): void {
-    for (const list of [this.serpents, this.dragons, this.vortices, this.masterpieces, this.figures] as {
+    for (const list of [this.serpents, this.bulls, this.vortices, this.masterpieces, this.figures] as {
       casterId: string;
     }[][])
       for (let i = list.length - 1; i >= 0; i--) if (list[i]!.casterId === casterId) list.splice(i, 1);
@@ -282,7 +281,7 @@ export class InkWorld {
 
   clear(): void {
     this.serpents.length = 0;
-    this.dragons.length = 0;
+    this.bulls.length = 0;
     this.vortices.length = 0;
     this.masterpieces.length = 0;
     this.figures.length = 0;
@@ -298,7 +297,7 @@ export class InkWorld {
   update(dtS: number, host: AbilityHost): void {
     this.nowS += dtS;
     this.updateSerpents(dtS, host);
-    this.updateDragons(dtS, host);
+    this.updateBulls(dtS, host);
     this.updateVortices(dtS, host);
     this.updateMasterpieces(dtS, host);
     this.updateFigures(dtS, host);
@@ -314,7 +313,7 @@ export class InkWorld {
       s.ageS += dtS;
       s.phaseS += dtS;
       s.biteReadyS = Math.max(0, s.biteReadyS - dtS);
-      if (!this.casterStanding(s.casterId, host) && s.phase !== 'fade') this.fade(s);
+      if (!this.casterStanding(s.casterId, host) && s.phase !== 'fade') this.fade(s, host);
       if (s.phase === 'form') {
         if (s.phaseS >= s.spec.formS) {
           s.phase = 'hunt';
@@ -341,14 +340,31 @@ export class InkWorld {
           s.x = t.x;
           s.y = t.y;
         }
-        if (s.phaseS >= s.spec.restrainS || !t?.hittable) this.fade(s);
+        // It holds for exactly `restrainS` (the binding runs on its own clock to the same length), then unwinds and bursts into ink.
+        if (s.phaseS >= s.spec.restrainS || !t?.hittable) this.fade(s, host);
       } else if (s.phaseS >= INK_FADE_S) {
         this.serpents.splice(i, 1);
       }
     }
   }
 
-  private fade(s: Serpent): void {
+  /** The serpent lets go (its time is up, the prey fell, or its caster did) and dissolves; the binding always ends with it. */
+  private fade(s: Serpent, host?: AbilityHost): void {
+    if (s.phase === 'wrap' && host) {
+      const t = host.fighters().find((f) => f.id === s.targetId);
+      host.bind?.(s.targetId ?? '', 0);
+      if (t)
+        host.emit({
+          kind: 'impact',
+          ability: s.def.id,
+          look: s.def.look,
+          vfx: 'ink-splash',
+          sfx: 'ink-pool',
+          x: t.x,
+          y: t.y,
+          radiusM: 1.1,
+        });
+    }
     s.phase = 'fade';
     s.phaseS = 0;
   }
@@ -362,7 +378,7 @@ export class InkWorld {
       target = t ?? undefined;
     }
     if (!target || s.ageS > spec.lifeS) {
-      this.fade(s);
+      this.fade(s, host);
       return;
     }
     // It turns toward the target no faster than its turn rate, so a sidestep or a dodge throws it off.
@@ -373,7 +389,7 @@ export class InkWorld {
     const from = { x: s.x, y: s.y };
     const to = { x: s.x + Math.cos(s.heading) * step, y: s.y + Math.sin(s.heading) * step };
     if (host.blocked(from, to) !== null) {
-      this.fade(s); // it splashes against a wall or furniture
+      this.fade(s, host); // it splashes against a wall or furniture
       host.emit({
         kind: 'impact',
         ability: s.def.id,
@@ -419,180 +435,207 @@ export class InkWorld {
       // Wrapped: held by the legs for a short time, then released; never twice in a row.
       if ((this.wrapImmuneUntilS.get(f.id) ?? 0) <= this.nowS) {
         this.wrapImmuneUntilS.set(f.id, this.nowS + spec.restrainS + spec.immuneS);
-        host.trap?.(f.id, spec.restrainS);
+        host.bind?.(f.id, spec.restrainS);
         s.targetId = f.id;
         s.phase = 'wrap';
         s.phaseS = 0;
-      } else this.fade(s);
+      } else this.fade(s, host);
       return;
     }
   }
 
-  private updateDragons(dtS: number, host: AbilityHost): void {
-    for (let i = this.dragons.length - 1; i >= 0; i--) {
-      const d = this.dragons[i]!;
-      const spec = d.spec;
-      d.ageS += dtS;
-      d.phaseS += dtS;
-      if (d.phase === 'fade') {
-        if (d.phaseS >= INK_FADE_S) this.dragons.splice(i, 1);
+  private updateBulls(dtS: number, host: AbilityHost): void {
+    for (let i = this.bulls.length - 1; i >= 0; i--) {
+      const b = this.bulls[i]!;
+      const spec = b.spec;
+      b.ageS += dtS;
+      b.phaseS += dtS;
+      if (b.phase === 'fade') {
+        if (b.phaseS >= INK_FADE_S) this.bulls.splice(i, 1);
         continue;
       }
-      d.leftS -= dtS;
-      if (d.leftS <= 0 || !this.casterStanding(d.casterId, host)) {
-        d.phase = 'fade';
-        d.phaseS = 0;
+      if (!this.casterStanding(b.casterId, host) || b.ageS > spec.durationS) {
+        this.bullFade(b, host);
         continue;
       }
-      if (d.phase === 'form') {
-        if (d.phaseS >= spec.formS) {
-          d.phase = 'fly';
-          d.phaseS = 0;
+      // It tracks the same opponent for the whole charge (and picks the nearest again if that one is gone).
+      let target = host.fighters().find((f) => f.id === b.targetId && f.hittable) as AbilityTarget | undefined;
+      if (!target) {
+        target = this.nearestEnemy(b.casterId, b, 30, host) ?? undefined;
+        b.targetId = target?.id ?? null;
+      }
+      if (b.phase === 'form') {
+        if (b.phaseS >= spec.formS) {
+          b.phase = 'paw';
+          b.phaseS = 0;
           host.emit({
             kind: 'impact',
-            ability: d.def.id,
-            look: d.def.look,
-            vfx: 'ink-dragon-live',
-            sfx: d.def.sfx.release,
-            x: d.x,
-            y: d.y,
-            radiusM: 1.2,
+            ability: b.def.id,
+            look: b.def.look,
+            vfx: 'ink-bull-rise',
+            sfx: b.def.sfx.release,
+            x: b.x,
+            y: b.y,
+            radiusM: 1.6,
           });
         }
-        continue;
-      }
-      const target = this.nearestEnemy(d.casterId, d, 30, host);
-      d.targetId = target?.id ?? null;
-      if (d.phase === 'fly') {
-        d.flownS += dtS;
-        this.flyStep(d, target, dtS, host.bounds?.());
-        if (target && d.flownS >= spec.lungeAfterS) {
-          // The warning: it rears with its jaws opening and the lane it will strike along is marked, locked at this moment.
-          const dir = norm({ x: target.x - d.x, y: target.y - d.y });
-          const end = { x: d.x + dir.x * spec.lungeRangeM, y: d.y + dir.y * spec.lungeRangeM };
-          const block = host.blocked({ x: d.x, y: d.y }, end);
-          d.lungeDir = dir;
-          d.lungeFrom = { x: d.x, y: d.y };
-          d.lungeReachM = block === null ? spec.lungeRangeM : Math.max(1, spec.lungeRangeM * block - 0.4);
-          d.heading = Math.atan2(dir.y, dir.x);
-          d.phase = 'rear';
-          d.phaseS = 0;
+      } else if (b.phase === 'paw') {
+        // Head down, one hoof scraping the ground; it squares up to the opponent while it gets ready.
+        if (target) b.heading += clampTurn(angleDiff(b.heading, Math.atan2(target.y - b.y, target.x - b.x)), 3 * dtS);
+        if (b.phaseS >= spec.pawS) {
+          b.phase = 'charge';
+          b.phaseS = 0;
           host.emit({
-            kind: 'telegraph',
-            ability: d.def.id,
-            look: d.def.look,
-            vfx: 'ink-dragon-warn',
-            sfx: 'ink-dragon-roar',
-            x: d.x,
-            y: d.y,
-            radiusM: spec.biteWidthM,
+            kind: 'impact',
+            ability: b.def.id,
+            look: b.def.look,
+            vfx: 'ink-bull-start',
+            sfx: 'bull-charge',
+            x: b.x,
+            y: b.y,
+            radiusM: 1.4,
+            dirX: Math.cos(b.heading),
+            dirY: Math.sin(b.heading),
           });
         }
-      } else if (d.phase === 'rear') {
-        if (d.phaseS >= spec.windupS) {
-          d.phase = 'lunge';
-          d.phaseS = 0;
-        }
-      } else if (d.phase === 'lunge') {
-        this.lungeStep(d, dtS, host);
-      } else if (d.phase === 'burst') {
-        if (d.phaseS >= DRAGON_BURST_S) {
-          d.phase = 'fade';
-          d.phaseS = 0;
+      } else if (b.phase === 'charge') {
+        this.chargeStep(b, target ?? null, dtS, host);
+      } else if (b.phase === 'slow') {
+        b.speed = Math.max(0, b.speed - (spec.speedMps / spec.slowS) * dtS);
+        b.lean *= 0.9;
+        this.bullMove(b, dtS, host);
+        if (b.phaseS >= spec.slowS) this.bullFade(b, host);
+      } else if (b.phase === 'ram') {
+        b.speed = 0;
+        b.lean = 0;
+        if (b.phaseS >= BULL_BURST_S) {
+          b.phase = 'fade';
+          b.phaseS = 0;
         }
       }
     }
   }
 
-  /** The head drives straight along the locked lane with its jaws open; the first fighter it reaches is bitten and the dragon bursts into ink. */
-  private lungeStep(d: Dragon, dtS: number, host: AbilityHost): void {
-    const spec = d.spec;
-    const travelled = Math.hypot(d.x - d.lungeFrom.x, d.y - d.lungeFrom.y);
-    const step = Math.min(spec.lungeSpeedMps * dtS, Math.max(0, d.lungeReachM - travelled));
-    d.x += d.lungeDir.x * step;
-    d.y += d.lungeDir.y * step;
-    // The head never leaves the map: at the edge the lane ends there.
-    const bounds = host.bounds?.();
-    if (bounds) {
-      const cx = Math.max(DRAGON_MARGIN_M, Math.min(bounds.w - DRAGON_MARGIN_M, d.x));
-      const cy = Math.max(DRAGON_MARGIN_M, Math.min(bounds.h - DRAGON_MARGIN_M, d.y));
-      if (cx !== d.x || cy !== d.y) {
-        d.x = cx;
-        d.y = cy;
-        d.lungeReachM = Math.hypot(d.x - d.lungeFrom.x, d.y - d.lungeFrom.y);
+  /** It scatters into ink where it stands (a miss that has run its course, a wall, or its caster going down). */
+  private bullFade(b: Bull, host: AbilityHost): void {
+    b.phase = 'fade';
+    b.phaseS = 0;
+    host.emit({
+      kind: 'impact',
+      ability: b.def.id,
+      look: b.def.look,
+      vfx: 'ink-splash',
+      sfx: 'ink-splash',
+      x: b.x,
+      y: b.y,
+      radiusM: 1.2,
+    });
+  }
+
+  /**
+   * The charge: it builds up speed, then curves toward its opponent no faster than its turn rate (less when it is going flat out, and not
+   * at all once it has committed inside `commitM`), so a sidestep at the right moment or a dodge throws it off. The horns land on the
+   * first opponent it reaches; a dodged pass is not a hit, and it carries on, then slows and scatters.
+   */
+  private chargeStep(b: Bull, target: AbilityTarget | null, dtS: number, host: AbilityHost): void {
+    const spec = b.spec;
+    b.speed = Math.min(spec.speedMps, b.speed + spec.accelMps2 * dtS);
+    let turned = 0;
+    if (target) {
+      const dist = Math.hypot(target.x - b.x, target.y - b.y);
+      const ahead = Math.cos(angleDiff(b.heading, Math.atan2(target.y - b.y, target.x - b.x))) > 0.2;
+      // Inside the commit distance, or once it has gone past, it holds its line: it cannot turn on a sixpence.
+      if (dist > spec.commitM && ahead) {
+        const rate = spec.turnRadPerS * (1.15 - 0.5 * (b.speed / spec.speedMps));
+        turned = clampTurn(angleDiff(b.heading, Math.atan2(target.y - b.y, target.x - b.x)), rate * dtS);
+        b.heading += turned;
+      }
+      // Once it has run past its opponent it loses interest, slows and scatters.
+      if (!ahead && dist > 1.8 && b.phaseS > 0.5) {
+        b.phase = 'slow';
+        b.phaseS = 0;
+        return;
       }
     }
-    this.trailStep(d);
+    // The body leans into the corner in proportion to how hard it is turning.
+    const maxTurn = spec.turnRadPerS * 0.65 * dtS || 1;
+    b.lean += (Math.max(-1, Math.min(1, turned / maxTurn)) - b.lean) * Math.min(1, dtS * 8);
+    if (!this.bullMove(b, dtS, host)) return;
     for (const f of host.fighters()) {
-      if (!f.hittable || this.friendly(f, d.casterId, host)) continue;
-      if (Math.hypot(f.x - d.x, f.y - d.y) > spec.biteWidthM / 2 + f.radiusM) continue;
-      host.hitFighter(d.casterId, f.id, d.def.payload, d.lungeDir, d.def.look?.hitFlash);
-      d.burstAt = { x: d.x, y: d.y };
-      d.phase = 'burst';
-      d.phaseS = 0;
+      if (!f.hittable || this.friendly(f, b.casterId, host) || b.passed.has(f.id)) continue;
+      if (Math.hypot(f.x - b.x, f.y - b.y) > spec.radiusM + f.radiusM) continue;
+      const dir = { x: Math.cos(b.heading), y: Math.sin(b.heading) };
+      const landed = host.hitFighter(b.casterId, f.id, b.def.payload, dir, b.def.look?.hitFlash);
+      if (!landed) {
+        b.passed.add(f.id); // dodged (or guarded): it thunders past
+        continue;
+      }
+      b.burstAt = { x: f.x, y: f.y };
+      b.phase = 'ram';
+      b.phaseS = 0;
       host.emit({
         kind: 'impact',
-        ability: d.def.id,
-        look: d.def.look,
-        vfx: d.def.vfx,
-        sfx: d.def.sfx.impact,
-        x: d.x,
-        y: d.y,
-        radiusM: 1.6,
-        dirX: d.lungeDir.x,
-        dirY: d.lungeDir.y,
+        ability: b.def.id,
+        look: b.def.look,
+        vfx: b.def.vfx,
+        sfx: b.def.sfx.impact,
+        x: f.x,
+        y: f.y,
+        radiusM: 2,
+        dirX: dir.x,
+        dirY: dir.y,
       });
       return;
     }
-    if (Math.hypot(d.x - d.lungeFrom.x, d.y - d.lungeFrom.y) >= d.lungeReachM - 1e-6) {
-      // Nothing was in the way: the head dissolves into ink at the end of the lane.
-      d.phase = 'fade';
-      d.phaseS = 0;
+    if (b.phaseS >= spec.chargeS) {
+      b.phase = 'slow';
+      b.phaseS = 0;
     }
   }
 
-  /** It circles the target at its orbit radius, never closer than the orbit, drifting round slowly. */
-  private flyStep(d: Dragon, target: AbilityTarget | null, dtS: number, bounds?: { w: number; h: number }): void {
-    const spec = d.spec;
-    const centre = target ?? { x: d.x, y: d.y };
-    d.orbit += 0.55 * dtS;
-    const px = d.x;
-    const py = d.y;
-    let want = { x: centre.x + Math.cos(d.orbit) * spec.orbitM, y: centre.y + Math.sin(d.orbit) * spec.orbitM };
-    // It flies inside the map: the circle it flies round the opponent is pressed in from the walls (never outside the arena).
-    if (bounds)
-      want = {
-        x: Math.max(DRAGON_MARGIN_M, Math.min(bounds.w - DRAGON_MARGIN_M, want.x)),
-        y: Math.max(DRAGON_MARGIN_M, Math.min(bounds.h - DRAGON_MARGIN_M, want.y)),
-      };
-    const dx = want.x - d.x;
-    const dy = want.y - d.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist > 0.05) {
-      const step = Math.min(dist, spec.speedMps * dtS);
-      d.x += (dx / dist) * step;
-      d.y += (dy / dist) * step;
+  /** Move along its heading; false if it ran into a wall or furniture (it splashes against it) or the edge of the map. */
+  private bullMove(b: Bull, dtS: number, host: AbilityHost): boolean {
+    if (b.speed <= 0) return true;
+    const from = { x: b.x, y: b.y };
+    const to = { x: b.x + Math.cos(b.heading) * b.speed * dtS, y: b.y + Math.sin(b.heading) * b.speed * dtS };
+    const bounds = host.bounds?.();
+    const out =
+      bounds !== undefined &&
+      (to.x < BULL_MARGIN_M ||
+        to.y < BULL_MARGIN_M ||
+        to.x > bounds.w - BULL_MARGIN_M ||
+        to.y > bounds.h - BULL_MARGIN_M);
+    if (out || host.blocked(from, to) !== null) {
+      b.phase = 'ram';
+      b.phaseS = 0;
+      b.speed = 0;
+      host.emit({
+        kind: 'impact',
+        ability: b.def.id,
+        look: b.def.look,
+        vfx: 'ink-splash',
+        sfx: 'ink-splash',
+        x: b.x,
+        y: b.y,
+        radiusM: 1.4,
+        dirX: Math.cos(b.heading),
+        dirY: Math.sin(b.heading),
+      });
+      return false;
     }
-    if (bounds) {
-      d.x = Math.max(DRAGON_MARGIN_M, Math.min(bounds.w - DRAGON_MARGIN_M, d.x));
-      d.y = Math.max(DRAGON_MARGIN_M, Math.min(bounds.h - DRAGON_MARGIN_M, d.y));
-    }
-    // The head always faces the opponent, whichever way it is flying round them; the ink trail follows the path it has flown.
-    if (target) d.heading = Math.atan2(target.y - d.y, target.x - d.x);
-    if (Math.hypot(d.x - px, d.y - py) > 0) this.trailStep(d);
-  }
-
-  /** The ink trail records the path the head has flown, as long as `DRAGON_TRAIL_M`. */
-  private trailStep(d: Dragon): void {
-    d.trail.unshift({ x: d.x, y: d.y });
+    b.gait += b.speed * dtS * 2.2;
+    b.x = to.x;
+    b.y = to.y;
+    b.trail.unshift({ x: b.x, y: b.y });
     let len = 0;
-    for (let k = 1; k < d.trail.length; k++) {
-      len += Math.hypot(d.trail[k]!.x - d.trail[k - 1]!.x, d.trail[k]!.y - d.trail[k - 1]!.y);
-      if (len > DRAGON_TRAIL_M) {
-        d.trail.length = k + 1;
+    for (let k = 1; k < b.trail.length; k++) {
+      len += Math.hypot(b.trail[k]!.x - b.trail[k - 1]!.x, b.trail[k]!.y - b.trail[k - 1]!.y);
+      if (len > BULL_TRAIL_M) {
+        b.trail.length = k + 1;
         break;
       }
     }
+    return true;
   }
 
   private updateVortices(dtS: number, host: AbilityHost): void {
@@ -713,4 +756,9 @@ export class InkWorld {
       }
     }
   }
+}
+
+/** A turn of `want` radians limited to at most `max` either way. */
+function clampTurn(want: number, max: number): number {
+  return Math.max(-max, Math.min(max, want));
 }

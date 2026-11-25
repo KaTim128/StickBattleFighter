@@ -2581,6 +2581,11 @@ export class FightArenaScene implements ArenaScene {
       jump = false;
       f.sprinting = false;
     }
+    // Ink Serpent: wrapped, so no blows and no jumps (he can still walk and guard).
+    if (c.bound) {
+      jump = false;
+      f.combo.interrupt();
+    }
     // What the feet stand on: the floor or the top of a piece of furniture.
     if (this.climbing) f.hop.floorM = this.climbing.floorFor(f);
     const air = f.airborne;
@@ -3727,7 +3732,7 @@ export class FightArenaScene implements ArenaScene {
             world: this.abilities.world.ink,
             at: (id) => {
               const f = id ? this.fighterByName(id) : null;
-              return f ? { x: f.x, y: f.y } : null;
+              return f ? { x: f.x, y: f.y, lift: f.hop.heightM + f.abilityLift, lean: f.view?.motion ?? 0 } : null;
             },
           }
         : undefined,
@@ -4205,6 +4210,7 @@ export class FightArenaScene implements ArenaScene {
     f.view.guard = c.state === 'guarding' ? 1 : 0;
     f.view.shieldFlare = f.shieldS / SHIELD_FLARE_S;
     f.view.stunned = c.state === 'stunned';
+    f.view.bound = c.bound;
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
     // Afterimage: temporal ghosts trail a fighter who is being driven by an ability that leaves them.

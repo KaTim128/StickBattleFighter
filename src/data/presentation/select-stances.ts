@@ -226,7 +226,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   // Inkmaster: upright and composed before a fresh page, the oversized brush held low in front of him, the free hand tucked at the waist.
   inkmaster: {
     title: 'The Living Brush',
-    style: 'Ink painter: waves, a serpent, a dragon, clones and a drawn monster',
+    style: 'Ink painter: waves, a serpent, a bull, clones and a drawn monster',
     pelvis: 0.78,
     leadFoot: 0.36,
     rearFoot: -0.42,

@@ -795,3 +795,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Colosseum props: walk into each from all sides (blocked); jump onto climbable ones; a fighter behind a column makes it see-through, walking away restores it, and it keeps blocking while see-through (automated: `prop-fade.test.ts`).
 
 - [ ] Music: each screen plays only its own track (menu track in every menu and the tournament screen, battle track after FIGHT!, house track in Hide and Seek); rapid screen changes never layer tracks; leaving a page or returning via Back never leaves the wrong track playing (automated: `music-director.test.ts`, `music-transitions.spec.ts`). Real-device check on Android Chrome still to do.
+
+- [ ] Ink Bull: rises from ink, paws and snorts, charges and curves after a moving opponent, can be sidestepped or dodged, rams with knockback and screen shake, a miss slows and scatters (automated: `ink-world.test.ts`, `inkmaster.test.ts`; look checked by screenshot).
+- [ ] Ink Serpent: wraps the body for exactly 4 s; the target cannot attack, use abilities, jump or dodge but can walk; it cannot be refreshed; ink seal over the head while bound; unwinds into ink on release.

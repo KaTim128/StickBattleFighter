@@ -117,6 +117,8 @@ export interface AbilityHost {
   /** A gentle current: add this velocity to a fighter's own movement for this step only (Ink Cyclone; they can still walk or dodge out). Optional. */
   nudge?(targetId: string, velocity: Vec2): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
+  /** Ink Serpent: bind the target (no abilities, attacks, jumps or dodges; walking stays free) for `seconds`; 0 frees it. */
+  bind?(targetId: string, seconds: number): void;
   legTrapState?(targetId: string): { heightM: number; trappedS: number };
   /** Telekinetic Toss: raise the nearest prop within reach where it stands and throw it at the opponent; false if there is none. */
   telekineticToss?(casterId: string, spec: TossDelivery): boolean;
@@ -1182,7 +1184,7 @@ export class AbilityWorld {
         break;
       }
       case 'serpent':
-      case 'dragon':
+      case 'bull':
       case 'vortex':
       case 'masterpiece':
         this.ink.release(casterId, def, aim, host);

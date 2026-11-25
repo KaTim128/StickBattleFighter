@@ -112,6 +112,8 @@ export class SceneAbilities implements AbilityHost {
     if (this.world.stopOf()) return 'busy';
     // Resonance Break: a muted fighter cannot use abilities (blows, blocks and dodges are unaffected).
     if (c.muted) return 'muted';
+    // Ink Serpent: wrapped, so no abilities at all (walking is still free).
+    if (c.bound) return 'bound';
     // Crystal Prison: legs held in crystal, so no ability that moves the body.
     if (c.trapped && MOVEMENT_DELIVERIES.has(caster.def(slot).delivery.type)) return 'trapped';
     const block = caster.check(slot, {
@@ -500,6 +502,18 @@ export class SceneAbilities implements AbilityHost {
     f.combatant.trapLegs(seconds);
     if (seconds > 0) {
       // Held where it stands: whatever it was doing with its legs stops (a charge, a dash, a leap).
+      this.world.cancel(f.name, this);
+      f.combo.interrupt();
+    }
+  }
+
+  /** Ink Serpent: wrap the target for exactly `seconds`. What it was doing with its body or hands stops, then only walking is left. */
+  bind(targetId: string, seconds: number): void {
+    const f = this.byName(targetId);
+    if (!f) return;
+    f.combatant.bind(seconds);
+    if (seconds > 0) {
+      f.caster?.interrupt(true);
       this.world.cancel(f.name, this);
       f.combo.interrupt();
     }

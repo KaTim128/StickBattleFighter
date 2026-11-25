@@ -100,6 +100,8 @@ export class StickmanView {
   bowDraw = 0;
   /** Stunned: stars circle the head (PRS-6). */
   stunned = false;
+  /** Bound by the Ink Serpent: a pulsing ink seal hangs over the head until it lets go. */
+  bound = false;
   private readonly status = new Graphics();
   /** The red ribbon behind a slashing knife (Rending Flurry), drawn above the body. */
   private readonly slashLayer = new Graphics();
@@ -1736,6 +1738,20 @@ export class StickmanView {
           alpha: this.shieldFlare,
         });
       }
+    }
+    if (this.bound) {
+      // An ink seal: a black brushed disc with a pale cross-stroke, bobbing above the head so the restraint reads at a glance.
+      const x = s.head.x;
+      const y = s.head.y - this.bones.headRadius - 0.3 + Math.sin(t * 5) * 0.025;
+      const r = 0.09 + Math.sin(t * 8) * 0.008;
+      g.circle(x, y, r + 0.025).fill({ color: 0xf2eee3, alpha: 0.5 });
+      g.circle(x, y, r).fill(0x050507);
+      g.moveTo(x - r * 0.6, y - r * 0.6)
+        .lineTo(x + r * 0.6, y + r * 0.6)
+        .stroke({ width: 0.02, color: 0xf2eee3, cap: 'round' });
+      g.moveTo(x + r * 0.6, y - r * 0.6)
+        .lineTo(x - r * 0.6, y + r * 0.6)
+        .stroke({ width: 0.02, color: 0xf2eee3, cap: 'round' });
     }
     if (this.stunned) {
       for (let i = 0; i < 3; i++) {

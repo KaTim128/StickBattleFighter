@@ -268,7 +268,10 @@ export interface AbilityVfxInput {
   /** Continuous beams (Fire Beam). */
   readonly beams?: readonly Beam[];
   /** Inkmaster's living ink (serpent, dragon, cyclone, the Masterpiece) and where a fighter stands by name. */
-  readonly ink?: { readonly world: InkWorld; readonly at: (id: string | null) => { x: number; y: number } | null };
+  readonly ink?: {
+    readonly world: InkWorld;
+    readonly at: (id: string | null) => { x: number; y: number; lift?: number; lean?: number } | null;
+  };
   /**
    * Spectral chains this frame (Grave Chains, owner 12/11/2026): from the caster's staff to the
    * flying hook, then to the enemy being dragged in. World points at chest height.

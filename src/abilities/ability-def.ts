@@ -720,8 +720,8 @@ export interface GrabDelivery {
 /**
  * Ink Serpent (Inkmaster): a serpent drawn in the air in `formS` seconds (it does nothing while forming), which then
  * hunts the nearest enemy, turning at up to `turnRadPerS` (so it can be dodged or outrun), and on contact bites with the
- * payload and wraps the target, holding its legs for `restrainS`. The same target cannot be wrapped again for
- * `immuneS`. Guarding, abilities and attacks stay available while it is held.
+ * payload and wraps the target's body for exactly `restrainS` (a `bind`: no abilities, attacks, jumps or dodges; walking and guarding stay
+ * free). The same target cannot be wrapped again until `immuneS` after the binding ends, so it can never be chained into a lock.
  */
 export interface SerpentDelivery {
   readonly type: 'serpent';
@@ -736,23 +736,27 @@ export interface SerpentDelivery {
 }
 
 /**
- * Ink Dragon (Inkmaster): drawn in the air, a black ink dragon flies round the nearest opponent for `lungeAfterS`, then rears (a
- * warning `windupS` long, the lane it will strike marked on the floor, jaws opening) and lunges `lungeRangeM` forward at
- * `lungeSpeedMps` with its mouth open. The first fighter its head reaches takes the payload (damage, slow and the ink splash over the
- * middle of their screen) as it bursts into black ink; a miss simply dissolves at the end of the lunge. It charges once.
+ * Ink Bull (Inkmaster): a bull of black brush-painted ink bursts up out of the ground `spawnM` in front of the caster (`formS`), lowers
+ * its head, paws the ground and snorts (`pawS`), then charges the nearest opponent: it builds to `speedMps` at `accelMps2`, and curves
+ * toward them no faster than `turnRadPerS` (less at full speed, and not at all inside `commitM`), so it can be sidestepped or dodged.
+ * The first opponent it reaches takes the payload (a heavy ram with strong knockback) and it bursts into ink; a miss runs on for up to
+ * `chargeS`, slows over `slowS` and scatters. It charges once and is gone after `durationS` at the latest.
  */
-export interface DragonDelivery {
-  readonly type: 'dragon';
+export interface BullDelivery {
+  readonly type: 'bull';
   readonly formS: number;
-  readonly durationS: number;
+  readonly pawS: number;
   readonly speedMps: number;
-  readonly orbitM: number;
-  readonly lungeAfterS: number;
-  readonly windupS: number;
-  readonly lungeRangeM: number;
-  readonly lungeSpeedMps: number;
-  /** How wide the head's bite is, metres (the warning lane is this wide). */
-  readonly biteWidthM: number;
+  readonly accelMps2: number;
+  readonly turnRadPerS: number;
+  readonly commitM: number;
+  readonly chargeS: number;
+  readonly slowS: number;
+  readonly durationS: number;
+  /** How far in front of the caster it rises, metres. */
+  readonly spawnM: number;
+  /** How wide the horns' ram is (the body's reach), metres. */
+  readonly radiusM: number;
 }
 
 /**
@@ -789,7 +793,7 @@ export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon' | 'shockwave'>;
 
 export type Delivery =
   | SerpentDelivery
-  | DragonDelivery
+  | BullDelivery
   | VortexDelivery
   | MasterpieceDelivery
   | ProjectileDelivery

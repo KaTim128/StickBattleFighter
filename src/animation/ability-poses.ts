@@ -1069,7 +1069,7 @@ const SHAPES: Record<string, CastShape> = {
  */
 const INK_DRAWING: Readonly<Record<string, { cycles: number; amp: number; lean: number }>> = {
   inkSerpent: { cycles: 2, amp: 38, lean: 6 }, // an S: two waves
-  inkDragon: { cycles: 1.5, amp: 60, lean: 10 }, // one great sweep out and back
+  inkBull: { cycles: 1.5, amp: 60, lean: 10 }, // one great sweep out and back
   inkClone: { cycles: 4, amp: 26, lean: 4 }, // quick short strokes: head, body, arms, legs
   inkCyclone: { cycles: 3, amp: 58, lean: 8 }, // round and round
   masterpiece: { cycles: 8, amp: 52, lean: 12 }, // a long, sweeping drawing

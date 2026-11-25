@@ -583,10 +583,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 12, '#f2eee3', 0.14),
     `<path d="M6 36 C8 22 20 28 24 22 C28 16 18 10 28 8 C38 6 42 16 38 22 C34 28 30 32 36 38" fill="none" stroke="#050505" stroke-width="6" stroke-linecap="round" filter="url(#ds)"/><path d="M6 36 C8 22 20 28 24 22 C28 16 18 10 28 8 C38 6 42 16 38 22" fill="none" stroke="#f2eee3" stroke-width="1.2" stroke-linecap="round" opacity=".55"/><circle cx="37" cy="39" r="2.4" fill="#f2eee3"/>`,
   ),
-  'ink-dragon': icon(
+  'ink-bull': icon(
     'ink',
     rays(24, 24, 16, '#f2eee3', 0.16),
-    `<path d="M4 34 C10 22 14 36 20 26 C26 16 30 30 34 20 C36 14 40 12 44 14 L40 20 L44 22 L38 24 C38 32 28 42 18 40 C12 38 8 38 4 34 Z" fill="#050505" stroke="#f2eee3" stroke-width="1.4" stroke-linejoin="round" filter="url(#ds)"/><path d="M38 14 L41 7 L43 14 Z" fill="#050505" stroke="#f2eee3" stroke-width="1"/><circle cx="39" cy="18" r="1.5" fill="#f2eee3"/><g fill="none" stroke="#f2eee3" stroke-width="1" opacity=".6"><path d="M12 36 C16 32 18 36 22 32"/><path d="M24 34 C28 30 30 34 34 30"/></g>`,
+    `<path d="M6 30 C8 22 16 20 24 22 C32 20 40 22 42 28 C43 34 38 38 34 38 L33 44 L29 44 L28 39 L18 39 L17 44 L13 44 L12 38 C8 38 5 34 6 30 Z" fill="#050505" stroke="#f2eee3" stroke-width="1.3" stroke-linejoin="round" filter="url(#ds)"/><path d="M8 24 C2 22 2 14 6 10 C6 16 9 19 13 22 Z M40 24 C46 22 46 14 42 10 C42 16 39 19 35 22 Z" fill="#050505" stroke="#f2eee3" stroke-width="1"/><path d="M15 30 L21 32 L16 33 Z M33 30 L27 32 L32 33 Z" fill="#f2eee3"/><g fill="none" stroke="#f2eee3" stroke-width="1" opacity=".55"><path d="M14 26 C18 24 22 26 26 24"/><path d="M26 28 C30 26 34 28 38 26"/></g>`,
   ),
   'ink-clone': icon(
     'ink',

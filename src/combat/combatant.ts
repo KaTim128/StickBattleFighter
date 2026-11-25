@@ -208,7 +208,7 @@ export class Combatant {
   tryDodge(): boolean {
     const chain = this.dodgeChainLength;
     const cost = this.dodgeCostFor(chain);
-    if (!this.canAct || this.trapped || this.dodgeCooldownS > 0 || this.stamina < cost) return false;
+    if (!this.canAct || this.trapped || this.bound || this.dodgeCooldownS > 0 || this.stamina < cost) return false;
     this.guardUp = false;
     this.stamina -= cost;
     this.sinceStaminaUseS = 0;
@@ -668,6 +668,20 @@ export class Combatant {
     else this.status.apply('trap', seconds);
   }
 
+  /** Ink Serpent: wrapped for exactly `seconds` (0 frees). Abilities, attacks, jumps and dodges are refused; walking is not. */
+  bind(seconds: number): void {
+    if (seconds <= 0 || this.koAgeS >= 0) this.status.clear('bind');
+    else this.status.apply('bind', seconds);
+  }
+
+  get bound(): boolean {
+    return this.status.has('bind');
+  }
+
+  get bindLeftS(): number {
+    return this.status.leftS('bind');
+  }
+
   get trapped(): boolean {
     return this.status.has('trap');
   }
@@ -733,6 +747,7 @@ export class Combatant {
       this.status.clear('bleed');
       this.status.clear('toxicity');
       this.status.clear('trap');
+      this.status.clear('bind');
       this.crystalShieldLeftS = 0;
       this.crystalShieldHp = 0;
       this.crystalShieldHits = 0;

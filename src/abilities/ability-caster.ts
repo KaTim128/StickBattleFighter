@@ -16,6 +16,7 @@ export type CastBlock =
   | 'airborne'
   | 'limit'
   | 'muted'
+  | 'bound'
   | 'trapped'
   /** Telekinetic Toss: nothing liftable in reach. Refused before stamina or cooldown is spent. */
   | 'noObject';
