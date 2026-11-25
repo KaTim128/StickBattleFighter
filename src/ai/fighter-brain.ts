@@ -91,6 +91,8 @@ export interface BrainView {
   readonly abilities: readonly { readonly slot: AbilitySlot; readonly ready: boolean }[];
   readonly profile: { readonly aggression: number; readonly attackEveryS: number; readonly reactionS: number };
   readonly design: BrainDesign;
+  /** Overtime: never retreat or hit-and-run, always engage (tournament T1). */
+  readonly forceEngage?: boolean;
   readonly difficulty: Difficulty;
   /** The next waypoint toward the target when walls or furniture are in the way (REQ-AI-5). */
   readonly route: Vec2 | null;
@@ -501,7 +503,7 @@ export class FighterBrain {
       hi = Math.max(lo, hi - 0.5);
     }
     const retreatBelow = d.retreatBelowHp + (this.fragile ? 0.1 : 0) + (this.phase === 'critical' ? 0.1 : 0);
-    if (retreatBelow > 0 && s.hpFrac < retreatBelow && !t.frozen) lo = hi;
+    if (retreatBelow > 0 && s.hpFrac < retreatBelow && !t.frozen && !v.forceEngage) lo = hi;
     if (diff.adapts && d.movement === 'kite' && this.playerClose > 0.5) {
       lo += 1;
       hi += 1;
@@ -612,7 +614,7 @@ export class FighterBrain {
       out.move = away(0.3, 0.3); // give it room to get up, then meet it
       return out;
     }
-    if (now < this.retreatUntilS && !punishing) {
+    if (now < this.retreatUntilS && !punishing && !v.forceEngage) {
       out.move = away(1, 0.4); // hit and run: slip back out
       return out;
     }

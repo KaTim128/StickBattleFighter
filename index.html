@@ -608,6 +608,9 @@
       .tn-champion-title { font: 900 14px system-ui, sans-serif; letter-spacing: 0.3em; color: #ffb347; }
       .tn-champion-name { font: 900 30px system-ui, sans-serif; }
       .tn-placement, .tn-record { opacity: 0.85; }
+      .tn-banner.tn-overtime { background: rgba(120, 20, 10, 0.9); color: #ffd7c9; }
+      .tn-skip-battle { position: fixed; top: 64px; right: 16px; z-index: 21; padding: 8px 16px; border: 2px solid #c9a24a; border-radius: 0; background: rgba(13, 15, 20, 0.9); color: #ffcf9e; font: 800 13px system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+      .tn-skip-battle:disabled { opacity: 0.6; cursor: default; }
       .tn-banner { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 4px 14px; border-radius: 999px; background: rgba(13, 15, 20, 0.8); color: #ffcf9e; font: 800 12px system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; pointer-events: none; }
       /* Combat controls only in an active fight (owner, 13/11/2026; set by bootstrap). */
       body:not(.fighting) .ability-bar, body:not(.fighting) .touch-controls { display: none; }

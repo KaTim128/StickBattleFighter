@@ -160,6 +160,8 @@ describe('tournament bracket (owner, 13/11/2026)', () => {
   });
 });
 
+const firstWins = async (): Promise<'a' | 'b'> => 'a';
+
 describe('tournament flow between stages', () => {
   it('waits for the player, then for watch or skip choices, then moves on', async () => {
     const { settleStage, skipBattles, recordFor } = await import('../../../src/modes/tournament/tournament-flow');
@@ -174,13 +176,13 @@ describe('tournament flow between stages', () => {
     for (const m of open.slice(0, 3)) recordResult(t, m.id, m.a!, 'watched');
     settleStage(t);
     expect(t.stage).toBe(0); // 4 still open
-    skipBattles(t, equal, rand); // Skip: the rest are settled and the next stage starts
+    await skipBattles(t, firstWins); // Skip: the rest are settled and the next stage starts
     expect(t.stage).toBe(1);
     recordResult(t, playerMatch(t)!.id, 'p', 'played');
-    skipBattles(t, equal, rand);
+    await skipBattles(t, firstWins);
     expect(t.stage).toBe(2);
     recordResult(t, playerMatch(t)!.id, 'p', 'played');
-    skipBattles(t, equal, rand);
+    await skipBattles(t, firstWins);
     recordResult(t, playerMatch(t)!.id, 'p', 'played');
     settleStage(t);
     expect(t.champion).toBe('p');
@@ -200,10 +202,59 @@ describe('tournament flow between stages', () => {
     const t = createTournament(8, PLAYER, POOL, rand);
     const pm = playerMatch(t)!;
     recordResult(t, pm.id, pm.a === 'p' ? pm.b! : pm.a!, 'played');
-    for (let i = 0; i < 5 && !t.champion; i++) skipBattles(t, equal, rand);
+    for (let i = 0; i < 5 && !t.champion; i++) await skipBattles(t, firstWins);
     settleStage(t);
     expect(t.champion).not.toBeNull();
     expect(t.champion).not.toBe('p');
     expect(playerPlacement(t)).toBe('Out in the Top 8');
+  });
+});
+
+describe('skip battles integrity (T2/T3)', () => {
+  it('fights each open AI match once with a reproducible seed, reports progress and advances', async () => {
+    const { skipBattles, matchSeed } = await import('../../../src/modes/tournament/tournament-flow');
+    const t = createTournament(8, PLAYER, POOL, seeded(31));
+    recordResult(t, playerMatch(t)!.id, 'p', 'played');
+    const seen: number[] = [];
+    const progress: [number, number][] = [];
+    await skipBattles(
+      t,
+      async (_a, _b, seed) => {
+        seen.push(seed);
+        return 'b';
+      },
+      (d, n) => progress.push([d, n]),
+    );
+    expect(seen).toHaveLength(3);
+    expect(progress.at(-1)).toEqual([3, 3]);
+    expect(t.stage).toBe(1);
+    const first = t.rounds[0]!.find((m) => m.how === 'simulated')!;
+    expect(matchSeed(first, entrant(t, first.a)!, entrant(t, first.b)!)).toBe(seen[0]);
+  });
+
+  it('a second skip (double click) and a match decided meanwhile record nothing twice', async () => {
+    const { skipBattles } = await import('../../../src/modes/tournament/tournament-flow');
+    const t = createTournament(8, PLAYER, POOL, seeded(32));
+    recordResult(t, playerMatch(t)!.id, 'p', 'played');
+    let calls = 0;
+    const slow = async (): Promise<'a' | 'b'> => {
+      calls++;
+      await Promise.resolve();
+      return 'a';
+    };
+    await Promise.all([skipBattles(t, slow), skipBattles(t, slow)]);
+    expect(t.stage).toBe(1);
+    expect(t.rounds[0]!.every((m) => m.winner !== null)).toBe(true);
+    expect(calls).toBeGreaterThanOrEqual(3);
+    const before = JSON.stringify(t.rounds[0]);
+    await skipBattles(t, slow);
+    expect(JSON.stringify(t.rounds[0])).toBe(before);
+  });
+
+  it('recordResult refuses a match already decided, so a late result cannot advance twice', () => {
+    const t = createTournament(4, PLAYER, POOL, seeded(33));
+    const m = playerMatch(t)!;
+    recordResult(t, m.id, 'p', 'played');
+    expect(() => recordResult(t, m.id, m.a === 'p' ? m.b! : m.a!, 'played')).toThrow(/already decided/);
   });
 });

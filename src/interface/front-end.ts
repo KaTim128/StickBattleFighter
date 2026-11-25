@@ -61,6 +61,8 @@ export interface TournamentSetup {
   readonly arena: string;
   readonly difficulty: string;
   readonly size: number;
+  /** Spectate from the start (T4): the picked fighter is played by the AI and every match is watched. */
+  readonly spectate?: boolean;
 }
 
 export interface FrontEndOptions {
@@ -122,7 +124,14 @@ export class FrontEnd {
   readonly root: HTMLDivElement;
   private screen: FrontScreen = 'title';
   private open = false;
-  private choice: { fighter: string; arena: string; difficulty: string; size: number; opponent: string };
+  private choice: {
+    fighter: string;
+    arena: string;
+    difficulty: string;
+    size: number;
+    opponent: string;
+    spectate: boolean;
+  };
   /** What fighter select leads to: a tournament or the Open Zone. */
   private selectFor: 'tournament' | 'practice' = 'tournament';
   private afterName: FrontScreen = 'modes';
@@ -143,6 +152,7 @@ export class FrontEnd {
       arena: o.arenas.find((a) => a.name === 'Colosseum')?.id ?? o.initial.arena,
       difficulty: o.difficulties.find((d) => d.id === 'easy')?.id ?? o.initial.difficulty,
       opponent: o.opponents[0]?.id ?? '',
+      spectate: false,
     };
     for (const f of o.fighters) this.names.set(f.id, f.name);
     this.root = el('div', 'front-end');
@@ -773,6 +783,7 @@ export class FrontEnd {
           this.choice.size = v;
         },
       );
+    if (this.selectFor === 'tournament') bar.append(this.spectateToggle());
     bar.append(
       dropdownField(
         'Difficulty',
@@ -800,6 +811,20 @@ export class FrontEnd {
     );
     bar.append(actions);
     sec.append(head, info, stage, roster, bar);
+  }
+
+  /** "Spectate" (T4): back this fighter and watch the AI play it through the tournament. */
+  private spectateToggle(): HTMLElement {
+    const label = el('label', 'fe-chips fe-spectate');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.dataset.spectate = '';
+    box.checked = this.choice.spectate;
+    box.addEventListener('change', () => {
+      this.choice.spectate = box.checked;
+    });
+    label.append(box, el('span', 'fe-chips-label', 'Spectate (the AI plays your fighter)'));
+    return label;
   }
 
   private quit(): void {

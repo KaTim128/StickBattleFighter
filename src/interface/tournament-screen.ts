@@ -90,8 +90,9 @@ export class TournamentScreen {
       const mine = playerMatch(state);
       if (mine) {
         const them = entrant(state, mine.a === me.id ? mine.b : mine.a)!;
-        actions.appendChild(el('p', 'tn-note', `Your match: ${me.name} vs ${them.name}`));
-        actions.appendChild(button('tn-fight', 'FIGHT', () => this.actions.fight()));
+        const watching = me.ai === true;
+        actions.appendChild(el('p', 'tn-note', `${watching ? 'Following' : 'Your match'}: ${me.name} vs ${them.name}`));
+        actions.appendChild(button('tn-fight', watching ? 'WATCH' : 'FIGHT', () => this.actions.fight()));
       } else {
         const open = openAiMatches(state);
         if (out) actions.appendChild(el('p', 'tn-note', `You are out (${playerPlacement(state)}). Follow the rest:`));

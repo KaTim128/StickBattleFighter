@@ -1,6 +1,5 @@
-import { BUILT_IN_LIBRARY } from '../characters/library';
-import { fighterRatings, ratingTotal } from '../characters/ratings';
-import { resolveCharacter } from '../characters/resolve';
+import { OFFICE } from '../data/arenas/office';
+import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { TournamentScreen } from '../interface/tournament-screen';
 import {
   createTournament,
@@ -20,6 +19,7 @@ import {
   saveTournament,
   tournamentHistory,
 } from '../modes/tournament/tournament-store';
+import { simulateFightHeadless } from './headless-fight';
 import type { FightArenaScene } from './scenes/fight-arena-scene';
 
 /**
@@ -28,11 +28,6 @@ import type { FightArenaScene } from './scenes/fight-arena-scene';
  * player watches). After each match the result is recorded, the tournament moves on as far as it
  * can, and the bracket page comes back. Each page reloads, so the tournament is saved in between.
  */
-
-/** A fighter's overall rating: the stronger fighter is likelier to win an unwatched battle. */
-function strength(fighter: string): number {
-  return ratingTotal(fighterRatings(resolveCharacter(fighter, BUILT_IN_LIBRARY)));
-}
 
 export interface TournamentPageContext {
   readonly params: URLSearchParams;
@@ -55,7 +50,7 @@ export function goToTitle(muted: boolean): void {
 
 /** Start a new tournament from the menu's choices and go to its bracket. */
 export function startTournament(
-  choice: { fighter: string; arena: string; difficulty: string; size: number },
+  choice: { fighter: string; arena: string; difficulty: string; size: number; spectate?: boolean },
   pool: readonly { fighter: string; name: string }[],
   muted: boolean,
   /** The player's registered name (owner, 13/11/2026): their identity in the draw, with their fighter. */
@@ -64,7 +59,11 @@ export function startTournament(
   const me = pool.find((p) => p.fighter === choice.fighter);
   const state = createTournament(
     choice.size,
-    { fighter: choice.fighter, name: `${playerName ?? 'You'} (${me?.name ?? choice.fighter})` },
+    {
+      fighter: choice.fighter,
+      name: `${playerName ?? 'You'} (${me?.name ?? choice.fighter})`,
+      spectate: choice.spectate === true,
+    },
     pool,
     Math.random,
   );
@@ -96,7 +95,7 @@ function goToMatch(saved: SavedTournament, matchId: string, watch: boolean, mute
   const m = findMatch(saved.state, matchId);
   if (!m) return;
   // In your match you are the player side; in a watched battle the first fighter is.
-  const mine = m.a === 'p' || m.b === 'p';
+  const mine = isPlayersOwn(saved, m);
   const left = entrant(saved.state, mine ? 'p' : m.a)!;
   const right = entrant(saved.state, mine ? (m.a === 'p' ? m.b : m.a) : m.b)!;
   const next = new URLSearchParams();
@@ -110,6 +109,11 @@ function goToMatch(saved: SavedTournament, matchId: string, watch: boolean, mute
   if (muted) next.set('mute', '');
   next.set('play', '');
   window.location.search = next.toString();
+}
+
+/** The player's own match: fought by hand, unless they are only spectating (T4), when it is watched. */
+function isPlayersOwn(saved: SavedTournament, m: { a: string | null; b: string | null }): boolean {
+  return (m.a === 'p' || m.b === 'p') && entrant(saved.state, 'p')?.ai !== true;
 }
 
 /** After a result: settle what can be settled, record a finished tournament, save. */
@@ -140,23 +144,47 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
     }
     const banner = document.createElement('div');
     banner.className = 'tn-banner';
-    banner.textContent = `${watch ? 'Watching · ' : ''}Tournament · ${stageName(fightersInRound(saved.state, saved.state.stage))}`;
+    const following = entrant(saved.state, 'p')?.ai === true && (m.a === 'p' || m.b === 'p');
+    const stageLabel = stageName(fightersInRound(saved.state, saved.state.stage));
+    banner.textContent = following
+      ? `Following ${entrant(saved.state, 'p')!.name} · ${stageLabel}`
+      : `${watch ? 'Watching · ' : ''}Tournament · ${stageLabel}`;
     document.body.appendChild(banner);
     const scene = ctx.scene;
     if (watch) document.body.classList.add('spectating');
-    const mine = m.a === 'p' || m.b === 'p';
+    const mine = isPlayersOwn(saved, m);
     const left = mine ? 'p' : m.a!;
     const right = mine ? (m.a === 'p' ? m.b! : m.a!) : m.b!;
-    // Leaving the fight (Settings → Leave) settles it on the health left, so the bracket always
-    // moves on correctly (owner, 13/11/2026). On a tie the side that stayed wins your own match;
-    // a watched battle is a coin toss weighted like any unwatched battle.
+    // Leaving the fight (Settings → Leave) settles it on the performance score (T1: health left, damage,
+    // hits, knockdowns, first hit; never a coin toss), so the bracket always moves on correctly
+    // (owner, 13/11/2026). Only a 3 vs 3 health tie falls back to the side that stayed.
     let leftEarly = false;
     ctx.setLeave(() => {
       leftEarly = true;
-      const sl = strength(entrant(saved.state, left)!.fighter);
-      const sr = strength(entrant(saved.state, right)!.fighter);
-      scene.endMatchNow(mine ? 'opponent' : Math.random() < sl / (sl + sr) ? 'player' : 'opponent');
+      scene.endMatchNow('opponent');
     });
+    scene.onOvertime = () => {
+      banner.textContent = `OVERTIME · ${banner.textContent}`;
+      banner.classList.add('tn-overtime');
+    };
+    // Skip Battle (T2): fast-forward the real simulation of a watched fight, once.
+    if (watch) {
+      const skip = document.createElement('button');
+      skip.className = 'tn-skip-battle';
+      skip.textContent = 'Skip Battle';
+      skip.addEventListener('click', () => {
+        if (skip.disabled) return;
+        skip.disabled = true;
+        skip.textContent = 'Skipping…';
+        ctx.setPaused('skip', true); // the live loop rests while this one runs the fight
+        const tick = (): void => {
+          if (scene.fastForward(12)) return;
+          setTimeout(tick, 0);
+        };
+        tick();
+      });
+      document.body.appendChild(skip);
+    }
     scene.onMatchEnd = (winner) => {
       const fresh = loadTournament() ?? saved;
       const by = winner === 'player' ? left : right;
@@ -172,18 +200,31 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
     return null;
   }
   // The bracket page: the game waits behind the screen.
+  let skipping = false;
   ctx.setPaused('tournament', true);
   const screen = new TournamentScreen(document.body, {
     fight: () => {
       const pm = playerMatch(saved.state);
-      if (pm) goToMatch(saved, pm.id, false, ctx.muted);
+      if (pm) goToMatch(saved, pm.id, entrant(saved.state, 'p')?.ai === true, ctx.muted);
     },
     watch: (id) => goToMatch(saved, id, true, ctx.muted),
     skipAll: () => {
-      skipBattles(saved.state, strength, Math.random);
-      commit(saved);
-      screen.setLatest(null);
-      screen.show(saved.state, tournamentHistory());
+      if (skipping) return; // one skip at a time (double taps do nothing)
+      skipping = true;
+      const arena = saved.arena === 'training-yard' ? TRAINING_YARD : OFFICE;
+      void skipBattles(
+        saved.state,
+        async (a, b, seed) => await simulateFightHeadless(seed, a.fighter, b.fighter, arena, saved.difficulty),
+        (done, total) => {
+          screen.setLatest(`Simulating battles… ${done}/${total}`);
+          screen.show(saved.state, tournamentHistory());
+        },
+      ).then(() => {
+        skipping = false;
+        commit(saved);
+        screen.setLatest(null);
+        screen.show(saved.state, tournamentHistory());
+      });
     },
     leave: () => {
       if (saved.state.champion) clearTournament();

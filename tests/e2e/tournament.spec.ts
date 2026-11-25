@@ -65,7 +65,7 @@ test('tournament: 4 fighters, Top 4, skip the other battle, win the Top 2, champ
   await expect(screen.locator('.tn-match.watchable')).toHaveCount(1);
   await expect(screen.locator('.tn-skip-all')).toHaveCount(1);
   await screen.locator('.tn-skip-all').click();
-  await expect(screen.locator('.tn-stage')).toHaveText(/^Top 2$/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/^Top 2$/i, { timeout: 180_000 }); // the battle is really fought, headless
   await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
   await knockOutOpponent(page);
   await expect(screen).toBeVisible({ timeout: 60_000 });
@@ -132,14 +132,14 @@ test('tournament: any number of AI battles can be watched (no limit), each one t
   for (let left = 7; left > 3; left--) {
     await Promise.all([page.waitForURL(/watch/), screen.locator('.tn-match.watchable').first().click()]);
     await expect(page.locator('.tn-banner')).toHaveText(/Watching/i);
-    await expect(page.locator('.tn-skip-battle')).toHaveCount(0); // no per-battle buttons
+    await expect(page.locator('.tn-skip-battle')).toHaveCount(1); // Skip Battle (T2)
     await expect(page.locator('.ability-bar')).toBeHidden(); // spectating: no combat controls
     await leaveFight(page);
     await expect(screen.locator('.tn-match.watchable')).toHaveCount(left - 1, { timeout: 60_000 });
     await expect(screen.locator('.tn-stage')).toHaveText(/Top 16/i); // still this stage
   }
   await screen.locator('.tn-skip-all').click();
-  await expect(screen.locator('.tn-stage')).toHaveText(/Top 8/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/Top 8/i, { timeout: 180_000 });
   await expect(screen.locator('.tn-fight')).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -152,7 +152,7 @@ test('tournament: leaving your own fight settles it and the bracket moves on', a
   await startAndWinFirst(page, 4);
   const screen = page.locator('.tournament');
   await screen.locator('.tn-skip-all').click();
-  await expect(screen.locator('.tn-stage')).toHaveText(/^Top 2$/i);
+  await expect(screen.locator('.tn-stage')).toHaveText(/^Top 2$/i, { timeout: 180_000 });
   await Promise.all([page.waitForURL(/match=/), screen.locator('.tn-fight').click()]);
   await page.waitForFunction(
     () => Boolean((window as unknown as { __stickmanDebug?: { sceneRef?: unknown } }).__stickmanDebug?.sceneRef),
@@ -163,5 +163,85 @@ test('tournament: leaving your own fight settles it and the bracket moves on', a
   await leaveFight(page);
   await expect(screen.locator('.tn-title')).toHaveText('TOURNAMENT CHAMPION', { timeout: 60_000 });
   await expect(screen.locator('.tn-placement')).toHaveText(/Runner-up/);
+  expect(errors).toEqual([]);
+});
+
+/** Spectate from the start (T4) with Skip Battle (T2): the AI plays the backed fighter; every result comes from a real simulation. */
+test('tournament: spectate a 4-fighter tournament to the champion with Skip Battle and Skip', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'one run is enough');
+  test.setTimeout(420_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    sessionStorage.setItem('stickman-arena.no-shell', '1');
+    if (localStorage.getItem('seeded-spectate')) return;
+    localStorage.setItem('seeded-spectate', '1');
+    localStorage.setItem('stickman-arena.test-hooks', '1');
+    const m = (id: string, round: number, slot: number, a: string | null, b: string | null) => ({
+      id,
+      round,
+      slot,
+      a,
+      b,
+      winner: null,
+      how: null,
+    });
+    const e = (id: string, fighter: string, name: string, extra: object = {}) => ({
+      id,
+      fighter,
+      name,
+      isPlayer: id === 'p',
+      ...extra,
+    });
+    localStorage.setItem(
+      'stickman-arena.tournament.v1',
+      JSON.stringify({
+        arena: 'office',
+        difficulty: 'normal',
+        state: {
+          version: 1,
+          stage: 0,
+          champion: null,
+          entrants: [
+            e('p', 'inferno', 'You (Inferno)', { ai: true }),
+            e('ai1', 'rampage', 'Rampage'),
+            e('ai2', 'necro', 'Necro'),
+            e('ai3', 'shroud', 'Shroud'),
+          ],
+          rounds: [[m('r0m0', 0, 0, 'p', 'ai1'), m('r0m1', 0, 1, 'ai2', 'ai3')], [m('r1m0', 1, 0, null, null)]],
+        },
+      }),
+    );
+  });
+  await page.goto('/?mode=tournament&mute&play');
+  const screen = page.locator('.tournament');
+  await expect(screen).toBeVisible({ timeout: 60_000 });
+  await expect(screen.locator('.tn-fight')).toHaveText('WATCH');
+  await expect(screen.locator('.tn-note').first()).toHaveText(/Following: You \(Inferno\) vs Rampage/);
+  // Your fighter's match opens as a watched fight with Skip Battle and the "Following" banner.
+  await Promise.all([page.waitForURL(/match=.*watch/), screen.locator('.tn-fight').click()]);
+  await expect(page.locator('.tn-banner')).toHaveText(/Following You \(Inferno\)/);
+  const skip = page.locator('.tn-skip-battle');
+  await expect(skip).toBeVisible({ timeout: 60_000 });
+  await skip.click();
+  await expect(skip).toBeDisabled(); // a single activation
+  await expect(page.locator('.tournament')).toBeVisible({ timeout: 180_000 });
+  await expect(page.locator('.tn-latest')).toHaveText(/Top 4: .* beat /);
+  // The other semi final: the rest of the stage is simulated for real, then the final follows.
+  await expect(page.locator('.tn-skip-all')).toHaveCount(1);
+  await page.locator('.tn-skip-all').click();
+  await expect(page.locator('.tn-stage')).toHaveText(/^Top 2$/i, { timeout: 180_000 });
+  // The final is the player's own match when they are still in, else an AI battle to skip.
+  const stillWatching = await page.locator('.tn-fight').count();
+  if (stillWatching > 0) {
+    await Promise.all([page.waitForURL(/match=/), page.locator('.tn-fight').click()]);
+    await page.locator('.tn-skip-battle').click();
+  } else {
+    await page.locator('.tn-skip-all').click();
+  }
+  await expect(page.locator('.tn-title')).toHaveText('TOURNAMENT CHAMPION', { timeout: 180_000 });
   expect(errors).toEqual([]);
 });

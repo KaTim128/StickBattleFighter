@@ -744,3 +744,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 ## Psion Toss and Slam (24/11/2026)
 - [ ] E with nothing in reach shows "NO OBJECT IN REACH" and costs nothing; F with nothing held shows "NOTHING HELD".
 - [ ] E lifts a chair, monitor or desk to his hand; F hurls it and hurts only where it hits; heavier hits harder.
+
+## Tournament rules, Skip Battle and Spectate (25/11/2026)
+- [ ] A fight with no KO reaches OVERTIME after 120 s of combat (the intro does not count): banner shows, damage rises, the AI keeps engaging, nothing heals.
+- [ ] If overtime ends without a KO, the winner follows health share, damage, hits, knockdowns, first hit; Leave on a watched fight uses the same score.
+- [ ] Skip Battle in a watched fight shows "Skipping…", cannot be pressed twice, and returns to the bracket with the result recorded once.
+- [ ] Skip (bracket) shows progress and settles each remaining battle by a real fight; a second tap does nothing.
+- [ ] Tournament select has a Spectate toggle: your fighter is played by the AI, its match is a watched fight ("Following <name>"), the draw button says WATCH.

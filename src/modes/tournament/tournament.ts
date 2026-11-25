@@ -20,6 +20,8 @@ export interface Entrant {
   readonly fighter: string;
   readonly name: string;
   readonly isPlayer: boolean;
+  /** Spectate from the start (T4): this entrant is the one the player backs, but the AI plays it. */
+  readonly ai?: boolean;
 }
 
 export type MatchOutcome = 'played' | 'watched' | 'simulated' | 'bye';
@@ -68,13 +70,15 @@ function shuffled<T>(items: readonly T[], rand: () => number): T[] {
  */
 export function createTournament(
   size: number,
-  player: { fighter: string; name: string },
+  player: { fighter: string; name: string; spectate?: boolean },
   pool: readonly { fighter: string; name: string }[],
   rand: () => number,
 ): TournamentState {
   if (!Number.isInteger(size) || size < 2) throw new Error(`a tournament needs at least 2 fighters, not ${size}`);
   if (pool.length === 0) throw new Error('no AI fighters to fill the tournament');
-  const entrants: Entrant[] = [{ id: 'p', fighter: player.fighter, name: player.name, isPlayer: true }];
+  const entrants: Entrant[] = [
+    { id: 'p', fighter: player.fighter, name: player.name, isPlayer: true, ...(player.spectate ? { ai: true } : {}) },
+  ];
   const seen = new Map<string, number>();
   // AI fighters in a random order, cycling through the pool so every fighter takes part; the
   // player's own fighter comes last in each cycle, so a small field has as many different

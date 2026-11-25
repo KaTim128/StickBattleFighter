@@ -1,9 +1,12 @@
 import {
   advance,
+  type Entrant,
+  entrant,
+  type Match,
   openAiMatches,
   playerMatch,
   playerPlacement,
-  simulateMatch,
+  recordResult,
   type TournamentState,
 } from './tournament';
 
@@ -22,9 +25,37 @@ export function settleStage(state: TournamentState): void {
   }
 }
 
-/** Skip Battles: settle every AI battle left in this stage without watching, then move on. */
-export function skipBattles(state: TournamentState, strength: (fighter: string) => number, rand: () => number): void {
-  for (const m of openAiMatches(state)) simulateMatch(state, m.id, strength, rand);
+/** Fights one AI battle for real and says who won (`a` is the match's first fighter). */
+export type FightSimulator = (a: Entrant, b: Entrant, seed: number) => Promise<'a' | 'b'>;
+
+/** A fixed seed for a match, from its id and fighters, so a skipped stage is reproducible. */
+export function matchSeed(m: Match, a: Entrant, b: Entrant): number {
+  let h = 2166136261;
+  for (const ch of `${m.id}|${a.fighter}|${b.fighter}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return h >>> 0;
+}
+
+/**
+ * Skip Battles (T2): settle every AI battle left in this stage by really simulating it (never a
+ * dice roll), reporting progress, then move on. A match decided meanwhile (a second skip, a reload)
+ * is left alone, so each match is recorded once.
+ */
+export async function skipBattles(
+  state: TournamentState,
+  fight: FightSimulator,
+  onProgress?: (done: number, total: number) => void,
+): Promise<void> {
+  const open = openAiMatches(state);
+  let done = 0;
+  for (const m of open) {
+    if (!m.winner) {
+      const a = entrant(state, m.a)!;
+      const b = entrant(state, m.b)!;
+      const side = await fight(a, b, matchSeed(m, a, b));
+      if (!m.winner) recordResult(state, m.id, side === 'a' ? a.id : b.id, 'simulated');
+    }
+    onProgress?.(++done, open.length);
+  }
   settleStage(state);
 }
 

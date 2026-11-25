@@ -1,5 +1,9 @@
 # Phase handoff
 
+## Latest (25/11/2026): Batch 6 (Tournament) implemented; Batches 0–5 pushed
+
+- T1–T4 done and build-verified (see `REQUIREMENTS_TRACEABILITY.md`, TD-158). Next: Batch 7 (arena order and Tutorial Zone rename, occlusion fix, curved wall, House Fight mode) after the owner's go-ahead.
+
 ## Current handoff (24/11/2026): planning complete, implementation not started
 
 - **Plan:** `STICKMAN_ARENA_IMPLEMENTATION_PLAN.md`, batches 0 to 10, with owner decisions D1 to D8 recorded 24/11/2026.

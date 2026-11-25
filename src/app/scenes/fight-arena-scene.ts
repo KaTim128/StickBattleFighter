@@ -49,7 +49,7 @@ import {
   hitCapsule,
   touchReachM,
 } from '../../combat/attacks';
-import { type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
+import { type Combatant, type CombatState, DEFENCE, type HitOutcome, seededRandom } from '../../combat/combatant';
 import { dodgeDirection, type IncomingShot } from '../../combat/dodge-direction';
 import type { CombatEvent } from '../../combat/events';
 import { brainDesignFor } from '../../data/ai/brains';
@@ -58,6 +58,7 @@ import type { ArenaLayout } from '../../data/arenas/arena-layout';
 import { COUNTDOWN_WORDS_S } from '../../data/audio/music';
 import { IMPACTS, type ImpactId, type ImpactProfile } from '../../data/combat/impacts';
 import { THROWING } from '../../data/combat/throwing';
+import { TOURNAMENT_RULES } from '../../data/modes/tournament-rules';
 import { footprint, type Material } from '../../data/objects/props';
 import type { ArenaProp } from '../../environment/arena-props';
 import { ArenaProps, type PropState } from '../../environment/arena-props';
@@ -65,6 +66,7 @@ import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-do
 import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
 import type { HudFighter, TopHudState } from '../../interface/top-hud';
+import { decideByScore, type SideRecord } from '../../modes/tournament/match-score';
 import { firmHoldS } from '../../physics/climbing';
 import { canStartJump, stepHop, stepVelocity } from '../../physics/movement';
 import { PhysicsWorld } from '../../physics/physics-world';
@@ -244,10 +246,13 @@ const NAV_REFRESH_S = 2;
 const AI_ROUTE_EVERY_S = 0.4;
 /** How far apart the fighters stand, facing each other, when READY... FIGHT! begins (metres). */
 const FIGHT_START_GAP_M = 3;
-/** A tournament match is decided at this time if nobody is knocked out (seconds of play). */
-const MATCH_TIME_LIMIT_S = 150;
 /** Seconds between the deciding KO and the result (the fall and dust play out). */
 const MATCH_END_PAUSE_S = 2.5;
+
+/** What the fallback score needs from one side of a match (T1). */
+function newTally(): { damage: number; hits: number; knockdowns: number; firstHitS: number | null } {
+  return { damage: 0, hits: 0, knockdowns: 0, firstHitS: null };
+}
 /** A 3 vs 3 fight has three fighters a side: a longer clock. */
 const TEAM_TIME_LIMIT_S = 300;
 /** Ability slots the fighter AI may use, in order. */
@@ -342,6 +347,14 @@ export class FightArenaScene implements ArenaScene {
   /** Called once, a moment after the match is decided (so the KO plays out). */
   onMatchEnd: ((winner: 'player' | 'opponent') => void) | null = null;
   private matchEndSent = false;
+  /** Seconds of combat so far: the match clock, which starts when the intro ends (T1). */
+  private combatS = 0;
+  /** Overtime has begun (T1): damage ramps up, the AI engages and nothing heals. */
+  private overtimeOn = false;
+  /** Called once when overtime starts, for the banner. */
+  onOvertime: (() => void) | null = null;
+  /** Per-side numbers for the deterministic fallback score (T1). */
+  private readonly tally = { player: newTally(), opponent: newTally() };
   /** How the AI opponents play (owner, 13/11/2026; REQ-AI-4). */
   readonly difficulty: Difficulty;
   private nav: NavGrid | null = null;
@@ -915,6 +928,7 @@ export class FightArenaScene implements ArenaScene {
     }
 
     this.simTimeS += stepS;
+    if (!this.intro && !this.matchResult) this.combatS += stepS;
     for (const f of this.fighters) {
       if (this.isFrozen(f)) continue; // Time Stop: its timers, statuses, cooldowns and meters wait where they are
       if (f.scriptedAttack) {
@@ -2128,7 +2142,10 @@ export class FightArenaScene implements ArenaScene {
       meleeReachM: this.aiMeleeReachM(f),
       canClimb: f.def.capabilities.canJump,
       abilities,
-      profile: f.def.ai,
+      profile: this.overtimeOn
+        ? { ...f.def.ai, aggression: Math.max(f.def.ai.aggression, TOURNAMENT_RULES.overtimeAiAggression) }
+        : f.def.ai,
+      forceEngage: this.overtimeOn,
       design: brainDesignFor(f.def.ai.id, f.def.abilities),
       difficulty: diff,
       route: f.aiRoute,
@@ -2294,9 +2311,16 @@ export class FightArenaScene implements ArenaScene {
     } else if (!this.matchResult) {
       if (p.isKo || o.isKo) {
         this.matchResult = { winner: o.isKo && !p.isKo ? 'player' : 'opponent', atS: this.simTimeS, by: 'ko' };
-      } else if (!this.intro && this.simTimeS >= MATCH_TIME_LIMIT_S) {
-        const lead = p.hp / p.stats.maxHp >= o.hp / o.stats.maxHp;
-        this.matchResult = { winner: lead ? 'player' : 'opponent', atS: this.simTimeS, by: 'time' };
+      } else if (!this.intro && this.combatS >= TOURNAMENT_RULES.regulationS) {
+        if (!this.overtimeOn) {
+          // Regulation is over with both standing: overtime, with no healing for either side.
+          this.overtimeOn = true;
+          p.healingLocked = true;
+          o.healingLocked = true;
+          this.onOvertime?.();
+        }
+        if (this.combatS >= TOURNAMENT_RULES.regulationS + TOURNAMENT_RULES.overtimeS + TOURNAMENT_RULES.fallbackAfterS)
+          this.matchResult = { winner: this.scoreWinner(), atS: this.simTimeS, by: 'time' };
       }
     }
     const r = this.matchResult;
@@ -2307,18 +2331,52 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /**
+   * Skip Battle (T2): run the real simulation, no rendering, until the match has ended and been
+   * reported, for at most `budgetMs` of wall-clock time per call. Returns true once it is over.
+   * The same `update` the live game runs, so the result is exactly what watching would give.
+   */
+  fastForward(budgetMs: number): boolean {
+    const end = performance.now() + budgetMs;
+    while (this.match && !this.matchEndSent && performance.now() < end) {
+      this.update(1 / 60);
+      this.drainEvents();
+    }
+    return this.matchEndSent;
+  }
+
+  /** The performance-score winner (T1): deterministic, see `decideByScore`. */
+  private scoreWinner(): 'player' | 'opponent' {
+    const rec = (side: 'player' | 'opponent', c: Combatant): SideRecord => ({
+      hpShare: this.teams ? this.teams.health(side) : c.hp / c.stats.maxHp,
+      damageDealt: this.tally[side].damage,
+      hitsLanded: this.tally[side].hits,
+      knockdowns: this.tally[side].knockdowns,
+      firstHitS: this.tally[side].firstHitS,
+    });
+    const r = decideByScore(rec('player', this.playerFighter.combatant), rec('opponent', this.dummyFighter.combatant));
+    return r === 'a' ? 'player' : 'opponent';
+  }
+
+  /** Extra damage taken by both sides in overtime (1 outside it). */
+  private overtimeFactor(): number {
+    if (!this.overtimeOn) return 1;
+    return 1 + TOURNAMENT_RULES.overtimeDamageRampPerS * (this.combatS - TOURNAMENT_RULES.regulationS);
+  }
+
+  /**
    * Settle a match early (the fight is left from Settings, owner 13/11/2026): whoever has more of
    * their health left wins; on a tie, `onTie` does (the side that stayed, when the player leaves
-   * their own fight). Reported through `onMatchEnd` at once.
+   * their own fight). Reported through `onMatchEnd` at once. The winner is the performance score
+   * (T1): never a coin toss; `onTie` only settles a 3 vs 3 health tie.
    */
   endMatchNow(onTie: 'player' | 'opponent' = 'player'): void {
     if (!this.match || this.matchEndSent) return;
-    const p = this.playerFighter.combatant;
-    const o = this.dummyFighter.combatant;
-    // 3 vs 3: the whole team's health counts.
-    const ps = this.teams ? this.teams.health('player') : p.hp / p.stats.maxHp;
-    const os = this.teams ? this.teams.health('opponent') : o.hp / o.stats.maxHp;
-    const winner = ps > os ? 'player' : ps < os ? 'opponent' : onTie;
+    let winner: 'player' | 'opponent';
+    if (this.teams) {
+      const ps = this.teams.health('player');
+      const os = this.teams.health('opponent');
+      winner = ps > os ? 'player' : ps < os ? 'opponent' : onTie;
+    } else winner = this.scoreWinner();
     this.matchResult ??= { winner, atS: this.simTimeS, by: 'time' };
     this.matchEndSent = true;
     this.onMatchEnd?.(this.matchResult.winner);
@@ -2527,9 +2585,10 @@ export class FightArenaScene implements ArenaScene {
     // A charged Death Mark triples the attacker's next landed blow (owner, 20/11/2026).
     const markFactor = this.abilities?.world.markFactor(attacker.name) ?? 1;
     const hpBefore = target.combatant.hp;
+    const wasDown = target.combatant.state === 'knockdown';
     const result = target.combatant.receive(
       {
-        baseDamage: s.damage * markFactor,
+        baseDamage: s.damage * markFactor * (this.match && !this.teams ? this.overtimeFactor() : 1),
         // Curse of Decay weakens everything the cursed fighter deals (owner, 12/11/2026).
         attackerPower: finalPower(attacker.def, attacker.combatant.status),
         heavy: s.heavy,
@@ -2546,6 +2605,7 @@ export class FightArenaScene implements ArenaScene {
     // Rewind Time counts the hit points a blow really removed (never the damage it attempted).
     this.abilities?.world.recordDealt(attacker.name, Math.max(0, hpBefore - target.combatant.hp));
     if (result.outcome === 'ignored') return false;
+    this.tallyHit(attacker, target, hpBefore, wasDown, result.outcome);
     this.events.push({
       kind: result.outcome,
       target: target.name,
@@ -2619,6 +2679,24 @@ export class FightArenaScene implements ArenaScene {
       this.shake.punch(0.08);
     }
     return true;
+  }
+
+  /** Record a landed blow for the fallback score (T1). */
+  private tallyHit(
+    attacker: FighterEntity,
+    target: FighterEntity,
+    hpBefore: number,
+    wasDown: boolean,
+    outcome: HitOutcome,
+  ): void {
+    if (!this.match || outcome === 'dodged' || outcome === 'blocked' || outcome === 'parried') return;
+    const side = attacker === this.playerFighter ? 'player' : attacker === this.dummyFighter ? 'opponent' : null;
+    if (!side) return;
+    const t = this.tally[side];
+    t.damage += Math.max(0, hpBefore - target.combatant.hp);
+    t.hits++;
+    t.firstHitS ??= this.combatS;
+    if (!wasDown && target.combatant.state === 'knockdown') t.knockdowns++;
   }
 
   /** Flash, sound, sparks, recoil, shake and hit-stop for one contact. */

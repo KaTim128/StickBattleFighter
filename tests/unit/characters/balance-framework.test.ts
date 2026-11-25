@@ -10,7 +10,7 @@ const FIGHTERS = Object.values(BUILT_IN_LIBRARY.characters).filter(
 );
 
 /** Seconds of enemy control one cast can deliver (a slow counts half, a wobble half). */
-export function controlSeconds(a: AbilityDef): number {
+function controlSeconds(a: AbilityDef): number {
   const p = a.payload;
   const d = a.delivery;
   let s = (p.stunS ?? 0) + (p.blindS ?? 0) + (p.mute?.durationS ?? 0);

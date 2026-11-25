@@ -119,6 +119,8 @@ export class Combatant {
   private guardAgeS = 0;
   private stunS = 0;
   private knockdownS = 0;
+  /** Overtime (tournament T1): nothing heals while this is set. */
+  healingLocked = false;
   private getUpS = 0;
   private downS = 0;
   private invulnS = 0;
@@ -798,7 +800,7 @@ export class Combatant {
    * or from tagging out. Callers are abilities that are defined as healing, and never revive a KO.
    */
   heal(amount: number): void {
-    if (this.hp <= 0 || amount <= 0) return;
+    if (this.hp <= 0 || amount <= 0 || this.healingLocked) return;
     this.hp = Math.min(this.stats.maxHp, this.hp + amount);
   }
 
