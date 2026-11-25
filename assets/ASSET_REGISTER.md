@@ -31,3 +31,6 @@ Each clip processed by `scripts/audio/process-sfx.sh` is recorded in `assets/aud
 | `assets/audio/sfx/shared/punch-barrage/sfx-punch-barrage.{ogg,mp3}` | Future stickman ability, not Hide and Seek | Pixabay 542394 | chromascension | Pixabay, to confirm | Processed, not wired |
 
 The Hide and Seek background track is `assets/audio/music-hide-seek-house.{ogg,mp3}`: the owner's "darkne scary horror atmosphere" track (Pixabay 620036, the same file as `docs/references/master-plan/`), crossfaded at its loop point (last 2 s into its start), 72.87 s. Licence: Pixabay, to confirm.
+| assets/ui/mode-tournament.webp | image (static) | Katim / Claude | Still frame captured from the game's own Colosseum (original art, graded and vignetted) | project-owned | wip | Game mode card, spec section 8 |
+| assets/ui/mode-tag-team.webp | image (static) | Katim / Claude | Still frame captured from the game's own Office arena | project-owned | wip | Game mode card |
+| assets/ui/mode-hide-seek.webp | image (static) | Katim / Claude | Still frame captured from the game's own Hide and Seek house | project-owned | wip | Game mode card |

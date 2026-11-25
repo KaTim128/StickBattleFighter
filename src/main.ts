@@ -1,6 +1,7 @@
 import { bootstrap } from './app/bootstrap';
 import { bootstrapHideSeek } from './app/hide-seek-page';
 import { mountShell, wantsShell } from './app/shell';
+import { watchLoading } from './interface/loading-screen';
 import { registerOfflineSupport } from './pwa-register';
 
 registerOfflineSupport();
@@ -13,8 +14,12 @@ if (!container || !status || !debugPanel) {
   throw new Error('index.html is missing #app, #status or #debug');
 }
 
+watchLoading(status);
+
 if (wantsShell(window, new URLSearchParams(window.location.search))) {
   // Fullscreen survives every page change: the game runs in a frame inside this shell (owner, 13/11/2026).
+  // The shell only frames the game; the framed page shows its own loading screen.
+  document.getElementById('loading-screen')?.remove();
   mountShell(document, window);
 } else if (new URLSearchParams(window.location.search).get('mode') === 'hide-seek')
   bootstrapHideSeek({ container, status }).catch((error: unknown) => {

@@ -1,3 +1,6 @@
+import hideSeekCard from '../../assets/ui/mode-hide-seek.webp?url';
+import tagTeamCard from '../../assets/ui/mode-tag-team.webp?url';
+import tournamentCard from '../../assets/ui/mode-tournament.webp?url';
 import titleArt from '../../assets/ui/title-menu.webp?url';
 import type { NormalSlot } from '../abilities/loadout';
 import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
@@ -391,9 +394,12 @@ export class FrontEnd {
   private buildModes(sec: HTMLElement): void {
     sec.append(el('h2', 'fe-h fe-screen-title', 'GAME MODES'));
     const list = el('div', 'fe-mode-list');
-    const card = (id: string, name: string, text: string, locked: boolean, onClick: () => void) => {
+    /** A game mode is one large still image: the whole card is the button, the name sits bottom right (static art only, no motion). */
+    const card = (id: string, name: string, text: string, locked: boolean, onClick: () => void, image?: string) => {
       const b = button(`fe-mode${locked ? ' locked' : ''}`, '', onClick);
       b.dataset.gm = id;
+      if (image) b.style.backgroundImage = `url("${image}")`;
+      b.setAttribute('aria-label', `${name}. ${text}`);
       b.append(el('strong', 'fe-mode-name', name), el('span', 'fe-mode-text', text));
       if (locked) {
         b.setAttribute('aria-disabled', 'true');
@@ -407,21 +413,30 @@ export class FrontEnd {
       'A knockout bracket of 4 to 16 fighters. Win every round to be champion.',
       false,
       () => this.openSelect('tournament'),
+      tournamentCard,
     );
-    card('3v3', 'Tag Team', 'Pick three from a pool of five and tag-team against an AI team.', false, () => {
-      this.pool = draftPool(
-        this.o.fighters.map((f) => f.id),
-        Math.random,
-      );
-      this.picks = [];
-      this.show('team');
-    });
+    card(
+      '3v3',
+      'Tag Team',
+      'Pick three from a pool of five and tag-team against an AI team.',
+      false,
+      () => {
+        this.pool = draftPool(
+          this.o.fighters.map((f) => f.id),
+          Math.random,
+        );
+        this.picks = [];
+        this.show('team');
+      },
+      tagTeamCard,
+    );
     card(
       'hide-seek',
       'Hide and Seek Nightmare',
       'Hide in a dark two-storey house for two minutes while Shroud hunts you. No fighting: stay quiet.',
       false,
       () => this.o.startHideSeek(),
+      hideSeekCard,
     );
     // Admin only (owner, 24/11/2026): the same house as a fighting arena: pick a fighter and an opponent as in the Open Zone.
     if (this.o.isAdmin()) {
@@ -430,6 +445,7 @@ export class FrontEnd {
         this.openSelect('practice');
       });
       fight.dataset.gm = 'house-fight';
+      fight.style.backgroundImage = `url("${hideSeekCard}")`;
       fight.append(
         el('strong', 'fe-mode-name', 'House of Nightmare: Fight (admin)'),
         el(
