@@ -98,6 +98,26 @@ describe('Ink Dragon', () => {
   });
 });
 
+describe('Ink Dragon stays on the map', () => {
+  it('never flies outside the arena, even when its opponent stands by a wall', () => {
+    const a = arena([{ x: 11.2, y: 0.5 }]);
+    a.host.bounds = () => ({ w: 12, h: 8 });
+    a.me.x = 6;
+    a.me.y = 4;
+    a.world.release('me', INKMASTER_KIT.a3, { x: 11, y: 1 }, a.host);
+    for (let i = 0; i < 14 * 60; i++) {
+      a.world.update(1 / 60, a.host);
+      const d = a.world.ink.dragons[0];
+      if (!d) break;
+      if (d.phase === 'form') continue;
+      expect(d.x).toBeGreaterThanOrEqual(1.19);
+      expect(d.x).toBeLessThanOrEqual(12 - 1.19);
+      expect(d.y).toBeGreaterThanOrEqual(1.19);
+      expect(d.y).toBeLessThanOrEqual(8 - 1.19);
+    }
+  });
+});
+
 describe('Ink Clone drawing', () => {
   it('draws the stick figure first, then the clone rises; nothing rises if he falls while drawing', () => {
     const a = arena([{ x: 5, y: 0 }]);

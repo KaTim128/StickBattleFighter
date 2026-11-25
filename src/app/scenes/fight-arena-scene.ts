@@ -870,6 +870,7 @@ export class FightArenaScene implements ArenaScene {
       this.walls,
     );
     this.abilities.random = () => this.rng();
+    this.abilities.boundsSource = () => ({ w: this.arena.widthM, h: this.arena.heightM });
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
     this.abilities.releaseAimSource = (f, def) => this.aiBeamAim(f, def);
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);

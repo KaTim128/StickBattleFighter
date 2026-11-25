@@ -528,6 +528,13 @@ export class SceneAbilities implements AbilityHost {
     };
   }
 
+  /** The arena floor's size (set by the scene). */
+  boundsSource: () => { w: number; h: number } = () => ({ w: Number.POSITIVE_INFINITY, h: Number.POSITIVE_INFINITY });
+
+  bounds(): { w: number; h: number } {
+    return this.boundsSource();
+  }
+
   standable(at: Vec2): boolean {
     return this.standableSource(at);
   }

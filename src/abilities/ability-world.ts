@@ -123,6 +123,8 @@ export interface AbilityHost {
   legTrapState?(targetId: string): { heightM: number; trappedS: number };
   /** Can a body stand here (inside the arena, clear of walls and furniture)? Optional (everywhere counts when absent). */
   standable?(at: Vec2): boolean;
+  /** The size of the arena floor, metres (a flying creature stays inside it). Optional (unbounded when absent). */
+  bounds?(): { readonly w: number; readonly h: number };
   /** Heal a fighter by `amount` (never above its maximum); returns false if it is down and nothing was done. Optional. */
   heal?(targetId: string, amount: number): boolean;
   /** Time Stop begins (`true`) or ends (`false`): the host freezes or releases everything but the caster. Optional. */

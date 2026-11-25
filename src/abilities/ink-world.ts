@@ -22,6 +22,8 @@ export const SERPENT_LENGTH_M = 3.4;
 export const DRAGON_HEIGHT_M = 2.1;
 /** How long the ink trail behind the dragon's head is, metres. */
 export const DRAGON_TRAIL_M = 4.6;
+/** The dragon never comes closer than this to the edge of the map, metres. */
+export const DRAGON_MARGIN_M = 1.2;
 /** The dragon's breath lasts this long, and a fighter is hit by one breath at most once. */
 const BREATH_S = 0.55;
 /** A bitten target's wrap and a missed bite both leave the serpent this long before it may bite again. */
@@ -462,7 +464,7 @@ export class InkWorld {
       d.targetId = target?.id ?? null;
       if (d.phase === 'fly') {
         d.sinceBreathS += dtS;
-        this.flyStep(d, target, dtS);
+        this.flyStep(d, target, dtS, host.bounds?.());
         if (target && d.sinceBreathS >= spec.breathEveryS && d.breathsDone < spec.breaths) {
           // The warning: it rears and the line it will breathe along is marked, locked at this moment.
           const dir = norm({ x: target.x - d.x, y: target.y - d.y });
@@ -518,13 +520,19 @@ export class InkWorld {
   }
 
   /** It circles the target at its orbit radius, never closer than the orbit, drifting round slowly. */
-  private flyStep(d: Dragon, target: AbilityTarget | null, dtS: number): void {
+  private flyStep(d: Dragon, target: AbilityTarget | null, dtS: number, bounds?: { w: number; h: number }): void {
     const spec = d.spec;
     const centre = target ?? { x: d.x, y: d.y };
     d.orbit += 0.55 * dtS;
     const px = d.x;
     const py = d.y;
-    const want = { x: centre.x + Math.cos(d.orbit) * spec.orbitM, y: centre.y + Math.sin(d.orbit) * spec.orbitM };
+    let want = { x: centre.x + Math.cos(d.orbit) * spec.orbitM, y: centre.y + Math.sin(d.orbit) * spec.orbitM };
+    // It flies inside the map: the circle it flies round the opponent is pressed in from the walls (never outside the arena).
+    if (bounds)
+      want = {
+        x: Math.max(DRAGON_MARGIN_M, Math.min(bounds.w - DRAGON_MARGIN_M, want.x)),
+        y: Math.max(DRAGON_MARGIN_M, Math.min(bounds.h - DRAGON_MARGIN_M, want.y)),
+      };
     const dx = want.x - d.x;
     const dy = want.y - d.y;
     const dist = Math.hypot(dx, dy);
@@ -532,6 +540,10 @@ export class InkWorld {
       const step = Math.min(dist, spec.speedMps * dtS);
       d.x += (dx / dist) * step;
       d.y += (dy / dist) * step;
+    }
+    if (bounds) {
+      d.x = Math.max(DRAGON_MARGIN_M, Math.min(bounds.w - DRAGON_MARGIN_M, d.x));
+      d.y = Math.max(DRAGON_MARGIN_M, Math.min(bounds.h - DRAGON_MARGIN_M, d.y));
     }
     // The head always faces the opponent, whichever way it is flying round them; the ink trail follows the path it has flown.
     if (target) d.heading = Math.atan2(target.y - d.y, target.x - d.x);

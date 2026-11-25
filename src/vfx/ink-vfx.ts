@@ -27,6 +27,7 @@ const BLACK = 0x050507;
 const INK = 0x15151b;
 const INK_LIT = 0x34343f;
 const PALE = 0xf2eee3;
+const WHITE_EYE_GLOW = 0xffffff;
 const PAPER = 0xe9dfc6;
 const PAPER_SHADE = 0xc9bd9c;
 const WOOD = 0x4a2c18;
@@ -335,87 +336,162 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     splatter(g, tip, 0.35, (t * 1.9) % 1, tip.x * 5, 6);
   }
   const headFade = fade * (drawing ? clamp01((k - 0.8) / 0.2) : 1);
-  // The head, in front: horned, whiskered, with a lion's mane and a jaw that opens for the breath.
-  const hp = P(d.x, d.y, hover + rear * 0.55);
-  const gape = rear;
-  const side = dirx >= 0 ? 1 : -1;
-  const hr = 0.3 * (0.4 + 0.6 * grow);
-  g.circle(hp.x - side * hr * 0.4, hp.y, hr * 1.25).fill({ color: BLACK, alpha: 0.9 * headFade });
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 1.2 + 1.9;
-    g.poly([
-      hp.x - side * hr * 0.2,
-      hp.y,
-      hp.x - side * (hr * 1.2 + Math.cos(a) * hr * 0.9),
-      hp.y + Math.sin(a) * hr * 1.3 - hr * 0.2,
-      hp.x - side * hr * 0.3,
-      hp.y + hr * 0.4,
-    ]).fill({
-      color: BLACK,
-      alpha: 0.85 * headFade,
-    });
+  dragonHead(
+    g,
+    P(d.x, d.y, hover + rear * 0.55),
+    dirx >= 0 ? 1 : -1,
+    0.3 * (0.4 + 0.6 * grow) * 1.5,
+    rear,
+    t,
+    headFade,
+  );
+}
+
+/**
+ * A Chinese dragon's head in profile, built from a skull with a long, tapering snout, a hinged lower jaw, a heavy brow, two swept-back horns,
+ * a spiked mane down the neck, a slanted white eye, teeth and long whiskers. `s` is the way it faces (+1 right, -1 left), `u` its size.
+ */
+function dragonHead(g: Graphics, hp: Point, s: 1 | -1, u: number, gape: number, t: number, a: number): void {
+  const pt = (fwd: number, up: number): Point => ({ x: hp.x + s * fwd * u, y: hp.y - up * u });
+  const flat = (pts: readonly (readonly [number, number])[]): number[] =>
+    pts.flatMap(([f, v]) => [pt(f, v).x, pt(f, v).y]);
+  const jaw = gape * 0.95;
+  // The neck joins the trail: a thick wedge behind the skull.
+  g.poly(
+    flat([
+      [-2.0, 0.1],
+      [-1.1, 0.42],
+      [-0.6, 0.6],
+      [-0.5, -0.5],
+      [-1.1, -0.34],
+      [-2.0, -0.08],
+    ]),
+  ).fill({ color: BLACK, alpha: a });
+  // The mane: spikes standing up and back along the neck.
+  for (let i = 0; i < 5; i++) {
+    const f0 = -0.4 - i * 0.28;
+    g.poly(
+      flat([
+        [f0, 0.6 - i * 0.02],
+        [f0 - 0.55, 1.05 - i * 0.04],
+        [f0 - 0.28, 0.5],
+      ]),
+    ).fill({ color: BLACK, alpha: a });
   }
-  g.ellipse(hp.x, hp.y, hr * 1.1, hr * 0.85).fill({ color: BLACK, alpha: headFade });
-  g.poly([
-    hp.x + side * hr * 0.4,
-    hp.y - hr * 0.35,
-    hp.x + side * hr * 1.9,
-    hp.y - hr * 0.2,
-    hp.x + side * hr * 1.95,
-    hp.y + hr * 0.1,
-    hp.x + side * hr * 0.3,
-    hp.y + hr * 0.3,
-  ]).fill({ color: BLACK, alpha: headFade });
-  g.poly([
-    hp.x + side * hr * 0.3,
-    hp.y + hr * 0.25,
-    hp.x + side * hr * 1.8,
-    hp.y + hr * (0.1 + 0.7 * gape),
-    hp.x + side * hr * 1.6,
-    hp.y + hr * (0.4 + 0.7 * gape),
-    hp.x + side * hr * 0.2,
-    hp.y + hr * 0.6,
-  ]).fill({
-    color: BLACK,
-    alpha: headFade,
-  });
+  // The great horns: thick at the root, curving back and up in a long sweep, with a pale ridge.
+  for (const [root, len, w] of [
+    [0, 1, 0.26],
+    [0.3, 0.7, 0.18],
+  ] as const) {
+    const pts = [0, 1, 2, 3, 4].map((i) => {
+      const k = i / 4;
+      const p = pt(root - k * 2.0 * len, 0.8 + Math.sin(k * 2.2) * 0.9 * len - k * k * 0.25);
+      return p;
+    });
+    ribbon(g, pts, [u * w, u * w * 0.8, u * w * 0.55, u * w * 0.3, 0.008], BLACK, a);
+    ribbon(
+      g,
+      pts.map((p) => ({ x: p.x, y: p.y - 0.02 })),
+      [u * w * 0.2, u * w * 0.15, u * w * 0.1, u * w * 0.06, 0.003],
+      INK_LIT,
+      0.8 * a,
+    );
+  }
+  // The skull and the long snout, down to the nose.
+  const skull = flat([
+    [-0.9, 0.05],
+    [-0.6, 0.75],
+    [0.15, 0.9],
+    [0.75, 0.66],
+    [1.8, 0.5],
+    [2.35, 0.34],
+    [2.4, 0.04],
+    [1.0, -0.04],
+    [-0.6, -0.12],
+  ]);
+  g.poly(skull).fill({ color: BLACK, alpha: a });
+  g.poly(skull).stroke({ width: 0.012, color: PALE, alpha: 0.35 * a });
+  // A lit ridge along the top of the snout and a heavy brow over the eye.
+  g.poly(
+    flat([
+      [0.2, 0.86],
+      [0.8, 0.62],
+      [1.8, 0.47],
+      [1.8, 0.4],
+      [0.8, 0.52],
+      [0.25, 0.74],
+    ]),
+  ).fill({ color: INK_LIT, alpha: 0.9 * a });
+  g.poly(
+    flat([
+      [0.3, 0.8],
+      [1.15, 0.7],
+      [1.0, 0.52],
+      [0.4, 0.6],
+    ]),
+  ).fill({ color: INK, alpha: a });
+  // The lower jaw, hinged under the skull, drops open for the breath.
+  const lower = flat([
+    [0.0, -0.04],
+    [1.95, -0.02 - jaw],
+    [2.05, -0.3 - jaw],
+    [0.9, -0.62 - jaw * 0.5],
+    [-0.2, -0.52],
+  ]);
   if (gape > 0.1)
-    g.poly([
-      hp.x + side * hr * 0.5,
-      hp.y + hr * 0.2,
-      hp.x + side * hr * 1.7,
-      hp.y + hr * 0.12,
-      hp.x + side * hr * 1.6,
-      hp.y + hr * (0.12 + 0.7 * gape),
-      hp.x + side * hr * 0.4,
-      hp.y + hr * 0.5,
-    ]).fill({
-      color: 0x330909,
-      alpha: 0.9 * headFade,
-    });
-  for (const k of [-1, 1]) {
-    g.moveTo(hp.x - side * hr * 0.2, hp.y - hr * 0.7)
-      .quadraticCurveTo(
-        hp.x - side * hr * (1 + k * 0.4),
-        hp.y - hr * (1.6 + k * 0.2),
-        hp.x - side * hr * (2 + k * 0.7),
-        hp.y - hr * (1.2 + k * 0.6),
-      )
-      .stroke({ width: 0.07 * (0.5 + 0.5 * grow), color: BLACK, alpha: headFade, cap: 'round' });
-    const w = [0, 1, 2, 3, 4].map((i) => ({
-      x: hp.x + side * hr * (1.7 - i * 0.55),
-      y: hp.y + k * hr * (0.2 + i * 0.25) + Math.sin(t * 5 + i * 0.9 + k) * 0.05,
-    }));
-    ribbon(g, w, [0.022, 0.018, 0.012, 0.008, 0.003], BLACK, headFade);
+    g.poly(
+      flat([
+        [0.4, -0.02],
+        [2.2, 0.0],
+        [2.0, -0.12 - jaw],
+        [0.4, -0.3 - jaw * 0.3],
+      ]),
+    ).fill({ color: 0x330909, alpha: 0.95 * a });
+  g.poly(lower).fill({ color: BLACK, alpha: a });
+  g.poly(lower).stroke({ width: 0.01, color: PALE, alpha: 0.3 * a });
+  // Teeth: upper fangs down, lower fangs up.
+  for (let i = 0; i < 5; i++) {
+    const f = 0.95 + i * 0.26;
+    g.poly(
+      flat([
+        [f, 0.0],
+        [f + 0.1, 0.0],
+        [f + 0.05, -0.2 - (i === 0 ? 0.12 : 0)],
+      ]),
+    ).fill({ color: PALE, alpha: a });
+    g.poly(
+      flat([
+        [f + 0.04, -0.04 - jaw],
+        [f + 0.14, -0.04 - jaw],
+        [f + 0.09, 0.14 - jaw],
+      ]),
+    ).fill({ color: PALE, alpha: a });
   }
-  g.circle(hp.x + side * hr * 0.55, hp.y - hr * 0.25, hr * 0.17).fill({ color: PALE, alpha: headFade });
-  g.circle(hp.x + side * hr * 0.55, hp.y - hr * 0.25, hr * 0.4).fill({ color: PALE, alpha: 0.15 * headFade });
-  for (let i = 0; i < 4; i++) {
-    const tx = hp.x + side * hr * (0.9 + i * 0.28);
-    g.poly([tx, hp.y + hr * 0.1, tx + 0.015, hp.y + hr * 0.1, tx + 0.008, hp.y + hr * 0.22]).fill({
-      color: PALE,
-      alpha: headFade,
+  // Nostril, and a beard of ink under the chin.
+  g.circle(pt(2.12, 0.22).x, pt(2.12, 0.22).y, 0.016).fill({ color: INK_LIT, alpha: a });
+  g.poly(
+    flat([
+      [0.9, -0.6 - jaw * 0.5],
+      [1.4, -1.25 - jaw * 0.6],
+      [1.5, -0.55 - jaw * 0.5],
+    ]),
+  ).fill({ color: BLACK, alpha: a });
+  // The eye: slanted and white, glowing, with a dark slit.
+  const eye = flat([
+    [0.5, 0.5],
+    [1.15, 0.62],
+    [0.85, 0.34],
+  ]);
+  g.poly(eye).fill({ color: WHITE_EYE_GLOW, alpha: a });
+  g.circle(pt(0.85, 0.5).x, pt(0.85, 0.5).y, 0.2 * u).fill({ color: WHITE_EYE_GLOW, alpha: 0.18 * a });
+  g.circle(pt(0.93, 0.5).x, pt(0.93, 0.5).y, 0.018).fill({ color: BLACK, alpha: a });
+  // Two long whiskers streaming back from the snout, drifting on the air.
+  for (const k of [0, 1]) {
+    const w = [0, 1, 2, 3, 4, 5].map((i) => {
+      const p = pt(1.95 - i * 0.55, 0.12 - k * 0.2 - i * 0.1 * (k ? -1 : 1) + Math.sin(t * 5 + i * 0.8 + k) * 0.08);
+      return p;
     });
+    ribbon(g, w, [0.024, 0.02, 0.015, 0.01, 0.006, 0.002], BLACK, a);
   }
 }
 
