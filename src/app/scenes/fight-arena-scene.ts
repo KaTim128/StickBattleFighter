@@ -910,6 +910,8 @@ export class FightArenaScene implements ArenaScene {
       const p = arena.props[i];
       // Wall-like props (cubicle and glass partitions) follow the same shared rules as the walls: behind a fighter
       // they stay solid and behind him; in front of him they may fade.
+      // The Colosseum's props are solid and opaque: they never fade (they are low, so they cannot hide a fighter for long).
+      if (arena.round) continue;
       if (p && WALL_LIKE_PROPS.has(p.kind)) {
         const { w, d } = footprint(p);
         const rect = { x0: p.x - w / 2, y0: p.y - d / 2, x1: p.x + w / 2, y1: p.y + d / 2 };

@@ -21,6 +21,7 @@ import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
 import { DEFAULT_DIFFICULTY, DIFFICULTIES, difficultyFor } from '../data/ai/difficulty';
 import type { ArenaLayout } from '../data/arenas/arena-layout';
+import { COLOSSEUM } from '../data/arenas/colosseum';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
@@ -193,10 +194,11 @@ function castFromParams(params: URLSearchParams): { player?: string; opponent?: 
 const HEAVY_HIT_FOR_CROWD = 100;
 
 /**
- * Arenas on the main menu (owner, 24/11/2026): the Office is first and the default; the training yard is the Tutorial Zone. The real
- * Colosseum is built later, must be ROUND, and then goes first, before the Office and the Tutorial Zone.
+ * Arenas on the main menu: the Colosseum (round; built 25/11/2026) is first and the default, then the Office, then the Tutorial Zone
+ * (the old training yard). A bare `?scene`-less URL still opens the Office, the engine's own default (tests and tools rely on it).
  */
 const MENU_ARENAS = [
+  { id: 'colosseum', name: 'Colosseum' },
   { id: 'office', name: 'Office' },
   { id: 'training-yard', name: 'Tutorial Zone' },
   { id: 'house', name: 'House of Nightmare (admin)', adminOnly: true },
@@ -307,7 +309,13 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       ? new EngineCheckScene(app.stage, textures, viewport, optionalTextures)
       : new FightArenaScene(
           withStarts(
-            sceneName === 'training-yard' ? TRAINING_YARD : sceneName === 'house' ? HOUSE_FIGHT : OFFICE,
+            sceneName === 'training-yard'
+              ? TRAINING_YARD
+              : sceneName === 'house'
+                ? HOUSE_FIGHT
+                : sceneName === 'colosseum'
+                  ? COLOSSEUM
+                  : OFFICE,
             params.get('playerAt'),
             params.get('dummyAt'),
           ),

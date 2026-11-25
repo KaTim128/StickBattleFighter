@@ -38,6 +38,11 @@ export interface ArenaLayout {
    * for the whole fight. The training yard (Testing Area) has none (SUP-22).
    */
   readonly music?: string;
+  /**
+   * A round arena (the Colosseum): the fighting floor is a circle inside the width/height box. Its tiered wall is the interior
+   * walls laid along the circle; the box's own rectangular outer walls are not drawn.
+   */
+  readonly round?: { readonly cx: number; readonly cy: number; readonly radiusM: number };
   /** Doors in gaps of the interior walls. */
   readonly doors?: readonly DoorSpec[];
 }
@@ -56,6 +61,10 @@ export interface WallRect extends Rect {
   readonly colour?: number;
   /** A breakable section's hit points (owner, 11/11/2026); none = an unbreakable wall. */
   readonly durability?: number;
+  /** How tall it stands, metres (default `INTERIOR_WALL_HEIGHT_M`): the Colosseum's near wall is low so it never hides the fight. */
+  readonly heightM?: number;
+  /** Collision only: the arena draws this wall itself (the Colosseum's tiered ring). */
+  readonly hidden?: boolean;
 }
 
 export interface FloorZone extends Rect {

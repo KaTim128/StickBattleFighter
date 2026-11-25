@@ -990,3 +990,6 @@ Done: Ink Monster 450 HP; Ink Slash brush swipe with 3 s blind and 40 % slow; In
 ## 25/11/2026: Batch 8 (S1, O1; TD-163)
 Done: select-screen strip cache and incremental drawing (before/after numbers in docs/qa); Open Zone Change Character (picker, `replacePlayerFighter`, integration test, browser check with three switches). Next: Batch 9 (pixel renderer, UI design system, loading screen), then Batch 10.
 
+## 25/11/2026: Colosseum (TD-164)
+Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torches), menu default, tests (arena layout, real-scene containment). Fixed while building: straight chords drawn across the wall (lines followed the run, not the curve), sand spilling past the rim (clipped). Batch 9 (pixel pipeline, UI design system, loading screen) is last, after this.
+

@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import { fromBoxFrame } from '../core/oriented-rect';
 import type { ArenaLayout, Rect } from '../data/arenas/arena-layout';
 import { kindOf } from '../data/objects/props';
+import { buildColosseum } from './colosseum-view';
 import { DoorView } from './door-view';
 import { face, faceQuad, isoBlock, shade } from './iso-draw';
 import { drawPrism } from './prism';
@@ -78,7 +79,12 @@ function wallColour(arena: ArenaLayout, r: Rect): number {
  * fighters beside it still depth-sort correctly. Each block is drawn as a prism
  * on its own footprint, so a turned wall shows its sloping face.
  */
-function wallBlocks(r: Rect, top: number, front: number): { node: Container; footOffset: number; rect: WallRect }[] {
+function wallBlocks(
+  r: Rect,
+  top: number,
+  front: number,
+  heightM = INTERIOR_WALL_HEIGHT_M,
+): { node: Container; footOffset: number; rect: WallRect }[] {
   const alongY = r.y1 - r.y0 >= r.x1 - r.x0;
   const length = alongY ? r.y1 - r.y0 : r.x1 - r.x0;
   const n = Math.max(1, Math.ceil(length / WALL_CHUNK_M - 1e-6));
@@ -98,9 +104,9 @@ function wallBlocks(r: Rect, top: number, front: number): { node: Container; foo
     const rel = corners.map((p) => iso(p.x - centre.x, p.y - centre.y));
     const c = new Container();
     c.label = 'interior-wall';
-    const g = drawPrism(new Graphics(), rel, INTERIOR_WALL_HEIGHT_M, { front, top, edge: 0x14181f, edgeWidth: 0 });
+    const g = drawPrism(new Graphics(), rel, heightM, { front, top, edge: 0x14181f, edgeWidth: 0 });
     // Seamless: outline and trim only the wall's long sides, never the joins between blocks.
-    const hM = INTERIOR_WALL_HEIGHT_M;
+    const hM = heightM;
     const long: [number, number][] = alongY
       ? [
           [1, 2],
@@ -186,7 +192,11 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
     .fill({ color: 0x000000, alpha: 0.07 })
     .rect(0, 0, 0.18, h)
     .fill({ color: 0x000000, alpha: 0.07 });
-  floorLayer.addChild(ao);
+  if (!arena.round) floorLayer.addChild(ao);
+
+  // The Colosseum's own dressing: sand, dust and cracks on the stone (its walls follow below).
+  const colosseum = arena.round ? buildColosseum(arena.round) : null;
+  if (colosseum) floorLayer.addChild(colosseum.floor);
 
   // Rugs and other floor decals lie under everything that stands.
   for (const p of arena.props) if (kindOf(p.kind).decal) floorLayer.addChild(buildPropView(p));
@@ -194,42 +204,52 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   // Outer walls: the two at the back (north, west) stand tall with windows; the two in front are
   // cut down to a low ledge so they never hide the fight.
   const walls = new Graphics();
-  isoBlock(walls, -t, -t, w + t, 0, 0, BACK_WALL_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
-  isoBlock(walls, -t, 0, 0, h + t, 0, BACK_WALL_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
-  for (const win of arena.windows ?? []) {
-    const at = face.left(0);
-    faceQuad(walls, at, win.x0, 0.9, win.x1, 2.0)
-      .fill({ color: 0xbfe6ff, alpha: 0.9 })
-      .stroke({ width: 0.04, color: 0xf2f6fa });
-    for (let x = win.x0 + 1.2; x < win.x1 - 0.1; x += 1.2)
-      faceQuad(walls, at, x - 0.03, 0.9, x + 0.03, 2.0).fill(0xf2f6fa);
-    faceQuad(walls, at, win.x0 + 0.15, 1.75, win.x0 + 0.6, 1.95).fill({ color: 0xffffff, alpha: 0.45 }); // glint
+  if (!arena.round) {
+    isoBlock(walls, -t, -t, w + t, 0, 0, BACK_WALL_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
+    isoBlock(walls, -t, 0, 0, h + t, 0, BACK_WALL_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
+    for (const win of arena.windows ?? []) {
+      const at = face.left(0);
+      faceQuad(walls, at, win.x0, 0.9, win.x1, 2.0)
+        .fill({ color: 0xbfe6ff, alpha: 0.9 })
+        .stroke({ width: 0.04, color: 0xf2f6fa });
+      for (let x = win.x0 + 1.2; x < win.x1 - 0.1; x += 1.2)
+        faceQuad(walls, at, x - 0.03, 0.9, x + 0.03, 2.0).fill(0xf2f6fa);
+      faceQuad(walls, at, win.x0 + 0.15, 1.75, win.x0 + 0.6, 1.95).fill({ color: 0xffffff, alpha: 0.45 }); // glint
+    }
+    // Skirting along the back walls' room faces.
+    faceQuad(walls, face.left(0), 0, 0, w, SKIRTING_M).fill(SKIRTING);
+    faceQuad(walls, face.right(0), 0, 0, h, SKIRTING_M).fill(shade(SKIRTING, 0.85));
   }
-  // Skirting along the back walls' room faces.
-  faceQuad(walls, face.left(0), 0, 0, w, SKIRTING_M).fill(SKIRTING);
-  faceQuad(walls, face.right(0), 0, 0, h, SKIRTING_M).fill(shade(SKIRTING, 0.85));
   world.addChild(walls);
   const front = new Graphics();
-  isoBlock(front, -t, h, w + t, h + t, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
-  isoBlock(front, w, -t, w + t, h, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
+  if (!arena.round) {
+    isoBlock(front, -t, h, w + t, h + t, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
+    isoBlock(front, w, -t, w + t, h, 0, FRONT_LEDGE_M, { colour: look.wall, top: look.wallEdge, edge: 0.4 });
+  }
 
   // The upper walls: the back walls extend upwards behind the room; the front walls rise over it.
   const backRise = new Graphics();
   world.addChildAt(backRise, world.getChildIndex(walls) + 1);
   const frontRise = new Graphics();
   const wallLook = { colour: look.wall, top: look.wallEdge, edge: 0.4 };
-  isoBlock(backRise, -t, -t, w + t, 0, BACK_WALL_M, TALL_WALL_M, wallLook);
-  isoBlock(backRise, -t, 0, 0, h + t, BACK_WALL_M, TALL_WALL_M, wallLook);
-  const glass = { colour: look.wall, top: look.wallEdge, edge: 0.6, alpha: FRONT_RISE_ALPHA };
-  isoBlock(frontRise, -t, h, w + t, h + t, FRONT_LEDGE_M, TALL_WALL_M, glass);
-  isoBlock(frontRise, w, -t, w + t, h, FRONT_LEDGE_M, TALL_WALL_M, glass);
-  const rail = { colour: look.wall, top: look.wallEdge, edge: 0.5, alpha: FRONT_RAIL_ALPHA };
-  isoBlock(frontRise, -t, h, w + t, h + t, TALL_WALL_M - FRONT_RAIL_M, TALL_WALL_M, rail);
-  isoBlock(frontRise, w, -t, w + t, h, TALL_WALL_M - FRONT_RAIL_M, TALL_WALL_M, rail);
+  if (!arena.round) {
+    isoBlock(backRise, -t, -t, w + t, 0, BACK_WALL_M, TALL_WALL_M, wallLook);
+    isoBlock(backRise, -t, 0, 0, h + t, BACK_WALL_M, TALL_WALL_M, wallLook);
+    const glass = { colour: look.wall, top: look.wallEdge, edge: 0.6, alpha: FRONT_RISE_ALPHA };
+    isoBlock(frontRise, -t, h, w + t, h + t, FRONT_LEDGE_M, TALL_WALL_M, glass);
+    isoBlock(frontRise, w, -t, w + t, h, FRONT_LEDGE_M, TALL_WALL_M, glass);
+    const rail = { colour: look.wall, top: look.wallEdge, edge: 0.5, alpha: FRONT_RAIL_ALPHA };
+    isoBlock(frontRise, -t, h, w + t, h + t, TALL_WALL_M - FRONT_RAIL_M, TALL_WALL_M, rail);
+    isoBlock(frontRise, w, -t, w + t, h, TALL_WALL_M - FRONT_RAIL_M, TALL_WALL_M, rail);
+  }
+
+  // A Graphics cannot hold children, so the Colosseum's wall layers sit in the world beside the others.
+  if (colosseum) world.addChildAt(colosseum.back, world.getChildIndex(backRise) + 1);
 
   const actors = new YSortLayer();
   world.addChild(actors.container);
   world.addChild(front); // the low front ledges draw over everything standing inside the room
+  if (colosseum) world.addChild(colosseum.front);
   world.addChild(frontRise);
   const props = new Map<number, Container>();
   arena.props.forEach((p, i) => {
@@ -244,7 +264,11 @@ export function buildArenaView(arena: ArenaLayout): ArenaView {
   const wallNodes: Container[][] = [];
   for (const r of arena.interiorWalls ?? []) {
     const nodes: Container[] = [];
-    for (const b of wallBlocks(r, 0xf4f0ea, r.colour ?? wallColour(arena, r))) {
+    if (r.hidden) {
+      wallNodes.push(nodes);
+      continue;
+    }
+    for (const b of wallBlocks(r, arena.round ? 0xe3cf9f : 0xf4f0ea, r.colour ?? wallColour(arena, r), r.heightM)) {
       actors.add(b.node, b.footOffset);
       occluders.push(b.node);
       occluderRects.push(b.rect);

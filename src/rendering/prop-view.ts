@@ -4,7 +4,7 @@ import type { FurnitureDef } from '../modes/hide-seek/house-types';
 import { drawBookshelf } from './bookshelf-view';
 import { drawHouseRug, drawInto } from './house-furniture';
 import { face, faceQuad, isoBlock, isoCylinder, isoShadow, shade, withMaterial } from './iso-draw';
-import { iso } from './projection';
+import { ISO_T, iso } from './projection';
 
 /**
  * Office and test props in the 2.5D style (TD-045, owner-approved mockups): bevelled blocks lit
@@ -59,6 +59,141 @@ function backrestBox(
   if (facing === 'n') return [x0, y1 - t, x1, y1];
   if (facing === 'e') return [x0, y0, x0 + t, y1];
   return [x1 - t, y0, x1, y1];
+}
+
+/** A small seeded random generator, so every prop of a kind weathers the same way. */
+function texRng(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+type FaceAt = (u: number, v: number) => { x: number; y: number };
+
+/** Surface texture on a face: grit and pitting (tiny dark and light flecks), pale chips and the odd stain. */
+function speckle(
+  g: Graphics,
+  at: FaceAt,
+  u0: number,
+  v0: number,
+  u1: number,
+  v1: number,
+  n: number,
+  seed: number,
+  dark = 0x3b3326,
+  light = 0xfff3d6,
+): void {
+  const r = texRng(seed);
+  for (let i = 0; i < n; i++) {
+    const q = at(u0 + r() * (u1 - u0), v0 + r() * (v1 - v0));
+    const size = 0.008 + r() * 0.02;
+    const pale = r() < 0.4;
+    g.circle(q.x, q.y, size).fill({ color: pale ? light : dark, alpha: pale ? 0.35 : 0.3 + r() * 0.25 });
+  }
+}
+
+/** Long thin streaks along a face (wood grain, weathering streaks), slightly wavering. */
+function streaks(
+  g: Graphics,
+  at: FaceAt,
+  u0: number,
+  v0: number,
+  u1: number,
+  v1: number,
+  n: number,
+  seed: number,
+  colour: number,
+  alpha = 0.35,
+): void {
+  const r = texRng(seed);
+  for (let i = 0; i < n; i++) {
+    const v = v0 + r() * (v1 - v0);
+    const a = u0 + r() * (u1 - u0) * 0.5;
+    const b = Math.min(u1, a + (u1 - u0) * (0.25 + r() * 0.5));
+    const p0 = at(a, v);
+    const p1 = at((a + b) / 2, v + (r() - 0.5) * 0.03);
+    const p2 = at(b, v + (r() - 0.5) * 0.02);
+    g.moveTo(p0.x, p0.y)
+      .quadraticCurveTo(p1.x, p1.y, p2.x, p2.y)
+      .stroke({ width: 0.007 + r() * 0.008, color: colour, alpha: alpha * (0.5 + r()) });
+  }
+}
+
+/** A crack or vein wandering across a face. */
+function vein(
+  g: Graphics,
+  at: FaceAt,
+  u: number,
+  v: number,
+  len: number,
+  seed: number,
+  colour: number,
+  width = 0.012,
+  alpha = 0.7,
+): void {
+  const r = texRng(seed);
+  let cu = u;
+  let cv = v;
+  const p = at(cu, cv);
+  g.moveTo(p.x, p.y);
+  for (let i = 0; i < 6; i++) {
+    cu += (len / 6) * (0.6 + r() * 0.8);
+    cv += (r() - 0.5) * len * 0.5;
+    const q = at(cu, cv);
+    g.lineTo(q.x, q.y);
+  }
+  g.stroke({ width, color: colour, alpha, join: 'round' });
+}
+
+/** Dirt and damp gathered along the foot of a face, and a few pale scuffs higher up. */
+function grime(g: Graphics, at: FaceAt, u0: number, u1: number, height: number, seed: number): void {
+  const r = texRng(seed);
+  const strip = [at(u0, 0), at(u1, 0), at(u1, height * 0.22), at(u0, height * 0.28)];
+  g.poly(strip.flatMap((q) => [q.x, q.y])).fill({ color: 0x2c2417, alpha: 0.28 });
+  for (let i = 0; i < 3; i++) {
+    const a = u0 + r() * (u1 - u0);
+    const p0 = at(a, height * (0.4 + r() * 0.4));
+    const p1 = at(a + (u1 - u0) * 0.1, height * (0.4 + r() * 0.4) - 0.04);
+    g.moveTo(p0.x, p0.y).lineTo(p1.x, p1.y).stroke({ width: 0.012, color: 0xfff3d6, alpha: 0.28 });
+  }
+}
+
+/** A patch of moss or lichen on a face, low down and in a corner. */
+function moss(g: Graphics, at: FaceAt, u: number, v: number, size: number, seed: number): void {
+  const r = texRng(seed);
+  for (let i = 0; i < 9; i++) {
+    const q = at(u + (r() - 0.5) * size, v + (r() - 0.5) * size * 0.6);
+    g.circle(q.x, q.y, 0.012 + r() * 0.025).fill({ color: r() < 0.5 ? 0x6b7b45 : 0x55663a, alpha: 0.5 });
+  }
+}
+
+/** Stone: grit and pitting on the lit faces and the top, a vein, grime at the foot, moss in a corner. */
+function weatherBlock(
+  g: Graphics,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  h: number,
+  seed: number,
+  mossy = true,
+): void {
+  const left = face.left(y1);
+  const right = face.right(x1);
+  const top = face.top(h);
+  speckle(g, left, x0, 0.03, x1, h - 0.02, Math.round(60 * (x1 - x0) * h) + 14, seed);
+  speckle(g, right, y0, 0.03, y1, h - 0.02, Math.round(60 * (y1 - y0) * h) + 10, seed + 1);
+  speckle(g, top, x0, y0, x1, y1, Math.round(50 * (x1 - x0) * (y1 - y0)) + 10, seed + 2);
+  streaks(g, left, x0, 0.05, x1, h - 0.03, 5, seed + 3, 0x8e8061, 0.35);
+  vein(g, left, x0 + (x1 - x0) * 0.2, h * 0.7, (x1 - x0) * 0.5, seed + 4, 0x5d5546, 0.012, 0.6);
+  grime(g, left, x0, x1, h, seed + 5);
+  grime(g, right, y0, y1, h, seed + 6);
+  if (mossy) moss(g, left, x0 + 0.1, 0.07, 0.25, seed + 7);
 }
 
 export function buildPropView(p: PropPlacement): Container {
@@ -498,6 +633,294 @@ function drawKind(
         .stroke({ width: 0.025, color: 0x1d1f24 });
       g.rect(top.x - 0.07, top.y - 0.03, 0.14, 0.025).fill(0xc9ccd2); // handle
       faceQuad(g, face.left(0.09), -0.06, 0.2, 0.06, 0.32).fill(0xf2efe9); // label
+      break;
+    }
+    // ---- The Colosseum's ruins and cargo: weathered sandy stone, cracked marble, aged wood and terracotta.
+    case 'roman-column-fallen': {
+      // A toppled fluted column lying along x: a drum with grooves, a worn capital at one end, a jagged break at the other.
+      const m = 0xe6dcc4;
+      isoBlock(g, x0 + 0.35, y0 + 0.05, x1 - 0.55, y1 - 0.05, 0, h - 0.08, { colour: m });
+      isoBlock(g, x1 - 0.55, y0, x1, y1, 0, h, { colour: 0xd9c7a1 }); // the capital
+      isoBlock(g, x1 - 0.2, y0, x1, y1, 0, h, { colour: 0xcdb98f, noAo: true }); // the worn rim of the capital
+      const f = face.left(y1 - 0.05);
+      for (let i = 1; i < 6; i++) {
+        const v = (i / 6) * (h - 0.12);
+        const q0 = f(x0 + 0.4, v);
+        const q1 = f(x1 - 0.6, v);
+        g.moveTo(q0.x, q0.y).lineTo(q1.x, q1.y).stroke({ width: 0.012, color: 0x9c9078, alpha: 0.7 });
+      }
+      // The broken end: jagged teeth of marble and a dark crack.
+      const j = [
+        f(x0 + 0.35, 0),
+        f(x0 + 0.28, 0.2),
+        f(x0 + 0.42, 0.34),
+        f(x0 + 0.3, 0.52),
+        f(x0 + 0.4, h - 0.08),
+        f(x0 + 0.5, h - 0.08),
+        f(x0 + 0.5, 0),
+      ];
+      g.poly(j.flatMap((q) => [q.x, q.y])).fill({ color: 0xb9ac92, alpha: 0.95 });
+      const c0 = f(x0 + 1.2, h - 0.1);
+      const c1 = f(x0 + 1.5, h * 0.5);
+      const c2 = f(x0 + 1.4, 0.05);
+      g.moveTo(c0.x, c0.y).lineTo(c1.x, c1.y).lineTo(c2.x, c2.y).stroke({ width: 0.02, color: 0x5d5546, alpha: 0.8 });
+      {
+        const lf = face.left(y1 - 0.05);
+        vein(g, lf, x0 + 0.5, h * 0.62, 1.9, 101, 0x9a8f78, 0.014, 0.75);
+        vein(g, lf, x0 + 1.4, h * 0.3, 1.2, 102, 0x8a7f68, 0.011, 0.6);
+        speckle(g, lf, x0 + 0.4, 0.03, x1 - 0.6, h - 0.1, 90, 103, 0x6a5f48);
+        streaks(g, lf, x0 + 0.4, 0.05, x1 - 0.6, h - 0.12, 8, 104, 0x9c9078, 0.4);
+        grime(g, lf, x0 + 0.4, x1 - 0.55, h, 105);
+        speckle(g, face.top(h - 0.08), x0 + 0.35, y0 + 0.05, x1 - 0.55, y1 - 0.05, 60, 106, 0x7a6f58);
+        moss(g, lf, x0 + 0.7, 0.07, 0.4, 107);
+        speckle(g, face.left(y1), x1 - 0.55, 0.03, x1, h - 0.02, 40, 108, 0x6a5f48); // the capital's grit
+        vein(g, face.right(x1), y0 + 0.1, h * 0.55, 0.5, 109, 0x6a5f48, 0.012, 0.6);
+      }
+      break;
+    }
+    case 'column-stub':
+      // A column snapped off a metre and a half up: plinth, fluted drum and a ragged top.
+      isoBlock(g, x0, y0, x1, y1, 0, 0.2, { colour: 0xd0bf98 });
+      isoCylinder(g, 0, 0, 0.2, 0.37, h - 0.2, 0xe6dcc4);
+      for (let i = 0; i < 4; i++) {
+        const a = -0.6 + i * 0.5;
+        const b0 = iso(Math.cos(a) * 0.37, Math.sin(a) * 0.37, 0.24);
+        const b1 = iso(Math.cos(a) * 0.37, Math.sin(a) * 0.37, h - 0.08);
+        g.moveTo(b0.x, b0.y).lineTo(b1.x, b1.y).stroke({ width: 0.012, color: 0x9c9078, alpha: 0.6 });
+      }
+      for (let i = 0; i < 5; i++) {
+        const a = i * 1.3;
+        const t = iso(Math.cos(a) * 0.22, Math.sin(a) * 0.14, h + 0.02);
+        g.poly([t.x - 0.08, t.y, t.x - 0.02, t.y - 0.1, t.x + 0.07, t.y]).fill({ color: 0xcdbf9f, alpha: 0.95 });
+      }
+      for (let i = 0; i < 40; i++) {
+        const r = texRng(200 + i);
+        const a = -1.2 + r() * 1.9;
+        const q = iso(Math.cos(a) * 0.37, Math.sin(a) * 0.37, 0.25 + r() * (h - 0.35));
+        g.circle(q.x, q.y, 0.008 + r() * 0.016).fill({ color: r() < 0.4 ? 0xfff3d6 : 0x6a5f48, alpha: 0.35 });
+      }
+      for (let i = 0; i < 3; i++) {
+        const q0 = iso(0.37 * Math.cos(-0.5 + i * 0.4), 0.37 * Math.sin(-0.5 + i * 0.4), h * 0.8);
+        const q1 = iso(0.37 * Math.cos(-0.5 + i * 0.4), 0.37 * Math.sin(-0.5 + i * 0.4), h * 0.3);
+        g.moveTo(q0.x, q0.y)
+          .lineTo(q1.x + 0.03, q1.y)
+          .stroke({ width: 0.01, color: 0x8e8061, alpha: 0.45 });
+      }
+      weatherBlock(g, x0, y0, x1, y1, 0.2, 210, true); // the plinth
+      break;
+    case 'column-piece': {
+      // A cracked marble drum lying where it fell.
+      isoCylinder(g, 0, 0, 0, 0.44, h, 0xe9e1cf);
+      const t = iso(0, 0, h);
+      g.moveTo(t.x - 0.3, t.y - 0.02)
+        .lineTo(t.x - 0.05, t.y + 0.07)
+        .lineTo(t.x + 0.08, t.y - 0.03)
+        .lineTo(t.x + 0.3, t.y + 0.05)
+        .stroke({ width: 0.02, color: 0x6a6252, alpha: 0.85 });
+      const b = iso(0.2, 0.2, 0.05);
+      g.moveTo(b.x, b.y - 0.55)
+        .lineTo(b.x - 0.06, b.y - 0.3)
+        .lineTo(b.x + 0.02, b.y - 0.1)
+        .stroke({ width: 0.018, color: 0x6a6252, alpha: 0.8 });
+      for (let i = 0; i < 36; i++) {
+        const r = texRng(300 + i);
+        const a = -1.2 + r() * 1.9;
+        const q = iso(Math.cos(a) * 0.44, Math.sin(a) * 0.44, 0.04 + r() * (h - 0.08));
+        g.circle(q.x, q.y, 0.008 + r() * 0.016).fill({ color: r() < 0.4 ? 0xfff3d6 : 0x7a6f58, alpha: 0.35 });
+      }
+      speckle(g, face.top(h), -0.35, -0.2, 0.35, 0.2, 30, 330, 0x8a7f68);
+      break;
+    }
+    case 'broken-arch': {
+      // What is left of an arch: a stout pier with the first stepped courses of the arch still sitting on it (all inside its own
+      // footprint, every course resting on the one below), a lower stump opposite, and the fallen stones between them on the floor.
+      isoBlock(g, x0, y0, x0 + 0.8, y1, 0, h * 0.7, { colour: 0xd9c7a1 });
+      isoBlock(g, x0, y0 + 0.05, x0 + 0.6, y1 - 0.05, h * 0.7, h * 0.88, { colour: 0xe0cfa8 });
+      isoBlock(g, x0, y0 + 0.1, x0 + 0.4, y1 - 0.1, h * 0.88, h, { colour: 0xe6d8b6 });
+      isoBlock(g, x1 - 0.6, y0, x1, y1, 0, h * 0.45, { colour: 0xcdb98f });
+      isoBlock(g, x0 + 0.85, y0 + 0.15, x1 - 0.65, y1 - 0.15, 0, 0.22, { colour: 0xc4b48f, noAo: true });
+      const f = face.left(y1);
+      for (const [u, v] of [
+        [0.3, 0.3],
+        [1.55, 0.2],
+      ] as const) {
+        const q = f(x0 + u, v);
+        g.moveTo(q.x, q.y)
+          .lineTo(q.x + 0.08, q.y + 0.12)
+          .lineTo(q.x - 0.02, q.y + 0.24)
+          .stroke({ width: 0.018, color: 0x6a5f48, alpha: 0.8 });
+      }
+      weatherBlock(g, x0, y0, x0 + 0.8, y1, h * 0.7, 400);
+      weatherBlock(g, x1 - 0.6, y0, x1, y1, h * 0.45, 410);
+      {
+        // Courses of stone on the pier and the stepped arch, and the rubble's grit.
+        const lf = face.left(y1);
+        for (const z of [0.25, 0.5, 0.75]) {
+          const a0 = lf(x0, z);
+          const a1 = lf(x0 + 0.8, z);
+          g.moveTo(a0.x, a0.y).lineTo(a1.x, a1.y).stroke({ width: 0.012, color: 0x8e8061, alpha: 0.6 });
+        }
+        speckle(g, face.top(0.22), x0 + 0.85, y0 + 0.15, x1 - 0.65, y1 - 0.15, 26, 420);
+      }
+      break;
+    }
+    case 'stone-block': {
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0xd2c3a0 });
+      const f = face.left(y1);
+      const m0 = f(x0, h * 0.5);
+      const m1 = f(x1, h * 0.5);
+      g.moveTo(m0.x, m0.y).lineTo(m1.x, m1.y).stroke({ width: 0.012, color: 0x8e8061, alpha: 0.6 });
+      const c = f(x0 + 0.1, h);
+      g.poly([c.x, c.y, c.x + 0.18, c.y, c.x + 0.05, c.y + 0.14]).fill({ color: 0x9d8f70, alpha: 0.9 }); // a chipped corner
+      weatherBlock(g, x0, y0, x1, y1, h, 500);
+      break;
+    }
+    case 'rubble':
+      // Loose stones lying flat on the floor, side by side (none overlaps or floats).
+      for (const [cx, cy, sw, sd, sh, col] of [
+        [-0.3, -0.1, 0.4, 0.3, 0.2, 0xd2c3a0],
+        [0.15, 0.1, 0.5, 0.35, 0.28, 0xc4b48f],
+        [0.38, -0.22, 0.26, 0.2, 0.14, 0xe0d2b0],
+        [-0.28, 0.24, 0.3, 0.2, 0.12, 0xb9aa86],
+        [0.02, -0.3, 0.2, 0.16, 0.1, 0xcfbf9a],
+      ] as const)
+        isoBlock(g, cx - sw / 2, cy - sd / 2, cx + sw / 2, cy + sd / 2, 0, sh, { colour: col, noAo: true });
+      for (const [cx, cy, sw, sd, sh] of [
+        [-0.3, -0.1, 0.4, 0.3, 0.2],
+        [0.15, 0.1, 0.5, 0.35, 0.28],
+        [0.38, -0.22, 0.26, 0.2, 0.14],
+        [-0.28, 0.24, 0.3, 0.2, 0.12],
+        [0.02, -0.3, 0.2, 0.16, 0.1],
+      ] as const) {
+        speckle(g, face.top(sh), cx - sw / 2, cy - sd / 2, cx + sw / 2, cy + sd / 2, 12, 600 + Math.round(cx * 100));
+        speckle(g, face.left(cy + sd / 2), cx - sw / 2, 0.01, cx + sw / 2, sh - 0.01, 8, 610 + Math.round(cy * 100));
+      }
+      break;
+    case 'crate': {
+      isoBlock(g, x0, y0, x1, y1, 0, h, { colour: 0x9a6a3a });
+      for (const [mapper, a0, a1] of [
+        [face.left(y1), x0, x1],
+        [face.right(x1), y0, y1],
+      ] as const) {
+        for (let i = 1; i < 4; i++) {
+          const v = (i / 4) * h;
+          const q0 = mapper(a0, v);
+          const q1 = mapper(a1, v);
+          g.moveTo(q0.x, q0.y).lineTo(q1.x, q1.y).stroke({ width: 0.012, color: 0x5a3a1c, alpha: 0.7 });
+        }
+      }
+      const f = face.left(y1);
+      for (const [u0, v0, u1, v1] of [
+        [x0, 0, x1, h],
+        [x0, h, x1, 0],
+      ] as const) {
+        const q0 = f(u0, v0);
+        const q1 = f(u1, v1);
+        g.moveTo(q0.x, q0.y).lineTo(q1.x, q1.y).stroke({ width: 0.03, color: 0x6e4a26, alpha: 0.6 });
+      }
+      for (const [mapper, a0, a1] of [
+        [face.left(y1), x0, x1],
+        [face.right(x1), y0, y1],
+      ] as const) {
+        streaks(g, mapper, a0 + 0.02, 0.03, a1 - 0.02, h - 0.03, 16, 700 + Math.round(a0 * 10), 0x4e3319, 0.5);
+        streaks(g, mapper, a0 + 0.02, 0.03, a1 - 0.02, h - 0.03, 6, 720 + Math.round(a0 * 10), 0xc99a62, 0.3);
+        speckle(g, mapper, a0, 0.02, a1, h - 0.02, 26, 740 + Math.round(a0 * 10), 0x3a2614, 0xe0b27a);
+        // Nails along each plank end, knots and a darkened edge.
+        for (const v of [0.1, 0.3, 0.5, 0.7]) {
+          for (const u of [a0 + 0.06, a1 - 0.06]) {
+            const q = mapper(u, v);
+            g.circle(q.x, q.y, 0.014).fill({ color: 0x2a2a2e, alpha: 0.85 });
+          }
+        }
+        const k1 = mapper(a0 + (a1 - a0) * 0.35, h * 0.4);
+        g.ellipse(k1.x, k1.y, 0.03, 0.02).fill({ color: 0x3a2412, alpha: 0.7 });
+        const edge = [mapper(a0, 0), mapper(a0 + 0.05, 0), mapper(a0 + 0.05, h), mapper(a0, h)];
+        g.poly(edge.flatMap((q) => [q.x, q.y])).fill({ color: 0x2a1a0c, alpha: 0.3 });
+        grime(g, mapper, a0, a1, h, 760 + Math.round(a0 * 10));
+      }
+      speckle(g, face.top(h), x0, y0, x1, y1, 30, 790, 0x3a2614, 0xe0b27a);
+      streaks(g, face.top(h), x0 + 0.03, y0 + 0.03, x1 - 0.03, y1 - 0.03, 8, 791, 0x4e3319, 0.45);
+      break;
+    }
+    case 'barrel': {
+      isoCylinder(g, 0, 0, 0, 0.33, h, 0x8a5a2e);
+      for (const z of [0.2, 0.7]) isoCylinder(g, 0, 0, z, 0.345, 0.07, 0x3b3b40);
+      for (let i = 0; i < 4; i++) {
+        const a = -0.7 + i * 0.5;
+        const b0 = iso(Math.cos(a) * 0.33, Math.sin(a) * 0.33, 0.05);
+        const b1 = iso(Math.cos(a) * 0.33, Math.sin(a) * 0.33, h - 0.05);
+        g.moveTo(b0.x, b0.y).lineTo(b1.x, b1.y).stroke({ width: 0.01, color: 0x4c3018, alpha: 0.6 });
+      }
+      for (let i = 0; i < 46; i++) {
+        const r = texRng(800 + i);
+        const a = -1.3 + r() * 2;
+        const q = iso(Math.cos(a) * 0.33, Math.sin(a) * 0.33, 0.04 + r() * (h - 0.08));
+        g.ellipse(q.x, q.y, 0.006 + r() * 0.01, 0.02 + r() * 0.04).fill({
+          color: r() < 0.5 ? 0x4c3018 : 0xb98456,
+          alpha: 0.4,
+        });
+      }
+      for (const z of [0.2, 0.7]) {
+        for (let i = 0; i < 5; i++) {
+          const a = -1.1 + i * 0.45;
+          const q = iso(Math.cos(a) * 0.345, Math.sin(a) * 0.345, z + 0.035);
+          g.circle(q.x, q.y, 0.016).fill(0x7a6e60); // hoop rivets
+          g.moveTo(q.x, q.y)
+            .lineTo(q.x + 0.01, q.y + 0.12)
+            .stroke({ width: 0.02, color: 0x7a4a2a, alpha: 0.45 }); // rust run
+        }
+      }
+      const lid = iso(0, 0, h);
+      g.ellipse(lid.x, lid.y, 0.27, 0.27 * ISO_T).stroke({ width: 0.014, color: 0x3a2412, alpha: 0.7 });
+      for (const k of [-0.12, 0, 0.12])
+        g.moveTo(lid.x + k, lid.y - 0.12)
+          .lineTo(lid.x + k, lid.y + 0.12)
+          .stroke({ width: 0.008, color: 0x4c3018, alpha: 0.5 });
+      break;
+    }
+    case 'amphora': {
+      // A terracotta jar standing on a solid foot: the belly rests on it, the neck on the belly, the rim on the neck.
+      isoCylinder(g, 0, 0, 0, 0.11, 0.18, 0xa85a32);
+      const body = iso(0, 0, 0.42);
+      g.ellipse(body.x, body.y, 0.22, 0.27).fill(0xb5653a);
+      g.ellipse(body.x - 0.07, body.y - 0.05, 0.09, 0.14).fill({ color: 0xd08454, alpha: 0.6 });
+      const neck = iso(0, 0, 0.72);
+      g.rect(neck.x - 0.08, neck.y - 0.14, 0.16, 0.28).fill(0xa85a32);
+      const rim = iso(0, 0, 0.9);
+      g.ellipse(rim.x, rim.y, 0.115, 0.04).fill(0xc5764a).stroke({ width: 0.012, color: 0x6a3a20, alpha: 0.7 });
+      for (const side of [-1, 1] as const) {
+        g.moveTo(neck.x + side * 0.08, neck.y - 0.08)
+          .quadraticCurveTo(neck.x + side * 0.26, neck.y - 0.02, neck.x + side * 0.2, neck.y + 0.16)
+          .stroke({ width: 0.035, color: 0xa85a32, cap: 'round' });
+      }
+      g.moveTo(body.x - 0.21, body.y - 0.02)
+        .lineTo(body.x + 0.21, body.y - 0.02)
+        .stroke({ width: 0.03, color: 0x4a2a18, alpha: 0.8 });
+      g.moveTo(body.x - 0.2, body.y + 0.06)
+        .lineTo(body.x + 0.2, body.y + 0.06)
+        .stroke({ width: 0.012, color: 0xe6c79a, alpha: 0.7 });
+      // Glaze, a painted zigzag band, scuffs, a hairline crack and dirt around the foot.
+      g.moveTo(body.x + 0.12, body.y - 0.2)
+        .quadraticCurveTo(body.x + 0.17, body.y, body.x + 0.12, body.y + 0.18)
+        .stroke({ width: 0.018, color: 0xf0b88a, alpha: 0.5 });
+      for (let k = 0; k < 8; k++) {
+        const x = body.x - 0.2 + k * 0.057;
+        g.moveTo(x, body.y - 0.07 + (k % 2) * 0.03)
+          .lineTo(x + 0.028, body.y - 0.04 - (k % 2) * 0.03)
+          .stroke({ width: 0.012, color: 0xe6c79a, alpha: 0.8 });
+      }
+      for (let k = 0; k < 40; k++) {
+        const r = texRng(900 + k);
+        g.circle(body.x - 0.2 + r() * 0.4, body.y - 0.26 + r() * 0.52, 0.006 + r() * 0.012).fill({
+          color: r() < 0.5 ? 0x6a3a20 : 0xf0b88a,
+          alpha: 0.3,
+        });
+      }
+      g.moveTo(body.x - 0.06, body.y + 0.05)
+        .lineTo(body.x - 0.02, body.y + 0.14)
+        .lineTo(body.x - 0.07, body.y + 0.22)
+        .stroke({ width: 0.01, color: 0x4a2412, alpha: 0.8 });
+      g.ellipse(body.x, body.y + 0.3, 0.19, 0.04).fill({ color: 0x2c2417, alpha: 0.3 });
       break;
     }
     case 'rug':

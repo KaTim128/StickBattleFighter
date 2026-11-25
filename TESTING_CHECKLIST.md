@@ -778,3 +778,10 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Fighter select: the picked fighter's animation shows within a few seconds on a phone; a second visit is near instant.
 - [ ] Open Zone: Settings -> Change Character swaps the fighter on the spot, repeatedly, with no reload; HUD, keys and abilities follow.
 
+## Colosseum (25/11/2026)
+- [ ] The menu offers Colosseum first and selects it by default; it opens as a large round arena.
+- [ ] Grey stone floor with thin uneven sand, golden brick walls with arches, banners, torches and seating with a subtle crowd; no weapons.
+- [ ] Ruins, crates, barrels and amphorae stand around the edge, solid and opaque, nothing floating or overlapping; the middle is open.
+- [ ] Fighters cannot leave the circle; the near wall never hides the fight.
+- [ ] Tournaments and the AI fight normally in it.
+
