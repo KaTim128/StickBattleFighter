@@ -185,68 +185,7 @@ function serpent(f: Graphics, g: Graphics, P: Project, s: Serpent, t: number, pr
   }
 }
 
-/**
- * One dragon wing: an arm of ink (shoulder, elbow, wrist) with a clawed thumb and four long finger bones fanning out; the membrane between
- * the fingers has a scalloped trailing edge that sweeps back to the body, so the whole wing is attached at the back. `flap` (-1..1) beats it.
- */
-function wing(g: Graphics, root: Point, tail: Point, side: -1 | 1, flap: number, grow: number, fade: number): void {
-  const lift = (0.8 + 0.5 * flap) * grow;
-  const sp = side;
-  const E = { x: root.x + sp * 0.32, y: root.y - 0.55 * lift };
-  const W = { x: E.x + sp * 0.75 * (0.7 + 0.3 * grow), y: E.y - 0.22 * lift + 0.06 };
-  const tips: Point[] = [
-    { x: W.x + sp * 0.55, y: W.y - 0.35 * lift + 0.1 },
-    { x: W.x + sp * 0.85, y: W.y + 0.18 + 0.1 * lift },
-    { x: W.x + sp * 0.7, y: W.y + 0.75 * grow + 0.15 * lift },
-    { x: W.x + sp * 0.34, y: W.y + 1.1 * grow + 0.1 * lift },
-  ];
-  const edge = (a: Point, b: Point): Point => ({
-    x: (a.x + b.x) / 2 - sp * 0.05,
-    y: (a.y + b.y) / 2 + 0.16 * grow,
-  });
-  // The membrane: arm, the leading edge out to the first fingertip, then scallops tip to tip and back to the body.
-  g.moveTo(root.x, root.y);
-  g.quadraticCurveTo((root.x + E.x) / 2, E.y + 0.02, E.x, E.y);
-  g.quadraticCurveTo((E.x + W.x) / 2, W.y - 0.06, W.x, W.y);
-  g.lineTo(tips[0]!.x, tips[0]!.y);
-  for (let i = 1; i < tips.length; i++) {
-    const c = edge(tips[i - 1]!, tips[i]!);
-    g.quadraticCurveTo(c.x, c.y, tips[i]!.x, tips[i]!.y);
-  }
-  const last = edge(tips[tips.length - 1]!, tail);
-  g.quadraticCurveTo(last.x, last.y, tail.x, tail.y);
-  g.quadraticCurveTo((tail.x + root.x) / 2 + sp * 0.05, (tail.y + root.y) / 2, root.x, root.y);
-  g.fill({ color: INK, alpha: 0.94 * fade });
-  // A lighter wash near the arm gives the membrane depth, and veins run from the wrist to each fingertip.
-  g.moveTo(root.x, root.y);
-  g.quadraticCurveTo((root.x + E.x) / 2, E.y + 0.02, E.x, E.y);
-  g.quadraticCurveTo((E.x + W.x) / 2, W.y - 0.06, W.x, W.y);
-  g.lineTo(W.x + (tips[2]!.x - W.x) * 0.5, W.y + (tips[2]!.y - W.y) * 0.5);
-  g.lineTo(root.x + (tail.x - root.x) * 0.3, root.y + (tail.y - root.y) * 0.3);
-  g.fill({ color: INK_LIT, alpha: 0.35 * fade });
-  for (const tip of tips) {
-    g.moveTo(W.x, W.y).lineTo(tip.x, tip.y).stroke({ width: 0.026, color: BLACK, alpha: fade, cap: 'round' });
-    g.moveTo(W.x, W.y)
-      .lineTo(tip.x, tip.y)
-      .stroke({ width: 0.007, color: PALE, alpha: 0.4 * fade, cap: 'round' });
-  }
-  // The arm bones, thick at the shoulder, with the thumb claw at the wrist.
-  g.moveTo(root.x, root.y)
-    .lineTo(E.x, E.y)
-    .lineTo(W.x, W.y)
-    .stroke({ width: 0.07, color: BLACK, alpha: fade, cap: 'round', join: 'round' });
-  g.moveTo(root.x, root.y)
-    .lineTo(E.x, E.y)
-    .lineTo(W.x, W.y)
-    .stroke({ width: 0.012, color: PALE, alpha: 0.45 * fade, cap: 'round', join: 'round' });
-  g.poly([W.x - sp * 0.02, W.y - 0.03, W.x + sp * 0.04, W.y - 0.2 * grow, W.x + sp * 0.07, W.y - 0.02]).fill({
-    color: PALE,
-    alpha: fade,
-  });
-  g.circle(root.x, root.y, 0.06).fill({ color: BLACK, alpha: fade });
-}
-
-/** The dragon's whole body: head, whiskered and horned, an S-curved serpentine body with scales and a mane, four clawed legs, two wings. */
+/** The dragon: a horned, whiskered head with a maned neck, trailing a long ribbon of black ink behind it. */
 function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): void {
   const spec = d.spec;
   const fade = d.phase === 'fade' ? clamp01(1 - d.phaseS / 0.6) : 1;
@@ -304,7 +243,7 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
   const widths: number[] = [];
   for (let i = 0; i < n; i++) {
     const u = i / (n - 1);
-    const back = u * 3.6 * grow;
+    const back = u * 4.6 * grow;
     const wave = Math.sin(t * 3 - u * 7) * 0.55 * Math.min(1, u * 2.4) * (1 - rear * 0.7);
     body.push(
       P(
@@ -313,16 +252,8 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
         hover - u * 0.35 + Math.sin(t * 3 - u * 7 + 1) * 0.15 * u + rear * 0.35 * (1 - u),
       ),
     );
-    widths.push((0.5 * (1 - u) ** 0.7 + 0.04) * (0.4 + 0.6 * grow));
+    widths.push((0.34 * (1 - u) ** 0.9 + 0.03) * (0.4 + 0.6 * grow));
   }
-  // Wings: each one grows from the back (the shoulder sits on the spine, the trailing edge meets the body further down), so they are part of
-  // the dragon. Far wing first, drawn behind the body.
-  const flap = Math.sin(t * 6.5);
-  const rootI = 3;
-  const tailI = 8;
-  const rootP = { x: body[rootI]!.x, y: body[rootI]!.y - widths[rootI]! * 0.45 };
-  const tailP = { x: body[tailI]!.x, y: body[tailI]!.y - widths[tailI]! * 0.3 };
-  wing(g, rootP, tailP, -1, flap, grow, fade);
   ribbon(
     g,
     body,
@@ -338,44 +269,14 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     INK_LIT,
     0.85 * fade,
   );
-  wing(g, rootP, tailP, 1, flap, grow, fade);
-  // Belly scales and the mane along the back.
-  for (let i = 1; i < n - 2; i++) {
+  // A few drops of ink fall from the trail as the head flies.
+  for (let i = 3; i < n - 1; i += 4) {
     const p = body[i]!;
-    const w = widths[i]!;
-    g.moveTo(p.x - w * 0.3, p.y + w * 0.25)
-      .lineTo(p.x, p.y + w * 0.4)
-      .lineTo(p.x + w * 0.3, p.y + w * 0.25)
-      .stroke({ width: 0.008, color: PALE, alpha: 0.35 * fade });
-    if (i % 2 === 0)
-      g.poly([
-        p.x + 0.02,
-        p.y - w * 0.5,
-        p.x - 0.05,
-        p.y - w * 0.5 - 0.14 * (1 - i / n) - 0.04,
-        p.x - 0.08,
-        p.y - w * 0.45,
-      ]).fill({ color: BLACK, alpha: fade });
-  }
-  // Four clawed legs hang from the body.
-  for (const [bi, off] of [
-    [5, -1],
-    [5, 1],
-    [10, -1],
-    [10, 1],
-  ] as const) {
-    const p = body[bi]!;
-    const sw = Math.sin(t * 4 + bi + off) * 0.06;
-    const fx = p.x + off * 0.16 + sw;
-    const fy = p.y + 0.5 * grow;
-    g.moveTo(p.x, p.y + 0.05)
-      .lineTo(p.x + off * 0.12, p.y + 0.28 * grow)
-      .lineTo(fx, fy)
-      .stroke({ width: 0.06, color: BLACK, alpha: fade, cap: 'round' });
-    for (const c of [-1, 0, 1])
-      g.moveTo(fx, fy)
-        .lineTo(fx + c * 0.05 + off * 0.03, fy + 0.07)
-        .stroke({ width: 0.014, color: PALE, alpha: 0.8 * fade, cap: 'round' });
+    const ph = (t * 0.8 + i * 0.21) % 1;
+    g.ellipse(p.x, p.y + widths[i]! * 0.5 + ph * 0.35, 0.014, 0.02 + ph * 0.01).fill({
+      color: BLACK,
+      alpha: (1 - ph) * fade,
+    });
   }
   // The head, in front: horned, whiskered, with a lion's mane and a jaw that opens for the breath.
   const hp = P(d.x, d.y, hover + rear * 0.55);
