@@ -1,12 +1,14 @@
 import type { AmbienceDef, AmbientBed, AmbientCue, AmbientEventId, NoiseColour, Swell } from '../data/audio/ambiences';
+import { CROWD_CHEER } from '../data/audio/music';
+import { AudioClip } from './music';
 
 /**
  * Background ambience (owner, 12/11/2026): soundscapes, not music. Plays an AmbienceDef on the
  * Web Audio clock:
  * - continuous beds (looping filtered noise, hums, a crowd's murmur) whose levels drift and swell;
- * - random one-off events (a creak, a cheer) synthesised on the spot;
+ * - random one-off events (a creak, a gasp) synthesised on the spot, and the crowd cheer, which plays the recorded clip;
  * - everything sent through a generated reverb sized to the space, optionally muffled.
- * No notes, melodies, beats or audio files. A light scheduler wakes a few times a second (never
+ * No notes, melodies or beats; the only recorded file is the crowd cheer. A light scheduler wakes a few times a second (never
  * on the game loop).
  */
 
@@ -53,6 +55,8 @@ export class AmbiencePlayer {
   private volume = 1;
   private readonly noise = new Map<NoiseColour, AudioBuffer>();
   private seed = 4242;
+  /** The recorded crowd cheer; until it has loaded (or if it cannot) the synthesised cheer plays instead. */
+  private readonly cheerClip = new AudioClip(CROWD_CHEER);
 
   /**
    * @param lookaheadS how far ahead events are scheduled. Live play keeps it short; an offline
@@ -75,6 +79,7 @@ export class AmbiencePlayer {
     out.connect(destination);
     this.out = out;
     for (const colour of ['white', 'pink', 'brown'] as const) this.noise.set(colour, this.makeNoise(ctx, colour));
+    if (typeof fetch === 'function') void this.cheerClip.load(ctx);
     if (this.wanted) this.start(this.wanted);
   }
 
@@ -368,7 +373,8 @@ export class AmbiencePlayer {
         break;
       }
       case 'cheer': {
-        // A section of the stands cheering: a bright swell of many voices, rising then falling away.
+        // A section of the stands cheering: the recorded crowd, a touch different in pitch each time; else a synthesised swell.
+        if (this.sample(ctx, t, gain * 0.6, pan, 0.96 + r() * 0.08, 20000)) break;
         const dur = 1.6 + r() * 1.4;
         for (const [hz, k] of [
           [550, 1],
@@ -428,7 +434,8 @@ export class AmbiencePlayer {
         break;
       }
       case 'distant-cheer': {
-        // The far side of the bowl cheering: muffled by distance, slow to swell, mostly echo.
+        // The far side of the bowl cheering: the same crowd, muffled by distance and quieter.
+        if (this.sample(ctx, t, gain * 0.35, pan, 0.9 + r() * 0.06, 1600)) break;
         const dur = 2.2 + r() * 2;
         for (const [hz, k] of [
           [420, 1],
@@ -470,13 +477,14 @@ export class AmbiencePlayer {
       case 'roar': {
         // The whole bowl erupting: a huge swell of cheering, applause and whistles together.
         const dur = 3 + r() * 1.5;
-        for (const [hz, k] of [
-          [300, 0.9],
-          [700, 1],
-          [1400, 0.8],
-          [2800, 0.4],
-        ] as const) {
-          this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz, gain * k, pan, 0.35, 1.1);
+        if (!this.sample(ctx, t, gain * 0.9, pan, 1, 20000)) {
+          for (const [hz, k] of [
+            [300, 0.9],
+            [700, 1],
+            [1400, 0.8],
+            [2800, 0.4],
+          ] as const)
+            this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz, gain * k, pan, 0.35, 1.1);
         }
         this.event(scape, 'applause', t + 0.4, gain * 0.8);
         for (let i = 0; i < 3; i++) this.event(scape, 'whistle', t + 0.3 + r() * 2, gain * 0.5);
@@ -484,6 +492,30 @@ export class AmbiencePlayer {
       }
     }
     setTimeout(() => pan.disconnect(), 8000);
+  }
+
+  /** Play the recorded cheer through `pan` (lowpassed to `lowpassHz`); false if it is not loaded, so the caller synthesises instead. */
+  private sample(
+    ctx: BaseAudioContext,
+    t: number,
+    gain: number,
+    pan: AudioNode,
+    rate: number,
+    lowpassHz: number,
+  ): boolean {
+    const buffer = this.cheerClip.ready;
+    if (!buffer) return false;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.playbackRate.value = rate;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src
+      .connect(this.filter(ctx, 'lowpass', lowpassHz, 0.7))
+      .connect(g)
+      .connect(pan);
+    src.start(t);
+    return true;
   }
 
   // ------------------------------------------------------------- building blocks

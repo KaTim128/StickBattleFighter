@@ -6,6 +6,8 @@ import menuMp3 from '../../../assets/audio/music-menu-pulse-epic.mp3?url';
 import menuOgg from '../../../assets/audio/music-menu-pulse-epic.ogg?url';
 import countdownMp3 from '../../../assets/audio/sfx-countdown-fight.mp3?url';
 import countdownOgg from '../../../assets/audio/sfx-countdown-fight.ogg?url';
+import cheerMp3 from '../../../assets/audio/sfx-crowd-cheer.mp3?url';
+import cheerOgg from '../../../assets/audio/sfx-crowd-cheer.ogg?url';
 import clickMp3 from '../../../assets/audio/sfx-ui-click.mp3?url';
 import clickOgg from '../../../assets/audio/sfx-ui-click.ogg?url';
 
@@ -53,6 +55,12 @@ export const MENU_MUSIC: AudioTrackDef = {
 };
 
 /** The click on every interface button (owner, 13/11/2026; never on combat buttons). */
+/**
+ * The Colosseum crowd's cheer (owner, 25/11/2026: the owner's supplied "strong, rhythmic cheering" recording replaces the synthesised
+ * cheer). Only the useful 10 s were kept (2.8 s to 12.8 s of the 30 s file: the swell, the rhythmic peak and the natural fall), with the
+ * rumble and hiss filtered, the level evened and normalised, and 0.9 s and 2.8 s fades.
+ */
+export const CROWD_CHEER: AudioTrackDef = { ogg: cheerOgg, mp3: cheerMp3, level: 1 };
 export const UI_CLICK: AudioTrackDef = { ogg: clickOgg, mp3: clickMp3, level: 0.6 };
 
 /**
