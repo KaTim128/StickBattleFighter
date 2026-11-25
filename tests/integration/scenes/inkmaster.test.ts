@@ -46,15 +46,15 @@ describe('Inkmaster', () => {
     await initPhysics();
   });
 
-  it('Ink Slash: a wide ink wave that damages and pushes the first opponent it reaches', async () => {
-    const { scene, scenes, runUntil, cast } = await setup();
+  it('Ink Slash: a close brush cut that damages the opponent, and blinds some of the time', async () => {
+    const { scene, scenes, runUntil, cast } = await setup('training-dummy', 1.6);
     cast('a1');
     runUntil(() => scene.dummy.hp < scene.dummyFighter.combatant.stats.maxHp, 3);
     expect(scene.dummyFighter.combatant.stats.maxHp - scene.dummy.hp).toBeGreaterThan(20);
     scenes.clear();
   });
 
-  it('Ink Serpent: forms first, then hunts, bites and briefly holds the legs; the target can still guard', async () => {
+  it('Ink Serpent: forms first, then hunts, bites and holds the legs for 5 seconds; the target can still guard', async () => {
     const { scene, scenes, run, runUntil, cast, world } = await setup('necro', 5);
     cast('a2');
     runUntil(() => world().serpents.length > 0, 2);
@@ -66,7 +66,9 @@ describe('Inkmaster', () => {
     runUntil(() => scene.dummyFighter.combatant.trapped, 4);
     expect(scene.dummyFighter.combatant.trapped).toBe(true);
     expect(scene.dummy.hp).toBeLessThan(scene.dummyFighter.combatant.stats.maxHp);
-    // The hold is short.
+    // It holds for 5 seconds, then lets go.
+    run(4);
+    expect(scene.dummyFighter.combatant.trapped).toBe(true);
     runUntil(() => !scene.dummyFighter.combatant.trapped, 3);
     expect(scene.dummyFighter.combatant.trapped).toBe(false);
     scenes.clear();
@@ -80,7 +82,7 @@ describe('Inkmaster', () => {
     const phases = new Set<string>();
     let breaths = 0;
     let last = '';
-    for (let i = 0; i < 9 / STEP; i++) {
+    for (let i = 0; i < 14 / STEP; i++) {
       run(STEP);
       const d = world().dragons[0];
       if (!d) break;
@@ -90,7 +92,8 @@ describe('Inkmaster', () => {
     }
     expect(phases.has('form')).toBe(true);
     expect(phases.has('rear')).toBe(true); // a visible warning before every breath
-    expect(breaths).toBe(1); // it charges once
+    expect(breaths).toBeGreaterThanOrEqual(1);
+    expect(breaths).toBeLessThanOrEqual(4);
     runUntil(() => world().dragons.length === 0, 4);
     expect(world().dragons).toHaveLength(0); // it dissolves when its time is up
     scenes.clear();

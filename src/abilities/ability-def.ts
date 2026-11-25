@@ -86,6 +86,8 @@ export interface AbilityPayload {
    * to anyone; a computer-controlled fighter cannot find its target; a player's view goes dark.
    */
   readonly blindS?: number;
+  /** Chance (0..1) that a landed blow applies `blindS` (default: always). Ink Slash blinds only some of the time. */
+  readonly blindChance?: number;
   /**
    * Curse of Decay (owner, 12/11/2026): for `durationS` the target deals `attackFactor` of its
    * damage and its defence is multiplied by `defenceFactor`. Refreshes, never stacks.

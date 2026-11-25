@@ -192,7 +192,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     retreatBelowHp: 0.3,
     hitAndRunS: 1,
     tactics: {
-      a1: { role: 'poke', minM: 2, maxM: 9, weight: 1.3 },
+      a1: { role: 'burst', minM: 0, maxM: 2.6, weight: 1.3 },
       a2: { role: 'control', minM: 2.5, maxM: 10, weight: 1.1 },
       a3: { role: 'zone', minM: 3, maxM: 10, weight: 1.2 },
       a4: { role: 'summon', minM: 0, maxM: 10, weight: 1.3 },

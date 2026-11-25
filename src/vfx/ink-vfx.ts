@@ -2,8 +2,10 @@ import type { Graphics } from 'pixi.js';
 import {
   COLLAPSE_S,
   DRAGON_HEIGHT_M,
+  DRAGON_TRAIL_M,
   type Dragon,
   type DrawnFigure,
+  type InkSlash,
   type InkWorld,
   type Masterpiece,
   type Serpent,
@@ -242,15 +244,56 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
   const n = 20;
   const body: Point[] = [];
   const widths: number[] = [];
+  // The ink trail follows the path the head has really flown (while it is being drawn, an S behind the head), sampled evenly along its length.
+  const path: Point[] = [{ x: d.x, y: d.y }];
+  if (d.phase !== 'form') for (const q of d.trail) path.push(q);
+  const need = d.phase === 'form' ? 0 : DRAGON_TRAIL_M;
+  let have = 0;
+  for (let k = 1; k < path.length; k++) have += Math.hypot(path[k]!.x - path[k - 1]!.x, path[k]!.y - path[k - 1]!.y);
+  // A trail that is still short (just drawn, or hovering) is extended straight back behind the head.
+  const tailFrom = path[path.length - 1]!;
+  if (have < need) {
+    const behind =
+      have > 0.05
+        ? Math.atan2(
+            tailFrom.y - path[Math.max(0, path.length - 2)]!.y,
+            tailFrom.x - path[Math.max(0, path.length - 2)]!.x,
+          )
+        : d.heading + Math.PI;
+    path.push({ x: tailFrom.x + Math.cos(behind) * (need - have), y: tailFrom.y + Math.sin(behind) * (need - have) });
+    have = need;
+  }
+  const total = d.phase === 'form' ? 4.6 : have;
   for (let i = 0; i < n; i++) {
     const u = i / (n - 1);
-    const back = u * 4.6;
-    const wave = Math.sin(t * 3 - u * 7) * 0.55 * Math.min(1, u * 2.4) * (1 - rear * 0.7);
+    const dist = u * total;
+    let p0: Point;
+    if (d.phase === 'form') {
+      const back = dist;
+      p0 = { x: d.x - dirx * back, y: d.y - diry * back };
+    } else {
+      let run = 0;
+      p0 = path[path.length - 1]!;
+      for (let k = 1; k < path.length; k++) {
+        const seg = Math.hypot(path[k]!.x - path[k - 1]!.x, path[k]!.y - path[k - 1]!.y);
+        if (run + seg >= dist) {
+          const f2 = seg > 0 ? (dist - run) / seg : 0;
+          p0 = {
+            x: path[k - 1]!.x + (path[k]!.x - path[k - 1]!.x) * f2,
+            y: path[k - 1]!.y + (path[k]!.y - path[k - 1]!.y) * f2,
+          };
+          break;
+        }
+        run += seg;
+      }
+    }
+    // A gentle ripple, so the ribbon of ink flows rather than lies stiff.
+    const wave = Math.sin(t * 3 - u * 7) * 0.22 * Math.min(1, u * 2.4);
     body.push(
       P(
-        d.x - dirx * back - diry * wave,
-        d.y - diry * back + dirx * wave,
-        hover - u * 0.35 + Math.sin(t * 3 - u * 7 + 1) * 0.15 * u + rear * 0.35 * (1 - u),
+        p0.x - diry * wave,
+        p0.y + dirx * wave,
+        hover - u * 0.3 + Math.sin(t * 3 - u * 7 + 1) * 0.1 * u + rear * 0.3 * (1 - u),
       ),
     );
     widths.push((0.34 * (1 - u) ** 0.9 + 0.03) * (0.4 + 0.6 * grow));
@@ -430,6 +473,44 @@ function vortex(f: Graphics, g: Graphics, P: Project, v: Vortex, t: number): voi
     const c = P(v.x + Math.cos(ang) * rad, v.y + Math.sin(ang) * rad, h);
     g.circle(c.x, c.y, 0.035 + (i % 3) * 0.015).fill({ color: BLACK, alpha: 0.85 * open });
   }
+}
+
+/** Ink Slash: a broad crescent of black ink cut through the air in front of him, with a pale edge and a spray of drops, gone in a blink. */
+function inkSlash(g: Graphics, P: Project, sl: InkSlash): void {
+  const k = clamp01(sl.ageS / 0.3);
+  const ang = Math.atan2(sl.dirY, sl.dirX);
+  // The arc sweeps from one side of the front to the other as it is cut.
+  const sweep = ease(Math.min(1, k * 2.2));
+  const a0 = ang - 1.05;
+  const a1 = a0 + 2.1 * sweep;
+  const pts: Point[] = [];
+  const widths: number[] = [];
+  const n = 14;
+  for (let i = 0; i < n; i++) {
+    const u = i / (n - 1);
+    const a = a0 + (a1 - a0) * u;
+    const r = sl.reachM * (0.75 + 0.25 * Math.sin(u * Math.PI));
+    pts.push(P(sl.x + Math.cos(a) * r, sl.y + Math.sin(a) * r, 1.0 + 0.15 * Math.sin(u * Math.PI)));
+    widths.push((0.05 + 0.24 * Math.sin(u * Math.PI)) * (1 - k * 0.6));
+  }
+  ribbon(
+    g,
+    pts,
+    widths.map((w) => w + 0.05),
+    PALE,
+    0.5 * (1 - k),
+  );
+  ribbon(g, pts, widths, BLACK, 1 - k * 0.9);
+  const edge = pts.map((p) => ({ x: p.x, y: p.y - 0.03 }));
+  ribbon(
+    g,
+    edge,
+    widths.map((w) => w * 0.18),
+    PALE,
+    0.7 * (1 - k),
+  );
+  const last = pts[pts.length - 1]!;
+  splatter(g, last, 0.9, k, sl.x * 13, 12);
 }
 
 /** A stick figure brushed onto the floor in quick strokes: head, body, arms, then legs, with an ink pool spreading beneath it. */
@@ -735,6 +816,7 @@ export function drawInk(
   t: number,
   preyAt: (id: string | null) => Point | null,
 ): void {
+  for (const sl of ink.slashes) inkSlash(g, P, sl);
   for (const fig of ink.figures) drawnFigure(f, g, P, fig, t);
   for (const v of ink.vortices) vortex(f, g, P, v, t);
   for (const m of ink.masterpieces) masterpiece(f, g, P, m, t);

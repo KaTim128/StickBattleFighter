@@ -869,6 +869,7 @@ export class FightArenaScene implements ArenaScene {
       () => this.shake.addTrauma(0.35),
       this.walls,
     );
+    this.abilities.random = () => this.rng();
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
     this.abilities.releaseAimSource = (f, def) => this.aiBeamAim(f, def);
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);

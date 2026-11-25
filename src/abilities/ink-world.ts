@@ -20,6 +20,8 @@ type Vec2 = { x: number; y: number };
 export const SERPENT_LENGTH_M = 3.4;
 /** How high the dragon flies above the floor (render height), metres. */
 export const DRAGON_HEIGHT_M = 2.1;
+/** How long the ink trail behind the dragon's head is, metres. */
+export const DRAGON_TRAIL_M = 4.6;
 /** The dragon's breath lasts this long, and a fighter is hit by one breath at most once. */
 const BREATH_S = 0.55;
 /** A bitten target's wrap and a missed bite both leave the serpent this long before it may bite again. */
@@ -70,6 +72,8 @@ export interface Dragon {
   /** Where it was drawn (the brush point). */
   readonly home: Vec2;
   targetId: string | null;
+  /** Where its head has been, newest first: the ink trail follows this path behind the head. */
+  readonly trail: Vec2[];
 }
 
 export interface Vortex {
@@ -92,6 +96,16 @@ export interface DrawnFigure {
   readonly spec: SummonSpec;
   x: number;
   y: number;
+  ageS: number;
+}
+
+/** A brush slash cutting through the air in front of Inkmaster (Ink Slash): drawn for a moment, then gone. */
+export interface InkSlash {
+  readonly x: number;
+  readonly y: number;
+  readonly dirX: number;
+  readonly dirY: number;
+  readonly reachM: number;
   ageS: number;
 }
 
@@ -130,6 +144,7 @@ export class InkWorld {
   readonly vortices: Vortex[] = [];
   readonly masterpieces: Masterpiece[] = [];
   readonly figures: DrawnFigure[] = [];
+  readonly slashes: InkSlash[] = [];
   /** A wrapped target cannot be wrapped again until this world time. */
   private readonly wrapImmuneUntilS = new Map<string, number>();
   private nowS = 0;
@@ -193,7 +208,7 @@ export class InkWorld {
           leftS: d.durationS,
           phase: 'form',
           phaseS: 0,
-          sinceBreathS: 0,
+          sinceBreathS: d.breathEveryS * 0.55, // the first breath comes soon after it is drawn, never at once
           breathsDone: 0,
           orbit: Math.atan2(-dir.y, -dir.x),
           breathDir: dir,
@@ -202,6 +217,7 @@ export class InkWorld {
           hit: new Set(),
           home,
           targetId: null,
+          trail: [{ ...home }],
         });
         return true;
       }
@@ -249,6 +265,11 @@ export class InkWorld {
   }
 
   /** Everything of this caster ends (it fell, or the battle reset). */
+  /** A brush slash for the ink look (the hit itself is the ability's strike): shown briefly in front of the caster. */
+  slash(at: Vec2, dir: Vec2, reachM: number): void {
+    this.slashes.push({ x: at.x, y: at.y, dirX: dir.x, dirY: dir.y, reachM, ageS: 0 });
+  }
+
   clearOf(casterId: string): void {
     for (const list of [this.serpents, this.dragons, this.vortices, this.masterpieces, this.figures] as {
       casterId: string;
@@ -262,6 +283,7 @@ export class InkWorld {
     this.vortices.length = 0;
     this.masterpieces.length = 0;
     this.figures.length = 0;
+    this.slashes.length = 0;
     this.wrapImmuneUntilS.clear();
   }
 
@@ -277,6 +299,10 @@ export class InkWorld {
     this.updateVortices(dtS, host);
     this.updateMasterpieces(dtS, host);
     this.updateFigures(dtS, host);
+    for (let i = this.slashes.length - 1; i >= 0; i--) {
+      this.slashes[i]!.ageS += dtS;
+      if (this.slashes[i]!.ageS > 0.3) this.slashes.splice(i, 1);
+    }
   }
 
   private updateSerpents(dtS: number, host: AbilityHost): void {
@@ -496,6 +522,8 @@ export class InkWorld {
     const spec = d.spec;
     const centre = target ?? { x: d.x, y: d.y };
     d.orbit += 0.55 * dtS;
+    const px = d.x;
+    const py = d.y;
     const want = { x: centre.x + Math.cos(d.orbit) * spec.orbitM, y: centre.y + Math.sin(d.orbit) * spec.orbitM };
     const dx = want.x - d.x;
     const dy = want.y - d.y;
@@ -504,7 +532,19 @@ export class InkWorld {
       const step = Math.min(dist, spec.speedMps * dtS);
       d.x += (dx / dist) * step;
       d.y += (dy / dist) * step;
-      d.heading = Math.atan2(dy, dx);
+    }
+    // The head always faces the opponent, whichever way it is flying round them; the ink trail follows the path it has flown.
+    if (target) d.heading = Math.atan2(target.y - d.y, target.x - d.x);
+    if (Math.hypot(d.x - px, d.y - py) > 0) {
+      d.trail.unshift({ x: d.x, y: d.y });
+      let len = 0;
+      for (let k = 1; k < d.trail.length; k++) {
+        len += Math.hypot(d.trail[k]!.x - d.trail[k - 1]!.x, d.trail[k]!.y - d.trail[k - 1]!.y);
+        if (len > DRAGON_TRAIL_M) {
+          d.trail.length = k + 1;
+          break;
+        }
+      }
     }
   }
 

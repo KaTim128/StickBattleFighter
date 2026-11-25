@@ -1248,6 +1248,7 @@ export class AbilityWorld {
       }
       case 'strike': {
         // One heavy blow straight ahead: everyone in reach, then whatever furniture or door it meets.
+        if (def.vfx === 'ink-slash') this.ink.slash(at, dir, d.reachM);
         const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
         let landed = false;
         for (const f of host.fighters()) {

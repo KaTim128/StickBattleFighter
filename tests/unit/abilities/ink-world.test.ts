@@ -42,8 +42,8 @@ describe('Ink Serpent', () => {
     expect(a.hits).toHaveLength(0);
     run(a, 3);
     expect(a.hits).toHaveLength(1);
-    expect(a.traps).toEqual([{ id: 'foe0', s: 1.1 }]);
-    expect(a.traps[0]!.s).toBeLessThanOrEqual(1.5);
+    expect(a.traps).toEqual([{ id: 'foe0', s: 5 }]); // held for 5 seconds
+    expect(INKMASTER_KIT.a2.delivery).toMatchObject({ restrainS: 5 });
   });
   it('turns slowly: a target far off to the side is not caught at once', () => {
     const a = arena([{ x: 0, y: 6 }]);
@@ -54,31 +54,41 @@ describe('Ink Serpent', () => {
 });
 
 describe('Ink Dragon', () => {
-  it('charges once: one warning, one breath that hits once, then it dissolves', () => {
+  it('flies round for 12 seconds, warns before each breath, hits each fighter once per breath, then leaves', () => {
     const a = arena([{ x: 5, y: 0 }]);
     a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
     const phases = new Set<string>();
-    let breathStarts = 0;
+    let breaths = 0;
     let last = '';
-    for (let i = 0; i < 8 * 60; i++) {
+    for (let i = 0; i < 14 * 60; i++) {
       a.world.update(1 / 60, a.host);
       const d = a.world.ink.dragons[0];
       if (!d) break;
       phases.add(d.phase);
-      if (d.phase === 'breathe' && last !== 'breathe') breathStarts++;
+      if (d.phase === 'breathe' && last !== 'breathe') breaths++;
       last = d.phase;
     }
     expect(phases.has('rear')).toBe(true); // the warning
-    expect(breathStarts).toBe(1);
-    expect(a.hits.length).toBeLessThanOrEqual(1);
+    expect(breaths).toBeGreaterThanOrEqual(2);
+    expect(breaths).toBeLessThanOrEqual(4);
+    expect(a.hits.length).toBeLessThanOrEqual(breaths);
     run(a, 2);
     expect(a.world.ink.dragons).toHaveLength(0);
   });
-  it('is quick: drawn in about half a second and breathing within about two seconds', () => {
+  it('its head always faces the opponent while its trail follows the path it flew', () => {
     const a = arena([{ x: 5, y: 0 }]);
     a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    run(a, 2.2);
-    expect(a.hits.length + (a.world.ink.dragons[0]?.phase === 'breathe' ? 1 : 0)).toBeGreaterThanOrEqual(1);
+    run(a, 1.2);
+    let trailMoved = false;
+    for (let i = 0; i < 3 * 60; i++) {
+      a.world.update(1 / 60, a.host);
+      const d = a.world.ink.dragons[0]!;
+      if (d.phase !== 'fly') continue;
+      const want = Math.atan2(a.them[0]!.y - d.y, a.them[0]!.x - d.x);
+      expect(Math.abs(Math.atan2(Math.sin(d.heading - want), Math.cos(d.heading - want)))).toBeLessThan(0.05);
+      if (d.trail.length > 5) trailMoved = true;
+    }
+    expect(trailMoved).toBe(true);
   });
   it('a new dragon replaces the old one (one at a time)', () => {
     const a = arena([{ x: 5, y: 0 }]);
@@ -103,6 +113,23 @@ describe('Ink Clone drawing', () => {
     b.me.hittable = false;
     run(b, 1);
     expect(b.summons).toEqual([]);
+  });
+});
+
+describe('Ink Slash', () => {
+  it('is a close melee cut (not a projectile) that may blind', () => {
+    const d = INKMASTER_KIT.a1.delivery;
+    expect(d.type).toBe('strike');
+    expect(INKMASTER_KIT.a1.payload.blindS).toBe(2);
+    expect(INKMASTER_KIT.a1.payload.blindChance).toBeGreaterThan(0);
+    expect(INKMASTER_KIT.a1.payload.blindChance).toBeLessThan(1);
+    const near = arena([{ x: 1.6, y: 0 }]);
+    near.world.release('me', INKMASTER_KIT.a1, { x: 1.6, y: 0 }, near.host);
+    expect(near.hits).toHaveLength(1);
+    expect(near.world.ink.slashes).toHaveLength(1);
+    const far = arena([{ x: 5, y: 0 }]);
+    far.world.release('me', INKMASTER_KIT.a1, { x: 5, y: 0 }, far.host);
+    expect(far.hits).toHaveLength(0); // out of reach
   });
 });
 

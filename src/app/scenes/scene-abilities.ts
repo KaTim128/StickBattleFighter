@@ -87,6 +87,8 @@ export class SceneAbilities implements AbilityHost {
    * master plan B4); null means the usual aim at the nearest enemy.
    */
   releaseAimSource: (f: FighterEntity, def: AbilityDef) => Vec2 | null = () => null;
+  /** The fight's dice (set by the scene so seeded fights stay repeatable). */
+  random: () => number = Math.random;
   /** Sound ids not yet played (the sound board drains them every frame). */
   private readonly sounds: string[] = [];
 
@@ -289,7 +291,9 @@ export class SceneAbilities implements AbilityHost {
     )
       attacker.combatant.gainMastery(1, attacker.caster.kit.passive.maxStacks);
     // Soul Drain: the target is blinded for a while.
-    if (landed && payload.blindS) target.combatant.blind(payload.blindS);
+    // Only a chance roll uses the dice, so abilities without one keep every seeded fight exactly as it was.
+    if (landed && payload.blindS && (payload.blindChance === undefined || this.random() < payload.blindChance))
+      target.combatant.blind(payload.blindS);
     if (landed && payload.slow) target.combatant.slow(payload.slow.durationS, payload.slow.speedFactor);
     if (landed && payload.aging)
       target.combatant.age(payload.aging.durationS, payload.aging.dps, payload.aging.defenceFactor);
