@@ -993,3 +993,7 @@ Done: select-screen strip cache and incremental drawing (before/after numbers in
 ## 25/11/2026: Colosseum (TD-164)
 Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torches), menu default, tests (arena layout, real-scene containment). Fixed while building: straight chords drawn across the wall (lines followed the run, not the curve), sand spilling past the rim (clipped). Batch 9 (pixel pipeline, UI design system, loading screen) is last, after this.
 
+
+## 25/11/2026 — prop collision and depth transparency
+- Removed the Colosseum no-fade exemption in `fight-arena-scene.ts`; props fade only when obstructing a fighter (TD-167). Added `tests/integration/scenes/prop-fade.test.ts`.
+- Checks: tsc clean, biome clean (warnings pre-existing), vitest 156 files / 1298 tests pass. Browser screenshot of the fix not yet taken.

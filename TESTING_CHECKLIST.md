@@ -791,3 +791,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] The champion has a prominent place above the Grand Final.
 - [ ] The House of Nightmare is selectable as an arena (Open Zone and tournament); there is no separate admin House Fight mode; its doors are wooden.
 
+
+- [ ] Colosseum props: walk into each from all sides (blocked); jump onto climbable ones; a fighter behind a column makes it see-through, walking away restores it, and it keeps blocking while see-through (automated: `prop-fade.test.ts`).
