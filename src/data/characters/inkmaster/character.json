@@ -1,0 +1,65 @@
+{
+  "id": "inkmaster",
+  "template": "base-stickman",
+  "displayName": "Inkmaster",
+  "description": "A wandering calligrapher from a mountain temple, Inkmaster believes every living thing begins as a stroke. His brush is taller than he is, its bristles never dry, and what he draws in the air walks off the page. He does not hate his opponents; he only wants to paint them into the picture.",
+  "characterType": "fighter",
+  "element": "shadow",
+  "combatStyle": "brush",
+  "profiles": {
+    "animation": "inkmaster-animation",
+    "moveset": "inkmaster-moveset",
+    "stats": "inkmaster-stats",
+    "effects": "inkmaster-effects",
+    "audio": "inkmaster-audio",
+    "ai": "inkmaster-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#1c1c22",
+    "colourBack": "#101015",
+    "outline": "#050505",
+    "limbWidthM": 0.085,
+    "outlineWidthM": 0.035
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "inkmaster-kit"
+}

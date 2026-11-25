@@ -10,6 +10,7 @@ import {
   type SummonSpec,
 } from './ability-def';
 
+import { InkWorld } from './ink-world';
 /**
  * Ability deliveries in the arena (REQ-ABL-1): projectiles, dashes with fire
  * trails, telegraphed rings and leaps. The world owns their motion and timing;
@@ -112,6 +113,8 @@ export interface AbilityHost {
   arm?(casterId: string, durationS: number): void;
   /** Hold a fighter's legs in crystal for `seconds` (0 frees them): no walking, jumping, dodging or flying, and a flier is dragged down. Optional. */
   trap?(targetId: string, seconds: number): void;
+  /** A gentle current: add this velocity to a fighter's own movement for this step only (Ink Cyclone; they can still walk or dodge out). Optional. */
+  nudge?(targetId: string, velocity: Vec2): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
   /** Telekinetic Toss: lift the nearest prop within `rangeM` to the caster's hand; false if there is none. */
   telekineticToss?(casterId: string, rangeM: number): boolean;
@@ -544,6 +547,11 @@ export class AbilityWorld {
   readonly parries: Parry[] = [];
   readonly prisons: PrisonTrack[] = [];
   readonly slideTrail: SlideMark[] = [];
+  /** Inkmaster's living ink: serpent, dragon, cyclone and the Masterpiece ritual. */
+  readonly ink = new InkWorld(
+    (c, at, r, h) => this.nearestEnemy(c, at, r, h),
+    (f, c, h) => this.friendly(f, c, h),
+  );
   /** The dice of Crystal Arsenal and the scatter of Shard Volley and Crystal Groundstrike (seedable for tests). */
   constructor(private readonly rng: () => number = Math.random) {}
   /** A lifted target cannot be lifted again until this time (Floating Prison's anti-lock rule), world seconds. */
@@ -604,6 +612,7 @@ export class AbilityWorld {
         if (a.abilityId) ids.add(a.abilityId);
       } else ids.add(a.def.id);
     }
+    for (const id of this.ink.runningIds(casterId)) ids.add(id);
     for (const t of this.telegraphs) if (t.casterId === casterId) ids.add(t.def.id);
     for (const m of this.marks) if (m.casterId === casterId) ids.add(m.def.id);
     for (const p of this.parries) if (p.casterId === casterId) ids.add(p.def.id);
@@ -1184,6 +1193,12 @@ export class AbilityWorld {
           });
         break;
       }
+      case 'serpent':
+      case 'dragon':
+      case 'vortex':
+      case 'masterpiece':
+        this.ink.release(casterId, def, aim, host);
+        break;
       case 'summon':
         host.summon?.(casterId, d);
         host.emit({
@@ -1430,6 +1445,7 @@ export class AbilityWorld {
     this.updateTime(dtS, host);
     this.updateGrenades(dtS, host);
     this.updatePrisons(dtS, host);
+    this.ink.update(dtS, host);
     for (let i = this.slideTrail.length - 1; i >= 0; i--) {
       const m = this.slideTrail[i]!;
       m.ageS += dtS;

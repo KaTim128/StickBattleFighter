@@ -13,6 +13,11 @@ Persistent record of project state. Update after every meaningful piece of work 
 | Runnable game | `npm run dev`: **training yard**, where a jointed greybox stickman walks and hops freely (keyboard or touch) with a follow camera. `?scene=engine-check` opens the physics test. No combat yet. |
 | Installed dependencies | pixi.js 8.22, @dimforge/rapier2d 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, vite-plugin-wasm 3.6, Vitest 5.1, Playwright 1.63.0, Biome 2.6 |
 
+## Inkmaster (25/11/2026, TD-159)
+- Added the fighter, five abilities, The Masterpiece, three summons, animations, sounds, select stance, icons and AI (design sheet `docs/design/fighters/inkmaster.md`).
+- Verified: typecheck, lint, unit and integration tests; browser screenshots of every ability, the scroll drawing and the monster. Matchup probe against the 12 other fighters: see the changelog row and the report.
+- Known: creatures are procedural vector art; sound effects are synthesised placeholders in the project's style; no real-device check yet.
+
 ## Batch 6: Tournament (25/11/2026, TD-158)
 - Added: `src/data/modes/tournament-rules.ts`, `src/modes/tournament/match-score.ts`, `src/app/headless-fight.ts`; scene overtime, tally, `fastForward`; `Combatant.healingLocked`; brain `forceEngage`; async real-fight `skipBattles`; Spectate toggle and Skip Battle button; the Leave coin toss is gone.
 - Tests: `tests/unit/modes/match-score.test.ts`, integrity tests in `tests/unit/modes/tournament.test.ts`, `tests/integration/scenes/tournament-overtime.test.ts`, e2e spectate tournament.

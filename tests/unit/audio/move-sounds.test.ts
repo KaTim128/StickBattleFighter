@@ -47,7 +47,9 @@ describe('unique attack audio (master plan B18)', () => {
     const impact = new Map<string, string>();
     for (const [kitId, kit] of Object.entries(ABILITY_KITS)) {
       if (kitId === 'dummy-kit') continue;
-      for (const a of [kit.a1, kit.a2, kit.a3, kit.a4, kit.a5!, kit.ult]) {
+      for (const a of [kit.a1, kit.a2, kit.a3, kit.a4, kit.a5, kit.ult]) {
+        // A summon's unused slots are dormant placeholders with no sounds of their own.
+        if (!a || a.id.startsWith('dormant-')) continue;
         const who = `${kitId}.${a.id}`;
         for (const [map, id] of [
           [release, a.sfx.release],

@@ -34,6 +34,8 @@ export class FighterEntity {
   readonly caster: AbilityCaster | null;
   /** Velocity forced by a dash or leap this step, or null. */
   driveVelocity: { x: number; y: number } | null = null;
+  /** A gentle current added to this step's movement (Ink Cyclone), cleared once applied. */
+  current: { x: number; y: number } | null = null;
   /** Height off the floor during a leap, metres. */
   abilityLift = 0;
   /**

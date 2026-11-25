@@ -19,7 +19,9 @@ export interface SummonHost {
   /** One simulation step of a fighter under the shared rules (attacks, movement, physics). */
   step(f: FighterEntity, stepS: number, move: Vec2): void;
   /** Press the fighter's attack button (it starts or continues its combo). */
-  attack(f: FighterEntity): void;
+  attack(f: FighterEntity, heavy?: boolean): void;
+  /** Cast one of a minion's own abilities at a spot (Ink Clone's arrows, the ink monster's slam and breath); true if it started. */
+  cast(f: FighterEntity, slot: 'a1' | 'a2' | 'a3' | 'a4' | 'ult', at: Vec2): boolean;
   /** A minion rose (dust and a sound) or crumbled away. */
   risen(f: FighterEntity): void;
   random(): number;
@@ -47,7 +49,11 @@ export class SceneSummons {
 
   /** How many more of `owner`'s minions may stand now (the cap counts the living, not the crumbling). */
   room(owner: FighterEntity, spec: SummonSpec): number {
-    const alive = this.list.filter((m) => m.summon?.owner === owner && !m.combatant.isKo).length;
+    // The cap is per kind of minion: Inkmaster's clone and his monster do not take each other's place.
+    const kinds = spec.variants ?? [spec.character];
+    const alive = this.list.filter(
+      (m) => m.summon?.owner === owner && !m.combatant.isKo && kinds.includes(m.def.id),
+    ).length;
     return Math.max(0, spec.maxAlive - alive);
   }
 
@@ -56,7 +62,11 @@ export class SceneSummons {
    * (`near: 'enemy'`). Returns how many appeared (some spots may be blocked).
    */
   spawn(owner: FighterEntity, spec: SummonSpec): number {
-    const def = this.host.loadDef(spec.character);
+    // A variant is chosen once, here, and stays that summon's weapon for its whole life (Ink Clone).
+    const character = spec.variants
+      ? (spec.variants[Math.floor(this.host.random() * spec.variants.length)] ?? spec.character)
+      : spec.character;
+    const def = this.host.loadDef(character);
     const radius = def.body.footRadiusM;
     const enemy = spec.near === 'enemy' ? this.nearestEnemy(owner, Number.POSITIVE_INFINITY) : null;
     let raised = 0;
@@ -181,10 +191,23 @@ export class SceneSummons {
       const d = Math.hypot(dx, dy) || 1;
       const opener = f.def.moves[f.def.starters.tap ?? ''];
       const reach = (opener?.reachM ?? 0.8) + target.def.body.footRadiusM + f.def.body.footRadiusM * 0.5;
-      if (c.canAct && !f.combo.attack) f.faceToward(dx, dy);
-      if (d > reach) move = { x: dx / d, y: dy / d };
+      const busy = f.combo.attack !== null || (f.caster?.cast ?? null) !== null;
+      if (c.canAct && !busy) f.faceToward(dx, dy);
+      // Its own abilities first (an archer's arrows, the monster's slam and breath): each only in its useful range.
+      if (f.caster && c.canAct && !busy && this.useAbility(f, target, d)) {
+        this.host.step(f, stepS, { x: 0, y: 0 });
+        return;
+      }
+      // A minion with no melee at all (the bow clone) keeps its distance and shoots.
+      if (!opener && f.caster) {
+        const want = Math.min(7, f.caster.def('a1').aimRangeM * 0.7);
+        if (d < want * 0.55) move = { x: -dx / d, y: -dy / d };
+        else if (d > want * 1.15) move = { x: (dx / d) * 0.8, y: (dy / d) * 0.8 };
+      } else if (d > reach) move = { x: dx / d, y: dy / d };
+      else if (!opener) move = { x: 0, y: 0 };
       else if (c.state === 'free' && !f.combo.attack && f.attackCooldownS === 0) {
-        this.host.attack(f);
+        // A minion with a heavy move (the ink monster's bite) uses it now and then, like a player would.
+        this.host.attack(f, f.def.starters.heavy !== undefined && this.host.random() < 0.4);
         f.attackCooldownS = f.def.ai.attackEveryS * (0.8 + this.host.random() * 0.4);
       }
     } else {
@@ -194,6 +217,21 @@ export class SceneSummons {
       if (d > FOLLOW_M) move = { x: (dx / d) * 0.7, y: (dy / d) * 0.7 };
     }
     this.host.step(f, stepS, move);
+  }
+
+  /** Try the minion's abilities, nearest-range first; true if one started. */
+  private useAbility(f: FighterEntity, target: FighterEntity, d: number): boolean {
+    const caster = f.caster;
+    if (!caster) return false;
+    for (const slot of ['ult', 'a1', 'a2', 'a3', 'a4'] as const) {
+      const def = caster.def(slot);
+      if (def.id.startsWith('dormant-')) continue;
+      const minM = def.delivery.type === 'beam' ? 2.6 : 0;
+      const maxM = def.delivery.type === 'nova' ? def.delivery.radiusM + 0.6 : def.aimRangeM;
+      if (d < minM || d > maxM) continue;
+      if (this.host.cast(f, slot, { x: target.x, y: target.y })) return true;
+    }
+    return false;
   }
 
   /** Everyone gone at once (scene exit). */

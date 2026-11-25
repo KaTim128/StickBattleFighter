@@ -1,5 +1,13 @@
 import type { Graphics } from 'pixi.js';
 import type { Point, solveSkeleton } from '../animation/skeleton';
+import {
+  drawBeastClaws,
+  drawBeastHead,
+  drawBeastMane,
+  drawBeastTail,
+  drawCloneHead,
+  drawInkmasterHead,
+} from './ink-parts';
 import { shadedBall } from './shaded-ball';
 
 /**
@@ -107,6 +115,8 @@ export interface PremiumSkin {
   readonly clockDisc?: { readonly bronze: number; readonly cyan: number };
   /** A temporal device on the near forearm: a bronze dial with cyan hands and a glowing crystal (Chronos). */
   readonly dial?: { readonly bronze: number; readonly cyan: number };
+  /** Inkmaster and his ink creatures: the master's head dressing, a clone's faceless head, or the beast's dragon head, tail, mane and claws. */
+  readonly ink?: 'master' | 'clone' | 'beast';
   /** A crystal crown of sharp points on the head (Prismor). */
   readonly crown?: { readonly body: number; readonly glow: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
@@ -517,6 +527,100 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     head: 'own',
     crown: { body: 0x9f8cff, glow: 0x4aa8ff },
   },
+  // Inkmaster (new fighter): a calligrapher in black ink: charcoal skin with pale rim light, a long dark robe with cream trim, a topknot.
+  ink: {
+    palette: {
+      outline: 0x030304,
+      skin: 0x1c1c22,
+      skinLit: 0x3a3a46,
+      skinShade: 0x0b0b0f,
+      skinBack: 0x121217,
+      rim: 0xf2eee3,
+      armour: 0x15151b,
+      armourLit: 0x32323d,
+      armourEdge: 0x030304,
+      seam: 0xf2eee3,
+      lava: null,
+      glow: 0xf2eee3,
+    },
+    bulk: 1.3,
+    muscle: 0.2,
+    gear: {
+      shoulder: 'none',
+      bracers: true,
+      legs: 'none',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: false, fists: false },
+    garment: { hem: 'robe', trim: 0xf2eee3, cloth: [0x15151b, 0x2e2e38, 0x070709] },
+    head: 'own',
+    ink: 'master',
+  },
+  // An ink clone: the same black ink with no robe and no face, rising from a pool.
+  inkclone: {
+    palette: {
+      outline: 0x020203,
+      skin: 0x121217,
+      skinLit: 0x30303a,
+      skinShade: 0x060608,
+      skinBack: 0x0c0c10,
+      rim: 0xd9d4c6,
+      armour: 0x0c0c10,
+      armourLit: 0x2a2a33,
+      armourEdge: 0x020203,
+      seam: null,
+      lava: null,
+      glow: 0x6d6d78,
+    },
+    bulk: 1.15,
+    muscle: 0.3,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'trousers',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'bare',
+      belt: false,
+    },
+    fire: { core: false, veins: false, fists: false },
+    head: 'own',
+    ink: 'clone',
+  },
+  // The ink monster: a huge, muscular beast of wet black ink with a dragon's head, great horns, white eyes, claws and a long tail.
+  inkbeast: {
+    palette: {
+      outline: 0x010102,
+      skin: 0x0d0d11,
+      skinLit: 0x2c2c37,
+      skinShade: 0x040406,
+      skinBack: 0x09090c,
+      rim: 0xcfcabb,
+      armour: 0x0a0a0e,
+      armourLit: 0x26262f,
+      armourEdge: 0x010102,
+      seam: null,
+      lava: null,
+      glow: 0xffffff,
+    },
+    bulk: 2.0,
+    muscle: 1.0,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'trousers',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'bare',
+      belt: false,
+    },
+    fire: { core: false, veins: false, fists: false },
+    head: 'own',
+    ink: 'beast',
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -712,6 +816,7 @@ export class PremiumModel {
     if (this.skin.clockDisc) this.clockDisc(g, fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, false);
     if (this.skin.wings) this.wings(g, fire, s);
+    if (this.skin.ink === 'beast') drawBeastTail(g, fire, s, this.inkState());
     this.arm(g, fire, s.armBack, true);
     if (this.skin.gauntlets) this.gauntlet(g, fire, s.armBack, true);
     const coated = this.skin.garment?.hem === 'coat';
@@ -743,10 +848,20 @@ export class PremiumModel {
       if (this.skin.helm) this.helm(g, s);
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
       if (this.skin.crown) this.crown(g, fire, s);
+      if (this.skin.ink === 'master') drawInkmasterHead(g, s, this.inkState());
+      if (this.skin.ink === 'clone') drawCloneHead(g, s, this.inkState());
+      if (this.skin.ink === 'beast') {
+        drawBeastMane(g, s, this.inkState());
+        drawBeastHead(g, fire, s, this.inkState(), this.st.shout?.k ?? 0);
+      }
       if (this.st.shout) this.shoutMouth(g, fire, s);
     }
     this.arm(g, fire, s.armFront, false);
     if (this.skin.gauntlets) this.gauntlet(g, fire, s.armFront, false);
+    if (this.skin.ink === 'beast') {
+      drawBeastClaws(g, s.armFront[1], s.armFront[2], 1.4);
+      drawBeastClaws(g, s.armBack[1], s.armBack[2], 1.4);
+    }
     if (this.skin.dial) this.dial(g, fire, s.armFront);
     if (this.skin.soundGear) this.soundGear(g, fire, s);
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
@@ -761,6 +876,10 @@ export class PremiumModel {
     if ((this.st.plating ?? 0) > 0.02) this.platingOverlay(g, fire, s);
     if (this.skin.handGlow !== undefined) this.handGlow(fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, true);
+  }
+
+  private inkState(): { t: number; w: number; headRadius: number; facing: 1 | -1 } {
+    return { t: this.st.t, w: this.st.w, headRadius: this.st.headRadius, facing: this.st.facing };
   }
 
   /** The ring behind the shoulders: two turning rings with tick marks and a core glow, always facing us. */

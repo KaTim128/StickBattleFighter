@@ -1,0 +1,8 @@
+{
+  "id": "ink-monster-animation",
+  "extends": "base-stickman-animation",
+  "states": {
+    "Jab": "inkbeast.claw",
+    "HeavyAttack": "inkbeast.bite"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "inkmaster-animation",
+  "extends": "style-boxing",
+  "states": {
+    "Jab": "inkmaster.brush-sweep",
+    "Hook": "inkmaster.brush-flick",
+    "HeavyPunch": "inkmaster.heavy-stroke",
+    "DownwardAerialKick": "inkmaster.plunge",
+    "ClashFinisher": "inkmaster.heavy-stroke",
+    "ClashWin": "inkmaster.heavy-stroke",
+    "Idle": "proc.idle.calligrapher",
+    "FightingStance": "proc.idle.calligrapher",
+    "Turn": "proc.idle.calligrapher",
+    "HeavyAttack": "inkmaster.grand-sweep"
+  }
+}

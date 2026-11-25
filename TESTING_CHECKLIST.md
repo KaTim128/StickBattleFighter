@@ -751,3 +751,12 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Skip Battle in a watched fight shows "Skipping…", cannot be pressed twice, and returns to the bracket with the result recorded once.
 - [ ] Skip (bracket) shows progress and settles each remaining battle by a real fight; a second tap does nothing.
 - [ ] Tournament select has a Spectate toggle: your fighter is played by the AI, its match is a watched fight ("Following <name>"), the draw button says WATCH.
+
+## Inkmaster (25/11/2026)
+- [ ] Ink Slash: a wide wave leaves the brush and pushes the first opponent it reaches.
+- [ ] Ink Serpent: drawn stroke by stroke, then hunts; a sidestep throws it off; a bite wraps the legs about 1 s and the target can still guard.
+- [ ] Ink Dragon: wings, whiskers and horns; a lit lane on the floor warns a full second before each breath; it leaves after 12 s.
+- [ ] Ink Clone: sword or bow chosen at random and fixed for the summon; the bow clone keeps its distance; both dissolve at 14 s.
+- [ ] Ink Cyclone (fifth ability): a gentle pull, repeated damage, a collapsing explosion; walking out frees you.
+- [ ] The Masterpiece: the light dims, a scroll appears, the monster is drawn stroke by stroke, tears out of the scroll, fights up to 16 s and dissolves.
+- [ ] Everything he drew disappears when he is knocked out or the battle resets.

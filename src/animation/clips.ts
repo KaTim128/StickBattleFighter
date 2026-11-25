@@ -46,6 +46,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.sonic',
   'proc.idle.temporal',
   'proc.idle.crystal',
+  'proc.idle.calligrapher',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -1452,6 +1453,77 @@ const STRIKES = {
     { lean: deg(-56), armFront: limb(46, 6), armBack: limb(38, 12), legFront: limb(72, -118), legBack: limb(-22, -90) },
   ),
   // Necro: the staff swept back over his shoulder, then driven forward in a soul-charged thrust.
+  // Inkmaster: the brush is held in the lead hand like a calligrapher's, and every blow is a stroke written in the air.
+  'inkmaster.brush-sweep': strike(
+    { lean: deg(10), head: deg(4), armBack: limb(-25, 100), armFront: limb(8, 64), legFront: limb(20, -20) },
+    { lean: deg(-12), head: deg(10), armBack: limb(70, 30), armFront: limb(70, 14), legBack: limb(-22, -8) },
+  ),
+  'inkmaster.brush-flick': strike(
+    { lean: deg(-6), head: deg(2), armBack: limb(20, 110), armFront: limb(96, 72) },
+    { lean: deg(-22), head: deg(12), armBack: limb(34, 100), armFront: limb(20, 8), legFront: limb(34, -34) },
+  ),
+  'inkmaster.heavy-stroke': strike(
+    { lean: deg(16), head: deg(-4), armBack: limb(-70, 100), armFront: limb(160, 50), legFront: limb(24, -22) },
+    {
+      lean: deg(-32),
+      head: deg(16),
+      armBack: limb(100, 20),
+      armFront: limb(52, 6),
+      legFront: limb(48, -58),
+      legBack: limb(-34, -10),
+    },
+  ),
+  'inkmaster.plunge': strike(
+    { lean: deg(8), armBack: limb(60, 90), armFront: limb(170, 40) },
+    { lean: deg(-26), head: deg(14), armBack: limb(30, 80), armFront: limb(10, 4), legFront: limb(50, -70) },
+  ),
+  'inkmaster.grand-sweep': strike(
+    { lean: deg(20), head: deg(-6), armBack: limb(-50, 120), armFront: limb(-40, 36), legFront: limb(26, -26) },
+    {
+      lean: deg(-36),
+      head: deg(18),
+      armBack: limb(104, 10),
+      armFront: limb(100, 4),
+      legFront: limb(46, -62),
+      legBack: limb(-36, -10),
+    },
+  ),
+  // The ink clone's sword: a plain slash, a crossing slash and an overhead chop.
+  'inkclone.slash': strike(
+    { lean: deg(6), armBack: limb(-10, 90), armFront: limb(30, 70) },
+    { lean: deg(-16), armBack: limb(60, 40), armFront: limb(86, 10), legBack: limb(-24, -8) },
+  ),
+  'inkclone.cross-slash': strike(
+    { lean: deg(-4), armBack: limb(30, 100), armFront: limb(100, 60) },
+    { lean: deg(-20), armBack: limb(20, 110), armFront: limb(14, 8), legFront: limb(36, -30) },
+  ),
+  'inkclone.overhead': strike(
+    { lean: deg(14), armBack: limb(-60, 100), armFront: limb(170, 40) },
+    { lean: deg(-28), armBack: limb(90, 30), armFront: limb(50, 4), legFront: limb(42, -52) },
+  ),
+  // The ink monster: a huge sweeping claw, and a lunging bite.
+  'inkbeast.claw': strike(
+    { lean: deg(24), head: deg(-8), armBack: limb(-30, 40), armFront: limb(-80, 20), legFront: limb(30, -24) },
+    {
+      lean: deg(-26),
+      head: deg(12),
+      armBack: limb(40, 30),
+      armFront: limb(98, 4),
+      legFront: limb(50, -50),
+      legBack: limb(-36, -10),
+    },
+  ),
+  'inkbeast.bite': strike(
+    { lean: deg(-10), head: deg(-26), armBack: limb(-10, 60), armFront: limb(-20, 60), legFront: limb(20, -20) },
+    {
+      lean: deg(-42),
+      head: deg(30),
+      armBack: limb(70, 30),
+      armFront: limb(70, 30),
+      legFront: limb(46, -56),
+      legBack: limb(-34, -10),
+    },
+  ),
   'necro.soul-rend': strike(
     { lean: deg(14), armBack: limb(-60, 110), armFront: limb(150, 40), legFront: limb(26, -24) },
     { lean: deg(-30), armBack: limb(96, 4), armFront: limb(90, 10), legFront: limb(46, -60), legBack: limb(-34, -10) },

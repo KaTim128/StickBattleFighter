@@ -157,4 +157,5 @@ export const ALL_PLAYABLE = [
   'reson',
   'chronos',
   'prismor',
+  'inkmaster',
 ] as const;

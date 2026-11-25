@@ -1,0 +1,5 @@
+{
+  "id": "ink-clone-bow-animation",
+  "extends": "base-stickman-animation",
+  "states": {}
+}

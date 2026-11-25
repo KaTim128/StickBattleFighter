@@ -1,0 +1,223 @@
+import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
+
+/**
+ * Inkmaster's kit: a Chinese ink painter whose brush draws weapons and creatures into the fight. Strength is versatility and tactical summons:
+ * a wide slash, a hunting serpent that briefly holds, a circling dragon, a sword or bow clone, a vortex that ends in a collapse, and one
+ * ultimate, The Masterpiece. His own stats are modest; the summons are help, not a second fighter. Values are PROVISIONAL (OQ-05).
+ */
+const INK = { deep: 0x050505, hot: 0x24242b, bright: 0x6d6d78, core: 0xf2eee3 } as const;
+const inkImpact = (ringM: number, extra: { shake?: number } = {}) => ({
+  flashM: ringM * 0.5,
+  sparks: 8,
+  motes: 34,
+  ringM,
+  smoke: 8,
+  groundFire: false,
+  smokeColour: 0x15151a,
+  ...extra,
+});
+
+export const INKMASTER_KIT: AbilityKit = {
+  comboIcon: 'ink-combo',
+  heavyIcon: 'brush-sweep',
+  // A1 (Q): Ink Slash. A horizontal swing sends a wide curved wave of ink across the floor.
+  a1: {
+    id: 'inkSlash',
+    name: 'Ink Slash',
+    label: 'SLASH',
+    description:
+      'Swings the brush across his body and releases a wide, curved wave of black ink that cuts along the floor, damaging and pushing back the first opponent it reaches.',
+    icon: 'ink-slash',
+    slot: 'a1',
+    staminaCost: 18,
+    cooldownS: 5,
+    castS: 0.3,
+    recoveryS: 0.35,
+    aimRangeM: 9,
+    moveFactor: 0.3,
+    interruptible: true,
+    payload: { damage: 54, knockbackMps: 4.5, heavy: false, strength: 300, impact: 'knuckle-light' },
+    delivery: { type: 'projectile', speedMps: 12, radiusM: 0.75, maxRangeM: 9 },
+    vfx: 'ink-slash',
+    sfx: { cast: 'ink-gather', release: 'ink-slash', impact: 'ink-splash' },
+    look: {
+      palette: INK,
+      charge: { gatherRadiusM: 0.8, motesPerS: 30, coreMaxM: 0.15 },
+      flight: { trailPerS: 90, sparksPerS: 8, shimmer: false, crescent: true },
+      impact: inkImpact(1.4),
+      hitFlash: 0x2a2a30,
+    },
+  },
+  // A2 (E): Ink Serpent. He draws a serpent in the air; it comes alive and hunts the nearest opponent.
+  a2: {
+    id: 'inkSerpent',
+    name: 'Ink Serpent',
+    label: 'SERPENT',
+    description:
+      'Draws a serpent in the air, stroke by stroke. It comes alive and hunts the nearest opponent, turning slowly enough to be dodged. If it catches them it bites and coils round their legs for a moment, but they can still guard and use abilities.',
+    icon: 'ink-serpent',
+    slot: 'a2',
+    staminaCost: 26,
+    cooldownS: 10,
+    castS: 0.45,
+    recoveryS: 0.35,
+    aimRangeM: 12,
+    moveFactor: 0.15,
+    interruptible: true,
+    payload: { damage: 46, knockbackMps: 1.5, heavy: false, strength: 250, impact: 'knuckle-light' },
+    delivery: {
+      type: 'serpent',
+      formS: 0.8,
+      speedMps: 8,
+      turnRadPerS: 2.4,
+      lifeS: 4.2,
+      radiusM: 0.5,
+      restrainS: 1.1,
+      immuneS: 5,
+    },
+    vfx: 'ink-serpent',
+    sfx: { cast: 'ink-gather', release: 'ink-serpent', impact: 'ink-bite' },
+    look: {
+      palette: INK,
+      impact: inkImpact(1.2),
+      hitFlash: 0x2a2a30,
+    },
+  },
+  // A3 (F): Ink Dragon. A sweeping stroke draws a flying dragon that circles his opponent and breathes ink.
+  a3: {
+    id: 'inkDragon',
+    name: 'Ink Dragon',
+    label: 'DRAGON',
+    description:
+      'Sweeps the brush across the air to draw a Chinese dragon in ink. It flies round the nearest opponent for 12 seconds and, every few seconds, rears and warns before it breathes a line of ink along the floor.',
+    icon: 'ink-dragon',
+    slot: 'a3',
+    staminaCost: 32,
+    cooldownS: 20,
+    castS: 0.5,
+    recoveryS: 0.4,
+    aimRangeM: 12,
+    moveFactor: 0.15,
+    interruptible: true,
+    payload: { damage: 46, knockbackMps: 3, heavy: false, strength: 300, impact: 'knuckle-light', noFlinch: true },
+    delivery: {
+      type: 'dragon',
+      formS: 1.1,
+      durationS: 12,
+      speedMps: 5.5,
+      orbitM: 4.2,
+      breathEveryS: 3.6,
+      windupS: 1,
+      breathRangeM: 7,
+      breathWidthM: 1.6,
+    },
+    vfx: 'ink-dragon',
+    sfx: { cast: 'ink-gather', release: 'ink-dragon', impact: 'ink-breath' },
+    look: {
+      palette: INK,
+      impact: inkImpact(1.6, { shake: 0.15 }),
+      hitFlash: 0x2a2a30,
+    },
+  },
+  // A4 (R): Ink Clone. A humanoid is drawn on the floor and rises out of a pool of ink: a sword clone or a bow clone.
+  a4: {
+    id: 'inkClone',
+    name: 'Ink Clone',
+    label: 'CLONE',
+    description:
+      'Draws a figure that rises from a pool of black ink and fights beside him for 14 seconds. It carries either a sword, and fights up close, or a bow, and shoots from a distance. Which one is chosen each time, and it cannot change.',
+    icon: 'ink-clone',
+    slot: 'a4',
+    staminaCost: 30,
+    cooldownS: 18,
+    castS: 0.55,
+    recoveryS: 0.4,
+    aimRangeM: 0,
+    moveFactor: 0.2,
+    interruptible: true,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: {
+      type: 'summon',
+      character: 'ink-clone-sword',
+      variants: ['ink-clone-sword', 'ink-clone-bow'],
+      count: 1,
+      lifeS: 14,
+      maxAlive: 1,
+    },
+    vfx: 'ink-clone',
+    sfx: { cast: 'ink-gather', release: 'ink-pool', impact: 'ink-pool' },
+    look: {
+      palette: INK,
+      impact: inkImpact(1.4),
+      hitFlash: 0x2a2a30,
+    },
+  },
+  // A5 (fifth): Ink Cyclone. He spins the brush; a vortex of ink forms ahead of him, drawing opponents in, then collapses.
+  a5: {
+    id: 'inkCyclone',
+    name: 'Ink Cyclone',
+    label: 'CYCLONE',
+    description:
+      'Spins the brush to whip up a vortex of ink a few metres ahead. For 3.4 seconds it hurts everyone inside and draws them gently toward its centre, then it collapses in an explosion that pushes them away. Walking or dodging out frees them.',
+    icon: 'ink-cyclone',
+    slot: 'a3',
+    staminaCost: 28,
+    cooldownS: 14,
+    castS: 0.5,
+    recoveryS: 0.4,
+    aimRangeM: 6,
+    moveFactor: 0.2,
+    interruptible: true,
+    payload: { damage: 11, knockbackMps: 0, heavy: false, strength: 150, impact: 'knuckle-light', noFlinch: true },
+    delivery: {
+      type: 'vortex',
+      radiusM: 3.4,
+      durationS: 3.4,
+      tickS: 0.5,
+      pullMps: 2.2,
+      collapseDamage: 50,
+      collapseRadiusM: 3.8,
+      collapseKnockbackMps: 6.5,
+      placeM: 5.5,
+    },
+    vfx: 'ink-cyclone',
+    sfx: { cast: 'ink-gather', release: 'ink-cyclone', impact: 'ink-collapse' },
+    look: {
+      palette: INK,
+      impact: inkImpact(3.6, { shake: 0.4 }),
+      hitFlash: 0x2a2a30,
+    },
+  },
+  // ULT (I): The Masterpiece. A scroll unrolls and he draws a mythical beast, which tears itself out of the page and fights for him.
+  ult: {
+    id: 'masterpiece',
+    name: 'The Masterpiece',
+    label: 'ULT',
+    description:
+      'The light dims and a great scroll unrolls before him. He draws a horned ink beast, stroke by stroke, then it tears itself off the page and fights for 16 seconds with a claw, a bite, a ground slam and a breath of ink before it dissolves. He is exposed while he draws.',
+    icon: 'masterpiece',
+    slot: 'ult',
+    staminaCost: 0,
+    cooldownS: 1,
+    castS: 0.7,
+    recoveryS: 3.2,
+    aimRangeM: 0,
+    moveFactor: 0,
+    interruptible: false,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: {
+      type: 'masterpiece',
+      drawS: 3,
+      summon: { character: 'ink-monster', count: 1, lifeS: 16, maxAlive: 1 },
+    },
+    vfx: 'masterpiece',
+    sfx: { cast: 'ink-gather', release: 'masterpiece-draw', impact: 'masterpiece-awaken' },
+    look: {
+      palette: INK,
+      impact: inkImpact(5, { shake: 0.6 }),
+      hitFlash: 0xf2eee3,
+    },
+  },
+  charge: chargeFor('masterpiece'),
+};

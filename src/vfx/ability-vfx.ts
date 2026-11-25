@@ -1,7 +1,9 @@
 import { type Container, Graphics } from 'pixi.js';
 import type { MagicLook } from '../abilities/ability-def';
 import type { AbilityFx, Beam, Cloud, FireZone, Grenade, Projectile, Telegraph } from '../abilities/ability-world';
+import type { InkWorld } from '../abilities/ink-world';
 import { ISO_T, iso } from '../rendering/projection';
+import { drawInk } from './ink-vfx';
 
 /**
  * Fire effects for abilities (GREYBOX vector VFX, PRS targets in spec §11.2):
@@ -255,6 +257,8 @@ export interface AbilityVfxInput {
   readonly trails?: readonly DashTrailFx[];
   /** Continuous beams (Fire Beam). */
   readonly beams?: readonly Beam[];
+  /** Inkmaster's living ink (serpent, dragon, cyclone, the Masterpiece) and where a fighter stands by name. */
+  readonly ink?: { readonly world: InkWorld; readonly at: (id: string | null) => { x: number; y: number } | null };
   /**
    * Spectral chains this frame (Grave Chains, owner 12/11/2026): from the caster's staff to the
    * flying hook, then to the enemy being dragged in. World points at chest height.
@@ -1884,6 +1888,8 @@ export class AbilityVfx {
         }
       }
     }
+
+    if (input.ink) drawInk(f, g, P, input.ink.world, t, input.ink.at);
 
     // Grenades: a shadow on the floor, then the olive body tumbling through its arc (or sitting, or stuck to someone),
     // with a light that blinks faster as the fuse runs down.

@@ -2,6 +2,8 @@ import { AERION_KIT } from '../data/abilities/aerion';
 import { CHRONOS_KIT } from '../data/abilities/chronos';
 import { GEARGRIND_KIT } from '../data/abilities/geargrind';
 import { INFERNO_KIT } from '../data/abilities/inferno';
+import { INK_CLONE_BOW_KIT, INK_MONSTER_KIT } from '../data/abilities/ink-summons';
+import { INKMASTER_KIT } from '../data/abilities/inkmaster';
 import { KENSHIRO_KIT } from '../data/abilities/kenshiro';
 import { NECRO_KIT } from '../data/abilities/necro';
 import { PRISMOR_KIT } from '../data/abilities/prismor';
@@ -26,4 +28,7 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'prismor-kit': PRISMOR_KIT,
   'psion-kit': PSION_KIT,
   'reson-kit': RESON_KIT,
+  'inkmaster-kit': INKMASTER_KIT,
+  'ink-clone-bow-kit': INK_CLONE_BOW_KIT,
+  'ink-monster-kit': INK_MONSTER_KIT,
 };

@@ -14,6 +14,7 @@ import type { UltimateCharge } from './ability-def';
  * - Celestial Tempest 1.25: untouchable for 2.4 s, up to thirty blades across the battlefield and a 90 damage dive.
  * - Final Judgement 1.3: untouchable for about 2 s and a 112 damage blow that cannot be dodged once the rush starts.
  * - Mindstorm 1.3: a 2.2 s field of eight flung objects and a 60 damage explosion, but he is rooted and exposed throughout.
+ * - The Masterpiece 1.35: 3 s of drawing (exposed), then a 16 s monster of 620 health with four slow, telegraphed attacks that opponents can beat.
  * - Rampage Mode 1.3: 8 s of 40% more defence, cooldowns 25% sooner, 15% faster and a shockwave.
  * - Blue Inferno 1.4: 10 s of +70% damage, cooldowns 30% sooner and 15% faster.
  */
@@ -28,6 +29,7 @@ export const ULTIMATE_POWER = {
   shatterwave: 1.25,
   timeStop: 1.5,
   crystalSovereign: 1.3,
+  masterpiece: 1.35,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

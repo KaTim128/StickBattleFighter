@@ -223,6 +223,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1.04,
     breath: { lean: 1, pelvis: 0.01, hands: 0.02 },
   },
+  // Inkmaster: upright and composed before a fresh page, the oversized brush held low in front of him, the free hand tucked at the waist.
+  inkmaster: {
+    title: 'The Living Brush',
+    style: 'Ink painter: waves, a serpent, a dragon, clones and a drawn monster',
+    pelvis: 0.95,
+    leadFoot: 0.2,
+    rearFoot: -0.26,
+    lean: -3,
+    head: -2,
+    front: { x: 0.42, y: 0.5 },
+    back: { x: 0.06, y: 0.62 },
+    turn: 0.52,
+    scale: 1,
+    breath: { lean: 1, pelvis: 0.01, hands: 0.025 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

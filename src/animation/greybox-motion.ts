@@ -130,7 +130,8 @@ export type IdleStyle =
   | 'mechanic'
   | 'sonic'
   | 'temporal'
-  | 'crystal';
+  | 'crystal'
+  | 'calligrapher';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -147,6 +148,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.sonic') return 'sonic';
   if (clipId === 'proc.idle.temporal') return 'temporal';
   if (clipId === 'proc.idle.crystal') return 'crystal';
+  if (clipId === 'proc.idle.calligrapher') return 'calligrapher';
   return 'boxer';
 }
 
@@ -351,7 +353,28 @@ function crystalIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * CALLIGRAPHER (Inkmaster): upright and composed, like a painter before a fresh page. The brush hand hangs low and a little forward with
+ * the bristles tilted up, and now and then it writes a small, slow stroke in the air; the other hand rests near the waist. A slow
+ * sway, as if breathing with the brush.
+ */
+function calligrapherIdle(timeS: number, bones: BoneLengths): Pose {
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.28);
+  const sway = Math.sin(timeS * TAU * 0.14);
+  const stroke = Math.max(0, Math.sin(timeS * TAU * 0.2)) ** 2;
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-2 + sway * 1.5),
+    head: deg(-2 + stroke * 4),
+    armFront: { root: deg(30 + stroke * 24 + breath * 2), bend: deg(46 - stroke * 14) },
+    armBack: { root: deg(-6 + sway * 3), bend: deg(70) },
+    legFront: legIk(0.18 + sway * 0.015, legs * 0.97 - breath * 0.006, bones.thigh, bones.shin),
+    legBack: legIk(-0.22 - sway * 0.015, legs * 0.97 - breath * 0.006, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'calligrapher') return calligrapherIdle(timeS, bones);
   if (style === 'crystal') return crystalIdle(timeS, bones);
   if (style === 'temporal') return temporalIdle(timeS, bones);
   if (style === 'sonic') return sonicIdle(timeS, bones);
@@ -527,6 +550,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0);
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'calligrapher') {
+    // Light, even steps like a dancer's, the brush arm trailing loosely, the other hand near the waist.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.8,
+      bob: 0.02,
+      leadX: 0.16,
+      rearX: -0.2,
+      reach: 0.17 * k,
+      lift: 0.07,
+      lean: -3,
+      sway: 1,
+      head: -2,
+      arms: { lead: { x: 0.22, y: 0.5 }, rear: { x: -0.04, y: 0.46 }, swingX: 0.12, swingY: 0.03 },
+    });
+  }
   if (style === 'crystal') {
     // A heavy, unhurried tread: long planted steps, the chest out, the big arm swinging low and slow.
     return gaitPose(phase, bones, {
@@ -666,6 +704,7 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
     style === 'mechanic' ||
     style === 'sonic' ||
     style === 'temporal' ||
+    style === 'calligrapher' ||
     style === 'crystal'
   )
     return idlePose(timeS, bones, style);

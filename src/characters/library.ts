@@ -30,6 +30,31 @@ import infernoCharacter from '../data/characters/inferno/character.json';
 import infernoEffects from '../data/characters/inferno/effects.json';
 import infernoMoveset from '../data/characters/inferno/moveset.json';
 import infernoStats from '../data/characters/inferno/stats.json';
+import inkBowAi from '../data/characters/ink-clone-bow/ai.json';
+import inkBowAnimation from '../data/characters/ink-clone-bow/animation-profile.json';
+import inkBowCharacter from '../data/characters/ink-clone-bow/character.json';
+import inkBowEffects from '../data/characters/ink-clone-bow/effects.json';
+import inkBowMoveset from '../data/characters/ink-clone-bow/moveset.json';
+import inkBowStats from '../data/characters/ink-clone-bow/stats.json';
+import inkSwordAi from '../data/characters/ink-clone-sword/ai.json';
+import inkSwordAnimation from '../data/characters/ink-clone-sword/animation-profile.json';
+import inkSwordCharacter from '../data/characters/ink-clone-sword/character.json';
+import inkSwordEffects from '../data/characters/ink-clone-sword/effects.json';
+import inkSwordMoveset from '../data/characters/ink-clone-sword/moveset.json';
+import inkSwordStats from '../data/characters/ink-clone-sword/stats.json';
+import inkMonsterAi from '../data/characters/ink-monster/ai.json';
+import inkMonsterAnimation from '../data/characters/ink-monster/animation-profile.json';
+import inkMonsterCharacter from '../data/characters/ink-monster/character.json';
+import inkMonsterEffects from '../data/characters/ink-monster/effects.json';
+import inkMonsterMoveset from '../data/characters/ink-monster/moveset.json';
+import inkMonsterStats from '../data/characters/ink-monster/stats.json';
+import inkAi from '../data/characters/inkmaster/ai.json';
+import inkAnimation from '../data/characters/inkmaster/animation-profile.json';
+import inkAudio from '../data/characters/inkmaster/audio.json';
+import inkCharacter from '../data/characters/inkmaster/character.json';
+import inkEffects from '../data/characters/inkmaster/effects.json';
+import inkMoveset from '../data/characters/inkmaster/moveset.json';
+import inkStats from '../data/characters/inkmaster/stats.json';
 import kenshiroAi from '../data/characters/kenshiro/ai.json';
 import kenshiroAnimation from '../data/characters/kenshiro/animation-profile.json';
 import kenshiroAudio from '../data/characters/kenshiro/audio.json';
@@ -132,6 +157,10 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroCharacter,
     psionCharacter,
     prismorCharacter,
+    inkCharacter,
+    inkSwordCharacter,
+    inkBowCharacter,
+    inkMonsterCharacter,
     geargrindCharacter,
     resonCharacter,
     chronosCharacter,
@@ -152,6 +181,10 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroAnimation,
     psionAnimation,
     prismorAnimation,
+    inkAnimation,
+    inkSwordAnimation,
+    inkBowAnimation,
+    inkMonsterAnimation,
     geargrindAnimation,
     resonAnimation,
     chronosAnimation,
@@ -167,6 +200,10 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroMoveset,
     psionMoveset,
     prismorMoveset,
+    inkMoveset,
+    inkSwordMoveset,
+    inkBowMoveset,
+    inkMonsterMoveset,
     geargrindMoveset,
     resonMoveset,
     chronosMoveset,
@@ -183,6 +220,10 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroStats,
     psionStats,
     prismorStats,
+    inkStats,
+    inkSwordStats,
+    inkBowStats,
+    inkMonsterStats,
     geargrindStats,
     resonStats,
     chronosStats,
@@ -200,6 +241,10 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroEffects,
     psionEffects,
     prismorEffects,
+    inkEffects,
+    inkSwordEffects,
+    inkBowEffects,
+    inkMonsterEffects,
     geargrindEffects,
     resonEffects,
     chronosEffects,
@@ -216,6 +261,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroAudio,
     psionAudio,
     prismorAudio,
+    inkAudio,
     geargrindAudio,
     resonAudio,
     chronosAudio,
@@ -233,6 +279,10 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     kenshiroAi,
     psionAi,
     prismorAi,
+    inkAi,
+    inkSwordAi,
+    inkBowAi,
+    inkMonsterAi,
     geargrindAi,
     resonAi,
     chronosAi,

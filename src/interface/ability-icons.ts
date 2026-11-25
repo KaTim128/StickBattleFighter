@@ -22,7 +22,8 @@ type Theme =
   | 'gear'
   | 'sonic'
   | 'time'
-  | 'crystal';
+  | 'crystal'
+  | 'ink';
 
 /** Backdrop colours per element: core, mid, edge. */
 const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
@@ -41,6 +42,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   sonic: ['#eafcff', '#0e8fa8', '#04141a'],
   time: ['#fff4cf', '#1f4fa8', '#07142a'],
   crystal: ['#e9e2ff', '#5a4bbf', '#0e0a2c'],
+  ink: ['#f2eee3', '#45454f', '#050507'],
 };
 
 const MATERIALS = `
@@ -570,6 +572,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'crystal',
     rays(24, 24, 15, '#e9e2ff', 0.2),
     `<g stroke="#4aa8ff" stroke-width="2.4" stroke-linecap="round" opacity=".9"><path d="M4 30 H22"/><path d="M6 36 H26"/><path d="M8 24 H20"/></g><g filter="url(#ds)"><path d="M24 32 L34 20 L44 30 L40 38 L28 40 Z" fill="#7b6cff" stroke="#e9e2ff" stroke-width="1.8"/></g><g fill="#e9e2ff"><path d="M36 14 L39 22 L33 22 Z"/><path d="M44 18 L46 25 L41 24 Z"/></g>`,
+  ),
+  'ink-slash': icon(
+    'ink',
+    rays(24, 24, 14, '#f2eee3', 0.16),
+    `<path d="M5 34 C10 12 32 6 44 16 C34 14 18 20 12 38 Z" fill="#050505" stroke="#f2eee3" stroke-width="1.4" stroke-linejoin="round" filter="url(#ds)"/><g fill="#050505" opacity=".85"><circle cx="40" cy="30" r="2.4"/><circle cx="35" cy="37" r="1.6"/><circle cx="43" cy="37" r="1.2"/></g>`,
+  ),
+  'ink-serpent': icon(
+    'ink',
+    rays(24, 24, 12, '#f2eee3', 0.14),
+    `<path d="M6 36 C8 22 20 28 24 22 C28 16 18 10 28 8 C38 6 42 16 38 22 C34 28 30 32 36 38" fill="none" stroke="#050505" stroke-width="6" stroke-linecap="round" filter="url(#ds)"/><path d="M6 36 C8 22 20 28 24 22 C28 16 18 10 28 8 C38 6 42 16 38 22" fill="none" stroke="#f2eee3" stroke-width="1.2" stroke-linecap="round" opacity=".55"/><circle cx="37" cy="39" r="2.4" fill="#f2eee3"/>`,
+  ),
+  'ink-dragon': icon(
+    'ink',
+    rays(24, 24, 16, '#f2eee3', 0.16),
+    `<path d="M4 34 C10 22 14 36 20 26 C26 16 30 30 34 20 C36 14 40 12 44 14 L40 20 L44 22 L38 24 C38 32 28 42 18 40 C12 38 8 38 4 34 Z" fill="#050505" stroke="#f2eee3" stroke-width="1.4" stroke-linejoin="round" filter="url(#ds)"/><path d="M38 14 L41 7 L43 14 Z" fill="#050505" stroke="#f2eee3" stroke-width="1"/><circle cx="39" cy="18" r="1.5" fill="#f2eee3"/><g fill="none" stroke="#f2eee3" stroke-width="1" opacity=".6"><path d="M12 36 C16 32 18 36 22 32"/><path d="M24 34 C28 30 30 34 34 30"/></g>`,
+  ),
+  'ink-clone': icon(
+    'ink',
+    rays(24, 24, 13, '#f2eee3', 0.14),
+    `<ellipse cx="24" cy="40" rx="14" ry="4.5" fill="#050505" opacity=".85"/><g filter="url(#ds)" stroke="#f2eee3" stroke-width="1.2" fill="#050505"><circle cx="24" cy="10" r="4.6"/><path d="M24 15 V28 M24 19 L15 25 M24 19 L33 14 M24 28 L18 38 M24 28 L30 38" fill="none" stroke="#050505" stroke-width="3.2" stroke-linecap="round"/></g><path d="M33 8 L38 28" stroke="#f2eee3" stroke-width="1.6" stroke-linecap="round"/>`,
+  ),
+  'ink-cyclone': icon(
+    'ink',
+    swirl('#f2eee3', 0.3),
+    `<g fill="none" stroke="#050505" stroke-linecap="round" filter="url(#ds)"><path d="M10 14 C28 6 40 16 36 26 C32 34 18 32 18 24 C18 18 28 18 28 24" stroke-width="5"/><path d="M8 34 C14 42 32 44 40 36" stroke-width="3.4"/></g><path d="M10 14 C28 6 40 16 36 26" fill="none" stroke="#f2eee3" stroke-width="1" opacity=".5"/>`,
+  ),
+  masterpiece: icon(
+    'ink',
+    rays(24, 24, 20, '#f2eee3', 0.3),
+    `<g filter="url(#ds)"><rect x="8" y="7" width="32" height="34" rx="2.5" fill="#efe6cf" stroke="#050505" stroke-width="2"/><rect x="6" y="5" width="36" height="4" rx="2" fill="#6b3a1c" stroke="#050505" stroke-width="1.4"/><rect x="6" y="39" width="36" height="4" rx="2" fill="#6b3a1c" stroke="#050505" stroke-width="1.4"/></g><path d="M13 32 C14 20 20 14 26 16 L24 12 L32 14 L30 18 C34 24 32 32 28 34 C24 30 20 34 13 32 Z" fill="#050505"/><circle cx="29" cy="20" r="1.4" fill="#efe6cf"/>`,
+  ),
+  'ink-combo': icon(
+    'ink',
+    rays(24, 24, 12, '#f2eee3', 0.12),
+    `<g fill="none" stroke="#050505" stroke-linecap="round" filter="url(#ds)"><path d="M6 36 C12 22 22 14 38 12" stroke-width="5"/><path d="M10 40 C18 30 28 24 42 24" stroke-width="3.6"/></g><g fill="none" stroke="#f2eee3" stroke-linecap="round" opacity=".5"><path d="M6 36 C12 22 22 14 38 12" stroke-width="1"/></g>`,
+  ),
+  'brush-sweep': icon(
+    'ink',
+    rays(24, 24, 15, '#f2eee3', 0.14),
+    `<g filter="url(#ds)"><path d="M8 40 L32 12" stroke="#6b3a1c" stroke-width="3.6" stroke-linecap="round"/><path d="M30 14 C36 6 44 6 45 8 C44 14 38 22 32 22 Z" fill="#050505" stroke="#f2eee3" stroke-width="1.2" stroke-linejoin="round"/></g><path d="M6 24 C14 30 26 36 40 34" fill="none" stroke="#050505" stroke-width="3" stroke-linecap="round" opacity=".7"/>`,
   ),
   'shard-volley': icon(
     'crystal',

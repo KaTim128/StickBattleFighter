@@ -622,9 +622,19 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /** Summoned minions now in the fight (tests and the debug hook). */
-  get summonStates(): { name: string; team: string; x: number; y: number; hp: number; ko: boolean; leftS: number }[] {
+  get summonStates(): {
+    name: string;
+    character: string;
+    team: string;
+    x: number;
+    y: number;
+    hp: number;
+    ko: boolean;
+    leftS: number;
+  }[] {
     return this.summons.list.map((f) => ({
       name: f.name,
+      character: f.def.id,
       team: f.team,
       x: f.x,
       y: f.y,
@@ -654,9 +664,12 @@ export class FightArenaScene implements ArenaScene {
       at.y < this.arena.heightM - r,
     fighters: () => this.fighters,
     step: (f, stepS, move) => this.stepFighter(f, stepS, move, false),
-    attack: (f) => {
-      if (f.landHoldS === 0) f.combo.press(GROUND);
+    attack: (f, heavy) => {
+      if (f.landHoldS !== 0) return;
+      if (heavy) f.combo.pressHeavy(GROUND);
+      else f.combo.press(GROUND);
     },
+    cast: (f, slot, at) => this.abilities?.tryCast(f, slot, at) === null,
     risen: (f) => {
       this.frameDust.push({
         points: [0, 1, 2].map((k) => ({ x: f.x + (k - 1) * 0.15, y: f.y, z: 0.1 + k * 0.2 })),
@@ -2497,6 +2510,11 @@ export class FightArenaScene implements ArenaScene {
         else if (!attack && !cast && Math.hypot(moveIn.x, moveIn.y) > 0.1) f.faceToward(moveIn.x, moveIn.y);
       }
     }
+    // A current (Ink Cyclone) drifts the body on top of its own movement, so walking or dodging out still works.
+    if (f.current) {
+      if (!c.isKo) next = { x: next.x + f.current.x, y: next.y + f.current.y };
+      f.current = null;
+    }
     body.setLinvel(next, true);
 
     if (jump && canStartJump(f.hop)) {
@@ -3538,6 +3556,15 @@ export class FightArenaScene implements ArenaScene {
     this.limbFlameStrength = limbFlames.reduce((m, l) => Math.max(m, l.strength), 0);
     this.resumeFlashS += frameDtS;
     this.vfx.update(frameDtS, {
+      ink: this.abilities
+        ? {
+            world: this.abilities.world.ink,
+            at: (id) => {
+              const f = id ? this.fighterByName(id) : null;
+              return f ? { x: f.x, y: f.y } : null;
+            },
+          }
+        : undefined,
       limbFlames,
       aim: this.ultAim ?? this.pointAimState ?? this.throwAim,
       impacts,
@@ -4017,7 +4044,9 @@ export class FightArenaScene implements ArenaScene {
         ? { kind: sl, k: f.caster?.cast?.phase === 'windup' ? Math.min(1, 0.3 + f.caster.phaseProgress) : 1 }
         : screaming
           ? { kind: 'scream', k: 1 }
-          : null;
+          : f.combo.attack?.id === 'monster-bite'
+            ? { kind: 'scream', k: Math.min(1, 0.3 + f.combo.progress * 1.4) }
+            : null;
     }
     // Reinforced Plating: the armour plates slide out and lock, then fold away at the end.
     const platingTo = f.buff?.plating ? Math.min(1, f.buff.leftS / 0.4) : 0;

@@ -2,6 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
+import { drawInkBow, drawInkBrush, drawInkSword } from './ink-props';
 import { MagmaModel } from './magma-model';
 import { PREMIUM_SKINS, PremiumModel } from './premium-model';
 
@@ -93,6 +94,8 @@ export class StickmanView {
   shoulderSpread = 1;
   /** 0..1 how far a held staff follows the swinging arm (a staff strike) instead of standing upright. */
   heldSwing = 0;
+  /** 0..1 how far the bow clone's bow is drawn (the string and arrow follow it). */
+  bowDraw = 0;
   /** Stunned: stars circle the head (PRS-6). */
   stunned = false;
   private readonly status = new Graphics();
@@ -1519,6 +1522,19 @@ export class StickmanView {
     }
     if (this.held === 'katana') {
       this.drawKatana(g, s, o);
+      return;
+    }
+    if (this.held === 'brush') {
+      // Inkmaster's brush: wetter while he is casting, drier after.
+      this.bladeTip = drawInkBrush(g, elbow, hand, o, this.clockS, 1);
+      return;
+    }
+    if (this.held === 'ink-sword') {
+      this.bladeTip = drawInkSword(g, elbow, hand, o);
+      return;
+    }
+    if (this.held === 'ink-bow') {
+      drawInkBow(g, hand, this.last?.facing ?? 1, o, this.bowDraw);
       return;
     }
     // Grave blade: one clean tapered blade of dark violet obsidian with a pale cutting edge (it

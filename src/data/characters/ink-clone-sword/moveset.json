@@ -1,0 +1,92 @@
+{
+  "id": "ink-clone-sword-moveset",
+  "starters": {
+    "tap": "ink-slash"
+  },
+  "moves": [
+    {
+      "id": "ink-slash",
+      "displayName": "Ink slash",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.14,
+      "activeS": 0.08,
+      "recoveryS": 0.3,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.45
+      },
+      "damage": 16,
+      "strength": 250,
+      "knockbackMps": 1.5,
+      "lungeMps": 0.5,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.1,
+      "zoomPunch": 0.01,
+      "requires": ["canPunch"],
+      "sfx": "hit-ink-clone-slash",
+      "next": {
+        "tap": "ink-cross"
+      }
+    },
+    {
+      "id": "ink-cross",
+      "displayName": "Ink cross slash",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.14,
+      "activeS": 0.08,
+      "recoveryS": 0.3,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.05,
+        "radiusM": 0.45
+      },
+      "damage": 18,
+      "strength": 300,
+      "knockbackMps": 1.8,
+      "lungeMps": 0.6,
+      "moveFactor": 0.35,
+      "impact": "knuckle-light",
+      "shake": 0.12,
+      "zoomPunch": 0.012,
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-ink-clone-slash",
+      "next": {
+        "tap": "ink-overhead"
+      }
+    },
+    {
+      "id": "ink-overhead",
+      "displayName": "Ink overhead strike",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.28,
+      "activeS": 0.1,
+      "recoveryS": 0.42,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.1,
+        "radiusM": 0.55
+      },
+      "damage": 30,
+      "strength": 600,
+      "knockbackMps": 3.5,
+      "lungeMps": 0.7,
+      "moveFactor": 0.25,
+      "impact": "knuckle-heavy",
+      "shake": 0.25,
+      "zoomPunch": 0.02,
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-ink-clone-overhead"
+    }
+  ]
+}

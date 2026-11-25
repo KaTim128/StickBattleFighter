@@ -285,6 +285,11 @@ export interface NovaDelivery {
  */
 export interface SummonSpec {
   readonly character: string;
+  /**
+   * Instead of `character`, one of these is picked at random each cast and stays fixed for that summon (Inkmaster's
+   * Ink Clone: a sword clone or a bow clone).
+   */
+  readonly variants?: readonly string[];
   readonly count: number;
   /** Seconds before they crumble; null = they stay until killed (owner, 12/11/2026). */
   readonly lifeS: number | null;
@@ -710,10 +715,78 @@ export interface GrabDelivery {
   readonly telekinetic?: boolean;
 }
 
+/**
+ * Ink Serpent (Inkmaster): a serpent drawn in the air in `formS` seconds (it does nothing while forming), which then
+ * hunts the nearest enemy, turning at up to `turnRadPerS` (so it can be dodged or outrun), and on contact bites with the
+ * payload and wraps the target, holding its legs for `restrainS`. The same target cannot be wrapped again for
+ * `immuneS`. Guarding, abilities and attacks stay available while it is held.
+ */
+export interface SerpentDelivery {
+  readonly type: 'serpent';
+  readonly formS: number;
+  readonly speedMps: number;
+  readonly turnRadPerS: number;
+  /** It dissolves after this long without a target caught. */
+  readonly lifeS: number;
+  readonly radiusM: number;
+  readonly restrainS: number;
+  readonly immuneS: number;
+}
+
+/**
+ * Ink Dragon (Inkmaster): a flying dragon drawn in `formS` seconds, which circles the nearest enemy for `durationS`.
+ * Every `breathEveryS` it rears (a visible warning `windupS` long, marked on the floor) and then breathes a line of
+ * ink `breathRangeM` long, hitting each fighter in it once with the payload. It never breathes twice at once.
+ */
+export interface DragonDelivery {
+  readonly type: 'dragon';
+  readonly formS: number;
+  readonly durationS: number;
+  readonly speedMps: number;
+  readonly orbitM: number;
+  readonly breathEveryS: number;
+  readonly windupS: number;
+  readonly breathRangeM: number;
+  readonly breathWidthM: number;
+}
+
+/**
+ * Ink Cyclone (Inkmaster): a swirling vortex at the aimed spot, `radiusM` wide, for `durationS`. Every `tickS` it damages
+ * everyone in it with the payload, and a gentle current (`pullMps`, weaker than walking) draws them toward the centre; dodging
+ * or walking out frees them. It ends in a collapse: `collapseDamage` to everyone inside `collapseRadiusM`, with a push.
+ */
+export interface VortexDelivery {
+  readonly type: 'vortex';
+  readonly radiusM: number;
+  readonly durationS: number;
+  readonly tickS: number;
+  readonly pullMps: number;
+  readonly collapseDamage: number;
+  readonly collapseRadiusM: number;
+  readonly collapseKnockbackMps: number;
+  /** How far ahead of the caster it forms at most (metres). */
+  readonly placeM: number;
+}
+
+/**
+ * The Masterpiece (Inkmaster's ultimate): a ritual of `drawS` seconds in which a scroll appears and the monster is drawn
+ * stroke by stroke (the caster is held at his drawing), then the monster tears out of the scroll as a summon. If the caster
+ * falls first, the drawing ruins.
+ */
+export interface MasterpieceDelivery {
+  readonly type: 'masterpiece';
+  readonly drawS: number;
+  readonly summon: SummonSpec;
+}
+
 /** What a running buff does (the buff delivery without its summons). */
 export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon' | 'shockwave'>;
 
 export type Delivery =
+  | SerpentDelivery
+  | DragonDelivery
+  | VortexDelivery
+  | MasterpieceDelivery
   | ProjectileDelivery
   | CloudDelivery
   | MarkDelivery

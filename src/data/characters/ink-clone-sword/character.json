@@ -1,0 +1,67 @@
+{
+  "id": "ink-clone-sword",
+  "template": "base-stickman",
+  "displayName": "Ink Clone (Sword)",
+  "description": "A figure drawn in black ink that rose from a pool: it fights with an ink sword.",
+  "characterType": "summon",
+  "element": "none",
+  "combatStyle": "blade",
+  "profiles": {
+    "animation": "ink-clone-sword-animation",
+    "moveset": "ink-clone-sword-moveset",
+    "stats": "ink-clone-sword-stats",
+    "effects": "ink-clone-sword-effects",
+    "audio": "default-audio",
+    "ai": "ink-clone-sword-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#15151b",
+    "colourBack": "#0b0b10",
+    "outline": "#030303",
+    "limbWidthM": 0.075,
+    "outlineWidthM": 0.035,
+    "scale": 0.9
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "staggersTargets": false,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": false,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": true
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Practice only."
+  },
+  "abilityKit": null
+}

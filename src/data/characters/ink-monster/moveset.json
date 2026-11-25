@@ -1,0 +1,61 @@
+{
+  "id": "ink-monster-moveset",
+  "starters": {
+    "tap": "monster-claw",
+    "heavy": "monster-bite"
+  },
+  "moves": [
+    {
+      "id": "monster-claw",
+      "displayName": "Heavy claw swipe",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.7,
+      "activeS": 0.14,
+      "recoveryS": 0.8,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 2.3,
+        "radiusM": 0.9
+      },
+      "damage": 56,
+      "strength": 900,
+      "knockbackMps": 6,
+      "lungeMps": 0.6,
+      "moveFactor": 0.1,
+      "impact": "knuckle-heavy",
+      "shake": 0.35,
+      "zoomPunch": 0.03,
+      "requires": ["canPunch"],
+      "sfx": "hit-ink-monster-claw"
+    },
+    {
+      "id": "monster-bite",
+      "displayName": "Bite",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.55,
+      "activeS": 0.12,
+      "recoveryS": 0.7,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.6,
+        "radiusM": 0.8
+      },
+      "damage": 50,
+      "strength": 800,
+      "knockbackMps": 3,
+      "lungeMps": 0.5,
+      "moveFactor": 0.1,
+      "impact": "knuckle-heavy",
+      "shake": 0.3,
+      "zoomPunch": 0.025,
+      "requires": ["canPunch"],
+      "sfx": "hit-ink-monster-bite"
+    }
+  ]
+}

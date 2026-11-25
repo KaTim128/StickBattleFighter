@@ -1,0 +1,9 @@
+{
+  "id": "ink-clone-sword-animation",
+  "extends": "base-stickman-animation",
+  "states": {
+    "Jab": "inkclone.slash",
+    "Hook": "inkclone.cross-slash",
+    "HeavyPunch": "inkclone.overhead"
+  }
+}

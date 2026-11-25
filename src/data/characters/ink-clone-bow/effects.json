@@ -1,0 +1,18 @@
+{
+  "id": "ink-clone-bow-effects",
+  "punchImpact": "impact-light",
+  "kickImpact": "impact-kick",
+  "heavyImpact": "impact-heavy",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#6d6d78",
+  "shakeScale": 0.6,
+  "hitstopScale": 0.7,
+  "head": "round",
+  "body": "inkclone",
+  "held": "ink-bow"
+}

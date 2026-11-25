@@ -764,4 +764,106 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('bandpass', 1600, 500, 0.9, 0.5, 0.7, 0, { attack: 0.02 }),
     noise('lowpass', 900, 200, 0.7, 0.35, 1, 0.05),
   ],
+
+  // ---------------------------------------------------------------- Inkmaster: brush swishes, wet splashes, drums and roars
+  'hit-ink-brush-sweep': [
+    noise('bandpass', 1500, 600, 0.12, 0.45, 1.6),
+    tone('triangle', 260, 170, 0.12, 0.25),
+    noise('lowpass', 900, 300, 0.1, 0.2, 0.8, 0.03),
+  ],
+  'hit-ink-brush-flick': [noise('bandpass', 2100, 900, 0.08, 0.45, 2), tone('sine', 360, 240, 0.09, 0.3)],
+  'hit-ink-heavy-stroke': [
+    tone('sine', 110, 45, 0.3, 0.7),
+    noise('bandpass', 1300, 350, 0.25, 0.45, 1.2),
+    noise('lowpass', 700, 200, 0.2, 0.3, 0.9, 0.04),
+  ],
+  'hit-ink-plunge': [noise('bandpass', 1500, 500, 0.12, 0.5, 2), tone('sine', 140, 60, 0.16, 0.55)],
+  'ink-gather': [noise('bandpass', 700, 1500, 0.4, 0.14, 1.8, 0, { attack: 0.25 }), tone('sine', 150, 230, 0.4, 0.14)],
+  'ink-slash': [noise('bandpass', 1900, 500, 0.25, 0.5, 1.4), tone('triangle', 340, 120, 0.22, 0.25)],
+  'ink-splash': [
+    noise('bandpass', 1100, 400, 0.22, 0.45, 1),
+    noise('highpass', 3000, undefined, 0.07, 0.2),
+    tone('sine', 200, 90, 0.14, 0.25),
+  ],
+  'ink-serpent': [
+    tone('sawtooth', 180, 120, 0.4, 0.1),
+    noise('bandpass', 2400, 1600, 0.45, 0.2, 3, 0, { flutter: 14 }),
+  ],
+  'ink-bite': [
+    tone('sine', 150, 60, 0.15, 0.55),
+    noise('bandpass', 2600, 900, 0.12, 0.4, 2),
+    tone('triangle', 900, 400, 0.1, 0.18, 0.02),
+  ],
+  'ink-dragon': [
+    tone('sawtooth', 90, 160, 0.7, 0.2),
+    noise('lowpass', 900, 400, 0.8, 0.3, 1, 0, { attack: 0.3 }),
+    tone('triangle', 400, 700, 0.6, 0.1),
+  ],
+  'ink-dragon-roar': [
+    tone('sawtooth', 120, 70, 0.9, 0.35, 0, 0.4),
+    noise('bandpass', 700, 300, 0.9, 0.4, 1.1, 0, { attack: 0.35 }),
+  ],
+  'ink-breath': [
+    noise('bandpass', 1300, 600, 0.55, 0.55, 0.9),
+    tone('sine', 90, 55, 0.5, 0.45),
+    noise('highpass', 3500, undefined, 0.3, 0.12, 1, 0.05),
+  ],
+  'ink-pool': [
+    noise('lowpass', 600, 200, 0.5, 0.4, 1),
+    tone('sine', 110, 60, 0.4, 0.4),
+    noise('bandpass', 1600, 700, 0.25, 0.15, 2, 0.1),
+  ],
+  'ink-cyclone': [
+    noise('bandpass', 900, 2200, 0.7, 0.4, 1.2, 0, { flutter: 9, attack: 0.1 }),
+    tone('sine', 120, 220, 0.6, 0.2),
+  ],
+  'ink-collapse': [
+    tone('sine', 80, 28, 0.7, 0.8),
+    noise('lowpass', 2200, 150, 0.7, 0.7, 0.8),
+    noise('bandpass', 1500, 400, 0.4, 0.3, 1.4, 0.05),
+  ],
+  'masterpiece-draw': [
+    noise('bandpass', 1200, 500, 0.5, 0.3, 1.5),
+    tone('sine', 140, 100, 0.5, 0.3),
+    tone('triangle', 520, 380, 0.4, 0.12, 0.05),
+  ],
+  'masterpiece-awaken': [
+    tone('sine', 70, 28, 1, 0.85),
+    noise('lowpass', 2600, 150, 1, 0.75, 0.8),
+    tone('sawtooth', 110, 60, 0.9, 0.25, 0.1),
+    noise('highpass', 3000, undefined, 0.5, 0.2, 1, 0.1),
+  ],
+  'monster-roar': [
+    tone('sawtooth', 100, 55, 1, 0.38, 0, 0.5),
+    noise('bandpass', 500, 220, 1, 0.4, 1, 0, { attack: 0.3 }),
+  ],
+  'monster-slam': [
+    tone('sine', 70, 26, 0.6, 0.9),
+    noise('lowpass', 1500, 120, 0.55, 0.7, 0.8),
+    noise('bandpass', 400, 150, 0.4, 0.4, 1, 0.03),
+  ],
+  'bow-draw': [noise('bandpass', 1000, 1800, 0.45, 0.15, 3, 0, { attack: 0.3 }), tone('triangle', 200, 340, 0.4, 0.1)],
+  'bow-shot': [
+    noise('highpass', 2500, 1200, 0.1, 0.4),
+    tone('triangle', 520, 220, 0.12, 0.35),
+    noise('bandpass', 1800, 700, 0.18, 0.2, 2, 0.04),
+  ],
+  'hit-ink-clone-slash': [noise('bandpass', 1600, 700, 0.1, 0.4, 2), tone('triangle', 300, 170, 0.1, 0.25)],
+  'hit-ink-clone-overhead': [noise('bandpass', 1300, 450, 0.16, 0.5, 1.6), tone('sine', 130, 55, 0.2, 0.5)],
+  'hit-ink-monster-claw': [
+    tone('sine', 85, 35, 0.35, 0.75),
+    noise('bandpass', 1700, 400, 0.3, 0.5, 1.3),
+    noise('lowpass', 800, 200, 0.25, 0.4, 1, 0.04),
+  ],
+  'hit-ink-monster-bite': [
+    tone('sine', 120, 45, 0.25, 0.7),
+    noise('bandpass', 2800, 800, 0.18, 0.5, 2),
+    tone('triangle', 700, 300, 0.2, 0.25, 0.02),
+  ],
+  'ink-arrow-hit': [noise('bandpass', 2000, 800, 0.1, 0.35, 2), tone('triangle', 420, 200, 0.1, 0.3)],
+  'monster-breath': [
+    noise('bandpass', 900, 400, 0.7, 0.5, 0.9, 0, { attack: 0.2 }),
+    tone('sawtooth', 80, 60, 0.7, 0.25),
+  ],
+  'monster-breath-hit': [noise('bandpass', 1100, 500, 0.15, 0.4, 1.4), tone('sine', 130, 70, 0.12, 0.3)],
 };

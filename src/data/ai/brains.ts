@@ -180,6 +180,29 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a4', 'a1'],
     ],
   },
+  // Inkmaster: a versatile summoner. Holds mid range, slashes ink waves, sends the serpent to hold a runner, draws the dragon and a clone
+  // early and lets them work while he keeps his distance, and draws the Masterpiece once the fight is on.
+  'inkmaster-ai': {
+    style: 'Ink summoner: waves at range, a serpent to hold, a dragon and clone to help, a monster to finish.',
+    preferredRangeM: [3, 6],
+    movement: 'circle',
+    meleeBias: 0.4,
+    heavyBias: 0.25,
+    defence: 'dodge',
+    retreatBelowHp: 0.3,
+    hitAndRunS: 1,
+    tactics: {
+      a1: { role: 'poke', minM: 2, maxM: 9, weight: 1.3 },
+      a2: { role: 'control', minM: 2.5, maxM: 10, weight: 1.1 },
+      a3: { role: 'zone', minM: 3, maxM: 10, weight: 1.2 },
+      a4: { role: 'summon', minM: 0, maxM: 10, weight: 1.3 },
+      ult: { role: 'summon', minM: 2, maxM: 8, weight: 1.2, when: { selfHpBelow: 0.95 } },
+    },
+    combos: [
+      ['a4', 'a1'],
+      ['a2', 'a1'],
+    ],
+  },
   // Geargrind: a gadget fighter. Sets a drone and mines first, plates up when hurt, punches with the rocket fist at range and
   // brawls close with the hydraulic arm; Overdrive when the enemy is within a rush.
   'geargrind-ai': {
@@ -363,6 +386,8 @@ export const GENERIC_DESIGN: BrainDesign = {
  * ability in its slot, keyed by ability id. Anything not listed keeps its slot's tactic.
  */
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
+  // Ink Cyclone: a vortex on a target at mid range; it hurts and gently draws them in, so it suits a target that stays put.
+  inkCyclone: { role: 'zone', minM: 2.5, maxM: 6, weight: 1.1 },
   // Eruption: a leap onto a hurt or helpless target at mid range.
   eruption: { role: 'burst', minM: 1.5, maxM: 6, weight: 1, when: { targetHpBelow: 0.7 } },
   // Bastion Anchor: brace when hurt and someone is on top of him.

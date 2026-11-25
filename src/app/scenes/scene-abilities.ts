@@ -509,6 +509,12 @@ export class SceneAbilities implements AbilityHost {
     }
   }
 
+  nudge(targetId: string, velocity: Vec2): void {
+    const f = this.byName(targetId);
+    if (!f || f.combatant.isKo) return;
+    f.current = { x: (f.current?.x ?? 0) + velocity.x, y: (f.current?.y ?? 0) + velocity.y };
+  }
+
   legTrapState(targetId: string): { heightM: number; trappedS: number } {
     const f = this.byName(targetId);
     if (!f) return { heightM: 0, trappedS: 0 };

@@ -1,0 +1,67 @@
+{
+  "id": "ink-monster",
+  "template": "base-stickman",
+  "displayName": "Ink Monster",
+  "description": "The beast Inkmaster draws in his Masterpiece: horned, white-eyed and made of wet black ink. It tears itself off the page, fights for a short while, and dissolves back into its drawing.",
+  "characterType": "summon",
+  "element": "none",
+  "combatStyle": "beast",
+  "profiles": {
+    "animation": "ink-monster-animation",
+    "moveset": "ink-monster-moveset",
+    "stats": "ink-monster-stats",
+    "effects": "ink-monster-effects",
+    "audio": "default-audio",
+    "ai": "ink-monster-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#0d0d11",
+    "colourBack": "#0b0b10",
+    "outline": "#030303",
+    "limbWidthM": 0.12,
+    "outlineWidthM": 0.035,
+    "scale": 1.9
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "staggersTargets": false,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": false,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": true
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Practice only."
+  },
+  "abilityKit": "ink-monster-kit"
+}

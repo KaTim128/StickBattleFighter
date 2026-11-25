@@ -1,0 +1,146 @@
+{
+  "id": "inkmaster-moveset",
+  "starters": {
+    "tap": "brush-sweep",
+    "air-tap": "brush-plunge",
+    "heavy": "grand-sweep"
+  },
+  "moves": [
+    {
+      "id": "brush-sweep",
+      "displayName": "Brush sweep",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.11,
+      "activeS": 0.08,
+      "recoveryS": 0.24,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.2,
+        "radiusM": 0.5
+      },
+      "damage": 22,
+      "strength": 330,
+      "knockbackMps": 1.8,
+      "lungeMps": 0.6,
+      "moveFactor": 0.35,
+      "impact": "knuckle-light",
+      "shake": 0.2,
+      "zoomPunch": 0.015,
+      "requires": ["canPunch"],
+      "sfx": "hit-ink-brush-sweep",
+      "next": {
+        "tap": "brush-flick"
+      }
+    },
+    {
+      "id": "brush-flick",
+      "displayName": "Brush flick",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.12,
+      "activeS": 0.08,
+      "recoveryS": 0.24,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.25,
+        "radiusM": 0.45
+      },
+      "damage": 26,
+      "strength": 420,
+      "knockbackMps": 2.2,
+      "lungeMps": 0.9,
+      "moveFactor": 0.3,
+      "impact": "knuckle-light",
+      "shake": 0.24,
+      "zoomPunch": 0.015,
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-ink-brush-flick",
+      "next": {
+        "tap": "heavy-stroke"
+      }
+    },
+    {
+      "id": "heavy-stroke",
+      "displayName": "Heavy stroke (finisher)",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.2,
+      "activeS": 0.1,
+      "recoveryS": 0.4,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.3,
+        "radiusM": 0.65
+      },
+      "damage": 48,
+      "strength": 1100,
+      "knockbackMps": 6.5,
+      "lungeMps": 0.8,
+      "moveFactor": 0.2,
+      "impact": "knuckle-heavy",
+      "shake": 0.42,
+      "zoomPunch": 0.035,
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-ink-heavy-stroke"
+    },
+    {
+      "id": "brush-plunge",
+      "displayName": "Plunging brush strike",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.08,
+      "activeS": 0.16,
+      "recoveryS": 0.3,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.6
+      },
+      "damage": 40,
+      "strength": 850,
+      "knockbackMps": 5,
+      "lungeMps": 0,
+      "moveFactor": 0.6,
+      "impact": "knuckle-heavy",
+      "shake": 0.34,
+      "zoomPunch": 0.03,
+      "requires": ["canUseAerialPunches"],
+      "sfx": "hit-ink-plunge"
+    },
+    {
+      "id": "grand-sweep",
+      "displayName": "Grand sweep",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.38,
+      "activeS": 0.1,
+      "recoveryS": 0.4,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.5,
+        "radiusM": 0.6
+      },
+      "damage": 50,
+      "strength": 950,
+      "knockbackMps": 7,
+      "lungeMps": 1.2,
+      "moveFactor": 0.25,
+      "impact": "knuckle-heavy",
+      "shake": 0.42,
+      "zoomPunch": 0.04,
+      "requires": ["canPunch"],
+      "sfx": "hit-ink-heavy-stroke"
+    }
+  ]
+}
