@@ -50,6 +50,18 @@ export class PlayerIntents {
     return this.sources.get(source) ?? null;
   }
 
+  /** Combined movement from every device except `source` (Fire Beam: the touch stick aims instead of walking). */
+  moveExcluding(source: string): Vec2 {
+    let x = 0;
+    let y = 0;
+    for (const [k, v] of this.sources) {
+      if (k === source) continue;
+      x += v.x;
+      y += v.y;
+    }
+    return clampToUnit({ x, y });
+  }
+
   /** Combined movement from all devices, never longer than 1. */
   get move(): Vec2 {
     let x = 0;

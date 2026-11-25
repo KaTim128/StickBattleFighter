@@ -156,7 +156,7 @@ describe('Inferno abilities in the arena (Phase 6)', () => {
     expect(scene.player.beamAiming).toBe(true);
     const start = { x: scene.player.x, y: scene.player.y };
     intents.setMove('touch', { x: 0, y: 1 }); // stick held "down" (world +y)
-    run(0.6);
+    run(1.0); // the beam now turns at 1.8 rad per second;
     const beam = scene.abilities!.world.beams[0]!;
     expect(beam.dir.y).toBeGreaterThan(0.9); // the beam swung to where the stick points
     expect(Math.hypot(scene.player.x - start.x, scene.player.y - start.y)).toBeLessThan(0.05); // he did not walk

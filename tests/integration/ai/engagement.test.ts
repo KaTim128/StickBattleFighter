@@ -19,7 +19,12 @@ function trackIdle(scene: FightArenaScene, f: () => FighterEntity, foe: () => Fi
   let last = { x: f().x, y: f().y };
   let idle = 0;
   let worst = 0;
+  let lastSim = (scene as unknown as { simTimeS: number }).simTimeS;
   return () => {
+    // Hit-stop freezes the whole game for a few frames on every landed blow; frozen frames are not game seconds.
+    const sim = (scene as unknown as { simTimeS: number }).simTimeS;
+    if (sim === lastSim) return worst;
+    lastSim = sim;
     const me = f();
     const them = foe();
     const moved = Math.hypot(me.x - last.x, me.y - last.y) > 0.01;

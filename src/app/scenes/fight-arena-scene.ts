@@ -1212,7 +1212,9 @@ export class FightArenaScene implements ArenaScene {
       !(f.combo.attack && !air) &&
       !f.caster?.cast;
     f.sprinting = this.intents.sprint;
-    this.stepFighter(f, stepS, this.intents.move, jump);
+    // While the player's Fire Beam pours, the touch stick aims it; keys and other devices still walk him.
+    const beaming = this.abilities?.world.beams.some((b) => b.casterId === f.name) ?? false;
+    this.stepFighter(f, stepS, beaming ? this.intents.moveExcluding('touch') : this.intents.move, jump);
   }
 
   /**
