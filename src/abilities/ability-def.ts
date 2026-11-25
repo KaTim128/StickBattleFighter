@@ -898,8 +898,11 @@ export interface MagicLook {
   readonly telegraph?: 'compress' | 'debris' | 'rings' | 'crystal';
   /** A barrier drawn as rippling sound-wave rings instead of hexagonal facets (Reson's Resonance Barrier). */
   readonly barrierStyle?: 'sonic';
-  /** A slow field drawn as a turning clock face (Chronos's Temporal Collapse). */
-  readonly field?: 'clock';
+  /**
+   * A slow field drawn as a turning clock face (Chronos's Temporal Collapse), or a field of rippling air held at the punching fist and
+   * reaching out to the blow's full reach as it lands (Reson's Vibration Punch; drawn from the fist, never a separate object).
+   */
+  readonly field?: 'clock' | 'vibration';
   /** A beam drawn as expanding rings of sound from the caster's mouth (Reson's Sonic Boom). */
   readonly beamStyle?: 'scream';
   /** The caster's mouth opens while the ability runs: a wide roar or a thin high screech (Reson). */

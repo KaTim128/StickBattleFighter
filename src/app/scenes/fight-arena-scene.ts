@@ -81,6 +81,7 @@ import { drawWallDamage } from '../../rendering/wall-damage';
 import { BackWallDepth, type WallRect } from '../../rendering/wall-occlusion';
 import {
   AbilityVfx,
+  type AbilityVfxInput,
   type AuraFx,
   type BurningThing,
   type ChargeFx,
@@ -3621,6 +3622,7 @@ export class FightArenaScene implements ArenaScene {
       this.shake.punch(0.06);
     }
     const charges: ChargeFx[] = [];
+    const fields: NonNullable<AbilityVfxInput['fields']>[number][] = [];
     const auras: AuraFx[] = [];
     const trails: DashTrailFx[] = [];
     const burning: BurningThing[] = this.frameBurning.splice(0, this.frameBurning.length);
@@ -3674,6 +3676,29 @@ export class FightArenaScene implements ArenaScene {
           look: cast.def.look,
           body: cast.def.delivery.type !== 'projectile',
         });
+      }
+      // Vibration Punch: the field of rippling air is held at the punching fist through the wind-up, reaches out as the blow lands, and
+      // fades with the recovery (it is read off the arm every frame, so it follows the animation exactly).
+      if (cast && cast.def.look?.field === 'vibration' && cast.def.delivery.type === 'strike' && f.view && !c.isKo) {
+        const tip = f.view.limbTips().fists[0];
+        if (tip) {
+          const fist = besideOnScreen(f.x, f.y, tip.x, tip.z);
+          const windup = cast.phase === 'windup';
+          const k = f.caster!.phaseProgress;
+          // From the fist to the end of the blow's reach (measured from his feet), never behind the knuckles.
+          const along = (fist.x - f.x) * f.aim.x + (fist.y - f.y) * f.aim.y;
+          fields.push({
+            fist,
+            dirX: f.aim.x,
+            dirY: f.aim.y,
+            lengthM: Math.max(0.4, cast.def.delivery.reachM - along),
+            widthM: cast.def.delivery.radiusM,
+            extend: windup ? 0 : Math.min(1, cast.t / 0.08),
+            charge: windup ? k : 1,
+            alpha: windup ? 0.25 + 0.5 * k : Math.max(0, 1 - Math.max(0, k - 0.35) / 0.65),
+            palette: cast.def.look.palette,
+          });
+        }
       }
       // A fury buff: red motes and steam rise off the body, with a red glow on the floor.
       if (f.buff && !c.isKo) {
@@ -3779,6 +3804,7 @@ export class FightArenaScene implements ArenaScene {
       grenades: world.grenades,
       funnels: world.funnels,
       cages: world.cages,
+      fields,
       ghosts: this.ghostsNow(frameDtS),
       afflicted: this.fighters.flatMap((o) =>
         o.combatant.muteLeftS > 0 || o.combatant.shatterLeftS > 0 || o.combatant.ageLeftS > 0 || this.isFrozen(o)

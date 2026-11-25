@@ -240,6 +240,21 @@ export interface AbilityVfxInput {
     readonly radiusM: number;
     readonly palette: Palette;
   }[];
+  /** Vibration fields held at a fist (Reson's Vibration Punch): anchored to the fist, aimed along the punch, reaching out as it lands. */
+  readonly fields?: readonly {
+    readonly fist: { readonly x: number; readonly y: number; readonly z: number };
+    readonly dirX: number;
+    readonly dirY: number;
+    /** How far in front of the fist the field reaches at full extent, metres. */
+    readonly lengthM: number;
+    readonly widthM: number;
+    /** 0..1: how far the field has reached out (0 in the wind-up, 1 as the blow lands). */
+    readonly extend: number;
+    /** 0..1: how much of the wind-up's gathering has built; and how visible it still is as it fades after the blow. */
+    readonly charge: number;
+    readonly alpha: number;
+    readonly palette: Palette;
+  }[];
   /** Spins in progress (Aerion's Wind Blade): the wings sweep round as blades. */
   readonly whirls?: readonly {
     readonly x: number;
@@ -1553,6 +1568,73 @@ export class AbilityVfx {
         const q = P(lv.x + Math.cos(ang) * r * 0.8, lv.y + Math.sin(ang) * r * 0.8, rise);
         g.circle(q.x, q.y, 0.04).fill({ color: pal.core, alpha: 0.75 * (1 - rise / (lv.heightM + 0.5)) });
       }
+    }
+
+    // Vibration Punch: rippling air held at the fist. Waves of distortion roll away from the knuckles through a cone that widens with
+    // distance, with a quivering shimmer around the fist itself; it only ever exists as part of the arm's own movement.
+    for (const fd of input.fields ?? []) {
+      const pal = fd.palette;
+      const len = Math.max(0.05, fd.lengthM * fd.extend);
+      const px = -fd.dirY;
+      const py = fd.dirX;
+      const at = (d: number, s: number, lift = 0): { x: number; y: number } =>
+        P(
+          fd.fist.x + fd.dirX * d + px * s * (fd.widthM * (0.25 + 0.75 * Math.min(1, d / Math.max(0.3, fd.lengthM)))),
+          fd.fist.y + fd.dirY * d + py * s * (fd.widthM * (0.25 + 0.75 * Math.min(1, d / Math.max(0.3, fd.lengthM)))),
+          fd.fist.z + lift,
+        );
+      if (fd.extend > 0.02) {
+        // The body of the field: a faint, shimmering cone from the knuckles to the far edge.
+        const cone = [at(0, -1), at(len, -1), at(len, 1), at(0, 1)];
+        g.poly(cone.flatMap((q) => [q.x, q.y])).fill({ color: pal.hot, alpha: 0.2 * fd.alpha });
+        g.poly(cone.flatMap((q) => [q.x, q.y])).stroke({ width: 0.035, color: pal.bright, alpha: 0.55 * fd.alpha });
+        // Wave fronts rolling outward, each a wobbling arc; a pale echo is drawn a hair off it, like air bending light.
+        const fronts = 6;
+        for (let i = 0; i < fronts; i++) {
+          const ph = (t * 3.2 + i / fronts) % 1;
+          const d = len * ph;
+          const a = fd.alpha * (1 - ph) * (0.35 + 0.65 * fd.extend);
+          const pts: { x: number; y: number }[] = [];
+          const echo: { x: number; y: number }[] = [];
+          for (let k = 0; k <= 10; k++) {
+            const s = -1 + (k / 10) * 2;
+            const wob = Math.sin(t * 38 + k * 1.7 + i * 2.1) * 0.035;
+            pts.push(at(d, s, wob));
+            echo.push(at(d + 0.05, s, -wob * 0.8));
+          }
+          g.poly(pts.flatMap((q) => [q.x, q.y])).stroke({
+            width: 0.085,
+            color: pal.bright,
+            alpha: Math.min(1, a * 1.3),
+          });
+          g.poly(echo.flatMap((q) => [q.x, q.y])).stroke({ width: 0.04, color: pal.core, alpha: Math.min(1, a) });
+        }
+        // Sound lines streaming along the punch.
+        for (let i = 0; i < 4; i++) {
+          const s = -0.7 + i * 0.47;
+          const a0 = at(len * 0.1, s);
+          const a1 = at(len * (0.55 + 0.4 * ((t * 2 + i * 0.31) % 1)), s, Math.sin(t * 45 + i) * 0.03);
+          g.moveTo(a0.x, a0.y)
+            .lineTo(a1.x, a1.y)
+            .stroke({ width: 0.02, color: pal.core, alpha: 0.35 * fd.alpha, cap: 'round' });
+        }
+      }
+      // The fist itself: a shaking halo of tight rings (stronger the longer the wind-up has built), and a bright core.
+      const c = P(fd.fist.x, fd.fist.y, fd.fist.z);
+      const quiver = Math.sin(t * 60) * 0.012 * (0.4 + fd.charge);
+      for (let i = 0; i < 3; i++) {
+        const ph = (t * 5 + i / 3) % 1;
+        const r = (0.1 + 0.2 * fd.charge + 0.16 * ph) * (1 + 0.5 * fd.extend);
+        g.ellipse(c.x + quiver, c.y, r, r * 0.95).stroke({
+          width: 0.03,
+          color: pal.bright,
+          alpha: (1 - ph) * 0.8 * fd.alpha,
+        });
+      }
+      g.circle(c.x - quiver, c.y, 0.05 + 0.07 * fd.charge).fill({
+        color: pal.core,
+        alpha: (0.45 + 0.4 * fd.charge) * fd.alpha,
+      });
     }
 
     // Perfect Parry: a thin ring round him that closes as the window runs out, with a bright flash of crossed steel.

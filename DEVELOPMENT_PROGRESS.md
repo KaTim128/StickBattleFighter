@@ -1016,3 +1016,7 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 - Files: `src/rendering/colosseum-view.ts`, `src/data/arenas/colosseum.ts`, `src/app/scenes/fight-arena-scene.ts`, `src/data/objects/props.ts`, `src/environment/arena-props.ts`, tests (`colosseum-solid.test.ts`, `prop-fade.test.ts`).
 - Checks: tsc and biome clean; vitest 1327 passing. Screenshots with the physical radii overlaid confirmed the floor now meets the wall.
 - Not verified: a phone, long AI-vs-AI fights, and the look of the cut ends where the tall back wall meets the low near wall (a flat end face is visible).
+
+## 25/11/2026 — Reson Vibration Punch field
+- Files: `src/data/abilities/reson.ts` (reach, `look.field: 'vibration'`), `src/abilities/ability-def.ts`, `src/vfx/ability-vfx.ts` (`fields`), `src/app/scenes/fight-arena-scene.ts`. Full vitest 1328 passing; slow-motion screenshots of the wind-up and release taken.
+- Not verified: a hit on a moving opponent at the new 2.4 m reach in a long fight, or balance by matrix.

@@ -41,3 +41,7 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 
 ## 25/11/2026 — Psion: Telekinetic Toss lift time follows weight
 - The rise before the throw is now `0.3 s + 0.09 s × √mass`, capped at 2.6 s (a chair about 0.6 s, a 160 kg stone block about 1.4 s, the heaviest ruins 2.6 s). Previously every object rose in a flat 0.55 s. Heavier objects still hit harder. Description updated. Provisional values.
+
+## 25/11/2026 — Reson: Vibration Punch field
+- Vibration Punch now shows a field of rippling air held at the punching fist: a quivering halo through the wind-up, then a cone of rolling distortion waves, echoes and sound lines reaching out to the blow's full reach as the fist drives in, fading over the recovery. It is drawn from the arm every frame (never a separate projectile) and the hit is still the same instant strike.
+- Reach 1.9 → 2.4 m (aim range 2 → 2.4 m), so he lands it from a little further than normal melee. Damage (117), cooldown (7 s), stamina (28) and knockback are unchanged.
