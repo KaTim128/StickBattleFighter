@@ -7,8 +7,8 @@ import { AMBIENCES, AMBIENT_EVENTS, CROWD_EVENTS, MENU_AMBIENCE_ID } from '../..
 
 const ARENAS = [OFFICE, TRAINING_YARD];
 
-it('the Colosseum has no ambience, only its battle music (owner, 25/11/2026)', () => {
-  expect(COLOSSEUM.ambience).toBeUndefined();
+it('the Colosseum uses the same quiet ambience as the Office, plus its battle music (owner, 25/11/2026)', () => {
+  expect(COLOSSEUM.ambience).toBe(OFFICE.ambience);
   expect(COLOSSEUM.music).toBeDefined();
 });
 

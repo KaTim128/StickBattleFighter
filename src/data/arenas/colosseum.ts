@@ -203,5 +203,7 @@ export const COLOSSEUM: ArenaLayout = {
   floorZones: [floor()],
   interiorWalls: ring(),
   round: { cx: C, cy: C, radiusM: COLOSSEUM_RADIUS_M },
+  // The same quiet empty-room ambience as the Office (owner, 25/11/2026: the crowd soundscape was too loud).
+  ambience: 'office-empty',
   music: 'japanese-boss',
 };

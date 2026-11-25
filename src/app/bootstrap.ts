@@ -370,7 +370,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   };
   const arenaAmbience = scene instanceof FightArenaScene && !automated ? scene.arena.ambience : undefined;
   const ambienceId = params.get('ambience') ?? arenaAmbience;
-  music.play(ambienceId ? (AMBIENCES[ambienceId] ?? null) : null);
+  const ambienceDef = ambienceId ? (AMBIENCES[ambienceId] ?? null) : null;
+  music.play(ambienceDef);
   // Battle music (owner, 12/11/2026): the map's own track loops from FIGHT! for the whole fight.
   // `?music=<id>` picks any, `?music=none` turns it off; automated browsers skip it like the ambience.
   const musicId =
@@ -395,6 +396,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   let battleOver = false;
   let reportMusic: (() => void) | null = null;
   const updateMenuMusic = (): void => {
+    // The arena's ambience belongs to the fight: any menu over it (pause, main menu, tournament screens) silences it, and it returns with the fight.
+    music.play(menusUp() ? null : ambienceDef);
     if (automated && !params.has('music')) return;
     const want = musicFor({ menusUp: menusUp(), fightStarted, battleOver });
     // The battle music fades slowly after the fight; otherwise tracks give way quickly. 'none' (the intro) is silence.
