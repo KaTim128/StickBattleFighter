@@ -47,6 +47,30 @@ export function drawMagixHead(g: Graphics, s: Skel, st: MagixDrawState): void {
     g.circle(mx + side * r * 0.62, my - r * 0.1, r * 0.07).fill(BLACK);
   }
   g.ellipse(mx, my - r * 0.02, r * 0.14, r * 0.14).fill(BLACK);
+  // Texture: fine hair strands combed out along each lobe (lighter lines that fan out from the centre), a soft sheen on the top edge,
+  // and a curl at each tip drawn as a small spiral.
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 3; i++) {
+      const k = i / 2;
+      const y0 = my - r * 0.06 + k * r * 0.14;
+      g.moveTo(mx + side * r * 0.08, y0)
+        .quadraticCurveTo(
+          mx + side * r * 0.32,
+          y0 - r * 0.1 + k * r * 0.06,
+          mx + side * r * (0.6 - k * 0.08),
+          y0 + r * (0.0 + k * 0.06),
+        )
+        .stroke({ width: 0.005, color: 0x4a4a58, alpha: 0.9, cap: 'round' });
+    }
+    g.moveTo(mx + side * r * 0.1, my - r * 0.17)
+      .quadraticCurveTo(mx + side * r * 0.36, my - r * 0.27, mx + side * r * 0.6, my - r * 0.12)
+      .stroke({ width: 0.008, color: 0x6a6a78, alpha: 0.8, cap: 'round' });
+    const tx = mx + side * r * 0.68;
+    g.moveTo(tx - side * r * 0.08, my + r * 0.04)
+      .quadraticCurveTo(tx + side * r * 0.08, my + r * 0.02, tx + side * r * 0.04, my - r * 0.08)
+      .quadraticCurveTo(tx - side * r * 0.02, my - r * 0.12, tx - side * r * 0.05, my - r * 0.04)
+      .stroke({ width: 0.005, color: 0x6a6a78, alpha: 0.9, cap: 'round' });
+  }
   // The hat: a wide brim, then a tall crown that tips a little with his movement.
   const tip = Math.sin(st.t * 2.2) * 0.012;
   const brimY = h.y - r * 0.78;
