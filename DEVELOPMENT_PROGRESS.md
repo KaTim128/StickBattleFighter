@@ -1045,3 +1045,4 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 
 ## 25/11/2026 — Inferno Fire Beam: walk while it pours, slower aim (owner)
 - `inferno.ts`: moveFactor 0 to 0.4, turnRadPerS 3.5 to 1.8, `scream: true` (only the first tick flinches, so the target keeps walking, as with Sonic Boom). Test timing adjusted. Not verified in a browser or on a phone (the touch stick now both aims and moves).
+- Later the same day: no beam tick stuns at all, the first included (Fire Beam and Sonic Boom; Sonic Boom still pushes). Closer to the flame still means more damage (distance falloff).

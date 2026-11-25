@@ -46,7 +46,7 @@ describe('Reson kit', () => {
       expect(a.payload.sonic, a.id).toBe(true);
   });
 
-  it('Sonic Boom (RS1) is a wide, steerable 3 second scream that never pins what it hits, interrupting it once only', () => {
+  it('Sonic Boom (RS1) is a wide, steerable 3 second scream that never pins or stuns what it hits (owner, 25/11/2026)', () => {
     const a = arena([{ x: 3, y: 0 }]);
     const pins: number[] = [];
     const flinch: boolean[] = [];
@@ -66,8 +66,7 @@ describe('Reson kit', () => {
     expect(pins).toEqual([]); // nothing is immobilised
     expect(d.widthM).toBeGreaterThanOrEqual(4.5);
     expect(d.turnRadPerS).toBeGreaterThan(0); // steerable like Fire Beam
-    expect(flinch[0]).toBe(true);
-    expect(flinch.slice(1).every((x) => !x)).toBe(true);
+    expect(flinch.every((x) => !x)).toBe(true); // no tick, not even the first, stuns or interrupts
     expect(a.world.beams).toHaveLength(0); // it ends on time
   });
 

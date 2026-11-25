@@ -132,7 +132,7 @@ export const INFERNO_KIT: AbilityKit = {
       tickS: 0.15,
       // Owner, 25/11/2026: slower aiming while it pours (was 3.5 rad/s).
       turnRadPerS: 1.8,
-      // Like Reson's Sonic Boom: only the first tick flinches, so whoever it hits can keep walking.
+      // Like Reson's Sonic Boom: no tick stuns or interrupts, so whoever it hits keeps walking (walking closer only means more damage).
       scream: true,
       ramp: { afterS: 1, startFactor: 1.1, perS: 0.2, maxFactor: 1.3 },
     },

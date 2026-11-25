@@ -1632,8 +1632,8 @@ export class AbilityWorld {
         const at = payloadAt(b.def.payload, dist, d.rangeM + BEAM_MUZZLE_M);
         const k = beamRampFactor(d.ramp, contactS);
         const scaled = k === 1 ? at : { ...at, damage: Math.round(at.damage * k) };
-        // A scream flinches a target only when it first connects; later ticks never interrupt again.
-        const payload = d.scream && was.includes(f.id) ? { ...scaled, noFlinch: true } : scaled;
+        // A scream never stuns or interrupts anyone (owner, 25/11/2026): Fire Beam and Sonic Boom only hurt (and Sonic Boom pushes).
+        const payload = d.scream ? { ...scaled, noFlinch: true } : scaled;
         if (!this.hit(host, b.casterId, f.id, payload, b.dir, b.def.look?.hitFlash)) {
           b.contact.delete(f.id);
           continue;
