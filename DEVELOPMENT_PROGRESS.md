@@ -13,6 +13,11 @@ Persistent record of project state. Update after every meaningful piece of work 
 | Runnable game | `npm run dev`: **training yard**, where a jointed greybox stickman walks and hops freely (keyboard or touch) with a follow camera. `?scene=engine-check` opens the physics test. No combat yet. |
 | Installed dependencies | pixi.js 8.22, @dimforge/rapier2d 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, vite-plugin-wasm 3.6, Vitest 5.1, Playwright 1.63.0, Biome 2.6 |
 
+## Batch 7: arenas and environment (25/11/2026, TD-160)
+- Added `src/data/arenas/house-fight.ts`, the admin Game Modes card and arena, `furnitureHides` in the occlusion fader, the Tutorial Zone rename and Office default, the curved-wall end fix.
+- Tests: unit (arena order, furniture occlusion), integration (House Fight 40 s AI fight inside the arena), full suite 1312 passed, menu, front-end and Hide and Seek e2e green.
+- Known: the occlusion fix and curved wall are checked by unit tests and one overview screenshot, not close-up screenshots from several camera positions; house furniture uses office prop shapes.
+
 ## Inkmaster (25/11/2026, TD-159)
 - Added the fighter, five abilities, The Masterpiece, three summons, animations, sounds, select stance, icons and AI (design sheet `docs/design/fighters/inkmaster.md`).
 - Verified: typecheck, lint, unit and integration tests; browser screenshots of every ability, the scroll drawing and the monster. Matchup probe against the 12 other fighters: see the changelog row and the report.

@@ -1,8 +1,8 @@
 # Phase handoff
 
-## Latest (25/11/2026): Batch 6 (Tournament) implemented; Batches 0–5 pushed
+## Latest (25/11/2026): Batch 7 (arenas, occlusion, House Fight) implemented; Batches 0–6 pushed; Inkmaster added
 
-- T1–T4 done and build-verified (see `REQUIREMENTS_TRACEABILITY.md`, TD-158). Next: Batch 7 (arena order and Tutorial Zone rename, occlusion fix, curved wall, House Fight mode) after the owner's go-ahead.
+- T1–T4 done and build-verified (see `REQUIREMENTS_TRACEABILITY.md`, TD-158). Next: Batch 8 (select-screen performance, Open Zone character switch) after the owner's go-ahead.
 
 ## Current handoff (24/11/2026): planning complete, implementation not started
 

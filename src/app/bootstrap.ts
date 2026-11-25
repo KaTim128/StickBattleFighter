@@ -21,6 +21,7 @@ import { SceneManager } from '../core/scene';
 import { DEFAULT_DIFFICULTY, DIFFICULTIES, difficultyFor } from '../data/ai/difficulty';
 import type { ArenaLayout } from '../data/arenas/arena-layout';
 import { GREYBOX_COLOURS } from '../data/arenas/greybox-arena';
+import { HOUSE_FIGHT } from '../data/arenas/house-fight';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { AMBIENCES } from '../data/audio/ambiences';
@@ -187,10 +188,14 @@ function castFromParams(params: URLSearchParams): { player?: string; opponent?: 
 /** A blow this big gets a reaction from a crowd. */
 const HEAVY_HIT_FOR_CROWD = 100;
 
-/** Arenas on the main menu (the training yard is the Colosseum floor until it has its own arena). */
+/**
+ * Arenas on the main menu (owner, 24/11/2026): the Office is first and the default; the training yard is the Tutorial Zone. The real
+ * Colosseum is built later, must be ROUND, and then goes first, before the Office and the Tutorial Zone.
+ */
 const MENU_ARENAS = [
   { id: 'office', name: 'Office' },
-  { id: 'training-yard', name: 'Colosseum' },
+  { id: 'training-yard', name: 'Tutorial Zone' },
+  { id: 'house', name: 'House of Nightmare (admin)', adminOnly: true },
 ] as const;
 
 /** Playable fighters for the main menu: every built-in fighter made from a template. */
@@ -297,7 +302,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       ? new EngineCheckScene(app.stage, textures, viewport, optionalTextures)
       : new FightArenaScene(
           withStarts(
-            sceneName === 'training-yard' ? TRAINING_YARD : OFFICE,
+            sceneName === 'training-yard' ? TRAINING_YARD : sceneName === 'house' ? HOUSE_FIGHT : OFFICE,
             params.get('playerAt'),
             params.get('dummyAt'),
           ),

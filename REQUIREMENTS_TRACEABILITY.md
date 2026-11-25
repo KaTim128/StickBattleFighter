@@ -26,10 +26,10 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | B1–B3 | Full-roster matrix, framework doc and tests, rebalance incl. Necro/Titan/Shroud | P2, MS2, MS12 | 5 | harness.ts, stats JSON, kits | matrix report | build-verified | docs/qa/balance-matrix-25-11-2026-final.md (12 fighters, Hard, 5 seeds per side, 660 fights: all 35-63 %), BALANCE_FRAMEWORK.md, balance-framework.test.ts, FIGHTER_SYSTEM_CHANGELOG.md; other difficulties and arenas not measured |
 | T1–T3 | Regulation, overtime, deterministic fallback, Skip Battle, integrity | MS1 | 6 | tournament-rules.ts, match-score.ts, fight-arena-scene.ts, tournament-flow.ts, headless-fight.ts | unit + e2e | build-verified | tests/unit/modes/match-score.test.ts, tests/unit/modes/tournament.test.ts, tests/integration/scenes/tournament-overtime.test.ts; browser check pending |
 | T4 | Spectate from start | P5 | 6 | front-end.ts, tournament.ts, tournament-page.ts | e2e | build-verified | e2e spec 'spectate a 4-fighter tournament'; browser check pending |
-| AR1 | Tutorial Zone rename, Office default, round Colosseum rule | P7 | 7 | bootstrap.ts, front-end.ts | unit | todo | |
-| E1 | Obstruction-based furniture fade | MS7.1 | 7 | occlusion-fader.ts | unit + screenshots | todo | |
-| E2 | Continuous curved wall | MS7.2 | 7 | office.ts, arena-view.ts | screenshots | todo | |
-| H1–H5 | House Fight (ground floor), admin toggle and picks, destruction, Hide and Seek intact | MS6 | 7 | new house-arena.ts, main-menu.ts | e2e | todo | |
+| AR1 | Tutorial Zone rename, Office default, round Colosseum rule | P7 | 7 | bootstrap.ts, front-end.ts | unit | build-verified | tests/unit/rendering/arena-order.test.ts; browser check pending |
+| E1 | Obstruction-based furniture fade | MS7.1 | 7 | occlusion-fader.ts | unit + screenshots | build-verified | tests/unit/rendering/occlusion-fader.test.ts (furnitureHides); browser check pending |
+| E2 | Continuous curved wall | MS7.2 | 7 | office.ts, arena-view.ts | screenshots | build-verified | Overview screenshot: the arc runs into the walls; close-up pending |
+| H1–H5 | House Fight (ground floor), admin toggle and picks, destruction, Hide and Seek intact | MS6 | 7 | new house-arena.ts, main-menu.ts | e2e | build-verified | tests/integration/scenes/house-fight.test.ts; screenshot of the arena; Hide and Seek e2e still green |
 | S1 | Select screen performance (measured) | MS4 | 8 | portraits.ts, front-end.ts, bootstrap.ts | timings | todo | |
 | O1 | Open Zone in-game character switch | MS5 | 8 | fight-arena-scene.ts, settings-panel.ts | e2e | todo | |
 | PX1–PX7 | Pixel pipeline, environment, lighting, fighters, VFX, UI, mandate | P10 | 9 | renderer.ts, new pixel-pipeline.ts, index.html | screenshots + tests | todo | |

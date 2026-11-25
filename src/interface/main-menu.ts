@@ -21,6 +21,8 @@ export interface MenuFighter {
 export interface MenuArena {
   readonly id: string;
   readonly name: string;
+  /** Listed only for the admin (House of Nightmare Fight mode, owner 24/11/2026). */
+  readonly adminOnly?: boolean;
 }
 
 export interface MenuChoice {

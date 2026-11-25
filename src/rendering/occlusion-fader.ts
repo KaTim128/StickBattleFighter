@@ -22,6 +22,15 @@ export interface FadeTarget {
    * the back walls stay solid when the player walks up to them).
    */
   readonly rect?: { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
+  /**
+   * A piece of furniture (not a wall): its footprint in world metres and its top height. It only fades when it stands in front of the
+   * viewer along the camera's line of sight (south-east of them) and the viewer is not standing on it (owner/master spec 7.1: a
+   * fighter on or beside a bookshelf never fades it).
+   */
+  readonly furniture?: {
+    readonly rect: { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
+    readonly topM: number;
+  };
   /** Its depth key (YSortLayer zIndex = feet y): larger draws in front. */
   depth(): number;
 }
@@ -31,6 +40,8 @@ export interface Viewer {
   depth(): number;
   /** Where the viewer stands in the world, metres (lets walls behind it stay solid). */
   readonly at?: { readonly x: number; readonly y: number };
+  /** Height of the floor it stands on (on top of a bookshelf, say), metres. */
+  readonly floorM?: number;
 }
 
 interface Box {
@@ -69,8 +80,13 @@ export class OcclusionFader {
     this.forced = nodes;
   }
 
-  add(node: Container, occludedAlpha?: number, rect?: FadeTarget['rect']): void {
-    this.targets.push({ node, depth: () => node.zIndex, ...(rect ? { rect } : {}) });
+  add(node: Container, occludedAlpha?: number, rect?: FadeTarget['rect'], furniture?: FadeTarget['furniture']): void {
+    this.targets.push({
+      node,
+      depth: () => node.zIndex,
+      ...(rect ? { rect } : {}),
+      ...(furniture ? { furniture } : {}),
+    });
     if (occludedAlpha !== undefined) this.own.set(node, occludedAlpha);
   }
 
@@ -97,6 +113,7 @@ export class OcclusionFader {
         box: grown(inset(placed(v.node, v.node.getLocalBounds()), 0.08), this.options.grow ?? 0),
         depth: v.depth(),
         at: v.at,
+        floorM: v.floorM ?? 0,
       }));
     const step = dtS / FADE_S;
     for (const t of this.targets) {
@@ -115,6 +132,7 @@ export class OcclusionFader {
         for (const v of boxes) {
           // A wall behind the viewer (north or west of it) cannot hide it, whatever its depth key says.
           if (t.rect && v.at && isBehindViewer(t.rect, v.at)) continue;
+          if (t.furniture && v.at && !furnitureHides(t.furniture, v.at, v.floorM)) continue;
           if (depth > v.depth && overlaps(b, v.box)) {
             blocking = true;
             break;
@@ -127,6 +145,23 @@ export class OcclusionFader {
       node.alpha = a < goal ? Math.min(goal, a + step) : Math.max(goal, a - step);
     }
   }
+}
+
+/**
+ * Can this piece of furniture hide a person at `at` standing `floorM` above the floor? Only if it is on the camera's side of them (the
+ * camera looks along (+1, +1) in world metres, so the piece must cross the line from the person toward the south-east) and they are not
+ * standing on top of it. Beside or behind it, or on it, never.
+ */
+export function furnitureHides(
+  f: NonNullable<FadeTarget['furniture']>,
+  at: { readonly x: number; readonly y: number },
+  floorM: number,
+): boolean {
+  if (floorM >= f.topM - 0.15) return false;
+  const R = 0.45; // about a body's half width
+  const lo = Math.max(f.rect.x0 - R - at.x, f.rect.y0 - R - at.y);
+  const hi = Math.min(f.rect.x1 + R - at.x, f.rect.y1 + R - at.y);
+  return hi > 0.05 && hi > lo;
 }
 
 /** A node's local box moved to where it stands in its parent (scale and pivot included; rotation ignored). */

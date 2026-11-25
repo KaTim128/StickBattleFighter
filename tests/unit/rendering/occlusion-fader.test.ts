@@ -83,3 +83,19 @@ describe('forced fading', () => {
     expect(wall.alpha).toBe(1);
   });
 });
+
+describe('furniture occlusion (master spec 7.1)', () => {
+  const shelf = { rect: { x0: 10, y0: 10, x1: 12, y1: 10.5 }, topM: 2 };
+  it('fades only when the shelf stands in front of the fighter along the camera line', async () => {
+    const { furnitureHides } = await import('../../../src/rendering/occlusion-fader');
+    expect(furnitureHides(shelf, { x: 9.5, y: 9 }, 0)).toBe(true); // north-west of it: the shelf is between him and the camera
+    expect(furnitureHides(shelf, { x: 11, y: 12 }, 0)).toBe(false); // in front of the shelf, south of it: it is behind him
+    expect(furnitureHides(shelf, { x: 14, y: 10.2 }, 0)).toBe(false); // beside it, to the east
+    expect(furnitureHides(shelf, { x: 6, y: 10.2 }, 0)).toBe(false); // beside it, to the west
+  });
+  it('never fades when the fighter stands on top of it', async () => {
+    const { furnitureHides } = await import('../../../src/rendering/occlusion-fader');
+    expect(furnitureHides(shelf, { x: 11, y: 10.2 }, 2)).toBe(false);
+    expect(furnitureHides(shelf, { x: 10.5, y: 9.6 }, 0)).toBe(true);
+  });
+});

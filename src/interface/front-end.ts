@@ -146,10 +146,10 @@ export class FrontEnd {
     parent: HTMLElement,
     private readonly o: FrontEndOptions,
   ) {
-    // Open Zone and Tournament start in the Colosseum on Easy (owner, 21/11/2026).
+    // Open Zone and Tournament start in the Office (the default arena, owner 24/11/2026) on Easy (owner, 21/11/2026).
     this.choice = {
       ...o.initial,
-      arena: o.arenas.find((a) => a.name === 'Colosseum')?.id ?? o.initial.arena,
+      arena: o.arenas[0]?.id ?? o.initial.arena,
       difficulty: o.difficulties.find((d) => d.id === 'easy')?.id ?? o.initial.difficulty,
       opponent: o.opponents[0]?.id ?? '',
       spectate: false,
@@ -378,6 +378,11 @@ export class FrontEnd {
     requestAnimationFrame(() => input.focus());
   }
 
+  /** The arenas on offer: the admin-only ones (House of Nightmare Fight) only for the admin. */
+  private arenaList(): readonly MenuArena[] {
+    return this.o.arenas.filter((a) => !a.adminOnly || this.o.isAdmin());
+  }
+
   private buildModes(sec: HTMLElement): void {
     sec.append(el('h2', 'fe-h fe-screen-title', 'GAME MODES'));
     const list = el('div', 'fe-mode-list');
@@ -413,6 +418,23 @@ export class FrontEnd {
       false,
       () => this.o.startHideSeek(),
     );
+    // Admin only (owner, 24/11/2026): the same house as a fighting arena: pick a fighter and an opponent as in the Open Zone.
+    if (this.o.isAdmin()) {
+      const fight = button('fe-mode fe-mode-fight', '', () => {
+        this.choice.arena = 'house';
+        this.openSelect('practice');
+      });
+      fight.dataset.gm = 'house-fight';
+      fight.append(
+        el('strong', 'fe-mode-name', 'House of Nightmare: Fight (admin)'),
+        el(
+          'span',
+          'fe-mode-text',
+          'Fight an AI fighter on the house ground floor. The stairs are closed; the furniture breaks.',
+        ),
+      );
+      list.append(fight);
+    }
     sec.append(list);
     const row = el('div', 'fe-row');
     row.append(button('fe-back', 'Back', () => this.show('title')));
@@ -484,7 +506,7 @@ export class FrontEnd {
       dropdownField(
         'Arena',
         'arena',
-        this.o.arenas,
+        this.arenaList(),
         () => this.choice.arena,
         (v) => {
           this.choice.arena = v;
@@ -754,7 +776,7 @@ export class FrontEnd {
       dropdownField(
         'Arena',
         'arena',
-        this.o.arenas.map((a) => ({ id: a.id, name: a.name })),
+        this.arenaList().map((a) => ({ id: a.id, name: a.name })),
         () => this.choice.arena,
         (v) => {
           this.choice.arena = v;

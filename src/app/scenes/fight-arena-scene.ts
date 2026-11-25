@@ -906,6 +906,13 @@ export class FightArenaScene implements ArenaScene {
         const rect = { x0: p.x - w / 2, y0: p.y - d / 2, x1: p.x + w / 2, y1: p.y + d / 2 };
         this.occlusion.add(node, undefined, rect);
         this.wallPieces.push({ node, rect });
+      } else if (p) {
+        const { w, d, h } = footprint(p);
+        // Furniture fades only when it really stands in front of a fighter along the camera's line, never when a fighter is on or beside it.
+        this.occlusion.add(node, undefined, undefined, {
+          rect: { x0: p.x - w / 2, y0: p.y - d / 2, x1: p.x + w / 2, y1: p.y + d / 2 },
+          topM: h,
+        });
       } else this.occlusion.add(node);
     }
     this.vfx = new AbilityVfx();
@@ -3154,7 +3161,16 @@ export class FightArenaScene implements ArenaScene {
     this.view.actors.update();
     // Keep both fighters visible: fade whatever stands in front of them.
     const viewers = this.fighters.flatMap((f) =>
-      f.view ? [{ node: f.view.root, depth: () => f.view?.root.zIndex ?? 0, at: { x: f.x, y: f.y } }] : [],
+      f.view
+        ? [
+            {
+              node: f.view.root,
+              depth: () => f.view?.root.zIndex ?? 0,
+              at: { x: f.x, y: f.y },
+              floorM: f.hop.floorM ?? 0,
+            },
+          ]
+        : [],
     );
     this.occlusion?.update(viewers, frameDtS);
 

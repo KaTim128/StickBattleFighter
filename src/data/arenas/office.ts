@@ -51,8 +51,11 @@ const ARC_APEX_X = 26.2;
 const ARC_SAG_M = ARC_APEX_X - ARC_END_X;
 const ARC_R = (MID_Y * MID_Y + ARC_SAG_M * ARC_SAG_M) / (2 * ARC_SAG_M);
 const ARC_CX = ARC_APEX_X - ARC_R;
-/** Angle (from the centre, 0 = the apex) where the arc meets the top and bottom walls, plus a little overrun. */
-const ARC_HALF_ANGLE = Math.asin(MID_Y / ARC_R) + 0.02;
+/**
+ * Angle (from the centre, 0 = the apex) where the arc ends: buried half a wall thickness into the top and bottom walls, so its
+ * face and top run on into theirs with no gap and no overrun showing (master spec 7.2).
+ */
+const ARC_HALF_ANGLE = Math.asin(Math.min(0.999, (MID_Y + WALL_THICK_M / 2) / ARC_R));
 const DOOR_HALF_ANGLE = DOOR_LEN_M / 2 / ARC_R;
 /** Door frame posts between the glass leaf and the wall ends (along the wall), metres. */
 const DOOR_POST_M = 0.14;

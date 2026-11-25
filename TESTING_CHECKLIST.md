@@ -760,3 +760,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Ink Cyclone (fifth ability): a gentle pull, repeated damage, a collapsing explosion; walking out frees you.
 - [ ] The Masterpiece: the light dims, a scroll appears, the monster is drawn stroke by stroke, tears out of the scroll, fights up to 16 s and dissolves.
 - [ ] Everything he drew disappears when he is knocked out or the battle resets.
+
+## Arenas and House Fight (25/11/2026)
+- [ ] The arena list shows Office first (the default) and Tutorial Zone second; no arena is called Colosseum.
+- [ ] A fighter standing on or beside a bookshelf or cabinet does not make it transparent; one standing behind it (north-west) does.
+- [ ] The curved office wall meets the top and bottom walls with no gap or poke-through, from any camera position.
+- [ ] Admin: Game Modes shows "House of Nightmare: Fight"; it starts a fight on the house ground floor; the stairs are closed; furniture breaks; chairs can be thrown. Non-admins do not see it. Hide and Seek is unchanged.
