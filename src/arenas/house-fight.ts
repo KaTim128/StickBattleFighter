@@ -93,6 +93,7 @@ function doors(): DoorSpec[] {
     x1: d.rect.x1 - OX,
     y1: d.rect.y1 - OY,
     breakStrength: 700,
+    wooden: true, // the nightmare house has solid wooden doors (owner, 25/11/2026)
   }));
 }
 

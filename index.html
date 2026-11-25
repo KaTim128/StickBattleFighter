@@ -1107,6 +1107,66 @@
       .settings-actions button:active, .settings-reset:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.55); }
       .settings-actions .settings-leave { grid-column: 1 / -1; background: linear-gradient(#7a2a24, #4a1612); border-color: var(--ui-danger); }
       .settings-actions button[hidden] { display: none; }
+      /* ===== Tournament draw (owner, 25/11/2026, after the tournament-draw reference): a premium symmetrical bracket. ===== */
+      .tournament {
+        background:
+          radial-gradient(ellipse 38% 70% at 0% 72%, rgba(150, 80, 255, 0.42), transparent 70%),
+          radial-gradient(ellipse 38% 70% at 100% 72%, rgba(255, 120, 40, 0.42), transparent 70%),
+          radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 70%),
+          repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 46px),
+          linear-gradient(180deg, #14101c 0%, #0b0b10 55%, #120b0a 100%);
+      }
+      .tournament::before, .tournament::after { content: ''; position: absolute; top: 20%; bottom: 0; width: 22%; pointer-events: none; opacity: 0.55; animation: tn-glow 4.6s ease-in-out infinite; }
+      .tournament::before { left: 0; background: radial-gradient(ellipse at 0% 100%, rgba(170, 100, 255, 0.55), transparent 65%); }
+      .tournament::after { right: 0; background: radial-gradient(ellipse at 100% 100%, rgba(255, 130, 50, 0.55), transparent 65%); animation-delay: -2.3s; }
+      @keyframes tn-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.75; } }
+      .tournament > * { position: relative; z-index: 1; }
+      .tn-title { background: linear-gradient(180deg, #fff 10%, #c9ced8 55%, #8b93a3 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.7)) drop-shadow(0 0 14px rgba(255, 170, 90, 0.35)); font-style: italic; letter-spacing: 0.2em; }
+      .tn-stage { color: var(--ui-gold); opacity: 1; }
+      .tn-bracket.tn-sym { position: relative; display: block; flex: none; overflow: visible; padding: 0; gap: 0; }
+      .tn-lines { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+      .tn-line { fill: none; stroke-width: 3; stroke-linejoin: round; opacity: 0.55; }
+      .tn-line-L { stroke: #8f5cff; } .tn-line-R { stroke: #ff8a3d; } .tn-line-C { stroke: #ffcf6b; }
+      .tn-line.won { opacity: 1; stroke-width: 4; filter: drop-shadow(0 0 5px currentColor); }
+      .tn-line-L.won { filter: drop-shadow(0 0 6px #8f5cff); } .tn-line-R.won { filter: drop-shadow(0 0 6px #ff8a3d); } .tn-line-C.won { filter: drop-shadow(0 0 6px #ffcf6b); }
+      .tn-line.flow { stroke-dasharray: 14 10; animation: tn-flow 1.1s linear 3; }
+      @keyframes tn-flow { to { stroke-dashoffset: -48; } }
+      .tn-sym .tn-round-name { position: absolute; margin: 0; text-align: center; font: 800 12px var(--ui-font); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ui-text-dim); opacity: 1; }
+      .tn-sym .tn-round-name.current { color: #fff; text-shadow: 0 0 12px rgba(255, 170, 90, 0.8); }
+      .tn-sym .tn-round-C { color: var(--ui-gold); font-size: 14px; }
+      .tn-sym .tn-match { position: absolute; display: block; box-sizing: border-box; border-radius: 10px; overflow: visible; background: linear-gradient(180deg, #232a38, #12161e); border: 2px solid #4a4f5c; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12); transition: box-shadow 0.2s linear, border-color 0.2s linear; }
+      .tn-sym .tn-side-L { border-color: #6a4bb0; } .tn-sym .tn-side-R { border-color: #b86a34; }
+      .tn-sym .tn-final { border-color: #e0b341; box-shadow: 0 0 26px rgba(255, 200, 90, 0.35), 0 8px 20px rgba(0, 0, 0, 0.6); }
+      .tn-sym .tn-match.arrive { box-shadow: 0 0 0 2px #fff, 0 0 28px rgba(255, 220, 140, 0.9); }
+      .tn-sym .tn-entry { display: flex; align-items: center; gap: 8px; padding: 4px 8px; box-sizing: border-box; font: 800 12px var(--ui-font); letter-spacing: 0.02em; position: relative; }
+      .tn-sym .tn-entry + .tn-entry { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+      .tn-sym .tn-name { flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.15; }
+      .tn-sym .tn-face { width: 42px; height: 42px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.28); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); background: radial-gradient(circle at 50% 35%, #3a4357, #171b24); }
+      .tn-sym .tn-face-empty { border-style: dashed; opacity: 0.5; display: grid; place-items: center; color: var(--ui-gold); font-size: 20px; }
+      .tn-sym .tn-entry.empty { opacity: 0.5; font-style: italic; font-weight: 600; }
+      .tn-sym .tn-entry.winner { background: linear-gradient(90deg, rgba(120, 230, 140, 0.2), transparent 80%); color: #fff; }
+      .tn-sym .tn-entry.winner .tn-face { border-color: #7ee08c; box-shadow: 0 0 10px rgba(126, 224, 140, 0.7); }
+      .tn-sym .tn-entry.player { box-shadow: inset 4px 0 0 #ff8a3d; color: #ffd9a8; }
+      .tn-sym .tn-entry.loser { color: #8d93a0; }
+      .tn-sym .tn-entry.loser .tn-face { filter: grayscale(1) brightness(0.55); border-color: #6b2a24; }
+      .tn-sym .tn-entry.loser .tn-name { text-decoration: line-through; text-decoration-color: rgba(224, 88, 74, 0.8); }
+      .tn-sym .tn-entry.loser::after { content: ''; position: absolute; left: 8px; width: 42px; top: 50%; border-top: 3px solid rgba(224, 88, 74, 0.9); transform: rotate(-35deg); }
+      .tn-sym .tn-out { position: absolute; right: 6px; top: 6px; padding: 1px 5px; border-radius: 4px; background: #5a1f1f; border: 1px solid #c25a4a; color: #ffb4a8; font: 900 9px var(--ui-font); letter-spacing: 0.14em; }
+      .tn-sym .tn-match.watchable { cursor: pointer; border-color: var(--ui-accent-orange); }
+      .tn-sym .tn-match.watchable:hover, .tn-sym .tn-match.watchable:focus-visible { outline: none; box-shadow: 0 0 0 2px #ff8a3d, 0 0 20px rgba(255, 138, 61, 0.55); }
+      .tn-sym .tn-watch-tag { position: absolute; left: 50%; bottom: -11px; transform: translateX(-50%); padding: 1px 8px; border-radius: 4px; white-space: nowrap; }
+      .tn-sym .tn-champ-slot { height: auto; min-height: 96px; border-color: #e0b341; background: radial-gradient(ellipse at 50% 0%, rgba(255, 200, 90, 0.28), rgba(18, 22, 30, 0.95) 70%); box-shadow: 0 0 34px rgba(255, 200, 90, 0.45), 0 8px 22px rgba(0, 0, 0, 0.6); }
+      .tn-sym .tn-champ-slot .tn-entry { height: 96px; justify-content: center; }
+      .tn-sym .tn-champ-slot.has-champion { animation: tn-champ 2.4s ease-in-out infinite; }
+      @keyframes tn-champ { 0%, 100% { box-shadow: 0 0 30px rgba(255, 200, 90, 0.4), 0 8px 22px rgba(0, 0, 0, 0.6); } 50% { box-shadow: 0 0 56px rgba(255, 220, 130, 0.85), 0 8px 22px rgba(0, 0, 0, 0.6); } }
+      .tn-sym .tn-champ-slot .tn-champion { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border: 0; background: none; text-align: center; }
+      .tn-sym .tn-champ-slot .tn-champion .tn-face { width: 84px; height: 84px; border-radius: 12px; border-color: #ffd36b; }
+      .tn-sym .tn-champion-title { font-size: 11px; }
+      .tn-sym .tn-champion-name { font-size: 16px; }
+      .tn-sym .tn-placement, .tn-sym .tn-record { font-size: 10px; }
+      .tn-token { position: absolute; z-index: 5; width: 44px; height: 44px; pointer-events: none; filter: drop-shadow(0 0 10px rgba(255, 220, 140, 0.9)); }
+      .tn-token .tn-face { width: 44px; height: 44px; border-radius: 8px; border: 2px solid #ffd36b; }
+      @media (prefers-reduced-motion: reduce) { .tournament::before, .tournament::after, .tn-line.flow, .tn-champ-slot.has-champion { animation: none; } }
       /* ===== Loading screen (spec section 9): the menu art, darkened, with a spinner and "Loading..." at the bottom right. ===== */
       #loading-screen {
         position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 28px 24px 0;

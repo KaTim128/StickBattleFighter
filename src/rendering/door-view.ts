@@ -17,11 +17,37 @@ const GLASS_FRONT = 0x9fd3f2;
 const GLASS_TOP = 0xd6eefc;
 const GLASS_EDGE = 0x2f3640;
 const GLASS_ALPHA = 0.42;
-const WOOD_FRONT = GLASS_FRONT;
-const WOOD_TOP = GLASS_TOP;
-const WOOD_EDGE = GLASS_EDGE;
-const FRAME = 0x4a525e;
-const FRAME_EDGE = 0x22262c;
+/** What a door is made of: the default glass pane in a metal frame, or solid dark wood (the House of Nightmare). */
+interface DoorMaterial {
+  readonly front: number;
+  readonly top: number;
+  readonly edge: number;
+  readonly alpha: number;
+  readonly frame: number;
+  readonly frameTop: number;
+  readonly frameEdge: number;
+  readonly planks: boolean;
+}
+const GLASS_DOOR: DoorMaterial = {
+  front: GLASS_FRONT,
+  top: GLASS_TOP,
+  edge: GLASS_EDGE,
+  alpha: GLASS_ALPHA,
+  frame: 0x4a525e,
+  frameTop: 0x5c6470,
+  frameEdge: 0x22262c,
+  planks: false,
+};
+const WOOD_DOOR: DoorMaterial = {
+  front: 0x7b4f2c,
+  top: 0x9a6c40,
+  edge: 0x2a1a0e,
+  alpha: 1,
+  frame: 0x3b2614,
+  frameTop: 0x57391e,
+  frameEdge: 0x1c1209,
+  planks: true,
+};
 const MAT = 0x8c2f2f;
 const ARROW = 0xffd23f;
 const HANDLE = 0xffd700;
@@ -45,11 +71,13 @@ export class DoorView {
   private broken = false;
   private drawnSwing = -1;
   private drawnSide = 0;
+  private readonly mat: DoorMaterial;
 
   constructor(
     private readonly spec: DoorSpec,
     private readonly heightM: number,
   ) {
+    this.mat = spec.wooden ? WOOD_DOOR : GLASS_DOOR;
     const along = spec.y1 - spec.y0;
     const cx = (spec.x0 + spec.x1) / 2;
     const h = heightM * 0.92;
@@ -70,7 +98,7 @@ export class DoorView {
           new Graphics()
             .circle(0, -h * 0.5, 0.07)
             .fill(HANDLE)
-            .stroke({ width: 0.02, color: WOOD_EDGE }),
+            .stroke({ width: 0.02, color: this.mat.edge }),
         );
       }
       this.intact.push(block.node);
@@ -98,7 +126,12 @@ export class DoorView {
       const node = new Container();
       node.label = `door-frame-${spec.id}`;
       node.addChild(
-        drawPrism(new Graphics(), rel, heightM, { front: FRAME, top: 0x5c6470, edge: FRAME_EDGE, edgeWidth: 0.025 }),
+        drawPrism(new Graphics(), rel, heightM, {
+          front: this.mat.frame,
+          top: this.mat.frameTop,
+          edge: this.mat.frameEdge,
+          edgeWidth: 0.025,
+        }),
       );
       const at = iso(centre.x, centre.y);
       node.position.set(at.x, at.y);
@@ -137,8 +170,8 @@ export class DoorView {
       area += p.x * q.y - q.x * p.y;
     }
     const outward = area > 0 ? 1 : -1;
-    const fill = { color: GLASS_FRONT, alpha: GLASS_ALPHA };
-    const line = { width: 0.025, color: GLASS_EDGE, alpha: 0.7 };
+    const fill = { color: this.mat.front, alpha: this.mat.alpha };
+    const line = { width: 0.025, color: this.mat.edge, alpha: this.mat.planks ? 0.95 : 0.7 };
     for (let i = 0; i < 4; i++) {
       const p = rel[i]!;
       const q = rel[(i + 1) % 4]!;
@@ -147,6 +180,18 @@ export class DoorView {
       const outerEnd = (i === 0 && first) || (i === 2 && last);
       if (end && !outerEnd) continue; // a join inside the pane: not drawn
       g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM]).fill(fill);
+      if (this.mat.planks && !end) {
+        // Solid boards: seams between three planks and a darker lower rail, so it reads as a wooden door, not a pane.
+        for (const k of [0.33, 0.66]) {
+          g.moveTo(p.x, p.y - heightM * k)
+            .lineTo(q.x, q.y - heightM * k)
+            .stroke({ width: 0.02, color: this.mat.edge, alpha: 0.8 });
+        }
+        g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM * 0.12, p.x, p.y - heightM * 0.12]).fill({
+          color: 0x000000,
+          alpha: 0.18,
+        });
+      }
       if (end) {
         g.poly([p.x, p.y, q.x, q.y, q.x, q.y - heightM, p.x, p.y - heightM]).stroke(line);
       } else {
@@ -166,7 +211,7 @@ export class DoorView {
     }
     // The top of the pane: filled, outlined only along its long sides (and its outer ends).
     const top = rel.map((p) => ({ x: p.x, y: p.y - heightM }));
-    g.poly(top.flatMap((p) => [p.x, p.y])).fill({ color: GLASS_TOP, alpha: GLASS_ALPHA });
+    g.poly(top.flatMap((p) => [p.x, p.y])).fill({ color: this.mat.top, alpha: this.mat.alpha });
     for (let i = 0; i < 4; i++) {
       const end = i === 0 || i === 2;
       if (end && !((i === 0 && first) || (i === 2 && last))) continue;
@@ -242,11 +287,11 @@ export class DoorView {
     });
     this.leafG.clear();
     drawPrism(this.leafG, corners, h, {
-      front: WOOD_FRONT,
-      top: WOOD_TOP,
-      edge: WOOD_EDGE,
+      front: this.mat.front,
+      top: this.mat.top,
+      edge: this.mat.edge,
       edgeWidth: 0.025,
-      alpha: GLASS_ALPHA,
+      alpha: this.mat.alpha,
     });
     const tip = corners[1]!;
     this.leafG.circle(tip.x * 0.82, tip.y * 0.82 - h * 0.5, 0.06).fill(HANDLE);
@@ -266,8 +311,8 @@ export class DoorView {
           new Graphics().ellipse(0, 0.05, len * 0.5, 0.07).fill({ color: 0x000000, alpha: 0.25 }),
           new Graphics()
             .rect(-len / 2, -0.06, len, 0.12)
-            .fill(i % 2 ? WOOD_TOP : WOOD_FRONT)
-            .stroke({ width: 0.015, color: WOOD_EDGE }),
+            .fill(i % 2 ? this.mat.top : this.mat.front)
+            .stroke({ width: 0.015, color: this.mat.edge }),
         );
         this.planks.push(plank);
         addPlank(plank);

@@ -441,24 +441,6 @@ export class FrontEnd {
       () => this.o.startHideSeek(),
       hideSeekCard,
     );
-    // Admin only (owner, 24/11/2026): the same house as a fighting arena: pick a fighter and an opponent as in the Open Zone.
-    if (this.o.isAdmin()) {
-      const fight = button('fe-mode fe-mode-fight', '', () => {
-        this.choice.arena = 'house';
-        this.openSelect('practice');
-      });
-      fight.dataset.gm = 'house-fight';
-      fight.style.backgroundImage = `url("${hideSeekCard}")`;
-      fight.append(
-        el('strong', 'fe-mode-name', 'House of Nightmare: Fight (admin)'),
-        el(
-          'span',
-          'fe-mode-text',
-          'Fight an AI fighter on the house ground floor. The stairs are closed; the furniture breaks.',
-        ),
-      );
-      list.append(fight);
-    }
     sec.append(list);
     const row = el('div', 'fe-row');
     row.append(button('fe-back', 'Back', () => this.show('title')));

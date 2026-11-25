@@ -85,6 +85,8 @@ export interface FloorZone extends Rect {
  * the way; only a kick or a heavy knockback impact against it breaks it.
  */
 export interface DoorSpec extends Rect {
+  /** A solid wooden door with a dark wooden frame (the House of Nightmare), instead of the default glass one. */
+  readonly wooden?: boolean;
   readonly id: string;
   /** Impact strength needed to break it (kick ≈ 600, a knocked-back dummy ≈ mass × speed). */
   readonly breakStrength: number;

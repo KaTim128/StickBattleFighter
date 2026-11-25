@@ -1,3 +1,4 @@
+import { HOUSE_FIGHT } from '../arenas/house-fight';
 import { COLOSSEUM } from '../data/arenas/colosseum';
 import { OFFICE } from '../data/arenas/office';
 import { TRAINING_YARD } from '../data/arenas/training-yard';
@@ -209,7 +210,14 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
     skipAll: () => {
       if (skipping) return; // one skip at a time (double taps do nothing)
       skipping = true;
-      const arena = saved.arena === 'training-yard' ? TRAINING_YARD : saved.arena === 'colosseum' ? COLOSSEUM : OFFICE;
+      const arena =
+        saved.arena === 'training-yard'
+          ? TRAINING_YARD
+          : saved.arena === 'colosseum'
+            ? COLOSSEUM
+            : saved.arena === 'house'
+              ? HOUSE_FIGHT
+              : OFFICE;
       void skipBattles(
         saved.state,
         async (a, b, seed) => await simulateFightHeadless(seed, a.fighter, b.fighter, arena, saved.difficulty),

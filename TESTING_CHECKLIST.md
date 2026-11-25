@@ -785,3 +785,9 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Fighters cannot leave the circle; the near wall never hides the fight.
 - [ ] Tournaments and the AI fight normally in it.
 
+## Tournament draw and House of Nightmare (25/11/2026)
+- [ ] The draw is symmetrical: Top 16 at the far left and right, moving in to the Grand Final in the centre; portraits and names in every slot; lines join each match to the next.
+- [ ] After a match the winner glides along the line into the next round; the loser shows OUT and is greyed and struck out.
+- [ ] The champion has a prominent place above the Grand Final.
+- [ ] The House of Nightmare is selectable as an arena (Open Zone and tournament); there is no separate admin House Fight mode; its doors are wooden.
+

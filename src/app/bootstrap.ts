@@ -201,7 +201,7 @@ const MENU_ARENAS = [
   { id: 'colosseum', name: 'Colosseum' },
   { id: 'office', name: 'Office' },
   { id: 'training-yard', name: 'Tutorial Zone' },
-  { id: 'house', name: 'House of Nightmare (admin)', adminOnly: true },
+  { id: 'house', name: 'House of Nightmare' },
 ] as const;
 
 /** Playable fighters for the main menu: every built-in fighter made from a template. */
