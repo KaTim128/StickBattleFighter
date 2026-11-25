@@ -797,7 +797,7 @@
       .fe-name-count { margin-top: 4px; font-size: 11px; opacity: 0.65; text-align: right; }
       .fe-name-error { min-height: 1.3em; color: #ff8a8a; font-weight: 700; }
       /* Game Modes. */
-      .fe-screen.fe-modes { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+      .fe-screen.fe-modes, .fe-screen.fe-practice { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
       .fe-mode-list { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
       /* Game mode cards: one large still image each, the whole card is the button, the name bottom right over a soft dark gradient. */
       .fe-mode { position: relative; display: block; box-sizing: border-box; width: min(92%, 560px); aspect-ratio: 16 / 5.2; overflow: hidden; padding: 0; border-radius: 14px; border: 2px solid rgba(201, 162, 74, 0.55); background: #0b0d12 center / cover no-repeat; color: #fff; text-align: left; cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5); transition: border-color 0.12s linear, box-shadow 0.12s linear; }
@@ -808,6 +808,14 @@
       .fe-mode-text { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
       .fe-mode .fe-lock { position: absolute; left: 14px; top: 12px; z-index: 1; margin: 0; }
       .fe-screen-title { text-align: center; margin-top: 4px; }
+      .fe-screen.fe-modes, .fe-screen.fe-practice { gap: 0; }
+      .fe-screen.fe-modes .fe-screen-title, .fe-screen.fe-practice .fe-screen-title { margin: 0 0 26px; }
+      .fe-screen.fe-modes .fe-row, .fe-screen.fe-practice .fe-row { margin-top: 30px; gap: 14px; }
+      .fe-mode-list.fe-mode-grid { display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; width: min(94%, 880px); height: min(56vh, 420px); }
+      .fe-mode-grid .fe-mode { width: auto; height: 100%; aspect-ratio: auto; }
+      .fe-mode-grid .fe-mode:first-child { grid-row: 1 / span 2; }
+      .fe-mode-grid .fe-mode:first-child .fe-mode-name { font-size: clamp(22px, 3.6vw, 36px); }
+      .fe-mode-grid .fe-mode-fight { grid-column: 1 / -1; grid-row: auto; height: 120px; }
       /* Fighter select: the information beside the fighter, the roster below. */
       .fe-select { display: grid; grid-template-columns: minmax(250px, 32%) minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: 'head head head' 'info stage roster' 'bar bar bar'; gap: 8px 18px; }
       .fe-sel-head { grid-area: head; display: flex; align-items: center; justify-content: space-between; padding-right: 54px; }
@@ -904,8 +912,11 @@
       html.short .fe-chip { padding: 3px 8px; font-size: 11px; }
       html.short .fe-back, html.short .fe-go { padding: 6px 18px; font-size: 12px; }
       html.short .fe-fight { padding: 6px 28px; }
-      html.short .fe-mode-list { flex-direction: row; flex-wrap: wrap; justify-content: center; }
-      html.short .fe-mode { width: min(31%, 300px); aspect-ratio: 16 / 9; }
+      html.short .fe-mode-list:not(.fe-mode-grid) { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+      html.short .fe-mode-list:not(.fe-mode-grid) .fe-mode { width: min(31%, 300px); aspect-ratio: 16 / 9; }
+      html.short .fe-mode-list.fe-mode-grid { height: 62vh; width: min(94%, 760px); }
+      html.short .fe-screen.fe-modes .fe-screen-title, html.short .fe-screen.fe-practice .fe-screen-title { margin-bottom: 12px; }
+      html.short .fe-screen.fe-modes .fe-row, html.short .fe-screen.fe-practice .fe-row { margin-top: 14px; }
       html.short .fe-mode-name { font-size: 16px; right: 12px; bottom: 8px; }
       /* Tutorial card (owner, 13/11/2026). */
       .tutorial-card { position: fixed; left: 50%; top: 74px; transform: translateX(-50%); z-index: 30; width: min(92%, 440px); box-sizing: border-box; padding: 10px 14px 12px; border-radius: 14px; background: rgba(12, 10, 18, 0.9); border: 1px solid rgba(255, 179, 71, 0.55); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); color: #f2f5fa; font: 14px system-ui, sans-serif; text-align: center; }

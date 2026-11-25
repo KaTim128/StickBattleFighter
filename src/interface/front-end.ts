@@ -395,7 +395,8 @@ export class FrontEnd {
 
   private buildModes(sec: HTMLElement): void {
     sec.append(el('h2', 'fe-h fe-screen-title', 'GAME MODES'));
-    const list = el('div', 'fe-mode-list');
+    // Tournament is the large card on the left, Tag Team and Hide and Seek stack on its right (owner's sketch, 25/11/2026).
+    const list = el('div', 'fe-mode-list fe-mode-grid');
     /** A game mode is one large still image: the whole card is the button, the name sits bottom right (static art only, no motion). */
     const card = (id: string, name: string, text: string, locked: boolean, onClick: () => void, image?: string) => {
       const b = button(`fe-mode${locked ? ' locked' : ''}`, '', onClick);

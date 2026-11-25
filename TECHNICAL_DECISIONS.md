@@ -1250,3 +1250,5 @@ Addendum to TD-165 (25/11/2026, owner request): the Game Modes screen is three l
 Addendum to TD-165 (25/11/2026, owner request): the Settings screen is redesigned on the same tokens: a gold-framed dark card with a header band, a segmented Audio/Profile control, volume sliders with an orange filled track and round thumb (`--val` set by `SettingsPanel.refreshVolumes`), a styled name field, grouped key bindings, and a two-column action grid with Leave as a full-width danger button.
 
 Addendum to TD-165 (25/11/2026, owner request): the Practice screen uses the same still-image cards (Tutorial, Open Zone), with their own `assets/ui/mode-*.webp` frames.
+
+Addendum to TD-165 (25/11/2026, owner sketch): the Game Modes screen is a grid: Tournament is one large card on the left, Tag Team and Hide and Seek stack on its right (the admin House Fight card spans the bottom). The Practice and Game Modes screens are vertically centred with more space between the title, the cards and the buttons.
