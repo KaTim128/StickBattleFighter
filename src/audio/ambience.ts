@@ -517,13 +517,16 @@ export class AmbiencePlayer {
     this.cheerUntilS = t + buffer.duration / rate;
     const src = ctx.createBufferSource();
     src.buffer = buffer;
-    src.playbackRate.value = rate;
+    src.playbackRate.value = lowpassHz < 12000 ? rate : 1; // plain speed for the main cheer
     const g = ctx.createGain();
     g.gain.value = Math.min(CHEER_MAX_GAIN, gain); // the file is already loud: never push it past clean headroom
-    src
-      .connect(this.filter(ctx, 'lowpass', lowpassHz, 0.5))
-      .connect(g)
-      .connect(pan);
+    // Phones glitch when the audio thread is busy: no extra filter unless it is the muffled distant cheer.
+    if (lowpassHz < 12000)
+      src
+        .connect(this.filter(ctx, 'lowpass', lowpassHz, 0.5))
+        .connect(g)
+        .connect(pan);
+    else src.connect(g).connect(pan);
     src.start(t);
     return true;
   }
