@@ -326,8 +326,8 @@ function temporalIdle(timeS: number, bones: BoneLengths): Pose {
   return {
     // Standing tall with the feet together, the dial arm held across the chest as if reading a watch, the other hand clasped
     // behind the back, the head bowed to the dial; he sways like a pendulum.
-    lean: deg(-1 + swing * 2.5),
-    head: deg(10),
+    lean: deg(swing * 1.2),
+    head: deg(1),
     armFront: { root: deg(28 + tick * 1.5), bend: deg(112) },
     armBack: { root: deg(-36), bend: deg(18) },
     legFront: legIk(0.07 + swing * 0.03, legs * 0.99, bones.thigh, bones.shin),

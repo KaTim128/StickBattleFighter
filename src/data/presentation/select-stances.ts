@@ -180,33 +180,33 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   reson: {
     title: 'The Tuned Fist',
     style: 'Sonic specialist: a scream, launching punches, defence-breaking screeches and a shattering ultimate',
-    pelvis: 0.84,
-    leadFoot: 0.32,
-    rearFoot: -0.3,
-    lean: -3,
-    head: 0,
-    // Relaxed and bouncing on the beat: the lead gauntlet hangs loose and low, ready to launch; the other hand rests raised at the chest.
-    front: { x: 0.9, y: 0.32 },
-    back: { x: 0.5, y: 0.02 },
+    pelvis: 0.86,
+    leadFoot: 0.3,
+    rearFoot: -0.28,
+    lean: -2,
+    head: -3,
+    // Listening: the far hand cups his ear (elbow raised out to the side) while the lead gauntlet points dead straight ahead.
+    front: { x: 0.99, y: 0.0 },
+    back: { x: 0.12, y: -0.42, elbowOut: true },
     turn: 0.55,
     scale: 1,
-    breath: { lean: 1.5, pelvis: 0.018, hands: 0.03 },
+    breath: { lean: 1, pelvis: 0.014, hands: 0.012 },
   },
-  // Chronos: poised and exact, the dial arm raised out in front, the other folded behind.
   chronos: {
     title: 'The Second Hand',
     style: 'Time specialist: slowing fields, rewinds, afterimages, ageing and a world-stopping ultimate',
-    pelvis: 0.86,
-    leadFoot: 0.3,
-    rearFoot: -0.3,
-    lean: -4,
-    head: 4,
-    // Side-on and unhurried: the dial arm bent up at the chest as if checking a watch, the other arm hanging easy at the side.
-    front: { x: 0.8, y: 0.3 },
-    back: { x: 0.46, y: 0.0 },
-    turn: 0.55,
+    // Upright, formal and unhurried: standing tall with the feet nearly together, the head level, the dial arm held at the chest as if
+    // checking a watch, the other hand clasped behind his back.
+    pelvis: 0.97,
+    leadFoot: 0.1,
+    rearFoot: -0.1,
+    lean: 0,
+    head: 0,
+    front: { x: 0.5, y: 0.2 },
+    back: { x: -0.1, y: 0.58 },
+    turn: 0.5,
     scale: 1,
-    breath: { lean: 1.5, pelvis: 0.01, hands: 0.02 },
+    breath: { lean: 0.5, pelvis: 0.006, hands: 0.012 },
   },
   // Prismor: planted wide like a monument, the oversized crystal arm raised across his chest, the other hand loose and open.
   prismor: {
