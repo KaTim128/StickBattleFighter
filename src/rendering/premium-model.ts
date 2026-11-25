@@ -1493,36 +1493,99 @@ export class PremiumModel {
     const out = this.c(this.P.outline);
     const plate = this.c(this.P.armourLit);
     const lit = this.c(0x9aa3b2);
+    const dark = this.c(0x4a5160);
+    const glow = this.P.seam ?? this.P.glow ?? 0xff7a1a;
     const slide = (1 - k) * 0.25; // plates start tucked in toward the back and slide forward
-    const chest = { x: s.chest.x + slide * 0.5, y: s.chest.y };
-    const hw = 0.21 * (0.5 + 0.5 * k);
-    const hh = 0.34;
-    g.roundRect(chest.x - hw - w * 0.15, chest.y - hh * 0.45 - w * 0.15, hw * 2 + w * 0.3, hh + w * 0.3, 0.04).fill(
-      out,
-    );
-    g.roundRect(chest.x - hw, chest.y - hh * 0.45, hw * 2, hh, 0.035).fill(plate);
-    g.roundRect(chest.x - hw * 0.6, chest.y - hh * 0.1, hw * 1.2, hh * 0.25, 0.02).fill({ color: lit, alpha: 0.9 });
-    if (this.P.seam !== null)
-      g.moveTo(chest.x - hw, chest.y + hh * 0.6)
-        .lineTo(chest.x + hw, chest.y + hh * 0.6)
-        .stroke({ width: w * 0.12, color: this.P.seam });
+    const cx = s.chest.x + slide * 0.5;
+    const cy = s.chest.y;
+    const hw = 0.23 * (0.5 + 0.5 * k);
+    const hh = 0.36;
+    // Breastplate: a shaped cuirass, broad at the shoulders and tapering to the waist, with a raised centre ridge, a glowing
+    // core, side vents and rivets, rather than a flat slab.
+    const cuirass = (grow: number): number[] => [
+      cx - hw - grow,
+      cy - hh * 0.5 - grow,
+      cx + hw + grow,
+      cy - hh * 0.5 - grow,
+      cx + hw * 0.92 + grow,
+      cy + hh * 0.05,
+      cx + hw * 0.62 + grow,
+      cy + hh * 0.62 + grow,
+      cx - hw * 0.62 - grow,
+      cy + hh * 0.62 + grow,
+      cx - hw * 0.92 - grow,
+      cy + hh * 0.05,
+    ];
+    g.poly(cuirass(w * 0.14)).fill(out);
+    g.poly(cuirass(0)).fill(plate);
+    // The upper chest catches the light; the lower plate is shaded.
+    g.poly([
+      cx - hw,
+      cy - hh * 0.5,
+      cx + hw,
+      cy - hh * 0.5,
+      cx + hw * 0.92,
+      cy - hh * 0.12,
+      cx - hw * 0.92,
+      cy - hh * 0.12,
+    ]).fill({
+      color: lit,
+      alpha: 0.75,
+    });
+    g.poly([
+      cx - hw * 0.9,
+      cy + hh * 0.2,
+      cx + hw * 0.9,
+      cy + hh * 0.2,
+      cx + hw * 0.62,
+      cy + hh * 0.62,
+      cx - hw * 0.62,
+      cy + hh * 0.62,
+    ]).fill({
+      color: dark,
+      alpha: 0.5,
+    });
+    // Centre ridge and the glowing power core.
+    g.moveTo(cx, cy - hh * 0.5)
+      .lineTo(cx, cy + hh * 0.62)
+      .stroke({ width: w * 0.16, color: out, alpha: 0.9 });
+    g.circle(cx, cy - hh * 0.02, w * 0.62 * k).fill(out);
+    g.circle(cx, cy - hh * 0.02, w * 0.42 * k).fill(glow);
+    fire.circle(cx, cy - hh * 0.02, w * 1.3 * k).fill({ color: glow, alpha: 0.22 * k });
+    // Vents and rivets.
+    for (const sx of [-1, 1]) {
+      for (let v = 0; v < 3; v++)
+        g.moveTo(cx + sx * hw * 0.55, cy + hh * (0.18 + v * 0.1))
+          .lineTo(cx + sx * hw * 0.8, cy + hh * (0.16 + v * 0.1))
+          .stroke({ width: w * 0.08, color: out, alpha: 0.85 });
+      g.circle(cx + sx * hw * 0.78, cy - hh * 0.36, w * 0.1).fill(out);
+    }
     for (const arm of [s.armFront, s.armBack]) {
       const [sh, el, hand] = arm as [Point, Point, Point];
-      const a = lerp(sh, el, 0.05);
-      const b = lerp(sh, el, 0.7);
-      sleeveQuad(g, a, b, w * 1.0 * k, w * 0.85 * k, out);
-      sleeveQuad(g, a, b, w * 0.8 * k, w * 0.68 * k, plate);
-      const c = lerp(el, hand, 0.2);
-      const d = lerp(el, hand, 0.8);
-      sleeveQuad(g, c, d, w * 0.9 * k, w * 0.8 * k, out);
-      sleeveQuad(g, c, d, w * 0.7 * k, w * 0.6 * k, lit);
-      g.circle(sh.x, sh.y, w * 1.15 * k).fill(out);
-      g.circle(sh.x, sh.y, w * 0.95 * k).fill(plate);
-      g.circle(sh.x, sh.y, w * 0.4 * k).fill(this.P.seam ?? lit);
+      // Pauldron: three overlapping lamellae stepping down the upper arm under a domed cap, each edged and rivetted.
+      for (let i = 2; i >= 0; i--) {
+        const c = lerp(sh, el, 0.06 + i * 0.2);
+        const r = w * (1.35 - i * 0.18) * k;
+        g.circle(c.x, c.y, r * 1.12).fill(out);
+        g.circle(c.x, c.y, r).fill(i === 0 ? plate : i === 1 ? lit : dark);
+        g.circle(c.x + r * 0.25, c.y - r * 0.3, r * 0.3).fill({ color: lit, alpha: 0.6 });
+      }
+      g.circle(sh.x, sh.y, w * 0.42 * k).fill(glow);
+      // Vambrace: a tapering sleeve with three raised bands and a flared cuff at the wrist.
+      const c1 = lerp(el, hand, 0.12);
+      const c2 = lerp(el, hand, 0.78);
+      sleeveQuad(g, c1, c2, w * 1.0 * k, w * 0.78 * k, out);
+      sleeveQuad(g, c1, c2, w * 0.8 * k, w * 0.6 * k, plate);
+      for (const t of [0.25, 0.5, 0.75]) {
+        const b = lerp(c1, c2, t);
+        g.circle(b.x, b.y, w * (0.62 - t * 0.14) * k).stroke({ width: w * 0.1, color: out, alpha: 0.9 });
+      }
+      const cuff = lerp(el, hand, 0.84);
+      g.circle(cuff.x, cuff.y, w * 0.78 * k).fill(out);
+      g.circle(cuff.x, cuff.y, w * 0.6 * k).fill(lit);
     }
     // A flash as each plate locks.
-    if (k > 0.85 && k < 1)
-      fire.circle(chest.x, chest.y, 0.35).fill({ color: this.P.glow ?? 0xff7a1a, alpha: (1 - k) * 4 });
+    if (k > 0.85 && k < 1) fire.circle(cx, cy, 0.38).fill({ color: this.P.glow ?? 0xff7a1a, alpha: (1 - k) * 4 });
   }
 
   /** Geometric fragments (small triangles and diamonds) orbiting the body, half behind it and half in front. */

@@ -40,7 +40,7 @@ export const KENSHIRO_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 38,
+      damage: 40,
       knockbackMps: 0.4,
       heavy: false,
       strength: 360,
@@ -76,7 +76,7 @@ export const KENSHIRO_KIT: AbilityKit = {
     aimRangeM: 0,
     moveFactor: 0.15,
     interruptible: false,
-    payload: { damage: 50, knockbackMps: 7, heavy: true, strength: 700, impact: 'knuckle-heavy', sword: true },
+    payload: { damage: 56, knockbackMps: 7, heavy: true, strength: 700, impact: 'knuckle-heavy', sword: true },
     delivery: { type: 'parry', windowS: 0.6, stunS: 0.9 },
     vfx: 'perfect-parry',
     sfx: { cast: 'katana-ready', release: 'parry-stance', impact: 'parry-counter' },
@@ -103,7 +103,7 @@ export const KENSHIRO_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: {
-      damage: 16,
+      damage: 18,
       knockbackMps: 1.2,
       heavy: false,
       strength: 300,
@@ -184,7 +184,7 @@ export const KENSHIRO_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 56,
+      damage: 60,
       knockbackMps: 0,
       heavy: false,
       strength: 320,
