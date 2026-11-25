@@ -72,13 +72,15 @@ export class AudioClip {
 export class MusicLoop {
   private source: AudioBufferSourceNode | null = null;
   private gain: GainNode | null = null;
+  /** A source that is fading out: it is stopped when the fade ends, or taken back if the track is wanted again. */
+  private fading: { src: AudioBufferSourceNode; gain: GainNode; timer: ReturnType<typeof setTimeout> } | null = null;
   private volume = 1;
   private duck = 1;
   private muted = false;
   private wantPlaying = false;
 
   constructor(
-    private readonly clip: AudioClip,
+    private readonly clip: Pick<AudioClip, 'load' | 'def'>,
     private readonly fadeInS = 1.5,
   ) {}
 
@@ -98,16 +100,33 @@ export class MusicLoop {
     this.applyLevel(timeS);
   }
 
+  /** Playing, and not on its way out. */
   get playing(): boolean {
     return this.source !== null;
   }
 
-  /** Start (once loaded) on the given context and output; a no-op if already playing. */
+  /** Any sound at all from this track, including a fade-out still running. */
+  get audible(): boolean {
+    return this.source !== null || this.fading !== null;
+  }
+
+  /**
+   * Start (once loaded) on the given context and output. Safe to call again at any moment: it never plays the same track twice. If the
+   * track is still fading out it is taken back (no second copy starts).
+   */
   start(ctx: AudioContext, out: AudioNode, fadeInS = this.fadeInS): void {
     this.wantPlaying = true;
     if (this.source) return;
+    if (this.fading) {
+      clearTimeout(this.fading.timer);
+      this.source = this.fading.src;
+      this.gain = this.fading.gain;
+      this.fading = null;
+      this.applyLevel(fadeInS);
+      return;
+    }
     void this.clip.load(ctx).then((buffer) => {
-      if (!buffer || !this.wantPlaying || this.source) return;
+      if (!buffer || !this.wantPlaying || this.source || this.fading) return;
       const gain = ctx.createGain();
       gain.gain.value = 0;
       gain.connect(out);
@@ -129,7 +148,7 @@ export class MusicLoop {
     });
   }
 
-  /** Fade out and stop. */
+  /** Fade out and stop. Idempotent: stopping a track that is stopped (or already fading) changes nothing. */
   stop(fadeS = 1): void {
     this.wantPlaying = false;
     const src = this.source;
@@ -137,8 +156,42 @@ export class MusicLoop {
     if (!src || !gain) return;
     const ctx = gain.context;
     gain.gain.cancelScheduledValues(ctx.currentTime);
-    gain.gain.setTargetAtTime(0, ctx.currentTime, fadeS / 4);
-    src.stop(ctx.currentTime + fadeS);
+    gain.gain.setTargetAtTime(0, ctx.currentTime, Math.max(0.01, fadeS / 4));
+    const timer = setTimeout(
+      () => {
+        try {
+          src.stop();
+        } catch {
+          // already stopped
+        }
+        gain.disconnect();
+        if (this.fading?.src === src) this.fading = null;
+      },
+      fadeS * 1000 + 100,
+    );
+    this.fading = { src, gain, timer };
+    this.source = null;
+    this.gain = null;
+  }
+
+  /** Stop at once, with no fade (the page is going away). */
+  silence(): void {
+    this.wantPlaying = false;
+    const gone = [
+      this.fading,
+      this.source && this.gain ? { src: this.source, gain: this.gain, timer: undefined } : null,
+    ];
+    for (const f of gone) {
+      if (!f) continue;
+      if (f.timer) clearTimeout(f.timer);
+      try {
+        f.src.stop();
+      } catch {
+        // already stopped
+      }
+      f.gain.disconnect();
+    }
+    this.fading = null;
     this.source = null;
     this.gain = null;
   }

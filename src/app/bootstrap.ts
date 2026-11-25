@@ -7,6 +7,7 @@ import { isAdminName } from '../admin/local-access';
 import { HOUSE_FIGHT } from '../arenas/house-fight';
 import { AmbiencePlayer } from '../audio/ambience';
 import { AudioClip, MusicLoop, musicFor } from '../audio/music';
+import { MusicDirector } from '../audio/music-director';
 import { pauseAudioWhenHidden } from '../audio/pause-when-hidden';
 import { SoundBoard } from '../audio/sound-board';
 import { readDraft } from '../characters/draft';
@@ -112,6 +113,9 @@ export interface EngineDebugInfo {
   /** Interface button clicks that played the click sound (owner, 13/11/2026). */
   uiClicks: number;
   menuMusicPlaying: boolean;
+  /** Which background tracks make sound right now (one, except during a short crossfade) and which one is wanted. */
+  musicTracks: string[];
+  musicWanted: string | null;
   /** Where the ability being aimed will land (the ultimate's leap or a point-aimed ability), or null. */
   aimSpot: { x: number; y: number } | null;
   /** Practice/testing: set the dummy's health (e.g. to see a KO quickly). */
@@ -372,37 +376,38 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   const musicId =
     params.get('music') ?? (scene instanceof FightArenaScene && !automated ? scene.arena.music : undefined);
   const musicDef = musicId ? BATTLE_MUSIC[musicId] : undefined;
-  const battleMusic = musicDef ? new MusicLoop(new AudioClip(musicDef)) : null;
-  battleMusic?.setMuted(sound.muted);
   const countdown = new AudioClip(FIGHT_COUNTDOWN);
   // Menu music (owner, 13/11/2026): on the title screen and every menu, looping; it gives way to
   // the battle music in a fight. Browsers only allow sound after the first tap or key.
-  const menuMusic = new MusicLoop(new AudioClip(MENU_MUSIC));
-  menuMusic.setMuted(sound.muted);
+  // One director owns every background track of this page: only the screen's own music plays (menu music in the menus, the arena's
+  // battle music in a fight), tracks give way with a fade, and nothing plays twice or carries over after leaving.
+  const musicDirector = new MusicDirector(() =>
+    sound.context && sound.musicBus ? { ctx: sound.context, out: sound.musicBus } : null,
+  );
+  musicDirector.register('menu', new MusicLoop(new AudioClip(MENU_MUSIC)));
+  if (musicDef) musicDirector.register('battle', new MusicLoop(new AudioClip(musicDef)));
+  musicDirector.setMuted(sound.muted);
+  musicDirector.attachPageLifecycle(window);
   const click = new AudioClip(UI_CLICK);
   const menusUp = (): boolean => ['menu', 'front', 'tournament'].some((k) => pausedBy.has(k));
   // Owner, 13/11/2026: the menu music runs through every menu, gives way to the battle music when
   // a fight starts, and comes back slowly once the battle is over.
   let battleOver = false;
+  let reportMusic: (() => void) | null = null;
   const updateMenuMusic = (): void => {
     if (automated && !params.has('music')) return;
-    if (musicFor({ menusUp: menusUp(), fightStarted, battleOver }) === 'menu') {
-      battleMusic?.stop(0.6);
-      if (sound.context && sound.musicBus) menuMusic.start(sound.context, sound.musicBus, battleOver ? 5 : 1.5);
-      debug.menuMusicPlaying = true;
-    } else {
-      menuMusic.stop(0.8);
-      debug.menuMusicPlaying = false;
-      startBattleMusic();
-    }
+    const want = musicFor({ menusUp: menusUp(), fightStarted, battleOver });
+    // The battle music fades slowly after the fight; otherwise tracks give way quickly. 'none' (the intro) is silence.
+    musicDirector.request(want === 'none' ? null : want, {
+      fadeInS: battleOver && want === 'menu' ? 5 : undefined,
+      fadeOutS: battleOver ? 2.5 : want === 'menu' ? 0.6 : 0.8,
+    });
+    reportMusic?.();
   };
   let countdownPlayed = false;
   /** The fight has begun (FIGHT!, or straight away without an intro): start the music once audio is on. */
   let fightStarted = false;
-  const startBattleMusic = (): void => {
-    if (fightStarted && !battleOver && battleMusic && sound.context && sound.musicBus)
-      battleMusic.start(sound.context, sound.musicBus);
-  };
+  const startBattleMusic = (): void => updateMenuMusic();
   // The game falls silent the moment its tab is hidden, and plays on when you come back (owner).
   pauseAudioWhenHidden(document, () => sound.context, window);
   // A page reached from the game itself (Play, a tournament step) tries to start its sound at once:
@@ -414,7 +419,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       music.attach(sound.context, sound.musicBus);
       void click.load(sound.context);
       void countdown.load(sound.context);
-      if (menusUp()) updateMenuMusic();
+      updateMenuMusic();
     }
   }
   onFirstInput(window, () => {
@@ -423,19 +428,16 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     if (sound.context && sound.musicBus) music.attach(sound.context, sound.musicBus);
     if (sound.context) void countdown.load(sound.context); // ready before the countdown
     if (sound.context) void click.load(sound.context);
-    if (menusUp()) updateMenuMusic();
-    else startBattleMusic();
+    updateMenuMusic();
   });
   onToggleMute(window, () => {
     sound.muted = !sound.muted;
     music.setMuted(sound.muted);
-    battleMusic?.setMuted(sound.muted);
-    menuMusic.setMuted(sound.muted);
+    musicDirector.setMuted(sound.muted);
   });
   const applyAudio = (): void => {
     music.setVolume(settings.current.musicVolume);
-    battleMusic?.setVolume(settings.current.musicVolume);
-    menuMusic.setVolume(settings.current.musicVolume);
+    musicDirector.setVolume(settings.current.musicVolume);
     sound.setVolume(settings.current.sfxVolume);
     document.documentElement.style.setProperty('--touch-scale', String(settings.current.touchScale));
   };
@@ -474,6 +476,8 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     musicPlaying: false,
     uiClicks: 0,
     menuMusicPlaying: false,
+    musicTracks: [],
+    musicWanted: null,
     aimSpot: null,
     setDummyHp() {}, // replaced once the scene exists
     clash: null,
@@ -493,6 +497,14 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       return [out[0] ?? 0, out[1] ?? 0, out[2] ?? 0, out[3] ?? 0];
     },
   };
+  reportMusic = (): void => {
+    debug.menuMusicPlaying = musicDirector.isPlaying('menu');
+    debug.musicTracks = musicDirector.audibleIds;
+    debug.musicWanted = musicDirector.want;
+  };
+  reportMusic();
+  // Fades change what is audible between requests, so the report follows the director.
+  window.setInterval(() => reportMusic?.(), 50);
   if (scene instanceof FightArenaScene) debug.screenOf = (x, y, z = 0) => scene.worldToScreen(x, y, z);
   // The live scene for tools: in development, or when a browser test asks for it (a flag in this
   // browser's storage that survives page changes). Nothing valuable is decided in the client, so
@@ -595,7 +607,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
           fightStarted = true; // no intro (skipped): the music starts with the fight
           startBattleMusic();
         }
-        debug.musicPlaying = battleMusic?.playing ?? false;
+        debug.musicPlaying = musicDirector.isPlaying('battle');
         {
           const spot = scene.ultAim?.to ?? scene.pointAimState?.to ?? null;
           debug.aimSpot = spot ? { x: spot.x, y: spot.y } : null;
@@ -622,7 +634,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         if (scene.matchResult && !battleOver) {
           // The battle is over: its music fades out and the menu music slowly returns.
           battleOver = true;
-          battleMusic?.stop(2.5);
           updateMenuMusic();
         }
         if (scene.drainShowcases() > 0) showcase.play();
@@ -881,7 +892,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
     isAdmin: () => isAdminName(playerName),
     onScreen: (screen) => {
-      menuMusic.setDuck(screen === 'select' ? 0.4 : 1);
+      musicDirector.setDuck('menu', screen === 'select' ? 0.4 : 1);
       // The stances are only on fighter select: drawn the first time it opens.
       if (screen === 'select') void drawStances();
     },

@@ -1,6 +1,7 @@
 import type { Application } from 'pixi.js';
 import { HideSeekAudio } from '../audio/hide-seek-audio';
 import { AudioClip, MusicLoop } from '../audio/music';
+import { MusicDirector } from '../audio/music-director';
 import { SoundBoard } from '../audio/sound-board';
 import { GameLoop } from '../core/game-loop';
 import { SceneManager } from '../core/scene';
@@ -65,14 +66,18 @@ export async function bootstrapHideSeek(elements: { container: HTMLElement; stat
   const sound = new SoundBoard();
   sound.muted = params.has('mute');
   // The background is the supplied horror track (HIDE_SEEK_MUSIC), not the synthesised house bed.
-  const houseMusic = new MusicLoop(new AudioClip(HIDE_SEEK_MUSIC));
+  const houseMusic = new MusicDirector(() =>
+    sound.context && sound.musicBus ? { ctx: sound.context, out: sound.musicBus } : null,
+  );
+  houseMusic.register('house', new MusicLoop(new AudioClip(HIDE_SEEK_MUSIC)));
   houseMusic.setMuted(sound.muted);
+  houseMusic.attachPageLifecycle(window);
   const audio = new HideSeekAudio();
   audio.muted = sound.muted;
   const startAudio = (): void => {
     sound.unlock();
     if (sound.context && sound.musicBus) {
-      houseMusic.start(sound.context, sound.musicBus);
+      houseMusic.request('house');
       audio.attach(sound.context, sound.musicBus);
     }
   };

@@ -1001,3 +1001,8 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 ## 25/11/2026 — ink creature visuals (TD-168)
 - Files: `src/rendering/ink-creature.ts` (new), `ink-parts.ts`, `premium-model.ts`, `src/app/scenes/fight-arena-scene.ts`, `fighter-entity.ts`.
 - Checks: tsc and biome clean, vitest 1298 passing. Screenshots of monster and clone taken; the serpent and dragon effects in `ink-vfx.ts` were not changed in this pass.
+
+## 25/11/2026 — background music centralised (TD-169)
+- Files: `src/audio/music-director.ts` (new), `music.ts`, `src/app/bootstrap.ts`, `src/app/hide-seek-page.ts`, tests above.
+- Fixed a start-up error found by the e2e run (debug object used before it existed). Ambience beds are unchanged and not covered by the director.
+- Not verified: real-device audio on Android Chrome; Hide and Seek music has unit coverage through the director only (no browser audio probe).
