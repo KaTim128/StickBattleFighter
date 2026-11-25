@@ -203,6 +203,5 @@ export const COLOSSEUM: ArenaLayout = {
   floorZones: [floor()],
   interiorWalls: ring(),
   round: { cx: C, cy: C, radiusM: COLOSSEUM_RADIUS_M },
-  ambience: 'colosseum',
   music: 'japanese-boss',
 };

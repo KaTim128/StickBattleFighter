@@ -1036,3 +1036,6 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 
 ## 25/11/2026 — all crowd cheering removed (owner)
 - Deleted `assets/audio/sfx-crowd-cheer.*` and the recorded-sample code; removed the synthesised `cheer`, `distant-cheer` and `roar` events and the KO roar reaction from the Colosseum ambience; tests updated. Not verified by ear.
+
+## 25/11/2026 — Colosseum ambience removed (owner)
+- `src/data/arenas/colosseum.ts` no longer sets an ambience: the Colosseum plays only its battle music. The ambience definitions stay in `src/data/audio/ambiences.ts` (the menu's tunnel still derives from them). Test added. Not verified by ear.

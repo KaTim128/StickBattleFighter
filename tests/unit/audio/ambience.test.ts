@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { nextDelayS } from '../../../src/audio/ambience';
+import { COLOSSEUM } from '../../../src/data/arenas/colosseum';
 import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { AMBIENCES, AMBIENT_EVENTS, CROWD_EVENTS, MENU_AMBIENCE_ID } from '../../../src/data/audio/ambiences';
 
 const ARENAS = [OFFICE, TRAINING_YARD];
+
+it('the Colosseum has no ambience, only its battle music (owner, 25/11/2026)', () => {
+  expect(COLOSSEUM.ambience).toBeUndefined();
+  expect(COLOSSEUM.music).toBeDefined();
+});
 
 describe('background ambience, never music (owner, 12/11/2026)', () => {
   it('every map with a soundscape has its own, and the menu has its own (the testing area has none, SUP-22)', () => {
