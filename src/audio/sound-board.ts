@@ -285,19 +285,14 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { noise: { dur: 0.35, gain: 0.4, type: 'bandpass', freq: 1400, freqEnd: 600, q: 4, attack: 0.02 } },
     { tone: { wave: 'sine', f0: 520, f1: 260, dur: 0.35, gain: 0.12 } },
   ],
-  // Hypnosis (Psion): a hollow rising hum as the spiral leaves, a soft ringing chime when it takes hold, and a falling shimmer when it lifts.
-  'hypno-cast': [
-    { tone: { wave: 'sine', f0: 300, f1: 640, dur: 0.5, gain: 0.22 } },
-    { noise: { dur: 0.5, gain: 0.12, type: 'bandpass', freq: 1200, freqEnd: 2600, q: 3, attack: 0.15 } },
+  // Gravity Vortex (Psion): a low swelling hum as the well opens, and a sharp outward crack as it flings everyone away.
+  'gravity-open': [
+    { tone: { wave: 'sine', f0: 90, f1: 220, dur: 0.7, gain: 0.35 } },
+    { noise: { dur: 0.7, gain: 0.18, type: 'bandpass', freq: 500, freqEnd: 1800, q: 2, attack: 0.3 } },
   ],
-  'hypno-hit': [
-    { tone: { wave: 'sine', f0: 880, f1: 660, dur: 0.9, gain: 0.3 } },
-    { tone: { wave: 'sine', f0: 1320, f1: 990, dur: 0.9, gain: 0.16, delay: 0.05 } },
-    { noise: { dur: 0.7, gain: 0.14, type: 'bandpass', freq: 2400, freqEnd: 900, q: 2, attack: 0.05 } },
-  ],
-  'hypno-end': [
-    { tone: { wave: 'sine', f0: 700, f1: 240, dur: 0.7, gain: 0.25 } },
-    { noise: { dur: 0.6, gain: 0.16, type: 'bandpass', freq: 3000, freqEnd: 600, q: 2.5, attack: 0.02 } },
+  'gravity-burst': [
+    { tone: { wave: 'sine', f0: 220, f1: 50, dur: 0.5, gain: 0.7 } },
+    { noise: { dur: 0.5, gain: 0.5, type: 'bandpass', freq: 2200, freqEnd: 300, q: 1.5, attack: 0.01 } },
   ],
   // Soul Drain landing: a dull hit and a sucking, rising whoosh (the life flowing back).
   'soul-drain-hit': [

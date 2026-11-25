@@ -39,7 +39,7 @@ import { browserStorage, SettingsState } from '../input/settings-store';
 import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
 import { AimHint } from '../interface/aim-hint';
-import { BlindVeil, HypnosisVeil, InkSplatVeil } from '../interface/blind-veil';
+import { BlindVeil, InkSplatVeil } from '../interface/blind-veil';
 import { CharacterPicker } from '../interface/character-picker';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
@@ -285,7 +285,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   settings.activate(playerName, params.get('character') ?? DEFAULT_CAST.player);
   const blindVeil = new BlindVeil(document.body);
   const inkSplatVeil = new InkSplatVeil(document.body);
-  const hypnosisVeil = new HypnosisVeil(document.body);
   const timeStopVeil = new TimeStopVeil(document.body);
   const visionVeil = new VisionVeil(document.body);
   const aimHint = new AimHint(document.body);
@@ -560,10 +559,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         const seen = viewAfflictions(debug.player, scene.match?.spectate === true);
         blindVeil.update(seen.blindS);
         inkSplatVeil.update(seen.splatS ?? 0);
-        {
-          const hh = scene.hypnosisHud;
-          hypnosisVeil.update(hh, hh?.side === 'player' && scene.match?.spectate !== true);
-        }
         timeStopVeil.update(scene.timeStopView.active, scene.timeStopView.resumeS);
         {
           // Lights out: the circle the player can still see, centred on their body, in screen pixels.

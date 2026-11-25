@@ -455,8 +455,8 @@ const SHAPES: Record<string, CastShape> = {
   },
 
   // ---- Psion (master plan section 4): gestures, not blows. The hands do the work and the body hardly moves.
-  // Hypnosis: both hands out, fingers spread, then swept in a slow circle toward the target.
-  hypnosis: {
+  // Gravity Vortex: both hands out, fingers spread, then swept in a slow circle as the well opens.
+  gravityVortex: {
     windup: { lean: deg(0), head: deg(4), armFront: limb(96, 10), armBack: limb(86, 14), legFront: limb(14, -22) },
     release: { lean: deg(-6), head: deg(6), armFront: limb(92, 100), armBack: limb(84, 104), legFront: limb(16, -24) },
     settle: 0.4,
@@ -1071,7 +1071,7 @@ const INK_DRAWING: Readonly<Record<string, { cycles: number; amp: number; lean: 
   inkSerpent: { cycles: 2, amp: 38, lean: 6 }, // an S: two waves
   inkBull: { cycles: 1.5, amp: 60, lean: 10 }, // one great sweep out and back
   inkClone: { cycles: 4, amp: 26, lean: 4 }, // quick short strokes: head, body, arms, legs
-  inkCyclone: { cycles: 3, amp: 58, lean: 8 }, // round and round
+  inkSpear: { cycles: 2, amp: 40, lean: 6 }, // the brush twirled, lengthening
   masterpiece: { cycles: 8, amp: 52, lean: 12 }, // a long, sweeping drawing
 };
 

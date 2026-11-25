@@ -16,6 +16,7 @@ import {
   AbilityWorld,
   type Vec2,
 } from '../../abilities/ability-world';
+import { INK_SPEAR_MOVESET } from '../../data/abilities/ink-spear';
 import { SHARD_BLADE_MOVESET } from '../../data/abilities/shard-blade';
 import type { ImpactId } from '../../data/combat/impacts';
 import type { ArenaProps } from '../../environment/arena-props';
@@ -114,8 +115,6 @@ export class SceneAbilities implements AbilityHost {
     if (c.muted) return 'muted';
     // Ink Serpent: wrapped, so no abilities at all (walking is still free).
     if (c.bound) return 'bound';
-    // Hypnosis: the copy has its original's abilities, never its ultimate.
-    if (f.hypnoCopy && slot === 'ult') return 'unavailable';
     // Crystal Prison: legs held in crystal, so no ability that moves the body.
     if (c.trapped && MOVEMENT_DELIVERIES.has(caster.def(slot).delivery.type)) return 'trapped';
     const block = caster.check(slot, {
@@ -330,17 +329,6 @@ export class SceneAbilities implements AbilityHost {
   tossSource: ((f: FighterEntity, spec: TossDelivery) => boolean) | null = null;
   /** Set by the scene: a Toss was refused (shows a message). */
   onBlocked: ((f: FighterEntity, block: CastBlock) => void) | null = null;
-  /** Set by the scene: Hypnosis touched `target`; make the copy (false when one already exists or the fight cannot take one). */
-  hypnotiseSource:
-    | ((by: FighterEntity, target: FighterEntity, spec: NonNullable<AbilityPayload['hypnosis']>) => boolean)
-    | null = null;
-  hypnotise(casterId: string, targetId: string, spec: NonNullable<AbilityPayload['hypnosis']>): boolean {
-    const by = this.byName(casterId);
-    const target = this.byName(targetId);
-    if (!by || !target) return false;
-    return this.hypnotiseSource?.(by, target, spec) ?? false;
-  }
-
   /** Set by the scene: Soul Drain took life from `target` and gave `healed` of it to `by` (the returning particles). */
   onDrain: ((by: FighterEntity, target: FighterEntity, healed: number) => void) | null = null;
 
@@ -497,12 +485,13 @@ export class SceneAbilities implements AbilityHost {
   }
 
   /** Shard Blade: the dual swords grow for `durationS` and their moveset takes over his taps and heavy. */
-  arm(casterId: string, durationS: number): void {
+  arm(casterId: string, durationS: number, weapon: 'blades' | 'spear' = 'blades'): void {
     const f = this.byName(casterId);
     if (!f) return;
-    f.heldWeapon = 'blades';
+    f.heldWeapon = weapon;
     f.weaponLeftS = durationS;
-    f.combo.useMoveset(SHARD_BLADE_MOVESET.moves, SHARD_BLADE_MOVESET.starters);
+    const set = weapon === 'spear' ? INK_SPEAR_MOVESET : SHARD_BLADE_MOVESET;
+    f.combo.useMoveset(set.moves, set.starters);
   }
 
   /** The swords end (time out, a KO, or another ability): his own punches come back at once. */

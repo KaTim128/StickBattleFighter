@@ -250,13 +250,6 @@ export interface AbilityVfxInput {
     readonly radiusM: number;
     readonly palette: Palette;
   }[];
-  /** A hypnosis under way: where the original stands, where the copy rises, how far the formation has got (0..1, then 1) and the colours. */
-  readonly hypnoses?: readonly {
-    readonly victim: { readonly x: number; readonly y: number };
-    readonly copy: { readonly x: number; readonly y: number };
-    readonly k: number;
-    readonly palette: Palette;
-  }[];
   /** Vibration fields held at a fist (Reson's Vibration Punch): anchored to the fist, aimed along the punch, reaching out as it lands. */
   readonly fields?: readonly {
     readonly fist: { readonly x: number; readonly y: number; readonly z: number };
@@ -1595,37 +1588,6 @@ export class AbilityVfx {
       }
     }
 
-    // Hypnosis: white spirals turn on the floor under both fighters; while the copy forms, ribbons of pale light stream from the
-    // original to the copy, which steps out along them; once it is live a faint spiral keeps turning under the copy.
-    for (const hy of input.hypnoses ?? []) {
-      const pal = hy.palette;
-      const spiralAt = (x: number, y: number, r: number, a: number, dir = 1): void => {
-        for (let arm = 0; arm < 2; arm++) {
-          const pts: number[] = [];
-          for (let i = 0; i <= 30; i++) {
-            const u = i / 30;
-            const ang = dir * t * 2.4 + arm * Math.PI + u * Math.PI * 3.4;
-            pts.push(x + Math.cos(ang) * r * u, y + Math.sin(ang) * r * u);
-          }
-          f.poly(pts, false).stroke({ width: 0.05, color: pal.core, alpha: a, cap: 'round', join: 'round' });
-        }
-        f.circle(x, y, r).stroke({ width: 0.03, color: pal.bright, alpha: a * 0.7 });
-      };
-      if (hy.k < 1) {
-        const fade = 1 - hy.k * 0.4;
-        spiralAt(hy.victim.x, hy.victim.y, 1.3, 0.75 * fade);
-        for (let i = 0; i < 5; i++) {
-          const ph = (t * 1.4 + i / 5) % 1;
-          const x = hy.victim.x + (hy.copy.x - hy.victim.x) * ph;
-          const y = hy.victim.y + (hy.copy.y - hy.victim.y) * ph;
-          const q = P(x, y, 0.9 + Math.sin(ph * Math.PI) * 0.5);
-          g.circle(q.x, q.y, 0.06 * (1 - 0.4 * ph)).fill({ color: pal.core, alpha: 0.85 * Math.sin(ph * Math.PI) });
-          g.circle(q.x, q.y, 0.16).fill({ color: pal.bright, alpha: 0.18 * Math.sin(ph * Math.PI) });
-        }
-      }
-      spiralAt(hy.copy.x, hy.copy.y, 0.9 + 0.5 * (1 - hy.k), 0.55, -1);
-    }
-
     // Soul Drain: small particles of life are pulled out of the victim and curve back to the drainer, one after another, each
     // arriving with a faint red pulse where it is taken in.
     for (const dr of input.drains ?? []) {
@@ -2634,35 +2596,6 @@ export class AbilityVfx {
         c.y + uy * L * 0.9,
       ]).fill({ color: pal.core, alpha: 0.9 });
       g.circle(c.x + ux * L, c.y + uy * L, 0.06).fill({ color: pal.bright, alpha: 0.5 });
-      return;
-    }
-    if (look.flight?.spiral) {
-      // Hypnosis: a flat white spiral turning in the air as it travels, its coils drawing into a bright centre, with pale rings
-      // shed behind it. It always faces the camera like a disc, so it reads the same from every angle.
-      const turn = t * 7;
-      for (let arm = 0; arm < 2; arm++) {
-        const pts: number[] = [];
-        for (let i = 0; i <= 36; i++) {
-          const u = i / 36;
-          const ang = turn + arm * Math.PI + u * Math.PI * 4.2;
-          const r = 0.03 + u * 0.4;
-          pts.push(c.x + Math.cos(ang) * r, c.y + Math.sin(ang) * r * 0.95);
-        }
-        g.poly(pts, false).stroke({ width: 0.07, color: pal.bright, alpha: 0.35, cap: 'round', join: 'round' });
-        g.poly(pts, false).stroke({ width: 0.035, color: pal.core, alpha: 0.95, cap: 'round', join: 'round' });
-      }
-      g.circle(c.x, c.y, 0.11).fill({ color: pal.core, alpha: 0.95 });
-      g.circle(c.x, c.y, 0.3).fill({ color: pal.bright, alpha: 0.12 });
-      for (let i = 1; i <= 3; i++) {
-        const back = i * 0.3;
-        g.ellipse(c.x - p.dir.x * back, c.y - p.dir.y * back * ISO_T, 0.38 - i * 0.07, (0.38 - i * 0.07) * 0.95).stroke(
-          {
-            width: 0.025,
-            color: pal.bright,
-            alpha: 0.5 - i * 0.12,
-          },
-        );
-      }
       return;
     }
     if (look.flight?.wave) {

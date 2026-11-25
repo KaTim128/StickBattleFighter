@@ -48,37 +48,3 @@ export class InkSplatVeil {
     this.el.classList.toggle('on', level > 0);
   }
 }
-
-/**
- * Hypnosis (Psion, owner 25/11/2026): when the trance takes hold a white spiral swirls out across the whole view and clears as the copy
- * steps out and control passes to it; a small banner then counts down the seconds the copy has left. Presentation only.
- */
-export class HypnosisVeil {
-  private readonly spiral: HTMLDivElement;
-  private readonly banner: HTMLDivElement;
-  private shown = '';
-
-  constructor(parent: HTMLElement) {
-    this.spiral = document.createElement('div');
-    this.spiral.className = 'hypno-veil';
-    this.spiral.setAttribute('aria-hidden', 'true');
-    this.banner = document.createElement('div');
-    this.banner.className = 'hypno-banner';
-    this.banner.setAttribute('aria-hidden', 'true');
-    parent.append(this.spiral, this.banner);
-  }
-
-  /** The scene's hypnosis (null: none). `mine` is true when it is the viewer's own side that was hypnotised into the copy. */
-  update(h: { phase: 'form' | 'live'; leftS: number; totalS: number; formK: number } | null, mine: boolean): void {
-    const spiral = h && h.phase === 'form' ? Math.round((1 - h.formK) * 20) / 20 : 0;
-    const banner = h && mine ? `${Math.ceil(h.leftS)}` : '';
-    const key = `${spiral}|${banner}`;
-    if (key === this.shown) return;
-    this.shown = key;
-    this.spiral.style.opacity = String(spiral * 0.85);
-    this.spiral.style.setProperty('--turn', `${(h?.formK ?? 0) * 360}deg`);
-    this.spiral.classList.toggle('on', spiral > 0);
-    this.banner.textContent = banner ? `HYPNOSIS ${banner}s` : '';
-    this.banner.classList.toggle('on', banner !== '');
-  }
-}

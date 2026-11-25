@@ -11,6 +11,10 @@
     "Idle": "proc.idle.calligrapher",
     "FightingStance": "proc.idle.calligrapher",
     "Turn": "proc.idle.calligrapher",
-    "HeavyAttack": "inkmaster.grand-sweep"
+    "HeavyAttack": "inkmaster.grand-sweep",
+    "BladeThrust": "inkmaster.spear-thrust",
+    "BladeSlashA": "inkmaster.spear-thrust",
+    "BladeFinale": "inkmaster.spear-lunge",
+    "BladeHammer": "inkmaster.spear-impale"
   }
 }

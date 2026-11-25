@@ -118,11 +118,8 @@ export class FighterEntity {
   summon: { readonly owner: FighterEntity; leftS: number | null; readonly persistent: boolean } | null = null;
   /** Seconds left of reappearing after a teleport (the body fades back in). */
   appearS = 0;
-  /** The whole length of the current reappearance (a teleport 0.3 s; a hypnosis copy longer). */
+  /** The whole length of the current reappearance (a teleport 0.3 s; a longer entrance). */
   appearTotalS = 0.3;
-  /** Hypnosis: this fighter is the weaker copy a Psion made (it never has the ultimate), and how long the original stays entranced. */
-  hypnoCopy = false;
-  hypnoS = 0;
   /** Ink creatures: seconds since it rose from its pool, and its health last frame (to splash ink when it is hurt). */
   inkAgeS = 0;
   inkHp: number | null = null;
@@ -167,7 +164,9 @@ export class FighterEntity {
   /** Presentation (winged fighters): how far the hover has lifted it, and the wings' spread and beat. */
   hoverNow = 0;
   /** Shard Blade: his crystal swords last while `weaponLeftS` runs; their moveset has taken over his unarmed taps. */
-  heldWeapon: 'blades' | null = null;
+  heldWeapon: 'blades' | 'spear' | null = null;
+  /** Presentation: how fully the Ink Spear has grown from the brush (0..1). */
+  spearForm = 0;
   weaponLeftS = 0;
   /** Presentation: how fully grown his crystal weapon is (0..1), and which one. */
   weaponForm = 0;

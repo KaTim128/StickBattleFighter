@@ -161,7 +161,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   // and rooted for his ultimate; the force wave and palm strikes only when something gets close.
   'psion-ai': {
     style:
-      'Telekinetic controller: hypnotises the opponent into a fight with their own weaker copy, tosses furniture, ruptures the air, holds targets, backs away.',
+      'Telekinetic controller: opens a gravity vortex to drag and fling, tosses furniture, ruptures the air, holds targets, backs away.',
     preferredRangeM: [3, 6],
     movement: 'circle',
     meleeBias: 0.35,
@@ -387,8 +387,8 @@ export const GENERIC_DESIGN: BrainDesign = {
  * ability in its slot, keyed by ability id. Anything not listed keeps its slot's tactic.
  */
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
-  // Ink Cyclone: a vortex on a target at mid range; it hurts and gently draws them in, so it suits a target that stays put.
-  inkCyclone: { role: 'zone', minM: 2.5, maxM: 6, weight: 1.1 },
+  // Ink Spear: a transformation to use when the target is within a spear's reach of closing in.
+  inkSpear: { role: 'buff', minM: 0, maxM: 5, weight: 1.1 },
   // Eruption: a leap onto a hurt or helpless target at mid range.
   eruption: { role: 'burst', minM: 1.5, maxM: 6, weight: 1, when: { targetHpBelow: 0.7 } },
   // Bastion Anchor: brace when hurt and someone is on top of him.

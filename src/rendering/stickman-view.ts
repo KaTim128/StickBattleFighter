@@ -2,7 +2,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
-import { drawInkBow, drawInkBrush, drawInkSword } from './ink-props';
+import { drawInkBow, drawInkBrush, drawInkSpear, drawInkSword } from './ink-props';
 import { MagmaModel } from './magma-model';
 import { PREMIUM_SKINS, PremiumModel } from './premium-model';
 
@@ -102,8 +102,6 @@ export class StickmanView {
   stunned = false;
   /** Bound by the Ink Serpent: a pulsing ink seal hangs over the head until it lets go. */
   bound = false;
-  /** Hypnotised (Psion): a white spiral turns over the head, 0..1 (fades in and out). */
-  hypnotised = 0;
   private readonly status = new Graphics();
   /** The red ribbon behind a slashing knife (Rending Flurry), drawn above the body. */
   private readonly slashLayer = new Graphics();
@@ -139,6 +137,8 @@ export class StickmanView {
   /** 0..1 how far crystal has grown round both legs (Crystal Prison). */
   legTrap = 0;
   /** Shard Blade's two transformed strikes: the crystal piercing punch (`finale`) and the crystal hammer slam (`hammer`), and how far through (0..1). */
+  /** Ink Spear: how far the brush has grown into a spear (0..1). */
+  spearForm = 0;
   weaponStrike: { kind: 'finale' | 'hammer'; k: number } | null = null;
   /** The mouth is open in a shout (Reson's Sonic Boom, Resonance Break), with how wide. */
   shout: { kind: 'scream' | 'screech'; k: number } | null = null;
@@ -1541,7 +1541,10 @@ export class StickmanView {
     }
     if (this.held === 'brush') {
       // Inkmaster's brush: held in both hands at the middle of the handle, a hand's width apart.
-      this.bladeTip = drawInkBrush(g, s.armBack[2], hand, o, this.clockS, 1);
+      this.bladeTip =
+        this.spearForm > 0.02
+          ? drawInkSpear(g, s.armBack[2], hand, o, this.clockS, this.spearForm)
+          : drawInkBrush(g, s.armBack[2], hand, o, this.clockS, 1);
       return;
     }
     if (this.held === 'ink-sword') {
@@ -1740,22 +1743,6 @@ export class StickmanView {
           alpha: this.shieldFlare,
         });
       }
-    }
-    if (this.hypnotised > 0.01) {
-      // Spiral eyes: a white spiral turning over the head, its coils drawing in toward a bright centre.
-      const cx = s.head.x;
-      const cy = s.head.y - this.bones.headRadius - 0.34;
-      const a = this.hypnotised;
-      g.circle(cx, cy, 0.2).fill({ color: 0xffffff, alpha: 0.12 * a });
-      const pts: number[] = [];
-      for (let i = 0; i <= 40; i++) {
-        const u = i / 40;
-        const ang = u * Math.PI * 5 - t * 6;
-        const r = 0.02 + u * 0.17;
-        pts.push(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r * 0.9);
-      }
-      g.poly(pts, false).stroke({ width: 0.035, color: 0xf2f4fb, alpha: 0.95 * a, cap: 'round', join: 'round' });
-      g.circle(cx, cy, 0.03).fill({ color: 0xffffff, alpha: a });
     }
     if (this.bound) {
       // An ink seal: a black brushed disc with a pale cross-stroke, bobbing above the head so the restraint reads at a glance.

@@ -1477,6 +1477,61 @@ const STRIKES = {
     { lean: deg(8), armBack: limb(60, 90), armFront: limb(170, 40) },
     { lean: deg(-26), head: deg(14), armBack: limb(30, 80), armFront: limb(10, 4), legFront: limb(50, -70) },
   ),
+  // Ink Spear: the spear drawn back along the hip, then driven straight out (a thrust), deeper (a lunge) or down from above (the impale).
+  'inkmaster.spear-thrust': strike(
+    {
+      lean: deg(6),
+      head: deg(-2),
+      armFront: limb(-20, 70),
+      armBack: limb(-44, 80),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -26),
+    },
+    {
+      lean: deg(-18),
+      head: deg(-6),
+      armFront: limb(88, 4),
+      armBack: limb(72, 10),
+      legFront: limb(42, -44),
+      legBack: limb(-38, -22),
+    },
+  ),
+  'inkmaster.spear-lunge': strike(
+    {
+      lean: deg(10),
+      head: deg(-4),
+      armFront: limb(-30, 64),
+      armBack: limb(-50, 78),
+      legFront: limb(28, -30),
+      legBack: limb(-34, -26),
+    },
+    {
+      lean: deg(-30),
+      head: deg(-8),
+      armFront: limb(94, 2),
+      armBack: limb(80, 6),
+      legFront: limb(54, -58),
+      legBack: limb(-44, -14),
+    },
+  ),
+  'inkmaster.spear-impale': strike(
+    {
+      lean: deg(16),
+      head: deg(-8),
+      armFront: limb(160, 40),
+      armBack: limb(150, 50),
+      legFront: limb(26, -32),
+      legBack: limb(-32, -30),
+    },
+    {
+      lean: deg(-38),
+      head: deg(16),
+      armFront: limb(60, 6),
+      armBack: limb(50, 12),
+      legFront: limb(56, -64),
+      legBack: limb(-40, -12),
+    },
+  ),
   'inkmaster.grand-sweep': strike(
     { lean: deg(20), head: deg(-6), armBack: limb(-50, 120), armFront: limb(-40, 36), legFront: limb(26, -26) },
     {

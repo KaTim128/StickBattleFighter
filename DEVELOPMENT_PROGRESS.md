@@ -1020,3 +1020,7 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 ## 25/11/2026 — Reson Vibration Punch field
 - Files: `src/data/abilities/reson.ts` (reach, `look.field: 'vibration'`), `src/abilities/ability-def.ts`, `src/vfx/ability-vfx.ts` (`fields`), `src/app/scenes/fight-arena-scene.ts`. Full vitest 1328 passing; slow-motion screenshots of the wind-up and release taken.
 - Not verified: a hit on a moving opponent at the new 2.4 m reach in a long fight, or balance by matrix.
+
+## 25/11/2026 — batch 1 of the Magix request (TD-173)
+- Done: Psion Gravity Vortex (replacing Hypnosis, removed), Ink Spear (replacing Ink Cyclone), Bull ink splat, Serpent no-run. Tests 1328 passing; screenshots of spear and vortex.
+- Next (batches 2+): the new fighter Magix (renamed from Mystario): model, Disappearing Act, A Rabbit, Card Barrage, Wand of Misfortune, Lucky Hat, Mirror Act ultimate, AI, roster and select screen.

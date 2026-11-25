@@ -111,14 +111,12 @@ export interface AbilityHost {
   /** Hold a target in a scream: for `seconds` it cannot walk toward the caster (`awayX/awayY` is the direction from the caster). Optional. */
   pin?(targetId: string, away: Vec2, seconds: number): void;
   /** Crystal Arsenal: the caster's fists turn to crystal for `durationS` seconds (replacing its unarmed moves). Optional. */
-  arm?(casterId: string, durationS: number): void;
+  arm?(casterId: string, durationS: number, weapon?: 'blades' | 'spear'): void;
   /** Hold a fighter's legs in crystal for `seconds` (0 frees them): no walking, jumping, dodging or flying, and a flier is dragged down. Optional. */
   trap?(targetId: string, seconds: number): void;
   /** A gentle current: add this velocity to a fighter's own movement for this step only (Ink Cyclone; they can still walk or dodge out). Optional. */
   nudge?(targetId: string, velocity: Vec2): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
-  /** Hypnosis: turn the target against its own side with a weaker copy of itself; false if it could not be done (a copy already exists). */
-  hypnotise?(casterId: string, targetId: string, spec: NonNullable<AbilityPayload['hypnosis']>): boolean;
   /** Ink Serpent: bind the target (no abilities, attacks, jumps or dodges; walking stays free) for `seconds`; 0 frees it. */
   bind?(targetId: string, seconds: number): void;
   legTrapState?(targetId: string): { heightM: number; trappedS: number };
@@ -1008,7 +1006,7 @@ export class AbilityWorld {
         });
         break;
       case 'arsenal':
-        host.arm?.(casterId, d.durationS);
+        host.arm?.(casterId, d.durationS, d.weapon ?? 'blades');
         host.emit({
           kind: 'impact',
           ability: def.id,
@@ -1504,7 +1502,6 @@ export class AbilityWorld {
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
-        if (p.def.payload.hypnosis) host.hypnotise?.(p.casterId, f.id, p.def.payload.hypnosis);
         if (d.lift) this.startLift(p, f, host);
         done = true;
         break;

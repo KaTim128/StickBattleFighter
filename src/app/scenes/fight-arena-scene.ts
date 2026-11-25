@@ -886,7 +886,6 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
     this.abilities.summonRoom = (f, spec) => this.summons.room(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
-    this.abilities.hypnotiseSource = (psion, victim, spec) => this.startHypnosis(psion, victim, spec);
     this.abilities.tossTarget = (f, rangeM) => this.tossCandidate(f, rangeM) !== null;
     this.abilities.tossSource = (f, spec) => this.telekineticToss(f, spec);
     this.abilities.onDrain = (by, target, healed) => {
@@ -1044,7 +1043,6 @@ export class FightArenaScene implements ArenaScene {
       }
       if (!stopped) {
         this.summons.update(stepS);
-        this.stepHypnosis(stepS);
         this.clashes.maybeStart(this.simTimeS);
       }
     }
@@ -2466,163 +2464,6 @@ export class FightArenaScene implements ArenaScene {
     return true;
   }
 
-  /**
-   * Hypnosis (Psion): the hypnotised fighter's weaker copy takes over the Psion's side of the fight while he stands safely out of it
-   * (out of the arena, so nothing can hit him). The side's controller (the player, or the AI) drives the copy against the original.
-   */
-  private hypnosis: {
-    side: 'player' | 'opponent';
-    psion: FighterEntity;
-    victim: FighterEntity;
-    copy: FighterEntity;
-    spec: NonNullable<AbilityPayload['hypnosis']>;
-    from: { x: number; y: number };
-    to: { x: number; y: number };
-    /** Where the Psion stood when he cast it: he is back exactly there when the trance ends. */
-    psionAt: { x: number; y: number };
-    ageS: number;
-    leftS: number;
-  } | null = null;
-
-  /** What the HUD shows of an active hypnosis: forming (the copy rising) or live, and the seconds left. */
-  get hypnosisHud(): {
-    phase: 'form' | 'live';
-    leftS: number;
-    totalS: number;
-    side: 'player' | 'opponent';
-    formK: number;
-  } | null {
-    const h = this.hypnosis;
-    return h
-      ? {
-          phase: h.ageS < h.spec.holdS ? 'form' : 'live',
-          leftS: h.leftS,
-          totalS: h.spec.durationS,
-          side: h.side,
-          formK: Math.min(1, h.ageS / h.spec.holdS),
-        }
-      : null;
-  }
-
-  /**
-   * The spiral touched `victim`: a weaker copy of it rises from it and takes the Psion's place. Only one copy exists at a time, only
-   * between the two main fighters, and not in tag fights. The copy has the victim's look, abilities and moves but a share of its health
-   * and damage, and never its ultimate.
-   */
-  private startHypnosis(
-    psion: FighterEntity,
-    victim: FighterEntity,
-    spec: NonNullable<AbilityPayload['hypnosis']>,
-  ): boolean {
-    if (this.hypnosis || this.teams || !this.physics || !this.view) return false;
-    const side = psion === this.playerFighter ? 'player' : psion === this.dummyFighter ? 'opponent' : null;
-    if (!side || victim === psion || victim.summon || victim.combatant.isKo || psion.combatant.isKo) return false;
-    if (victim !== (side === 'player' ? this.dummyFighter : this.playerFighter)) return false;
-    const stats = victim.def.stats;
-    const def = {
-      ...victim.def,
-      stats: {
-        ...stats,
-        maxHp: Math.max(1, Math.round(stats.maxHp * spec.hpFactor)),
-        power: stats.power * spec.powerFactor,
-      },
-    };
-    const copy = new FighterEntity(side === 'player' ? 'player' : 'dummy', def, victim, side === 'player');
-    copy.team = psion.team;
-    copy.hypnoCopy = true;
-    // The Psion's own loose business ends with him leaving the fight.
-    this.abilities?.interrupt(psion, true);
-    this.abilities?.world.clearOf(psion.name);
-    this.pointAim = null;
-    this.ultAimPoint = null;
-    this.swapIn(side, copy);
-    this.tags--; // not a tag
-    // It rises from the original, then steps out to the side facing the Psion's old position.
-    const psionAt = { x: psion.x, y: psion.y };
-    const away = { x: psion.x - victim.x, y: psion.y - victim.y };
-    const al = Math.hypot(away.x, away.y) || 1;
-    const want = {
-      x: victim.x + (-away.y / al) * 1.9 + (away.x / al) * 0.6,
-      y: victim.y + (away.x / al) * 1.9 + (away.y / al) * 0.6,
-    };
-    const to = this.freeSpotNear(copy, want) ?? { x: victim.x, y: victim.y };
-    copy.placeAt({ x: victim.x, y: victim.y });
-    copy.appearS = spec.holdS;
-    copy.appearTotalS = spec.holdS;
-    copy.combatant.grantInvulnerability(spec.holdS);
-    copy.combatant.stun(spec.holdS);
-    victim.combatant.stun(spec.holdS);
-    victim.hypnoS = spec.holdS;
-    copy.hypnoS = spec.holdS;
-    victim.combo.interrupt();
-    this.abilities?.interrupt(victim, true);
-    this.hypnosis = {
-      side,
-      psion,
-      victim,
-      copy,
-      spec,
-      from: { x: victim.x, y: victim.y },
-      to,
-      psionAt,
-      ageS: 0,
-      leftS: spec.durationS,
-    };
-    this.characterSound(victim, 'jump', 0.5);
-    this.queueSound('hypno-hit', 0.9);
-    return true;
-  }
-
-  private stepHypnosis(stepS: number): void {
-    const h = this.hypnosis;
-    if (!h) return;
-    h.ageS += stepS;
-    h.victim.hypnoS = Math.max(0, h.spec.holdS - h.ageS);
-    h.copy.hypnoS = h.victim.hypnoS;
-    // While it forms the copy slides out of the original (it cannot be hit or act yet).
-    if (h.ageS < h.spec.holdS) {
-      const k = Math.min(1, h.ageS / h.spec.holdS);
-      const e = k * k * (3 - 2 * k);
-      h.copy.placeAt({ x: h.from.x + (h.to.x - h.from.x) * e, y: h.from.y + (h.to.y - h.from.y) * e });
-      h.copy.faceToward(h.victim.x - h.copy.x, h.victim.y - h.copy.y);
-      h.victim.faceToward(h.copy.x - h.victim.x, h.copy.y - h.victim.y);
-    } else h.leftS -= stepS;
-    // The Psion's own cooldowns keep running while he is away.
-    this.abilities?.stepCaster(h.psion, stepS);
-    if (h.leftS <= 0 || h.copy.combatant.isKo || h.victim.combatant.isKo || h.psion.combatant.isKo) this.endHypnosis();
-  }
-
-  /** The trance lifts: the copy dissolves into white light and the Psion steps back in where it stood. */
-  private endHypnosis(): void {
-    const h = this.hypnosis;
-    if (!h) return;
-    this.hypnosis = null;
-    const at = { x: h.copy.x, y: h.copy.y };
-    this.frameDust.push({
-      points: [0, 1, 2, 3].map((i) => ({ x: at.x, y: at.y, z: 0.3 + i * 0.4 })),
-      colour: 0xf2f4fb,
-      colours: [0xffffff, 0xcfd4e6, 0x9aa0b8],
-      onlyColours: true,
-      count: 90,
-    });
-    this.swapIn(h.side, h.psion);
-    this.tags--;
-    // Psion steps back in exactly where he stood when he cast it (the nearest free spot if something is there now), not where the
-    // copy fell; the original snaps out of the trance on the spot.
-    h.psion.placeAt(this.freeSpotNear(h.psion, h.psionAt) ?? h.psionAt);
-    h.psion.faceToward(h.victim.x - h.psion.x, h.victim.y - h.psion.y);
-    h.victim.hypnoS = 0;
-    h.victim.combatant.stun(0);
-    this.frameDust.push({
-      points: [0, 1, 2].map((i) => ({ x: h.victim.x, y: h.victim.y, z: 0.5 + i * 0.5 })),
-      colour: 0xf2f4fb,
-      colours: [0xffffff, 0xcfd4e6],
-      onlyColours: true,
-      count: 40,
-    });
-    this.queueSound('hypno-end', 0.8);
-  }
-
   /** Tags made so far (tests and the HUD's swap flash). */
   tags = 0;
 
@@ -2637,9 +2478,8 @@ export class FightArenaScene implements ArenaScene {
    * after a short pause so the KO plays out.
    */
   private decideMatch(): void {
-    // During a hypnosis the Psion's side is the Psion himself (his copy falling is not his defeat).
-    const p = (this.hypnosis?.side === 'player' ? this.hypnosis.psion : this.playerFighter).combatant;
-    const o = (this.hypnosis?.side === 'opponent' ? this.hypnosis.psion : this.dummyFighter).combatant;
+    const p = this.playerFighter.combatant;
+    const o = this.dummyFighter.combatant;
     const t = this.teams;
     if (!this.matchResult && t) {
       // 3 vs 3: a KO only ends it when the whole team is down; on time, the healthier team wins.
@@ -2780,6 +2620,7 @@ export class FightArenaScene implements ArenaScene {
     // Ink Serpent: wrapped, so no blows and no jumps (he can still walk and guard).
     if (c.bound) {
       jump = false;
+      f.sprinting = false; // wrapped: walking only, no running
       f.combo.interrupt();
     }
     // What the feet stand on: the floor or the top of a piece of furniture.
@@ -3992,16 +3833,6 @@ export class FightArenaScene implements ArenaScene {
       funnels: world.funnels,
       cages: world.cages,
       fields,
-      hypnoses: this.hypnosis
-        ? [
-            {
-              victim: { x: this.hypnosis.victim.x, y: this.hypnosis.victim.y },
-              copy: { x: this.hypnosis.copy.x, y: this.hypnosis.copy.y },
-              k: Math.min(1, this.hypnosis.ageS / this.hypnosis.spec.holdS),
-              palette: this.hypnosis.psion.caster?.def('a1').look?.palette ?? DRAIN_FALLBACK,
-            },
-          ]
-        : [],
       drains: this.liveDrains(frameDtS).map((d) => {
         const chest = (f: FighterEntity) => ({ x: f.x, y: f.y, z: f.hop.heightM + 1.1 });
         return {
@@ -4311,7 +4142,7 @@ export class FightArenaScene implements ArenaScene {
       const broke = c.takeCrystalBreaks();
       const cast = f.caster?.cast;
       let kind: string | null = null;
-      if (f.heldWeapon) kind = 'blades';
+      if (f.heldWeapon === 'blades') kind = 'blades';
       else if (f.buff?.sovereign) kind = 'sovereign';
       if (kind) {
         if (f.weaponKind !== kind) f.weaponForm = 0; // a new crystal grows from nothing
@@ -4458,8 +4289,9 @@ export class FightArenaScene implements ArenaScene {
     // and stars circling the head while stunned.
     f.view.guard = c.state === 'guarding' ? 1 : 0;
     f.view.shieldFlare = f.shieldS / SHIELD_FLARE_S;
-    f.view.stunned = c.state === 'stunned' && f.hypnoS <= 0;
-    f.view.hypnotised = f.hypnoS > 0 && !f.hypnoCopy ? Math.min(1, f.hypnoS / 0.3) : 0;
+    f.view.stunned = c.state === 'stunned';
+    f.spearForm += ((f.heldWeapon === 'spear' ? 1 : 0) - f.spearForm) * smoothing(9, frameDtS);
+    f.view.spearForm = f.spearForm < 0.01 ? 0 : f.spearForm;
     f.view.bound = c.bound;
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;

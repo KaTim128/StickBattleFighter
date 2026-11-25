@@ -823,6 +823,11 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     tone('sine', 110, 60, 0.4, 0.4),
     noise('bandpass', 1600, 700, 0.25, 0.15, 2, 0.1),
   ],
+  // Ink Spear: the brush stretching and hardening into a spear.
+  'ink-spear-form': [
+    noise('bandpass', 900, 2600, 0.35, 0.4, 1.4, 0, { attack: 0.05 }),
+    tone('triangle', 220, 520, 0.3, 0.25),
+  ],
   'ink-cyclone': [
     noise('bandpass', 900, 2200, 0.7, 0.4, 1.2, 0, { flutter: 9, attack: 0.1 }),
     tone('sine', 120, 220, 0.6, 0.2),

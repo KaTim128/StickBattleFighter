@@ -403,10 +403,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 26, 16, '#ffffff', 0.25),
     `<path d="M24 4 V40" stroke="#ff6a72" stroke-width="4" opacity=".6" filter="url(#gl)"/><g filter="url(#ds)"><path d="M24 6 V38" stroke="#eef2f7" stroke-width="5" stroke-linecap="round"/><rect x="18" y="34" width="12" height="4" rx="1.5" fill="#6a1520" stroke="#1a0508" stroke-width="1.2"/></g><ellipse cx="24" cy="42" rx="14" ry="3" fill="#ff6a72" opacity=".4" filter="url(#bl)"/>`,
   ),
-  hypnosis: icon(
+  'gravity-vortex': icon(
     'psi',
-    rays(24, 24, 16, '#f4eaff', 0.25),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M24 24 C24 21 27 21 27 24 C27 29 20 29 20 23 C20 16 30 16 30 24 C30 33 17 33 17 22 C17 11 33 11 33 24 C33 37 14 37 14 21 C14 7 36 7 36 24" stroke="#f4f6fb" stroke-width="2.6"/></g><circle cx="24" cy="24" r="2.2" fill="#ffffff"/>`,
+    swirl('#f4eaff', 0.3),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M8 16 C26 6 42 16 38 27 C34 37 17 34 17 24 C17 18 28 18 28 24" stroke="#c7a1ff" stroke-width="3.6"/><path d="M8 34 C14 43 32 45 41 36" stroke="#8a4fe0" stroke-width="2.6"/></g><circle cx="24" cy="24" r="2.4" fill="#f4eaff"/>`,
   ),
   'telekinetic-toss': icon(
     'psi',
@@ -593,10 +593,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 13, '#f2eee3', 0.14),
     `<ellipse cx="24" cy="40" rx="14" ry="4.5" fill="#050505" opacity=".85"/><g filter="url(#ds)" stroke="#f2eee3" stroke-width="1.2" fill="#050505"><circle cx="24" cy="10" r="4.6"/><path d="M24 15 V28 M24 19 L15 25 M24 19 L33 14 M24 28 L18 38 M24 28 L30 38" fill="none" stroke="#050505" stroke-width="3.2" stroke-linecap="round"/></g><path d="M33 8 L38 28" stroke="#f2eee3" stroke-width="1.6" stroke-linecap="round"/>`,
   ),
-  'ink-cyclone': icon(
+  'ink-spear': icon(
     'ink',
-    swirl('#f2eee3', 0.3),
-    `<g fill="none" stroke="#050505" stroke-linecap="round" filter="url(#ds)"><path d="M10 14 C28 6 40 16 36 26 C32 34 18 32 18 24 C18 18 28 18 28 24" stroke-width="5"/><path d="M8 34 C14 42 32 44 40 36" stroke-width="3.4"/></g><path d="M10 14 C28 6 40 16 36 26" fill="none" stroke="#f2eee3" stroke-width="1" opacity=".5"/>`,
+    rays(24, 24, 16, '#f2eee3', 0.16),
+    `<g filter="url(#ds)"><path d="M6 42 L34 14" stroke="#4a2c18" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M32 16 C36 9 40 6 44 4 C42 9 40 13 36 20 Z" fill="#050505" stroke="#f2eee3" stroke-width="1.2" stroke-linejoin="round"/><path d="M30 18 L26 14 M28 20 L23 18" stroke="#b01c24" stroke-width="2" stroke-linecap="round"/></g>`,
   ),
   masterpiece: icon(
     'ink',

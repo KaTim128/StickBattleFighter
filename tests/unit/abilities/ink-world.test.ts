@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AbilityPayload } from '../../../src/abilities/ability-def';
 import { type AbilityHost, AbilityWorld } from '../../../src/abilities/ability-world';
+import { INK_SPEAR_MOVESET } from '../../../src/data/abilities/ink-spear';
 import { INKMASTER_KIT } from '../../../src/data/abilities/inkmaster';
 
 /** Inkmaster's ink deliveries against a fake host: the rules that keep them fair, without the scene. */
@@ -91,6 +92,9 @@ describe('Ink Bull', () => {
     }
     return phases;
   };
+  it("a ram that lands covers the target's view in ink for exactly 1.5 seconds", () => {
+    expect(INKMASTER_KIT.a3.payload.inkSplatS).toBe(1.5);
+  });
   it('rises from the ink, paws the ground, then charges once and rams the opponent, then scatters', () => {
     const a = arena([{ x: 8, y: 0 }]);
     a.world.release('me', INKMASTER_KIT.a3, { x: 8, y: 0 }, a.host);
@@ -229,26 +233,22 @@ describe('Ink Slash', () => {
   });
 });
 
-describe('Ink Cyclone', () => {
-  it('pulls gently (slower than walking), hurts on a tick and collapses once', () => {
-    const a = arena([{ x: 4.5, y: 0 }]);
-    a.world.release('me', INKMASTER_KIT.a5!, { x: 3, y: 0 }, a.host);
-    run(a, 1.2);
-    expect(a.nudges.length).toBeGreaterThan(0);
-    for (const n of a.nudges) expect(n.speed).toBeLessThan(4.6);
-    const ticks = a.hits.length;
-    expect(ticks).toBeGreaterThanOrEqual(2);
-    run(a, 3);
-    expect(a.world.ink.vortices).toHaveLength(0);
-    const collapse = a.hits.filter((h) => h.damage === 50);
-    expect(collapse).toHaveLength(1);
-  });
-  it('anyone outside its radius is untouched', () => {
-    const a = arena([{ x: 12, y: 0 }]);
-    a.world.release('me', INKMASTER_KIT.a5!, { x: 5, y: 0 }, a.host);
-    run(a, 5);
-    expect(a.hits).toHaveLength(0);
-    expect(a.nudges).toHaveLength(0);
+describe('Ink Spear', () => {
+  it('is an 8 second transformation that swaps in long, narrow, contact-only thrusts', () => {
+    const d = INKMASTER_KIT.a5!.delivery;
+    expect(d).toMatchObject({ type: 'arsenal', weapon: 'spear', durationS: 8 });
+    const set = INK_SPEAR_MOVESET;
+    expect(Object.keys(set.moves).sort()).toEqual(['spear-impale', 'spear-lunge', 'spear-thrust', 'spear-thrust-2']);
+    for (const m of Object.values(set.moves)) {
+      expect(m.contact).toBe(true);
+      expect(m.reachM).toBeGreaterThanOrEqual(2.3); // well past a fist's reach
+      expect(m.hitRadiusM).toBeLessThanOrEqual(0.4); // narrow: it must be aimed
+    }
+    // Poking damage is high but bounded, and the heavy is the hardest hit.
+    const dmg = Object.values(set.moves).map((m) => m.damage);
+    expect(Math.max(...dmg)).toBeLessThanOrEqual(70);
+    expect(set.moves['spear-impale']!.damage).toBe(Math.max(...dmg));
+    expect(INKMASTER_KIT.a5!.cooldownS).toBeGreaterThanOrEqual(14);
   });
 });
 

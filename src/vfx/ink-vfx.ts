@@ -609,12 +609,16 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
 /** The cyclone: spiralling ink arms, a dark pool at the heart, rising drops; it caves in at the end and bursts. */
 function vortex(f: Graphics, g: Graphics, P: Project, v: Vortex, t: number): void {
   const spec = v.spec;
+  // Inkmaster's cyclone was black ink; Psion's gravity vortex is the same swirl in deep violet with a pale lilac rim.
+  const psy = v.def.vfx === 'gravity-vortex';
+  const dark = psy ? 0x1a0b30 : BLACK;
+  const rim = psy ? 0xc7a1ff : PALE;
   if (v.collapsed) {
     const k = clamp01(v.collapseS / COLLAPSE_S);
     const r = spec.collapseRadiusM * ease(k);
-    f.circle(v.x, v.y, r).fill({ color: BLACK, alpha: 0.4 * (1 - k) });
-    f.circle(v.x, v.y, r).stroke({ width: 0.25 * (1 - k) + 0.03, color: BLACK, alpha: 0.9 * (1 - k) });
-    f.circle(v.x, v.y, r * 0.8).stroke({ width: 0.05, color: PALE, alpha: 0.5 * (1 - k) });
+    f.circle(v.x, v.y, r).fill({ color: dark, alpha: 0.4 * (1 - k) });
+    f.circle(v.x, v.y, r).stroke({ width: 0.25 * (1 - k) + 0.03, color: dark, alpha: 0.9 * (1 - k) });
+    f.circle(v.x, v.y, r * 0.8).stroke({ width: 0.05, color: rim, alpha: 0.5 * (1 - k) });
     const c = P(v.x, v.y, 0.4);
     splatter(g, c, spec.collapseRadiusM * 0.9, k, v.x * 5, 28);
     return;
@@ -622,9 +626,9 @@ function vortex(f: Graphics, g: Graphics, P: Project, v: Vortex, t: number): voi
   const open = ease(clamp01(v.ageS / 0.35));
   const closing = clamp01((spec.durationS - v.ageS) / 0.5);
   const R = spec.radiusM * open;
-  f.circle(v.x, v.y, R).fill({ color: BLACK, alpha: 0.2 * open });
-  f.circle(v.x, v.y, R * 0.45).fill({ color: BLACK, alpha: 0.45 * open });
-  f.circle(v.x, v.y, R).stroke({ width: 0.05, color: PALE, alpha: 0.25 * open });
+  f.circle(v.x, v.y, R).fill({ color: dark, alpha: 0.2 * open });
+  f.circle(v.x, v.y, R * 0.45).fill({ color: dark, alpha: 0.45 * open });
+  f.circle(v.x, v.y, R).stroke({ width: 0.05, color: rim, alpha: 0.25 * open });
   // Spiral arms on the floor, spinning faster toward the centre.
   const arms = 4;
   for (let a = 0; a < arms; a++) {
@@ -637,12 +641,12 @@ function vortex(f: Graphics, g: Graphics, P: Project, v: Vortex, t: number): voi
       pts.push({ x: v.x + Math.cos(ang) * rad, y: v.y + Math.sin(ang) * rad });
       widths.push(0.28 * (1 - u * 0.8) + 0.02);
     }
-    ribbon(f, pts, widths, BLACK, 0.75 * open);
+    ribbon(f, pts, widths, dark, 0.75 * open);
     ribbon(
       f,
       pts,
       widths.map((w) => w * 0.18),
-      PALE,
+      rim,
       0.28 * open,
     );
   }
@@ -651,14 +655,14 @@ function vortex(f: Graphics, g: Graphics, P: Project, v: Vortex, t: number): voi
     const h = 0.4 + i * 0.5;
     const c = P(v.x, v.y, h);
     const w = (R * (0.8 - i * 0.15) + Math.sin(t * 4 + i) * 0.1) * open * closing;
-    g.ellipse(c.x, c.y, w, w * ISO_T * 1.3).stroke({ width: 0.12 - i * 0.02, color: BLACK, alpha: 0.7 * open });
+    g.ellipse(c.x, c.y, w, w * ISO_T * 1.3).stroke({ width: 0.12 - i * 0.02, color: dark, alpha: 0.7 * open });
   }
   for (let i = 0; i < 16; i++) {
     const ang = t * 4 + i * 0.7;
     const rad = R * (0.35 + ((i * 0.37) % 0.6));
     const h = 0.2 + ((t * 0.9 + i * 0.13) % 1) * 2;
     const c = P(v.x + Math.cos(ang) * rad, v.y + Math.sin(ang) * rad, h);
-    g.circle(c.x, c.y, 0.035 + (i % 3) * 0.015).fill({ color: BLACK, alpha: 0.85 * open });
+    g.circle(c.x, c.y, 0.035 + (i % 3) * 0.015).fill({ color: dark, alpha: 0.85 * open });
   }
 }
 

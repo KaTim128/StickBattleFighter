@@ -177,3 +177,86 @@ export function drawInkBow(g: Graphics, hand: Point, facing: 1 | -1, o: number, 
   }
   g.circle(hand.x, hand.y, 0.04 + o).fill(INK_BLACK);
 }
+
+/**
+ * The Ink Spear: the brush grown into a long spear. `form` (0..1) is how far the change has gone: the dark lacquered shaft stretches
+ * out past the front hand, the bristles harden into a long leaf-shaped blade of black ink with a pale edge, and a red tassel and
+ * wisps of living ink stream from the socket. Held the way the brush is, along the line from the rear hand to the front hand.
+ */
+export function drawInkSpear(
+  g: Graphics,
+  rear: Point,
+  front: Point,
+  o: number,
+  t: number,
+  form: number,
+): { tip: Point; inner: Point } {
+  const dx = front.x - rear.x;
+  const dy = front.y - rear.y;
+  const dl = Math.hypot(dx, dy) || 1;
+  const ux = dx / dl;
+  const uy = dy / dl;
+  const nx = -uy;
+  const ny = ux;
+  const at = (k: number, side = 0): Point => ({ x: front.x + ux * k + nx * side, y: front.y + uy * k + ny * side });
+  const reach = 0.62 + 0.85 * form; // the shaft grows
+  const butt = at(-0.5 - dl);
+  const socket = at(reach);
+  // The shaft: dark lacquered wood with a pale lit edge and gold bands.
+  g.moveTo(butt.x, butt.y)
+    .lineTo(socket.x, socket.y)
+    .stroke({ width: 0.056 + o * 2, color: INK_BLACK, cap: 'round' });
+  g.moveTo(butt.x, butt.y).lineTo(socket.x, socket.y).stroke({ width: 0.042, color: WOOD, cap: 'round' });
+  g.moveTo(at(-0.46, -0.013).x, at(-0.46, -0.013).y)
+    .lineTo(at(reach - 0.04, -0.013).x, at(reach - 0.04, -0.013).y)
+    .stroke({ width: 0.011, color: WOOD_LIT, alpha: 0.8, cap: 'round' });
+  for (const k of [-0.44 - dl, reach * 0.5, reach - 0.08]) {
+    g.moveTo(at(k, -0.028).x, at(k, -0.028).y)
+      .lineTo(at(k, 0.028).x, at(k, 0.028).y)
+      .stroke({ width: 0.016, color: GOLD, cap: 'round' });
+  }
+  // The blade: a long leaf of black ink with a pale cutting edge, flowing like a brush stroke that has set hard.
+  const bl = 0.3 + 0.35 * form;
+  const wob = Math.sin(t * 6) * 0.008;
+  const tip = at(reach + bl, wob);
+  const blade = [
+    at(reach, -0.03),
+    at(reach + bl * 0.3, -0.085 - wob),
+    at(reach + bl * 0.7, -0.05),
+    tip,
+    at(reach + bl * 0.7, 0.05),
+    at(reach + bl * 0.3, 0.088 + wob),
+    at(reach, 0.03),
+  ];
+  const flat = blade.flatMap((p) => [p.x, p.y]);
+  g.poly(flat).fill(INK_BLACK);
+  g.poly(flat).stroke({ width: o * 1.4 + 0.004, color: INK_BLACK, join: 'round' });
+  g.moveTo(at(reach + 0.02, -0.02).x, at(reach + 0.02, -0.02).y)
+    .lineTo(tip.x, tip.y)
+    .stroke({ width: 0.009, color: PALE, alpha: 0.85, cap: 'round' });
+  g.moveTo(at(reach + 0.02, 0.02).x, at(reach + 0.02, 0.02).y)
+    .lineTo(tip.x, tip.y)
+    .stroke({ width: 0.006, color: INK_WET, alpha: 0.9, cap: 'round' });
+  // A red tassel at the socket, and living wisps of ink streaming back from the blade.
+  for (let i = 0; i < 3; i++) {
+    const s = Math.sin(t * 7 + i * 1.3) * 0.03;
+    g.moveTo(socket.x, socket.y)
+      .quadraticCurveTo(
+        at(reach - 0.1, (i - 1) * 0.05 + s).x,
+        at(reach - 0.1, (i - 1) * 0.05 + s).y,
+        at(reach - 0.2, (i - 1) * 0.07 + s * 2).x,
+        at(reach - 0.2, (i - 1) * 0.07 + s * 2).y,
+      )
+      .stroke({ width: 0.012, color: 0xb01c24, alpha: 0.9, cap: 'round' });
+  }
+  for (let i = 0; i < 5; i++) {
+    const p = (t * 1.4 + i * 0.2) % 1;
+    const w = at(reach + 0.1 + (0.5 - p) * bl, (i % 2 ? 1 : -1) * (0.07 + p * 0.1));
+    g.circle(w.x, w.y + p * 0.08, 0.012 * (1 - p)).fill({ color: INK_BLACK, alpha: (1 - p) * form });
+  }
+  for (const h of [front, rear]) {
+    g.circle(h.x, h.y, 0.046 + o).fill(INK_BLACK);
+    g.circle(h.x, h.y, 0.036).fill(0x22222a);
+  }
+  return { tip, inner: at(0.75) };
+}

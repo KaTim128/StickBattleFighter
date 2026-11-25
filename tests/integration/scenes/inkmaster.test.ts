@@ -97,6 +97,11 @@ describe('Inkmaster', () => {
     run(0.3);
     expect(me.airborne).toBe(false);
     expect(me.combatant.tryDodge()).toBe(false);
+    // It cannot run either.
+    intents.sprint = true;
+    run(0.2);
+    expect(me.sprinting).toBe(false);
+    intents.sprint = false;
     // But it can walk.
     intents.setMove('t', { x: 1, y: 0 });
     run(1);
@@ -118,8 +123,10 @@ describe('Inkmaster', () => {
     runUntil(() => world().bulls.length > 0, 2);
     expect(world().bulls).toHaveLength(1);
     const phases = new Set<string>();
+    let splat = 0;
     for (let i = 0; i < 14 / STEP; i++) {
       run(STEP);
+      splat = Math.max(splat, foe.combatant.inkSplatLeftS);
       const b = world().bulls[0];
       if (!b) break;
       phases.add(b.phase);
@@ -131,7 +138,11 @@ describe('Inkmaster', () => {
     runUntil(() => world().bulls.length === 0, 4);
     expect(world().bulls).toHaveLength(0); // it scatters when it is done
     // If its horns landed, the opponent was hurt and driven back along the charge.
-    if (scene.dummy.hp < foe.combatant.stats.maxHp) expect(foe.x).toBeGreaterThan(x0);
+    if (scene.dummy.hp < foe.combatant.stats.maxHp) {
+      expect(foe.x).toBeGreaterThan(x0);
+      expect(splat).toBeGreaterThan(1.4); // a landed ram splashes ink over their screen for 1.5 s
+      expect(splat).toBeLessThanOrEqual(1.5);
+    }
     scenes.clear();
   });
 
@@ -156,24 +167,24 @@ describe('Inkmaster', () => {
     expect(seen.size).toBeGreaterThanOrEqual(1);
   }, 60_000);
 
-  it('Ink Cyclone: a gentle pull and repeated damage, ending in a collapsing explosion; walking out frees them', async () => {
-    const { scene, scenes, run, world } = await setup('rampage', 5);
-    const kit = scene.playerFighter.caster!.kit;
-    const host = scene.abilities!;
-    const me = scene.playerFighter.name;
-    host.world.release(me, kit.a5!, { x: scene.dummyFighter.x, y: scene.dummyFighter.y }, host);
-    expect(world().vortices).toHaveLength(1);
-    const v = world().vortices[0]!;
-    const maxHp = scene.dummyFighter.combatant.stats.maxHp;
-    run(1.6);
-    expect(maxHp - scene.dummy.hp).toBeGreaterThan(0); // repeated damage
-    expect(Number.isFinite(v.x)).toBe(true);
-    const before = scene.dummy.hp;
-    run(3);
-    expect(world().vortices).toHaveLength(0); // it collapsed and is gone
-    expect(before - scene.dummy.hp).toBeGreaterThan(0); // the collapse hurts too
+  it('Ink Spear: the brush becomes a spear for 8 seconds; a thrust reaches and hurts, and the brush comes back', async () => {
+    const { intents, scene, scenes, run } = await setup('training-dummy', 2.0);
+    const me = scene.playerFighter;
+    // a5 is the fifth ability: cast it through the world like the old cyclone test did.
+    scene.abilities!.world.release(me.name, me.caster!.kit.a5!, { x: 0, y: 0 }, scene.abilities!);
+    run(0.2);
+    expect(me.heldWeapon).toBe('spear');
+    expect(me.weaponLeftS).toBeGreaterThan(7);
+    const hp = scene.dummy.hp;
+    intents.pressMelee();
+    run(0.6);
+    // 2 m is out of a normal punch's reach but inside the spear's.
+    expect(scene.dummy.hp).toBeLessThan(hp);
+    run(8.2);
+    expect(me.heldWeapon).toBeNull(); // the spear is a brush again
+    expect(me.combo.attack).toBeNull();
     scenes.clear();
-  });
+  }, 60_000);
 
   it('The Masterpiece: a ritual of drawing, then an ink monster with a limited life and health that dissolves', async () => {
     const { scene, scenes, run, runUntil, cast, world } = await setup('rampage', 7);
