@@ -78,7 +78,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     turn: 0.6,
     // The shoulders spread only part of the way with the turn, so the chest does not look wider than the body under it (owner, 25/11/2026).
     shoulderSpread: 0.1,
-    scale: 1.2,
+    scale: 1.28,
     breath: { lean: 1.5, pelvis: 0.01, hands: 0.02 },
   },
   // Tall and dominant: nearly straight legs, chest up and chin raised, the skull staff planted in
