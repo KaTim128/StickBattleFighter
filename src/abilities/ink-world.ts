@@ -24,8 +24,10 @@ export const DRAGON_HEIGHT_M = 2.1;
 export const DRAGON_TRAIL_M = 4.6;
 /** The dragon never comes closer than this to the edge of the map, metres. */
 export const DRAGON_MARGIN_M = 1.2;
-/** The dragon's breath lasts this long, and a fighter is hit by one breath at most once. */
-const BREATH_S = 0.55;
+/** After its bite lands the dragon holds as a bursting splash of ink this long. */
+export const DRAGON_BURST_S = 0.5;
+/** How high the lunging head flies at the start of its charge and where it ends (chest height of what it bites), metres. */
+export const DRAGON_LUNGE_END_HEIGHT_M = 1.0;
 /** A bitten target's wrap and a missed bite both leave the serpent this long before it may bite again. */
 const BITE_PAUSE_S = 0.7;
 /** The serpent fades out over this long once it has finished. */
@@ -60,17 +62,17 @@ export interface Dragon {
   heading: number;
   ageS: number;
   leftS: number;
-  phase: 'form' | 'fly' | 'rear' | 'breathe' | 'fade';
+  phase: 'form' | 'fly' | 'rear' | 'lunge' | 'burst' | 'fade';
   phaseS: number;
-  sinceBreathS: number;
-  /** Breaths made so far. */
-  breathsDone: number;
+  /** Seconds spent flying round the opponent since the last phase (the lunge comes when it reaches `lungeAfterS`). */
+  flownS: number;
   orbit: number;
-  /** The breath's line: where it starts, its direction (locked when the warning starts) and how far it really reaches. */
-  breathDir: Vec2;
-  breathFrom: Vec2;
-  breathReachM: number;
-  readonly hit: Set<string>;
+  /** The lunge's lane: where it starts, its direction (locked when the warning starts) and how far it really reaches. */
+  lungeDir: Vec2;
+  lungeFrom: Vec2;
+  lungeReachM: number;
+  /** Where the bite landed (the burst), or null. */
+  burstAt: Vec2 | null;
   /** Where it was drawn (the brush point). */
   readonly home: Vec2;
   targetId: string | null;
@@ -210,13 +212,12 @@ export class InkWorld {
           leftS: d.durationS,
           phase: 'form',
           phaseS: 0,
-          sinceBreathS: d.breathEveryS * 0.55, // the first breath comes soon after it is drawn, never at once
-          breathsDone: 0,
+          flownS: 0,
           orbit: Math.atan2(-dir.y, -dir.x),
-          breathDir: dir,
-          breathFrom: home,
-          breathReachM: d.breathRangeM,
-          hit: new Set(),
+          lungeDir: dir,
+          lungeFrom: home,
+          lungeReachM: d.lungeRangeM,
+          burstAt: null,
           home,
           targetId: null,
           trail: [{ ...home }],
@@ -303,7 +304,7 @@ export class InkWorld {
     this.updateFigures(dtS, host);
     for (let i = this.slashes.length - 1; i >= 0; i--) {
       this.slashes[i]!.ageS += dtS;
-      if (this.slashes[i]!.ageS > 0.3) this.slashes.splice(i, 1);
+      if (this.slashes[i]!.ageS > 0.4) this.slashes.splice(i, 1);
     }
   }
 
@@ -463,21 +464,19 @@ export class InkWorld {
       const target = this.nearestEnemy(d.casterId, d, 30, host);
       d.targetId = target?.id ?? null;
       if (d.phase === 'fly') {
-        d.sinceBreathS += dtS;
+        d.flownS += dtS;
         this.flyStep(d, target, dtS, host.bounds?.());
-        if (target && d.sinceBreathS >= spec.breathEveryS && d.breathsDone < spec.breaths) {
-          // The warning: it rears and the line it will breathe along is marked, locked at this moment.
+        if (target && d.flownS >= spec.lungeAfterS) {
+          // The warning: it rears with its jaws opening and the lane it will strike along is marked, locked at this moment.
           const dir = norm({ x: target.x - d.x, y: target.y - d.y });
-          const from = { x: d.x + dir.x * 0.9, y: d.y + dir.y * 0.9 };
-          const end = { x: from.x + dir.x * spec.breathRangeM, y: from.y + dir.y * spec.breathRangeM };
-          const block = host.blocked(from, end);
-          d.breathDir = dir;
-          d.breathFrom = from;
-          d.breathReachM = block === null ? spec.breathRangeM : Math.max(1, spec.breathRangeM * block);
+          const end = { x: d.x + dir.x * spec.lungeRangeM, y: d.y + dir.y * spec.lungeRangeM };
+          const block = host.blocked({ x: d.x, y: d.y }, end);
+          d.lungeDir = dir;
+          d.lungeFrom = { x: d.x, y: d.y };
+          d.lungeReachM = block === null ? spec.lungeRangeM : Math.max(1, spec.lungeRangeM * block - 0.4);
           d.heading = Math.atan2(dir.y, dir.x);
           d.phase = 'rear';
           d.phaseS = 0;
-          d.hit.clear();
           host.emit({
             kind: 'telegraph',
             ability: d.def.id,
@@ -486,36 +485,69 @@ export class InkWorld {
             sfx: 'ink-dragon-roar',
             x: d.x,
             y: d.y,
-            radiusM: spec.breathWidthM,
+            radiusM: spec.biteWidthM,
           });
         }
       } else if (d.phase === 'rear') {
         if (d.phaseS >= spec.windupS) {
-          d.phase = 'breathe';
+          d.phase = 'lunge';
           d.phaseS = 0;
-          d.sinceBreathS = 0;
-          host.emit({
-            kind: 'impact',
-            ability: d.def.id,
-            look: d.def.look,
-            vfx: d.def.vfx,
-            sfx: d.def.sfx.impact,
-            x: d.breathFrom.x,
-            y: d.breathFrom.y,
-            radiusM: spec.breathWidthM,
-            dirX: d.breathDir.x,
-            dirY: d.breathDir.y,
-          });
         }
-      } else if (d.phase === 'breathe') {
-        this.breathe(d, host);
-        if (d.phaseS >= BREATH_S) {
-          d.breathsDone++;
-          // Its one charge spent, the dragon dissolves back into ink.
-          d.phase = d.breathsDone >= spec.breaths ? 'fade' : 'fly';
+      } else if (d.phase === 'lunge') {
+        this.lungeStep(d, dtS, host);
+      } else if (d.phase === 'burst') {
+        if (d.phaseS >= DRAGON_BURST_S) {
+          d.phase = 'fade';
           d.phaseS = 0;
         }
       }
+    }
+  }
+
+  /** The head drives straight along the locked lane with its jaws open; the first fighter it reaches is bitten and the dragon bursts into ink. */
+  private lungeStep(d: Dragon, dtS: number, host: AbilityHost): void {
+    const spec = d.spec;
+    const travelled = Math.hypot(d.x - d.lungeFrom.x, d.y - d.lungeFrom.y);
+    const step = Math.min(spec.lungeSpeedMps * dtS, Math.max(0, d.lungeReachM - travelled));
+    d.x += d.lungeDir.x * step;
+    d.y += d.lungeDir.y * step;
+    // The head never leaves the map: at the edge the lane ends there.
+    const bounds = host.bounds?.();
+    if (bounds) {
+      const cx = Math.max(DRAGON_MARGIN_M, Math.min(bounds.w - DRAGON_MARGIN_M, d.x));
+      const cy = Math.max(DRAGON_MARGIN_M, Math.min(bounds.h - DRAGON_MARGIN_M, d.y));
+      if (cx !== d.x || cy !== d.y) {
+        d.x = cx;
+        d.y = cy;
+        d.lungeReachM = Math.hypot(d.x - d.lungeFrom.x, d.y - d.lungeFrom.y);
+      }
+    }
+    this.trailStep(d);
+    for (const f of host.fighters()) {
+      if (!f.hittable || this.friendly(f, d.casterId, host)) continue;
+      if (Math.hypot(f.x - d.x, f.y - d.y) > spec.biteWidthM / 2 + f.radiusM) continue;
+      host.hitFighter(d.casterId, f.id, d.def.payload, d.lungeDir, d.def.look?.hitFlash);
+      d.burstAt = { x: d.x, y: d.y };
+      d.phase = 'burst';
+      d.phaseS = 0;
+      host.emit({
+        kind: 'impact',
+        ability: d.def.id,
+        look: d.def.look,
+        vfx: d.def.vfx,
+        sfx: d.def.sfx.impact,
+        x: d.x,
+        y: d.y,
+        radiusM: 1.6,
+        dirX: d.lungeDir.x,
+        dirY: d.lungeDir.y,
+      });
+      return;
+    }
+    if (Math.hypot(d.x - d.lungeFrom.x, d.y - d.lungeFrom.y) >= d.lungeReachM - 1e-6) {
+      // Nothing was in the way: the head dissolves into ink at the end of the lane.
+      d.phase = 'fade';
+      d.phaseS = 0;
     }
   }
 
@@ -547,34 +579,19 @@ export class InkWorld {
     }
     // The head always faces the opponent, whichever way it is flying round them; the ink trail follows the path it has flown.
     if (target) d.heading = Math.atan2(target.y - d.y, target.x - d.x);
-    if (Math.hypot(d.x - px, d.y - py) > 0) {
-      d.trail.unshift({ x: d.x, y: d.y });
-      let len = 0;
-      for (let k = 1; k < d.trail.length; k++) {
-        len += Math.hypot(d.trail[k]!.x - d.trail[k - 1]!.x, d.trail[k]!.y - d.trail[k - 1]!.y);
-        if (len > DRAGON_TRAIL_M) {
-          d.trail.length = k + 1;
-          break;
-        }
-      }
-    }
+    if (Math.hypot(d.x - px, d.y - py) > 0) this.trailStep(d);
   }
 
-  /** The breath is a line: each fighter in it is hit once per breath. */
-  private breathe(d: Dragon, host: AbilityHost): void {
-    const spec = d.spec;
-    const a = d.breathFrom;
-    const b = { x: a.x + d.breathDir.x * d.breathReachM, y: a.y + d.breathDir.y * d.breathReachM };
-    for (const f of host.fighters()) {
-      if (!f.hittable || d.hit.has(f.id) || this.friendly(f, d.casterId, host)) continue;
-      // Distance from the fighter to the segment.
-      const abx = b.x - a.x;
-      const aby = b.y - a.y;
-      const t = Math.max(0, Math.min(1, ((f.x - a.x) * abx + (f.y - a.y) * aby) / (abx * abx + aby * aby || 1)));
-      const dist = Math.hypot(f.x - (a.x + abx * t), f.y - (a.y + aby * t));
-      if (dist > spec.breathWidthM / 2 + f.radiusM) continue;
-      d.hit.add(f.id);
-      host.hitFighter(d.casterId, f.id, d.def.payload, d.breathDir, d.def.look?.hitFlash);
+  /** The ink trail records the path the head has flown, as long as `DRAGON_TRAIL_M`. */
+  private trailStep(d: Dragon): void {
+    d.trail.unshift({ x: d.x, y: d.y });
+    let len = 0;
+    for (let k = 1; k < d.trail.length; k++) {
+      len += Math.hypot(d.trail[k]!.x - d.trail[k - 1]!.x, d.trail[k]!.y - d.trail[k - 1]!.y);
+      if (len > DRAGON_TRAIL_M) {
+        d.trail.length = k + 1;
+        break;
+      }
     }
   }
 

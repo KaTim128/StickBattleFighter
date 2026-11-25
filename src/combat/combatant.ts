@@ -644,6 +644,17 @@ export class Combatant {
     this.status.apply('blind', seconds);
   }
 
+  /** Ink splashed over the middle of the view for `seconds` (Ink Dragon): presentation only, it does not stop targeting. */
+  inkSplat(seconds: number): void {
+    if (this.koAgeS >= 0) return;
+    this.status.apply('inksplat', seconds);
+  }
+
+  /** Seconds of ink left over the view. */
+  get inkSplatLeftS(): number {
+    return this.status.leftS('inksplat');
+  }
+
   /** Feedback Pulse (Reson): their movement direction wobbles for `seconds` (a longer one replaces a shorter one). */
   disrupt(seconds: number): void {
     if (this.koAgeS >= 0) return;

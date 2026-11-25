@@ -7,11 +7,12 @@
  * Hunting Frenzy darkness, Vexoris's fog, and any future one, never work on spectators). Every view effect is read through
  * this one function, so a spectator of a watched AI battle (the fighter is AI-played) always sees clearly.
  */
-export function viewAfflictions<T extends { blindS: number; darkS: number; fogS: number; nightVisionS: number }>(
-  p: T,
-  spectating: boolean,
-): T {
-  return spectating ? { ...p, blindS: 0, darkS: 0, fogS: 0, nightVisionS: 0 } : p;
+export function viewAfflictions<
+  T extends { blindS: number; splatS?: number; darkS: number; fogS: number; nightVisionS: number },
+>(p: T, spectating: boolean): T {
+  return spectating
+    ? { ...p, blindS: 0, ...(p.splatS === undefined ? {} : { splatS: 0 }), darkS: 0, fogS: 0, nightVisionS: 0 }
+    : p;
 }
 
 export function inTheDark(darkS: number, spectating: boolean): boolean {

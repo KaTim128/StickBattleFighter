@@ -62,22 +62,20 @@ describe('Psion kit', () => {
     expect(PSION_KIT.a1.look?.telegraph).toBe('compress');
   });
 
-  it('Telekinetic Toss lifts a prop at his hand; Psychic Slam hurls it (PS1, PS2)', () => {
+  it('Telekinetic Toss raises a prop where it stands then throws it; Psychic Rupture is a focused force at the target (PS1, PS3)', () => {
     const a = arena({ x: 3, y: 0 });
     const log: string[] = [];
-    (a.host as unknown as Record<string, unknown>).telekineticToss = (_id: string, range: number) => {
-      log.push(`toss:${range}`);
-      return true;
-    };
-    (a.host as unknown as Record<string, unknown>).telekineticSlam = (_id: string, speed: number) => {
-      log.push(`slam:${speed}`);
+    (a.host as unknown as Record<string, unknown>).telekineticToss = (_id: string, spec: { rangeM: number }) => {
+      log.push(`toss:${spec.rangeM}`);
       return true;
     };
     a.world.release('me', PSION_KIT.a2, { x: 6, y: 0 }, a.host);
-    a.world.release('me', PSION_KIT.a3, { x: 6, y: 0 }, a.host);
-    expect(log).toEqual(['toss:6', 'slam:1.35']);
+    expect(log).toEqual(['toss:6']);
     expect(PSION_KIT.a2.delivery.type).toBe('toss');
-    expect(PSION_KIT.a3.delivery.type).toBe('slam');
+    expect(PSION_KIT.a3.name).toBe('Psychic Rupture');
+    expect(PSION_KIT.a3.delivery.type).toBe('projectile');
+    expect(PSION_KIT.a3.payload.knockbackMps).toBeGreaterThanOrEqual(8); // strong knockback
+    expect(PSION_KIT.a3.castS).toBeGreaterThanOrEqual(0.45); // a wind-up the opponent can see and dodge
   });
 
   it('Floating Prison lifts the nearest foe, holds it, lets it down, and cannot lift it again for 4 seconds', () => {

@@ -1,7 +1,9 @@
 import type { Graphics } from 'pixi.js';
 import {
   COLLAPSE_S,
+  DRAGON_BURST_S,
   DRAGON_HEIGHT_M,
+  DRAGON_LUNGE_END_HEIGHT_M,
   DRAGON_TRAIL_M,
   type Dragon,
   type DrawnFigure,
@@ -28,6 +30,10 @@ const INK = 0x15151b;
 const INK_LIT = 0x34343f;
 const PALE = 0xf2eee3;
 const WHITE_EYE_GLOW = 0xffffff;
+/** The dragon's warning lane on the floor: a warm red wash with a bright edge, easy to read against any floor. */
+const WARN = 0xff4a2a;
+const WARN_DEEP = 0xb01808;
+const WARN_EDGE = 0xffb08a;
 const PAPER = 0xe9dfc6;
 const PAPER_SHADE = 0xc9bd9c;
 const WOOD = 0x4a2c18;
@@ -194,49 +200,75 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
   const spec = d.spec;
   const fade = d.phase === 'fade' ? clamp01(1 - d.phaseS / 0.6) : 1;
   const grow = d.phase === 'form' ? ease(clamp01(d.phaseS / spec.formS)) : 1;
-  const hover = d.phase === 'form' ? 0.8 + (DRAGON_HEIGHT_M - 0.8) * grow : DRAGON_HEIGHT_M + Math.sin(t * 2.2) * 0.12;
-  const rear = d.phase === 'rear' ? Math.min(1, d.phaseS / 0.35) : d.phase === 'breathe' ? 1 : 0;
-  // Shadow, and the warning line and breath on the floor.
+  const hover =
+    d.phase === 'form'
+      ? 0.8 + (DRAGON_HEIGHT_M - 0.8) * grow
+      : DRAGON_HEIGHT_M + Math.sin(t * 2.2) * 0.12 * (d.phase === 'fly' ? 1 : 0.3);
+  const lunging = d.phase === 'lunge';
+  const bursting = d.phase === 'burst';
+  const lungeK = lunging ? clamp01(d.phaseS / 0.45) : bursting ? 1 : 0;
+  // Jaws open as it rears, then gape wide for the bite.
+  const rear = d.phase === 'rear' ? Math.min(1, d.phaseS / 0.35) : lunging || bursting ? 1 : 0;
+  const gape =
+    d.phase === 'rear' ? 0.45 + 0.4 * rear : lunging ? 1.25 : bursting ? 1.25 * (1 - clamp01(d.phaseS / 0.2)) : 0;
+  // Shadow, the warning lane and the streak of ink the lunge leaves on the floor.
   f.ellipse(d.x, d.y, 1.0 * grow, 0.4 * grow).fill({ color: BLACK, alpha: 0.2 * fade });
-  if (d.phase === 'rear' || d.phase === 'breathe') {
-    const a = d.breathFrom;
-    const b = { x: a.x + d.breathDir.x * d.breathReachM, y: a.y + d.breathDir.y * d.breathReachM };
+  if (d.phase === 'rear' || lunging) {
+    const a = d.lungeFrom;
+    const b = { x: a.x + d.lungeDir.x * d.lungeReachM, y: a.y + d.lungeDir.y * d.lungeReachM };
     if (d.phase === 'rear') {
       const k = clamp01(d.phaseS / spec.windupS);
-      // A clear warning: a pale lane on the floor with the black ink filling it from the dragon outward, flashing as the breath nears.
+      // A clear warning: a red lane on the floor, brightening and flashing as the lunge nears.
       const flash = 0.5 + 0.5 * Math.sin(t * (10 + 16 * k));
       f.moveTo(a.x, a.y)
         .lineTo(b.x, b.y)
-        .stroke({ width: spec.breathWidthM, color: PALE, alpha: 0.1 + 0.16 * flash });
+        .stroke({ width: spec.biteWidthM, color: WARN, alpha: 0.24 + 0.2 * flash });
       f.moveTo(a.x, a.y)
         .lineTo(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k)
-        .stroke({ width: spec.breathWidthM * 0.7, color: BLACK, alpha: 0.25 + 0.3 * k });
+        .stroke({ width: spec.biteWidthM * 0.7, color: WARN_DEEP, alpha: 0.3 + 0.3 * k });
       for (const sgn of [-1, 1]) {
-        const nx = -d.breathDir.y * (spec.breathWidthM / 2) * sgn;
-        const ny = d.breathDir.x * (spec.breathWidthM / 2) * sgn;
+        const nx = -d.lungeDir.y * (spec.biteWidthM / 2) * sgn;
+        const ny = d.lungeDir.x * (spec.biteWidthM / 2) * sgn;
         f.moveTo(a.x + nx, a.y + ny)
           .lineTo(b.x + nx, b.y + ny)
-          .stroke({ width: 0.05, color: PALE, alpha: 0.55 + 0.35 * flash });
+          .stroke({ width: 0.08, color: WARN_EDGE, alpha: 0.75 + 0.25 * flash });
       }
     } else {
-      const k = clamp01(d.phaseS / 0.55);
-      const pts: Point[] = [];
-      for (let i = 0; i < 10; i++) {
-        const u = i / 9;
-        const reach = Math.min(1, k * 1.8) * u;
-        pts.push({ x: a.x + (b.x - a.x) * reach, y: a.y + (b.y - a.y) * reach });
-      }
       f.moveTo(a.x, a.y)
-        .lineTo(b.x, b.y)
-        .stroke({ width: spec.breathWidthM * 1.2 * (1 - k * 0.3), color: BLACK, alpha: 0.5 * (1 - k) + 0.1 });
-      ribbon(
-        f,
-        pts,
-        pts.map((_, i) => spec.breathWidthM * (0.4 + 0.6 * (i / 9)) * (1 - k * 0.4)),
-        BLACK,
-        0.85 * (1 - k * 0.6),
-      );
-      splatter(f, b, 1.1, k, d.x * 3, 14);
+        .lineTo(d.x, d.y)
+        .stroke({ width: spec.biteWidthM * 0.8, color: BLACK, alpha: 0.35 });
+    }
+  }
+  if (bursting && d.burstAt) {
+    // The bite lands: the dragon bursts into a black splash of ink that flings drops outward and then thins away.
+    const k = clamp01(d.phaseS / DRAGON_BURST_S);
+    const c = d.burstAt;
+    for (let i = 0; i < 9; i++) {
+      const ang = i * 0.7 + 0.4;
+      const dist = (0.5 + (i % 3) * 0.3) * ease(Math.min(1, k * 2.2));
+      f.ellipse(
+        c.x + Math.cos(ang) * dist,
+        c.y + Math.sin(ang) * dist * 0.7,
+        0.4 - (i % 3) * 0.08,
+        0.28 - (i % 3) * 0.05,
+      ).fill({
+        color: BLACK,
+        alpha: 0.75 * (1 - k),
+      });
+    }
+    f.ellipse(c.x, c.y, 1.0 * ease(Math.min(1, k * 3)), 0.7 * ease(Math.min(1, k * 3))).fill({
+      color: BLACK,
+      alpha: 0.85 * (1 - k * 0.8),
+    });
+    splatter(f, c, 2.2, k, c.x * 5, 26);
+    const hb = P(c.x, c.y, DRAGON_LUNGE_END_HEIGHT_M);
+    for (let i = 0; i < 14; i++) {
+      const ang = i * 2.1;
+      const dist = (0.4 + (i % 4) * 0.35) * ease(Math.min(1, k * 2));
+      g.circle(hb.x + Math.cos(ang) * dist, hb.y + Math.sin(ang) * dist * 0.8 - k * 0.3, 0.06 + (i % 3) * 0.04).fill({
+        color: BLACK,
+        alpha: 0.9 * (1 - k),
+      });
     }
   }
   // The body: an S curve behind the head at flying height, getting thinner toward the tail.
@@ -335,13 +367,15 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     g.circle(tip.x, tip.y, 0.17).fill({ color: PALE, alpha: 0.18 });
     splatter(g, tip, 0.35, (t * 1.9) % 1, tip.x * 5, 6);
   }
-  const headFade = fade * (drawing ? clamp01((k - 0.8) / 0.2) : 1);
+  const headFade = fade * (drawing ? clamp01((k - 0.8) / 0.2) : 1) * (bursting ? 1 - clamp01(d.phaseS / 0.12) : 1);
+  const headZ = d.phase === 'rear' ? hover + rear * 0.55 : hover + (DRAGON_LUNGE_END_HEIGHT_M - hover) * lungeK;
+  // The head faces the way it is going; a lunging head is bigger and gapes wide with its fangs bared.
   dragonHead(
     g,
-    P(d.x, d.y, hover + rear * 0.55),
+    P(d.x, d.y, headZ),
     dirx >= 0 ? 1 : -1,
-    0.3 * (0.4 + 0.6 * grow) * 1.5,
-    rear,
+    0.3 * (0.4 + 0.6 * grow) * (1.5 + 0.35 * Math.max(rear, lungeK)),
+    gape,
     t,
     headFade,
   );
@@ -397,94 +431,82 @@ function dragonHead(g: Graphics, hp: Point, s: 1 | -1, u: number, gape: number, 
       0.8 * a,
     );
   }
-  // The skull and the long snout, down to the nose.
-  const skull = flat([
-    [-0.9, 0.05],
-    [-0.6, 0.75],
-    [0.15, 0.9],
-    [0.75, 0.66],
-    [1.8, 0.5],
-    [2.35, 0.34],
-    [2.4, 0.04],
-    [1.0, -0.04],
-    [-0.6, -0.12],
-  ]);
-  g.poly(skull).fill({ color: BLACK, alpha: a });
-  g.poly(skull).stroke({ width: 0.012, color: PALE, alpha: 0.35 * a });
-  // A lit ridge along the top of the snout and a heavy brow over the eye.
-  g.poly(
-    flat([
-      [0.2, 0.86],
-      [0.8, 0.62],
-      [1.8, 0.47],
-      [1.8, 0.4],
-      [0.8, 0.52],
-      [0.25, 0.74],
-    ]),
-  ).fill({ color: INK_LIT, alpha: 0.9 * a });
-  g.poly(
-    flat([
-      [0.3, 0.8],
-      [1.15, 0.7],
-      [1.0, 0.52],
-      [0.4, 0.6],
-    ]),
-  ).fill({ color: INK, alpha: a });
-  // The lower jaw, hinged under the skull, drops open for the breath.
-  const lower = flat([
-    [0.0, -0.04],
-    [1.95, -0.02 - jaw],
-    [2.05, -0.3 - jaw],
-    [0.9, -0.62 - jaw * 0.5],
-    [-0.2, -0.52],
-  ]);
-  if (gape > 0.1)
+  // The head is one smooth silhouette: skull, brow, long snout and nose drawn as a single curved outline, so it reads as one animal's head.
+  const at = (f: number, v: number): Point => pt(f, v);
+  const upper = (): void => {
+    g.moveTo(at(-0.9, 0.1).x, at(-0.9, 0.1).y);
+    for (const [cf, cv, f, v] of [
+      [-0.95, 0.7, -0.35, 0.86],
+      [0.1, 1.0, 0.65, 0.78],
+      [0.9, 0.6, 1.4, 0.52],
+      [2.0, 0.44, 2.4, 0.3],
+      [2.55, 0.15, 2.4, -0.02],
+      [1.6, -0.1, 0.6, -0.05],
+      [-0.2, -0.05, -0.9, 0.1],
+    ] as const)
+      g.quadraticCurveTo(at(cf, cv).x, at(cf, cv).y, at(f, v).x, at(f, v).y);
+  };
+  upper();
+  g.fill({ color: BLACK, alpha: a });
+  upper();
+  g.stroke({ width: 0.012, color: PALE, alpha: 0.3 * a });
+  // The lower jaw, hinged under the skull and drawn as one curved shape, drops open for the breath.
+  const lowerJaw = (): void => {
+    g.moveTo(at(0.1, -0.02).x, at(0.1, -0.02).y);
+    for (const [cf, cv, f, v] of [
+      [1.1, -0.06 - jaw * 0.4, 2.0, -0.06 - jaw],
+      [2.15, -0.2 - jaw, 1.95, -0.36 - jaw],
+      [1.2, -0.55 - jaw * 0.7, 0.25, -0.5 - jaw * 0.3],
+      [-0.2, -0.4, 0.1, -0.02],
+    ] as const)
+      g.quadraticCurveTo(at(cf, cv).x, at(cf, cv).y, at(f, v).x, at(f, v).y);
+  };
+  if (gape > 0.1) {
     g.poly(
       flat([
-        [0.4, -0.02],
+        [0.5, -0.02],
         [2.2, 0.0],
-        [2.0, -0.12 - jaw],
-        [0.4, -0.3 - jaw * 0.3],
+        [2.0, -0.1 - jaw],
+        [0.5, -0.26 - jaw * 0.3],
       ]),
     ).fill({ color: 0x330909, alpha: 0.95 * a });
-  g.poly(lower).fill({ color: BLACK, alpha: a });
-  g.poly(lower).stroke({ width: 0.01, color: PALE, alpha: 0.3 * a });
-  // Teeth: upper fangs down, lower fangs up.
-  for (let i = 0; i < 5; i++) {
-    const f = 0.95 + i * 0.26;
+  }
+  lowerJaw();
+  g.fill({ color: BLACK, alpha: a });
+  lowerJaw();
+  g.stroke({ width: 0.01, color: PALE, alpha: 0.28 * a });
+  // A lit ridge along the top of the snout, thin and following its curve.
+  g.moveTo(at(0.3, 0.84).x, at(0.3, 0.84).y)
+    .quadraticCurveTo(at(1.1, 0.62).x, at(1.1, 0.62).y, at(2.2, 0.36).x, at(2.2, 0.36).y)
+    .stroke({ width: 0.02, color: INK_LIT, alpha: 0.9 * a, cap: 'round' });
+  // Small fangs: upper ones down, lower ones up.
+  for (let i = 0; i < 4; i++) {
+    const f = 1.05 + i * 0.3;
     g.poly(
       flat([
         [f, 0.0],
-        [f + 0.1, 0.0],
-        [f + 0.05, -0.2 - (i === 0 ? 0.12 : 0)],
+        [f + 0.08, 0.0],
+        [f + 0.04, -0.17],
       ]),
     ).fill({ color: PALE, alpha: a });
     g.poly(
       flat([
-        [f + 0.04, -0.04 - jaw],
-        [f + 0.14, -0.04 - jaw],
-        [f + 0.09, 0.14 - jaw],
+        [f + 0.05, -0.05 - jaw],
+        [f + 0.13, -0.05 - jaw],
+        [f + 0.09, 0.1 - jaw],
       ]),
     ).fill({ color: PALE, alpha: a });
   }
-  // Nostril, and a beard of ink under the chin.
-  g.circle(pt(2.12, 0.22).x, pt(2.12, 0.22).y, 0.016).fill({ color: INK_LIT, alpha: a });
+  g.circle(at(2.1, 0.2).x, at(2.1, 0.2).y, 0.014).fill({ color: INK_LIT, alpha: a });
+  // The eye: small, narrow and sharp, white with no pupil, slanting up toward the brow.
   g.poly(
     flat([
-      [0.9, -0.6 - jaw * 0.5],
-      [1.4, -1.25 - jaw * 0.6],
-      [1.5, -0.55 - jaw * 0.5],
+      [0.62, 0.5],
+      [1.05, 0.6],
+      [0.78, 0.45],
     ]),
-  ).fill({ color: BLACK, alpha: a });
-  // The eye: slanted and white, glowing, with a dark slit.
-  const eye = flat([
-    [0.5, 0.5],
-    [1.15, 0.62],
-    [0.85, 0.34],
-  ]);
-  g.poly(eye).fill({ color: WHITE_EYE_GLOW, alpha: a });
-  g.circle(pt(0.85, 0.5).x, pt(0.85, 0.5).y, 0.2 * u).fill({ color: WHITE_EYE_GLOW, alpha: 0.18 * a });
-  g.circle(pt(0.93, 0.5).x, pt(0.93, 0.5).y, 0.018).fill({ color: BLACK, alpha: a });
+  ).fill({ color: WHITE_EYE_GLOW, alpha: a });
+  g.circle(at(0.85, 0.54).x, at(0.85, 0.54).y, 0.08 * u).fill({ color: WHITE_EYE_GLOW, alpha: 0.14 * a });
   // Two long whiskers streaming back from the snout, drifting on the air.
   for (const k of [0, 1]) {
     const w = [0, 1, 2, 3, 4, 5].map((i) => {
@@ -551,42 +573,53 @@ function vortex(f: Graphics, g: Graphics, P: Project, v: Vortex, t: number): voi
   }
 }
 
-/** Ink Slash: a broad crescent of black ink cut through the air in front of him, with a pale edge and a spray of drops, gone in a blink. */
+/**
+ * Ink Slash: one fast calligraphy brush swipe. The stroke is thin where the brush lands, swells to a heavy belly, then tapers and
+ * breaks into dry-brush bristle streaks at the tail, with a bright wet leading tip and flicked drops.
+ */
 function inkSlash(g: Graphics, P: Project, sl: InkSlash): void {
-  const k = clamp01(sl.ageS / 0.3);
+  const k = clamp01(sl.ageS / 0.4);
   const ang = Math.atan2(sl.dirY, sl.dirX);
-  // The arc sweeps from one side of the front to the other as it is cut.
-  const sweep = ease(Math.min(1, k * 2.2));
-  const a0 = ang - 1.05;
-  const a1 = a0 + 2.1 * sweep;
-  const pts: Point[] = [];
-  const widths: number[] = [];
-  const n = 14;
-  for (let i = 0; i < n; i++) {
-    const u = i / (n - 1);
-    const a = a0 + (a1 - a0) * u;
-    const r = sl.reachM * (0.75 + 0.25 * Math.sin(u * Math.PI));
-    pts.push(P(sl.x + Math.cos(a) * r, sl.y + Math.sin(a) * r, 1.0 + 0.15 * Math.sin(u * Math.PI)));
-    widths.push((0.05 + 0.24 * Math.sin(u * Math.PI)) * (1 - k * 0.6));
+  const sweep = ease(Math.min(1, k * 3.2));
+  const a0 = ang - 1.15;
+  const span = 2.3;
+  const head = a0 + span * sweep;
+  const n = 18;
+  const fade = 1 - ease(clamp01((k - 0.35) / 0.65));
+  const stroke = (rOff: number, lift: number, wMul: number, from: number): { pts: Point[]; widths: number[] } => {
+    const pts: Point[] = [];
+    const widths: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const u = i / (n - 1);
+      const a = a0 + (head - a0) * u;
+      const r = sl.reachM * (0.8 + 0.2 * Math.sin(u * Math.PI)) + rOff;
+      pts.push(P(sl.x + Math.cos(a) * r, sl.y + Math.sin(a) * r, 1.0 + lift + 0.12 * Math.sin(u * Math.PI)));
+      // thin entry, heavy belly in the first half, long tapering tail towards the head of the swing
+      const body = Math.sin(Math.min(1, u * 1.15) * Math.PI) ** 0.8;
+      widths.push((0.03 + 0.3 * body) * wMul * (u < from ? 0 : 1));
+    }
+    return { pts, widths };
+  };
+  const main = stroke(0, 0, 1, 0);
+  ribbon(
+    g,
+    main.pts,
+    main.widths.map((w) => w + 0.05),
+    PALE,
+    0.45 * fade,
+  );
+  ribbon(g, main.pts, main.widths, BLACK, fade);
+  // dry-brush bristle streaks trailing off the heavy part of the stroke
+  for (let j = 0; j < 4; j++) {
+    const s2 = stroke((j - 1.5) * 0.11, 0.02 * j, 0.16, 0.12 + j * 0.05);
+    ribbon(g, s2.pts, s2.widths, BLACK, 0.85 * fade);
   }
-  ribbon(
-    g,
-    pts,
-    widths.map((w) => w + 0.05),
-    PALE,
-    0.5 * (1 - k),
-  );
-  ribbon(g, pts, widths, BLACK, 1 - k * 0.9);
-  const edge = pts.map((p) => ({ x: p.x, y: p.y - 0.03 }));
-  ribbon(
-    g,
-    edge,
-    widths.map((w) => w * 0.18),
-    PALE,
-    0.7 * (1 - k),
-  );
-  const last = pts[pts.length - 1]!;
-  splatter(g, last, 0.9, k, sl.x * 13, 12);
+  const glint = stroke(0.02, 0.05, 0.1, 0.3);
+  ribbon(g, glint.pts, glint.widths, PALE, 0.65 * fade);
+  // wet bright tip where the brush is now, and the drops flicked off it
+  const tip = main.pts[main.pts.length - 1]!;
+  if (sweep < 1) g.circle(tip.x, tip.y, 0.09).fill({ color: PALE, alpha: 0.8 });
+  splatter(g, tip, 1.0, k, sl.x * 13, 14);
 }
 
 /** A stick figure brushed onto the floor in quick strokes: head, body, arms, then legs, with an ink pool spreading beneath it. */

@@ -74,26 +74,21 @@ describe('Inkmaster', () => {
     scenes.clear();
   });
 
-  it('Ink Dragon: drawn, circles its target, warns before breathing, and never breathes twice at once', async () => {
+  it('Ink Dragon: drawn, circles its target, warns, lunges once and bites', async () => {
     const { scene, scenes, run, runUntil, cast, world } = await setup('necro', 5);
     cast('a3');
     runUntil(() => world().dragons.length > 0, 2);
     expect(world().dragons).toHaveLength(1);
     const phases = new Set<string>();
-    let breaths = 0;
-    let last = '';
     for (let i = 0; i < 14 / STEP; i++) {
       run(STEP);
       const d = world().dragons[0];
       if (!d) break;
       phases.add(d.phase);
-      if (d.phase === 'breathe' && last !== 'breathe') breaths++;
-      last = d.phase;
     }
     expect(phases.has('form')).toBe(true);
-    expect(phases.has('rear')).toBe(true); // a visible warning before every breath
-    expect(breaths).toBeGreaterThanOrEqual(1);
-    expect(breaths).toBeLessThanOrEqual(4);
+    expect(phases.has('rear')).toBe(true); // a visible warning before the lunge
+    expect(phases.has('lunge')).toBe(true);
     runUntil(() => world().dragons.length === 0, 4);
     expect(world().dragons).toHaveLength(0); // it dissolves when its time is up
     scenes.clear();
@@ -153,7 +148,7 @@ describe('Inkmaster', () => {
     const monster = scene.summonStates[0]!;
     expect(monster.character).toBe('ink-monster');
     expect(monster.leftS).toBeGreaterThan(14);
-    expect(monster.hp).toBeLessThanOrEqual(380);
+    expect(monster.hp).toBeLessThanOrEqual(450);
     expect(scene.summonStates.length).toBe(1); // never more than one
     // It fights: over some seconds the opponent takes damage from it, without being knocked down for good.
     run(10);

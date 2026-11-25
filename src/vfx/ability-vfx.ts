@@ -2,6 +2,7 @@ import { type Container, Graphics } from 'pixi.js';
 import type { MagicLook } from '../abilities/ability-def';
 import type { AbilityFx, Beam, Cloud, FireZone, Grenade, Projectile, Telegraph } from '../abilities/ability-world';
 import type { InkWorld } from '../abilities/ink-world';
+import { arcPath } from '../rendering/arc-path';
 import { ISO_T, iso } from '../rendering/projection';
 import { drawInk } from './ink-vfx';
 
@@ -229,6 +230,15 @@ export interface AbilityVfxInput {
     readonly ageS: number;
     readonly heightM: number;
     readonly palette: Palette | null;
+  }[];
+  /** Objects Psion's Toss is raising: where they float, how high, how far through the rise (0..1) and the size of the thing. */
+  readonly levitations?: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly heightM: number;
+    readonly k: number;
+    readonly radiusM: number;
+    readonly palette: Palette;
   }[];
   /** Spins in progress (Aerion's Wind Blade): the wings sweep round as blades. */
   readonly whirls?: readonly {
@@ -1522,6 +1532,26 @@ export class AbilityVfx {
       if (c.ageS < c.armS) f.circle(c.x, c.y, c.radiusM).stroke({ width: 0.06, color: pal.bright, alpha: 0.6 });
     }
 
+    // Telekinetic Toss: a purple psychic glow on the floor beneath the object as it rises, with rings pulsing out and motes lifting off it.
+    for (const lv of input.levitations ?? []) {
+      const pal = lv.palette;
+      const pulse = 0.6 + 0.4 * Math.sin(t * 14);
+      const r = lv.radiusM * (1.1 + 0.5 * lv.k);
+      f.circle(lv.x, lv.y, r * 1.5).fill({ color: pal.deep, alpha: 0.22 + 0.15 * lv.k });
+      f.circle(lv.x, lv.y, r).fill({ color: pal.hot, alpha: 0.3 * pulse + 0.1 });
+      f.circle(lv.x, lv.y, r * 0.55).fill({ color: pal.bright, alpha: 0.35 + 0.2 * pulse });
+      for (let i = 0; i < 2; i++) {
+        const ph = (t * 1.6 + i * 0.5) % 1;
+        f.circle(lv.x, lv.y, r * (0.5 + ph)).stroke({ width: 0.04, color: pal.core, alpha: 0.7 * (1 - ph) });
+      }
+      for (let i = 0; i < 6; i++) {
+        const ang = i * 1.05 + t * 1.3;
+        const rise = ((t * 0.9 + i / 6) % 1) * (lv.heightM + 0.4);
+        const q = P(lv.x + Math.cos(ang) * r * 0.8, lv.y + Math.sin(ang) * r * 0.8, rise);
+        g.circle(q.x, q.y, 0.04).fill({ color: pal.core, alpha: 0.75 * (1 - rise / (lv.heightM + 0.5)) });
+      }
+    }
+
     // Perfect Parry: a thin ring round him that closes as the window runs out, with a bright flash of crossed steel.
     for (const pr of input.parries ?? []) {
       const pal = pr.palette ?? FIRE;
@@ -1622,7 +1652,7 @@ export class AbilityVfx {
         const fade = Math.min(1, af.shatterS / 0.5);
         for (let i = 0; i < 6; i++) {
           const a0 = (i * Math.PI) / 3 + 0.2;
-          f.arc(af.x, af.y, 0.62, a0, a0 + 0.62).stroke({
+          arcPath(f, af.x, af.y, 0.62, a0, a0 + 0.62).stroke({
             width: 0.05,
             color: 0x7ae8ff,
             alpha: 0.85 * fade,
@@ -1665,7 +1695,12 @@ export class AbilityVfx {
       const beat = dc.ageS % 0.9;
       if (beat > 0.45 && beat < 0.6) {
         const c0 = iso(dc.x + dc.dirX * 0.8, dc.y, 1.2);
-        g.arc(c0.x, c0.y, 0.6, -1.0, 1.0).stroke({ width: 0.05, color: pal.core, alpha: 0.5 * fade, cap: 'round' });
+        arcPath(g, c0.x, c0.y, 0.6, -1.0, 1.0).stroke({
+          width: 0.05,
+          color: pal.core,
+          alpha: 0.5 * fade,
+          cap: 'round',
+        });
       }
     }
     for (const e of input.echoes ?? []) {
@@ -2008,13 +2043,13 @@ export class AbilityVfx {
             const a0 = ang - spread + Math.sin(t * 41 + i) * 0.05;
             const a1 = ang + spread + Math.sin(t * 37 + i * 1.7) * 0.05;
             f.moveTo(b.from.x + Math.cos(a0) * rr * k, b.from.y + Math.sin(a0) * rr * k);
-            f.arc(b.from.x, b.from.y, rr * k, a0, a1).stroke({ width: w, color: col, alpha: a, cap: 'round' });
+            arcPath(f, b.from.x, b.from.y, rr * k, a0, a1).stroke({ width: w, color: col, alpha: a, cap: 'round' });
           }
           const c = P(b.from.x + Math.cos(ang) * rr, b.from.y + Math.sin(ang) * rr, MOUTH_HEIGHT_M);
           const sa = Math.atan2(dy * ISO_T, dx);
           const gr = 0.1 + 0.8 * ph;
           g.moveTo(c.x + Math.cos(sa - 1.1) * gr, c.y + Math.sin(sa - 1.1) * gr);
-          g.arc(c.x, c.y, gr, sa - 1.1, sa + 1.1).stroke({
+          arcPath(g, c.x, c.y, gr, sa - 1.1, sa + 1.1).stroke({
             width: 0.09 * (1 - ph * 0.5),
             color: pal.core,
             alpha: (1 - ph) * 0.95 * amount,
@@ -2247,8 +2282,8 @@ export class AbilityVfx {
       // A magnetic mine: a steel disc with an orange horseshoe magnet and field rings drawing inward while it is armed.
       f.circle(c.x, c.y, 0.32).fill(0x3a3f48);
       f.circle(c.x, c.y, 0.32).stroke({ width: 0.04, color: 0x0d0f12, alpha: 1 });
-      f.arc(c.x, c.y, 0.18, Math.PI * 0.15, Math.PI * 0.85).stroke({ width: 0.07, color: pal.hot, alpha: 1 });
-      f.arc(c.x, c.y, 0.18, Math.PI * 1.15, Math.PI * 1.85).stroke({ width: 0.07, color: 0xc9ced8, alpha: 1 });
+      arcPath(f, c.x, c.y, 0.18, Math.PI * 0.15, Math.PI * 0.85).stroke({ width: 0.07, color: pal.hot, alpha: 1 });
+      arcPath(f, c.x, c.y, 0.18, Math.PI * 1.15, Math.PI * 1.85).stroke({ width: 0.07, color: 0xc9ced8, alpha: 1 });
       if (live)
         for (let i = 0; i < 3; i++) {
           const k = 1 - ((t * 0.7 + i / 3) % 1);
@@ -2428,13 +2463,13 @@ export class AbilityVfx {
           const cx = c.x - Math.cos(ang) * back;
           const cy = c.y - Math.sin(ang) * back * ISO_T;
           const r = 1.0 - i * 0.1;
-          g.arc(cx, cy, r, ang - 1.2, ang + 1.2).stroke({
+          arcPath(g, cx, cy, r, ang - 1.2, ang + 1.2).stroke({
             width: 0.14 - i * 0.05,
             color: pal.hot,
             alpha: 0.6 - i * 0.25,
             cap: 'round',
           });
-          g.arc(cx, cy, r, ang - 1.2, ang + 1.2).stroke({
+          arcPath(g, cx, cy, r, ang - 1.2, ang + 1.2).stroke({
             width: 0.06 - i * 0.02,
             color: i === 0 ? pal.bright : pal.core,
             alpha: 0.95 - i * 0.3,
@@ -2454,7 +2489,7 @@ export class AbilityVfx {
         for (let i = 0; i < 5; i++) {
           const cx = c.x - Math.cos(ang) * i * 0.16;
           const cy = c.y - Math.sin(ang) * i * 0.16 * ISO_T;
-          g.arc(cx, cy, 0.28 + i * 0.06 + 0.03 * Math.sin(t * 50 + i), ang - 0.8, ang + 0.8).stroke({
+          arcPath(g, cx, cy, 0.28 + i * 0.06 + 0.03 * Math.sin(t * 50 + i), ang - 0.8, ang + 0.8).stroke({
             width: 0.035,
             color: i === 0 ? pal.core : pal.bright,
             alpha: 0.95 - i * 0.15,
@@ -2471,7 +2506,7 @@ export class AbilityVfx {
         const w = (0.55 + i * 0.22) * (1 + 0.06 * Math.sin(t * 26 + i));
         const cx = c.x - Math.cos(ang) * back;
         const cy = c.y - Math.sin(ang) * back * ISO_T;
-        g.arc(cx, cy, w, ang - 1.0, ang + 1.0).stroke({
+        arcPath(g, cx, cy, w, ang - 1.0, ang + 1.0).stroke({
           width: 0.09 - i * 0.02,
           color: i === 0 ? pal.core : pal.bright,
           alpha: 0.95 - i * 0.25,

@@ -26,6 +26,11 @@
         pointer-events: none; max-width: min(calc(44 * var(--vw, 1vw)), 520px); box-sizing: border-box;
       }
       #status[data-state='error'] { background: rgba(160, 20, 20, 0.85); }
+      /* The controls hint is not shown during play (owner, 25/11/2026); the tutorial has its own Keys button for it. */
+      #status:not([data-state='error']) { display: none; }
+      .keys-button { position: fixed; left: 46px; top: 10px; z-index: 7; height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid rgba(255, 190, 120, 0.8); background: rgba(12, 14, 19, 0.82); color: #ffd8b0; font: 800 12px system-ui, sans-serif; cursor: pointer; }
+      .keys-panel { position: fixed; left: 46px; top: 46px; z-index: 8; width: min(340px, calc(100vw - 60px)); padding: 10px 12px; border-radius: 12px; background: rgba(10, 12, 17, 0.96); border: 1px solid rgba(255, 190, 120, 0.6); color: #e8edf5; font: 12px/1.5 system-ui, sans-serif; }
+      .keys-panel[hidden] { display: none; }
       .touch-controls { position: fixed; inset: 0; pointer-events: none; z-index: 7; } /* above the blind and dark veils */
       /* Holding a button (block) must not select or highlight its label, or open the iOS/Android callout. */
       .touch-controls, .touch-controls * {
@@ -49,6 +54,16 @@
         transition: opacity 0.15s linear;
       }
       /* Time Stop (Chronos, owner 21/11/2026): the world drains to a washed-out blue and gold; a gold flash marks time resuming. */
+      /* Ink Dragon's burst: a black ink splat over the middle of the view that clears by itself. */
+      .ink-splat-veil {
+        position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 5;
+        background:
+          radial-gradient(ellipse 34% 40% at 50% 50%, #050507 0, #050507 78%, rgba(5, 5, 7, 0) 100%),
+          radial-gradient(ellipse 22% 26% at 40% 44%, #050507 0, rgba(5, 5, 7, 0) 100%),
+          radial-gradient(ellipse 20% 24% at 61% 58%, #050507 0, rgba(5, 5, 7, 0) 100%),
+          radial-gradient(ellipse 14% 18% at 54% 34%, #050507 0, rgba(5, 5, 7, 0) 100%);
+        transition: opacity 0.1s linear;
+      }
       .time-stop-veil {
         position: fixed; inset: 0; pointer-events: none; z-index: 4; --flare: 0;
         background: radial-gradient(circle at 50% 50%, rgba(255, 224, 140, calc(var(--flare) * 0.55)) 0, rgba(47, 123, 255, calc(var(--flare) * 0.25)) 60%, rgba(11, 42, 90, 0) 100%);
@@ -164,9 +179,9 @@
       .ability-notice.show { animation: ability-notice 1.4s ease-out forwards; }
       .ability-notice[hidden] { display: none; }
       @keyframes ability-notice { 0% { opacity: 0; transform: translate(-50%, 6px); } 15% { opacity: 1; transform: translate(-50%, 0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -6px); } }
-      .ability-info-button { position: fixed; left: 10px; top: 78px; z-index: 7; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255, 190, 120, 0.8); background: rgba(12, 14, 19, 0.82); color: #ffd8b0; font: italic 800 15px Georgia, serif; cursor: pointer; }
+      .ability-info-button { position: fixed; left: 10px; top: 10px; z-index: 7; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255, 190, 120, 0.8); background: rgba(12, 14, 19, 0.82); color: #ffd8b0; font: italic 800 15px Georgia, serif; cursor: pointer; }
       .ability-info-button[hidden], body:not(.fighting) .ability-info-button { display: none; }
-      .ability-info-panel { position: fixed; left: 10px; top: 114px; z-index: 8; width: min(340px, calc(100vw - 20px)); max-height: calc(100vh - 140px); overflow-y: auto; padding: 10px; border-radius: 12px; background: rgba(10, 12, 17, 0.96); border: 1px solid rgba(255, 190, 120, 0.6); color: #e8edf5; font: 12px system-ui, sans-serif; }
+      .ability-info-panel { position: fixed; left: 10px; top: 46px; z-index: 8; width: min(340px, calc(100vw - 20px)); max-height: calc(100vh - 70px); overflow-y: auto; padding: 10px; border-radius: 12px; background: rgba(10, 12, 17, 0.96); border: 1px solid rgba(255, 190, 120, 0.6); color: #e8edf5; font: 12px system-ui, sans-serif; }
       .ability-info-panel[hidden], body:not(.fighting) .ability-info-panel { display: none; }
       .ability-info-title { display: flex; justify-content: space-between; align-items: center; font: 800 13px system-ui, sans-serif; margin-bottom: 6px; }
       .ability-info-close { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.35); background: transparent; color: #fff; cursor: pointer; }
@@ -305,7 +320,7 @@
         width: min(calc(calc(100 * var(--vw, 1vw)) - 132px), 860px); display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px;
         pointer-events: none; font: 700 12px system-ui, sans-serif; color: #f2f5fa; text-shadow: 0 1px 0 #000;
       }
-      .th-side { --accent: #ffb27a; --slant: -18deg; display: flex; gap: 10px; align-items: flex-start; }
+      .th-side { position: relative; --accent: #ffb27a; --slant: -18deg; display: flex; gap: 10px; align-items: flex-start; }
       .th-right { --slant: 18deg; flex-direction: row-reverse; text-align: right; }
       .th-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
       .th-name {
@@ -356,6 +371,32 @@
         background: radial-gradient(circle at 42% 40%, #fffbe6 0 18%, #ffc94a 32%, #ff8c1e 58%, #d8320c 76%, transparent 78%);
         box-shadow: 0 -8px 10px -2px rgba(255, 140, 30, 0.9), 0 -14px 12px -6px rgba(255, 220, 90, 0.8);
       }
+      /* The move each fighter is making, beside their own portrait in their own theme; an ultimate is a large banner. */
+      .th-move {
+        --mv: #ffb27a; --mv2: #fff; position: relative; align-self: flex-start; margin: 2px 8px 0; padding: 1px 10px; max-width: 100%;
+        font: italic 800 11px system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+        color: var(--mv2); background: linear-gradient(90deg, color-mix(in srgb, var(--mv) 55%, #0b0d12), rgba(11, 13, 18, 0.85));
+        border-left: 3px solid var(--mv); transform: skewX(var(--slant)); opacity: 0; transition: opacity 0.18s linear;
+        text-shadow: 0 1px 0 #000, 0 0 6px var(--mv);
+      }
+      .th-right .th-move.ult { left: auto; right: 0; }
+      .th-right .th-move { align-self: flex-end; background: linear-gradient(270deg, color-mix(in srgb, var(--mv) 55%, #0b0d12), rgba(11, 13, 18, 0.85)); border-left: 0; border-right: 3px solid var(--mv); }
+      .th-move.on { opacity: 1; }
+      .th-move.pop { animation: th-move-in 0.22s ease-out; }
+      .th-move.ult {
+        position: absolute; top: calc(100% + 8px); left: 0; margin: 0; max-width: none; padding: 3px 22px; font-size: 24px; font-weight: 900; letter-spacing: 0.12em; border-width: 0 0 4px;
+        border-bottom: 4px solid var(--mv2); box-shadow: 0 0 22px var(--mv), inset 0 0 16px color-mix(in srgb, var(--mv) 60%, transparent);
+        text-shadow: 0 2px 0 #000, 0 0 14px var(--mv), 0 0 28px var(--mv); animation: th-ult-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+      }
+      .th-move.ult::before, .th-move.ult::after {
+        content: ''; position: absolute; top: 0; bottom: 0; width: 70px; pointer-events: none;
+        background: repeating-linear-gradient(100deg, transparent 0 7px, color-mix(in srgb, var(--mv) 75%, transparent) 7px 9px);
+        opacity: 0.7; animation: th-ult-streak 0.9s linear infinite;
+      }
+      .th-move.ult::before { left: -76px; } .th-move.ult::after { right: -76px; transform: scaleX(-1); }
+      @keyframes th-move-in { from { transform: skewX(var(--slant)) translateX(-10px); opacity: 0; } to { transform: skewX(var(--slant)); opacity: 1; } }
+      @keyframes th-ult-in { 0% { transform: skewX(var(--slant)) scale(2.2); opacity: 0; } 60% { transform: skewX(var(--slant)) scale(0.94); opacity: 1; } 100% { transform: skewX(var(--slant)) scale(1); } }
+      @keyframes th-ult-streak { from { background-position: 0 0; } to { background-position: 28px 0; } }
       .th-centre { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; }
       /* A big italic timer on a slanted dark plate. */
       .th-timer {
@@ -371,6 +412,8 @@
         #status:not([data-state='error']) { display: none; }
       }
       html.narrow .top-hud { gap: 6px; }
+      html.narrow .th-move.ult, html.short .th-move.ult { font-size: 17px; padding: 2px 12px; }
+      html.narrow .th-move { font-size: 9px; }
       html.narrow .th-portrait { width: 32px; height: 32px; }
       html.narrow .th-centre { min-width: 70px; }
       html.narrow .th-timer { font-size: 15px; }

@@ -7,6 +7,7 @@ import {
   type Burn,
   finisherFactor,
   type SummonSpec,
+  type TossDelivery,
 } from '../../abilities/ability-def';
 import {
   type AbilityFx,
@@ -120,14 +121,10 @@ export class SceneAbilities implements AbilityHost {
     });
     if (block) return block;
     const def = caster.def(slot);
-    // Psion's Toss and Slam are refused with a message before anything is spent (PS1, PS2).
+    // Psion's Toss is refused with a message before anything is spent when there is nothing to take hold of (PS1).
     if (def.delivery.type === 'toss' && (f.carrying || !this.tossTarget?.(f, def.delivery.rangeM))) {
       this.onBlocked?.(f, 'noObject');
       return 'noObject';
-    }
-    if (def.delivery.type === 'slam' && !f.carrying) {
-      this.onBlocked?.(f, 'noHeld');
-      return 'noHeld';
     }
     // A fifth skeleton is refused before anything is spent (master plan B5).
     if (def.delivery.type === 'summon' && this.summonRoom(f, def.delivery) <= 0) return 'limit';
@@ -294,6 +291,7 @@ export class SceneAbilities implements AbilityHost {
     // Only a chance roll uses the dice, so abilities without one keep every seeded fight exactly as it was.
     if (landed && payload.blindS && (payload.blindChance === undefined || this.random() < payload.blindChance))
       target.combatant.blind(payload.blindS);
+    if (landed && payload.inkSplatS) target.combatant.inkSplat(payload.inkSplatS);
     if (landed && payload.slow) target.combatant.slow(payload.slow.durationS, payload.slow.speedFactor);
     if (landed && payload.aging)
       target.combatant.age(payload.aging.durationS, payload.aging.dps, payload.aging.defenceFactor);
@@ -322,20 +320,14 @@ export class SceneAbilities implements AbilityHost {
 
   /** Set by the scene: is there a prop within reach for Telekinetic Toss? */
   tossTarget: ((f: FighterEntity, rangeM: number) => boolean) | null = null;
-  /** Set by the scene: lift the nearest prop (Toss) / hurl the held one (Slam). */
-  tossSource: ((f: FighterEntity, rangeM: number) => boolean) | null = null;
-  slamSource: ((f: FighterEntity, speedFactor: number, powerFactor: number) => boolean) | null = null;
-  /** Set by the scene: a Toss or Slam was refused (shows a message). */
+  /** Set by the scene: raise the nearest prop where it stands and throw it (Toss). */
+  tossSource: ((f: FighterEntity, spec: TossDelivery) => boolean) | null = null;
+  /** Set by the scene: a Toss was refused (shows a message). */
   onBlocked: ((f: FighterEntity, block: CastBlock) => void) | null = null;
 
-  telekineticToss(casterId: string, rangeM: number): boolean {
+  telekineticToss(casterId: string, spec: TossDelivery): boolean {
     const f = this.byName(casterId);
-    return f ? (this.tossSource?.(f, rangeM) ?? false) : false;
-  }
-
-  telekineticSlam(casterId: string, speedFactor: number, powerFactor: number): boolean {
-    const f = this.byName(casterId);
-    return f ? (this.slamSource?.(f, speedFactor, powerFactor) ?? false) : false;
+    return f ? (this.tossSource?.(f, spec) ?? false) : false;
   }
 
   /** Set by the scene: Time Stop begins or ends. */

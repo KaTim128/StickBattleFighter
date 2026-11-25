@@ -52,10 +52,12 @@ const ARC_SAG_M = ARC_APEX_X - ARC_END_X;
 const ARC_R = (MID_Y * MID_Y + ARC_SAG_M * ARC_SAG_M) / (2 * ARC_SAG_M);
 const ARC_CX = ARC_APEX_X - ARC_R;
 /**
- * Angle (from the centre, 0 = the apex) where the arc ends: buried half a wall thickness into the top and bottom walls, so its
- * face and top run on into theirs with no gap and no overrun showing (master spec 7.2).
+ * Angle (from the centre, 0 = the apex) where the arc ends: its last piece stops just short of the outer wall's room face (0.1 m
+ * clear of it), so the turned piece's end never sticks out over the wall as a flat-topped patch (owner, 25/11/2026); the wall behind
+ * fills the last sliver, so the face and top still run on into the wall's.
  */
-const ARC_HALF_ANGLE = Math.asin(Math.min(0.999, (MID_Y + WALL_THICK_M / 2) / ARC_R));
+const ARC_END_CLEARANCE_M = 0.1;
+const ARC_HALF_ANGLE = Math.asin(Math.min(0.999, (MID_Y - ARC_END_CLEARANCE_M) / ARC_R));
 const DOOR_HALF_ANGLE = DOOR_LEN_M / 2 / ARC_R;
 /** Door frame posts between the glass leaf and the wall ends (along the wall), metres. */
 const DOOR_POST_M = 0.14;

@@ -1,5 +1,6 @@
 import type { Graphics } from 'pixi.js';
 import type { Point, solveSkeleton } from '../animation/skeleton';
+import { arcPath } from './arc-path';
 import { shadedBall } from './shaded-ball';
 
 /**
@@ -318,7 +319,7 @@ export class MagmaModel {
         color: this.c(MAGMA.armourLit),
         alpha: 0.8,
       });
-      fire.arc(capC.x, capC.y, capR * 0.82, Math.PI * 0.15, Math.PI * 0.95).stroke({
+      arcPath(fire, capC.x, capC.y, capR * 0.82, Math.PI * 0.15, Math.PI * 0.95).stroke({
         width: w * 0.14,
         color: this.c(MAGMA.seam),
         alpha: 0.75,

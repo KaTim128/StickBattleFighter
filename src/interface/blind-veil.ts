@@ -23,3 +23,28 @@ export class BlindVeil {
     this.el.classList.toggle('on', level > 0);
   }
 }
+
+/**
+ * Ink Dragon's burst (owner, 25/11/2026): a black ink splat covers the CENTRE of the screen for its short duration, the edges still
+ * showing; it thins out over the last 0.3 s and disappears by itself. Presentation only.
+ */
+export class InkSplatVeil {
+  private readonly el: HTMLDivElement;
+  private shown = -1;
+
+  constructor(parent: HTMLElement) {
+    this.el = document.createElement('div');
+    this.el.className = 'ink-splat-veil';
+    this.el.setAttribute('aria-hidden', 'true');
+    parent.appendChild(this.el);
+  }
+
+  /** Seconds of ink left (0 = clear). Cheap: the DOM is touched only when the level changes. */
+  update(splatS: number): void {
+    const level = Math.round(Math.min(1, splatS / 0.3) * 20) / 20;
+    if (level === this.shown) return;
+    this.shown = level;
+    this.el.style.opacity = String(level);
+    this.el.classList.toggle('on', level > 0);
+  }
+}

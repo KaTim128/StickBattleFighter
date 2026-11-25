@@ -54,26 +54,52 @@ describe('Ink Serpent', () => {
 });
 
 describe('Ink Dragon', () => {
-  it('flies round for 12 seconds, warns before each breath, hits each fighter once per breath, then leaves', () => {
+  it('flies round, warns, lunges once at the opponent, bites them with the slow and ink splash, then vanishes', () => {
     const a = arena([{ x: 5, y: 0 }]);
     a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    const phases = new Set<string>();
-    let breaths = 0;
-    let last = '';
+    const phases: string[] = [];
     for (let i = 0; i < 14 * 60; i++) {
       a.world.update(1 / 60, a.host);
       const d = a.world.ink.dragons[0];
       if (!d) break;
-      phases.add(d.phase);
-      if (d.phase === 'breathe' && last !== 'breathe') breaths++;
-      last = d.phase;
+      if (phases[phases.length - 1] !== d.phase) phases.push(d.phase);
     }
-    expect(phases.has('rear')).toBe(true); // the warning
-    expect(breaths).toBeGreaterThanOrEqual(2);
-    expect(breaths).toBeLessThanOrEqual(4);
-    expect(a.hits.length).toBeLessThanOrEqual(breaths);
+    expect(phases.indexOf('rear')).toBeGreaterThan(-1); // the warning
+    expect(phases.indexOf('lunge')).toBeGreaterThan(phases.indexOf('rear'));
+    expect(phases.filter((p) => p === 'lunge')).toHaveLength(1); // it charges once
     run(a, 2);
     expect(a.world.ink.dragons).toHaveLength(0);
+  });
+  it('a bite deals the payload once, with a 1.5 s slow and ink splash, and bursts the dragon', () => {
+    const a = arena([{ x: 5, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
+    const p = INKMASTER_KIT.a3.payload;
+    expect(p.inkSplatS).toBe(1.5);
+    expect(p.slow).toEqual({ durationS: 1.5, speedFactor: 0.6 });
+    let burst = false;
+    for (let i = 0; i < 14 * 60; i++) {
+      a.world.update(1 / 60, a.host);
+      const d = a.world.ink.dragons[0];
+      if (!d) break;
+      if (d.phase === 'burst') burst = true;
+    }
+    expect(burst).toBe(true);
+    expect(a.hits).toHaveLength(1);
+  });
+  it('a lunge that finds nobody in the lane hits nobody and dissolves', () => {
+    const a = arena([{ x: 5, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
+    let rearing = false;
+    for (let i = 0; i < 14 * 60; i++) {
+      a.world.update(1 / 60, a.host);
+      const d = a.world.ink.dragons[0];
+      if (!d) break;
+      if (d.phase === 'rear' && !rearing) {
+        rearing = true;
+        a.them[0]!.y = 6; // steps out of the locked lane during the warning
+      }
+    }
+    expect(a.hits).toHaveLength(0);
   });
   it('its head always faces the opponent while its trail follows the path it flew', () => {
     const a = arena([{ x: 5, y: 0 }]);
@@ -140,9 +166,8 @@ describe('Ink Slash', () => {
   it('is a close melee cut (not a projectile) that may blind', () => {
     const d = INKMASTER_KIT.a1.delivery;
     expect(d.type).toBe('strike');
-    expect(INKMASTER_KIT.a1.payload.blindS).toBe(2);
-    expect(INKMASTER_KIT.a1.payload.blindChance).toBeGreaterThan(0);
-    expect(INKMASTER_KIT.a1.payload.blindChance).toBeLessThan(1);
+    expect(INKMASTER_KIT.a1.payload.blindS).toBe(3);
+    expect(INKMASTER_KIT.a1.payload.slow).toEqual({ durationS: 3, speedFactor: 0.6 });
     const near = arena([{ x: 1.6, y: 0 }]);
     near.world.release('me', INKMASTER_KIT.a1, { x: 1.6, y: 0 }, near.host);
     expect(near.hits).toHaveLength(1);

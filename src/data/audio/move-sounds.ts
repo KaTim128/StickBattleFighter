@@ -385,6 +385,12 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('bandpass', 700, 1500, 0.6, 0.12, 1.6, 0, { attack: 0.3 }),
   ],
   'psi-hurl': [noise('bandpass', 1800, 500, 0.3, 0.5, 1), tone('sine', 120, 50, 0.3, 0.55)],
+  'psi-rupture': [noise('bandpass', 400, 2600, 0.35, 0.4, 1.4, 0, { attack: 0.05 }), tone('sine', 90, 220, 0.4, 0.5)],
+  'psi-rupture-hit': [
+    tone('sine', 150, 40, 0.4, 0.7),
+    noise('bandpass', 2200, 500, 0.3, 0.55, 1.2),
+    tone('triangle', 600, 200, 0.2, 0.3),
+  ],
   'psi-drop': [tone('sine', 140, 60, 0.25, 0.4), noise('lowpass', 1200, 300, 0.2, 0.3, 0.9)],
   'barrier-up': [tone('sine', 200, 480, 0.4, 0.3), tone('triangle', 800, 1200, 0.3, 0.14)],
   'barrier-hit': [tone('triangle', 1400, 800, 0.12, 0.25), noise('bandpass', 3000, 1500, 0.1, 0.25, 2)],

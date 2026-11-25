@@ -17,7 +17,6 @@ const STYLE: Record<CombatEvent['kind'], { text: (e: CombatEvent) => string; cls
   combo: { text: (e) => `${e.amount} HIT COMBO`, cls: 'ct-combo' },
   miss: { text: () => 'MISS', cls: 'ct-miss' },
   noObject: { text: () => 'NO OBJECT IN REACH', cls: 'ct-notice' },
-  noHeld: { text: () => 'NOTHING HELD', cls: 'ct-notice' },
 };
 
 const MAX_LIVE = 24;

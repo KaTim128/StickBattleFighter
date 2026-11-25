@@ -413,10 +413,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 14, '#f4eaff', 0.2),
     `<g filter="url(#ds)"><rect x="14" y="22" width="20" height="13" rx="2" fill="#2c2640" stroke="#c7a1ff" stroke-width="1.8"/><path d="M18 22 V17 H30 V22" fill="none" stroke="#8a4fe0" stroke-width="1.6"/></g><g fill="none" stroke="#c7a1ff" stroke-width="2.4" stroke-linecap="round" filter="url(#gl)"><path d="M24 12 V4 M20 8 L24 4 L28 8"/><path d="M8 40 C14 44 34 44 40 40" opacity=".7"/></g>`,
   ),
-  'psychic-slam': icon(
+  'psychic-rupture': icon(
     'psi',
     rays(24, 24, 14, '#f4eaff', 0.2),
-    `<path d="M6 38 C14 22 28 14 42 12" stroke="#c7a1ff" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#gl)" opacity=".8"/><g filter="url(#ds)"><rect x="30" y="8" width="13" height="13" rx="2" fill="#2c2640" stroke="#f4eaff" stroke-width="1.8" transform="rotate(20 36 14)"/></g><g stroke="#8a4fe0" stroke-width="2" stroke-linecap="round" opacity=".8"><path d="M10 30 L20 26 M8 36 L18 32"/></g>`,
+    `<g fill="none" stroke="#c7a1ff" stroke-width="2.6" stroke-linecap="round" filter="url(#gl)"><path d="M14 10 C22 18 22 30 14 38"/><path d="M22 8 C32 18 32 30 22 40" opacity=".8"/><path d="M30 6 C42 18 42 30 30 42" opacity=".6"/></g><g filter="url(#ds)"><circle cx="9" cy="24" r="4.5" fill="#2c2640" stroke="#f4eaff" stroke-width="1.8"/></g>`,
   ),
   'floating-prison': icon(
     'psi',

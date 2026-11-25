@@ -467,10 +467,10 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-4), head: deg(6), armFront: limb(130, 30), armBack: limb(30, 80), legFront: limb(16, -24) },
     settle: 0.3,
   },
-  // Psychic Slam: the raised hand flung forward and down.
-  psychicSlam: {
-    windup: { lean: deg(4), head: deg(2), armFront: limb(140, 40), armBack: limb(30, 80), legFront: limb(14, -22) },
-    release: { lean: deg(-18), head: deg(8), armFront: limb(100, 4), armBack: limb(-20, 70), legFront: limb(26, -26) },
+  // Psychic Rupture: both hands drawn to the temples in concentration, then thrust out flat toward the target.
+  psychicRupture: {
+    windup: { lean: deg(-4), head: deg(6), armFront: limb(150, 120), armBack: limb(140, 120), legFront: limb(14, -22) },
+    release: { lean: deg(-14), head: deg(8), armFront: limb(96, 4), armBack: limb(90, 8), legFront: limb(24, -26) },
     settle: 0.4,
   },
   // Floating Prison: one hand lifted with the fingers curled, the other drawing a circle in the air.

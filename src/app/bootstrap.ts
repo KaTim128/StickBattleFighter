@@ -37,7 +37,7 @@ import { browserStorage, SettingsState } from '../input/settings-store';
 import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction } from '../input/touch-controls';
 import { AbilityHud } from '../interface/ability-hud';
 import { AimHint } from '../interface/aim-hint';
-import { BlindVeil } from '../interface/blind-veil';
+import { BlindVeil, InkSplatVeil } from '../interface/blind-veil';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { FightIntro } from '../interface/fight-intro';
@@ -274,6 +274,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   // The fighter this page plays has its own key layout, saved for the player's profile (Phase 1 A3).
   settings.activate(playerName, params.get('character') ?? DEFAULT_CAST.player);
   const blindVeil = new BlindVeil(document.body);
+  const inkSplatVeil = new InkSplatVeil(document.body);
   const timeStopVeil = new TimeStopVeil(document.body);
   const visionVeil = new VisionVeil(document.body);
   const aimHint = new AimHint(document.body);
@@ -532,6 +533,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         showStickAiming(document.body, debug.player.beamAiming);
         const seen = viewAfflictions(debug.player, scene.match?.spectate === true);
         blindVeil.update(seen.blindS);
+        inkSplatVeil.update(seen.splatS ?? 0);
         timeStopVeil.update(scene.timeStopView.active, scene.timeStopView.resumeS);
         {
           // Lights out: the circle the player can still see, centred on their body, in screen pixels.
@@ -1007,6 +1009,24 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       menu: () => front.setOpen(true, 'title'),
       controls: () => openActiveFighterControls(),
     });
+    // The movement and control keys are shown only here, and only when asked for: a small button beside the info button.
+    const keysButton = document.createElement('button');
+    keysButton.type = 'button';
+    keysButton.className = 'keys-button';
+    keysButton.textContent = 'Keys';
+    keysButton.tabIndex = -1;
+    const keysPanel = document.createElement('div');
+    keysPanel.className = 'keys-panel';
+    keysPanel.hidden = true;
+    keysButton.addEventListener('pointerdown', (e) => e.stopPropagation());
+    keysPanel.addEventListener('pointerdown', (e) => e.stopPropagation());
+    keysButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      keysPanel.hidden = !keysPanel.hidden;
+      if (!keysPanel.hidden) keysPanel.textContent = controlsHint();
+      keysButton.blur();
+    });
+    document.body.append(keysButton, keysPanel);
     let last = { x: f.x, y: f.y, hits: f.hits };
     let ultReady = false;
     let lastMs = performance.now();

@@ -177,11 +177,8 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
         skip.disabled = true;
         skip.textContent = 'Skipping…';
         ctx.setPaused('skip', true); // the live loop rests while this one runs the fight
-        const tick = (): void => {
-          if (scene.fastForward(12)) return;
-          setTimeout(tick, 0);
-        };
-        tick();
+        // One frame to show the state, then the whole result is computed at once and the battle ends (no fast-forward).
+        setTimeout(() => scene.skipToEnd(), 0);
       });
       document.body.appendChild(skip);
     }

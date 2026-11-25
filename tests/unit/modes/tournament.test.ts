@@ -211,6 +211,19 @@ describe('tournament flow between stages', () => {
 });
 
 describe('skip battles integrity (T2/T3)', () => {
+  it('each Skip press settles only the stage on screen and starts the next one; later stages stay undecided', async () => {
+    const { skipBattles } = await import('../../../src/modes/tournament/tournament-flow');
+    const t = createTournament(16, PLAYER, POOL, seeded(41));
+    recordResult(t, playerMatch(t)!.id, 'p', 'played');
+    // The player is out later on: only AI matches remain in every stage after this one.
+    await skipBattles(t, firstWins);
+    expect(t.stage).toBe(1); // exactly one stage on
+    expect(t.rounds[0]!.every((m) => m.winner)).toBe(true);
+    expect(t.rounds[1]!.some((m) => m.winner)).toBe(false); // the next stage is untouched
+    expect(t.rounds.slice(2).every((r) => r.every((m) => !m.winner))).toBe(true);
+    expect(t.champion).toBeNull();
+  });
+
   it('fights each open AI match once with a reproducible seed, reports progress and advances', async () => {
     const { skipBattles, matchSeed } = await import('../../../src/modes/tournament/tournament-flow');
     const t = createTournament(8, PLAYER, POOL, seeded(31));

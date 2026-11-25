@@ -88,6 +88,8 @@ export interface AbilityPayload {
   readonly blindS?: number;
   /** Chance (0..1) that a landed blow applies `blindS` (default: always). Ink Slash blinds only some of the time. */
   readonly blindChance?: number;
+  /** Ink splashed over the middle of the target's screen for this long (Ink Dragon). */
+  readonly inkSplatS?: number;
   /**
    * Curse of Decay (owner, 12/11/2026): for `durationS` the target deals `attackFactor` of its
    * damage and its defence is multiplied by `defenceFactor`. Refreshes, never stacks.
@@ -564,21 +566,17 @@ export interface EchoDelivery {
 }
 
 /**
- * Telekinetic Toss (Psion, PS1): the nearest real prop within `rangeM` (any mass the props system carries) is lifted by his mind
- * and floats at his hand. Nothing in reach: the cast is refused before stamina or cooldown is spent ('noObject').
+ * Telekinetic Toss (Psion): the nearest real prop within `rangeM` (any mass the props system carries) stays exactly where it is
+ * until he takes hold of it. Then it rises straight up from its own spot over `riseS` to `heightM` with a purple psychic glow beneath
+ * it, and is thrown at his opponent as a real thrown body, `speedFactor` times a normal throw's speed and `powerFactor` times its
+ * power. Damage and knockback come from its mass and speed through the throwing rules and land only on a real collision. Nothing in
+ * reach: the cast is refused before stamina or cooldown is spent ('noObject').
  */
 export interface TossDelivery {
   readonly type: 'toss';
   readonly rangeM: number;
-}
-
-/**
- * Psychic Slam (Psion, PS2): hurls the prop he holds along his aim as a real thrown body, `speedFactor` times a normal throw's
- * speed and `powerFactor` times its power. Damage and knockback come from the prop's mass and speed through the throwing rules and
- * land only on a real collision. Nothing held: refused before anything is spent ('noHeld').
- */
-export interface SlamDelivery {
-  readonly type: 'slam';
+  readonly riseS: number;
+  readonly heightM: number;
   readonly speedFactor: number;
   readonly powerFactor: number;
 }
@@ -738,9 +736,10 @@ export interface SerpentDelivery {
 }
 
 /**
- * Ink Dragon (Inkmaster): a flying dragon drawn in `formS` seconds, which circles the nearest enemy for `durationS`.
- * After `breathEveryS` of flying it rears (a visible warning `windupS` long, marked on the floor) and breathes a line of
- * ink `breathRangeM` long, hitting each fighter in it once with the payload, `breaths` times in all, then dissolves.
+ * Ink Dragon (Inkmaster): drawn in the air, a black ink dragon flies round the nearest opponent for `lungeAfterS`, then rears (a
+ * warning `windupS` long, the lane it will strike marked on the floor, jaws opening) and lunges `lungeRangeM` forward at
+ * `lungeSpeedMps` with its mouth open. The first fighter its head reaches takes the payload (damage, slow and the ink splash over the
+ * middle of their screen) as it bursts into black ink; a miss simply dissolves at the end of the lunge. It charges once.
  */
 export interface DragonDelivery {
   readonly type: 'dragon';
@@ -748,12 +747,12 @@ export interface DragonDelivery {
   readonly durationS: number;
   readonly speedMps: number;
   readonly orbitM: number;
-  readonly breathEveryS: number;
+  readonly lungeAfterS: number;
   readonly windupS: number;
-  readonly breathRangeM: number;
-  readonly breathWidthM: number;
-  /** How many breaths it makes before it dissolves (one: it charges once, breathes, and is gone). */
-  readonly breaths: number;
+  readonly lungeRangeM: number;
+  readonly lungeSpeedMps: number;
+  /** How wide the head's bite is, metres (the warning lane is this wide). */
+  readonly biteWidthM: number;
 }
 
 /**
@@ -821,7 +820,6 @@ export type Delivery =
   | GrabDelivery
   | TossDelivery
   | EchoDelivery
-  | SlamDelivery
   | AssaultDelivery;
 
 /**

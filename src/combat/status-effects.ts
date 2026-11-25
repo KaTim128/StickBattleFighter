@@ -11,6 +11,7 @@ export type StatusId =
   | 'burn'
   | 'bleed'
   | 'blind'
+  | 'inksplat'
   | 'decay'
   | 'dark'
   | 'toxicity'
@@ -69,6 +70,7 @@ export const STATUS_DEFS: Record<StatusId, StatusDef> = {
   burn: { stacking: 'strongest', tickIntervalS: 0 },
   bleed: { stacking: 'strongest', tickIntervalS: 0 },
   blind: { stacking: 'strongest', tickIntervalS: 0 },
+  inksplat: { stacking: 'strongest', tickIntervalS: 0 },
   // Reson's Feedback Pulse: movement direction wobbles for a moment; no damage, no stun.
   disrupt: { stacking: 'strongest', tickIntervalS: 0 },
   // Reson's Resonance Break: mute (no abilities) and shattered defence, each its own timer so nothing else can renew or soften them.

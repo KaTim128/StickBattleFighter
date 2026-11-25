@@ -6,6 +6,7 @@ import {
   type AbilitySlot,
   type Burn,
   type MagicLook,
+  type TossDelivery,
 } from '../../abilities/ability-def';
 import type { Parry } from '../../abilities/ability-world';
 import { applyLoadout, type Loadout } from '../../abilities/loadout';
@@ -65,7 +66,7 @@ import { ArenaProps, type PropState } from '../../environment/arena-props';
 import { BreakableDoor, circleTouchesRect } from '../../environment/breakable-door';
 import { BreakableWalls } from '../../environment/breakable-wall';
 import type { PlayerIntents } from '../../input/intents';
-import type { HudFighter, TopHudState } from '../../interface/top-hud';
+import type { HudFighter, HudMove, TopHudState } from '../../interface/top-hud';
 import { decideByScore, type SideRecord } from '../../modes/tournament/match-score';
 import { firmHoldS } from '../../physics/climbing';
 import { canStartJump, stepHop, stepVelocity } from '../../physics/movement';
@@ -126,6 +127,8 @@ export interface PlayerState {
   lifting: boolean;
   /** Seconds of blindness left (Soul Drain): the player's view darkens. */
   blindS: number;
+  /** Seconds of ink left over the middle of the view (Ink Dragon). */
+  splatS: number;
   /** Seconds of darkness left (an enemy's Hunting Frenzy): only a small circle round them shows. */
   darkS: number;
   /** How far the player can see in that darkness, metres (Infinity when not in the dark). */
@@ -722,6 +725,10 @@ export class FightArenaScene implements ArenaScene {
               ? 'flame'
               : 'round',
         colour: `#${f.def.look.limb.toString(16).padStart(6, '0')}`,
+        move: (() => {
+          const mc = this.moveCalls.get(f);
+          return mc && mc.untilS > this.simTimeS && mc.move.name ? mc.move : null;
+        })(),
       };
     };
     return {
@@ -762,6 +769,7 @@ export class FightArenaScene implements ArenaScene {
       carrying: f.carrying?.placement.kind ?? null,
       lifting: f.liftS > 0,
       blindS: f.combatant.blindLeftS,
+      splatS: f.combatant.inkSplatLeftS,
       darkS: f.combatant.darkLeftS,
       sightM: f.combatant.sightM,
       nightVisionS: f.buff?.darkensFoes
@@ -877,11 +885,10 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.summonRoom = (f, spec) => this.summons.room(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
     this.abilities.tossTarget = (f, rangeM) => this.tossCandidate(f, rangeM) !== null;
-    this.abilities.tossSource = (f, rangeM) => this.telekineticToss(f, rangeM);
-    this.abilities.slamSource = (f, speed, power) => this.telekineticSlam(f, speed, power);
+    this.abilities.tossSource = (f, spec) => this.telekineticToss(f, spec);
     this.abilities.onBlocked = (f, block) =>
       this.events.push({
-        kind: block === 'noHeld' ? 'noHeld' : 'noObject',
+        kind: 'noObject',
         target: f.name,
         x: f.x,
         y: f.y - headTop(f),
@@ -1049,6 +1056,7 @@ export class FightArenaScene implements ArenaScene {
     }
     if (!this.stopOwner) {
       for (const door of this.doors) door.update(stepS);
+      this.stepLevitations(stepS);
       this.checkThrownHits();
       this.props?.update(stepS);
     }
@@ -1083,10 +1091,7 @@ export class FightArenaScene implements ArenaScene {
     if (f.carrying) {
       // Hands full: the combat buttons do nothing until it is thrown or put down (CONTROL_SCHEME §2).
       this.intents.consumeMeleeEdges();
-      // The one exception (PS2): Psychic Slam hurls the object his mind is holding, once it is up.
-      const pressed = this.intents.consumeAbility();
-      if (pressed && f.liftS <= 0 && f.caster?.def(pressed).delivery.type === 'slam')
-        this.lastAbilityBlock = this.abilities?.tryCast(f, pressed) ?? null;
+      this.intents.consumeAbility();
       this.intents.consumeAimCancel();
       this.intents.consumeHeavy();
       if (c.state === 'guarding') c.setGuard(false);
@@ -1232,7 +1237,34 @@ export class FightArenaScene implements ArenaScene {
     const key = cast ? `a:${cast.def.id}` : attack ? `m:${attack.id}:${f.combo.step}` : null;
     if (key && key !== this.lastActionKey) this.lastActionName = cast ? cast.def.name : (attack?.label ?? null);
     this.lastActionKey = key;
+    for (const who of [this.playerFighter, this.dummyFighter]) this.trackMove(who);
   }
+
+  /** The move shown beside a fighter's portrait: what it is casting or swinging, kept up a moment after it ends so it can be read. */
+  private trackMove(f: FighterEntity): void {
+    const cast = f.caster?.cast;
+    const attack = f.combo.attack;
+    const key = cast ? `a:${cast.def.id}` : attack ? `m:${attack.id}:${f.combo.step}` : null;
+    const prev = this.moveCalls.get(f);
+    if (key && (!prev || prev.key !== key)) {
+      const ultimate = cast?.def.slot === 'ult';
+      const hex = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
+      const pal = cast?.def.look?.palette;
+      const base = f.def.look.limb;
+      this.moveCalls.set(f, {
+        key,
+        untilS: this.simTimeS + (ultimate ? 2.8 : 1.3),
+        move: {
+          name: cast ? cast.def.name : (attack?.label ?? ''),
+          ultimate,
+          colour: hex(pal ? pal.hot : base),
+          bright: hex(pal ? pal.core : 0xffffff),
+        },
+      });
+    } else if (key && prev) prev.untilS = Math.max(prev.untilS, this.simTimeS + (prev.move.ultimate ? 1.4 : 0.5));
+  }
+
+  private readonly moveCalls = new Map<FighterEntity, { key: string; untilS: number; move: HudMove }>();
 
   /**
    * Pick up / throw / put down (Phase 7, REQ-PHY-8, TD-016). Press near an object to lift it;
@@ -1297,28 +1329,88 @@ export class FightArenaScene implements ArenaScene {
     return foes.find((o) => o.name === id) ?? main;
   }
 
+  /** Objects Psion's Toss is raising: where they float and how long they have risen. */
+  private readonly levitations: {
+    f: FighterEntity;
+    prop: ArenaProp;
+    spec: TossDelivery;
+    ageS: number;
+    at: { x: number; y: number };
+  }[] = [];
+
   /** The prop Telekinetic Toss would lift: the nearest within `rangeM`, any mass (PS1). */
   private tossCandidate(f: FighterEntity, rangeM: number): ArenaProp | null {
     return this.props?.pickupCandidate(f.x, f.y, f.aim, rangeM, 99, Number.POSITIVE_INFINITY, true) ?? null;
   }
 
-  /** Telekinetic Toss: his mind lifts the nearest prop to float at his hand, quickly whatever its weight. */
-  private telekineticToss(f: FighterEntity, rangeM: number): boolean {
-    if (f.carrying) return false;
-    const prop = this.tossCandidate(f, rangeM);
+  /**
+   * Telekinetic Toss: his mind takes hold of the nearest prop right where it stands. It rises straight up from its own spot with a
+   * purple glow beneath it (no hand lift, nothing carried), then `stepLevitations` throws it at his opponent.
+   */
+  private telekineticToss(f: FighterEntity, spec: TossDelivery): boolean {
+    const props = this.props;
+    if (!props || f.carrying) return false;
+    const prop = this.tossCandidate(f, spec.rangeM);
     if (!prop) return false;
-    this.liftProp(f, prop);
-    f.liftTotalS = 0.4;
-    f.liftS = f.liftTotalS;
+    const r = prop.rect;
+    const at = { x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 };
+    props.pickUp(prop, this.fighters.indexOf(f), { ...at, heightM: 0 });
+    this.levitations.push({ f, prop, spec, ageS: 0, at });
+    this.characterSound(f, 'jump', 0.4);
     return true;
   }
 
-  /** Psychic Slam: hurl the floating prop as a real thrown body, faster and harder than a hand throw. */
-  private telekineticSlam(f: FighterEntity, speedFactor: number, powerFactor: number): boolean {
-    if (!f.carrying) return false;
-    f.liftS = 0;
-    this.throwCarried(f, speedFactor, powerFactor);
-    return true;
+  /** Rise the objects Psion holds, then throw each at the nearest opponent (or let it drop if he is put down meanwhile). */
+  private stepLevitations(stepS: number): void {
+    const props = this.props;
+    for (let i = this.levitations.length - 1; i >= 0; i--) {
+      const l = this.levitations[i]!;
+      l.ageS += stepS;
+      const k = Math.min(1, l.ageS / l.spec.riseS);
+      const heightM = l.spec.heightM * k * k * (3 - 2 * k);
+      if (!props || l.prop.broken || !l.prop.held) {
+        this.levitations.splice(i, 1);
+        continue;
+      }
+      props.carry(l.prop, { ...l.at, heightM });
+      if (l.f.combatant.isKo || !l.f.combatant.canAct) {
+        props.release(l.prop, { x: 0, y: 0 }, heightM, 0, false); // his focus broke: it falls where it floated
+        this.levitations.splice(i, 1);
+        continue;
+      }
+      if (l.ageS < l.spec.riseS) continue;
+      const dir = this.tossDir(l.f);
+      const speed = this.throwSpeed(l.f, l.prop) * l.spec.speedFactor;
+      l.f.faceToward(dir.x, dir.y);
+      props.release(
+        l.prop,
+        { x: dir.x * speed, y: dir.y * speed },
+        Math.max(THROWING.launchHeightM, heightM),
+        THROWING.launchUpMps,
+        true,
+        { power: l.f.def.objects.throwPower * l.spec.powerFactor, fire: false },
+      );
+      this.queueSound('psi-hurl', 0.8);
+      this.levitations.splice(i, 1);
+    }
+  }
+
+  /** Toss goes at the nearest living opponent, whatever the distance (the thrown body does the rest). */
+  private tossDir(f: FighterEntity): { x: number; y: number } {
+    let best: FighterEntity | null = null;
+    let bestD = Number.POSITIVE_INFINITY;
+    for (const o of this.fighters) {
+      if (o.team === f.team || o.combatant.isKo) continue;
+      const d = Math.hypot(o.x - f.x, o.y - f.y);
+      if (d < bestD) {
+        best = o;
+        bestD = d;
+      }
+    }
+    const dx = best ? best.x - f.x : f.aim.x;
+    const dy = best ? best.y - f.y : f.aim.y;
+    const len = Math.hypot(dx, dy) || 1;
+    return { x: dx / len, y: dy / len };
   }
 
   /** Lift a prop overhead (the player's pickup press and the AI's pickup share this). */
@@ -2364,6 +2456,29 @@ export class FightArenaScene implements ArenaScene {
       this.drainEvents();
     }
     return this.matchEndSent;
+  }
+
+  /**
+   * Battle Skip, instant (owner, 25/11/2026): no fast-forward, no waiting. The match is settled right now by running the same
+   * simulation (stats, abilities, rules) in one go, to its reported end. A step cap stops a runaway fight; the rules end every
+   * match well inside it, and anything still open at the cap is settled by the performance score.
+   */
+  skipToEnd(): void {
+    if (!this.match || this.matchEndSent) return;
+    const cap = Math.ceil(
+      (TEAM_TIME_LIMIT_S +
+        TOURNAMENT_RULES.regulationS +
+        TOURNAMENT_RULES.overtimeS +
+        TOURNAMENT_RULES.fallbackAfterS +
+        MATCH_END_PAUSE_S +
+        30) *
+        60,
+    );
+    for (let i = 0; i < cap && !this.matchEndSent; i++) {
+      this.update(1 / 60);
+      this.drainEvents();
+    }
+    if (!this.matchEndSent) this.endMatchNow();
   }
 
   /** The performance-score winner (T1): deterministic, see `decideByScore`. */
@@ -3584,6 +3699,23 @@ export class FightArenaScene implements ArenaScene {
           }
         : undefined,
       limbFlames,
+      levitations: this.levitations.map((l) => {
+        const k = Math.min(1, l.ageS / l.spec.riseS);
+        const sz = l.prop.size;
+        return {
+          x: l.at.x,
+          y: l.at.y,
+          heightM: l.spec.heightM * k,
+          k,
+          radiusM: Math.max(0.35, Math.max(sz.w, sz.d) / 2),
+          palette: l.f.caster?.def('a2').look?.palette ?? {
+            deep: 0x2a1650,
+            hot: 0x8a4fe0,
+            bright: 0xc7a1ff,
+            core: 0xf4eaff,
+          },
+        };
+      }),
       aim: this.ultAim ?? this.pointAimState ?? this.throwAim,
       impacts,
       dust,

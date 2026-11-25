@@ -17,15 +17,15 @@ A wandering calligrapher from a mountain temple. Charcoal skin with cream rim li
 ## Kit
 | Slot | Ability | Delivery | Numbers |
 |---|---|---|---|
-| Q | Ink Slash | `strike`: a close brush cut (reach 2.2 m) | 54 damage, 35 % chance to blind for 2 s, 5 s, 18 stamina |
+| Q | Ink Slash | `strike`: a close brush cut (reach 2.2 m) | 54 damage, blinds for 3 s and slows 40 % for 3 s, 5 s, 18 stamina |
 | E | Ink Serpent | `serpent` (drawn 0.6 s, then hunts, turn rate 2.4 rad/s) | 46 damage, wraps the legs for 5 s (guard and abilities still work), same target immune 4 s after, 10 s |
-| F | Ink Dragon | `dragon` (drawn 0.9 s, 12 s, one at a time; head always faces the opponent, ink trail follows its path) | breath 46 damage, one breath per 3.6 s, 1.0 s warning lane on the floor, 20 s |
+| F | Ink Dragon | `dragon` (drawn 0.9 s, one at a time; head always faces the opponent, ink trail follows its path) | two breaths 46 damage each, 3.6 s apart, 1.0 s red warning lane on the floor, vanishes after the second, 20 s |
 | R | Ink Clone | `summon` with variants sword or bow | 14 s, one at a time; sword clone 190 health, bow clone 130 health and 20-damage arrows every 2.4 s; 18 s |
 | (fifth) | Ink Cyclone | `vortex` | radius 3.4 m, 3.4 s, 11 damage per 0.5 s, pull 2.2 m/s (walking is 4.9), collapse 50 damage and a push; 14 s |
 | I | The Masterpiece | `masterpiece` | 3 s drawing ritual (he is exposed), then the monster for 16 s |
 
 ### The ink monster (`ink-monster`)
-380 health, 3.4 m/s, scale 1.3 (about Titan's size, a little taller), knockback resistance 0.6. Four attacks, each with a visible wind-up and its own cooldown:
+500 health, 3.4 m/s, scale 1.3 (about Titan's size, a little taller), knockback resistance 0.6. Four attacks, each with a visible wind-up and its own cooldown:
 claw swipe (basic, 0.7 s wind-up, 38 damage), bite (heavy, 0.55 s wind-up, 34), ground slam (0.5 s cast and 0.85 s ring warning, 32, 7 s), ink breath (0.9 s wind-up, 1.5 s stream, 9 per 0.4 s tick, no flinch, 11 s). No attack knocks down or chains, so nobody is trapped. The summon ends with a burst of ink when its time is up or its health is gone, and also if Inkmaster is knocked out.
 
 ## Counterplay and limits

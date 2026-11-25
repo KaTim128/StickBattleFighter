@@ -1,5 +1,6 @@
 import type { Graphics } from 'pixi.js';
 import type { Point, solveSkeleton } from '../animation/skeleton';
+import { arcPath } from './arc-path';
 import {
   drawBeastClaws,
   drawBeastHead,
@@ -1014,7 +1015,11 @@ export class PremiumModel {
     const cy = s.chest.y + 0.03;
     for (let i = 0; i < 3; i++) {
       const ph = (t * 1.2 + i / 3) % 1;
-      fire.arc(cx, cy, 0.05 + ph * 0.16, -0.9, 0.9).stroke({ width: w * 0.1, color: sg.glow, alpha: 0.7 * (1 - ph) });
+      arcPath(fire, cx, cy, 0.05 + ph * 0.16, -0.9, 0.9).stroke({
+        width: w * 0.1,
+        color: sg.glow,
+        alpha: 0.7 * (1 - ph),
+      });
     }
   }
 
@@ -1036,9 +1041,11 @@ export class PremiumModel {
     });
     for (let i = 0; i < 2; i++) {
       const ph = (t * (sh.kind === 'scream' ? 2.2 : 3.4) + i * 0.5) % 1;
-      fire
-        .arc(mx, my, r * (0.5 + ph * 1.4), -0.7, 0.7)
-        .stroke({ width: w * 0.12, color: this.P.glow ?? 0x19c4e0, alpha: sh.k * 0.7 * (1 - ph) });
+      arcPath(fire, mx, my, r * (0.5 + ph * 1.4), -0.7, 0.7).stroke({
+        width: w * 0.12,
+        color: this.P.glow ?? 0x19c4e0,
+        alpha: sh.k * 0.7 * (1 - ph),
+      });
     }
   }
 
@@ -2068,7 +2075,7 @@ export class PremiumModel {
         alpha: 0.8,
       });
       if (this.P.seam !== null)
-        fire.arc(capC.x, capC.y, capR * 0.82, Math.PI * 0.15, Math.PI * 0.95).stroke({
+        arcPath(fire, capC.x, capC.y, capR * 0.82, Math.PI * 0.15, Math.PI * 0.95).stroke({
           width: w * 0.14,
           color: this.P.seam,
           alpha: 0.75,
@@ -2507,7 +2514,7 @@ export class PremiumModel {
         color: 0xffffff,
         alpha: 0.4,
       });
-      g.arc(sh.x + dx, sh.y + dy, r * 0.8, Math.PI * 0.2, Math.PI * 0.8).stroke({
+      arcPath(g, sh.x + dx, sh.y + dy, r * 0.8, Math.PI * 0.2, Math.PI * 0.8).stroke({
         width: w * 0.06,
         color: this.c(toward(bone, 0x000000, 0.4)),
         alpha: 0.7,

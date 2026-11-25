@@ -8,6 +8,7 @@ import {
   type MagicLook,
   payloadAt,
   type SummonSpec,
+  type TossDelivery,
 } from './ability-def';
 
 import { InkWorld } from './ink-world';
@@ -116,11 +117,9 @@ export interface AbilityHost {
   /** A gentle current: add this velocity to a fighter's own movement for this step only (Ink Cyclone; they can still walk or dodge out). Optional. */
   nudge?(targetId: string, velocity: Vec2): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
-  /** Telekinetic Toss: lift the nearest prop within `rangeM` to the caster's hand; false if there is none. */
-  telekineticToss?(casterId: string, rangeM: number): boolean;
-  /** Psychic Slam: hurl the held prop along the caster's aim; false if nothing is held. */
-  telekineticSlam?(casterId: string, speedFactor: number, powerFactor: number): boolean;
   legTrapState?(targetId: string): { heightM: number; trappedS: number };
+  /** Telekinetic Toss: raise the nearest prop within reach where it stands and throw it at the opponent; false if there is none. */
+  telekineticToss?(casterId: string, spec: TossDelivery): boolean;
   /** Can a body stand here (inside the arena, clear of walls and furniture)? Optional (everywhere counts when absent). */
   standable?(at: Vec2): boolean;
   /** The size of the arena floor, metres (a flying creature stays inside it). Optional (unbounded when absent). */
@@ -980,20 +979,7 @@ export class AbilityWorld {
         break;
       }
       case 'toss': {
-        const ok = host.telekineticToss?.(casterId, d.rangeM) ?? false;
-        host.emit({
-          kind: ok ? 'release' : 'fizzle',
-          ability: def.id,
-          look: def.look,
-          vfx: def.vfx,
-          sfx: ok ? def.sfx.release : null,
-          x: at.x,
-          y: at.y,
-        });
-        break;
-      }
-      case 'slam': {
-        const ok = host.telekineticSlam?.(casterId, d.speedFactor, d.powerFactor) ?? false;
+        const ok = host.telekineticToss?.(casterId, d) ?? false;
         host.emit({
           kind: ok ? 'release' : 'fizzle',
           ability: def.id,

@@ -62,4 +62,22 @@ describe('tournament regulation, overtime and fallback (T1/T2)', () => {
     expect(ended).toBe(1);
     scenes.clear();
   }, 120_000);
+
+  it('Battle Skip settles the match at once with the same result as running it out, and reports once', async () => {
+    const slow = await match(21);
+    let slowWinner = '';
+    slow.scene.onMatchEnd = (w) => {
+      slowWinner = w;
+    };
+    while (!slow.scene.fastForward(50));
+    slow.scenes.clear();
+    const fast = await match(21);
+    const reports: string[] = [];
+    fast.scene.onMatchEnd = (w) => reports.push(w);
+    fast.scene.skipToEnd(); // one call: no budget, no waiting
+    fast.scene.skipToEnd(); // a second press does nothing more
+    expect(reports).toEqual([slowWinner]);
+    expect(fast.scene.matchResult).not.toBeNull();
+    fast.scenes.clear();
+  }, 120_000);
 });

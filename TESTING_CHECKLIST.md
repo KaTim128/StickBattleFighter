@@ -766,3 +766,13 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] A fighter standing on or beside a bookshelf or cabinet does not make it transparent; one standing behind it (north-west) does.
 - [ ] The curved office wall meets the top and bottom walls with no gap or poke-through, from any camera position.
 - [ ] Admin: Game Modes shows "House of Nightmare: Fight"; it starts a fight on the house ground floor; the stairs are closed; furniture breaks; chairs can be thrown. Non-admins do not see it. Hide and Seek is unchanged.
+
+## Owner updates 25/11/2026
+- [ ] Ink Monster has 450 health; Ink Slash is a clear brush swipe that blinds for 3 s and slows 40 %.
+- [ ] Ink Dragon rears with a red lane, lunges mouth open along it, bites for damage with a 1.5 s slow and a black splash over the centre of the target's screen, then bursts.
+- [ ] No orange line under Geargrind's Magnetic Mine, Reson's abilities or the Ink Monster's ultimate.
+- [ ] Skip Battle ends a watched fight at once with the right result; the draw Skip settles only the stage on screen.
+- [ ] Psion: Toss raises an object straight up from where it stands on a purple glow and throws it; Psychic Rupture builds up visibly, then a distortion wave hits for damage, knockback and stagger.
+- [ ] Each fighter's current move shows beside their own portrait; an ultimate shows a large themed banner.
+- [ ] The curved office wall meets the north wall with no patch.
+

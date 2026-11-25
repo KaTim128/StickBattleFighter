@@ -21,6 +21,19 @@ export interface HudFighter {
   /** Portrait style: a living flame or a plain head, in the fighter's colour. */
   readonly portrait: 'flame' | 'brute' | 'round';
   readonly colour: string;
+  /**
+   * The move this fighter is making (or just made), shown beside their own portrait in their own theme (owner, 25/11/2026):
+   * compact for blows and abilities, large and dramatic for an ultimate. Null when none.
+   */
+  readonly move?: HudMove | null;
+}
+
+export interface HudMove {
+  readonly name: string;
+  readonly ultimate: boolean;
+  /** CSS colours of the fighter's theme for this move: the main and the bright one. */
+  readonly colour: string;
+  readonly bright: string;
 }
 
 export interface TopHudState {
@@ -52,6 +65,8 @@ class Side {
   private readonly hpLag: HTMLDivElement;
   private readonly st: HTMLDivElement;
   private readonly status: HTMLDivElement;
+  private readonly move: HTMLDivElement;
+  private shownMove = '';
   private shown = '';
   private lag = 1;
 
@@ -65,6 +80,7 @@ class Side {
         <div class="th-bar th-hp"><div class="th-lag"></div><div class="th-fill"></div></div>
         <div class="th-bar th-st"><div class="th-fill"></div></div>
         <div class="th-status"></div>
+        <div class="th-move"></div>
       </div>`;
     this.portrait = this.root.querySelector('.th-portrait')!;
     this.name = this.root.querySelector('.th-name')!;
@@ -72,6 +88,7 @@ class Side {
     this.hpLag = this.root.querySelector('.th-hp .th-lag')!;
     this.st = this.root.querySelector('.th-st .th-fill')!;
     this.status = this.root.querySelector('.th-status')!;
+    this.move = this.root.querySelector('.th-move')!;
   }
 
   private hasImage = false;
@@ -94,6 +111,20 @@ class Side {
     this.hp.style.width = `${hp * 100}%`;
     this.hpLag.style.width = `${this.lag * 100}%`;
     this.st.style.width = `${Math.max(0, Math.min(1, f.stamina / f.maxStamina)) * 100}%`;
+    const mv = f.move ?? null;
+    const mkey = mv ? `${mv.name}|${mv.ultimate}|${mv.colour}|${mv.bright}` : '';
+    if (mkey !== this.shownMove) {
+      this.shownMove = mkey;
+      this.move.classList.remove('on', 'ult', 'pop');
+      if (mv) {
+        this.move.textContent = mv.name;
+        this.move.style.setProperty('--mv', mv.colour);
+        this.move.style.setProperty('--mv2', mv.bright);
+        void this.move.offsetWidth; // restart the entrance animation for each new move
+        this.move.classList.add('on', 'pop');
+        if (mv.ultimate) this.move.classList.add('ult');
+      } else this.move.textContent = '';
+    }
     const key = `${f.name}|${f.portrait}|${f.colour}|${f.status.join(',')}`;
     if (key === this.shown) return;
     this.shown = key;

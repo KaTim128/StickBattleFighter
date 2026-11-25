@@ -227,7 +227,7 @@ test('tournament: spectate a 4-fighter tournament to the champion with Skip Batt
   const skip = page.locator('.tn-skip-battle');
   await expect(skip).toBeVisible({ timeout: 60_000 });
   await skip.click();
-  await expect(skip).toBeDisabled(); // a single activation
+  // Skip Battle is instant (25/11/2026): the result is settled at once and the bracket follows, with no fast-forward.
   await expect(page.locator('.tournament')).toBeVisible({ timeout: 180_000 });
   await expect(page.locator('.tn-latest')).toHaveText(/Top 4: .* beat /);
   // The other semi final: the rest of the stage is simulated for real, then the final follows.
