@@ -498,7 +498,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     },
   };
   reportMusic = (): void => {
-    debug.menuMusicPlaying = musicDirector.isPlaying('menu');
+    debug.menuMusicPlaying = musicDirector.want === 'menu'; // wanted (it starts with the first input); musicTracks is what is audible
     debug.musicTracks = musicDirector.audibleIds;
     debug.musicWanted = musicDirector.want;
   };
