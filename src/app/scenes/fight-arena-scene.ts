@@ -563,8 +563,7 @@ export class FightArenaScene implements ArenaScene {
     }
     if (physics) {
       const r = o.def.body.footRadiusM + 0.1;
-      const inside = (q: { x: number; y: number }) =>
-        q.x > r && q.y > r && q.x < this.arena.widthM - r && q.y < this.arena.heightM - r;
+      const inside = (q: { x: number; y: number }) => this.onFloor(q, r);
       // Straight ahead first, then turning further and further aside.
       for (let i = 0; i < 24; i++) {
         const turn = ((i + 1) >> 1) * (Math.PI / 12) * (i % 2 ? 1 : -1);
@@ -664,12 +663,7 @@ export class FightArenaScene implements ArenaScene {
       f.detach();
     },
     blocked: (from, to) => this.physics?.castWorldRay(from, to)?.fraction ?? null,
-    isFree: (at, r) =>
-      (this.physics?.isFree(at, r) ?? false) &&
-      at.x > r &&
-      at.y > r &&
-      at.x < this.arena.widthM - r &&
-      at.y < this.arena.heightM - r,
+    isFree: (at, r) => (this.physics?.isFree(at, r) ?? false) && this.onFloor(at, r),
     fighters: () => this.fighters,
     step: (f, stepS, move) => this.stepFighter(f, stepS, move, false),
     attack: (f, heavy) => {
@@ -1909,11 +1903,32 @@ export class FightArenaScene implements ArenaScene {
 
   /** Keep a target on the floor of the map. */
   private insideMap(p: { x: number; y: number }): { x: number; y: number } {
-    const m = 0.3;
-    return {
-      x: Math.min(this.arena.widthM - m, Math.max(m, p.x)),
-      y: Math.min(this.arena.heightM - m, Math.max(m, p.y)),
-    };
+    return this.clampToArena(p, 0.3);
+  }
+
+  /** Is this point on the arena's floor, `m` metres clear of its edge? A round arena (the Colosseum) is its circle, not its bounding box. */
+  private onFloor(p: { x: number; y: number }, m: number): boolean {
+    const round = this.arena.round;
+    if (round && Math.hypot(p.x - round.cx, p.y - round.cy) > round.radiusM - m) return false;
+    return p.x > m && p.y > m && p.x < this.arena.widthM - m && p.y < this.arena.heightM - m;
+  }
+
+  /** The nearest point to `p` that is on the floor, `m` metres clear of the edge (the circle of a round arena). */
+  private clampToArena(p: { x: number; y: number }, m: number): { x: number; y: number } {
+    let x = Math.min(this.arena.widthM - m, Math.max(m, p.x));
+    let y = Math.min(this.arena.heightM - m, Math.max(m, p.y));
+    const round = this.arena.round;
+    if (round) {
+      const dx = x - round.cx;
+      const dy = y - round.cy;
+      const d = Math.hypot(dx, dy);
+      const max = round.radiusM - m;
+      if (d > max && d > 0) {
+        x = round.cx + (dx / d) * max;
+        y = round.cy + (dy / d) * max;
+      }
+    }
+    return { x, y };
   }
 
   /**
@@ -1992,13 +2007,7 @@ export class FightArenaScene implements ArenaScene {
   /** Can a body stand here: inside the arena, clear of walls and furniture (Crystal Groundstrike keeps its zones on usable ground). */
   private standableAt(p: { x: number; y: number }): boolean {
     const r = 0.5;
-    return (
-      p.x > r &&
-      p.y > r &&
-      p.x < this.arena.widthM - r &&
-      p.y < this.arena.heightM - r &&
-      (this.physics?.isFree(p, r) ?? true)
-    );
+    return this.onFloor(p, r) && (this.physics?.isFree(p, r) ?? true);
   }
 
   /**
@@ -2024,13 +2033,9 @@ export class FightArenaScene implements ArenaScene {
     if (!physics) return null;
     const r = f.def.body.footRadiusM;
     const edge = r + 0.05;
-    const inside = (p: { x: number; y: number }) =>
-      p.x > edge && p.y > edge && p.x < this.arena.widthM - edge && p.y < this.arena.heightM - edge;
+    const inside = (p: { x: number; y: number }) => this.onFloor(p, edge);
     // Never past the arena's edge: the search starts from the nearest spot inside it.
-    to = {
-      x: Math.min(this.arena.widthM - edge - 0.01, Math.max(edge + 0.01, to.x)),
-      y: Math.min(this.arena.heightM - edge - 0.01, Math.max(edge + 0.01, to.y)),
-    };
+    to = this.clampToArena(to, edge + 0.01);
     for (const ring of [0, 0.35, 0.7, 1.05, 1.4]) {
       const steps = ring === 0 ? 1 : 12;
       for (let k = 0; k < steps; k++) {
@@ -2056,8 +2061,16 @@ export class FightArenaScene implements ArenaScene {
     const x = f.curr.x;
     const y = f.curr.y;
     // The centre past the map's edge. A body stands against a wall with its centre a foot's width inside, never past it.
+    const round = this.arena.round;
     const outside =
-      !Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > this.arena.widthM || y > this.arena.heightM;
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      x < 0 ||
+      y < 0 ||
+      x > this.arena.widthM ||
+      y > this.arena.heightM ||
+      // A round arena: past its circle is past its wall, whatever the bounding box says (the ring's wall is thin and its top is not floor).
+      (round !== undefined && Math.hypot(x - round.cx, y - round.cy) > round.radiusM - f.def.body.footRadiusM * 0.5);
     if (!outside) return;
     const to = Number.isFinite(x) && Number.isFinite(y) ? { x, y } : f.spawn;
     f.placeAt(this.freeSpotNear(f, to) ?? f.spawn);

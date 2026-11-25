@@ -465,9 +465,13 @@ export class ArenaProps {
     let bestD = Number.POSITIVE_INFINITY;
     for (const prop of this.props) {
       const liftable =
-        prop.kind.throwable || (liftsFurniture && prop.kind.movable && (prop.placement.elevationM ?? 0) === 0);
+        prop.kind.throwable ||
+        (liftsFurniture &&
+          (prop.kind.movable || prop.kind.carriable === true) &&
+          (prop.placement.elevationM ?? 0) === 0);
       if (!liftable || prop.broken || prop.held || prop.flight || prop.kind.decal) continue;
-      if (prop.kind.massKg > maxLiftKg) continue;
+      // Heavy ruins (columns, arch pieces, blocks) are carried whatever they weigh; everything else obeys the lifting limit.
+      if (prop.kind.massKg > maxLiftKg && prop.kind.carriable !== true) continue;
       const loose = prop.looseFall;
       if (loose && (loose.heightM > 0 || (prop.body && Math.hypot(prop.body.linvel().x, prop.body.linvel().y) > 0.5)))
         continue;

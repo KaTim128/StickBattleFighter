@@ -21,7 +21,12 @@ describe('prop depth fading and collision', () => {
   });
 
   async function setup(startOffset: { x: number; y: number }) {
-    const prop = COLOSSEUM.props.find((p) => p.kind === 'column-stub')!;
+    // One column in the open middle of the Colosseum (the ruins around the rim sit close to the wall and leave no room to stand behind them).
+    const prop = {
+      ...COLOSSEUM.props.find((p) => p.kind === 'column-stub')!,
+      x: COLOSSEUM.widthM / 2,
+      y: COLOSSEUM.heightM / 2,
+    };
     const intents = new PlayerIntents();
     const arena = {
       ...COLOSSEUM,

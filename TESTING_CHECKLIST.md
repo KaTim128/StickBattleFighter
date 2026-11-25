@@ -798,3 +798,5 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 
 - [ ] Ink Bull: rises from ink, paws and snorts, charges and curves after a moving opponent, can be sidestepped or dodged, rams with knockback and screen shake, a miss slows and scatters (automated: `ink-world.test.ts`, `inkmaster.test.ts`; look checked by screenshot).
 - [ ] Ink Serpent: wraps the body for exactly 4 s; the target cannot attack, use abilities, jump or dodge but can walk; it cannot be refreshed; ink seal over the head while bound; unwinds into ink on release.
+
+- [ ] Colosseum is solid: nobody (player, dummy, AI) reaches or crosses the wall by walking, jumping, dodging, knockback or teleport; ruins keep clear of the wall; the floor visibly meets the wall; Titan and Psion can lift the columns, arch pieces and blocks (automated: `colosseum-solid.test.ts`; look checked by screenshot).

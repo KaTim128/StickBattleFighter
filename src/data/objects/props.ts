@@ -46,6 +46,11 @@ export interface PropKind {
    * (owner, 12/11/2026). Chairs, plants, bins and thin panels are not climbable.
    */
   readonly climbable?: boolean;
+  /**
+   * Heavy ruins that are still carried and thrown by the fighters strong enough to lift furniture (Titan) and by Psion's Telekinetic Toss,
+   * whatever they weigh (owner, 25/11/2026: pillars and the like can be carried). The throw stays capped by `THROWING`.
+   */
+  readonly carriable?: boolean;
 }
 
 export const PROP_KINDS = {
@@ -605,6 +610,7 @@ export const PROP_KINDS = {
     movable: false,
     throwable: false,
     climbable: true,
+    carriable: true,
   },
   'column-stub': {
     label: 'Broken column',
@@ -618,6 +624,7 @@ export const PROP_KINDS = {
     movable: false,
     throwable: false,
     climbable: true,
+    carriable: true,
   },
   'column-piece': {
     label: 'Marble column piece',
@@ -631,6 +638,7 @@ export const PROP_KINDS = {
     movable: false,
     throwable: false,
     climbable: true,
+    carriable: true,
   },
   'broken-arch': {
     label: 'Broken arch fragment',
@@ -644,6 +652,7 @@ export const PROP_KINDS = {
     movable: false,
     throwable: false,
     climbable: true,
+    carriable: true,
   },
   'stone-block': {
     label: 'Stone block',
@@ -657,6 +666,7 @@ export const PROP_KINDS = {
     movable: true,
     throwable: false,
     climbable: true,
+    carriable: true,
   },
   rubble: {
     label: 'Rubble',

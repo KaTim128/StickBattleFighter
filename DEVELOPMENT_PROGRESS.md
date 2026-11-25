@@ -1011,3 +1011,8 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 - Files: `src/abilities/ink-world.ts`, `ability-def.ts`, `ability-world.ts`, `src/vfx/ink-vfx.ts`, `src/data/abilities/inkmaster.ts`, `src/combat/{combatant,status-effects}.ts`, `src/app/scenes/{fight-arena-scene,scene-abilities}.ts`, `src/rendering/stickman-view.ts`, icons, sounds, poses, AI text, tests.
 - Checks: tsc and biome clean for the changed code; vitest 1311 passing. Browser: bull and serpent screenshots against the training dummy (bull rammed and knocked the dummy down; snake coil, seal and unwind seen).
 - Not verified: the AI Inkmaster's use of the Bull against a moving player in a long fight; real-device play; balance only reasoned (not matrix-run); the new bull sounds are synthesised and not heard by me.
+
+## 25/11/2026 — Colosseum solidity and carriable ruins (TD-171)
+- Files: `src/rendering/colosseum-view.ts`, `src/data/arenas/colosseum.ts`, `src/app/scenes/fight-arena-scene.ts`, `src/data/objects/props.ts`, `src/environment/arena-props.ts`, tests (`colosseum-solid.test.ts`, `prop-fade.test.ts`).
+- Checks: tsc and biome clean; vitest 1327 passing. Screenshots with the physical radii overlaid confirmed the floor now meets the wall.
+- Not verified: a phone, long AI-vs-AI fights, and the look of the cut ends where the tall back wall meets the low near wall (a flat end face is visible).

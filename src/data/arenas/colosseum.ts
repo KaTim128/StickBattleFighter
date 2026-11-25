@@ -12,6 +12,13 @@ import type { ArenaLayout, FloorZone, WallRect } from './arena-layout';
 export const COLOSSEUM_RADIUS_M = 15;
 /** How thick the ring wall is, metres (the inner face is at the radius). */
 export const COLOSSEUM_WALL_T = 1;
+/**
+ * The ring's collision stands this far in front of the wall's drawn base, so a body stopped by it never looks as though it stands on or in
+ * the wall: it halts a clear step short of the brick (owner, 25/11/2026).
+ */
+export const COLOSSEUM_KEEP_OUT_M = 1;
+/** No ruin or crate reaches closer than this to the wall's base, so nobody standing on one is ever level with the wall. */
+export const COLOSSEUM_PROP_CLEARANCE_M = 2.4;
 const SIZE = 2 * (COLOSSEUM_RADIUS_M + 1);
 const C = SIZE / 2;
 
@@ -21,7 +28,7 @@ const STONE_LINE = 0x777a7f;
 /** Short straight pieces along the circle, overlapping a little so no gap shows on the bend. */
 function ring(): WallRect[] {
   const n = 96;
-  const rMid = COLOSSEUM_RADIUS_M + COLOSSEUM_WALL_T / 2;
+  const rMid = COLOSSEUM_RADIUS_M - COLOSSEUM_KEEP_OUT_M + COLOSSEUM_WALL_T / 2;
   const pad = 0.02;
   const pieces: WallRect[] = [];
   for (let i = 0; i < n; i++) {
@@ -95,9 +102,38 @@ function settle(list: PropPlacement[]): PropPlacement[] {
   return out;
 }
 
+/** How far a prop's footprint reaches from the centre (its farthest corner), metres. */
+function extentM(p: PropPlacement): number {
+  const { w, d } = footprint(p);
+  let m = 0;
+  for (const sx of [-1, 1])
+    for (const sy of [-1, 1]) m = Math.max(m, Math.hypot(p.x + (sx * w) / 2 - C, p.y + (sy * d) / 2 - C));
+  return m;
+}
+
+/** Every piece is brought in until it stands clear of the wall, then settled so nothing overlaps (repeated, as one nudges the other). */
+function clearOfWall(list: PropPlacement[]): PropPlacement[] {
+  let out = list;
+  for (let pass = 0; pass < 6; pass++) {
+    out = out.map((p) => {
+      const q = { ...p };
+      for (let i = 0; i < 60 && extentM(q) > COLOSSEUM_RADIUS_M - COLOSSEUM_PROP_CLEARANCE_M; i++) {
+        const r = Math.hypot(q.x - C, q.y - C);
+        const a = Math.atan2(q.y - C, q.x - C);
+        q.x = C + Math.cos(a) * (r - 0.1);
+        q.y = C + Math.sin(a) * (r - 0.1);
+      }
+      return q;
+    });
+    out = settle(out);
+    if (out.every((p) => extentM(p) <= COLOSSEUM_RADIUS_M - COLOSSEUM_PROP_CLEARANCE_M + 1e-6)) break;
+  }
+  return out;
+}
+
 /** Ruins, crates, jars and barrels along the edge of the floor; nothing within 8 m of the middle. */
 function props(): PropPlacement[] {
-  return settle([
+  return clearOfWall([
     // Fallen and broken Roman columns and cracked marble pieces.
     at('roman-column-fallen', 200, 12.2),
     at('roman-column-fallen', 322, 12.6, { rotated: true }),

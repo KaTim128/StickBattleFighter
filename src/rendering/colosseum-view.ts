@@ -28,8 +28,13 @@ const FRONT_WALL_M = 0.9;
 const SEAT_ROWS = 5;
 const SEAT_DEPTH_M = 1.5;
 const SEAT_RISE_M = 0.85;
-/** The wall is drawn tall across the back and sides, low across the front: where the front begins (sine of the angle). */
-const FRONT_FROM_SIN = 0.3;
+/**
+ * The camera looks in from the south-east, so a wall on that half of the ring stands between the camera and the floor: drawn tall, its top
+ * and ledge would paint over the floor and make fighters look as though they stand on it. That half is drawn low, with its outer face to
+ * the camera; only the true back wall (the half away from the camera) is drawn tall with its inner face and arches. `cos + sin` of the
+ * wall's angle is how far it lies toward the camera (its ledge, 2.6 m up, covers floor once this passes about 0.25).
+ */
+const FRONT_FROM = 0.2;
 const SEGMENTS = 96;
 
 type Point = { x: number; y: number };
@@ -174,7 +179,7 @@ function drawWalls(back: Graphics, front: Graphics, round: { cx: number; cy: num
     const ny = -Math.sin(mid);
     return 0.92 + 0.2 * ((nx + ny) * Math.SQRT1_2) * -1;
   };
-  const isFront = (mid: number): boolean => Math.sin(mid) > FRONT_FROM_SIN;
+  const isFront = (mid: number): boolean => Math.cos(mid) + Math.sin(mid) > FRONT_FROM;
   const backSegs: number[] = [];
   const frontSegs: number[] = [];
   for (let i = 0; i < SEGMENTS; i++) (isFront(seg(i)[2]) ? frontSegs : backSegs).push(i);
