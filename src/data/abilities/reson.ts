@@ -163,7 +163,7 @@ export const RESON_KIT: AbilityKit = {
     name: 'Dissonance',
     label: 'DISSONANCE',
     description:
-      'Sends clashing frequencies through everyone within 3.2 metres. They are not pushed or stunned, but for 3.5 seconds the way they move wobbles off course, so they cannot walk a straight line.',
+      'Sends clashing frequencies through everyone within 3.2 metres, hurting them for 55 damage. They are not pushed or stunned, but for 3.5 seconds the way they move wobbles off course, so they cannot walk a straight line.',
     icon: 'dissonance',
     slot: 'a3',
     staminaCost: 22,
@@ -174,7 +174,7 @@ export const RESON_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: {
-      damage: 24,
+      damage: 55,
       knockbackMps: 0,
       heavy: false,
       strength: 200,

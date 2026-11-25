@@ -105,7 +105,8 @@ describe('Reson kit', () => {
     run(a, 0.5);
     expect(a.hits).toHaveLength(1);
     expect(a.hits[0]).toMatchObject({ disrupt: true });
-    expect(a.hits[0]!.damage).toBeLessThanOrEqual(30);
+    expect(a.hits[0]!.damage).toBe(55); // buffed from 24 (25/11/2026): it hurts as well as scrambles
+    expect(a.hits[0]!.damage).toBeLessThan(RESON_KIT.a4.payload.damage + 20); // still no stronger than his Vibration Punch can be
     expect(RESON_KIT.a5!.payload.stunS).toBeUndefined();
     expect(RESON_KIT.a5!.payload.knockbackMps).toBe(0);
     expect(RESON_KIT.a5!.payload.disrupt?.durationS).toBeGreaterThanOrEqual(3);
