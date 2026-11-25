@@ -1033,3 +1033,6 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 ## 25/11/2026 — Colosseum cheer from the owner's recording
 - Files: `assets/audio/sfx-crowd-cheer.*`, `src/audio/ambience.ts`, `src/data/audio/music.ts`, registers. Unit audio tests pass (39); production build includes the clip.
 - Not verified: the sound by ear in the browser (no audio device here), and the level relative to the crowd beds.
+
+## 25/11/2026 — all crowd cheering removed (owner)
+- Deleted `assets/audio/sfx-crowd-cheer.*` and the recorded-sample code; removed the synthesised `cheer`, `distant-cheer` and `roar` events and the KO roar reaction from the Colosseum ambience; tests updated. Not verified by ear.

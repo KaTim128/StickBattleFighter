@@ -61,28 +61,16 @@ export const AMBIENT_EVENTS = [
   'flicker',
   'vent-click',
   // Arena crowd
-  'cheer',
   'applause',
   'whistle',
   'ooh',
-  'roar',
-  'distant-cheer',
   'gasp',
   'murmur-rise',
 ] as const;
 export type AmbientEventId = (typeof AMBIENT_EVENTS)[number];
 
 /** Crowd sounds: never in a soundscape meant to be empty of people. */
-export const CROWD_EVENTS: readonly AmbientEventId[] = [
-  'cheer',
-  'applause',
-  'whistle',
-  'ooh',
-  'roar',
-  'distant-cheer',
-  'gasp',
-  'murmur-rise',
-];
+export const CROWD_EVENTS: readonly AmbientEventId[] = ['applause', 'whistle', 'ooh', 'gasp', 'murmur-rise'];
 
 export interface AmbientEvent {
   readonly id: AmbientEventId;
@@ -168,11 +156,11 @@ const OFFICE_EMPTY: AmbienceDef = {
  * modelled on any audio the owner supplied earlier).
  * - Bed: thousands of supporters murmuring over a low rumble of the bowl; the murmur rises and falls
  *   slowly and irregularly (no regular surges), which keeps it uneasy.
- * - Events: distant cheering from the far stands, the crowd's murmur building nervously and settling
- *   back (suspense), occasional applause, whistles, sharp excited gasps, nearer cheers, and now and
+ * - Events: the crowd's murmur building nervously and settling
+ *   back (suspense), occasional applause, whistles, sharp excited gasps, and now and
  *   then the whole bowl erupting.
  * - Space: a long stone reverb plus slapback echoes off the arena walls.
- * The crowd answers the fight: a big blow draws an "ooh", a KO a roar. No music, melody, beats or
+ * The crowd answers the fight: a big blow draws an "ooh". There is no cheering. No music, melody, beats or
  * instruments: all synthesised noise and voices-like swells (src/audio/ambience.ts).
  */
 const COLOSSEUM: AmbienceDef = {
@@ -210,16 +198,13 @@ const COLOSSEUM: AmbienceDef = {
     },
   ],
   events: [
-    { id: 'distant-cheer', everyS: [6, 14], gain: 1.1 },
     { id: 'murmur-rise', everyS: [14, 28], gain: 1 },
     { id: 'applause', everyS: [12, 26], gain: 0.9 },
     { id: 'whistle', everyS: [8, 18], gain: 0.45 },
     { id: 'gasp', everyS: [16, 34], gain: 1 },
     { id: 'ooh', everyS: [25, 50], gain: 1 },
-    { id: 'cheer', everyS: [18, 35], gain: 1.1 },
-    { id: 'roar', everyS: [45, 90], gain: 2 },
   ],
-  reactions: { 'heavy-hit': 'ooh', ko: 'roar' },
+  reactions: { 'heavy-hit': 'ooh' },
 };
 
 /**

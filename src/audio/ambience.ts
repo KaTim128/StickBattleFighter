@@ -1,14 +1,12 @@
 import type { AmbienceDef, AmbientBed, AmbientCue, AmbientEventId, NoiseColour, Swell } from '../data/audio/ambiences';
-import { CROWD_CHEER } from '../data/audio/music';
-import { AudioClip } from './music';
 
 /**
  * Background ambience (owner, 12/11/2026): soundscapes, not music. Plays an AmbienceDef on the
  * Web Audio clock:
  * - continuous beds (looping filtered noise, hums, a crowd's murmur) whose levels drift and swell;
- * - random one-off events (a creak, a gasp) synthesised on the spot, and the crowd cheer, which plays the recorded clip;
+ * - random one-off events (a creak, a gasp) synthesised on the spot;
  * - everything sent through a generated reverb sized to the space, optionally muffled.
- * No notes, melodies or beats; the only recorded file is the crowd cheer. A light scheduler wakes a few times a second (never
+ * No notes, melodies, beats or audio files. A light scheduler wakes a few times a second (never
  * on the game loop).
  */
 
@@ -22,8 +20,6 @@ const TICK_MS = 120;
 const LOOKAHEAD_S = 0.4;
 /** Ambience sits under the effects. */
 const AMBIENCE_LEVEL = 0.5;
-/** The recorded cheer's gain never exceeds this (the clip is normalised; overlapping or boosted copies clip). */
-const CHEER_MAX_GAIN = 0.45;
 /** A new soundscape fades in over this long; the old one fades out. */
 const FADE_S = 1.2;
 
@@ -57,10 +53,6 @@ export class AmbiencePlayer {
   private volume = 1;
   private readonly noise = new Map<NoiseColour, AudioBuffer>();
   private seed = 4242;
-  /** The recorded crowd cheer; until it has loaded (or if it cannot) the synthesised cheer plays instead. */
-  private readonly cheerClip = new AudioClip(CROWD_CHEER);
-  /** When the cheer now sounding ends (context seconds). */
-  private cheerUntilS = 0;
 
   /**
    * @param lookaheadS how far ahead events are scheduled. Live play keeps it short; an offline
@@ -83,7 +75,6 @@ export class AmbiencePlayer {
     out.connect(destination);
     this.out = out;
     for (const colour of ['white', 'pink', 'brown'] as const) this.noise.set(colour, this.makeNoise(ctx, colour));
-    if (typeof fetch === 'function') void this.cheerClip.load(ctx);
     if (this.wanted) this.start(this.wanted);
   }
 
@@ -376,19 +367,6 @@ export class AmbiencePlayer {
         this.noiseAt(ctx, 'brown', t + 0.05, 2.5, 'lowpass', 400, gain * 0.5, pan, 0.8);
         break;
       }
-      case 'cheer': {
-        // A section of the stands cheering: the recorded crowd, a touch different in pitch each time; else a synthesised swell.
-        if (this.sample(ctx, t, gain * 0.6, pan, 0.96 + r() * 0.08, 20000)) break;
-        const dur = 1.6 + r() * 1.4;
-        for (const [hz, k] of [
-          [550, 1],
-          [1100, 0.8],
-          [2300, 0.45],
-        ] as const) {
-          this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz * (0.9 + r() * 0.2), gain * k, pan, dur * 0.3, 1.2);
-        }
-        break;
-      }
       case 'applause': {
         // Thousands of hands: dense tiny claps swelling in and dying away.
         const dur = 2 + r() * 1.5;
@@ -437,19 +415,6 @@ export class AmbiencePlayer {
         }
         break;
       }
-      case 'distant-cheer': {
-        // The far side of the bowl cheering: the same crowd, muffled by distance and quieter.
-        if (this.sample(ctx, t, gain * 0.35, pan, 0.9 + r() * 0.06, 1600)) break;
-        const dur = 2.2 + r() * 2;
-        for (const [hz, k] of [
-          [420, 1],
-          [850, 0.7],
-          [1500, 0.3],
-        ] as const) {
-          this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz * (0.9 + r() * 0.2), gain * k * 0.7, pan, dur * 0.45, 1.3);
-        }
-        break;
-      }
       case 'gasp': {
         // An excited reaction: a sharp intake of breath across a section, rising fast, cut short.
         const dur = 0.5 + r() * 0.3;
@@ -478,57 +443,8 @@ export class AmbiencePlayer {
         }
         break;
       }
-      case 'roar': {
-        // The whole bowl erupting: a huge swell of cheering, applause and whistles together.
-        const dur = 3 + r() * 1.5;
-        if (!this.sample(ctx, t, gain * 0.9, pan, 1, 20000)) {
-          for (const [hz, k] of [
-            [300, 0.9],
-            [700, 1],
-            [1400, 0.8],
-            [2800, 0.4],
-          ] as const)
-            this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz, gain * k, pan, 0.35, 1.1);
-        }
-        this.event(scape, 'applause', t + 0.4, gain * 0.8);
-        for (let i = 0; i < 3; i++) this.event(scape, 'whistle', t + 0.3 + r() * 2, gain * 0.5);
-        break;
-      }
     }
     setTimeout(() => pan.disconnect(), 8000);
-  }
-
-  /**
-   * Play the recorded cheer through `pan` (lowpassed to `lowpassHz`). One cheer at a time: a second one starting over the first would
-   * stack the same recording and clip into static, so while one is sounding a new request is skipped (returns true: nothing is
-   * synthesised instead either). False only if the clip is not loaded, so the caller synthesises.
-   */
-  private sample(
-    ctx: BaseAudioContext,
-    t: number,
-    gain: number,
-    pan: AudioNode,
-    rate: number,
-    lowpassHz: number,
-  ): boolean {
-    const buffer = this.cheerClip.ready;
-    if (!buffer) return false;
-    if (t < this.cheerUntilS) return true;
-    this.cheerUntilS = t + buffer.duration;
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    src.playbackRate.value = lowpassHz < 12000 ? rate : 1; // plain speed for the main cheer
-    const g = ctx.createGain();
-    g.gain.value = Math.min(CHEER_MAX_GAIN, gain); // the file is already loud: never push it past clean headroom
-    // Phones glitch when the audio thread is busy: no extra filter unless it is the muffled distant cheer.
-    if (lowpassHz < 12000)
-      src
-        .connect(this.filter(ctx, 'lowpass', lowpassHz, 0.5))
-        .connect(g)
-        .connect(pan);
-    else src.connect(g).connect(pan);
-    src.start(t);
-    return true;
   }
 
   // ------------------------------------------------------------- building blocks

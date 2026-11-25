@@ -230,5 +230,5 @@ The owner supplied eight clips and the Hide and Seek background track; the Pixab
 - **Not wired (owner decision):** footsteps (the file is one continuous walk with no gaps, so single steps cannot be cut out automatically); the three punch sounds for fighting (they need a mapping from each combo hit or heavy to a sound, and that changes the combat audio); the barrage clip (a future stickman ability, not Hide and Seek).
 
 
-## Colosseum cheer (25/11/2026)
-- `assets/audio/sfx-crowd-cheer.{ogg,mp3}` replaces the synthesised cheer in the Colosseum ambience (events `cheer`, `distant-cheer` muffled, and the `roar` swell). Processing: see `assets/ASSET_REGISTER.md`. The synthesised cheer remains only as a fallback while the file loads or if it cannot. Not verified by ear: level against the beds and the music was set by loudness numbers only.
+## Colosseum cheering removed (25/11/2026)
+- Owner: remove all crowd cheering. The recorded cheer file, the synthesised `cheer`, `distant-cheer` and `roar` events and the KO roar reaction are gone. The Colosseum keeps its murmur beds, applause, whistles, gasps and oohs.
