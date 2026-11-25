@@ -314,13 +314,13 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
 
   // Legs: a gallop cycle while charging, a scraping front hoof while it paws, still otherwise.
   const hips: ReadonlyArray<{ fw: number; side: number; front: boolean; offs: number }> = [
-    { fw: 0.85, side: -0.3, front: true, offs: 0 },
-    { fw: -0.85, side: -0.3, front: false, offs: Math.PI * 0.7 },
-    { fw: 0.85, side: 0.3, front: true, offs: 0.35 },
-    { fw: -0.85, side: 0.3, front: false, offs: Math.PI * 0.7 + 0.35 },
+    { fw: 0.8, side: -0.13, front: true, offs: 0 },
+    { fw: -0.8, side: -0.13, front: false, offs: Math.PI * 0.7 },
+    { fw: 0.8, side: 0.13, front: true, offs: 0.35 },
+    { fw: -0.8, side: 0.13, front: false, offs: Math.PI * 0.7 + 0.35 },
   ];
   const leg = (h: (typeof hips)[number], near: boolean): void => {
-    const hipZ = 0.95 + heave;
+    const hipZ = 1.2 + heave; // the leg starts well inside the body, so it is always joined to it
     let foot: [number, number];
     let kneeBend = h.front ? 0.14 : -0.16;
     if (pawing && h.front && near) {
@@ -336,7 +336,10 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
     const hip: Local = [h.fw, hipZ, h.side];
     const knee: Local = [(h.fw + foot[0]) / 2 + kneeBend, (hipZ + foot[1]) / 2 - 0.05, h.side];
     const hoof: Local = [foot[0], foot[1], h.side];
-    stroke([hip, knee, hoof], [0.44, 0.28, 0.2], near ? BLACK : INK, alpha * (near ? 1 : 0.85));
+    // A thigh/shoulder mass where the leg joins, so no gap can show between the leg and the body.
+    const top = L(h.fw, hipZ - 0.15, h.side);
+    g.ellipse(top.x, top.y, 0.3, 0.26).fill({ color: near ? BLACK : INK, alpha });
+    stroke([hip, knee, hoof], [0.5, 0.3, 0.2], near ? BLACK : INK, alpha * (near ? 1 : 0.85));
     // The hoof: a small cloven wedge.
     const hp = L(foot[0], foot[1], h.side);
     g.poly([
