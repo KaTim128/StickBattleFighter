@@ -114,6 +114,8 @@ export class SceneAbilities implements AbilityHost {
     if (c.muted) return 'muted';
     // Ink Serpent: wrapped, so no abilities at all (walking is still free).
     if (c.bound) return 'bound';
+    // Hypnosis: the copy has its original's abilities, never its ultimate.
+    if (f.hypnoCopy && slot === 'ult') return 'unavailable';
     // Crystal Prison: legs held in crystal, so no ability that moves the body.
     if (c.trapped && MOVEMENT_DELIVERIES.has(caster.def(slot).delivery.type)) return 'trapped';
     const block = caster.check(slot, {
@@ -308,7 +310,9 @@ export class SceneAbilities implements AbilityHost {
     // Soul Drain (HL, N2): the caster takes back a share of the HP the blow actually removed; a blocked,
     // absorbed or missed blow removes none, so it heals none.
     if (landed && payload.lifesteal && !attacker.combatant.isKo) {
-      attacker.combatant.heal((hpBefore - target.combatant.hp) * payload.lifesteal);
+      const healed = (hpBefore - target.combatant.hp) * payload.lifesteal;
+      attacker.combatant.heal(healed);
+      if (healed > 0) this.onDrain?.(attacker, target, healed);
     }
     return landed;
   }
@@ -326,6 +330,19 @@ export class SceneAbilities implements AbilityHost {
   tossSource: ((f: FighterEntity, spec: TossDelivery) => boolean) | null = null;
   /** Set by the scene: a Toss was refused (shows a message). */
   onBlocked: ((f: FighterEntity, block: CastBlock) => void) | null = null;
+  /** Set by the scene: Hypnosis touched `target`; make the copy (false when one already exists or the fight cannot take one). */
+  hypnotiseSource:
+    | ((by: FighterEntity, target: FighterEntity, spec: NonNullable<AbilityPayload['hypnosis']>) => boolean)
+    | null = null;
+  hypnotise(casterId: string, targetId: string, spec: NonNullable<AbilityPayload['hypnosis']>): boolean {
+    const by = this.byName(casterId);
+    const target = this.byName(targetId);
+    if (!by || !target) return false;
+    return this.hypnotiseSource?.(by, target, spec) ?? false;
+  }
+
+  /** Set by the scene: Soul Drain took life from `target` and gave `healed` of it to `by` (the returning particles). */
+  onDrain: ((by: FighterEntity, target: FighterEntity, healed: number) => void) | null = null;
 
   telekineticToss(casterId: string, spec: TossDelivery): boolean {
     const f = this.byName(casterId);

@@ -403,10 +403,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 26, 16, '#ffffff', 0.25),
     `<path d="M24 4 V40" stroke="#ff6a72" stroke-width="4" opacity=".6" filter="url(#gl)"/><g filter="url(#ds)"><path d="M24 6 V38" stroke="#eef2f7" stroke-width="5" stroke-linecap="round"/><rect x="18" y="34" width="12" height="4" rx="1.5" fill="#6a1520" stroke="#1a0508" stroke-width="1.2"/></g><ellipse cx="24" cy="42" rx="14" ry="3" fill="#ff6a72" opacity=".4" filter="url(#bl)"/>`,
   ),
-  'mind-crush': icon(
+  hypnosis: icon(
     'psi',
     rays(24, 24, 16, '#f4eaff', 0.25),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#8a4fe0" stroke-width="2" opacity=".6"/><circle cx="24" cy="24" r="11" stroke="#c7a1ff" stroke-width="2.4"/><circle cx="24" cy="24" r="5" stroke="#f4eaff" stroke-width="2.6"/></g><g stroke="#f4eaff" stroke-width="2" stroke-linecap="round"><path d="M24 3 V9 M24 45 V39 M3 24 H9 M45 24 H39"/></g>`,
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><path d="M24 24 C24 21 27 21 27 24 C27 29 20 29 20 23 C20 16 30 16 30 24 C30 33 17 33 17 22 C17 11 33 11 33 24 C33 37 14 37 14 21 C14 7 36 7 36 24" stroke="#f4f6fb" stroke-width="2.6"/></g><circle cx="24" cy="24" r="2.2" fill="#ffffff"/>`,
   ),
   'telekinetic-toss': icon(
     'psi',

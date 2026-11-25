@@ -800,3 +800,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Ink Serpent: wraps the body for exactly 4 s; the target cannot attack, use abilities, jump or dodge but can walk; it cannot be refreshed; ink seal over the head while bound; unwinds into ink on release.
 
 - [ ] Colosseum is solid: nobody (player, dummy, AI) reaches or crosses the wall by walking, jumping, dodging, knockback or teleport; ruins keep clear of the wall; the floor visibly meets the wall; Titan and Psion can lift the columns, arch pieces and blocks (automated: `colosseum-solid.test.ts`; look checked by screenshot).
+
+- [ ] Psion Hypnosis: spiral flies and only a hit makes a copy; the copy looks like the original, has no ultimate and weaker health and damage; the player controls it while Psion is out of the fight; one copy at a time; it hands control back after 9 s or when either side falls (automated: `hypnosis.test.ts`, `psion.test.ts`; look checked by screenshot). Not checked: an AI Psion hypnotising the player, and real-device play.
+- [ ] Necro Soul Drain: grey bolt with a red core; returning life particles on a hit (look checked by screenshot).

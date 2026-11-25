@@ -117,6 +117,8 @@ export interface AbilityHost {
   /** A gentle current: add this velocity to a fighter's own movement for this step only (Ink Cyclone; they can still walk or dodge out). Optional. */
   nudge?(targetId: string, velocity: Vec2): void;
   /** What Crystal Prison needs to know about a fighter: its height off the floor, whether it flies, and how long its legs are still held. Optional. */
+  /** Hypnosis: turn the target against its own side with a weaker copy of itself; false if it could not be done (a copy already exists). */
+  hypnotise?(casterId: string, targetId: string, spec: NonNullable<AbilityPayload['hypnosis']>): boolean;
   /** Ink Serpent: bind the target (no abilities, attacks, jumps or dodges; walking stays free) for `seconds`; 0 frees it. */
   bind?(targetId: string, seconds: number): void;
   legTrapState?(targetId: string): { heightM: number; trappedS: number };
@@ -1502,6 +1504,7 @@ export class AbilityWorld {
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
+        if (p.def.payload.hypnosis) host.hypnotise?.(p.casterId, f.id, p.def.payload.hypnosis);
         if (d.lift) this.startLift(p, f, host);
         done = true;
         break;

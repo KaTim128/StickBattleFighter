@@ -165,6 +165,16 @@ export interface AbilityVfxInput {
     readonly k: number;
     readonly palette: Palette | null;
   }[];
+  /** Life being drawn out of a fighter and carried back to its drainer (Necro's Soul Drain): live end points, progress and palette. */
+  readonly drains?: readonly {
+    readonly from: { readonly x: number; readonly y: number; readonly z: number };
+    readonly to: { readonly x: number; readonly y: number; readonly z: number };
+    /** Seconds since the drain landed. */
+    readonly ageS: number;
+    /** How many particles, from how much was drained. */
+    readonly count: number;
+    readonly palette: Palette;
+  }[];
   /** Fighters muted and/or with shattered defence (Reson's Resonance Break): seconds left of each. */
   readonly afflicted?: readonly {
     readonly x: number;
@@ -238,6 +248,13 @@ export interface AbilityVfxInput {
     readonly heightM: number;
     readonly k: number;
     readonly radiusM: number;
+    readonly palette: Palette;
+  }[];
+  /** A hypnosis under way: where the original stands, where the copy rises, how far the formation has got (0..1, then 1) and the colours. */
+  readonly hypnoses?: readonly {
+    readonly victim: { readonly x: number; readonly y: number };
+    readonly copy: { readonly x: number; readonly y: number };
+    readonly k: number;
     readonly palette: Palette;
   }[];
   /** Vibration fields held at a fist (Reson's Vibration Punch): anchored to the fist, aimed along the punch, reaching out as it lands. */
@@ -1570,6 +1587,80 @@ export class AbilityVfx {
       }
     }
 
+    // Hypnosis: white spirals turn on the floor under both fighters; while the copy forms, ribbons of pale light stream from the
+    // original to the copy, which steps out along them; once it is live a faint spiral keeps turning under the copy.
+    for (const hy of input.hypnoses ?? []) {
+      const pal = hy.palette;
+      const spiralAt = (x: number, y: number, r: number, a: number, dir = 1): void => {
+        for (let arm = 0; arm < 2; arm++) {
+          const pts: number[] = [];
+          for (let i = 0; i <= 30; i++) {
+            const u = i / 30;
+            const ang = dir * t * 2.4 + arm * Math.PI + u * Math.PI * 3.4;
+            pts.push(x + Math.cos(ang) * r * u, y + Math.sin(ang) * r * u);
+          }
+          f.poly(pts, false).stroke({ width: 0.05, color: pal.core, alpha: a, cap: 'round', join: 'round' });
+        }
+        f.circle(x, y, r).stroke({ width: 0.03, color: pal.bright, alpha: a * 0.7 });
+      };
+      if (hy.k < 1) {
+        const fade = 1 - hy.k * 0.4;
+        spiralAt(hy.victim.x, hy.victim.y, 1.3, 0.75 * fade);
+        for (let i = 0; i < 5; i++) {
+          const ph = (t * 1.4 + i / 5) % 1;
+          const x = hy.victim.x + (hy.copy.x - hy.victim.x) * ph;
+          const y = hy.victim.y + (hy.copy.y - hy.victim.y) * ph;
+          const q = P(x, y, 0.9 + Math.sin(ph * Math.PI) * 0.5);
+          g.circle(q.x, q.y, 0.06 * (1 - 0.4 * ph)).fill({ color: pal.core, alpha: 0.85 * Math.sin(ph * Math.PI) });
+          g.circle(q.x, q.y, 0.16).fill({ color: pal.bright, alpha: 0.18 * Math.sin(ph * Math.PI) });
+        }
+      }
+      spiralAt(hy.copy.x, hy.copy.y, 0.9 + 0.5 * (1 - hy.k), 0.55, -1);
+    }
+
+    // Soul Drain: small particles of life are pulled out of the victim and curve back to the drainer, one after another, each
+    // arriving with a faint red pulse where it is taken in.
+    for (const dr of input.drains ?? []) {
+      const pal = dr.palette;
+      for (let i = 0; i < dr.count; i++) {
+        const u = (dr.ageS - i * 0.045) / 0.75;
+        if (u <= 0 || u >= 1) continue;
+        const e = u * u * (3 - 2 * u);
+        // A quadratic curve rising and bowing aside, each particle on its own arc; it quickens toward the drainer.
+        const side = (((i * 0.618) % 1) - 0.5) * 1.4;
+        const mx = (dr.from.x + dr.to.x) / 2;
+        const my = (dr.from.y + dr.to.y) / 2;
+        const dx = dr.to.x - dr.from.x;
+        const dy = dr.to.y - dr.from.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const cx = mx - (dy / len) * side;
+        const cy = my + (dx / len) * side;
+        const cz = Math.max(dr.from.z, dr.to.z) + 0.5 + ((i * 0.37) % 1) * 0.5;
+        const bez = (a: number, b: number, c: number): number =>
+          (1 - e) * (1 - e) * a + 2 * (1 - e) * e * b + e * e * c;
+        const q = P(bez(dr.from.x, cx, dr.to.x), bez(dr.from.y, cy, dr.to.y), bez(dr.from.z, cz, dr.to.z));
+        const sz = 0.065 * (1 - 0.4 * e);
+        g.circle(q.x, q.y, sz * 2.6).fill({ color: pal.core, alpha: 0.22 * (1 - e * 0.5) });
+        g.circle(q.x, q.y, sz).fill({ color: pal.bright, alpha: 0.9 });
+        g.circle(q.x, q.y, sz * 0.5).fill({ color: pal.core, alpha: 0.95 });
+        // A short fading tail behind it.
+        const e2 = Math.max(0, e - 0.035);
+        const t0 = P(
+          bez2(dr.from.x, cx, dr.to.x, e2),
+          bez2(dr.from.y, cy, dr.to.y, e2),
+          bez2(dr.from.z, cz, dr.to.z, e2),
+        );
+        g.moveTo(t0.x, t0.y)
+          .lineTo(q.x, q.y)
+          .stroke({ width: sz * 1.3, color: pal.bright, alpha: 0.4, cap: 'round' });
+        if (u > 0.9) {
+          const p2 = P(dr.to.x, dr.to.y, dr.to.z);
+          const k = (u - 0.9) / 0.1;
+          g.circle(p2.x, p2.y, 0.12 + 0.18 * k).fill({ color: pal.core, alpha: 0.28 * (1 - k) });
+        }
+      }
+    }
+
     // Vibration Punch: rippling air held at the fist. Waves of distortion roll away from the knuckles through a cone that widens with
     // distance, with a quivering shimmer around the fist itself; it only ever exists as part of the arm's own movement.
     for (const fd of input.fields ?? []) {
@@ -2537,6 +2628,35 @@ export class AbilityVfx {
       g.circle(c.x + ux * L, c.y + uy * L, 0.06).fill({ color: pal.bright, alpha: 0.5 });
       return;
     }
+    if (look.flight?.spiral) {
+      // Hypnosis: a flat white spiral turning in the air as it travels, its coils drawing into a bright centre, with pale rings
+      // shed behind it. It always faces the camera like a disc, so it reads the same from every angle.
+      const turn = t * 7;
+      for (let arm = 0; arm < 2; arm++) {
+        const pts: number[] = [];
+        for (let i = 0; i <= 36; i++) {
+          const u = i / 36;
+          const ang = turn + arm * Math.PI + u * Math.PI * 4.2;
+          const r = 0.03 + u * 0.4;
+          pts.push(c.x + Math.cos(ang) * r, c.y + Math.sin(ang) * r * 0.95);
+        }
+        g.poly(pts, false).stroke({ width: 0.07, color: pal.bright, alpha: 0.35, cap: 'round', join: 'round' });
+        g.poly(pts, false).stroke({ width: 0.035, color: pal.core, alpha: 0.95, cap: 'round', join: 'round' });
+      }
+      g.circle(c.x, c.y, 0.11).fill({ color: pal.core, alpha: 0.95 });
+      g.circle(c.x, c.y, 0.3).fill({ color: pal.bright, alpha: 0.12 });
+      for (let i = 1; i <= 3; i++) {
+        const back = i * 0.3;
+        g.ellipse(c.x - p.dir.x * back, c.y - p.dir.y * back * ISO_T, 0.38 - i * 0.07, (0.38 - i * 0.07) * 0.95).stroke(
+          {
+            width: 0.025,
+            color: pal.bright,
+            alpha: 0.5 - i * 0.12,
+          },
+        );
+      }
+      return;
+    }
     if (look.flight?.wave) {
       // A sonic boom: three nested crescents of sound opening toward where it is going, with a bright leading edge.
       const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);
@@ -2692,4 +2812,9 @@ export class AbilityVfx {
     this.seed = (this.seed * 1664525 + 1013904223) >>> 0;
     return this.seed / 4294967296;
   }
+}
+
+/** A point on the quadratic curve a -> b -> c at progress `e` (one axis). */
+function bez2(a: number, b: number, c: number, e: number): number {
+  return (1 - e) * (1 - e) * a + 2 * (1 - e) * e * b + e * e * c;
 }

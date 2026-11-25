@@ -160,7 +160,8 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   // Psion: a ranged controller. Keeps his distance, crushes from range, raises furniture with his mind and throws it at the target, ruptures the air in front of him, holds a target in the air,
   // and rooted for his ultimate; the force wave and palm strikes only when something gets close.
   'psion-ai': {
-    style: 'Telekinetic controller: crushes from range, tosses furniture, ruptures the air, holds targets, backs away.',
+    style:
+      'Telekinetic controller: hypnotises the opponent into a fight with their own weaker copy, tosses furniture, ruptures the air, holds targets, backs away.',
     preferredRangeM: [3, 6],
     movement: 'circle',
     meleeBias: 0.35,

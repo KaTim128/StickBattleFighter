@@ -50,16 +50,39 @@ describe('Psion kit', () => {
     expect(PSION_KIT.passive?.id).toBe('focus');
   });
 
-  it('Mind Crush closes in on the target for under a second and then releases once, hitting what is inside', () => {
+  it('Hypnosis is a spinning spiral that does no damage itself, and calls for a copy only when it touches the opponent', () => {
     const a = arena({ x: 5, y: 0 });
+    const calls: string[] = [];
+    (a.host as unknown as Record<string, unknown>).hypnotise = (c: string, t: string) => {
+      calls.push(`${c}>${t}`);
+      return true;
+    };
+    expect(PSION_KIT.a1.id).toBe('hypnosis');
+    expect(PSION_KIT.a1.payload.damage).toBe(0);
+    expect(PSION_KIT.a1.look?.flight?.spiral).toBe(true);
     a.world.release('me', PSION_KIT.a1, { x: 5, y: 0 }, a.host);
-    expect(a.world.telegraphs).toHaveLength(1);
-    expect(a.world.telegraphs[0]?.x).toBeCloseTo(5, 1);
-    run(a, 0.5);
-    expect(a.hits).toHaveLength(0); // still compressing
-    run(a, 0.5);
-    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
-    expect(PSION_KIT.a1.look?.telegraph).toBe('compress');
+    run(a, 0.2);
+    expect(calls).toEqual([]); // still in flight
+    run(a, 1);
+    expect(calls).toEqual(['me>foe']);
+    // Balanced as a normal ability: a long cooldown and a weak, short-lived copy.
+    const h = PSION_KIT.a1.payload.hypnosis!;
+    expect(PSION_KIT.a1.cooldownS).toBeGreaterThanOrEqual(25);
+    expect(h.durationS).toBeLessThanOrEqual(10);
+    expect(h.hpFactor).toBeLessThanOrEqual(0.5);
+    expect(h.powerFactor).toBeLessThanOrEqual(0.6);
+  });
+
+  it('a spiral that misses calls for nothing', () => {
+    const a = arena({ x: 5, y: 6 });
+    const calls: string[] = [];
+    (a.host as unknown as Record<string, unknown>).hypnotise = () => {
+      calls.push('x');
+      return true;
+    };
+    a.world.release('me', PSION_KIT.a1, { x: 8, y: 0 }, a.host);
+    run(a, 2);
+    expect(calls).toEqual([]);
   });
 
   it('Telekinetic Toss raises a prop where it stands then throws it; Psychic Rupture is a focused force at the target (PS1, PS3)', () => {

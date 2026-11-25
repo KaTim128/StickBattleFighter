@@ -88,6 +88,17 @@ export interface AbilityPayload {
   readonly blindS?: number;
   /** Chance (0..1) that a landed blow applies `blindS` (default: always). Ink Slash blinds only some of the time. */
   readonly blindChance?: number;
+  /**
+   * Hypnosis (Psion): on contact the target is hypnotised and a weaker copy of it rises. `durationS` is how long the copy lasts,
+   * `hpFactor` and `powerFactor` scale its health and the damage it deals, and `holdS` is how long the original stands entranced while
+   * the copy forms. Only one copy exists at a time; the copy never has the original's ultimate.
+   */
+  readonly hypnosis?: {
+    readonly durationS: number;
+    readonly hpFactor: number;
+    readonly powerFactor: number;
+    readonly holdS: number;
+  };
   /** Ink splashed over the middle of the target's screen for this long (Ink Dragon). */
   readonly inkSplatS?: number;
   /**
@@ -862,6 +873,8 @@ export interface MagicLook {
     readonly debris?: boolean;
     /** Drawn as a widening crescent of sound waves (Reson's Sonic Boom). */
     readonly wave?: boolean;
+    /** Drawn as a spinning white hypnotic spiral (Psion's Hypnosis). */
+    readonly spiral?: boolean;
     /** The wave drawn as tight, thin, fast rings (Reson's Resonance Break). */
     readonly screech?: boolean;
     /** Drawn as a wide horizontal crescent of light cutting across the way it travels (Chronos's Chrono Slash). */

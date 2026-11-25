@@ -10,6 +10,8 @@ import { chargeFor } from '../../abilities/ultimate-charge';
  * and the energy gathering round him is subtle so it never hides him (CHARACTER_STYLE_QA S7). All numbers
  * PROVISIONAL (OQ-05).
  */
+/** Soul Drain's own colours: grey ghost-light with a subtle red glow burning at its centre. */
+const DRAIN = { deep: 0x1e1e23, hot: 0x6f6f78, bright: 0xc4c4cc, core: 0xff6a58 } as const;
 const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff } as const;
 /** Curse of Decay's colours: rot green over the grave's dark. */
 const DECAY = { deep: 0x1c2410, hot: 0x5d8a1e, bright: 0xa8d84c, core: 0xecffc8 } as const;
@@ -47,11 +49,11 @@ export const NECRO_KIT: AbilityKit = {
     vfx: 'soul-drain',
     sfx: { cast: 'soul-gather', release: 'soul-cast', impact: 'soul-drain-hit' },
     look: {
-      palette: SOUL,
+      palette: DRAIN,
       charge: { gatherRadiusM: 0.9, motesPerS: 45, coreMaxM: 0.2 },
       flight: { trailPerS: 100, sparksPerS: 26, shimmer: true },
-      impact: { flashM: 0.8, sparks: 26, motes: 34, ringM: 1.1, smoke: 10, groundFire: false, smokeColour: 0x3a2850 },
-      hitFlash: 0xd9c8ff,
+      impact: { flashM: 0.8, sparks: 26, motes: 34, ringM: 1.1, smoke: 10, groundFire: false, smokeColour: 0x3a3a42 },
+      hitFlash: 0xd0d0d8,
     },
   },
   // A2: Death Eruption. Where he points, the ground darkens; then skeletal hands and bone spikes

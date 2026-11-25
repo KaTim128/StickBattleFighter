@@ -118,6 +118,11 @@ export class FighterEntity {
   summon: { readonly owner: FighterEntity; leftS: number | null; readonly persistent: boolean } | null = null;
   /** Seconds left of reappearing after a teleport (the body fades back in). */
   appearS = 0;
+  /** The whole length of the current reappearance (a teleport 0.3 s; a hypnosis copy longer). */
+  appearTotalS = 0.3;
+  /** Hypnosis: this fighter is the weaker copy a Psion made (it never has the ultimate), and how long the original stays entranced. */
+  hypnoCopy = false;
+  hypnoS = 0;
   /** Ink creatures: seconds since it rose from its pool, and its health last frame (to splash ink when it is hurt). */
   inkAgeS = 0;
   inkHp: number | null = null;

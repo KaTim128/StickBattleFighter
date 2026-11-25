@@ -455,8 +455,8 @@ const SHAPES: Record<string, CastShape> = {
   },
 
   // ---- Psion (master plan section 4): gestures, not blows. The hands do the work and the body hardly moves.
-  // Mind Crush: both hands out, fingers spread, then slowly closed to fists.
-  mindCrush: {
+  // Hypnosis: both hands out, fingers spread, then swept in a slow circle toward the target.
+  hypnosis: {
     windup: { lean: deg(0), head: deg(4), armFront: limb(96, 10), armBack: limb(86, 14), legFront: limb(14, -22) },
     release: { lean: deg(-6), head: deg(6), armFront: limb(92, 100), armBack: limb(84, 104), legFront: limb(16, -24) },
     settle: 0.4,

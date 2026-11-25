@@ -64,6 +64,21 @@
           radial-gradient(ellipse 14% 18% at 54% 34%, #050507 0, rgba(5, 5, 7, 0) 100%);
         transition: opacity 0.1s linear;
       }
+      /* Hypnosis (Psion): a white spiral swirls across the view as the trance takes hold, then a countdown banner while the copy fights. */
+      .hypno-veil {
+        position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 5;
+        background:
+          repeating-conic-gradient(from var(--turn, 0deg) at 50% 50%, rgba(255, 255, 255, 0.0) 0deg, rgba(255, 255, 255, 0.55) 14deg, rgba(255, 255, 255, 0.0) 28deg),
+          radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0, rgba(235, 240, 255, 0.45) 40%, rgba(160, 170, 210, 0.25) 100%);
+        mask-image: radial-gradient(circle at 50% 50%, #000 0, #000 55%, transparent 100%);
+        transition: opacity 0.1s linear;
+      }
+      .hypno-banner {
+        position: fixed; left: 50%; top: 92px; transform: translateX(-50%); pointer-events: none; z-index: 6; opacity: 0;
+        padding: 4px 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.7); background: rgba(40, 44, 66, 0.72);
+        color: #f2f4fb; font: italic 900 13px system-ui, sans-serif; letter-spacing: 0.14em; transition: opacity 0.2s;
+      }
+      .hypno-banner.on { opacity: 1; }
       /* Open Zone: Change Character picker. */
       .char-picker { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(0, 0, 0, 0.6); }
       .char-picker[hidden] { display: none; }

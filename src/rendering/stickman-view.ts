@@ -102,6 +102,8 @@ export class StickmanView {
   stunned = false;
   /** Bound by the Ink Serpent: a pulsing ink seal hangs over the head until it lets go. */
   bound = false;
+  /** Hypnotised (Psion): a white spiral turns over the head, 0..1 (fades in and out). */
+  hypnotised = 0;
   private readonly status = new Graphics();
   /** The red ribbon behind a slashing knife (Rending Flurry), drawn above the body. */
   private readonly slashLayer = new Graphics();
@@ -1738,6 +1740,22 @@ export class StickmanView {
           alpha: this.shieldFlare,
         });
       }
+    }
+    if (this.hypnotised > 0.01) {
+      // Spiral eyes: a white spiral turning over the head, its coils drawing in toward a bright centre.
+      const cx = s.head.x;
+      const cy = s.head.y - this.bones.headRadius - 0.34;
+      const a = this.hypnotised;
+      g.circle(cx, cy, 0.2).fill({ color: 0xffffff, alpha: 0.12 * a });
+      const pts: number[] = [];
+      for (let i = 0; i <= 40; i++) {
+        const u = i / 40;
+        const ang = u * Math.PI * 5 - t * 6;
+        const r = 0.02 + u * 0.17;
+        pts.push(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r * 0.9);
+      }
+      g.poly(pts, false).stroke({ width: 0.035, color: 0xf2f4fb, alpha: 0.95 * a, cap: 'round', join: 'round' });
+      g.circle(cx, cy, 0.03).fill({ color: 0xffffff, alpha: a });
     }
     if (this.bound) {
       // An ink seal: a black brushed disc with a pale cross-stroke, bobbing above the head so the restraint reads at a glance.
