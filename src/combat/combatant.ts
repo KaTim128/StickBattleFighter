@@ -574,6 +574,14 @@ export class Combatant {
     return r;
   }
 
+  /**
+   * Set health to this share of the maximum (0..1). Not healing: Mirror Act's change of body carries the real health fraction across
+   * to the copy and back, so nothing is gained or lost by it. (HL: this and `heal` are the only ways health goes up.)
+   */
+  setHealthFraction(fraction: number): void {
+    this.hp = Math.max(1, Math.min(this.stats.maxHp, this.stats.maxHp * fraction));
+  }
+
   raiseBarrier(hp: number, seconds: number, reflect = 0): void {
     if (this.koAgeS >= 0) return;
     this.barrierReflect = reflect;

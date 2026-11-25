@@ -2,9 +2,11 @@ import { type Container, Graphics } from 'pixi.js';
 import type { MagicLook } from '../abilities/ability-def';
 import type { AbilityFx, Beam, Cloud, FireZone, Grenade, Projectile, Telegraph } from '../abilities/ability-world';
 import type { InkWorld } from '../abilities/ink-world';
+import type { MagixWorld } from '../abilities/magix-world';
 import { arcPath } from '../rendering/arc-path';
 import { ISO_T, iso } from '../rendering/projection';
 import { drawInk } from './ink-vfx';
+import { drawMagix } from './magix-vfx';
 
 /**
  * Fire effects for abilities (GREYBOX vector VFX, PRS targets in spec §11.2):
@@ -292,6 +294,8 @@ export interface AbilityVfxInput {
   readonly trails?: readonly DashTrailFx[];
   /** Continuous beams (Fire Beam). */
   readonly beams?: readonly Beam[];
+  /** Magix's cards, hat items and mirror dust. */
+  readonly magix?: MagixWorld;
   /** Inkmaster's living ink (serpent, dragon, cyclone, the Masterpiece) and where a fighter stands by name. */
   readonly ink?: {
     readonly world: InkWorld;
@@ -2070,6 +2074,7 @@ export class AbilityVfx {
       }
     }
 
+    if (input.magix) drawMagix(f, g, P, input.magix, t);
     if (input.ink) drawInk(f, g, P, input.ink.world, t, input.ink.at, { back: this.inkBack, front: this.inkFront });
 
     // Grenades: a shadow on the floor, then the olive body tumbling through its arc (or sitting, or stuck to someone),
@@ -2564,6 +2569,18 @@ export class AbilityVfx {
     }
     // A tornado shot is drawn as its funnel (see `funnels`), not as a bolt.
     if (look.flight?.tornado) return;
+    if (look.flight?.wand) {
+      // Wand of Misfortune: a glittering violet bolt with a sparkling, twisting trail of little stars and a gold core.
+      p.trail.forEach((q, i) => {
+        const k = (i + 1) / (p.trail.length + 1);
+        const tc = P(q.x + Math.sin(t * 20 + i) * 0.05, q.y + Math.cos(t * 17 + i) * 0.05, BOLT_HEIGHT_M);
+        g.circle(tc.x, tc.y, 0.05 * k).fill({ color: i % 2 ? pal.bright : pal.core, alpha: 0.7 * k });
+      });
+      f.circle(c.x, c.y, 0.3).fill({ color: pal.hot, alpha: 0.3 });
+      g.circle(c.x, c.y, 0.11).fill({ color: pal.hot, alpha: 0.95 });
+      g.circle(c.x, c.y, 0.06).fill({ color: pal.core, alpha: 1 });
+      return;
+    }
     if (look.flight?.shard) {
       // A crystal shard: a long sharp diamond pointing the way it flies, a pale core streak, a glinting trail behind it.
       const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);

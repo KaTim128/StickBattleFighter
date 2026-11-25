@@ -204,6 +204,30 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a2', 'a1'],
     ],
   },
+  // Magix: a trickster. Keeps his distance, throws the rabbit and the cards, curses the opponent's best ability, vanishes to close in
+  // for a strike, and becomes the opponent with Mirror Act once the fight is on.
+  'magix-ai': {
+    style:
+      'Illusionist: rabbit and cards at range, a curse on their best trick, vanish to strike, Mirror Act to finish.',
+    preferredRangeM: [3.5, 7],
+    movement: 'circle',
+    meleeBias: 0.35,
+    heavyBias: 0.2,
+    defence: 'dodge',
+    retreatBelowHp: 0.3,
+    hitAndRunS: 1,
+    tactics: {
+      a1: { role: 'buff', minM: 4, maxM: 10, weight: 1.0 },
+      a2: { role: 'zone', minM: 3, maxM: 10, weight: 1.2 },
+      a3: { role: 'burst', minM: 2.5, maxM: 10, weight: 1.2 },
+      a4: { role: 'control', minM: 3, maxM: 11, weight: 1.3 },
+      ult: { role: 'summon', minM: 0, maxM: 10, weight: 1.2, when: { selfHpBelow: 0.95 } },
+    },
+    combos: [
+      ['a4', 'a3'],
+      ['a2', 'a3'],
+    ],
+  },
   // Geargrind: a gadget fighter. Sets a drone and mines first, plates up when hurt, punches with the rocket fist at range and
   // brawls close with the hydraulic arm; Overdrive when the enemy is within a rush.
   'geargrind-ai': {
@@ -387,6 +411,8 @@ export const GENERIC_DESIGN: BrainDesign = {
  * ability in its slot, keyed by ability id. Anything not listed keeps its slot's tactic.
  */
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
+  // Lucky Hat: a gamble worth taking at any range, a little more readily once a fight is under way.
+  luckyHat: { role: 'buff', minM: 0, maxM: 9, weight: 1, when: { selfHpBelow: 0.95 } },
   // Ink Spear: a transformation to use when the target is within a spear's reach of closing in.
   inkSpear: { role: 'buff', minM: 0, maxM: 5, weight: 1.1 },
   // Eruption: a leap onto a hurt or helpless target at mid range.

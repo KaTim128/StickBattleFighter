@@ -294,6 +294,69 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 220, f1: 50, dur: 0.5, gain: 0.7 } },
     { noise: { dur: 0.5, gain: 0.5, type: 'bandpass', freq: 2200, freqEnd: 300, q: 1.5, attack: 0.01 } },
   ],
+  // Magix (owner, 25/11/2026): the stage-magic set. A puff of smoke with a sparkle, a rabbit's soft hops, confetti poppers, a riffled deck,
+  // a card's snick, a wand's flick and its curse, the hat rummaged and popped, a mirror shattering, a bomb.
+  'magic-poof': [
+    { noise: { dur: 0.35, gain: 0.35, type: 'bandpass', freq: 900, freqEnd: 400, q: 1.2, attack: 0.02 } },
+    { tone: { wave: 'sine', f0: 1500, f1: 2600, dur: 0.25, gain: 0.1, delay: 0.05 } },
+    { tone: { wave: 'sine', f0: 2200, f1: 3200, dur: 0.2, gain: 0.07, delay: 0.14 } },
+  ],
+  'magic-reappear': [
+    { noise: { dur: 0.3, gain: 0.4, type: 'bandpass', freq: 600, freqEnd: 1800, q: 1.4, attack: 0.01 } },
+    { tone: { wave: 'sine', f0: 2800, f1: 1400, dur: 0.22, gain: 0.1 } },
+  ],
+  'hat-reveal': [
+    { tone: { wave: 'triangle', f0: 500, f1: 1100, dur: 0.18, gain: 0.25 } },
+    { crackle: { dur: 0.3, gain: 0.2, count: 12 } },
+  ],
+  'mirror-dust': [
+    { noise: { dur: 0.7, gain: 0.35, type: 'lowpass', freq: 1200, freqEnd: 400, attack: 0.15 } },
+    { tone: { wave: 'sine', f0: 600, f1: 1500, dur: 0.6, gain: 0.08, attack: 0.3 } },
+  ],
+  'rabbit-hop': [
+    { tone: { wave: 'sine', f0: 320, f1: 520, dur: 0.1, gain: 0.25 } },
+    { tone: { wave: 'sine', f0: 380, f1: 600, dur: 0.1, gain: 0.2, delay: 0.14 } },
+  ],
+  'confetti-pop': [
+    { noise: { dur: 0.04, gain: 0.8, type: 'bandpass', freq: 2200, q: 1.2 } },
+    { tone: { wave: 'sine', f0: 180, f1: 70, dur: 0.25, gain: 0.6 } },
+    { crackle: { dur: 0.5, gain: 0.25, count: 22 } },
+  ],
+  'confetti-throw': [
+    { noise: { dur: 0.25, gain: 0.3, type: 'bandpass', freq: 3000, freqEnd: 1500, q: 1, attack: 0.02 } },
+    { crackle: { dur: 0.3, gain: 0.15, count: 14 } },
+  ],
+  'card-shuffle': [{ crackle: { dur: 0.35, gain: 0.3, count: 24 } }],
+  'card-throw': [{ noise: { dur: 0.06, gain: 0.3, type: 'bandpass', freq: 3500, freqEnd: 1800, q: 2, attack: 0.005 } }],
+  'card-hit': [
+    { noise: { dur: 0.03, gain: 0.35, type: 'bandpass', freq: 2800, q: 2 } },
+    { tone: { wave: 'triangle', f0: 700, f1: 420, dur: 0.05, gain: 0.08 } },
+  ],
+  'wand-flick': [
+    { noise: { dur: 0.15, gain: 0.3, type: 'bandpass', freq: 1500, freqEnd: 4000, q: 2, attack: 0.01 } },
+    { tone: { wave: 'sine', f0: 1800, f1: 3400, dur: 0.15, gain: 0.08 } },
+  ],
+  'wand-bolt': [
+    { tone: { wave: 'triangle', f0: 900, f1: 500, dur: 0.3, gain: 0.18 } },
+    { crackle: { dur: 0.3, gain: 0.15, count: 10 } },
+  ],
+  'wand-curse': [
+    { tone: { wave: 'sawtooth', f0: 330, f1: 110, dur: 0.5, gain: 0.25, drive: 0.3 } },
+    { noise: { dur: 0.4, gain: 0.25, type: 'bandpass', freq: 1200, freqEnd: 300, q: 3, attack: 0.02 } },
+  ],
+  'hat-rummage': [{ noise: { dur: 0.35, gain: 0.25, type: 'lowpass', freq: 900, attack: 0.1, flutter: 14 } }],
+  'hat-pop': [
+    { tone: { wave: 'sine', f0: 400, f1: 900, dur: 0.12, gain: 0.35 } },
+    { noise: { dur: 0.05, gain: 0.5, type: 'bandpass', freq: 2000, q: 1.5 } },
+  ],
+  'mirror-shatter': [
+    { crackle: { dur: 0.5, gain: 0.35, count: 20 } },
+    { tone: { wave: 'triangle', f0: 2400, f1: 1200, dur: 0.3, gain: 0.1 } },
+  ],
+  'bomb-blast': [
+    { tone: { wave: 'sine', f0: 140, f1: 40, dur: 0.5, gain: 0.9, drive: 0.35 } },
+    { noise: { dur: 0.45, gain: 0.5, type: 'bandpass', freq: 1200, freqEnd: 250, q: 1, attack: 0.01 } },
+  ],
   // Soul Drain landing: a dull hit and a sucking, rising whoosh (the life flowing back).
   'soul-drain-hit': [
     { tone: { wave: 'sine', f0: 140, f1: 55, dur: 0.2, gain: 0.7 } },

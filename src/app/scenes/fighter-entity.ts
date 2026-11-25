@@ -95,6 +95,10 @@ export class FighterEntity {
   dustSounded = false;
   /** A timed self-buff (Rampage Mode): speed and durability, with seconds left. */
   buff: (import('../../abilities/ability-def').BuffEffect & { leftS: number }) | null = null;
+  /** Disappearing Act: how visible he is drawn (1 = fully, eased). */
+  vanishAlpha = 1;
+  /** Mirror Act: this body is Magix wearing the opponent's shape; `original` is the magician it returns to. */
+  mirror: { readonly original: FighterEntity } | null = null;
   /** The ability that started the buff: its cooldown (or the ultimate's recharge) waits until the buff ends. */
   buffSourceId: string | null = null;
   /** Consecutive landed hits (PRS-4 combo counter) and when the last one landed (sim seconds). */
@@ -115,7 +119,15 @@ export class FighterEntity {
    */
   team: 'player' | 'opponent' = 'player';
   /** A summoned minion: who raised it and how long it has left (null for real fighters). */
-  summon: { readonly owner: FighterEntity; leftS: number | null; readonly persistent: boolean } | null = null;
+  summon: {
+    readonly owner: FighterEntity;
+    leftS: number | null;
+    readonly persistent: boolean;
+    /** Magix's rabbit: its burst settings, the fuse once it has reached its target (null before), and whether it has gone off. */
+    readonly rabbit?: import('../../abilities/ability-def').SummonSpec['rabbit'];
+    fuseS: number | null;
+    burst: boolean;
+  } | null = null;
   /** Seconds left of reappearing after a teleport (the body fades back in). */
   appearS = 0;
   /** The whole length of the current reappearance (a teleport 0.3 s; a longer entrance). */

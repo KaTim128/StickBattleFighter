@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import type { AbilityHudState, CastBlock } from '../../abilities/ability-caster';
+import type { MirrorDelivery, SummonSpec } from '../../abilities/ability-def';
 import {
   ABILITY_SLOTS,
   type AbilityDef,
@@ -94,6 +95,7 @@ import {
 import { EFFECTS, type EffectDef } from '../../vfx/effects-library';
 import type { ArenaScene, Viewport } from './arena-scene';
 import { FighterEntity } from './fighter-entity';
+import { INVISIBLE_TELL_M } from './invisible';
 import { SceneAbilities } from './scene-abilities';
 import { type ClashBanner, type ClashHudState, SceneClash } from './scene-clash';
 import { SceneClimbing } from './scene-climbing';
@@ -684,6 +686,7 @@ export class FightArenaScene implements ArenaScene {
       });
       this.queueSound('summon-rise', 0.7);
     },
+    burst: (f, spec) => this.rabbitBurst(f, spec),
     random: () => this.rng(),
   });
 
@@ -884,6 +887,7 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
     this.abilities.releaseAimSource = (f, def) => this.aiBeamAim(f, def);
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
+    this.abilities.mirrorSource = (f, spec) => this.beginMirror(f, spec);
     this.abilities.summonRoom = (f, spec) => this.summons.room(f, spec);
     this.abilities.teleportSource = (f, to) => this.teleportTo(f, to);
     this.abilities.tossTarget = (f, rangeM) => this.tossCandidate(f, rangeM) !== null;
@@ -963,6 +967,7 @@ export class FightArenaScene implements ArenaScene {
 
     this.simTimeS += stepS;
     if (!this.intro && !this.matchResult) this.combatS += stepS;
+    const mirrorEnds: FighterEntity[] = [];
     for (const f of this.fighters) {
       if (this.isFrozen(f)) continue; // Time Stop: its timers, statuses, cooldowns and meters wait where they are
       if (f.scriptedAttack) {
@@ -990,6 +995,7 @@ export class FightArenaScene implements ArenaScene {
       if (f.buff) {
         f.buff.leftS -= stepS;
         if (f.buff.leftS <= 0 || f.combatant.isKo) {
+          if (f.mirror) mirrorEnds.push(f); // Mirror Act is over: the magician comes back (after this loop)
           // Crystal Sovereign ends: the armour and the shield shatter.
           if (f.buff.sovereign) {
             f.combatant.dropCrystalArmour();
@@ -1016,6 +1022,7 @@ export class FightArenaScene implements ArenaScene {
       if (f.combatant.isKo && f.combatant.koAge >= DEFENCE.koRespawnS && !f.summon && !this.match) f.respawn();
     }
 
+    for (const copy of mirrorEnds) this.endMirror(copy);
     if (this.teams && !this.intro && !this.matchResult && !this.stopOwner) this.teams.step(stepS);
     if (this.match) this.decideMatch();
     this.climbing?.refresh();
@@ -2241,7 +2248,12 @@ export class FightArenaScene implements ArenaScene {
     }
     if (f.aiRoute && Math.hypot(f.aiRoute.x - f.x, f.aiRoute.y - f.y) < NAV_CELL_M * 0.6)
       f.aiRouteAgeS = AI_ROUTE_EVERY_S;
-    const sees = !p.combatant.isKo && !c.blinded && Math.hypot(p.x - f.x, p.y - f.y) <= c.sightM;
+    // Disappearing Act: an invisible target is only noticed from very close (the shimmer), otherwise the AI loses track of it.
+    const sees =
+      !p.combatant.isKo &&
+      !c.blinded &&
+      Math.hypot(p.x - f.x, p.y - f.y) <= c.sightM &&
+      (!p.buff?.invisible || Math.hypot(p.x - f.x, p.y - f.y) <= INVISIBLE_TELL_M);
     const caster = f.caster;
     const ctx = { canAct: c.canAct && !f.combo.attack, stamina: c.stamina, airborne: f.airborne };
     const abilities = caster
@@ -2434,6 +2446,98 @@ export class FightArenaScene implements ArenaScene {
     incoming.faceToward(foe.x - incoming.x, foe.y - incoming.y);
     this.characterSound(incoming, 'jump', 0.7);
     this.tags++;
+  }
+
+  /** Magix's rabbit goes off: everyone of the other side within its radius is hurt and flung from it; the owner is not. */
+  private rabbitBurst(f: FighterEntity, spec: NonNullable<SummonSpec['rabbit']>): void {
+    const owner = f.summon?.owner;
+    if (!owner) return;
+    for (const o of this.fighters) {
+      if (o.team === f.team || o.combatant.isKo || !o.body) continue;
+      const gap = Math.hypot(o.x - f.x, o.y - f.y);
+      if (gap > spec.radiusM + o.def.body.footRadiusM) continue;
+      const away = gap > 1e-6 ? { x: (o.x - f.x) / gap, y: (o.y - f.y) / gap } : { x: 1, y: 0 };
+      this.abilities?.hitFighter(
+        owner.name,
+        o.name,
+        { damage: spec.damage, knockbackMps: spec.knockbackMps, heavy: true, strength: 260, impact: 'knuckle-heavy' },
+        away,
+        0xffd1ec,
+      );
+    }
+    this.abilities?.emit({
+      kind: 'impact',
+      ability: 'aRabbit',
+      vfx: 'magix-rabbit',
+      sfx: 'confetti-pop',
+      x: f.x,
+      y: f.y,
+      radiusM: spec.radiusM,
+    });
+  }
+
+  /**
+   * Mirror Act (Magix's ultimate): in the dust he becomes an exact copy of the opponent. The copy is a real fighter built from the
+   * opponent's own data (look, moves, abilities without its ultimate, its cooldown clocks as they stand), on his side and under his
+   * controls, with his real health fraction, a temporary shield of a share of his maximum health, and 90% of the opponent's damage.
+   * The opponent itself is never touched. `endMirror` undoes all of it.
+   */
+  private beginMirror(f: FighterEntity, spec: MirrorDelivery): boolean {
+    const side = f === this.playerFighter ? 'player' : f === this.dummyFighter ? 'opponent' : null;
+    if (!side || f.mirror || !this.physics || f.combatant.isKo) return false;
+    const foe = side === 'player' ? this.dummyFighter : this.playerFighter;
+    if (foe.combatant.isKo || foe.mirror || !foe.caster) return false;
+    const copy = new FighterEntity(f.name, foe.def, { x: f.x, y: f.y }, f.showStamina);
+    copy.team = f.team;
+    copy.mirror = { original: f };
+    const hpFrac = f.combatant.hp / Math.max(1, f.combatant.stats.maxHp);
+    copy.combatant.setHealthFraction(hpFrac);
+    copy.combatant.stamina = f.combatant.stamina;
+    copy.caster?.copyCooldownsFrom(foe.caster);
+    copy.caster?.lock('ult', spec.durationS); // the copy never has the ultimate
+    copy.buff = {
+      durationS: spec.durationS,
+      speedFactor: 1,
+      damageTakenFactor: 1,
+      abilityDamageFactor: spec.powerFactor,
+      meleeDamageFactor: spec.powerFactor,
+      label: 'MIRROR ACT',
+      leftS: spec.durationS,
+    };
+    this.swapIn(side, copy);
+    this.tags--; // a transformation is not a 3 vs 3 tag
+    copy.combatant.raiseBarrier(spec.shieldFraction * copy.combatant.stats.maxHp, spec.durationS);
+    return true;
+  }
+
+  /** The copy's time is up, or it fell: the shield goes, the magician is back with the health he really has. */
+  private endMirror(copy: FighterEntity): void {
+    const original = copy.mirror?.original;
+    if (!original || !this.physics) return;
+    const side = copy === this.playerFighter ? 'player' : copy === this.dummyFighter ? 'opponent' : null;
+    if (!side) return;
+    const hpFrac = copy.combatant.isKo ? 0 : copy.combatant.hp / Math.max(1, copy.combatant.stats.maxHp);
+    this.summons.clearOwnedBy(copy);
+    this.abilities?.world.clearOf(copy.name);
+    copy.mirror = null;
+    const at = { x: copy.x, y: copy.y };
+    this.swapIn(side, original);
+    this.tags--;
+    original.combatant.setHealthFraction(hpFrac);
+    original.buff = null;
+    original.buffSourceId = null;
+    original.combatant.damageTakenScale = 1;
+    // Beaten while borrowed: he is beaten for real.
+    if (hpFrac <= 0) original.combatant.takeUnguardedDamage(original.combatant.hp + 1);
+    this.abilities?.emit({
+      kind: 'impact',
+      ability: 'mirrorAct',
+      vfx: 'magix-mirror',
+      sfx: 'magic-poof',
+      x: at.x,
+      y: at.y,
+      radiusM: 2,
+    });
   }
 
   /**
@@ -2832,6 +2936,7 @@ export class FightArenaScene implements ArenaScene {
     });
 
     if (result.outcome === 'dodged') return false;
+    this.abilities?.noteLanded(attacker);
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
     // A crystal weapon in his hands shatters the moment a blow gets through (a guard that held is not a hit).
     if (!guarded && this.abilities) {
@@ -3137,7 +3242,9 @@ export class FightArenaScene implements ArenaScene {
   }
 
   /** An attack reached its active window: check its hit capsule against other fighters and doors. */
-  private resolveHit(attacker: FighterEntity, a: AttackDef): void {
+  private resolveHit(attacker: FighterEntity, blow: AttackDef): void {
+    // Lucky Hat's range boost lengthens the reach of his blows while it lasts.
+    const a = attacker.buff?.rangeFactor ? { ...blow, reachM: blow.reachM * attacker.buff.rangeFactor } : blow;
     const body = attacker.body;
     if (!body) return;
     const dir = { x: attacker.aim.x, y: attacker.aim.y };
@@ -3788,6 +3895,7 @@ export class FightArenaScene implements ArenaScene {
     this.limbFlameStrength = limbFlames.reduce((m, l) => Math.max(m, l.strength), 0);
     this.resumeFlashS += frameDtS;
     this.vfx.update(frameDtS, {
+      magix: this.abilities?.world.magix,
       ink: this.abilities
         ? {
             world: this.abilities.world.ink,
@@ -4294,7 +4402,8 @@ export class FightArenaScene implements ArenaScene {
     f.view.spearForm = f.spearForm < 0.01 ? 0 : f.spearForm;
     f.view.bound = c.bound;
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
-    f.view.rage = f.buff ? Math.min(1, f.buff.leftS) : 0;
+    // (Magix's labelled buffs, Lucky Hat and Mirror Act, are not fury: no red flush.)
+    f.view.rage = f.buff && !f.buff.label ? Math.min(1, f.buff.leftS) : 0;
     // Afterimage: temporal ghosts trail a fighter who is being driven by an ability that leaves them.
     const afterimageLook = f.caster?.cast?.def.look?.afterimages === true && f.driveVelocity !== null;
     if (afterimageLook && !c.isKo) {
@@ -4368,12 +4477,25 @@ export class FightArenaScene implements ArenaScene {
     f.view.motion = vel ? Math.min(1, Math.hypot(vel.x, vel.y) / Math.max(1, f.def.movement.maxSpeedMps)) : 0;
     this.koDissolve(f, x, y, drawnHeight, frameDtS);
     this.inkCreatureFx(f, x, y, drawnHeight, frameDtS);
+    // Disappearing Act: he is faintly there for himself; others only catch him from very close.
+    const foe = f === this.playerFighter ? this.dummyFighter : this.playerFighter;
+    const seenBy =
+      f === this.playerFighter && !this.match?.spectate
+        ? 0.32
+        : Math.hypot(foe.x - f.x, foe.y - f.y) <= INVISIBLE_TELL_M
+          ? 0.3
+          : 0;
+    f.vanishAlpha += ((f.buff?.invisible && !c.isKo ? seenBy : 1) - f.vanishAlpha) * smoothing(10, frameDtS);
+    if (f.vanishAlpha < 0.995) f.view.root.alpha = Math.min(f.view.root.alpha, f.vanishAlpha);
+    // The tag over the bar: the stat Lucky Hat raised, or the seal on his abilities and its time left.
+    const sealed = f.caster?.locked;
+    f.bars?.setTag(f.buff?.label ?? (sealed ? `LOCKED ${sealed.leftS.toFixed(1)}s` : null));
     f.bars?.draw(
       at.x,
       at.y - heightM - headTop(f) * Math.cos(f.tilt),
       c.hp / c.stats.maxHp,
       c.stamina / c.stats.maxStamina,
-      !c.isKo,
+      !c.isKo && f.vanishAlpha > 0.5,
     );
     return { x, y };
   }

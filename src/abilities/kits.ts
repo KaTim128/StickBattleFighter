@@ -5,6 +5,7 @@ import { INFERNO_KIT } from '../data/abilities/inferno';
 import { INK_CLONE_BOW_KIT, INK_MONSTER_KIT } from '../data/abilities/ink-summons';
 import { INKMASTER_KIT } from '../data/abilities/inkmaster';
 import { KENSHIRO_KIT } from '../data/abilities/kenshiro';
+import { MAGIX_KIT } from '../data/abilities/magix';
 import { NECRO_KIT } from '../data/abilities/necro';
 import { PRISMOR_KIT } from '../data/abilities/prismor';
 import { PSION_KIT } from '../data/abilities/psion';
@@ -29,6 +30,7 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'psion-kit': PSION_KIT,
   'reson-kit': RESON_KIT,
   'inkmaster-kit': INKMASTER_KIT,
+  'magix-kit': MAGIX_KIT,
   'ink-clone-bow-kit': INK_CLONE_BOW_KIT,
   'ink-monster-kit': INK_MONSTER_KIT,
 };

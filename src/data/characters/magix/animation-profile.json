@@ -1,0 +1,20 @@
+{
+  "id": "magix-animation",
+  "extends": "style-boxing",
+  "states": {
+    "Idle": "proc.idle.magician",
+    "FightingStance": "proc.idle.magician",
+    "Turn": "proc.idle.magician",
+    "Jab": "magix.card-flick",
+    "Hook": "magix.wand-sweep",
+    "HeavyAttack": "magix.grand-finale",
+    "FrontKick": "magix.tap-kick",
+    "SideKick": "magix.side-flick",
+    "RoundhouseKick": "magix.spin-flourish",
+    "JumpingFrontKick": "magix.leap-kick",
+    "DownwardAerialKick": "magix.curtain-drop",
+    "ClashFinisher": "magix.grand-finale",
+    "ClashWin": "magix.grand-finale",
+    "HeavyPunch": "magix.grand-finale"
+  }
+}

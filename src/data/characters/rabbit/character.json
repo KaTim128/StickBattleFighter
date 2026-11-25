@@ -1,0 +1,66 @@
+{
+  "id": "rabbit",
+  "template": "base-stickman",
+  "displayName": "Rabbit",
+  "description": "The white rabbit from Magix's hat. It hops straight at the nearest opponent and bursts into confetti.",
+  "characterType": "summon",
+  "element": "none",
+  "combatStyle": "beast",
+  "profiles": {
+    "animation": "rabbit-animation",
+    "moveset": "rabbit-moveset",
+    "stats": "rabbit-stats",
+    "effects": "rabbit-effects",
+    "audio": "default-audio",
+    "ai": "rabbit-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#f6f3ee",
+    "colourBack": "#cfc9d4",
+    "outline": "#3a3340",
+    "limbWidthM": 0.075,
+    "outlineWidthM": 0.035,
+    "scale": 0.5
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "staggersTargets": false,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": false,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": true
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Practice only."
+  }
+}

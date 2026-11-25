@@ -59,3 +59,13 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - **Inkmaster, Ink Spear (fifth ability) replaces Ink Cyclone:** the brush grows into a long spear for 8 s; taps become a two-thrust poke (30, 32), a driving lunge (46) and the heavy becomes an impaling stab (62), all long (2.3-2.7 m), narrow and contact-only. Stamina 24, cooldown 16 s. New spear drawing, thrust animations and sounds.
 - **Ink Bull:** a ram that lands splashes ink over the middle of the target's screen for 1.5 s.
 - **Ink Serpent:** a held target can no longer run (as well as no attacks, abilities, jumps or dodges); walking and guarding stay free; it lasts exactly the 4 s hold and ends when the snake releases.
+
+## 25/11/2026 — New fighter: Magix, the master illusionist
+- **Magix** (renamed from "Mystario"): tall black top hat with a red band, black tailcoat, white shirt panel, red bow tie, mischievous grin and a wand. Stats: 1000 HP, speed 5.1 m/s, power 1.19, defence 1.0, stamina 90 (regen 28/s), light (64 kg); his ratings equal the shared budget and he leads none of them by much.
+- **Disappearing Act (Q):** invisible for up to 4 s, +35% speed; both end the moment he lands an attack.
+- **A Rabbit (E):** a white rabbit hops at the nearest opponent, fuse 1 s, confetti burst (62 damage, push, 2.4 m); hitting it sets it off.
+- **Card Barrage (F):** exactly 52 cards over 2.6 s, 6 damage each, 20% with extra knockback, no stun, stops if interrupted.
+- **Wand of Misfortune (R):** a bolt that seals one random ability (ultimate included) for 12 s; padlock and countdown on the HUD.
+- **Lucky Hat (fifth):** random +25% to speed, damage, defence, range or max-HP shield for 10 s, or a thrown sword (58) or a bomb (70).
+- **Mirror Act (ultimate):** becomes a copy of the opponent for 12 s with a 20% shield, real health kept, normal abilities only, 90% damage; the opponent is never changed.
+- New: `HELD_ITEMS` `wand`, `BODY_STYLES` `magix`/`rabbit`, `MagixWorld`, caster lock API, `Combatant.setHealthFraction`, the rabbit minion.

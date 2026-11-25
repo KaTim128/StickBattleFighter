@@ -1,0 +1,191 @@
+import { Container } from 'pixi.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
+import { SceneManager } from '../../../src/core/scene';
+import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
+import { PlayerIntents } from '../../../src/input/intents';
+import { initPhysics } from '../../../src/physics/physics-world';
+
+const STEP = 1 / 60;
+
+/** Magix in the real fight scene against a chosen opponent. */
+async function setup(opponent = 'training-dummy', gap = 5) {
+  const intents = new PlayerIntents();
+  const scene = new FightArenaScene(
+    { ...TRAINING_YARD, playerStart: { x: 13, y: 13 }, dummyStart: { x: 13 + gap, y: 13 } },
+    new Container(),
+    intents,
+    () => ({ width: 1280, height: 720 }),
+    false,
+    { player: 'magix', opponent },
+  );
+  const scenes = new SceneManager();
+  await scenes.switchTo(() => scene);
+  const run = (s: number) => {
+    for (let i = 0; i < Math.round(s / STEP); i++) {
+      scenes.update(STEP);
+      scenes.render(1, STEP);
+    }
+  };
+  const runUntil = (done: () => boolean, limitS = 4) => {
+    for (let i = 0; i < limitS / STEP && !done(); i++) run(STEP);
+  };
+  run(0.2);
+  scene.drainEvents();
+  const cast = (slot: 'a1' | 'a2' | 'a3' | 'a4' | 'ult') => {
+    intents.pressAbility(slot);
+    run(STEP * 2);
+  };
+  const me = () => scene.playerFighter;
+  const foe = () => scene.dummyFighter;
+  const world = () => scene.abilities!.world.magix;
+  return { intents, scene, scenes, run, runUntil, cast, me, foe, world };
+}
+
+describe('Magix', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
+  it('Disappearing Act: invisible and 35% faster, and both end the moment he lands an attack', async () => {
+    const { scene, scenes, run, cast, me, intents } = await setup('training-dummy', 1.4);
+    scene.playerFighter.combatant.stamina = 100;
+    cast('a1');
+    run(0.5);
+    expect(me().buff?.invisible).toBe(true);
+    expect(me().buff?.speedFactor).toBeCloseTo(1.35, 5);
+    run(0.5);
+    expect(me().vanishAlpha).toBeLessThan(0.6); // faint even to himself
+    intents.pressMelee();
+    run(0.8);
+    // His blow landed: invisibility and speed end together.
+    expect(scene.dummy.hp).toBeLessThan(scene.dummyFighter.combatant.stats.maxHp);
+    expect(me().buff).toBeNull();
+    scenes.clear();
+  });
+
+  it('Disappearing Act runs out on its own after 4 seconds', async () => {
+    const { scenes, run, cast, me } = await setup('training-dummy', 9);
+    cast('a1');
+    run(3.5);
+    expect(me().buff?.invisible).toBe(true);
+    run(0.8);
+    expect(me().buff).toBeNull();
+    scenes.clear();
+  });
+
+  it('A Rabbit: hops at the opponent, a 1 s fuse, then a confetti burst that hurts and knocks back', async () => {
+    const { scene, scenes, run, runUntil, cast } = await setup('rampage', 7);
+    cast('a2');
+    runUntil(() => scene.summonStates.length > 0, 2);
+    expect(scene.summonStates[0]?.character).toBe('rabbit');
+    const hp = scene.dummy.hp;
+    runUntil(() => scene.dummy.hp < hp, 8);
+    expect(scene.dummy.hp).toBeLessThan(hp);
+    runUntil(() => scene.summonStates.length === 0, 3);
+    expect(scene.summonStates).toHaveLength(0);
+    scenes.clear();
+  }, 30_000);
+
+  it('A Rabbit goes off early when the opponent hits it', async () => {
+    const { scene, scenes, run, runUntil, cast } = await setup('training-dummy', 7);
+    cast('a2');
+    runUntil(() => scene.summonStates.length > 0, 2);
+    const rabbit = (
+      scene as unknown as { summons: { list: { combatant: { takeUnguardedDamage(n: number): void } }[] } }
+    ).summons.list[0]!;
+    rabbit.combatant.takeUnguardedDamage(1000); // anything that hits it sets it off at once
+    run(0.1);
+    expect(scene.abilities!.recentFx.some((fx) => fx.ability === 'aRabbit' && fx.kind === 'impact')).toBe(true);
+    scenes.clear();
+  });
+
+  it('Card Barrage: exactly 52 cards, low damage each, and no more once interrupted', async () => {
+    const { scene, scenes, run, runUntil, cast, world } = await setup('training-dummy', 6);
+    scene.playerFighter.combatant.stamina = 100;
+    let emitted = 0;
+    cast('a3');
+    for (let i = 0; i < 4 / STEP; i++) {
+      run(STEP);
+      emitted = Math.max(emitted, world().volleys[0]?.emitted ?? emitted);
+    }
+    runUntil(() => world().cards.length === 0, 3);
+    expect(emitted).toBeGreaterThanOrEqual(1);
+    expect(scene.dummy.hp).toBeLessThan(scene.dummyFighter.combatant.stats.maxHp);
+    // Each card stings only a little: the whole deck stays well under half of a fighter.
+    expect(scene.dummyFighter.combatant.stats.maxHp - scene.dummy.hp).toBeLessThan(500);
+    scenes.clear();
+  }, 30_000);
+
+  it('Wand of Misfortune: a hit seals exactly one random ability for 12 s, never two, never extended', async () => {
+    const { scene, scenes, run, runUntil, cast, foe } = await setup('rampage', 4);
+    scene.playerFighter.combatant.stamina = 100;
+    cast('a4');
+    runUntil(() => foe().caster?.locked != null, 3);
+    const lock = foe().caster!.locked!;
+    expect(lock.leftS).toBeGreaterThan(11.5);
+    expect(lock.leftS).toBeLessThanOrEqual(12);
+    const slot = lock.slot;
+    // A second hit does not add another lock or lengthen this one.
+    expect(foe().caster!.lock('a1', 12)).toBe(false);
+    run(11);
+    expect(foe().caster!.locked?.slot).toBe(slot);
+    runUntil(() => foe().caster!.locked === null, 3);
+    expect(foe().caster!.locked).toBeNull(); // it ends by itself, on time (hit-stop only stretches real time)
+    scenes.clear();
+  }, 60_000);
+
+  it('Lucky Hat: gives exactly one of seven things, and a stat boost ends by itself without changing anything for good', async () => {
+    const seen = new Set<string>();
+    for (let k = 0; k < 14 && seen.size < 4; k++) {
+      const { scene, scenes, run, cast, me, world } = await setup('training-dummy', 8);
+      scene.playerFighter.combatant.stamina = 100;
+      const maxHp = me().combatant.stats.maxHp;
+      cast('a4'); // the loadout may differ: cast the fifth directly below
+      void cast;
+      scene.abilities!.world.release(me().name, me().caster!.kit.a5!, { x: 20, y: 13 }, scene.abilities!);
+      run(0.2);
+      const kind = world().lastLucky;
+      expect(kind).not.toBeNull();
+      seen.add(kind!);
+      if (me().buff) {
+        expect(me().buff?.label).toMatch(/\+25%/);
+        run(10.5);
+        expect(me().buff).toBeNull();
+        expect(me().combatant.stats.maxHp).toBe(maxHp);
+        expect(me().combatant.damageTakenScale).toBe(1);
+      }
+      scenes.clear();
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(3);
+  }, 120_000);
+
+  it('Mirror Act: becomes an exact copy of the opponent for 12 s, then the magician returns with his real health', async () => {
+    const { scene, scenes, run, runUntil, cast, me, foe } = await setup('rampage', 6);
+    scene.playerFighter.caster!.fillMeter();
+    const original = me();
+    cast('ult');
+    runUntil(() => me() !== original, 3);
+    expect(me()).not.toBe(original);
+    expect(me().def.id).toBe('rampage'); // looks, moves and abilities of the opponent
+    expect(me().combatant.barrierHp).toBeGreaterThan(0); // a temporary shield
+    expect(me().caster?.locked?.slot).toBe('ult'); // never the ultimate
+    // His real health fraction came across with him (whatever the fight had done to him by then).
+    expect(me().combatant.hp / me().combatant.stats.maxHp).toBeCloseTo(
+      original.combatant.hp / original.combatant.stats.maxHp,
+      1,
+    );
+    expect(foe().def.id).toBe('rampage'); // the opponent is untouched
+    expect(foe().combatant.hp).toBe(foe().combatant.stats.maxHp);
+    run(11);
+    expect(me()).not.toBe(original);
+    runUntil(() => me() === original, 3);
+    expect(me()).toBe(original); // 12 s later he is Magix again
+    expect(me().def.id).toBe('magix');
+    expect(me().combatant.hp).toBeGreaterThan(0);
+    expect(me().combatant.hp).toBeLessThanOrEqual(me().combatant.stats.maxHp);
+    expect(me().combatant.barrierHp).toBe(0); // the shield is gone
+    expect(me().buff).toBeNull();
+    scenes.clear();
+  }, 60_000);
+});

@@ -24,6 +24,8 @@ export interface SummonHost {
   cast(f: FighterEntity, slot: 'a1' | 'a2' | 'a3' | 'a4' | 'ult', at: Vec2): boolean;
   /** A minion rose (dust and a sound) or crumbled away. */
   risen(f: FighterEntity): void;
+  /** Magix's rabbit goes off: hurt and push everyone close, with confetti. */
+  burst(f: FighterEntity, spec: NonNullable<SummonSpec['rabbit']>): void;
   random(): number;
 }
 
@@ -77,7 +79,14 @@ export class SceneSummons {
       if (!spot) continue;
       const f = new FighterEntity(`${owner.name}-summon-${++this.made}`, def, spot, false);
       f.team = owner.team;
-      f.summon = { owner, leftS: spec.lifeS, persistent: spec.persistent === true };
+      f.summon = {
+        owner,
+        leftS: spec.lifeS,
+        persistent: spec.persistent === true,
+        rabbit: spec.rabbit,
+        fuseS: null,
+        burst: false,
+      };
       // Raised by an enemy: they face it; otherwise they face where the summoner looks.
       if (enemy) f.faceToward(enemy.x - spot.x, enemy.y - spot.y);
       else f.faceToward(owner.aim.x, owner.aim.y);
@@ -156,6 +165,12 @@ export class SceneSummons {
       if (s.leftS !== null) s.leftS -= stepS;
       // Time's up, or its summoner fell (unless it stays until killed): it crumbles.
       const expired = s.leftS !== null && s.leftS <= 0;
+      // The rabbit goes off when its fuse runs out, its time is up, or anyone knocks it out (hitting it sets it off early).
+      if (s.rabbit && !s.burst && (f.combatant.isKo || expired || (s.fuseS !== null && s.fuseS <= 0))) {
+        s.burst = true;
+        this.host.burst(f, s.rabbit);
+        if (!f.combatant.isKo) f.combatant.expire(); // it is gone in the burst
+      }
       if (!f.combatant.isKo && (expired || (!s.persistent && s.owner.combatant.isKo))) f.combatant.expire();
       if (f.combatant.isKo) {
         this.host.step(f, stepS, { x: 0, y: 0 });
@@ -172,6 +187,10 @@ export class SceneSummons {
   /** Go for the nearest enemy in sight and attack in reach; otherwise stay by the summoner. */
   private think(f: FighterEntity, stepS: number): void {
     const owner = f.summon!.owner;
+    if (f.summon!.rabbit) {
+      this.thinkRabbit(f, stepS);
+      return;
+    }
     let target: FighterEntity | null = null;
     let best = Math.min(SIGHT_M, f.combatant.sightM); // in the dark: only what is close
     for (const o of this.host.fighters()) {
@@ -216,6 +235,24 @@ export class SceneSummons {
       const d = Math.hypot(dx, dy);
       if (d > FOLLOW_M) move = { x: (dx / d) * 0.7, y: (dy / d) * 0.7 };
     }
+    this.host.step(f, stepS, move);
+  }
+
+  /** The rabbit hops at the nearest opponent; within its arming range a short fuse begins, and the burst is up to `update`. */
+  private thinkRabbit(f: FighterEntity, stepS: number): void {
+    const s = f.summon!;
+    const spec = s.rabbit!;
+    const target = this.nearestEnemy(f, Number.POSITIVE_INFINITY);
+    let move: Vec2 = { x: 0, y: 0 };
+    if (target) {
+      const dx = target.x - f.x;
+      const dy = target.y - f.y;
+      const d = Math.hypot(dx, dy) || 1;
+      if (f.combatant.canAct) f.faceToward(dx, dy);
+      move = { x: dx / d, y: dy / d };
+      if (s.fuseS === null && d <= spec.armRangeM + target.def.body.footRadiusM) s.fuseS = spec.fuseS;
+    }
+    if (s.fuseS !== null) s.fuseS -= stepS;
     this.host.step(f, stepS, move);
   }
 

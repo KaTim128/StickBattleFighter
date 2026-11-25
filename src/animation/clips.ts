@@ -47,6 +47,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.temporal',
   'proc.idle.crystal',
   'proc.idle.calligrapher',
+  'proc.idle.magician',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -1531,6 +1532,132 @@ const STRIKES = {
       legFront: limb(56, -64),
       legBack: limb(-40, -12),
     },
+  ),
+  // ---- Magix's showman style: flourishes, flicks of the wrist and a theatrical finish.
+  // Card flick: the hand whipped across and the card snapped out toward the target.
+  'magix.card-flick': strike(
+    {
+      lean: deg(-2),
+      head: deg(4),
+      armFront: limb(40, 120),
+      armBack: limb(-20, 100),
+      legFront: limb(22, -26),
+      legBack: limb(-24, -22),
+    },
+    {
+      lean: deg(-14),
+      head: deg(-2),
+      armFront: limb(88, 10),
+      armBack: limb(-30, 100),
+      legFront: limb(32, -30),
+      legBack: limb(-28, -22),
+    },
+  ),
+  // Wand sweep: the wand drawn back over the shoulder, then swept down and across in a long arc.
+  'magix.wand-sweep': strike(
+    {
+      lean: deg(8),
+      head: deg(6),
+      armFront: limb(150, 50),
+      armBack: limb(-30, 96),
+      legFront: limb(24, -28),
+      legBack: limb(-30, -24),
+    },
+    {
+      lean: deg(-24),
+      head: deg(-6),
+      armFront: limb(72, 6),
+      armBack: limb(-20, 90),
+      legFront: limb(40, -42),
+      legBack: limb(-36, -20),
+    },
+  ),
+  // Grand finale: both arms thrown wide for the audience, then snapped forward in a showman's flourish.
+  'magix.grand-finale': strike(
+    {
+      lean: deg(12),
+      head: deg(8),
+      armFront: limb(120, 20),
+      armBack: limb(120, 20),
+      legFront: limb(26, -30),
+      legBack: limb(-30, -28),
+    },
+    {
+      lean: deg(-34),
+      head: deg(-4),
+      armFront: limb(100, 4),
+      armBack: limb(96, 8),
+      legFront: limb(50, -56),
+      legBack: limb(-40, -14),
+    },
+  ),
+  // Magix's kicks: a showman's footwork. Each has its own wind-up and a flourish of the free hand.
+  'magix.tap-kick': strike(
+    {
+      lean: deg(4),
+      armFront: limb(70, 100),
+      armBack: limb(-40, 90),
+      legFront: limb(-10, -30),
+      legBack: limb(-26, -20),
+    },
+    {
+      lean: deg(-12),
+      head: deg(-4),
+      armFront: limb(-30, 60),
+      armBack: limb(50, 20),
+      legFront: limb(80, -6),
+      legBack: limb(-30, -22),
+    },
+  ),
+  'magix.side-flick': strike(
+    { lean: deg(10), armFront: limb(90, 40), armBack: limb(-60, 90), legFront: limb(20, -70), legBack: limb(-20, -20) },
+    {
+      lean: deg(-22),
+      head: deg(-6),
+      armFront: limb(140, 30),
+      armBack: limb(-70, 60),
+      legFront: limb(96, -4),
+      legBack: limb(-34, -24),
+    },
+  ),
+  'magix.spin-flourish': strike(
+    {
+      lean: deg(16),
+      head: deg(8),
+      armFront: limb(120, 30),
+      armBack: limb(-90, 40),
+      legFront: limb(30, -50),
+      legBack: limb(-36, -30),
+    },
+    {
+      lean: deg(-30),
+      head: deg(-10),
+      armFront: limb(60, 10),
+      armBack: limb(110, 20),
+      legFront: limb(110, -10),
+      legBack: limb(-40, -26),
+    },
+  ),
+  'magix.leap-kick': strike(
+    {
+      lean: deg(-6),
+      armFront: limb(150, 60),
+      armBack: limb(-60, 90),
+      legFront: limb(50, -90),
+      legBack: limb(-20, -50),
+    },
+    {
+      lean: deg(-24),
+      head: deg(-6),
+      armFront: limb(100, 20),
+      armBack: limb(-50, 70),
+      legFront: limb(100, -8),
+      legBack: limb(-44, -40),
+    },
+  ),
+  'magix.curtain-drop': strike(
+    { lean: deg(10), armBack: limb(60, 90), armFront: limb(170, 40) },
+    { lean: deg(-28), head: deg(14), armBack: limb(30, 80), armFront: limb(10, 4), legFront: limb(54, -74) },
   ),
   'inkmaster.grand-sweep': strike(
     { lean: deg(20), head: deg(-6), armBack: limb(-50, 120), armFront: limb(-40, 36), legFront: limb(26, -26) },

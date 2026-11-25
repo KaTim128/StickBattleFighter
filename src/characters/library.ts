@@ -62,6 +62,13 @@ import kenshiroCharacter from '../data/characters/kenshiro/character.json';
 import kenshiroEffects from '../data/characters/kenshiro/effects.json';
 import kenshiroMoveset from '../data/characters/kenshiro/moveset.json';
 import kenshiroStats from '../data/characters/kenshiro/stats.json';
+import magixAi from '../data/characters/magix/ai.json';
+import magixAnimation from '../data/characters/magix/animation-profile.json';
+import magixAudio from '../data/characters/magix/audio.json';
+import magixCharacter from '../data/characters/magix/character.json';
+import magixEffects from '../data/characters/magix/effects.json';
+import magixMoveset from '../data/characters/magix/moveset.json';
+import magixStats from '../data/characters/magix/stats.json';
 import necroAi from '../data/characters/necro/ai.json';
 import necroAnimation from '../data/characters/necro/animation-profile.json';
 import necroAudio from '../data/characters/necro/audio.json';
@@ -83,6 +90,12 @@ import psionCharacter from '../data/characters/psion/character.json';
 import psionEffects from '../data/characters/psion/effects.json';
 import psionMoveset from '../data/characters/psion/moveset.json';
 import psionStats from '../data/characters/psion/stats.json';
+import rabbitAi from '../data/characters/rabbit/ai.json';
+import rabbitAnimation from '../data/characters/rabbit/animation-profile.json';
+import rabbitCharacter from '../data/characters/rabbit/character.json';
+import rabbitEffects from '../data/characters/rabbit/effects.json';
+import rabbitMoveset from '../data/characters/rabbit/moveset.json';
+import rabbitStats from '../data/characters/rabbit/stats.json';
 import rampageAi from '../data/characters/rampage/ai.json';
 import rampageAnimation from '../data/characters/rampage/animation-profile.json';
 import rampageAudio from '../data/characters/rampage/audio.json';
@@ -158,6 +171,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionCharacter,
     prismorCharacter,
     inkCharacter,
+    magixCharacter,
+    rabbitCharacter,
     inkSwordCharacter,
     inkBowCharacter,
     inkMonsterCharacter,
@@ -182,6 +197,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionAnimation,
     prismorAnimation,
     inkAnimation,
+    magixAnimation,
+    rabbitAnimation,
     inkSwordAnimation,
     inkBowAnimation,
     inkMonsterAnimation,
@@ -201,6 +218,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionMoveset,
     prismorMoveset,
     inkMoveset,
+    magixMoveset,
+    rabbitMoveset,
     inkSwordMoveset,
     inkBowMoveset,
     inkMonsterMoveset,
@@ -221,6 +240,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionStats,
     prismorStats,
     inkStats,
+    magixStats,
+    rabbitStats,
     inkSwordStats,
     inkBowStats,
     inkMonsterStats,
@@ -242,6 +263,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionEffects,
     prismorEffects,
     inkEffects,
+    magixEffects,
+    rabbitEffects,
     inkSwordEffects,
     inkBowEffects,
     inkMonsterEffects,
@@ -262,6 +285,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionAudio,
     prismorAudio,
     inkAudio,
+    magixAudio,
     geargrindAudio,
     resonAudio,
     chronosAudio,
@@ -280,6 +304,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     psionAi,
     prismorAi,
     inkAi,
+    magixAi,
+    rabbitAi,
     inkSwordAi,
     inkBowAi,
     inkMonsterAi,

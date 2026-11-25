@@ -1,0 +1,8 @@
+{
+  "id": "magix-ai",
+  "attackEveryS": 1.15,
+  "aggression": 0.5,
+  "clashMashRate": 6,
+  "settleDecelMps2": 13,
+  "reactionS": 0.2
+}

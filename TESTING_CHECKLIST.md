@@ -803,3 +803,11 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 
 - [ ] Psion Hypnosis: spiral flies and only a hit makes a copy; the copy looks like the original, has no ultimate and weaker health and damage; the player controls it while Psion is out of the fight; one copy at a time; it hands control back after 9 s or when either side falls (automated: `hypnosis.test.ts`, `psion.test.ts`; look checked by screenshot). Not checked: an AI Psion hypnotising the player, and real-device play.
 - [ ] Necro Soul Drain: grey bolt with a red core; returning life particles on a hit (look checked by screenshot).
+
+- [ ] Magix: top hat, red band, bow tie, grin and wand drawn (screenshot); idle and walk are his own; each kick and tap has its own clip (automated: `unique-animation`).
+- [ ] Magix Disappearing Act: invisible and 35% faster for up to 4 s, faint to himself, an AI opponent loses him beyond 1.6 m, both end the moment he lands a blow (automated: `magix.test.ts`; the AI's behaviour is not browser-verified).
+- [ ] Magix A Rabbit: hops at the opponent, 1 s fuse, confetti burst hurts and pushes, hitting it sets it off early (automated).
+- [ ] Magix Card Barrage: 52 cards spin on trails, light damage, some extra knockback, an interruption stops it (automated for count and damage; screenshot of the spin).
+- [ ] Magix Wand of Misfortune: one random ability (ultimate included) sealed for exactly 12 s, padlock and countdown on the HUD, never two locks, no cooldown change (automated).
+- [ ] Magix Lucky Hat: one of seven results, a stat label above the bar, the boost ends by itself with nothing left changed (automated).
+- [ ] Magix Mirror Act: dust, then an exact copy of the opponent (look, moves, abilities, no ultimate) for 12 s with a shield, real health kept, the opponent untouched, the magician restored (automated; screenshot).

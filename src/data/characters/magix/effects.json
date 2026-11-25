@@ -1,0 +1,18 @@
+{
+  "id": "magix-effects",
+  "punchImpact": "impact-light",
+  "kickImpact": "impact-kick",
+  "heavyImpact": "impact-heavy",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#c9a6ff",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "magix",
+  "held": "wand"
+}

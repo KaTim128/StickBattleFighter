@@ -137,11 +137,22 @@ function serpent(
   const m = Math.max(2, trail.length);
   for (let i = 0; i < m; i++) {
     const p = trail[Math.min(i, trail.length - 1)]!;
+    const q = trail[Math.min(i + 1, trail.length - 1)]!;
+    const r = trail[Math.max(i - 1, 0)]!;
     const u = i / (m - 1);
-    const ripple = Math.sin(t * 9 - i * 0.9) * 0.1 * (0.3 + u);
-    const nx = -Math.sin(s.heading) * ripple;
-    const ny = Math.cos(s.heading) * ripple;
-    pts.push(P(p.x + nx, p.y + ny, z + Math.sin(t * 5 + i) * 0.05));
+    // A travelling S-wave: sideways to the body's own direction at each point, small at the head and growing toward the tail, so it
+    // really slithers (the head weaves, the tail whips) instead of sliding straight.
+    const dx = r.x - q.x || Math.cos(s.heading);
+    const dy = r.y - q.y || Math.sin(s.heading);
+    const dl = Math.hypot(dx, dy) || 1;
+    const wave = Math.sin(t * 8 - i * 0.75) * (0.07 + 0.2 * u);
+    pts.push(
+      P(
+        p.x - (dy / dl) * wave,
+        p.y + (dx / dl) * wave,
+        z + Math.sin(t * 5 + i) * 0.05 + Math.sin(t * 8 - i * 0.75) * 0.03,
+      ),
+    );
     widths.push(0.34 * (1 - u * 0.8) ** 0.9 + 0.025);
   }
   // Which graphics each piece of the body goes to: normally one; round a prey the coils behind it and the coils in front of it are
@@ -197,14 +208,34 @@ function serpent(
       INK_LIT,
       0.8 * fade,
     );
-    // Scale marks: short pale chevrons along the body.
-    for (let i = 2; i < bp.length - 2; i += 3) {
+    // Texture: an alternating diamond pattern of lighter wash down the back, a pale belly edge on the lower side, banded scale lines,
+    // and dry-brush speckle, so it reads as a scaled snake rather than a plain ribbon.
+    for (let i = 1; i < bp.length - 1; i++) {
       const p = bp[i]!;
+      const q = bp[i - 1]!;
+      const l = Math.hypot(p.x - q.x, p.y - q.y) || 1;
+      const nx = -(p.y - q.y) / l;
+      const ny = (p.x - q.x) / l;
+      const w = bw[i]! * 0.5;
+      if (i % 2 === 0) {
+        target
+          .poly([
+            p.x + (q.x - p.x) * 0.9,
+            p.y + (q.y - p.y) * 0.9,
+            p.x + nx * w * 0.55,
+            p.y + ny * w * 0.55,
+            p.x - (q.x - p.x) * 0.9,
+            p.y - (q.y - p.y) * 0.9,
+            p.x - nx * w * 0.55,
+            p.y - ny * w * 0.55,
+          ])
+          .fill({ color: INK_LIT, alpha: 0.55 * fade });
+      }
       target
-        .moveTo(p.x - 0.03, p.y - 0.03)
-        .lineTo(p.x, p.y + 0.02)
-        .lineTo(p.x + 0.03, p.y - 0.03)
-        .stroke({ width: 0.008, color: PALE, alpha: 0.4 * fade });
+        .moveTo(p.x + nx * w * 0.95, p.y + ny * w * 0.95)
+        .lineTo(p.x - nx * w * 0.95, p.y - ny * w * 0.95)
+        .stroke({ width: 0.007, color: PALE, alpha: 0.22 * fade });
+      target.circle(p.x + nx * w * 0.8, p.y + ny * w * 0.8 + 0.01, w * 0.14).fill({ color: PALE, alpha: 0.35 * fade });
     }
   };
   if (sides && layers) {
@@ -243,6 +274,28 @@ function serpent(
   );
   hg.poly([...pt(-0.02, -0.14), ...pt(-0.2, -0.3), ...pt(0.04, -0.17)]).fill({ color: BLACK, alpha: fade });
   hg.circle(head.x + hx * 0.12 + nx * -0.07, head.y + hy * 0.12 + ny * -0.07, 0.03).fill({ color: PALE, alpha: fade });
+  // The brow ridge over the eye, a forked tongue flicking out, and fangs when the jaw opens.
+  hg.moveTo(...(pt(0.0, -0.1) as [number, number]))
+    .lineTo(...(pt(0.2, -0.13) as [number, number]))
+    .stroke({ width: 0.02, color: INK_LIT, alpha: fade, cap: 'round' });
+  const flick = (Math.sin(t * 11) + 1) / 2;
+  const t0 = pt(0.34, -0.01);
+  const t1 = pt(0.34 + 0.16 + 0.14 * flick, -0.01);
+  hg.moveTo(t0[0]!, t0[1]!).lineTo(t1[0]!, t1[1]!).stroke({ width: 0.012, color: 0xb01c24, alpha: fade, cap: 'round' });
+  for (const k of [-1, 1]) {
+    const f1 = pt(0.34 + 0.16 + 0.14 * flick, -0.01);
+    const f2 = pt(0.34 + 0.24 + 0.14 * flick, -0.01 + k * 0.05);
+    hg.moveTo(f1[0]!, f1[1]!)
+      .lineTo(f2[0]!, f2[1]!)
+      .stroke({ width: 0.01, color: 0xb01c24, alpha: fade, cap: 'round' });
+  }
+  if (gape > 0.6) {
+    for (const o of [0.12, 0.2]) {
+      const fa = pt(o, 0.05);
+      const fb = pt(o + 0.01, 0.1 + 0.05 * gape);
+      hg.moveTo(fa[0]!, fa[1]!).lineTo(fb[0]!, fb[1]!).stroke({ width: 0.012, color: PALE, alpha: fade, cap: 'round' });
+    }
+  }
   for (const k of [-1, 1]) {
     const wp = [0, 1, 2, 3].map((i) => ({
       x: head.x + hx * (0.2 - i * 0.12) + nx * k * (0.06 + i * 0.07) + Math.sin(t * 6 + i) * 0.02,
@@ -423,20 +476,36 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
   const headF = 1.3 + 0.05 * headLow;
   const headZ = 1.55 - 0.7 * headLow + heave;
   const horn = (side: number, a: number): void => {
-    const base: Local = [headF + 0.12, headZ + 0.34, side * 0.28];
+    // Each horn grows out of a thick root buried inside the skull (so it can never float free of the head), sweeps out and up, then
+    // curves forward to a fine point, with a pale ridge of light along its upper edge and growth rings across it.
+    const rf = headF + 0.1;
+    const rz = headZ + 0.3;
     const pts: Local[] = [
-      base,
-      [headF + 0.32, headZ + 0.46, side * 0.5],
-      [headF + 0.6, headZ + 0.42 + 0.05 * headLow, side * 0.62],
-      [headF + 0.92, headZ + 0.62 + 0.22 * headLow, side * 0.52],
+      [rf - 0.08, rz - 0.1, side * 0.06],
+      [rf + 0.1, rz + 0.04, side * 0.28],
+      [rf + 0.36, rz + 0.06 + 0.04 * headLow, side * 0.5],
+      [rf + 0.66, rz + 0.2 + 0.12 * headLow, side * 0.52],
+      [rf + 0.9, rz + 0.46 + 0.24 * headLow, side * 0.4],
     ];
-    stroke(pts, [0.3, 0.22, 0.14, 0.03], BLACK, a);
+    const w = [0.36, 0.32, 0.22, 0.12, 0.02];
+    stroke(pts, w, BLACK, a);
     stroke(
-      pts.map((p) => [p[0], p[1] + 0.035, p[2]] as Local),
-      [0.04, 0.035, 0.022, 0.004],
+      pts.map((p) => [p[0], p[1] + 0.045, p[2]] as Local),
+      w.map((x) => x * 0.18),
       PALE,
-      a * 0.55,
+      a * 0.6,
     );
+    for (let i = 1; i < 4; i++) {
+      const p = pts[i]!;
+      const ring = [L(p[0] - 0.02, p[1] + w[i]! * 0.5, p[2] ?? 0), L(p[0] + 0.02, p[1] - w[i]! * 0.5, p[2] ?? 0)];
+      g.moveTo(ring[0]!.x, ring[0]!.y)
+        .lineTo(ring[1]!.x, ring[1]!.y)
+        .stroke({ width: 0.012, color: INK_LIT, alpha: 0.7 * a });
+    }
+    // The root boss: a swelling of horn where it meets the head.
+    const root = L(rf, rz - 0.02, side * 0.12);
+    g.ellipse(root.x, root.y, 0.17 * S, 0.14 * S).fill({ color: BLACK, alpha: a });
+    g.ellipse(root.x - 0.02, root.y - 0.03, 0.09 * S, 0.06 * S).fill({ color: INK_LIT, alpha: 0.55 * a });
   };
   horn(-1, alpha * 0.8);
   const tailSwing = Math.sin(t * 3 + b.gait) * 0.22 * (charging ? 1.5 : 1);
@@ -558,6 +627,37 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
     INK_LIT,
     0.7 * alpha,
   );
+  // The heavy brow: a thick ridge across the top of the skull that both horns grow from, so the pair is one joined piece with the head.
+  stroke(
+    [
+      [headF + 0.04, headZ + 0.28, -0.3],
+      [headF + 0.1, headZ + 0.34, 0],
+      [headF + 0.04, headZ + 0.28, 0.3],
+    ],
+    [0.2, 0.26, 0.2],
+    BLACK,
+    alpha,
+  );
+  // Short ears under the horns, and a coarse mane of jagged brush tufts down the neck and over the hump.
+  for (const sd of [-1, 1]) {
+    const e = L(headF - 0.12, headZ + 0.36, sd * 0.3);
+    g.poly([e.x, e.y, e.x - 0.1 * S, e.y - 0.2 * S, e.x + 0.07 * S, e.y - 0.05 * S]).fill({ color: BLACK, alpha });
+  }
+  for (let i = 0; i < 9; i++) {
+    const u = i / 8;
+    const bf = 1.15 - u * 1.05;
+    const bz = 1.52 + 0.26 * Math.sin(u * Math.PI * 0.9) + heave * 0.6 - 0.3 * headLow * (1 - u);
+    const tuft = L(bf, bz);
+    const flick = 0.11 + noise(i * 2.2) * 0.1 + (charging ? 0.07 : 0);
+    g.poly([
+      tuft.x - 0.05 * S,
+      tuft.y + 0.04,
+      tuft.x - (0.06 + flick) * S,
+      tuft.y - flick * S,
+      tuft.x + 0.05 * S,
+      tuft.y,
+    ]).fill({ color: BLACK, alpha });
+  }
   // The nostril and a steaming snort while it readies itself.
   const nose = L(headF + 0.66, headZ - 0.1);
   g.ellipse(nose.x, nose.y, 0.03, 0.02).fill({ color: INK_LIT, alpha });

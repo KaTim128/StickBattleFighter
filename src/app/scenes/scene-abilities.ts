@@ -6,6 +6,7 @@ import {
   type BuffEffect,
   type Burn,
   finisherFactor,
+  type MirrorDelivery,
   type SummonSpec,
   type TossDelivery,
 } from '../../abilities/ability-def';
@@ -24,6 +25,7 @@ import { type BreakableDoor, circleTouchesRect } from '../../environment/breakab
 import type { BreakableWalls } from '../../environment/breakable-wall';
 import type { PhysicsWorld } from '../../physics/physics-world';
 import type { FighterEntity } from './fighter-entity';
+import { INVISIBLE_TELL_M } from './invisible';
 
 /** The scene's shared hit path (melee and abilities use the same rules, INV-5). */
 export type StrikeFn = (
@@ -78,6 +80,8 @@ export class SceneAbilities implements AbilityHost {
   teleportSource: (f: FighterEntity, to: Vec2) => Vec2 | null = () => null;
   /** Can a body stand at this spot (inside the arena, clear of walls and furniture)? Set by the scene, which owns the physics. */
   standableSource: (at: Vec2) => boolean = () => true;
+  /** Mirror Act: turns the caster into a copy of its opponent (set by the scene, which owns the fighters). */
+  mirrorSource: (f: FighterEntity, spec: MirrorDelivery) => boolean = () => false;
   /** Raises a caster's minions (set by the scene, which owns the fighters). */
   summonSource: (f: FighterEntity, spec: SummonSpec) => void = () => {};
   /** How many more minions this fighter may raise right now (the scene counts the living ones). */
@@ -203,6 +207,7 @@ export class SceneAbilities implements AbilityHost {
         cooldownMaxS: def.cooldownS,
         staminaCost: slot === 'ult' ? 0 : def.staminaCost,
         block: caster.check(slot, ctx),
+        lockedS: caster.locked?.slot === slot ? caster.locked.leftS : 0,
       };
     });
     return { slots, meter: caster.meter, meterMax: caster.kit.charge.max, casting: caster.cast?.def.id ?? null };
@@ -243,7 +248,10 @@ export class SceneAbilities implements AbilityHost {
     const f = this.byName(casterId);
     const o = this.byName(targetId);
     if (!f || !o) return false;
-    return !f.combatant.blinded && Math.hypot(o.x - f.x, o.y - f.y) <= f.combatant.sightM;
+    const gap = Math.hypot(o.x - f.x, o.y - f.y);
+    // Disappearing Act: someone who has vanished is only found from very close.
+    if (o.buff?.invisible && gap > INVISIBLE_TELL_M) return false;
+    return !f.combatant.blinded && gap <= f.combatant.sightM;
   }
 
   hitFighter(casterId: string, targetId: string, payload: AbilityPayload, dir: Vec2, hitFlash?: number): boolean {
@@ -295,6 +303,11 @@ export class SceneAbilities implements AbilityHost {
     if (landed && payload.blindS && (payload.blindChance === undefined || this.random() < payload.blindChance))
       target.combatant.blind(payload.blindS);
     if (landed && payload.inkSplatS) target.combatant.inkSplat(payload.inkSplatS);
+    // Wand of Misfortune: one random ability (the ultimate included) is sealed for exactly the stated time; never two at once.
+    if (landed && payload.lockAbility && target.caster) {
+      const slots = ['a1', 'a2', 'a3', 'a4', 'ult'] as const;
+      target.caster.lock(slots[Math.floor(this.random() * slots.length)] ?? 'a1', payload.lockAbility.durationS);
+    }
     if (landed && payload.slow) target.combatant.slow(payload.slow.durationS, payload.slow.speedFactor);
     if (landed && payload.aging)
       target.combatant.age(payload.aging.durationS, payload.aging.dps, payload.aging.defenceFactor);
@@ -457,6 +470,29 @@ export class SceneAbilities implements AbilityHost {
     f.abilityLift = heightM;
   }
 
+  mirror(casterId: string, spec: MirrorDelivery): boolean {
+    const f = this.byName(casterId);
+    return f ? this.mirrorSource(f, spec) : false;
+  }
+
+  /**
+   * An attack of `attacker` landed on someone. Disappearing Act ends with it: the invisibility and the speed go together and he reappears
+   * in a puff of smoke.
+   */
+  noteLanded(attacker: FighterEntity): void {
+    if (!attacker.buff?.endsOnHit) return;
+    this.buff(attacker.name, null);
+    this.emit({
+      kind: 'impact',
+      ability: 'disappearingAct',
+      vfx: 'magix-vanish',
+      sfx: 'magic-poof',
+      x: attacker.x,
+      y: attacker.y,
+      radiusM: 1.8,
+    });
+  }
+
   buff(casterId: string, buff: BuffEffect | null, abilityId?: string): void {
     const f = this.byName(casterId);
     if (!f) return;
@@ -468,6 +504,8 @@ export class SceneAbilities implements AbilityHost {
       f.caster.cooldownScale = buff?.cooldownFactor ?? 1;
       if (buff?.cooldownFactor) f.caster.scaleCooldowns(buff.cooldownFactor);
     }
+    // Lucky Hat's maximum-health boost: a shield worth that share of his maximum health for as long as the buff lasts, then gone.
+    if (buff?.shieldFraction) f.combatant.raiseBarrier(buff.shieldFraction * f.combatant.stats.maxHp, buff.durationS);
     // Crystal Sovereign: armour that takes the next few blows, and a small shield for the next few frontal ones.
     if (buff?.sovereign) {
       f.combatant.raiseCrystalArmour(buff.sovereign.armourHits);

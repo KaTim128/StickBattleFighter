@@ -24,6 +24,10 @@ function castDamage(a: AbilityDef): number {
   if (d.type === 'dash' && d.slide) return a.payload.damage + d.slide.thorns.payload.damage;
   if (d.type === 'projectile' && d.fan) return (a.payload.damage * d.fan.count) / 2;
   if (d.type === 'eruptions') return a.payload.damage * 2;
+  // Magix: about half of a 52-card fan lands on one target; the rabbit's burst hits once; the hat gives a sword or a bomb two times in seven.
+  if (d.type === 'cards') return (a.payload.damage * d.count) / 2;
+  if (d.type === 'summon' && d.rabbit) return d.rabbit.damage;
+  if (d.type === 'luckyHat') return (d.sword.damage + d.bomb.damage) / 7;
   if (a.payload.aging) return a.payload.damage + a.payload.aging.dps * a.payload.aging.durationS;
   return a.payload.damage;
 }

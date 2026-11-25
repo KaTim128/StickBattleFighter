@@ -167,6 +167,7 @@ function paint(el: HTMLElement, s: AbilitySlotState, state: AbilityHudState): vo
   el.style.setProperty('--fill', `${(fill * 100).toFixed(1)}%`);
   el.classList.toggle('cooling', !isUlt && cooling > 0);
   el.classList.toggle('no-stamina', s.block === 'stamina');
+  el.classList.toggle('sealed', s.block === 'locked');
   el.classList.toggle('ready', s.block === null);
   el.classList.toggle('casting', state.casting !== null);
   // The ability's picture (its name stays as the tooltip and for screen readers).
@@ -185,11 +186,14 @@ function paint(el: HTMLElement, s: AbilitySlotState, state: AbilityHudState): vo
   }
   const cost = el.querySelector('.ab-cost');
   if (cost) {
-    const text = isUlt
-      ? `${Math.floor(state.meter)}%`
-      : s.cooldownS > 0
-        ? `${s.cooldownS.toFixed(1)}s`
-        : `${s.staminaCost} ST`;
+    const text =
+      s.block === 'locked'
+        ? `🔒${(s.lockedS ?? 0).toFixed(1)}s` // Wand of Misfortune: the seal and its remaining time
+        : isUlt
+          ? `${Math.floor(state.meter)}%`
+          : s.cooldownS > 0
+            ? `${s.cooldownS.toFixed(1)}s`
+            : `${s.staminaCost} ST`;
     if (cost.textContent !== text) cost.textContent = text;
   }
   if (el.classList.contains('ability-button')) {

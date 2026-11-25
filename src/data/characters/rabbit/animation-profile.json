@@ -1,0 +1,5 @@
+{
+  "id": "rabbit-animation",
+  "extends": "base-stickman-animation",
+  "states": {}
+}

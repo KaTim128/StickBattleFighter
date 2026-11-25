@@ -88,6 +88,8 @@ export interface AbilityPayload {
   readonly blindS?: number;
   /** Chance (0..1) that a landed blow applies `blindS` (default: always). Ink Slash blinds only some of the time. */
   readonly blindChance?: number;
+  /** Wand of Misfortune (Magix): on a hit, one random ability of the target is locked for `durationS` (never two at once). */
+  readonly lockAbility?: { readonly durationS: number };
   /** Ink splashed over the middle of the target's screen for this long (Ink Dragon). */
   readonly inkSplatS?: number;
   /**
@@ -302,6 +304,18 @@ export interface SummonSpec {
   readonly near?: 'caster' | 'enemy';
   /** They stay even if the summoner falls. */
   readonly persistent?: boolean;
+  /**
+   * Magix's rabbit: it hops at the nearest enemy and, within `armRangeM` of it, a fuse of `fuseS` begins; at the end (or the moment anything
+   * hits it) it bursts in confetti, hurting and pushing everyone within `radiusM`.
+   */
+  readonly rabbit?: {
+    readonly fuseS: number;
+    readonly armRangeM: number;
+    readonly radiusM: number;
+    readonly damage: number;
+    readonly knockbackMps: number;
+    readonly hopSpeedMps: number;
+  };
   /** Seconds the summoner spends drawing them before they appear (Ink Clone: a stick figure is brushed on the floor, then it rises). */
   readonly drawS?: number;
 }
@@ -694,6 +708,18 @@ export interface BuffDelivery {
    * one-handed sword is in his hand meanwhile (`meleeDamageFactor` is its edge).
    */
   readonly sovereign?: { readonly armourHits: number; readonly shieldHits: number };
+  /**
+   * Disappearing Act (Magix): the caster cannot be seen (the opponent loses track of him unless he is right on top of them; he sees
+   * himself faintly). It ends, with the rest of the buff, the moment he lands any attack on an opponent (`endsOnHit`).
+   */
+  readonly invisible?: boolean;
+  readonly endsOnHit?: boolean;
+  /** Multiplies the reach of the caster's melee blows (Lucky Hat's range stat). */
+  readonly rangeFactor?: number;
+  /** A temporary shield worth this share of the caster's maximum HP, gone when the buff ends (Lucky Hat's HP stat). */
+  readonly shieldFraction?: number;
+  /** Shown to the player: which stat Lucky Hat raised, as a short label ("SPEED +25%"). */
+  readonly label?: string;
   /** Armour plates extend over the caster while it lasts (Geargrind's Reinforced Plating, Overdrive). */
   readonly plating?: boolean;
   /** The caster is drawn this much bigger while it lasts (Rampage Mode, owner 13/11/2026: 1.1). */
@@ -796,10 +822,61 @@ export interface MasterpieceDelivery {
   readonly summon: SummonSpec;
 }
 
+/**
+ * Card Barrage (Magix): exactly `count` playing cards, one after another over `durationS`, fan out toward the opponent (each with its own
+ * small angle off the aim, speed and spin). Each deals the payload (light) and `knockbackChance` of them push for `knockbackMps`. The
+ * barrage stops if the caster is interrupted; cards already thrown keep flying. They are simulated and drawn as one batch.
+ */
+export interface CardsDelivery {
+  readonly type: 'cards';
+  readonly count: number;
+  readonly durationS: number;
+  readonly speedMps: number;
+  /** Half-angle of the fan, radians. */
+  readonly spreadRad: number;
+  readonly radiusM: number;
+  readonly rangeM: number;
+  readonly knockbackChance: number;
+  readonly knockbackMps: number;
+}
+
+/**
+ * Lucky Hat (Magix): a hand into the hat, and one of seven things comes out at random: +`bonus` to one of five stats for `durationS`
+ * (speed, damage, defence, attack range, maximum HP) or a thrown sword or a thrown bomb.
+ */
+export interface LuckyHatDelivery {
+  readonly type: 'luckyHat';
+  readonly durationS: number;
+  readonly bonus: number;
+  readonly sword: { readonly damage: number; readonly knockbackMps: number; readonly speedMps: number };
+  readonly bomb: {
+    readonly damage: number;
+    readonly knockbackMps: number;
+    readonly radiusM: number;
+    readonly fuseS: number;
+  };
+}
+
+/**
+ * Mirror Act (Magix's ultimate): confetti thrown at the floor bursts into a cloud of dust ( `dustS` ); as it clears he is an exact copy of
+ * the opponent for `durationS`: its look, abilities (not its ultimate) and moves at `powerFactor` of its damage, with a temporary shield
+ * of `shieldFraction` of his own maximum HP over his own real HP. Cooldowns are the opponent's own at that moment.
+ */
+export interface MirrorDelivery {
+  readonly type: 'mirror';
+  readonly dustS: number;
+  readonly durationS: number;
+  readonly shieldFraction: number;
+  readonly powerFactor: number;
+}
+
 /** What a running buff does (the buff delivery without its summons). */
 export type BuffEffect = Omit<BuffDelivery, 'type' | 'summon' | 'shockwave'>;
 
 export type Delivery =
+  | CardsDelivery
+  | LuckyHatDelivery
+  | MirrorDelivery
   | SerpentDelivery
   | BullDelivery
   | VortexDelivery
@@ -866,6 +943,8 @@ export interface MagicLook {
     readonly wave?: boolean;
     /** The wave drawn as tight, thin, fast rings (Reson's Resonance Break). */
     readonly screech?: boolean;
+    /** Drawn as a glittering magic trail from a wand (Magix's Wand of Misfortune). */
+    readonly wand?: boolean;
     /** Drawn as a wide horizontal crescent of light cutting across the way it travels (Chronos's Chrono Slash). */
     readonly crescent?: boolean;
     /** Drawn as a small spinning crystal shard with a glinting trail (Prismor's Shard Volley). */

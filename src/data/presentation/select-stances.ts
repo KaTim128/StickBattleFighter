@@ -238,6 +238,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.01, hands: 0.025 },
   },
+  // Magix: a showman's pose, hat tipped, wand flourished out front and the other hand behind his back.
+  magix: {
+    title: 'The Master Illusionist',
+    style: 'Illusionist: vanishing, a rabbit, cards, curses and a borrowed face',
+    pelvis: 0.8,
+    leadFoot: 0.3,
+    rearFoot: -0.34,
+    lean: -6,
+    head: -3,
+    front: { x: 0.7, y: 0.18 },
+    back: { x: -0.05, y: 0.55 },
+    turn: 0.5,
+    scale: 1,
+    breath: { lean: 1, pelvis: 0.01, hands: 0.03 },
+  },
   shroud: {
     title: 'The Unseen Blade',
     style: 'Stealth assassin: vanishes, ambushes and strikes from the dark',

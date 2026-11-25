@@ -1,0 +1,66 @@
+{
+  "id": "magix",
+  "template": "base-stickman",
+  "displayName": "Magix",
+  "description": "Magix has never once shown an audience what is in his hat before he wants them to know. Top hat tipped, wand twirling and a smile that says he already knows how the trick ends, he turns every fight into a stage show: now you see him, now you don't, and the rabbit is not as friendly as it looks. Cards, confetti, misdirection and one very rude transformation: he fights best as whoever you are.",
+  "characterType": "fighter",
+  "element": "none",
+  "combatStyle": "illusion",
+  "profiles": {
+    "animation": "magix-animation",
+    "moveset": "magix-moveset",
+    "stats": "magix-stats",
+    "effects": "magix-effects",
+    "audio": "magix-audio",
+    "ai": "magix-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.44,
+      "shin": 0.44
+    },
+    "colour": "#17171f",
+    "colourBack": "#0d0d12",
+    "outline": "#050507",
+    "limbWidthM": 0.08,
+    "outlineWidthM": 0.03,
+    "spine": 0.55
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "magix-kit"
+}

@@ -17,6 +17,8 @@ export type CastBlock =
   | 'limit'
   | 'muted'
   | 'bound'
+  /** Wand of Misfortune: this ability is locked for a while (its cooldown is untouched). */
+  | 'locked'
   | 'trapped'
   /** Telekinetic Toss: nothing liftable in reach. Refused before stamina or cooldown is spent. */
   | 'noObject';
@@ -58,6 +60,8 @@ export interface AbilitySlotState {
   readonly staminaCost: number;
   /** Why it cannot be cast now, or null if ready. */
   readonly block: CastBlock | null;
+  /** Seconds this ability stays locked by a Wand of Misfortune (0 = not locked). */
+  readonly lockedS?: number;
 }
 
 export interface AbilityHudState {
@@ -78,6 +82,8 @@ export class AbilityCaster {
   cooldownScale = 1;
   private meterValue = 0;
   private active: ActiveCast | null = null;
+  /** The one ability a Wand of Misfortune has locked, and for how long more. Never more than one; it never touches a cooldown. */
+  private lockedSlot: { slot: AbilitySlot; leftS: number } | null = null;
 
   constructor(readonly kit: AbilityKit) {
     for (const s of ABILITY_SLOTS) this.cooldowns.set(s, 0);
@@ -85,6 +91,29 @@ export class AbilityCaster {
 
   def(slot: AbilitySlot): AbilityDef {
     return this.kit[slot];
+  }
+
+  /** Lock one ability for `seconds` (ignored while another is locked, so a lock can never be extended or stacked). True if it locked. */
+  lock(slot: AbilitySlot, seconds: number): boolean {
+    if (this.lockedSlot || seconds <= 0) return false;
+    this.lockedSlot = { slot, leftS: seconds };
+    if (this.active?.def.slot === slot) this.active = null; // a cast of that ability in progress is cut off
+    return true;
+  }
+
+  /** Take over another caster's cooldown clocks as they stand now (Mirror Act: the copy uses the opponent's own cooldowns). */
+  copyCooldownsFrom(other: AbilityCaster): void {
+    for (const s of ABILITY_SLOTS) this.cooldowns.set(s, other.cooldowns.get(s) ?? 0);
+  }
+
+  /** The locked ability, if any. */
+  get locked(): { readonly slot: AbilitySlot; readonly leftS: number } | null {
+    return this.lockedSlot;
+  }
+
+  /** Lift any lock at once (a KO, a reset, the end of a fight). */
+  unlock(): void {
+    this.lockedSlot = null;
   }
 
   /** Seconds of cooldown left; while the ability is still being executed, its full cooldown, not yet running. */
@@ -126,6 +155,7 @@ export class AbilityCaster {
   /** Why this ability cannot be cast right now, or null if it can. */
   check(slot: AbilitySlot, ctx: CastContext): CastBlock | null {
     const def = this.kit[slot];
+    if (this.lockedSlot?.slot === slot) return 'locked';
     if (this.active || !ctx.canAct) return 'busy';
     if (ctx.airborne) return 'airborne';
     if (this.pending.has(slot) || (this.cooldowns.get(slot) ?? 0) > 0) return 'cooldown';
@@ -180,6 +210,7 @@ export class AbilityCaster {
     this.cooldownScale = 1;
     this.meterValue = 0;
     this.active = null;
+    this.lockedSlot = null;
   }
 
   /**
@@ -197,6 +228,11 @@ export class AbilityCaster {
       this.cooldowns.set(slot, full);
     }
     for (const s of ABILITY_SLOTS) this.cooldowns.set(s, Math.max(0, (this.cooldowns.get(s) ?? 0) - dtS));
+    // A lock runs out by itself, exactly on time, and leaves every cooldown as it was.
+    if (this.lockedSlot) {
+      this.lockedSlot.leftS -= dtS;
+      if (this.lockedSlot.leftS <= 0) this.lockedSlot = null;
+    }
     // The ultimate recharges only while it is not being executed.
     if (!this.pending.has('ult')) {
       this.meterValue = Math.min(this.kit.charge.max, this.meterValue + this.kit.charge.perSecond * dtS);

@@ -3,6 +3,7 @@ import type { BoneLengths, Point, Pose } from '../animation/skeleton';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
 import { drawInkBow, drawInkBrush, drawInkSpear, drawInkSword } from './ink-props';
+import { drawWand } from './magix-parts';
 import { MagmaModel } from './magma-model';
 import { PREMIUM_SKINS, PremiumModel } from './premium-model';
 
@@ -1545,6 +1546,13 @@ export class StickmanView {
         this.spearForm > 0.02
           ? drawInkSpear(g, s.armBack[2], hand, o, this.clockS, this.spearForm)
           : drawInkBrush(g, s.armBack[2], hand, o, this.clockS, 1);
+      return;
+    }
+    if (this.held === 'wand') {
+      {
+        const tip = drawWand(g, hand, ux, uy, o, this.clockS);
+        this.bladeTip = { tip, inner: hand };
+      }
       return;
     }
     if (this.held === 'ink-sword') {

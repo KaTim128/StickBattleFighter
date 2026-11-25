@@ -8,6 +8,7 @@
  * `AbilityKit.heavyIcon`).
  */
 type Theme =
+  | 'magic'
   | 'fire'
   | 'earth'
   | 'soul'
@@ -43,6 +44,7 @@ const THEME: Readonly<Record<Theme, readonly [string, string, string]>> = {
   time: ['#fff4cf', '#1f4fa8', '#07142a'],
   crystal: ['#e9e2ff', '#5a4bbf', '#0e0a2c'],
   ink: ['#f2eee3', '#45454f', '#050507'],
+  magic: ['#fff4c2', '#7a3fc4', '#150a26'],
 };
 
 const MATERIALS = `
@@ -592,6 +594,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     'ink',
     rays(24, 24, 13, '#f2eee3', 0.14),
     `<ellipse cx="24" cy="40" rx="14" ry="4.5" fill="#050505" opacity=".85"/><g filter="url(#ds)" stroke="#f2eee3" stroke-width="1.2" fill="#050505"><circle cx="24" cy="10" r="4.6"/><path d="M24 15 V28 M24 19 L15 25 M24 19 L33 14 M24 28 L18 38 M24 28 L30 38" fill="none" stroke="#050505" stroke-width="3.2" stroke-linecap="round"/></g><path d="M33 8 L38 28" stroke="#f2eee3" stroke-width="1.6" stroke-linecap="round"/>`,
+  ),
+  'disappearing-act': icon(
+    'magic',
+    rays(24, 24, 16, '#fff4c2', 0.2),
+    `<g filter="url(#ds)"><ellipse cx="24" cy="30" rx="15" ry="9" fill="#5a4a78" opacity=".8"/><ellipse cx="17" cy="24" rx="9" ry="7" fill="#8a7aa8" opacity=".85"/><ellipse cx="31" cy="22" rx="9" ry="7" fill="#8a7aa8" opacity=".85"/><ellipse cx="24" cy="17" rx="8" ry="6" fill="#b4a4d0" opacity=".9"/></g><path d="M10 10 L12 14 L16 16 L12 18 L10 22 L8 18 L4 16 L8 14 Z M38 30 L39.5 33 L43 34.5 L39.5 36 L38 39 L36.5 36 L33 34.5 L36.5 33 Z" fill="#ffd86b" stroke="#fff4c2" stroke-width=".8"/>`,
+  ),
+  rabbit: icon(
+    'magic',
+    rays(24, 24, 15, '#fff4c2', 0.16),
+    `<g filter="url(#ds)"><ellipse cx="18" cy="14" rx="3.6" ry="10" fill="#f6f3ee" stroke="#3a3340" stroke-width="1.4" transform="rotate(-8 18 14)"/><ellipse cx="29" cy="14" rx="3.6" ry="10" fill="#f6f3ee" stroke="#3a3340" stroke-width="1.4" transform="rotate(10 29 14)"/><ellipse cx="18" cy="14" rx="1.4" ry="6.5" fill="#f2a6b6" transform="rotate(-8 18 14)"/><circle cx="24" cy="31" r="11" fill="#f6f3ee" stroke="#3a3340" stroke-width="1.6"/><circle cx="20" cy="29" r="1.6" fill="#16161c"/><circle cx="28" cy="29" r="1.6" fill="#16161c"/><circle cx="24" cy="33.5" r="1.8" fill="#f2a6b6"/></g>`,
+  ),
+  'card-barrage': icon(
+    'magic',
+    rays(24, 24, 17, '#fff4c2', 0.18),
+    `<g filter="url(#ds)" stroke="#2a2a35" stroke-width="1.4"><rect x="6" y="14" width="15" height="21" rx="2" fill="#faf6ee" transform="rotate(-24 13 24)"/><rect x="16" y="10" width="15" height="21" rx="2" fill="#faf6ee" transform="rotate(-4 24 20)"/><rect x="27" y="14" width="15" height="21" rx="2" fill="#faf6ee" transform="rotate(18 34 24)"/></g><path d="M24 17 L28 22 L24 29 L20 22 Z" fill="#d23a4a"/><circle cx="35" cy="22" r="2.6" fill="#15151c"/>`,
+  ),
+  'wand-misfortune': icon(
+    'magic',
+    rays(24, 24, 16, '#e0b8ff', 0.2),
+    `<g filter="url(#ds)"><path d="M8 40 L32 16" stroke="#15151c" stroke-width="4.2" stroke-linecap="round"/><path d="M8 40 L12 36 M30 18 L33 15" stroke="#f6f3ee" stroke-width="4.2" stroke-linecap="round"/></g><g fill="#ffd86b" stroke="#fff4c2" stroke-width=".8"><path d="M38 8 L40 13 L45 15 L40 17 L38 22 L36 17 L31 15 L36 13 Z"/></g><path d="M34 22 L40 28 L35 29 L38 36" stroke="#b06cff" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+  ),
+  'lucky-hat': icon(
+    'magic',
+    rays(24, 24, 16, '#fff4c2', 0.18),
+    `<g filter="url(#ds)"><ellipse cx="24" cy="36" rx="17" ry="5" fill="#15151c" stroke="#3a3a48" stroke-width="1.2"/><path d="M12 36 L14 12 H34 L36 36 Z" fill="#15151c" stroke="#3a3a48" stroke-width="1.2"/><rect x="12.6" y="27" width="22.8" height="5.4" fill="#b3263a"/></g><path d="M20 12 C18 4 24 2 25 8 C26 2 32 4 29 12" fill="#f6f3ee" stroke="#3a3340" stroke-width="1.2"/><path d="M36 8 L37 11 L40 12 L37 13 L36 16 L35 13 L32 12 L35 11 Z" fill="#ffd86b"/>`,
+  ),
+  'mirror-act': icon(
+    'magic',
+    rays(24, 24, 20, '#fff4c2', 0.28),
+    `<g filter="url(#ds)"><rect x="9" y="5" width="30" height="38" rx="4" fill="#d6e8ff" stroke="#e3b94a" stroke-width="2.4"/><path d="M15 38 L33 10" stroke="#fff" stroke-width="2.6" opacity=".7"/><circle cx="20" cy="18" r="4.2" fill="#15151c"/><path d="M20 22 V31 M20 25 L15 29 M20 25 L26 29" stroke="#15151c" stroke-width="2.4" stroke-linecap="round"/><circle cx="31" cy="21" r="3.6" fill="#7a3fc4" opacity=".75"/></g>`,
+  ),
+  'magix-combo': icon(
+    'magic',
+    rays(24, 24, 12, '#fff4c2', 0.12),
+    `<g fill="none" stroke-linecap="round" filter="url(#ds)"><path d="M8 38 L30 14" stroke="#15151c" stroke-width="4.4"/><path d="M8 38 L11 35 M28 16 L30.5 13.5" stroke="#f6f3ee" stroke-width="4.4"/></g><path d="M34 10 L36 15 L41 17 L36 19 L34 24 L32 19 L27 17 L32 15 Z" fill="#ffd86b" stroke="#fff4c2" stroke-width=".8"/>`,
+  ),
+  'wand-flourish': icon(
+    'magic',
+    rays(24, 24, 15, '#fff4c2', 0.14),
+    `<g filter="url(#ds)"><path d="M10 40 L30 20" stroke="#15151c" stroke-width="4.4" stroke-linecap="round"/><path d="M10 40 L13 37" stroke="#f6f3ee" stroke-width="4.4" stroke-linecap="round"/></g><path d="M6 14 C16 4 34 6 42 20" fill="none" stroke="#ffd86b" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="1 5"/><path d="M36 28 L38 33 L43 35 L38 37 L36 42 L34 37 L29 35 L34 33 Z" fill="#b06cff"/>`,
   ),
   'ink-spear': icon(
     'ink',

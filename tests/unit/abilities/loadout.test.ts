@@ -24,6 +24,7 @@ const AI: Record<string, string> = {
   'chronos-kit': 'chronos-ai',
   'geargrind-kit': 'geargrind-ai',
   'inkmaster-kit': 'inkmaster-ai',
+  'magix-kit': 'magix-ai',
 };
 
 describe('five abilities, four equipped, any one on the bench (master plan B13, B14)', () => {

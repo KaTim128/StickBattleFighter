@@ -6,12 +6,14 @@ import {
   beamRampFactor,
   type CloudSpec,
   type MagicLook,
+  type MirrorDelivery,
   payloadAt,
   type SummonSpec,
   type TossDelivery,
 } from './ability-def';
 
 import { InkWorld } from './ink-world';
+import { MagixWorld } from './magix-world';
 /**
  * Ability deliveries in the arena (REQ-ABL-1): projectiles, dashes with fire
  * trails, telegraphed rings and leaps. The world owns their motion and timing;
@@ -112,6 +114,8 @@ export interface AbilityHost {
   pin?(targetId: string, away: Vec2, seconds: number): void;
   /** Crystal Arsenal: the caster's fists turn to crystal for `durationS` seconds (replacing its unarmed moves). Optional. */
   arm?(casterId: string, durationS: number, weapon?: 'blades' | 'spear'): void;
+  /** Mirror Act: the caster becomes a copy of its nearest opponent (see the scene); false if there is nobody to copy. Optional. */
+  mirror?(casterId: string, spec: MirrorDelivery): boolean;
   /** Hold a fighter's legs in crystal for `seconds` (0 frees them): no walking, jumping, dodging or flying, and a flier is dragged down. Optional. */
   trap?(targetId: string, seconds: number): void;
   /** A gentle current: add this velocity to a fighter's own movement for this step only (Ink Cyclone; they can still walk or dodge out). Optional. */
@@ -555,6 +559,12 @@ export class AbilityWorld {
     (c, at, r, h) => this.nearestEnemy(c, at, r, h),
     (f, c, h) => this.friendly(f, c, h),
   );
+  /** Magix's props: the 52 cards, the hat's sword and bomb, and Mirror Act's dust. */
+  readonly magix = new MagixWorld(
+    (c, at, r, h) => this.nearestEnemy(c, at, r, h),
+    (f, c, h) => this.friendly(f, c, h),
+    () => this.rng(),
+  );
   /** The dice of Crystal Arsenal and the scatter of Shard Volley and Crystal Groundstrike (seedable for tests). */
   constructor(private readonly rng: () => number = Math.random) {}
   /** A lifted target cannot be lifted again until this time (Floating Prison's anti-lock rule), world seconds. */
@@ -616,6 +626,7 @@ export class AbilityWorld {
       } else ids.add(a.def.id);
     }
     for (const id of this.ink.runningIds(casterId)) ids.add(id);
+    for (const id of this.magix.runningIds(casterId)) ids.add(id);
     for (const t of this.telegraphs) if (t.casterId === casterId) ids.add(t.def.id);
     for (const m of this.marks) if (m.casterId === casterId) ids.add(m.def.id);
     for (const p of this.parries) if (p.casterId === casterId) ids.add(p.def.id);
@@ -1189,6 +1200,11 @@ export class AbilityWorld {
       case 'masterpiece':
         this.ink.release(casterId, def, aim, host);
         break;
+      case 'cards':
+      case 'luckyHat':
+      case 'mirror':
+        this.magix.release(casterId, def, aim, host);
+        break;
       case 'summon':
         // A summon that is drawn first (Ink Clone) rises once its figure is finished; others rise at once.
         if (d.drawS && this.ink.release(casterId, def, aim, host)) break;
@@ -1389,6 +1405,7 @@ export class AbilityWorld {
   cancel(casterId: string, host: AbilityHost): void {
     // Being hit or knocked out breaks a stalk (a mark already charged survives a flinch).
     this.cancelStalk(casterId, host);
+    this.magix.cancel(casterId);
     for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
@@ -1415,6 +1432,7 @@ export class AbilityWorld {
       }
     }
     this.ink.clearOf(casterId);
+    this.magix.clearOf(casterId);
   }
 
   update(dtS: number, host: AbilityHost): void {
@@ -1452,6 +1470,7 @@ export class AbilityWorld {
     this.updateGrenades(dtS, host);
     this.updatePrisons(dtS, host);
     this.ink.update(dtS, host);
+    this.magix.update(dtS, host);
     for (let i = this.slideTrail.length - 1; i >= 0; i--) {
       const m = this.slideTrail[i]!;
       m.ageS += dtS;

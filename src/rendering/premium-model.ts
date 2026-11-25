@@ -10,6 +10,7 @@ import {
   drawCloneHead,
   drawInkmasterHead,
 } from './ink-parts';
+import { drawMagixHead, drawRabbitHead } from './magix-parts';
 import { shadedBall } from './shaded-ball';
 
 /**
@@ -119,6 +120,8 @@ export interface PremiumSkin {
   readonly dial?: { readonly bronze: number; readonly cyan: number };
   /** Inkmaster and his ink creatures: the master's head dressing, a clone's faceless head, or the beast's dragon head, tail, mane and claws. */
   readonly ink?: 'master' | 'clone' | 'beast';
+  /** Magix's top hat, bow tie and grin, or the white rabbit's ears and face. */
+  readonly magic?: 'magician' | 'rabbit';
   /** A crystal crown of sharp points on the head (Prismor). */
   readonly crown?: { readonly body: number; readonly glow: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
@@ -623,6 +626,70 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     head: 'own',
     ink: 'beast',
   },
+  // Magix: the master illusionist. A black tailcoat over a white shirt, red bow tie and band on a tall top hat.
+  magix: {
+    palette: {
+      outline: 0x050507,
+      skin: 0x1a1a22,
+      skinLit: 0x3a3a48,
+      skinShade: 0x0b0b10,
+      skinBack: 0x121218,
+      rim: 0xf6f3ee,
+      armour: 0x15151c,
+      armourLit: 0x34343f,
+      armourEdge: 0x050507,
+      seam: 0xb3263a,
+      lava: null,
+      glow: 0xe3b94a,
+    },
+    bulk: 1.15,
+    muscle: 0.1,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'trousers',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: false, fists: false },
+    garment: { hem: 'coat', trim: 0xb3263a, cloth: [0x15151c, 0x2f2f3b, 0x08080c] },
+    chestPanel: 0xf6f3ee,
+    head: 'own',
+    magic: 'magician',
+  },
+  // The rabbit from the hat: small, white, long-eared.
+  rabbit: {
+    palette: {
+      outline: 0x3a3340,
+      skin: 0xf6f3ee,
+      skinLit: 0xffffff,
+      skinShade: 0xcfc9d4,
+      skinBack: 0xe3dfe8,
+      rim: 0xffffff,
+      armour: 0xf6f3ee,
+      armourLit: 0xffffff,
+      armourEdge: 0x3a3340,
+      seam: null,
+      lava: null,
+      glow: 0xf2a6b6,
+    },
+    bulk: 1.5,
+    muscle: 0,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'none',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'bare',
+      belt: false,
+    },
+    fire: { core: false, veins: false, fists: false },
+    head: 'own',
+    magic: 'rabbit',
+  },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
     palette: {
@@ -856,6 +923,8 @@ export class PremiumModel {
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
       if (this.skin.crown) this.crown(g, fire, s);
       if (this.skin.ink === 'master') drawInkmasterHead(g, s, this.inkState());
+      if (this.skin.magic === 'magician') drawMagixHead(g, s, this.inkState());
+      if (this.skin.magic === 'rabbit') drawRabbitHead(g, s, this.inkState());
       if (this.skin.ink === 'clone') drawCloneHead(g, fire, s, this.inkState());
       if (this.skin.ink === 'beast') {
         drawBeastMane(g, s, this.inkState());

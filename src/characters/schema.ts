@@ -295,9 +295,11 @@ export const BODY_STYLES = [
   'ink',
   'inkclone',
   'inkbeast',
+  'magix',
+  'rabbit',
 ] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
-export const HELD_ITEMS = ['staff', 'bone-sword', 'knife', 'katana', 'brush', 'ink-sword', 'ink-bow'] as const;
+export const HELD_ITEMS = ['staff', 'bone-sword', 'knife', 'katana', 'brush', 'ink-sword', 'ink-bow', 'wand'] as const;
 export type HeldItem = (typeof HELD_ITEMS)[number];
 
 /** Sound ids come from the sound board; several per event are picked between for variety. */

@@ -131,7 +131,8 @@ export type IdleStyle =
   | 'sonic'
   | 'temporal'
   | 'crystal'
-  | 'calligrapher';
+  | 'calligrapher'
+  | 'magician';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -149,6 +150,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.temporal') return 'temporal';
   if (clipId === 'proc.idle.crystal') return 'crystal';
   if (clipId === 'proc.idle.calligrapher') return 'calligrapher';
+  if (clipId === 'proc.idle.magician') return 'magician';
   return 'boxer';
 }
 
@@ -373,7 +375,27 @@ function calligrapherIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * MAGICIAN (Magix): the showman's stance. Weight on the back foot with the front toe tapping, the wand arm raised and flicking small
+ * circles in the air as if about to conjure, the other hand tucked behind the back, the head tilted with a knowing air.
+ */
+function magicianIdle(timeS: number, bones: BoneLengths): Pose {
+  const flick = Math.sin(timeS * TAU * 0.9);
+  const sway = Math.sin(timeS * TAU * 0.25);
+  const tap = Math.max(0, Math.sin(timeS * TAU * 1.5));
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-3 + sway * 1.5),
+    head: deg(5 + sway * 2),
+    armFront: { root: deg(78 + flick * 6), bend: deg(58 + flick * 10) },
+    armBack: { root: deg(-26 + sway * 3), bend: deg(104) },
+    legFront: legIk(0.3 + tap * 0.04, legs * 0.93 - tap * 0.012, bones.thigh, bones.shin),
+    legBack: legIk(-0.24 - sway * 0.01, legs * 0.88, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'magician') return magicianIdle(timeS, bones);
   if (style === 'calligrapher') return calligrapherIdle(timeS, bones);
   if (style === 'crystal') return crystalIdle(timeS, bones);
   if (style === 'temporal') return temporalIdle(timeS, bones);
@@ -550,6 +572,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0);
   if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'magician') {
+    // A strut with a flourish: high light steps, chest out, the wand arm sweeping up and out with each stride.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.7,
+      bob: 0.028,
+      leadX: 0.24,
+      rearX: -0.26,
+      reach: 0.18 * k,
+      lift: 0.09,
+      lean: -3,
+      sway: 1.5,
+      head: 3,
+      arms: { lead: { x: 0.3, y: 0.62 }, rear: { x: -0.18, y: 0.4 }, swingX: 0.14, swingY: 0.07 },
+    });
+  }
   if (style === 'calligrapher') {
     // Light, even steps like a dancer's, the brush arm trailing loosely, the other hand near the waist.
     return gaitPose(phase, bones, {
@@ -705,6 +742,7 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
     style === 'sonic' ||
     style === 'temporal' ||
     style === 'calligrapher' ||
+    style === 'magician' ||
     style === 'crystal'
   )
     return idlePose(timeS, bones, style);
