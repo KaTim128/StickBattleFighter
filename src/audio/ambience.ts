@@ -1,9 +1,9 @@
-import type { AmbienceDef, AmbientBed, AmbientCue, AmbientEventId, NoiseColour, Swell } from '../data/audio/ambiences';
+import type { AmbienceDef, AmbientBed, AmbientEventId, NoiseColour, Swell } from '../data/audio/ambiences';
 
 /**
  * Background ambience (owner, 12/11/2026): soundscapes, not music. Plays an AmbienceDef on the
  * Web Audio clock:
- * - continuous beds (looping filtered noise, hums, a crowd's murmur) whose levels drift and swell;
+ * - continuous beds (looping filtered noise, hums,) whose levels drift and swell;
  * - random one-off events (a creak, a gasp) synthesised on the spot;
  * - everything sent through a generated reverb sized to the space, optionally muffled.
  * No notes, melodies, beats or audio files. A light scheduler wakes a few times a second (never
@@ -26,9 +26,6 @@ const FADE_S = 1.2;
 interface LiveBed {
   readonly bed: AmbientBed;
   readonly gain: GainNode;
-  /** Crowd bands: each band's own level, moved at its chatter rate. */
-  readonly bands: GainNode[];
-  nextChatter: number[];
   nextSwell: number;
   readonly stops: (() => void)[];
 }
@@ -97,16 +94,6 @@ export class AmbiencePlayer {
 
   get musicVolume(): number {
     return this.volume;
-  }
-
-  /** Something happened in the fight: the soundscape answers if it has a reaction (a crowd). */
-  react(cue: AmbientCue): void {
-    const scape = this.live;
-    const ctx = this.ctx;
-    const id = scape?.def.reactions?.[cue];
-    if (!scape || !ctx || !id) return;
-    const ev = scape.def.events.find((e) => e.id === id);
-    this.event(scape, id, ctx.currentTime + 0.05, (ev?.gain ?? 0.5) * 1.8);
   }
 
   stop(): void {
@@ -219,7 +206,7 @@ export class AmbiencePlayer {
     const gain = ctx.createGain();
     gain.gain.value = bed.gain;
     gain.connect(into);
-    const live: LiveBed = { bed, gain, bands: [], nextChatter: [], nextSwell: t + 1, stops: [] };
+    const live: LiveBed = { bed, gain, nextSwell: t + 1, stops: [] };
     if (bed.kind === 'noise') {
       const src = this.loop(ctx, bed.colour);
       const f = ctx.createBiquadFilter();
@@ -239,22 +226,6 @@ export class AmbiencePlayer {
         osc.start();
         live.stops.push(() => osc.stop());
       }
-    } else {
-      // A crowd: bands of noise spread (log-evenly) across the voice range, each its own level.
-      const src = this.loop(ctx, 'pink');
-      for (let i = 0; i < bed.bands; i++) {
-        const k = bed.bands > 1 ? i / (bed.bands - 1) : 0.5;
-        const f = ctx.createBiquadFilter();
-        f.type = 'bandpass';
-        f.frequency.value = bed.lowHz * (bed.highHz / bed.lowHz) ** k * (0.92 + this.rand() * 0.16);
-        f.Q.value = 1.4;
-        const g = ctx.createGain();
-        g.gain.value = 0.5;
-        src.connect(f).connect(g).connect(gain);
-        live.bands.push(g);
-        live.nextChatter.push(t);
-      }
-      live.stops.push(() => src.stop());
     }
     return live;
   }
@@ -276,19 +247,9 @@ export class AmbiencePlayer {
     });
   }
 
-  /** Beds breathe: crowd bands chatter up and down; swells lift the whole bed now and then. */
+  /** Beds breathe: swells lift a whole bed now and then. */
   private drift(b: LiveBed, now: number, horizon: number): void {
     const bed = b.bed;
-    if (bed.kind === 'crowd') {
-      b.bands.forEach((g, i) => {
-        if ((b.nextChatter[i] ?? 0) < now - 1) b.nextChatter[i] = now;
-        while ((b.nextChatter[i] ?? Number.POSITIVE_INFINITY) < horizon) {
-          const at = b.nextChatter[i]!;
-          g.gain.setTargetAtTime(0.2 + this.rand() * 0.8, at, 0.08);
-          b.nextChatter[i] = at + 1 / (bed.chatterHz[0] + (bed.chatterHz[1] - bed.chatterHz[0]) * this.rand());
-        }
-      });
-    }
     const swell: Swell | undefined = bed.kind === 'hum' ? undefined : bed.swell;
     if (!swell) return;
     if (b.nextSwell < now - 2) b.nextSwell = now + 0.5;
@@ -365,82 +326,6 @@ export class AmbiencePlayer {
         // The air handling cycling: a click, then the air surging a little.
         this.noiseAt(ctx, 'white', t, 0.01, 'bandpass', 2500, gain, pan, 0.001);
         this.noiseAt(ctx, 'brown', t + 0.05, 2.5, 'lowpass', 400, gain * 0.5, pan, 0.8);
-        break;
-      }
-      case 'applause': {
-        // Thousands of hands: dense tiny claps swelling in and dying away.
-        const dur = 2 + r() * 1.5;
-        const claps = Math.round(dur * 80);
-        for (let i = 0; i < claps; i++) {
-          const u = r();
-          const at = t + u * dur;
-          const shape = Math.sin(Math.PI * Math.min(1, u * 1.4)); // swells in, tails away
-          this.noiseAt(
-            ctx,
-            'white',
-            at,
-            0.012,
-            'bandpass',
-            1500 + r() * 2500,
-            gain * 0.35 * shape * (0.4 + r() * 0.6),
-            pan,
-            0.001,
-            0.8,
-          );
-        }
-        break;
-      }
-      case 'whistle': {
-        // A fan's sharp whistle: a quick upward glide, sometimes falling again (a call, not a tune).
-        const dur = 0.35 + r() * 0.4;
-        const f0 = 1800 + r() * 700;
-        const osc = this.toneAt(ctx, 'sine', f0, f0 * (1.15 + r() * 0.2), t, dur);
-        if (r() < 0.5) osc.frequency.exponentialRampToValueAtTime(f0 * 0.85, t + dur);
-        osc.connect(this.env(ctx, pan, t, dur, gain * 0.25, 0.03));
-        break;
-      }
-      case 'ooh': {
-        // The crowd wincing at a big blow: a vowel-like swell sliding down.
-        const dur = 1.1 + r() * 0.6;
-        for (const [a, b, k] of [
-          [560, 380, 1],
-          [980, 720, 0.6],
-        ] as const) {
-          const src = this.loop(ctx, 'pink');
-          const f = this.filter(ctx, 'bandpass', a, 5);
-          f.frequency.setValueAtTime(a, t);
-          f.frequency.exponentialRampToValueAtTime(b, t + dur);
-          src.connect(f).connect(this.env(ctx, pan, t, dur, gain * k * 1.6, dur * 0.25));
-          src.stop(t + dur + 0.1);
-        }
-        break;
-      }
-      case 'gasp': {
-        // An excited reaction: a sharp intake of breath across a section, rising fast, cut short.
-        const dur = 0.5 + r() * 0.3;
-        for (const [a, b, k] of [
-          [900, 1500, 1],
-          [1800, 2600, 0.6],
-        ] as const) {
-          const src = this.loop(ctx, 'pink');
-          const f = this.filter(ctx, 'bandpass', a, 3);
-          f.frequency.setValueAtTime(a, t);
-          f.frequency.exponentialRampToValueAtTime(b, t + dur);
-          src.connect(f).connect(this.env(ctx, pan, t, dur, gain * k * 1.2, dur * 0.6));
-          src.stop(t + dur + 0.1);
-        }
-        break;
-      }
-      case 'murmur-rise': {
-        // Suspense: the crowd's murmur building as something seems about to happen, then settling.
-        const dur = 4 + r() * 3;
-        for (const [hz, k] of [
-          [260, 0.8],
-          [520, 1],
-          [1000, 0.6],
-        ] as const) {
-          this.noiseAt(ctx, 'pink', t, dur, 'bandpass', hz * (0.9 + r() * 0.2), gain * k * 0.55, pan, dur * 0.7, 1.6);
-        }
         break;
       }
     }

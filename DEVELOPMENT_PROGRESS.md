@@ -1039,3 +1039,6 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 
 ## 25/11/2026 — Colosseum ambience removed (owner)
 - Superseded the same day: the Colosseum now uses the Office's `office-empty` ambience (the crowd one was too loud), and any menu over a fight (pause, main menu, tournament) silences the arena ambience (`bootstrap.ts` `updateMenuMusic`), which returns with the fight. Not verified by ear or on a phone.
+
+## 25/11/2026 — crowd soundscape and menu tunnel ambience removed (owner)
+- Deleted the `colosseum` and `tunnel` ambience definitions, the crowd bed, the crowd events (applause, whistle, ooh, gasp, murmur-rise), the fight-reaction hook and `MENU_AMBIENCE_ID`. Remaining soundscapes: `office-empty` (also the Colosseum's) and `house-night`. Tests updated; not verified by ear.

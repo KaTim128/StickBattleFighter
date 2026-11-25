@@ -3,6 +3,6 @@
 
 **Key interfaces:**
 - `SoundBoard`: `unlock()` on first input, `play(id)`, `muted`, `setVolume`; `hasSound(id)`. Sound ids come from impact profiles (`src/data/combat/impacts.ts`), ability sound hooks and the KO (`ko`, `dust`).
-- `AmbiencePlayer` (`ambience.ts`): `attach`, `play(AmbienceDef)`, `react(cue)`, `setMuted`, `setVolume`. It plays the soundscapes in `src/data/audio/ambiences.ts`.
+- `AmbiencePlayer` (`ambience.ts`): `attach`, `play(AmbienceDef)`, `setMuted`, `setVolume`. It plays the soundscapes in `src/data/audio/ambiences.ts`.
 - `pauseAudioWhenHidden`: silences the game while its tab is hidden.
 - `HideSeekAudio` (`hide-seek-audio.ts`): the Hide and Seek mode's positional horror sound (footsteps, doors, hiding, thrown objects, heartbeat, stingers); `spatialise` is the pure pan, level and muffle rule shared with the hunter's hearing.

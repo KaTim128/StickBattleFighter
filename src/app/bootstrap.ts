@@ -194,9 +194,6 @@ function castFromParams(params: URLSearchParams): { player?: string; opponent?: 
   return { player: draft.characterId, opponent, library: withEntries(BUILT_IN_LIBRARY, draft.entries) };
 }
 
-/** A blow this big gets a reaction from a crowd. */
-const HEAVY_HIT_FOR_CROWD = 100;
-
 /**
  * Arenas on the main menu: the Colosseum (round; built 25/11/2026) is first and the default, then the Office, then the Tutorial Zone
  * (the old training yard). A bare `?scene`-less URL still opens the Office, the engine's own default (tests and tools rely on it).
@@ -619,11 +616,6 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
         debug.dummy = scene.dummy;
         debug.dummyAttacks = scene.dummyAttacks;
         const events = scene.drainEvents();
-        // The crowd answers the fight (Colosseum): a big blow draws an "ooh", a KO a roar.
-        for (const e of events) {
-          if (e.kind === 'ko') music.react('ko');
-          else if (e.kind === 'hit' && e.amount >= HEAVY_HIT_FOR_CROWD) music.react('heavy-hit');
-        }
         combatText.show(events, (x, y) => scene.worldToScreen(x, y));
         abilityHud.update(scene.abilityHud);
         tutorialFrame?.();

@@ -3,7 +3,7 @@ import { nextDelayS } from '../../../src/audio/ambience';
 import { COLOSSEUM } from '../../../src/data/arenas/colosseum';
 import { OFFICE } from '../../../src/data/arenas/office';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
-import { AMBIENCES, AMBIENT_EVENTS, CROWD_EVENTS, MENU_AMBIENCE_ID } from '../../../src/data/audio/ambiences';
+import { AMBIENCES, AMBIENT_EVENTS } from '../../../src/data/audio/ambiences';
 
 const ARENAS = [OFFICE, TRAINING_YARD];
 
@@ -13,13 +13,11 @@ it('the Colosseum uses the same quiet ambience as the Office, plus its battle mu
 });
 
 describe('background ambience, never music (owner, 12/11/2026)', () => {
-  it('every map with a soundscape has its own, and the menu has its own (the testing area has none, SUP-22)', () => {
-    expect(AMBIENCES[MENU_AMBIENCE_ID]).toBeDefined();
+  it('every map with a soundscape has its own, (the testing area has none, SUP-22)', () => {
     const ids = ARENAS.filter((a) => a.id !== 'training-yard').map((a) => a.ambience);
     expect(ARENAS.find((a) => a.id === 'training-yard')?.ambience).toBeUndefined();
     for (const id of ids) {
       expect(id && AMBIENCES[id], `${id}`).toBeTruthy();
-      expect(id).not.toBe(MENU_AMBIENCE_ID);
     }
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -30,7 +28,7 @@ describe('background ambience, never music (owner, 12/11/2026)', () => {
     expect(a.level).toBeLessThanOrEqual(1);
     expect(a.reverb.seconds).toBeGreaterThan(0.5);
     for (const bed of a.beds) {
-      expect(['noise', 'hum', 'crowd']).toContain(bed.kind); // no note, melody or beat layers exist
+      expect(['noise', 'hum']).toContain(bed.kind); // no note, melody or beat layers exist
       expect(bed.gain).toBeGreaterThan(0);
       expect(bed.gain).toBeLessThanOrEqual(1);
     }
@@ -39,26 +37,12 @@ describe('background ambience, never music (owner, 12/11/2026)', () => {
       expect(e.everyS[0]).toBeGreaterThan(1); // occasional, never a steady pulse
       expect(e.everyS[1]).toBeGreaterThan(e.everyS[0]); // irregular: no fixed tempo
     }
-    for (const id of Object.values(a.reactions ?? {})) expect(a.events.map((e) => e.id)).toContain(id);
   });
 
   it('the empty office is still: air, hum and the building settling; no people at all', () => {
     const office = AMBIENCES[OFFICE.ambience!]!;
-    expect(office.beds.some((b) => b.kind === 'crowd')).toBe(false);
-    for (const e of office.events) expect(CROWD_EVENTS).not.toContain(e.id);
-    expect(office.reactions).toBeUndefined();
     expect(office.events.map((e) => e.id)).toEqual(expect.arrayContaining(['creak', 'thump', 'tick']));
     expect(office.beds.some((b) => b.kind === 'hum')).toBe(true); // ventilation and mains hum
-  });
-
-  it('the Colosseum has a crowd: murmur, nervous murmur swells, applause, whistles, gasps and oohs (no cheering), with arena echoes, answering the fight', () => {
-    const arena = AMBIENCES.colosseum!;
-    expect(arena.beds.some((b) => b.kind === 'crowd')).toBe(true);
-    expect(arena.events.map((e) => e.id).sort()).toEqual([...CROWD_EVENTS].sort());
-    expect(arena.reverb.seconds).toBeGreaterThan(AMBIENCES[OFFICE.ambience!]!.reverb.seconds); // a vast stone bowl
-    expect(arena.reactions).toEqual({ 'heavy-hit': 'ooh' });
-    expect(arena.echo?.delaysS.length).toBeGreaterThanOrEqual(2); // slapback off the stone walls
-    expect(AMBIENCES.tunnel!.muffleHz).toBeLessThan(1000); // the menu hears it through stone
   });
 
   it('event timing is random within its range', () => {

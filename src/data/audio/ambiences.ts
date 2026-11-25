@@ -34,22 +34,7 @@ export interface HumBed {
   readonly gain: number;
 }
 
-/**
- * Thousands of people murmuring: many bands of noise across the voice range, each rising and
- * falling at its own chatter rate (no words, no voices you can pick out).
- */
-export interface CrowdBed {
-  readonly kind: 'crowd';
-  readonly bands: number;
-  readonly lowHz: number;
-  readonly highHz: number;
-  readonly gain: number;
-  /** How often each band's level changes, per second. */
-  readonly chatterHz: readonly [number, number];
-  readonly swell?: Swell;
-}
-
-export type AmbientBed = NoiseBed | HumBed | CrowdBed;
+export type AmbientBed = NoiseBed | HumBed;
 
 /** One-off sounds (each synthesised in src/audio/ambience.ts). */
 export const AMBIENT_EVENTS = [
@@ -60,17 +45,8 @@ export const AMBIENT_EVENTS = [
   'knock',
   'flicker',
   'vent-click',
-  // Arena crowd
-  'applause',
-  'whistle',
-  'ooh',
-  'gasp',
-  'murmur-rise',
 ] as const;
 export type AmbientEventId = (typeof AMBIENT_EVENTS)[number];
-
-/** Crowd sounds: never in a soundscape meant to be empty of people. */
-export const CROWD_EVENTS: readonly AmbientEventId[] = ['applause', 'whistle', 'ooh', 'gasp', 'murmur-rise'];
 
 export interface AmbientEvent {
   readonly id: AmbientEventId;
@@ -78,9 +54,6 @@ export interface AmbientEvent {
   readonly everyS: readonly [number, number];
   readonly gain: number;
 }
-
-/** What happens in the fight that the soundscape answers (a crowd reacting). */
-export type AmbientCue = 'heavy-hit' | 'ko';
 
 export interface AmbienceDef {
   readonly id: string;
@@ -103,8 +76,6 @@ export interface AmbienceDef {
   };
   readonly beds: readonly AmbientBed[];
   readonly events: readonly AmbientEvent[];
-  /** Events played when something happens in the fight. */
-  readonly reactions?: Partial<Record<AmbientCue, AmbientEventId>>;
 }
 
 /**
@@ -151,78 +122,6 @@ const OFFICE_EMPTY: AmbienceDef = {
 };
 
 /**
- * COLOSSEUM DURING A LIVE TOURNAMENT (owner, 12/11/2026, second brief: "suspenseful ambience inside a
- * massive Colosseum ... tense, intimidating and immersive", designed from that brief alone and not
- * modelled on any audio the owner supplied earlier).
- * - Bed: thousands of supporters murmuring over a low rumble of the bowl; the murmur rises and falls
- *   slowly and irregularly (no regular surges), which keeps it uneasy.
- * - Events: the crowd's murmur building nervously and settling
- *   back (suspense), occasional applause, whistles, sharp excited gasps, and now and
- *   then the whole bowl erupting.
- * - Space: a long stone reverb plus slapback echoes off the arena walls.
- * The crowd answers the fight: a big blow draws an "ooh". There is no cheering. No music, melody, beats or
- * instruments: all synthesised noise and voices-like swells (src/audio/ambience.ts).
- */
-const COLOSSEUM: AmbienceDef = {
-  id: 'colosseum',
-  title: 'Colosseum, tournament in progress',
-  level: 0.85,
-  reverb: { seconds: 5.5, wet: 0.55 },
-  echo: { delaysS: [0.21, 0.37, 0.58], feedback: 0.32, lowpassHz: 1800, wet: 0.3 },
-  beds: [
-    {
-      kind: 'crowd',
-      bands: 12,
-      lowHz: 180,
-      highHz: 2400,
-      gain: 0.9,
-      chatterHz: [2, 6],
-      swell: { everyS: [9, 20], depth: 0.35 },
-    },
-    {
-      kind: 'noise',
-      colour: 'brown',
-      filter: 'lowpass',
-      freqHz: 200,
-      gain: 0.22,
-      swell: { everyS: [12, 25], depth: 0.4 },
-    },
-    {
-      kind: 'noise',
-      colour: 'pink',
-      filter: 'bandpass',
-      freqHz: 500,
-      q: 0.5,
-      gain: 0.06,
-      swell: { everyS: [15, 30], depth: 0.3 },
-    },
-  ],
-  events: [
-    { id: 'murmur-rise', everyS: [14, 28], gain: 1 },
-    { id: 'applause', everyS: [12, 26], gain: 0.9 },
-    { id: 'whistle', everyS: [8, 18], gain: 0.45 },
-    { id: 'gasp', everyS: [16, 34], gain: 1 },
-    { id: 'ooh', everyS: [25, 50], gain: 1 },
-  ],
-  reactions: { 'heavy-hit': 'ooh' },
-};
-
-/**
- * THE FIGHTERS' TUNNEL (menu): the same tournament heard through stone from under the stands,
- * muffled and distant, waiting to walk out.
- */
-const TUNNEL: AmbienceDef = {
-  ...COLOSSEUM,
-  id: 'tunnel',
-  title: "Fighters' tunnel under the Colosseum",
-  level: 0.7,
-  reverb: { seconds: 3.2, wet: 0.55 },
-  muffleHz: 700,
-  events: COLOSSEUM.events.filter((e) => e.id !== 'whistle'),
-  reactions: undefined,
-};
-
-/**
  * THE HOUSE AT NIGHT (Hide and Seek, Phase 2 section J): a dark, heavy, uneasy bed made only of
  * air, a deep beating drone and rare building noises, with a long reverb. Original and synthesised;
  * the supplied candidate file `docs/references/master-plan/darkne-scary-horror-atmosphere-620036.mp3`
@@ -262,11 +161,7 @@ const HOUSE_NIGHT: AmbienceDef = {
   ],
 };
 
-export const MENU_AMBIENCE_ID = 'tunnel';
-
 export const AMBIENCES: Readonly<Record<string, AmbienceDef>> = {
   [OFFICE_EMPTY.id]: OFFICE_EMPTY,
-  [COLOSSEUM.id]: COLOSSEUM,
-  [TUNNEL.id]: TUNNEL,
   [HOUSE_NIGHT.id]: HOUSE_NIGHT,
 };
