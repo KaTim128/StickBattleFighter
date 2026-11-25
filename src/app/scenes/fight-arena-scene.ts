@@ -303,6 +303,11 @@ const HEAD_TOP_M = 1.75;
 const WALL_LIKE_PROPS: ReadonlySet<string> = new Set(['cubicle-panel', 'glass-partition']);
 
 /** After a teleport the body fades back in over this long, seconds. */
+/** Ink creatures: the particle colours of their ink, and how long they take to rise out of the floor. */
+const INK_SPLASH = [0x050505, 0x0b0d14, 0x1a2238, 0x8fb4ee, 0xdcecff];
+const INK_RISE_S = 0.6;
+const isInkCreature = (f: FighterEntity): boolean =>
+  f.summon !== null && (f.def.effects.body === 'inkbeast' || f.def.effects.body === 'inkclone');
 const TELEPORT_APPEAR_S = 0.3;
 /** The top of a fighter's head over its feet (big fighters are drawn bigger: rig.scale). */
 const headTop = (f: FighterEntity): number => HEAD_TOP_M * (f.def.sizeScale ?? 1);
@@ -4274,6 +4279,7 @@ export class FightArenaScene implements ArenaScene {
     const vel = f.body?.linvel();
     f.view.motion = vel ? Math.min(1, Math.hypot(vel.x, vel.y) / Math.max(1, f.def.movement.maxSpeedMps)) : 0;
     this.koDissolve(f, x, y, drawnHeight, frameDtS);
+    this.inkCreatureFx(f, x, y, drawnHeight, frameDtS);
     f.bars?.draw(
       at.x,
       at.y - heightM - headTop(f) * Math.cos(f.tilt),
@@ -4392,15 +4398,75 @@ export class FightArenaScene implements ArenaScene {
     const points = Array.from({ length: 7 }, (_, i) => along((HEAD_TOP_M * i) / 6));
     // Most dust leaves early, thinning out as the last of the body fades.
     const count = Math.round(260 * frameDtS * (1.2 - k));
-    // The look of the dust comes from the fighter's Effects Profile (grey dust, or embers and ash).
+    // The look of the dust comes from the fighter's Effects Profile (grey dust, or embers and ash). Ink creatures melt back into ink.
     const fx = EFFECTS[f.def.effects.disintegration];
+    const ink = isInkCreature(f);
     this.frameDust.push({
       points,
       colour: f.def.look.limb,
-      colours: fx?.dust,
+      colours: ink ? INK_SPLASH : fx?.dust,
+      ...(ink ? { onlyColours: true } : {}),
       embers: fx?.embers ? Math.round((fx.embers * frameDtS) / 1.6) : 0,
       count,
     });
+  }
+
+  /**
+   * Ink creatures (Inkmaster's clones and monster): they rise out of a pool of ink, splash ink where they are hurt and sink back into
+   * the floor when they go. Presentation only.
+   */
+  private inkCreatureFx(f: FighterEntity, x: number, y: number, heightM: number, frameDtS: number): void {
+    const view = f.view;
+    if (!view || !isInkCreature(f)) return;
+    const c = f.combatant;
+    const big = f.def.effects.body === 'inkbeast';
+    const span = (heightM + 1.0) * (big ? 1.8 : 1);
+    if (c.isKo) {
+      // Melting: the figure sinks and pools as it fades, then drips away.
+      const k = Math.min(1, Math.max(0, (c.koAge - KO_DISSOLVE_FROM_S) / KO_DISSOLVE_S));
+      view.setGrowth(1 - 0.4 * k);
+      if (k > 0 && k < 1)
+        this.frameDust.push({
+          points: [{ x, y, z: 0.05 }],
+          colour: 0x050505,
+          colours: INK_SPLASH,
+          onlyColours: true,
+          count: Math.round(70 * frameDtS),
+        });
+      return;
+    }
+    f.inkAgeS += frameDtS;
+    if (f.inkAgeS < INK_RISE_S) {
+      // Rising: it wells up out of a pool, a splash ringing the spot.
+      const k = f.inkAgeS / INK_RISE_S;
+      const e = 1 - (1 - k) * (1 - k);
+      view.setGrowth(0.35 + 0.65 * e);
+      view.root.alpha = Math.min(view.root.alpha, 0.25 + 0.75 * e);
+      this.frameDust.push({
+        points: [0, 1, 2, 3].map((i) => ({
+          x: x + Math.cos(i * 1.6 + f.inkAgeS * 7) * 0.35,
+          y: y + Math.sin(i * 1.6 + f.inkAgeS * 7) * 0.35,
+          z: 0.1 + k * span * 0.5,
+        })),
+        colour: 0x050505,
+        colours: INK_SPLASH,
+        onlyColours: true,
+        count: Math.round(260 * frameDtS * (1 - k * 0.5)),
+      });
+    } else view.setGrowth(1);
+    // Hurt: a spray of ink flies off the body where it was struck.
+    const hp = c.hp;
+    if (f.inkHp !== null && hp < f.inkHp - 0.01) {
+      const lost = f.inkHp - hp;
+      this.frameDust.push({
+        points: [0.35, 0.55, 0.75].map((z) => ({ x, y, z: heightM + span * z * 0.6 })),
+        colour: 0x050505,
+        colours: INK_SPLASH,
+        onlyColours: true,
+        count: Math.min(90, 16 + Math.round(lost * 1.4)),
+      });
+    }
+    f.inkHp = hp;
   }
 
   debugStats(): Record<string, string | number> {

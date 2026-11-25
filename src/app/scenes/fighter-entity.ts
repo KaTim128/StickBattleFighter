@@ -118,6 +118,9 @@ export class FighterEntity {
   summon: { readonly owner: FighterEntity; leftS: number | null; readonly persistent: boolean } | null = null;
   /** Seconds left of reappearing after a teleport (the body fades back in). */
   appearS = 0;
+  /** Ink creatures: seconds since it rose from its pool, and its health last frame (to splash ink when it is hurt). */
+  inkAgeS = 0;
+  inkHp: number | null = null;
   body: RigidBody | null = null;
   view: StickmanView | null = null;
   bars: FighterBars | null = null;

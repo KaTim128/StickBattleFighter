@@ -997,3 +997,7 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 ## 25/11/2026 — prop collision and depth transparency
 - Removed the Colosseum no-fade exemption in `fight-arena-scene.ts`; props fade only when obstructing a fighter (TD-167). Added `tests/integration/scenes/prop-fade.test.ts`.
 - Checks: tsc clean, biome clean (warnings pre-existing), vitest 156 files / 1298 tests pass. Browser screenshot of the fix not yet taken.
+
+## 25/11/2026 — ink creature visuals (TD-168)
+- Files: `src/rendering/ink-creature.ts` (new), `ink-parts.ts`, `premium-model.ts`, `src/app/scenes/fight-arena-scene.ts`, `fighter-entity.ts`.
+- Checks: tsc and biome clean, vitest 1298 passing. Screenshots of monster and clone taken; the serpent and dragon effects in `ink-vfx.ts` were not changed in this pass.

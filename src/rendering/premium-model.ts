@@ -1,6 +1,7 @@
 import type { Graphics } from 'pixi.js';
 import type { Point, solveSkeleton } from '../animation/skeleton';
 import { arcPath } from './arc-path';
+import { drawInkBack, drawInkPool, drawInkSurface } from './ink-creature';
 import {
   drawBeastClaws,
   drawBeastHead,
@@ -817,6 +818,11 @@ export class PremiumModel {
     if (this.skin.clockDisc) this.clockDisc(g, fire, s);
     if (this.skin.fragments) this.fragments(g, fire, s, false);
     if (this.skin.wings) this.wings(g, fire, s);
+    const creature = this.skin.ink === 'beast' || this.skin.ink === 'clone';
+    if (creature) {
+      drawInkPool(g, s, this.inkState(), this.skin.ink === 'beast' ? 1.6 : 1);
+      drawInkBack(g, s, this.inkState(), this.skin.ink === 'beast');
+    }
     if (this.skin.ink === 'beast') drawBeastTail(g, fire, s, this.inkState());
     this.arm(g, fire, s.armBack, true);
     if (this.skin.gauntlets) this.gauntlet(g, fire, s.armBack, true);
@@ -850,7 +856,7 @@ export class PremiumModel {
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
       if (this.skin.crown) this.crown(g, fire, s);
       if (this.skin.ink === 'master') drawInkmasterHead(g, s, this.inkState());
-      if (this.skin.ink === 'clone') drawCloneHead(g, s, this.inkState());
+      if (this.skin.ink === 'clone') drawCloneHead(g, fire, s, this.inkState());
       if (this.skin.ink === 'beast') {
         drawBeastMane(g, s, this.inkState());
         drawBeastHead(g, fire, s, this.inkState(), this.st.shout?.k ?? 0);
@@ -860,9 +866,10 @@ export class PremiumModel {
     this.arm(g, fire, s.armFront, false);
     if (this.skin.gauntlets) this.gauntlet(g, fire, s.armFront, false);
     if (this.skin.ink === 'beast') {
-      drawBeastClaws(g, s.armFront[1], s.armFront[2], 1.4);
-      drawBeastClaws(g, s.armBack[1], s.armBack[2], 1.4);
+      drawBeastClaws(g, s.armFront[1], s.armFront[2], 1.1);
+      drawBeastClaws(g, s.armBack[1], s.armBack[2], 1.1);
     }
+    if (creature) drawInkSurface(g, fire, s, this.inkState(), this.skin.ink === 'beast');
     if (this.skin.dial) this.dial(g, fire, s.armFront);
     if (this.skin.soundGear) this.soundGear(g, fire, s);
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);

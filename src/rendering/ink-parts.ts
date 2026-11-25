@@ -1,7 +1,7 @@
 import type { Graphics } from 'pixi.js';
 import type { solveSkeleton } from '../animation/skeleton';
 
-type Skel = ReturnType<typeof solveSkeleton>;
+export type Skel = ReturnType<typeof solveSkeleton>;
 type Point = { x: number; y: number };
 
 /** What the parts need to know about this frame (a subset of the premium model's draw state). */
@@ -18,7 +18,7 @@ const BLACK = 0x060608;
 const INK = 0x14141a;
 const INK_LIT = 0x2e2e38;
 const PALE = 0xf2eee3;
-const WHITE_EYE = 0xffffff;
+const WHITE_EYE = 0xe4f1ff;
 
 /** Catmull-Rom upsampling: `sub` extra points between each pair, so a stroke curves smoothly instead of showing its corners. */
 export function smoothPath<T extends { x: number; y: number }>(
@@ -64,7 +64,13 @@ export function smoothPath<T extends { x: number; y: number }>(
 }
 
 /** A tapered ribbon along `pts`, `widths` wide at each point (metres): the stroke of a brush, smoothed into a curve. */
-function ribbon(g: Graphics, rawPts: readonly Point[], rawWidths: readonly number[], colour: number, alpha = 1): void {
+export function ribbon(
+  g: Graphics,
+  rawPts: readonly Point[],
+  rawWidths: readonly number[],
+  colour: number,
+  alpha = 1,
+): void {
   if (rawPts.length < 2) return;
   const { pts, widths } = smoothPath(rawPts, rawWidths);
   const left: Point[] = [];
@@ -111,14 +117,40 @@ export function drawInkmasterHead(g: Graphics, s: Skel, st: InkDrawState): void 
     .stroke({ width: 0.01, color: PALE, alpha: 0.9, cap: 'round' });
 }
 
-/** A clone's head: a smooth, faceless ink oval: only a pale glint where a face would be. */
-export function drawCloneHead(g: Graphics, s: Skel, st: InkDrawState): void {
+/**
+ * A clone's head: a smooth, faceless ink oval with one pale brush-stroke slit for an eye, a ragged crest of ink that streams back
+ * and upward like a lit brush, and a drip that gathers on the chin and falls.
+ */
+export function drawCloneHead(g: Graphics, fire: Graphics, s: Skel, st: InkDrawState): void {
   const r = st.headRadius;
-  g.circle(s.head.x, s.head.y, r * 1.02).fill(BLACK);
-  g.ellipse(s.head.x - r * 0.3, s.head.y - r * 0.35, r * 0.3, r * 0.2).fill({ color: INK_LIT, alpha: 0.8 });
+  const h = s.head;
+  // The crest: three tapered ink flames streaming back from the crown, licking in the air.
+  for (let k = 0; k < 3; k++) {
+    const pts = [0, 1, 2, 3, 4].map((i) => ({
+      x: h.x - r * 0.3 - i * r * (0.55 - k * 0.08),
+      y: h.y - r * (0.7 - k * 0.2) - i * r * (0.2 + k * 0.06) + Math.sin(st.t * 4 + i * 0.9 + k * 2) * r * 0.12 * i,
+    }));
+    ribbon(g, pts, [r * 0.34, r * 0.3, r * 0.2, r * 0.1, 0.004], BLACK);
+  }
+  g.circle(h.x, h.y, r * 1.02).fill(BLACK);
+  g.ellipse(h.x - r * 0.3, h.y - r * 0.4, r * 0.34, r * 0.2).fill({ color: 0x4b5368, alpha: 0.75 });
+  // A brush-stroke eye: a thin slanted slit that flares at the outer end, glowing blue-white.
+  const ex = h.x + r * 0.2;
+  const ey = h.y - r * 0.08;
+  fire.circle(ex + r * 0.3, ey, r * 0.5).fill({ color: 0x9cc8ff, alpha: 0.18 });
+  g.poly([
+    ex - r * 0.05,
+    ey + r * 0.06,
+    ex + r * 0.6,
+    ey - r * 0.14,
+    ex + r * 0.5,
+    ey + r * 0.02,
+    ex + r * 0.1,
+    ey + r * 0.12,
+  ]).fill(0xdcecff);
   // Ink drips off its chin and settles back.
   const p = (st.t * 0.7) % 1;
-  g.ellipse(s.head.x + r * 0.2, s.head.y + r * (1 + p * 0.9), 0.012, 0.018 + p * 0.01).fill({
+  g.ellipse(h.x + r * 0.2, h.y + r * (1 + p * 0.9), 0.012, 0.018 + p * 0.01).fill({
     color: BLACK,
     alpha: 1 - p,
   });
@@ -267,16 +299,20 @@ export function drawBeastHead(g: Graphics, fire: Graphics, s: Skel, st: InkDrawS
       h.y + r * 0.55 + jawDrop * 0.2,
     ]).fill(0x2a0b0b);
   }
-  for (let i = 0; i < 6; i++) {
-    const x = h.x + r * 0.6 + i * r * 0.19;
-    g.poly([x, h.y + r * 0.2, x + 0.02, h.y + r * 0.2, x + 0.01, h.y + r * 0.2 + 0.07]).fill(PALE);
+  // Fangs: a few long ones among shorter teeth, so the mouth reads as a mouth and not a comb.
+  for (let i = 0; i < 5; i++) {
+    const x = h.x + r * 0.62 + i * r * 0.26;
+    const long = i % 2 === 0;
+    const up = long ? 0.1 : 0.045;
+    const down = long ? 0.085 : 0.04;
+    g.poly([x, h.y + r * 0.2, x + 0.026, h.y + r * 0.2, x + 0.013, h.y + r * 0.2 + up]).fill(PALE);
     g.poly([
-      x,
-      h.y + r * 0.35 + jawDrop,
       x + 0.02,
       h.y + r * 0.35 + jawDrop,
-      x + 0.01,
-      h.y + r * 0.35 + jawDrop - 0.06,
+      x + 0.046,
+      h.y + r * 0.35 + jawDrop,
+      x + 0.033,
+      h.y + r * 0.35 + jawDrop - down,
     ]).fill(PALE);
   }
   // Nostril and whiskers: two long tendrils streaming back from the snout like a dragon's, drifting on the air.
@@ -332,10 +368,10 @@ export function drawBeastClaws(g: Graphics, elbow: Point, hand: Point, scale = 1
   for (const k of [-1, 0, 1]) {
     const bx = hand.x + ux * 0.03 + nx * k * 0.055 * scale;
     const by = hand.y + uy * 0.03 + ny * k * 0.055 * scale;
-    const tx = bx + ux * 0.2 * scale + nx * k * 0.03 * scale;
-    const ty = by + uy * 0.2 * scale + ny * k * 0.03 * scale;
-    const mx = bx + ux * 0.1 * scale + nx * k * 0.045 * scale;
-    const my = by + uy * 0.1 * scale + ny * k * 0.045 * scale;
+    const tx = bx + ux * 0.13 * scale + nx * k * 0.035 * scale;
+    const ty = by + uy * 0.13 * scale + ny * k * 0.035 * scale;
+    const mx = bx + ux * 0.07 * scale + nx * k * 0.05 * scale;
+    const my = by + uy * 0.07 * scale + ny * k * 0.05 * scale;
     g.poly([
       bx + nx * 0.028,
       by + ny * 0.028,
@@ -347,9 +383,9 @@ export function drawBeastClaws(g: Graphics, elbow: Point, hand: Point, scale = 1
       my - ny * 0.015,
       bx - nx * 0.028,
       by - ny * 0.028,
-    ]).fill(PALE);
+    ]).fill(0xcfd6e2);
     g.poly([bx + nx * 0.028, by + ny * 0.028, tx, ty, bx - nx * 0.028, by - ny * 0.028]).stroke({
-      width: 0.006,
+      width: 0.008,
       color: BLACK,
     });
   }

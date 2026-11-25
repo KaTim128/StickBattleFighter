@@ -1262,3 +1262,8 @@ Context: owner requests of 25/11/2026 (premium symmetrical bracket after the tou
 - **Decision:** Colosseum props use the shared furniture rule again: a prop fades (alpha only, 0.2 s) only while it is nearer the camera than a fighter and overlaps them on screen; it returns to full opacity when they move away; a fighter standing on or beside it never fades it. Colliders are separate physics bodies and ignore alpha.
 - **Verified:** `tests/integration/scenes/prop-fade.test.ts` (opaque when far, fades when a fighter is behind, restores, still blocks while faded) and the earlier walk-into-every-prop check.
 - **Status:** accepted.
+
+## TD-168: Ink creature look and animation (25/11/2026)
+- **Context:** Inkmaster's clones were plain black stickmen and the monster a dark mass with a comb of white teeth.
+- **Decision:** a shared `src/rendering/ink-creature.ts` paints dry-brush streaks, a blue-white sheen, a chest swirl, flowing ink ribbons, drips and a floor pool over the clone and monster bodies (presentation only; rig, stats, abilities and AI untouched). Clones gain a brush-stroke slit eye and an ink-flame crest; the monster gets blue-white eyes, alternating fangs and shorter claws. `FightArenaScene.inkCreatureFx` adds a rise from a pool of ink (0.6 s), an ink spray when hurt, and a melt/sink on expiry, with ink-coloured particles.
+- **Status:** accepted. Verified in the browser by screenshots of the monster and clone; the rise, hurt spray and melt were not captured mid-animation.
