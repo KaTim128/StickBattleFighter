@@ -43,6 +43,8 @@ function heroPose(def: FighterDef): Pose {
     robe: { armFront: { root: rad(95), bend: rad(35) }, armBack: { root: rad(28), bend: rad(62) } },
     cloak: { armFront: { root: rad(112), bend: rad(62) }, armBack: { root: rad(-30), bend: rad(60) }, lean: rad(-8) },
     solid: { armFront: { root: rad(55), bend: rad(110) }, armBack: { root: rad(30), bend: rad(120) } },
+    // Bohemeth: the upper pair raised and back, the lower pair low and forward, so the four fists do not hide the face.
+    bohemeth: { armFront: { root: rad(44), bend: rad(118) }, armBack: { root: rad(22), bend: rad(122) }, lean: rad(-4) },
   };
   const own = poses[body];
   return {
@@ -51,6 +53,9 @@ function heroPose(def: FighterDef): Pose {
     head: rad(-6),
     armFront: own?.armFront ?? { root: rad(38), bend: rad(95) },
     armBack: own?.armBack ?? { root: rad(-25), bend: rad(110) },
+    ...(body === 'bohemeth'
+      ? { armFront2: { root: rad(54), bend: rad(60) }, armBack2: { root: rad(34), bend: rad(54) } }
+      : {}),
   };
 }
 
@@ -71,7 +76,8 @@ function makeView(def: FighterDef): StickmanView {
 function placeFighter(def: FighterDef): Slot {
   const view = makeView(def);
   const premium = lookFor(def.effects.body) !== undefined;
-  const bodyK = def.bones.spine / 0.5; // bigger rigs get a bigger window
+  // Bigger rigs get a bigger window; a four-armed fighter's second pair of arms needs a wider one to fit the way the others' do.
+  const bodyK = (def.bones.spine / 0.5) * (def.bones.lowerArms ? 1.22 : 1);
   // Premium portraits: a relaxed, open stance so the face and chest are not hidden by the guard,
   // framed wider so the head, its crest and the shoulders all fit (head in the upper third).
   const pose = premium ? heroPose(def) : idlePose(0.2, def.bones);
@@ -157,6 +163,10 @@ const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   sonic: { deep: '#04090c', mid: '#0f2a33', glow: '#19c4e0', spark: '#eafcff', frame: '#7ae8ff' },
   mechanic: { deep: '#0b0c0e', mid: '#2a2d33', glow: '#ff7a1a', spark: '#ffd9a0', frame: '#ff9a3c' },
   psychic: { deep: '#07040f', mid: '#1f1040', glow: '#8a4fe0', spark: '#e4d2ff', frame: '#c7a1ff' },
+  // Inkmaster, Magix and Bohemeth join the premium portraits (owner, 25/11/2026: the same size and framing as the fighters before them).
+  ink: { deep: '#040405', mid: '#1c1c24', glow: '#6d6d78', spark: '#f2eee3', frame: '#cfcabb' },
+  magix: { deep: '#07040f', mid: '#2a1450', glow: '#b3263a', spark: '#ffe08a', frame: '#d9a6ff' },
+  bohemeth: { deep: '#0a0402', mid: '#3a1a10', glow: '#e8540f', spark: '#ffc890', frame: '#c8855a' },
   samurai: { deep: '#080204', mid: '#3a0a12', glow: '#d02438', spark: '#ffb0b8', frame: '#e5434f' },
 };
 

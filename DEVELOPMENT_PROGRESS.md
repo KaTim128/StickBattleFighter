@@ -1059,3 +1059,5 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 - Not verified: AI Bohemeth in long fights, each ability's pose in motion beyond those screenshots, the new sounds by ear, real-device play, a balance matrix run. Fire trails on punches are the flames themselves and the impact flare, not a separate trail.
 
 ## 25/11/2026 — select stances (owner): Titan's shoulders spread only 10% with the turn so his chest is not wider than his body; Bohemeth's upper pair held up and back, lower pair low and forward (select screen and idle) so the four arms do not overlap. Screenshot-checked.
+
+## 25/11/2026 — portraits (owner): Inkmaster, Magix and Bohemeth added to the premium portrait looks (they had none, so were cropped tight and looked bigger); Bohemeth's window widened for his second pair of arms and its hero pose set. Screenshot-checked on the select grid.
