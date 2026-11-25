@@ -1056,6 +1056,46 @@
       .ui-panel { background: var(--ui-panel); border: 2px solid var(--ui-border-gold); border-radius: 12px; color: var(--ui-text); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
       .ui-title, :is(.tn-title, .settings-head h2, .cp-head h2, .ability-info-title) { font-family: var(--ui-font-head); font-style: italic; letter-spacing: 0.06em; text-transform: uppercase; }
       .settings-card, .cp-card { background: var(--ui-panel); border: 2px solid var(--ui-border-gold); border-radius: 12px; }
+      /* ===== Settings screen redesign (owner, 25/11/2026) ===== */
+      .settings-panel { background: radial-gradient(ellipse at center, rgba(12, 14, 20, 0.62), rgba(3, 4, 7, 0.86)); backdrop-filter: blur(3px); }
+      .settings-card {
+        position: relative; width: min(calc(92 * var(--vw, 1vw)), 520px); padding: 0 0 18px; overflow-x: hidden;
+        background: linear-gradient(180deg, #1c2330, #11151d); border: 2px solid var(--ui-border-gold); border-radius: 14px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+      .settings-card > * { margin-left: 20px; margin-right: 20px; }
+      .settings-head { margin: 0 !important; padding: 14px 16px 12px 22px; background: linear-gradient(90deg, rgba(255, 138, 61, 0.3), rgba(255, 138, 61, 0) 70%), #0f131a; border-bottom: 2px solid var(--ui-border-gold); }
+      .settings-head h2 { font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6); }
+      .settings-close { width: 34px; height: 34px; border-radius: 8px; border: 2px solid var(--ui-border); background: #1c2330; color: #fff; font-size: 16px; transition: border-color 0.1s linear, background 0.1s linear; }
+      .settings-close:hover { border-color: var(--ui-accent-orange); background: #2a3342; }
+      .settings-tabs { padding: 4px; margin-top: 16px; border-radius: 10px; background: #0b0e14; border: 1px solid var(--ui-border); }
+      .settings-tabs button { border: 0; border-radius: 7px; background: transparent; color: var(--ui-text-dim); font: 800 12px var(--ui-font); letter-spacing: 0.1em; text-transform: uppercase; padding: 9px 10px; }
+      .settings-tabs button:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+      .settings-tabs button.active { background: linear-gradient(#ffa866, #e86f1f); color: #1b120a; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
+      .settings-slider { padding: 12px 14px; margin-bottom: 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); font: 800 12px var(--ui-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ui-gold); }
+      .settings-slider output { color: #fff; font-size: 16px; letter-spacing: 0; }
+      .settings-slider input[type='range'] { --val: 50%; -webkit-appearance: none; appearance: none; width: 100%; height: 8px; margin: 8px 0 2px; border-radius: 4px; outline: none; cursor: pointer; background: linear-gradient(90deg, var(--ui-accent-orange) var(--val), #0b0e14 var(--val)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
+      .settings-slider input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #ffe2c2; background: radial-gradient(circle at 35% 30%, #ffd2a6, #ff8a3d); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.55); }
+      .settings-slider input[type='range']::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ffe2c2; background: #ff8a3d; }
+      .settings-slider input[type='range']:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 4px; }
+      .settings-name-input { width: 100%; box-sizing: border-box; margin-top: 6px; padding: 9px 12px; border-radius: 8px; border: 2px solid var(--ui-border); background: #0b0e14; color: #fff; font: 700 15px var(--ui-font); }
+      .settings-name-input:focus { outline: none; border-color: var(--ui-accent-orange); }
+      .settings-binds h3 { margin: 14px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--ui-border); color: var(--ui-gold); opacity: 1; font-size: 11px; letter-spacing: 0.14em; }
+      .settings-bind { padding: 5px 8px; border-radius: 8px; }
+      .settings-bind:hover { background: rgba(255, 255, 255, 0.05); }
+      .settings-key { border-radius: 8px; background: #0b0e14; border: 2px solid var(--ui-border); font: 800 12px var(--ui-font); letter-spacing: 0.04em; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
+      .settings-key:hover { border-color: var(--ui-accent-orange); }
+      .settings-message { background: #151a24; }
+      .settings-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--ui-border); }
+      .settings-actions button, .settings-reset {
+        display: inline-flex; align-items: center; justify-content: center; padding: 10px 12px; min-height: 40px; border-radius: var(--ui-radius);
+        border: 2px solid var(--ui-border-gold); background: linear-gradient(#2a3342, #181e29); color: var(--ui-text);
+        font: 800 12px var(--ui-font); letter-spacing: 0.08em; text-transform: uppercase; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 0 rgba(0, 0, 0, 0.55); cursor: pointer;
+      }
+      .settings-actions button:hover, .settings-reset:hover { filter: brightness(1.18); }
+      .settings-actions button:active, .settings-reset:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.55); }
+      .settings-actions .settings-leave { grid-column: 1 / -1; background: linear-gradient(#7a2a24, #4a1612); border-color: var(--ui-danger); }
+      .settings-actions button[hidden] { display: none; }
       /* ===== Loading screen (spec section 9): the menu art, darkened, with a spinner and "Loading..." at the bottom right. ===== */
       #loading-screen {
         position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 28px 24px 0;

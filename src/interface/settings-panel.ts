@@ -179,6 +179,7 @@ export class SettingsPanel {
     for (const input of this.root.querySelectorAll<HTMLInputElement>('[data-volume]')) {
       const v = s[input.dataset.volume as 'musicVolume' | 'sfxVolume'];
       input.value = String(Math.round(v * 100));
+      input.style.setProperty('--val', `${Math.round(v * 100)}%`);
       const out = input.nextElementSibling;
       if (out) out.textContent = `${Math.round(v * 100)}%`;
     }
