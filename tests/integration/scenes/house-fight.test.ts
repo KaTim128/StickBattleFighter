@@ -1,8 +1,9 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
+import { HOUSE_FIGHT } from '../../../src/arenas/house-fight';
 import { SceneManager } from '../../../src/core/scene';
-import { HOUSE_FIGHT } from '../../../src/data/arenas/house-fight';
+import { PROP_KINDS } from '../../../src/data/objects/props';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
 
@@ -16,8 +17,16 @@ describe('House of Nightmare Fight', () => {
     expect(HOUSE_FIGHT.props.length).toBeGreaterThan(15);
     expect(HOUSE_FIGHT.doors!.length).toBeGreaterThanOrEqual(2);
     expect(HOUSE_FIGHT.interiorWalls!.length).toBeGreaterThan(5);
-    const stairs = HOUSE_FIGHT.interiorWalls!.find((w) => w.x0 === 27.3 - 15 && w.y0 === 10.3 - 9);
-    expect(stairs).toBeDefined(); // closed
+    expect(HOUSE_FIGHT.props.some((p) => p.kind === 'house-stairs')).toBe(true); // closed: solid scenery
+    // The furniture is the house's own, drawn with the house's art.
+    expect(HOUSE_FIGHT.props.filter((p) => p.house).length).toBe(HOUSE_FIGHT.props.length);
+    // Chairs, lamps and small tables can be thrown in a fight; the cupboards and the staircase stay put.
+    const kinds = new Set(HOUSE_FIGHT.props.map((p) => p.kind));
+    for (const k of ['house-chair', 'house-lamp', 'house-small-table'] as const) {
+      expect(kinds.has(k)).toBe(true);
+      expect(PROP_KINDS[k].throwable).toBe(true);
+    }
+    expect(PROP_KINDS['house-stairs'].movable).toBe(false);
     const scene = new FightArenaScene(
       HOUSE_FIGHT,
       new Container(),

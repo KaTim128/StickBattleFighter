@@ -3,7 +3,7 @@ import type { FloorIndex, HouseDef, Rect, RoomDef, StairDef, WallDef } from '../
 import { FLOOR_HEIGHT_M, type HouseWorld } from '../modes/hide-seek/world';
 import { drawDoorFrame, drawDoorLeaf } from './door-draw';
 import { BRICK_AGED, floorDecor, PLASTER_AGED, wallDetails } from './house-decor';
-import { aged, drawHouseFurniture } from './house-furniture';
+import { aged, drawHouseFurniture, drawHouseRug } from './house-furniture';
 import { isoBlock, shade } from './iso-draw';
 import { OcclusionFader } from './occlusion-fader';
 import { ISO_C, ISO_T, iso } from './projection';
@@ -107,7 +107,7 @@ const SHED_FLOOR = 0x57462f;
 /** The y on screen of a rectangle's nearest corner: what the y-sort layer sorts by. */
 const frontY = (r: Rect, z = 0): number => iso(r.x1, r.y1, z).y;
 
-function floorColour(room: RoomDef): number {
+export function floorColour(room: RoomDef): number {
   switch (room.kind) {
     case 'bathroom':
       return BATH_TILE;
@@ -187,7 +187,7 @@ function wallChunks(w: WallDef, heightM: number, colour: number, exterior: boole
   return out;
 }
 
-function drawStairs(s: StairDef, zBase: number, thin = false): { g: Graphics; rect: Rect; sortY: number }[] {
+export function drawStairs(s: StairDef, zBase: number, thin = false): { g: Graphics; rect: Rect; sortY: number }[] {
   const r = s.ramp;
   const n = 15;
   const out: { g: Graphics; rect: Rect; sortY: number }[] = [];
@@ -378,24 +378,9 @@ export function buildHouseView(house: HouseDef, world: HouseWorld, bake: Baker =
   }
   for (const f of house.furniture) {
     if (f.kind !== 'rug' && f.kind !== 'path') continue; // the yards' grass is their room floor
-    const g = new Graphics().poly(poly(f)).fill(aged(f.colour));
-    if (f.kind === 'rug') {
-      // A worn rug: a darker border, a frayed edge, a stain and a bald patch.
-      g.poly(poly({ x0: f.x0 + 0.25, y0: f.y0 + 0.25, x1: f.x1 - 0.25, y1: f.y1 - 0.25 })).stroke({
-        width: 0.05,
-        color: aged(0xc9a96a, 0.7),
-        alpha: 0.7,
-      });
-      g.poly(poly({ x0: f.x0 + 0.5, y0: f.y0 + 0.5, x1: f.x1 - 0.5, y1: f.y1 - 0.5 })).stroke({
-        width: 0.02,
-        color: 0x000000,
-        alpha: 0.3,
-      });
-      const c = iso((f.x0 + f.x1) / 2 + 0.8, (f.y0 + f.y1) / 2 - 0.3);
-      g.ellipse(c.x, c.y, 0.55, 0.28).fill({ color: 0x120a08, alpha: 0.35 });
-      const bald = iso((f.x0 + f.x1) / 2 - 0.9, (f.y0 + f.y1) / 2 + 0.4);
-      g.ellipse(bald.x, bald.y, 0.7, 0.35).fill({ color: 0x1d1612, alpha: 0.25 });
-    }
+    const g = new Graphics();
+    if (f.kind === 'rug') drawHouseRug(g, f, iso);
+    else g.poly(poly(f)).fill(aged(f.colour));
     floors[f.floor]!.ground.addChild(g);
     nodes.push({
       node: g,

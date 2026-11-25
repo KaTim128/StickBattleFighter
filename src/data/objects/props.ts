@@ -462,6 +462,160 @@ export const PROP_KINDS = {
     movable: true,
     throwable: false,
   },
+  // ---- House of Nightmare (Fight mode): the Hide and Seek house's own furniture, drawn with the house's art (`PropPlacement.house`).
+  // Sizes come from each placed piece; these set what it is made of, how heavy it is and what a fight can do with it.
+  'house-chair': {
+    label: 'Chair',
+    w: 0.6,
+    d: 0.6,
+    h: 0.5,
+    solid: true,
+    material: 'wood',
+    massKg: 6,
+    durability: 70,
+    movable: true,
+    throwable: true,
+  },
+  'house-armchair': {
+    label: 'Armchair',
+    w: 1.1,
+    d: 1.1,
+    h: 0.9,
+    solid: true,
+    material: 'fabric',
+    massKg: 22,
+    durability: 140,
+    movable: true,
+    throwable: false,
+    climbable: true,
+  },
+  'house-sofa': {
+    label: 'Sofa',
+    w: 2.7,
+    d: 1.2,
+    h: 0.9,
+    solid: true,
+    material: 'fabric',
+    massKg: 55,
+    durability: 180,
+    movable: true,
+    throwable: false,
+    climbable: true,
+  },
+  'house-table': {
+    label: 'Table',
+    w: 1.5,
+    d: 1.6,
+    h: 0.75,
+    solid: true,
+    material: 'wood',
+    massKg: 30,
+    durability: 160,
+    movable: true,
+    throwable: false,
+    climbable: true,
+  },
+  'house-small-table': {
+    label: 'Small table',
+    w: 0.7,
+    d: 0.7,
+    h: 0.55,
+    solid: true,
+    material: 'wood',
+    massKg: 7,
+    durability: 80,
+    movable: true,
+    throwable: true,
+    climbable: true,
+  },
+  'house-lamp': {
+    label: 'Floor lamp',
+    w: 0.5,
+    d: 0.5,
+    h: 1.6,
+    solid: true,
+    material: 'metal',
+    massKg: 4,
+    durability: 40,
+    movable: true,
+    throwable: true,
+  },
+  'house-chest': {
+    label: 'Chest',
+    w: 1.3,
+    d: 0.7,
+    h: 0.5,
+    solid: true,
+    material: 'wood',
+    massKg: 25,
+    durability: 200,
+    movable: true,
+    throwable: false,
+    climbable: true,
+  },
+  'house-storage': {
+    label: 'Cupboard',
+    w: 1.2,
+    d: 0.7,
+    h: 1.9,
+    solid: true,
+    material: 'wood',
+    massKg: 90,
+    durability: 420,
+    movable: false,
+    throwable: false,
+    climbable: true,
+  },
+  'house-counter': {
+    label: 'Kitchen unit',
+    w: 1.2,
+    d: 0.8,
+    h: 0.95,
+    solid: true,
+    material: 'metal',
+    massKg: 100,
+    durability: 360,
+    movable: false,
+    throwable: false,
+    climbable: true,
+  },
+  'house-stairs': {
+    label: 'Staircase',
+    w: 1.4,
+    d: 3.5,
+    h: 3,
+    solid: true,
+    material: 'wood',
+    massKg: 800,
+    durability: null,
+    movable: false,
+    throwable: false,
+  },
+  'house-curtain': {
+    label: 'Curtain',
+    w: 2.5,
+    d: 0.3,
+    h: 2.2,
+    solid: false,
+    material: 'fabric',
+    massKg: 5,
+    durability: null,
+    movable: false,
+    throwable: false,
+  },
+  'house-rug': {
+    label: 'Rug',
+    w: 5,
+    d: 4,
+    h: 0.02,
+    solid: false,
+    material: 'fabric',
+    massKg: 10,
+    durability: null,
+    movable: false,
+    throwable: false,
+    decal: true,
+  },
 } as const satisfies Record<string, PropKind>;
 
 export type PropKindId = keyof typeof PROP_KINDS;
@@ -485,13 +639,20 @@ export interface PropPlacement {
   readonly elevationM?: number;
   /** Depth-sort position (y) when it sits on another prop, so it draws on top of it. */
   readonly sortY?: number;
+  /** Override depth and height (a piece of house furniture keeps its own size). */
+  readonly d?: number;
+  readonly h?: number;
+  /** A piece of the Hide and Seek house's furniture: drawn with the house's own art (House of Nightmare Fight mode). */
+  readonly house?: { readonly kind: string; readonly colour: number; readonly id: string };
 }
 
 /** Footprint size of a placed prop, after rotation and overrides. */
 export function footprint(p: PropPlacement): { w: number; d: number; h: number } {
   const kind = PROP_KINDS[p.kind];
   const w = p.w ?? kind.w;
-  return p.rotated ? { w: kind.d, d: w, h: kind.h } : { w, d: kind.d, h: kind.h };
+  const d = p.d ?? kind.d;
+  const h = p.h ?? kind.h;
+  return p.rotated ? { w: d, d: w, h } : { w, d, h };
 }
 
 /** The catalogue entry for a kind, as the general PropKind type (for optional fields like `decal`). */

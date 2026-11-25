@@ -50,8 +50,14 @@ export function drawHouseFurniture(
   return drawInto(new Graphics(), f, all, walls);
 }
 
-export function drawInto(g: Graphics, f: FurnitureDef, all: readonly FurnitureDef[], walls: readonly Rect[]): Graphics {
-  const facing = facingFor(f, all, walls);
+export function drawInto(
+  g: Graphics,
+  f: FurnitureDef,
+  all: readonly FurnitureDef[],
+  walls: readonly Rect[],
+  facingOverride?: Facing,
+): Graphics {
+  const facing = facingOverride ?? facingFor(f, all, walls);
   const w = f.x1 - f.x0;
   const d = f.y1 - f.y0;
   const h = f.heightM;
@@ -880,4 +886,33 @@ function wear(g: Graphics, f: FurnitureDef, seed: number): void {
       g.moveTo(p0.x, p0.y).lineTo(p1.x, p1.y).lineTo(p2.x, p2.y).stroke({ width: 0.004, color: 0xe8e8e0, alpha: 0.32 });
     }
   }
+}
+
+/**
+ * The house's worn rug (a darker border, a frayed edge, a stain and a bald patch), drawn through `P` (screen metres for the house view,
+ * plain floor metres for an arena floor, where `squash` is 1 because the floor layer is projected for us).
+ */
+export function drawHouseRug(
+  g: Graphics,
+  r: Rect & { readonly colour: number },
+  P: (x: number, y: number) => { x: number; y: number },
+  squash = 0.5,
+): void {
+  const quad = (a: Rect): number[] =>
+    [P(a.x0, a.y0), P(a.x1, a.y0), P(a.x1, a.y1), P(a.x0, a.y1)].flatMap((p) => [p.x, p.y]);
+  g.poly(quad(r)).fill(aged(r.colour));
+  g.poly(quad({ x0: r.x0 + 0.25, y0: r.y0 + 0.25, x1: r.x1 - 0.25, y1: r.y1 - 0.25 })).stroke({
+    width: 0.05,
+    color: aged(0xc9a96a, 0.7),
+    alpha: 0.7,
+  });
+  g.poly(quad({ x0: r.x0 + 0.5, y0: r.y0 + 0.5, x1: r.x1 - 0.5, y1: r.y1 - 0.5 })).stroke({
+    width: 0.02,
+    color: 0x000000,
+    alpha: 0.3,
+  });
+  const c = P((r.x0 + r.x1) / 2 + 0.8, (r.y0 + r.y1) / 2 - 0.3);
+  g.ellipse(c.x, c.y, 0.55, 0.55 * squash).fill({ color: 0x120a08, alpha: 0.35 });
+  const bald = P((r.x0 + r.x1) / 2 - 0.9, (r.y0 + r.y1) / 2 + 0.4);
+  g.ellipse(bald.x, bald.y, 0.7, 0.7 * squash).fill({ color: 0x1d1612, alpha: 0.25 });
 }

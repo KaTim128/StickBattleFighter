@@ -1,6 +1,9 @@
 import { Container, Graphics } from 'pixi.js';
 import { footprint, kindOf, PROP_KINDS, type PropPlacement } from '../data/objects/props';
+import type { FurnitureDef } from '../modes/hide-seek/house-types';
 import { drawBookshelf } from './bookshelf-view';
+import { drawHouseRug, drawInto } from './house-furniture';
+import { drawStairs } from './house-view';
 import { face, faceQuad, isoBlock, isoCylinder, isoShadow, shade, withMaterial } from './iso-draw';
 import { iso } from './projection';
 
@@ -71,6 +74,40 @@ export function buildPropView(p: PropPlacement): Container {
   const g = new Graphics();
   root.addChild(g);
   const kind = kindOf(p.kind);
+  if (p.house && kind.decal) {
+    // The house's own rug, in plain floor metres.
+    drawHouseRug(g, { x0, y0, x1, y1, colour: p.house.colour }, (x, y) => ({ x, y }), 1);
+    root.position.set(p.x, p.y);
+    return root;
+  }
+  if (p.house) {
+    // A piece of the Hide and Seek house's furniture, drawn with the house's own art around the prop's centre.
+    const piece: FurnitureDef = {
+      id: p.house.id,
+      kind: p.house.kind as FurnitureDef['kind'],
+      floor: 0,
+      x0,
+      y0,
+      x1,
+      y1,
+      heightM: h,
+      solid: kind.solid,
+      blocksSight: false,
+      colour: p.house.colour,
+    };
+    if (p.house.kind === 'stairs') {
+      // The staircase, closed off in a fight: the house's own treads, rising toward the north.
+      const steps = drawStairs(
+        { id: 'main', ramp: { x0, y0, x1, y1 }, rises: 'n', riseM: h, bottomFloor: 0, topFloor: 1 },
+        0,
+      );
+      // Far treads first, so each nearer tread draws over the one behind it.
+      for (const step of steps.reverse()) root.addChild(step.g);
+    } else drawInto(g, piece, [], [], p.facing);
+    const at = iso(p.x, p.y);
+    root.position.set(at.x, at.y);
+    return root;
+  }
   if (kind.decal) {
     // Decals are drawn in floor space (inside the floor layer): plain world metres.
     g.roundRect(x0, y0, w, d, 0.15).fill(0x7a2632).stroke({ width: 0.08, color: 0xc9a227 });
@@ -473,6 +510,19 @@ function drawKind(
       break;
     }
     case 'rug':
+    // The house's pieces are drawn from the house's own art before this switch is reached.
+    case 'house-stairs':
+    case 'house-chair':
+    case 'house-armchair':
+    case 'house-sofa':
+    case 'house-table':
+    case 'house-small-table':
+    case 'house-lamp':
+    case 'house-chest':
+    case 'house-storage':
+    case 'house-counter':
+    case 'house-curtain':
+    case 'house-rug':
       break;
     default: {
       const k: never = p.kind;
