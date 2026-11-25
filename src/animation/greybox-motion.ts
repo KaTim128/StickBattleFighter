@@ -132,6 +132,7 @@ export type IdleStyle =
   | 'temporal'
   | 'crystal'
   | 'calligrapher'
+  | 'fourarm'
   | 'magician';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
@@ -151,6 +152,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.crystal') return 'crystal';
   if (clipId === 'proc.idle.calligrapher') return 'calligrapher';
   if (clipId === 'proc.idle.magician') return 'magician';
+  if (clipId === 'proc.idle.fourarm') return 'fourarm';
   return 'boxer';
 }
 
@@ -394,7 +396,29 @@ function magicianIdle(timeS: number, bones: BoneLengths): Pose {
   };
 }
 
+/**
+ * FOUR ARM (Bohemeth): a wide, planted brawler's stance with a slow, heavy breath. The upper fists are held up in front of the face,
+ * the lower pair hangs low and forward at the hips, and the weight rocks gently from foot to foot; the lower hands flex in turn.
+ */
+function fourArmIdle(timeS: number, bones: BoneLengths): Pose {
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.4);
+  const shift = Math.sin(timeS * TAU * 0.2);
+  const flex = Math.max(0, Math.sin(timeS * TAU * 0.35)) ** 2;
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-4 + breath * 1.2 + shift * 1),
+    head: deg(-2),
+    armFront: { root: deg(62 + breath * 3), bend: deg(112) },
+    armBack: { root: deg(48 + breath * 3), bend: deg(116) },
+    armFront2: { root: deg(26 + flex * 8), bend: deg(70 + flex * 14) },
+    armBack2: { root: deg(8 - flex * 5), bend: deg(60) },
+    legFront: legIk(0.36 + shift * 0.02, legs * 0.93 - breath * 0.012, bones.thigh, bones.shin),
+    legBack: legIk(-0.34 - shift * 0.02, legs * 0.93 - (1 - breath) * 0.012, bones.thigh, bones.shin),
+  };
+}
+
 export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
+  if (style === 'fourarm') return fourArmIdle(timeS, bones);
   if (style === 'magician') return magicianIdle(timeS, bones);
   if (style === 'calligrapher') return calligrapherIdle(timeS, bones);
   if (style === 'crystal') return crystalIdle(timeS, bones);
@@ -571,7 +595,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0);
-  if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
+  if (style === 'heavyweight' || style === 'fourarm') return heavyWalkPose(phase, bones, k);
   if (style === 'magician') {
     // A strut with a flourish: high light steps, chest out, the wand arm sweeping up and out with each stride.
     return gaitPose(phase, bones, {

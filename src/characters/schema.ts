@@ -297,6 +297,7 @@ export const BODY_STYLES = [
   'inkbeast',
   'magix',
   'rabbit',
+  'bohemeth',
 ] as const;
 export type BodyStyle = (typeof BODY_STYLES)[number];
 export const HELD_ITEMS = ['staff', 'bone-sword', 'knife', 'katana', 'brush', 'ink-sword', 'ink-bow', 'wand'] as const;
@@ -405,6 +406,8 @@ export interface CharacterDefinition {
       readonly foreArm: number;
       readonly thigh: number;
       readonly shin: number;
+      /** Four-armed fighters (Bohemeth): metres below the chest where the lower pair of shoulders sits. */
+      readonly lowerArms?: number;
     };
     readonly colour: string;
     readonly colourBack: string;

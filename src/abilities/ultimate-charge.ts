@@ -15,6 +15,7 @@ import type { UltimateCharge } from './ability-def';
  * - Final Judgement 1.3: untouchable for about 2 s and a 112 damage blow that cannot be dodged once the rush starts.
  * - Mindstorm 1.3: a 2.2 s field of eight flung objects and a 60 damage explosion, but he is rooted and exposed throughout.
  * - The Masterpiece 1.35: 3 s of drawing (exposed), then a 16 s monster of 450 health with four slow, telegraphed attacks that opponents can beat.
+ * - Fiery Fists 1.2: 12 s of 20% faster attacks (no extra damage, no defence), and his slow body and short moves stay as they were.
  * - Mirror Act 1.3: 12 s as a copy of the opponent at 90% damage, with a 20% shield, but only its normal abilities and a 0.9 s cloud of exposure.
  * - Rampage Mode 1.3: 8 s of 40% more defence, cooldowns 25% sooner, 15% faster and a shockwave.
  * - Blue Inferno 1.4: 10 s of +70% damage, cooldowns 30% sooner and 15% faster.
@@ -32,6 +33,7 @@ export const ULTIMATE_POWER = {
   crystalSovereign: 1.3,
   masterpiece: 1.35,
   mirrorAct: 1.3,
+  fieryFists: 1.2,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

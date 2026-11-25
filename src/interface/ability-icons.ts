@@ -635,6 +635,46 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 15, '#fff4c2', 0.14),
     `<g filter="url(#ds)"><path d="M10 40 L30 20" stroke="#15151c" stroke-width="4.4" stroke-linecap="round"/><path d="M10 40 L13 37" stroke="#f6f3ee" stroke-width="4.4" stroke-linecap="round"/></g><path d="M6 14 C16 4 34 6 42 20" fill="none" stroke="#ffd86b" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="1 5"/><path d="M36 28 L38 33 L43 35 L38 37 L36 42 L34 37 L29 35 L34 33 Z" fill="#b06cff"/>`,
   ),
+  'bohemeth-charge': icon(
+    'earth',
+    rays(24, 24, 16, '#f3e3c2', 0.18),
+    `<g filter="url(#ds)"><path d="M6 30 C14 20 26 18 38 22 L34 28 C26 26 18 28 12 34 Z" fill="#7a3a28" stroke="#22170c" stroke-width="1.6"/><circle cx="36" cy="22" r="6" fill="#a8573a" stroke="#22170c" stroke-width="1.6"/></g><path d="M4 22 H16 M2 28 H12 M6 34 H14" stroke="#f3e3c2" stroke-width="2" stroke-linecap="round" opacity=".7"/>`,
+  ),
+  'four-arm-uppercut': icon(
+    'earth',
+    rays(24, 24, 16, '#f3e3c2', 0.18),
+    `<g filter="url(#ds)"><circle cx="24" cy="14" r="6" fill="#d8c8b0" stroke="#22170c" stroke-width="1.6"/><path d="M12 8 L19 20 M36 8 L29 20" stroke="#7a3a28" stroke-width="4" stroke-linecap="round"/><path d="M12 42 C12 32 18 26 22 22 M36 42 C36 32 30 26 26 22" stroke="#a8573a" stroke-width="5" stroke-linecap="round" fill="none"/></g><path d="M24 4 V0 M20 6 L18 2 M28 6 L30 2" stroke="#f3e3c2" stroke-width="1.6" stroke-linecap="round"/>`,
+  ),
+  'thunder-clap': icon(
+    'earth',
+    rays(24, 24, 20, '#f3e3c2', 0.3),
+    `<g filter="url(#ds)"><path d="M8 26 L20 24 L22 30 L10 32 Z M40 26 L28 24 L26 30 L38 32 Z M10 16 L21 21 L19 25 L8 21 Z M38 16 L27 21 L29 25 L40 21 Z" fill="#7a3a28" stroke="#22170c" stroke-width="1.4"/></g><path d="M24 8 L21 18 L26 18 L22 28" stroke="#ffe680" stroke-width="2.6" fill="none" stroke-linejoin="round"/><circle cx="24" cy="24" r="14" fill="none" stroke="#f3e3c2" stroke-width="1.4" opacity=".6"/>`,
+  ),
+  'four-arm-smash': icon(
+    'earth',
+    rays(24, 24, 18, '#f3e3c2', 0.2),
+    `<g filter="url(#ds)"><path d="M10 6 L16 24 M18 4 L21 24 M30 4 L27 24 M38 6 L32 24" stroke="#7a3a28" stroke-width="4.4" stroke-linecap="round"/><circle cx="16" cy="26" r="3.4" fill="#a8573a"/><circle cx="21" cy="26" r="3.4" fill="#a8573a"/><circle cx="27" cy="26" r="3.4" fill="#a8573a"/><circle cx="32" cy="26" r="3.4" fill="#a8573a"/></g><path d="M4 38 L12 32 L20 38 L24 30 L28 38 L36 32 L44 38" stroke="#22170c" stroke-width="2.4" fill="none" stroke-linejoin="round"/><path d="M6 42 H42" stroke="#f3e3c2" stroke-width="2" opacity=".6"/>`,
+  ),
+  'chain-grab': icon(
+    'earth',
+    rays(24, 24, 16, '#f3e3c2', 0.16),
+    `<g filter="url(#ds)" fill="#5a5058" stroke="#22170c" stroke-width="1.4"><ellipse cx="9" cy="36" rx="5" ry="3" transform="rotate(-30 9 36)"/><ellipse cx="17" cy="30" rx="5" ry="3" transform="rotate(-30 17 30)" fill="#9a909a"/><ellipse cx="25" cy="24" rx="5" ry="3" transform="rotate(-30 25 24)"/><ellipse cx="33" cy="18" rx="5" ry="3" transform="rotate(-30 33 18)" fill="#9a909a"/></g><path d="M36 8 L44 10 L42 18 L36 16 Z" fill="#8a8490" stroke="#22170c" stroke-width="1.6" stroke-linejoin="round"/>`,
+  ),
+  'fiery-fists': icon(
+    'fire',
+    rays(24, 24, 20, '#ffe9a3', 0.3),
+    `<g filter="url(#ds)"><circle cx="13" cy="16" r="6" fill="#a8573a" stroke="#22170c" stroke-width="1.5"/><circle cx="35" cy="16" r="6" fill="#a8573a" stroke="#22170c" stroke-width="1.5"/><circle cx="14" cy="32" r="6" fill="#a8573a" stroke="#22170c" stroke-width="1.5"/><circle cx="34" cy="32" r="6" fill="#a8573a" stroke="#22170c" stroke-width="1.5"/></g><g fill="#ff9a1f" stroke="#fff0b0" stroke-width="1"><path d="M13 8 C9 4 14 2 13 0 C18 4 17 8 13 10 Z"/><path d="M35 8 C31 4 36 2 35 0 C40 4 39 8 35 10 Z"/><path d="M14 24 C10 20 15 18 14 16 C19 20 18 24 14 26 Z"/><path d="M34 24 C30 20 35 18 34 16 C39 20 38 24 34 26 Z"/></g>`,
+  ),
+  'four-fists': icon(
+    'earth',
+    rays(24, 24, 12, '#f3e3c2', 0.12),
+    `<g filter="url(#ds)" fill="#a8573a" stroke="#22170c" stroke-width="1.6"><circle cx="12" cy="14" r="5.4"/><circle cx="36" cy="14" r="5.4"/><circle cx="14" cy="34" r="5.4"/><circle cx="34" cy="34" r="5.4"/></g><path d="M18 14 H30 M20 34 H28" stroke="#f3e3c2" stroke-width="2.2" stroke-linecap="round" opacity=".6"/>`,
+  ),
+  'double-fist': icon(
+    'earth',
+    rays(24, 24, 14, '#f3e3c2', 0.14),
+    `<g filter="url(#ds)" fill="#a8573a" stroke="#22170c" stroke-width="1.6"><circle cx="30" cy="20" r="6.6"/><circle cx="34" cy="30" r="6.6"/></g><path d="M4 18 H20 M2 28 H22 M6 36 H20" stroke="#f3e3c2" stroke-width="2.2" stroke-linecap="round" opacity=".7"/>`,
+  ),
   'ink-spear': icon(
     'ink',
     rays(24, 24, 16, '#f2eee3', 0.16),

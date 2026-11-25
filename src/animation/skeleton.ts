@@ -23,6 +23,12 @@ export interface Pose {
   legFront: Limb;
   legBack: Limb;
   /**
+   * The second, lower pair of arms of a four-armed fighter (Bohemeth; only used when the rig's `lowerArms` is set). Absent: they hang
+   * and trail the upper pair (`lowerArmFrom`), so every existing pose and clip still gives a sensible lower pair.
+   */
+  armFront2?: Limb;
+  armBack2?: Limb;
+  /**
    * Raise the whole figure this far after its lowest foot is put on the floor, metres: the
    * flight phase of a run, when both feet are off the ground (owner, 11/11/2026). Default 0.
    */
@@ -37,6 +43,8 @@ export interface BoneLengths {
   readonly foreArm: number;
   readonly thigh: number;
   readonly shin: number;
+  /** Four-armed rigs: how far below the chest (metres, down the spine) the lower arms' shoulders sit. Absent: two arms. */
+  readonly lowerArms?: number;
 }
 
 export interface Point {
@@ -53,6 +61,13 @@ export interface SolvedSkeleton {
   armBack: [Point, Point, Point];
   legFront: [Point, Point, Point];
   legBack: [Point, Point, Point];
+  armFront2?: [Point, Point, Point];
+  armBack2?: [Point, Point, Point];
+}
+
+/** The lower arm that follows an upper arm when a pose gives it no angles of its own: hanging lower and trailing a little behind it. */
+export function lowerArmFrom(upper: Limb): Limb {
+  return { root: upper.root * 0.5 + 0.3, bend: upper.bend * 0.6 + 0.35 };
 }
 
 const along = (from: Point, angle: number, length: number): Point => ({
@@ -87,6 +102,12 @@ export function solveSkeleton(pose: Pose, bones: BoneLengths): SolvedSkeleton {
     return [pelvis, knee, along(knee, l.root + l.bend, bones.shin)];
   };
 
+  // The lower pair of a four-armed rig hangs from a second shoulder line further down the torso.
+  const shoulder2 = bones.lowerArms ? along(chest, torso + Math.PI, bones.lowerArms) : null;
+  const arm2 = (l: Limb): [Point, Point, Point] => {
+    const elbow = along(shoulder2!, torsoDown + l.root, bones.upperArm * 0.95);
+    return [shoulder2!, elbow, along(elbow, torsoDown + l.root + l.bend, bones.foreArm * 0.95)];
+  };
   const solved: SolvedSkeleton = {
     pelvis,
     chest,
@@ -96,14 +117,23 @@ export function solveSkeleton(pose: Pose, bones: BoneLengths): SolvedSkeleton {
     armBack: arm(pose.armBack),
     legFront: leg(pose.legFront),
     legBack: leg(pose.legBack),
+    ...(shoulder2
+      ? {
+          armFront2: arm2(pose.armFront2 ?? lowerArmFrom(pose.armFront)),
+          armBack2: arm2(pose.armBack2 ?? lowerArmFrom(pose.armBack)),
+        }
+      : {}),
   };
 
   const lowestFoot = Math.max(solved.legFront[2].y, solved.legBack[2].y) + (pose.liftM ?? 0);
   const lift = (p: Point): void => {
     p.y -= lowestFoot;
   };
+  if (shoulder2) lift(shoulder2);
   for (const p of [pelvis, chest, neck, head]) lift(p);
-  for (const limb of [solved.armFront, solved.armBack, solved.legFront, solved.legBack]) {
+  const limbs = [solved.armFront, solved.armBack, solved.legFront, solved.legBack];
+  if (solved.armFront2 && solved.armBack2) limbs.push(solved.armFront2, solved.armBack2);
+  for (const limb of limbs) {
     // pelvis/chest already lifted; they are shared references at index 0
     lift(limb[1]);
     lift(limb[2]);
@@ -122,6 +152,12 @@ export function blendPose(a: Pose, b: Pose, t: number): Pose {
     armBack: limb(a.armBack, b.armBack),
     legFront: limb(a.legFront, b.legFront),
     legBack: limb(a.legBack, b.legBack),
+    ...(a.armFront2 || b.armFront2 || a.armBack2 || b.armBack2
+      ? {
+          armFront2: limb(a.armFront2 ?? lowerArmFrom(a.armFront), b.armFront2 ?? lowerArmFrom(b.armFront)),
+          armBack2: limb(a.armBack2 ?? lowerArmFrom(a.armBack), b.armBack2 ?? lowerArmFrom(b.armBack)),
+        }
+      : {}),
     ...(a.liftM || b.liftM ? { liftM: m(a.liftM ?? 0, b.liftM ?? 0) } : {}),
   };
 }

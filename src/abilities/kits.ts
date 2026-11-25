@@ -1,4 +1,5 @@
 import { AERION_KIT } from '../data/abilities/aerion';
+import { BOHEMETH_KIT } from '../data/abilities/bohemeth';
 import { CHRONOS_KIT } from '../data/abilities/chronos';
 import { GEARGRIND_KIT } from '../data/abilities/geargrind';
 import { INFERNO_KIT } from '../data/abilities/inferno';
@@ -31,6 +32,7 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'reson-kit': RESON_KIT,
   'inkmaster-kit': INKMASTER_KIT,
   'magix-kit': MAGIX_KIT,
+  'bohemeth-kit': BOHEMETH_KIT,
   'ink-clone-bow-kit': INK_CLONE_BOW_KIT,
   'ink-monster-kit': INK_MONSTER_KIT,
 };

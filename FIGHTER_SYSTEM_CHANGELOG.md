@@ -69,3 +69,15 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - **Lucky Hat (fifth):** random +25% to speed, damage, defence, range or max-HP shield for 10 s, or a thrown sword (58) or a bomb (70).
 - **Mirror Act (ultimate):** becomes a copy of the opponent for 12 s with a 20% shield, real health kept, normal abilities only, 90% damage; the opponent is never changed.
 - New: `HELD_ITEMS` `wand`, `BODY_STYLES` `magix`/`rabbit`, `MagixWorld`, caster lock API, `Combatant.setHealthFraction`, the rabbit minion.
+
+## 25/11/2026 — New fighter: Bohemeth, the four armed brute
+- **Look:** dark reddish-brown heavyweight, a little shorter and leaner than Titan, four arms (upper and lower pair, each independently posed), iron chains over the chest, waist and forearms and a loose length swinging from the belt.
+- **Stats:** 1180 HP, 3.7 m/s (slow), 145 kg, defence 1.1, power 1.0 with a x1.2 punch multiplier.
+- **Tap:** upper jab 22, upper cross 22, lower body punch 30, lower finisher 38 (push 5.5). **Heavy:** double fist 62, push 7.5. **Air:** four-fist leaping slam.
+- **Directional Charge (Q):** 0.45 s crouch, then a locked 5.5 m burst at 17 m/s, 70 damage, shoulders first; 9 s cooldown.
+- **Four Arm Uppercut (E):** grab, 0.55 s hold, 85 damage, then a launch of up to 2.6 m scaled by weight (x0.25 to x1.4), 24 fall damage scaled the same; 13 s.
+- **Thunder Clap (F):** 55 damage in 3.2 m with push, and any charge within 8 m is stopped and staggered 0.9 s; 16 s.
+- **Four Arm Ground Smash (R):** jump up to 3 m, 80 damage in 3 m falling to 40% at the edge, then a crouch; 15 s.
+- **Chain Grab (fifth):** chain 18 m/s to 8.5 m, 14 damage and a 1.4 s stun, hauled in at 12 m/s (slower for heavy), then a 50 damage knockdown punch; 17 s.
+- **Fiery Fists (ultimate):** 12 s, attack speed x1.2, flames on all four fists; no extra damage.
+- New: `Pose.armFront2/armBack2`, `BoneLengths.lowerArms`, `AbilityTarget.massKg`, grab `uppercut`, nova `interruptsCharges`, pull `refKg`/`followUp`, buff `fireFists`.

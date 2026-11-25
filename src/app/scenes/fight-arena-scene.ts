@@ -2939,6 +2939,18 @@ export class FightArenaScene implements ArenaScene {
 
     if (result.outcome === 'dodged') return false;
     this.abilities?.noteLanded(attacker);
+    // Fiery Fists: a flare of fire where a punch lands.
+    if (attacker.buff?.fireFists && attacker.caster)
+      this.abilities?.emit({
+        kind: 'impact',
+        ability: 'fieryFists',
+        look: attacker.caster.kit.ult.look,
+        vfx: 'fiery-fists',
+        sfx: 'fire-fists-hit',
+        x: t.x,
+        y: t.y,
+        radiusM: 1.1,
+      });
     const guarded = result.outcome === 'blocked' || result.outcome === 'parried';
     // A crystal weapon in his hands shatters the moment a blow gets through (a guard that held is not a hit).
     if (!guarded && this.abilities) {
@@ -4405,7 +4417,11 @@ export class FightArenaScene implements ArenaScene {
     f.view.bound = c.bound;
     // A fury buff (Rampage Mode) flushes the body red, easing off in its last second.
     // (Magix's labelled buffs, Lucky Hat and Mirror Act, are not fury: no red flush.)
-    f.view.rage = f.buff && !f.buff.label ? Math.min(1, f.buff.leftS) : 0;
+    f.view.rage = f.buff && !f.buff.label && !f.buff.fireFists ? Math.min(1, f.buff.leftS) : 0;
+    // Fiery Fists: the flames take hold over the first half second and die away smoothly in the last one.
+    const fistsTo = f.buff?.fireFists && !c.isKo ? Math.min(1, f.buff.leftS / 0.8) : 0;
+    f.view.fireFists += (fistsTo - f.view.fireFists) * smoothing(fistsTo > f.view.fireFists ? 6 : 8, frameDtS);
+    if (f.view.fireFists < 0.01 && fistsTo === 0) f.view.fireFists = 0;
     // Afterimage: temporal ghosts trail a fighter who is being driven by an ability that leaves them.
     const afterimageLook = f.caster?.cast?.def.look?.afterimages === true && f.driveVelocity !== null;
     if (afterimageLook && !c.isKo) {

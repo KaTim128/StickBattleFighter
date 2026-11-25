@@ -105,7 +105,14 @@ export interface AbilityPayload {
    * Drags the target toward the caster when it lands (Grave Chains, owner 12/11/2026), at
    * `speedMps`, stopping `stopM` in front of the caster or at anything solid in the way.
    */
-  readonly pull?: { readonly speedMps: number; readonly stopM: number };
+  readonly pull?: {
+    readonly speedMps: number;
+    readonly stopM: number;
+    /** Heavier targets are dragged slower: speed x clamp(refKg / mass, 0.5, 1) (Bohemeth's Chain Grab). */
+    readonly refKg?: number;
+    /** What the caster does the moment the target arrives: a punch with this payload (Chain Grab's finishing blow). */
+    readonly followUp?: AbilityPayload;
+  };
 }
 
 /**
@@ -269,6 +276,11 @@ export interface NovaDelivery {
    * instead of around the caster (Death Eruption, owner 12/11/2026).
    */
   readonly atTarget?: boolean;
+  /**
+   * Thunder Clap (Bohemeth): every enemy within `rangeM` that is in the middle of a charge (a dash) is stopped dead and staggered for
+   * `staggerS`, even from beyond the ring's own radius. Only charges are stopped; nothing else is cancelled.
+   */
+  readonly interruptsCharges?: { readonly rangeM: number; readonly staggerS: number };
   /**
    * Shots loosed while the warning builds (Psion's Mindstorm: objects float up, then fly at his enemies): `count`
    * shots between half a second in and the end, each at an enemy inside the ring (or outward if none), carrying
@@ -713,6 +725,8 @@ export interface BuffDelivery {
    * himself faintly). It ends, with the rest of the buff, the moment he lands any attack on an opponent (`endsOnHit`).
    */
   readonly invisible?: boolean;
+  /** All four fists burn (Bohemeth's Fiery Fists): flames round the hands, fire trails on punches and hotter impacts. */
+  readonly fireFists?: boolean;
   readonly endsOnHit?: boolean;
   /** Multiplies the reach of the caster's melee blows (Lucky Hat's range stat). */
   readonly rangeFactor?: number;
@@ -749,6 +763,20 @@ export interface GrabDelivery {
    * moment, then hurled along the caster's aim with the payload instead of slammed down.
    */
   readonly telekinetic?: boolean;
+  /**
+   * Four Arm Uppercut (Bohemeth): the target is held at the upper hands for `holdS`, then the lower hands uppercut it: the payload hits
+   * (its `knockbackByWeight` scales the push) and the target is launched up `liftM` metres over `liftS`, scaled by its weight
+   * (`refKg / mass`, kept between `minK` and `maxK`), and falls for `fallDamage`.
+   */
+  readonly uppercut?: {
+    readonly holdS: number;
+    readonly liftS: number;
+    readonly liftM: number;
+    readonly refKg: number;
+    readonly minK: number;
+    readonly maxK: number;
+    readonly fallDamage: number;
+  };
 }
 
 /**

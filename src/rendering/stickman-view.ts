@@ -135,6 +135,8 @@ export class StickmanView {
   weapon: { kind: string; form: number } | null = null;
   /** 0..1 how fully the crystal armour covers him. */
   crystalArmour = 0;
+  /** Fiery Fists (Bohemeth): 0..1 how far the flames round all four fists have taken hold. */
+  fireFists = 0;
   /** 0..1 how far crystal has grown round both legs (Crystal Prison). */
   legTrap = 0;
   /** Shard Blade's two transformed strikes: the crystal piercing punch (`finale`) and the crystal hammer slam (`hammer`), and how far through (0..1). */
@@ -459,6 +461,7 @@ export class StickmanView {
         weapon: this.weapon,
         weaponStrike: this.weaponStrike,
         crystalArmour: this.crystalArmour,
+        fireFists: this.fireFists,
         shout: this.shout,
         wingFlap: this.wingFlap,
       });

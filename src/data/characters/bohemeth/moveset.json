@@ -1,0 +1,175 @@
+{
+  "id": "bohemeth-moveset",
+  "starters": {
+    "tap": "upper-jab",
+    "air-tap": "four-fist-slam",
+    "heavy": "double-fist"
+  },
+  "moves": [
+    {
+      "id": "upper-jab",
+      "displayName": "Upper jab",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.09,
+      "activeS": 0.08,
+      "recoveryS": 0.2,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.5
+      },
+      "damage": 22,
+      "strength": 500,
+      "knockbackMps": 1.4,
+      "lungeMps": 0.8,
+      "moveFactor": 0.3,
+      "impact": "knuckle-heavy",
+      "shake": 0.25,
+      "zoomPunch": 0.02,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "upper-cross"
+      },
+      "sfx": "hit-bohemeth-upper-jab"
+    },
+    {
+      "id": "upper-cross",
+      "displayName": "Upper cross",
+      "animationState": "StraightPunch",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.2,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.05,
+        "radiusM": 0.5
+      },
+      "damage": 22,
+      "strength": 520,
+      "knockbackMps": 1.6,
+      "lungeMps": 1.0,
+      "moveFactor": 0.3,
+      "impact": "knuckle-heavy",
+      "shake": 0.25,
+      "zoomPunch": 0.02,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "lower-body-punch"
+      },
+      "sfx": "hit-bohemeth-upper-cross"
+    },
+    {
+      "id": "lower-body-punch",
+      "displayName": "Lower body punch",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.12,
+      "activeS": 0.09,
+      "recoveryS": 0.24,
+      "cancelAt": 0.3,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.55
+      },
+      "damage": 30,
+      "strength": 800,
+      "knockbackMps": 2.2,
+      "lungeMps": 1.2,
+      "moveFactor": 0.3,
+      "impact": "knuckle-heavy",
+      "shake": 0.32,
+      "zoomPunch": 0.02,
+      "requires": ["canPunch", "canUseCombos"],
+      "next": {
+        "tap": "lower-finisher"
+      },
+      "sfx": "hit-bohemeth-body-punch"
+    },
+    {
+      "id": "lower-finisher",
+      "displayName": "Lower finisher",
+      "animationState": "HeavyPunch",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.16,
+      "activeS": 0.1,
+      "recoveryS": 0.38,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.1,
+        "radiusM": 0.6
+      },
+      "damage": 38,
+      "strength": 1300,
+      "knockbackMps": 5.5,
+      "lungeMps": 1.3,
+      "moveFactor": 0.2,
+      "impact": "knuckle-heavy",
+      "shake": 0.5,
+      "zoomPunch": 0.04,
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-bohemeth-finisher"
+    },
+    {
+      "id": "four-fist-slam",
+      "displayName": "Four-fist leaping slam",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.08,
+      "activeS": 0.18,
+      "recoveryS": 0.3,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.0,
+        "radiusM": 0.7
+      },
+      "damage": 50,
+      "strength": 1400,
+      "knockbackMps": 6,
+      "lungeMps": 0,
+      "moveFactor": 0.6,
+      "impact": "knuckle-heavy",
+      "shake": 0.45,
+      "zoomPunch": 0.04,
+      "requires": ["canUseAerialPunches"],
+      "sfx": "hit-bohemeth-slam"
+    },
+    {
+      "id": "double-fist",
+      "displayName": "Double-fist heavy",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.45,
+      "activeS": 0.1,
+      "recoveryS": 0.52,
+      "cancelAt": 1,
+      "hitbox": {
+        "reachM": 1.3,
+        "radiusM": 0.75
+      },
+      "damage": 62,
+      "strength": 1700,
+      "knockbackMps": 7.5,
+      "lungeMps": 0.8,
+      "moveFactor": 0.15,
+      "impact": "knuckle-heavy",
+      "shake": 0.7,
+      "zoomPunch": 0.05,
+      "requires": ["canPunch", "canUseCombos"],
+      "sfx": "hit-bohemeth-double-fist"
+    }
+  ]
+}

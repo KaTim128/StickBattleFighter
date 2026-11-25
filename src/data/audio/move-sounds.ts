@@ -837,6 +837,83 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     noise('lowpass', 2200, 150, 0.7, 0.7, 0.8),
     noise('bandpass', 1500, 400, 0.4, 0.3, 1.4, 0.05),
   ],
+  // ---------------------------------------------------------------- Bohemeth: four heavy fists, iron chain and thunder
+  'hit-bohemeth-upper-jab': [tone('sine', 140, 60, 0.12, 0.7), noise('lowpass', 1500, 500, 0.08, 0.5, 0.9)],
+  'hit-bohemeth-upper-cross': [tone('sine', 120, 52, 0.14, 0.75), noise('bandpass', 900, 450, 0.09, 0.45, 1)],
+  'hit-bohemeth-body-punch': [
+    tone('sine', 100, 40, 0.18, 0.85, 0, 0.15),
+    noise('lowpass', 900, 300, 0.12, 0.55, 0.8),
+    noise('bandpass', 420, undefined, 0.07, 0.3, 1.4, 0.03),
+  ],
+  'hit-bohemeth-finisher': [
+    tone('sine', 80, 30, 0.3, 0.95, 0, 0.3),
+    noise('lowpass', 1100, 200, 0.2, 0.6, 0.8),
+    noise('bandpass', 300, undefined, 0.15, 0.4, 1.6, 0.05),
+    tone('triangle', 1100, 700, 0.1, 0.12, 0.02),
+  ],
+  'hit-bohemeth-slam': [tone('sine', 70, 28, 0.35, 0.95, 0, 0.35), noise('lowpass', 800, 150, 0.3, 0.6, 0.8)],
+  'hit-bohemeth-double-fist': [
+    tone('sine', 75, 26, 0.4, 1, 0, 0.35),
+    noise('lowpass', 1000, 160, 0.3, 0.7, 0.8),
+    noise('highpass', 3000, undefined, 0.05, 0.3, 1, 0.01),
+  ],
+  'bohemeth-grunt': [tone('sawtooth', 110, 70, 0.25, 0.3, 0, 0.3), noise('bandpass', 500, 300, 0.25, 0.2, 2)],
+  'bohemeth-rush': [noise('bandpass', 400, 1500, 0.35, 0.5, 1, 0, { attack: 0.08 }), tone('sine', 90, 160, 0.3, 0.3)],
+  'bohemeth-ram': [tone('sine', 110, 36, 0.4, 0.95, 0, 0.3), noise('lowpass', 1400, 200, 0.35, 0.7, 0.9)],
+  'uppercut-grab': [noise('bandpass', 700, 1200, 0.2, 0.4, 1.4), tone('triangle', 260, 180, 0.18, 0.25)],
+  'uppercut-launch': [
+    tone('sine', 150, 520, 0.28, 0.6),
+    noise('lowpass', 1800, 300, 0.2, 0.6, 0.9),
+    noise('bandpass', 2200, 900, 0.12, 0.3, 1.2, 0.04),
+  ],
+  'thunder-clap': [
+    noise('bandpass', 2200, 800, 0.08, 0.9, 0.9),
+    tone('sine', 120, 40, 0.5, 0.9, 0, 0.4),
+    noise('lowpass', 1600, 120, 0.7, 0.55, 0.7, 0.02),
+  ],
+  'thunder-boom': [
+    tone('sine', 60, 22, 0.9, 1, 0, 0.45),
+    noise('lowpass', 1200, 90, 0.9, 0.7, 0.7),
+    noise('bandpass', 700, 200, 0.6, 0.35, 1.2, 0.1),
+  ],
+  'bohemeth-leap': [
+    noise('bandpass', 500, 1100, 0.3, 0.45, 1.2, 0, { attack: 0.1 }),
+    tone('triangle', 130, 240, 0.25, 0.3),
+  ],
+  'bohemeth-quake': [
+    tone('sine', 55, 24, 0.8, 1, 0, 0.4),
+    noise('lowpass', 900, 100, 0.8, 0.75, 0.8),
+    noise('bandpass', 1500, 400, 0.3, 0.3, 1.5, 0.05),
+    noise('highpass', 4000, undefined, 0.1, 0.2, 1, 0.02),
+  ],
+  'chain-unwind': [
+    noise('highpass', 3500, 5500, 0.3, 0.3, 1, 0, { flutter: 28 }),
+    tone('triangle', 1700, 1300, 0.2, 0.08),
+  ],
+  'chain-throw': [
+    noise('bandpass', 900, 2800, 0.28, 0.4, 1.2, 0, { attack: 0.03 }),
+    noise('highpass', 4000, undefined, 0.3, 0.25, 1, 0, { flutter: 36 }),
+  ],
+  'chain-snap': [
+    noise('bandpass', 2600, 1400, 0.06, 0.8, 2),
+    tone('triangle', 1400, 900, 0.12, 0.2),
+    noise('lowpass', 700, 250, 0.2, 0.4, 1, 0.04),
+  ],
+  'chain-punch': [
+    tone('sine', 85, 30, 0.35, 0.95, 0, 0.3),
+    noise('lowpass', 1100, 180, 0.25, 0.65, 0.8),
+    noise('bandpass', 2500, 1200, 0.05, 0.4, 2),
+  ],
+  'fire-ignite': [
+    noise('bandpass', 700, 2600, 0.9, 0.55, 1, 0, { flutter: 12, attack: 0.3 }),
+    tone('sawtooth', 70, 140, 0.8, 0.25, 0, 0.3),
+    noise('highpass', 3500, undefined, 0.5, 0.2, 1, 0.2, { flutter: 40 }),
+  ],
+  'fire-fists-hit': [
+    tone('sine', 120, 50, 0.2, 0.75),
+    noise('bandpass', 1800, 700, 0.18, 0.5, 1, 0, { flutter: 20 }),
+    noise('highpass', 5000, undefined, 0.08, 0.25, 1, 0, { flutter: 50 }),
+  ],
   'masterpiece-draw': [
     noise('bandpass', 1200, 500, 0.5, 0.3, 1.5),
     tone('sine', 140, 100, 0.5, 0.3),

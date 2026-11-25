@@ -241,6 +241,7 @@ export class SceneAbilities implements AbilityHost {
       radiusM: f.def.body.footRadiusM,
       hittable: !f.combatant.isKo && f.body !== null,
       team: f.team,
+      massKg: f.def.body.massKg,
     }));
   }
 

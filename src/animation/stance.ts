@@ -28,6 +28,8 @@ export function stancePose(s: SelectStance, bones: BoneLengths, breath: number):
     head: rad(s.head),
     armFront: hand(s.front),
     armBack: hand(s.back),
+    ...(s.front2 ? { armFront2: hand(s.front2) } : {}),
+    ...(s.back2 ? { armBack2: hand(s.back2) } : {}),
     legFront: legIk(s.leadFoot * leg, pelvisM, bones.thigh, bones.shin),
     legBack: legIk(s.rearFoot * leg, pelvisM, bones.thigh, bones.shin),
   };

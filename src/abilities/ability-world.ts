@@ -36,6 +36,8 @@ export interface AbilityTarget {
   readonly hittable: boolean;
   /** Side it fights for: abilities never hit the caster's own team (summons, owner 12/11/2026). */
   readonly team?: string;
+  /** Body weight, kilograms (weight-scaled launches and pulls). */
+  readonly massKg?: number;
 }
 
 export type FxKind = 'cast' | 'release' | 'impact' | 'telegraph' | 'fizzle';
@@ -439,6 +441,9 @@ interface PullAction {
   readonly abilityId?: string;
   readonly speedMps: number;
   readonly stopM: number;
+  /** What the caster does when the target arrives (Chain Grab's punch), and from which ability. */
+  readonly followUp?: AbilityPayload;
+  readonly followFx?: { readonly def: AbilityDef };
   /** Drag the target to this spot instead of to the caster (Temporal Echo). */
   readonly toPoint?: Vec2;
   ageS: number;
@@ -800,6 +805,7 @@ export class AbilityWorld {
     const a = this.actions.find((x) => x.kind === 'grab' && x.targetId === targetId) as GrabAction | undefined;
     const d = a?.def.delivery;
     if (!a || d?.type !== 'grab') return 0;
+    if (d.uppercut) return 0.15 * Math.min(1, a.ageS / 0.25);
     return d.liftM * Math.min(1, a.ageS / d.liftS);
   }
 
@@ -1149,6 +1155,28 @@ export class AbilityWorld {
           y: spot.y,
           radiusM: d.radiusM,
         });
+        // Thunder Clap stops any charge under way within its reach, wherever the charger is on the way in.
+        if (d.interruptsCharges) {
+          const { rangeM, staggerS } = d.interruptsCharges;
+          for (const a of [...this.actions]) {
+            if (a.kind !== 'dash') continue;
+            const charger = host.fighters().find((f) => f.id === a.casterId);
+            if (!charger || this.friendly(charger, casterId, host)) continue;
+            if (Math.hypot(charger.x - at.x, charger.y - at.y) > rangeM + charger.radiusM) continue;
+            this.cancel(a.casterId, host);
+            host.hold?.(a.casterId, staggerS);
+            host.emit({
+              kind: 'impact',
+              ability: def.id,
+              look: def.look,
+              vfx: def.vfx,
+              sfx: null,
+              x: charger.x,
+              y: charger.y,
+              radiusM: 1.2,
+            });
+          }
+        }
         break;
       }
       case 'teleport': {
@@ -1730,8 +1758,19 @@ export class AbilityWorld {
         casterId,
         targetId,
         ...(abilityId ? { abilityId } : {}),
-        speedMps: payload.pull.speedMps,
+        speedMps:
+          payload.pull.speedMps *
+          (payload.pull.refKg
+            ? Math.max(
+                0.5,
+                Math.min(
+                  1,
+                  payload.pull.refKg / Math.max(1, host.fighters().find((f) => f.id === targetId)?.massKg ?? 70),
+                ),
+              )
+            : 1),
         stopM: payload.pull.stopM,
+        ...(payload.pull.followUp ? { followUp: payload.pull.followUp } : {}),
         ageS: 0,
       });
     }
@@ -1833,7 +1872,23 @@ export class AbilityWorld {
     const dy = c.y - target.y;
     const d = Math.hypot(dx, dy);
     const gap = d - a.stopM - target.radiusM;
-    if (gap <= 0.05) return true;
+    if (gap <= 0.05) {
+      // Arrived: the caster's finishing blow (Chain Grab), with its own impact.
+      if (a.followUp) {
+        const dir = d > 1e-6 ? { x: -dx / d, y: -dy / d } : { x: 1, y: 0 };
+        host.hitFighter(a.casterId, a.targetId, a.followUp, dir);
+        host.emit({
+          kind: 'impact',
+          ability: a.abilityId ?? 'chainGrab',
+          vfx: 'chain-punch',
+          sfx: 'chain-punch',
+          x: target.x,
+          y: target.y,
+          radiusM: 1.2,
+        });
+      }
+      return true;
+    }
     const speed = Math.min(a.speedMps, gap / dtS);
     host.drive(a.targetId, { x: (dx / d) * speed, y: (dy / d) * speed }, 0);
     return false;
@@ -1953,6 +2008,41 @@ export class AbilityWorld {
       this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
       host.drive(a.targetId, null, 0);
       host.hitFighter(a.casterId, a.targetId, a.def.payload, a.dir, a.def.look?.hitFlash);
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: a.def.sfx.impact,
+        x: target.x,
+        y: target.y,
+        radiusM: d.slamRadiusM,
+      });
+      return true;
+    }
+    if (d.uppercut) {
+      // Held at the upper hands, then thrown up by the lower pair: the launch depends on the target's weight.
+      host.drive(a.targetId, { x: 0, y: 0 }, 0.15 * Math.min(1, a.ageS / 0.25));
+      const fixX = hold.x - target.x;
+      const fixY = hold.y - target.y;
+      if (Math.hypot(fixX, fixY) > 0.02)
+        host.drive(a.targetId, { x: fixX * 8, y: fixY * 8 }, 0.15 * Math.min(1, a.ageS / 0.25));
+      if (a.ageS < d.uppercut.holdS) return false;
+      const k = Math.max(
+        d.uppercut.minK,
+        Math.min(d.uppercut.maxK, d.uppercut.refKg / Math.max(1, target.massKg ?? 70)),
+      );
+      this.grabOutcomes.set(a.casterId, { state: 'slam', sinceS: 0 });
+      host.drive(a.targetId, null, 0);
+      host.hitFighter(a.casterId, a.targetId, a.def.payload, a.dir, a.def.look?.hitFlash);
+      this.beginLift(
+        a.casterId,
+        a.def,
+        a.dir,
+        target,
+        { liftS: d.uppercut.liftS, liftM: d.uppercut.liftM * k, fallDamage: d.uppercut.fallDamage * k, immuneS: 0 },
+        host,
+      );
       host.emit({
         kind: 'impact',
         ability: a.def.id,

@@ -1,0 +1,230 @@
+import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
+
+/**
+ * Bohemeth's kit (owner, 25/11/2026): a four-armed, chain-wrapped heavyweight. His extra arms create mechanics rather than multiplying
+ * damage: a short explosive charge, a two-handed grab with a two-handed uppercut, a clap that stops charges, a four-fisted jump slam
+ * and a chain that drags opponents in for a punch; the ultimate sets all four fists alight for 20% faster attacks. He is slow, his
+ * charge is short and his big moves are long on cooldown and long in recovery. Values are PROVISIONAL (OQ-05).
+ */
+const IRON = { deep: 0x3a2018, hot: 0x8a4a30, bright: 0xc8855a, core: 0xf2dcc4 } as const;
+const FIRE = { deep: 0x5a1004, hot: 0xe8540f, bright: 0xffa233, core: 0xfff0b0 } as const;
+const dust = (ringM: number, shake: number) => ({
+  flashM: ringM * 0.45,
+  sparks: 24,
+  motes: 44,
+  ringM,
+  smoke: 18,
+  groundFire: false,
+  smokeColour: 0x8a6a52,
+  shake,
+});
+
+export const BOHEMETH_KIT: AbilityKit = {
+  comboIcon: 'four-fists',
+  heavyIcon: 'double-fist',
+  // A1 (Q): Directional Charge. A crouch, then a short, explosive shoulder-first burst along the direction he is aiming.
+  a1: {
+    id: 'directionalCharge',
+    name: 'Directional Charge',
+    label: 'CHARGE',
+    description:
+      'Drops low and leans in, then bursts forward in the direction he is aiming with his shoulders leading. The direction is locked when it begins and the rush is short. He slams the first enemy he reaches for heavy damage and knockback. It can be sidestepped or dodged, and walls and furniture stop it.',
+    icon: 'bohemeth-charge',
+    slot: 'a1',
+    staminaCost: 28,
+    cooldownS: 9,
+    castS: 0.45,
+    recoveryS: 0.8,
+    aimRangeM: 6,
+    moveFactor: 0,
+    interruptible: true,
+    payload: { damage: 70, knockbackMps: 9, heavy: true, strength: 1800, impact: 'knuckle-heavy', wallDamage: 1500 },
+    delivery: {
+      type: 'dash',
+      distanceM: 5.5,
+      speedMps: 17,
+      hitRadiusM: 0.85,
+      collision: { radiusM: 1.8 },
+    },
+    vfx: 'bohemeth-charge',
+    sfx: { cast: 'bohemeth-grunt', release: 'bohemeth-rush', impact: 'bohemeth-ram' },
+    look: {
+      palette: IRON,
+      charge: { gatherRadiusM: 1.0, motesPerS: 70, coreMaxM: 0 },
+      flight: { trailPerS: 120, sparksPerS: 18, shimmer: false },
+      impact: dust(2.2, 0.5),
+      hitFlash: 0xffd0a0,
+    },
+  },
+  // A2 (E): Four Arm Uppercut. The upper hands seize the opponent; the lower hands swing up together and launch them.
+  a2: {
+    id: 'fourArmUppercut',
+    name: 'Four Arm Uppercut',
+    label: 'UPPERCUT',
+    description:
+      'Seizes the opponent round the body with both upper hands and holds them while both lower hands swing up in one huge uppercut. The launch depends on weight: light fighters fly high, medium ones moderately, heavy ones barely leave the ground, and the very heaviest mostly just take the damage. If nobody is in reach he closes his hands on air.',
+    icon: 'four-arm-uppercut',
+    slot: 'a2',
+    staminaCost: 32,
+    cooldownS: 13,
+    castS: 0.3,
+    recoveryS: 1.0,
+    aimRangeM: 2.5,
+    moveFactor: 0.2,
+    interruptible: true,
+    payload: {
+      damage: 85,
+      knockbackMps: 6,
+      knockbackByWeight: { refKg: 80, minK: 0.3, maxK: 1.4 },
+      heavy: true,
+      strength: 1400,
+      impact: 'knuckle-heavy',
+    },
+    delivery: {
+      type: 'grab',
+      reachM: 1.3,
+      radiusM: 0.55,
+      liftS: 0.7,
+      liftM: 0,
+      slamRadiusM: 1.4,
+      uppercut: { holdS: 0.55, liftS: 0.7, liftM: 2.6, refKg: 80, minK: 0.25, maxK: 1.4, fallDamage: 24 },
+    },
+    vfx: 'four-arm-uppercut',
+    sfx: { cast: 'bohemeth-grunt', release: 'uppercut-grab', impact: 'uppercut-launch' },
+    look: { palette: IRON, impact: dust(1.8, 0.7), hitFlash: 0xffd0a0 },
+  },
+  // A3 (F): Thunder Clap. All four hands slam together: a shockwave that hurts, pushes, interrupts and stops charges.
+  a3: {
+    id: 'thunderClap',
+    name: 'Thunder Clap',
+    label: 'CLAP',
+    description:
+      'Raises all four arms and claps all four hands together: a thundering shockwave hurts and throws back everyone around him and breaks their attacks. It also stops any charge coming at him from up to 8 metres away, leaving the charger staggered.',
+    icon: 'thunder-clap',
+    slot: 'a3',
+    staminaCost: 30,
+    cooldownS: 16,
+    castS: 0.4,
+    recoveryS: 0.8,
+    aimRangeM: 0,
+    moveFactor: 0,
+    interruptible: true,
+    payload: {
+      damage: 55,
+      knockbackMps: 8,
+      heavy: false,
+      strength: 800,
+      impact: 'knuckle-heavy',
+      falloff: { fullWithinM: 1.2, minFactor: 0.55 },
+    },
+    delivery: { type: 'nova', radiusM: 3.2, telegraphS: 0.12, interruptsCharges: { rangeM: 8, staggerS: 0.9 } },
+    vfx: 'thunder-clap',
+    sfx: { cast: 'bohemeth-grunt', release: 'thunder-clap', impact: 'thunder-boom' },
+    look: { palette: IRON, impact: { ...dust(3.2, 0.8), flashM: 1.6 }, hitFlash: 0xffffff },
+  },
+  // A4 (R): Four Arm Ground Smash. A jump, all four fists raised, then down together; a crouch in the dust.
+  a4: {
+    id: 'fourArmGroundSmash',
+    name: 'Four Arm Ground Smash',
+    label: 'SMASH',
+    description:
+      'Crouches, jumps with all four arms raised and brings all four fists down onto the floor together. The landing sends out a ground shockwave that hurts and throws back everyone nearby, more the closer they are, and he stays crouched with his hands on the ground for a moment afterwards.',
+    icon: 'four-arm-smash',
+    slot: 'a4',
+    staminaCost: 34,
+    cooldownS: 15,
+    castS: 0.4,
+    recoveryS: 1.0,
+    aimRangeM: 3,
+    moveFactor: 0.1,
+    interruptible: true,
+    payload: {
+      damage: 80,
+      knockbackMps: 9,
+      heavy: true,
+      strength: 1500,
+      impact: 'knuckle-heavy',
+      falloff: { fullWithinM: 1.2, minFactor: 0.4 },
+    },
+    delivery: { type: 'leap', maxRangeM: 3, airS: 0.65, peakM: 1.6, radiusM: 3.0, aimSpeedMps: 3 },
+    vfx: 'four-arm-smash',
+    sfx: { cast: 'bohemeth-grunt', release: 'bohemeth-leap', impact: 'bohemeth-quake' },
+    look: { palette: IRON, impact: { ...dust(3.0, 0.9), scorchM: 0.8 }, hitFlash: 0xffffff },
+  },
+  // A5 (fifth): Chain Grab. He frees a length of chain, throws it, drags the opponent in and punches them to the floor.
+  a5: {
+    id: 'chainGrab',
+    name: 'Chain Grab',
+    label: 'CHAIN',
+    description:
+      'Unwinds a length of the chain from his body and throws it at the opponent. If it catches, it wraps round them and he hauls them in, heavier fighters more slowly. They arrive stunned, and he punches them to the floor. A miss rattles back to him.',
+    icon: 'chain-grab',
+    slot: 'a3',
+    staminaCost: 30,
+    cooldownS: 17,
+    castS: 0.4,
+    recoveryS: 0.7,
+    aimRangeM: 8.5,
+    moveFactor: 0.2,
+    interruptible: true,
+    payload: {
+      damage: 14,
+      knockbackMps: 0,
+      heavy: false,
+      strength: 300,
+      impact: 'knuckle-light',
+      stunS: 1.4,
+      pull: {
+        speedMps: 12,
+        stopM: 0.9,
+        refKg: 100,
+        followUp: { damage: 50, knockbackMps: 5, heavy: true, strength: 1200, impact: 'knuckle-heavy' },
+      },
+    },
+    delivery: { type: 'projectile', speedMps: 18, radiusM: 0.35, maxRangeM: 8.5 },
+    vfx: 'chain-grab',
+    sfx: { cast: 'chain-unwind', release: 'chain-throw', impact: 'chain-snap' },
+    look: {
+      palette: IRON,
+      flight: { trailPerS: 40, sparksPerS: 10, shimmer: false },
+      impact: dust(1.2, 0.3),
+      hitFlash: 0xffd0a0,
+    },
+  },
+  // ULT (I): Fiery Fists. All four fists catch fire; his attacks are 20% faster until it burns out.
+  ult: {
+    id: 'fieryFists',
+    name: 'Fiery Fists',
+    label: 'ULT',
+    description:
+      'Raises all four arms, clenches his fists and sets all four ablaze. For 12 seconds every punch is 20% faster, with flames trailing from the fists and flaring where they land. The fire changes how fast he hits, not how hard.',
+    icon: 'fiery-fists',
+    slot: 'ult',
+    staminaCost: 0,
+    cooldownS: 1,
+    castS: 0.9,
+    recoveryS: 0.4,
+    aimRangeM: 0,
+    moveFactor: 0.2,
+    interruptible: false,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: {
+      type: 'buff',
+      durationS: 12,
+      speedFactor: 1,
+      damageTakenFactor: 1,
+      attackSpeedFactor: 1.2,
+      fireFists: true,
+    },
+    vfx: 'fiery-fists',
+    sfx: { cast: 'bohemeth-grunt', release: 'fire-ignite', impact: 'fire-fists-hit' },
+    look: {
+      palette: FIRE,
+      charge: { gatherRadiusM: 1.4, motesPerS: 120, coreMaxM: 0.2 },
+      impact: dust(2.4, 0.4),
+      hitFlash: 0xffb060,
+    },
+  },
+  charge: chargeFor('fieryFists'),
+};

@@ -1,0 +1,17 @@
+{
+  "id": "bohemeth-animation",
+  "extends": "style-boxing",
+  "states": {
+    "Jab": "bohemeth.upper-jab",
+    "StraightPunch": "bohemeth.upper-cross",
+    "Hook": "bohemeth.lower-body-punch",
+    "HeavyPunch": "bohemeth.lower-finisher",
+    "HeavyAttack": "bohemeth.double-fist",
+    "DownwardAerialKick": "bohemeth.body-slam",
+    "ClashFinisher": "bohemeth.lower-finisher",
+    "ClashWin": "bohemeth.lower-finisher",
+    "Idle": "proc.idle.fourarm",
+    "FightingStance": "proc.idle.fourarm",
+    "Turn": "proc.idle.fourarm"
+  }
+}

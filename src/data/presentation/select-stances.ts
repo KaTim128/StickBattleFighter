@@ -23,6 +23,9 @@ export interface SelectStance {
   readonly floatM?: number;
   /** Near hand (the knife hand). `elbowOut`: the elbow points forward instead of back (hands on hips). */
   readonly front: { readonly x: number; readonly y: number; readonly elbowOut?: boolean };
+  /** The lower pair of a four-armed fighter (Bohemeth): near and far lower hands. Absent: they trail the upper pair. */
+  readonly front2?: { readonly x: number; readonly y: number; readonly elbowOut?: boolean };
+  readonly back2?: { readonly x: number; readonly y: number; readonly elbowOut?: boolean };
   /** Far hand (the staff hand). */
   readonly back: { readonly x: number; readonly y: number; readonly elbowOut?: boolean };
   /**
@@ -252,6 +255,24 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     turn: 0.5,
     scale: 1,
     breath: { lean: 1, pelvis: 0.01, hands: 0.03 },
+  },
+  // Bohemeth: a wide, planted brawler's stance, the upper fists raised in front of the face and the lower pair hanging heavy at the hips.
+  bohemeth: {
+    title: 'The Four Armed Brute',
+    style: 'Four-armed heavyweight: charges, grabs, claps and smashes with chains wrapped round him',
+    pelvis: 0.84,
+    leadFoot: 0.4,
+    rearFoot: -0.4,
+    lean: -6,
+    head: 0,
+    // Both upper fists up and out like a boxer's guard, both lower fists held out low and wide: four clear arms, the face left open.
+    front: { x: 0.8, y: -0.34 },
+    back: { x: -0.35, y: -0.42 },
+    front2: { x: 0.92, y: 0.32 },
+    back2: { x: -0.5, y: 0.5 },
+    turn: 0.58,
+    scale: 1.04,
+    breath: { lean: 1.5, pelvis: 0.012, hands: 0.025 },
   },
   shroud: {
     title: 'The Unseen Blade',

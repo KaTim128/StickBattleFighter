@@ -811,3 +811,8 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Magix Wand of Misfortune: one random ability (ultimate included) sealed for exactly 12 s, padlock and countdown on the HUD, never two locks, no cooldown change (automated).
 - [ ] Magix Lucky Hat: one of seven results, a stat label above the bar, the boost ends by itself with nothing left changed (automated).
 - [ ] Magix Mirror Act: dust, then an exact copy of the opponent (look, moves, abilities, no ultimate) for 12 s with a shield, real health kept, the opponent untouched, the magician restored (automated; screenshot).
+
+- [ ] Bohemeth four arms: all four visible and animated in idle, walk, every tap, heavy and ability; none overlap unnaturally or vanish (screenshots; automated: rig solves the lower pair).
+- [ ] Bohemeth tap: four different arms, four animations, the fourth hardest; heavy: both upper fists together, higher damage and push (automated: move data).
+- [ ] Directional Charge: short, locked direction, hits the first fighter, dodgeable (automated); Four Arm Uppercut: held, then launched by weight (automated: light vs heavy); Thunder Clap: area hit and stops a charge from 8 m (automated); Ground Smash: jump, landing hit stronger up close (automated); Chain Grab: chain flies, drags in (slower for heavy), arrival punch (automated); Fiery Fists: +20% attack speed, flames on four fists, gone after 12 s (automated).
+- [ ] Not browser-verified: AI Bohemeth against varied opponents, every ability pose in motion, real-device play, a matrix balance run.

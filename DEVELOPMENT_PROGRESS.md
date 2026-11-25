@@ -1052,3 +1052,8 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 
 ## 25/11/2026 — Magix's face: plain white head with only a curled moustache (owner). Checked on the select screen (screenshot).
 - Magix's moustache texture was tried and reverted (owner): back to the plain handlebar moustache.
+
+## 25/11/2026 — Bohemeth, the four armed brute (TD-174)
+- Files: `src/animation/skeleton.ts` (four-arm rig), `src/rendering/premium-model.ts` (skin, chains, fist flames), `src/data/characters/bohemeth/*`, `src/data/abilities/bohemeth.ts`, `src/abilities/{ability-def,ability-world,kits,ultimate-charge}.ts`, `src/animation/{clips,ability-poses,greybox-motion,stance}.ts`, `src/app/scenes/{fight-arena-scene,scene-abilities}.ts`, `src/data/{ai/brains,presentation/select-stances,audio/move-sounds}.ts`, `src/interface/ability-icons.ts`, tests (`tests/integration/scenes/bohemeth.test.ts`, roster, loadout, balance bands).
+- Checks: tsc clean, unit and scene tests pass, browser screenshots of idle, taps, uppercut hold, ultimate and select screen.
+- Not verified: AI Bohemeth in long fights, each ability's pose in motion beyond those screenshots, the new sounds by ear, real-device play, a balance matrix run. Fire trails on punches are the flames themselves and the impact flare, not a separate trail.

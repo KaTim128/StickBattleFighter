@@ -48,6 +48,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.crystal',
   'proc.idle.calligrapher',
   'proc.idle.magician',
+  'proc.idle.fourarm',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -1658,6 +1659,115 @@ const STRIKES = {
   'magix.curtain-drop': strike(
     { lean: deg(10), armBack: limb(60, 90), armFront: limb(170, 40) },
     { lean: deg(-28), head: deg(14), armBack: limb(30, 80), armFront: limb(10, 4), legFront: limb(54, -74) },
+  ),
+  // ---- Bohemeth's four arms: every tap is thrown by a different arm while the others stay up in a guard, so all four read as working.
+  // Upper jab: the near upper arm snaps out; the three others hold a boxer's guard and the lower pair keeps low.
+  'bohemeth.upper-jab': strike(
+    { lean: deg(-6), armFront: limb(58, 118), armBack: limb(36, 112), armFront2: limb(24, 100), armBack2: limb(8, 96) },
+    {
+      lean: deg(-18),
+      head: deg(-2),
+      armFront: limb(94, 4),
+      armBack: limb(40, 116),
+      armFront2: limb(30, 98),
+      armBack2: limb(10, 94),
+    },
+  ),
+  // Upper cross: the far upper arm follows, the body turning behind it; the first arm pulls back to guard.
+  'bohemeth.upper-cross': strike(
+    { lean: deg(-4), armBack: limb(14, 120), armFront: limb(50, 118), armFront2: limb(28, 100), armBack2: limb(6, 96) },
+    {
+      lean: deg(-26),
+      head: deg(6),
+      armBack: limb(98, 2),
+      armFront: limb(46, 122),
+      armFront2: limb(34, 96),
+      armBack2: limb(8, 92),
+    },
+  ),
+  // Lower body punch: he drops his weight and the near lower arm drives into the body, both upper arms held high over it.
+  'bohemeth.lower-body-punch': strike(
+    {
+      lean: deg(2),
+      armFront: limb(70, 100),
+      armBack: limb(60, 104),
+      armFront2: limb(-10, 112),
+      armBack2: limb(0, 100),
+      legFront: limb(30, -34),
+    },
+    {
+      lean: deg(-32),
+      head: deg(14),
+      armFront: limb(76, 96),
+      armBack: limb(64, 100),
+      armFront2: limb(88, 22),
+      armBack2: limb(6, 96),
+      legFront: limb(46, -52),
+    },
+  ),
+  // Lower finisher: the far lower arm swings the whole body behind it; the upper pair drops to guard the throw.
+  'bohemeth.lower-finisher': strike(
+    {
+      lean: deg(10),
+      head: deg(4),
+      armFront: limb(56, 110),
+      armBack: limb(48, 108),
+      armFront2: limb(16, 100),
+      armBack2: limb(-34, 96),
+      legFront: limb(26, -28),
+    },
+    {
+      lean: deg(-40),
+      head: deg(18),
+      armFront: limb(60, 104),
+      armBack: limb(52, 106),
+      armFront2: limb(30, 96),
+      armBack2: limb(104, 2),
+      legFront: limb(52, -58),
+      legBack: limb(-40, -14),
+    },
+  ),
+  // Heavy attack: both upper arms brought together at his right side, the body wound back, then both fists driven across and forward as one.
+  'bohemeth.double-fist': strike(
+    {
+      lean: deg(14),
+      head: deg(8),
+      armFront: limb(-34, 88),
+      armBack: limb(-40, 92),
+      armFront2: limb(26, 100),
+      armBack2: limb(10, 96),
+      legFront: limb(24, -30),
+      legBack: limb(-34, -24),
+    },
+    {
+      lean: deg(-38),
+      head: deg(-2),
+      armFront: limb(100, 4),
+      armBack: limb(102, 6),
+      armFront2: limb(40, 96),
+      armBack2: limb(30, 98),
+      legFront: limb(52, -58),
+      legBack: limb(-40, -14),
+    },
+  ),
+  // Leaping body slam: all four arms thrown down together.
+  'bohemeth.body-slam': strike(
+    {
+      lean: deg(8),
+      armFront: limb(168, 30),
+      armBack: limb(160, 36),
+      armFront2: limb(150, 40),
+      armBack2: limb(140, 44),
+    },
+    {
+      lean: deg(-26),
+      head: deg(14),
+      armFront: limb(40, 20),
+      armBack: limb(30, 30),
+      armFront2: limb(36, 30),
+      armBack2: limb(24, 40),
+      legFront: limb(50, -70),
+    },
   ),
   'inkmaster.grand-sweep': strike(
     { lean: deg(20), head: deg(-6), armBack: limb(-50, 120), armFront: limb(-40, 36), legFront: limb(26, -26) },

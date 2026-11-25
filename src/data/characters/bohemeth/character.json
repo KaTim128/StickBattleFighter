@@ -1,0 +1,68 @@
+{
+  "id": "bohemeth",
+  "template": "base-stickman",
+  "displayName": "Bohemeth",
+  "description": "Nobody has ever counted how many blows Bohemeth throws in a second, because nobody has stayed standing long enough to try. Four arms, wrapped in the chains of every cage that failed to hold him, and a temper those chains were never going to hold either. He does not circle or posture: he walks straight at you, grabs what he can reach with two hands and hits it with the other two.",
+  "characterType": "fighter",
+  "element": "none",
+  "combatStyle": "brawling",
+  "profiles": {
+    "animation": "bohemeth-animation",
+    "moveset": "bohemeth-moveset",
+    "stats": "bohemeth-stats",
+    "effects": "bohemeth-effects",
+    "audio": "bohemeth-audio",
+    "ai": "bohemeth-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.07,
+      "headRadius": 0.17,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.4,
+      "shin": 0.39,
+      "lowerArms": 0.17
+    },
+    "colour": "#7a3a28",
+    "colourBack": "#5a2a1e",
+    "outline": "#1c0c08",
+    "limbWidthM": 0.118,
+    "outlineWidthM": 0.04,
+    "scale": 1.0,
+    "pants": "#2a1a16"
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "bohemeth-kit"
+}

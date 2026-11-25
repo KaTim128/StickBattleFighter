@@ -9,6 +9,13 @@ import baseAnimation from '../data/characters/base-stickman/animation-profile.js
 import baseCharacter from '../data/characters/base-stickman/character.json';
 import baseMoveset from '../data/characters/base-stickman/moveset.json';
 import baseStats from '../data/characters/base-stickman/stats.json';
+import bohemethAi from '../data/characters/bohemeth/ai.json';
+import bohemethAnimation from '../data/characters/bohemeth/animation-profile.json';
+import bohemethAudio from '../data/characters/bohemeth/audio.json';
+import bohemethCharacter from '../data/characters/bohemeth/character.json';
+import bohemethEffects from '../data/characters/bohemeth/effects.json';
+import bohemethMoveset from '../data/characters/bohemeth/moveset.json';
+import bohemethStats from '../data/characters/bohemeth/stats.json';
 import chronosAi from '../data/characters/chronos/ai.json';
 import chronosAnimation from '../data/characters/chronos/animation-profile.json';
 import chronosAudio from '../data/characters/chronos/audio.json';
@@ -172,6 +179,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     prismorCharacter,
     inkCharacter,
     magixCharacter,
+    bohemethCharacter,
     rabbitCharacter,
     inkSwordCharacter,
     inkBowCharacter,
@@ -198,6 +206,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     prismorAnimation,
     inkAnimation,
     magixAnimation,
+    bohemethAnimation,
     rabbitAnimation,
     inkSwordAnimation,
     inkBowAnimation,
@@ -219,6 +228,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     prismorMoveset,
     inkMoveset,
     magixMoveset,
+    bohemethMoveset,
     rabbitMoveset,
     inkSwordMoveset,
     inkBowMoveset,
@@ -241,6 +251,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     prismorStats,
     inkStats,
     magixStats,
+    bohemethStats,
     rabbitStats,
     inkSwordStats,
     inkBowStats,
@@ -264,6 +275,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     prismorEffects,
     inkEffects,
     magixEffects,
+    bohemethEffects,
     rabbitEffects,
     inkSwordEffects,
     inkBowEffects,
@@ -286,6 +298,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     prismorAudio,
     inkAudio,
     magixAudio,
+    bohemethAudio,
     geargrindAudio,
     resonAudio,
     chronosAudio,
@@ -305,6 +318,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     prismorAi,
     inkAi,
     magixAi,
+    bohemethAi,
     rabbitAi,
     inkSwordAi,
     inkBowAi,
