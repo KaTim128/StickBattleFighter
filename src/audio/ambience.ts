@@ -514,7 +514,7 @@ export class AmbiencePlayer {
     const buffer = this.cheerClip.ready;
     if (!buffer) return false;
     if (t < this.cheerUntilS) return true;
-    this.cheerUntilS = t + buffer.duration / rate;
+    this.cheerUntilS = t + buffer.duration;
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     src.playbackRate.value = lowpassHz < 12000 ? rate : 1; // plain speed for the main cheer
