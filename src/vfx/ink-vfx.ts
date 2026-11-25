@@ -16,11 +16,19 @@ import { ISO_T } from '../rendering/projection';
 type Point = { x: number; y: number };
 type Project = (x: number, y: number, z?: number) => Point;
 /** Where a serpent's prey stands, how high its feet are off the floor (a jump), and how far it leans (-1..1, the way it faces). */
+/** Where the serpent coiled round a prey is drawn: just behind and just in front of the prey's own figure in the depth sort. */
+export interface InkLayers {
+  readonly back: Graphics;
+  readonly front: Graphics;
+}
+
 export interface Prey {
   readonly x: number;
   readonly y: number;
   readonly lift?: number;
   readonly lean?: number;
+  /** The target's depth key (its feet y): the coils behind it sort just under it and the coils in front just over it. */
+  readonly depth?: number;
 }
 
 /**
@@ -76,7 +84,15 @@ function splatter(g: Graphics, at: Point, radius: number, k: number, seed: numbe
 }
 
 /** The serpent: drawn in the air by a brush tip, then a living, hunting snake of ink; it coils round its prey when it catches it. */
-function serpent(f: Graphics, g: Graphics, P: Project, s: Serpent, t: number, preyAt: Prey | null): void {
+function serpent(
+  f: Graphics,
+  g: Graphics,
+  P: Project,
+  s: Serpent,
+  t: number,
+  preyAt: Prey | null,
+  layers: InkLayers | null,
+): void {
   const fade = s.phase === 'fade' ? clamp01(1 - s.phaseS / 0.6) : 1;
   const z = 0.45;
   // Shadow on the floor.
@@ -128,57 +144,81 @@ function serpent(f: Graphics, g: Graphics, P: Project, s: Serpent, t: number, pr
     pts.push(P(p.x + nx, p.y + ny, z + Math.sin(t * 5 + i) * 0.05));
     widths.push(0.34 * (1 - u * 0.8) ** 0.9 + 0.025);
   }
+  // Which graphics each piece of the body goes to: normally one; round a prey the coils behind it and the coils in front of it are
+  // drawn on either side of the target's own figure, so the snake visibly passes behind it and in front of it.
+  const sides: boolean[] | null = s.phase === 'wrap' && preyAt && layers ? [] : null;
   if (s.phase === 'wrap' && preyAt) {
     // Winding round the prey: the body that chased it slides off its path and spirals up the target's own shape (wider at the hips and
-    // the shoulders, narrower at the waist), the head ending up at the shoulder; it squeezes in pulses, and unwinds before it is released.
+    // the shoulders, narrower at the waist), several loops from the shoulder to the ankles, the head ending up at the shoulder. It
+    // squeezes in pulses and unwinds before it is released.
     const hold = s.spec.restrainS;
-    const wind = ease(clamp01(s.phaseS / 0.55));
-    const unwind = ease(clamp01((s.phaseS - (hold - 0.45)) / 0.45));
+    const wind = ease(clamp01(s.phaseS / 0.6));
+    const unwind = ease(clamp01((s.phaseS - (hold - 0.5)) / 0.5));
     const lift = preyAt.lift ?? 0;
     const free = pts.slice();
-    const N = 30;
+    const N = 56;
     pts.length = 0;
     widths.length = 0;
     for (let i = 0; i < N; i++) {
       const u = i / (N - 1); // 0 at the head (the shoulder), 1 at the tail (the ankles)
-      const z = lift + 1.28 - u * 1.12;
-      const body = 0.3 + 0.07 * Math.sin(u * Math.PI * 2 - 0.4); // the torso's own outline
+      const z = lift + 1.3 - u * 1.2;
+      const body = 0.31 + 0.08 * Math.sin(u * Math.PI * 2 - 0.4) + 0.03 * Math.sin(u * 19); // the torso's own outline, and the coil's slack
       const squeeze = 1 + 0.05 * Math.sin(t * 7 - u * 9);
-      const a = u * Math.PI * 5.2 + t * 0.7 + (preyAt.lean ?? 0) * 0.5;
+      // The angle round the body: the head begins on the camera's side; every half turn the body passes behind, then in front again.
+      const a = Math.PI / 4 + u * Math.PI * 7.4 + Math.sin(t * 1.3) * 0.12;
       const sway = (preyAt.lean ?? 0) * 0.16 * (1 - u);
-      const wound = P(preyAt.x + Math.cos(a) * body * squeeze + sway, preyAt.y + Math.sin(a) * body * squeeze, z);
+      const ox = Math.cos(a) * body * squeeze + sway;
+      const oy = Math.sin(a) * body * squeeze;
+      const wound = P(preyAt.x + ox, preyAt.y + oy, z);
       const from = free[Math.min(free.length - 1, Math.round(u * (free.length - 1)))]!;
-      const w = clamp01(wind * 1.5 - u * 0.5) * (1 - unwind);
+      const w = clamp01(wind * 1.6 - u * 0.6) * (1 - unwind);
       pts.push({ x: from.x + (wound.x - from.x) * w, y: from.y + (wound.y - from.y) * w });
-      widths.push(0.3 * (1 - u * 0.4) * (1 - w) + 0.19 * (1 - u * 0.5) * w + 0.02);
+      widths.push(0.28 * (1 - u * 0.35) * (1 - w) + 0.16 * (1 - u * 0.5) * w + 0.02);
+      // In front of the body when this stretch is on the camera's side of it (the camera looks along (-1, -1)); not yet wound = in front.
+      sides?.push(w < 0.5 || Math.cos(a) + Math.sin(a) > 0);
     }
     // Ink flung off the strike, then a few drops where it squeezes.
     splatter(g, P(preyAt.x, preyAt.y, lift + 0.9), 0.5, clamp01(s.phaseS / 0.5), s.x * 3, s.phaseS < 0.5 ? 14 : 4);
   }
-  ribbon(
-    g,
-    pts,
-    widths.map((w) => w + 0.04),
-    PALE,
-    0.28 * fade,
-  );
-  ribbon(g, pts, widths, BLACK, fade);
-  ribbon(
-    g,
-    pts.map((p) => ({ x: p.x - 0.015, y: p.y - 0.03 })),
-    widths.map((w) => w * 0.25),
-    INK_LIT,
-    0.8 * fade,
-  );
-  // Scale marks: short pale chevrons along the body.
-  for (let i = 2; i < pts.length - 2; i += 3) {
-    const p = pts[i]!;
-    g.moveTo(p.x - 0.03, p.y - 0.03)
-      .lineTo(p.x, p.y + 0.02)
-      .lineTo(p.x + 0.03, p.y - 0.03)
-      .stroke({ width: 0.008, color: PALE, alpha: 0.4 * fade });
-  }
+  const body = (target: Graphics, bp: readonly Point[], bw: readonly number[]): void => {
+    if (bp.length < 2) return;
+    ribbon(
+      target,
+      bp,
+      bw.map((w) => w + 0.04),
+      PALE,
+      0.28 * fade,
+    );
+    ribbon(target, bp, bw, BLACK, fade);
+    ribbon(
+      target,
+      bp.map((p) => ({ x: p.x - 0.015, y: p.y - 0.03 })),
+      bw.map((w) => w * 0.25),
+      INK_LIT,
+      0.8 * fade,
+    );
+    // Scale marks: short pale chevrons along the body.
+    for (let i = 2; i < bp.length - 2; i += 3) {
+      const p = bp[i]!;
+      target
+        .moveTo(p.x - 0.03, p.y - 0.03)
+        .lineTo(p.x, p.y + 0.02)
+        .lineTo(p.x + 0.03, p.y - 0.03)
+        .stroke({ width: 0.008, color: PALE, alpha: 0.4 * fade });
+    }
+  };
+  if (sides && layers) {
+    // Split the body into runs of the same side; each run shares its end point with the next so the coil stays unbroken.
+    let start = 0;
+    for (let i = 1; i <= pts.length; i++) {
+      if (i < pts.length && sides[i] === sides[start]) continue;
+      const end = Math.min(pts.length, i + 1);
+      body(sides[start] ? layers.front : layers.back, pts.slice(start, end), widths.slice(start, end));
+      start = i;
+    }
+  } else body(g, pts, widths);
   // The head: a wedge with two whiskers, horns and a white eye; the jaw opens as it strikes.
+  const hg = layers && sides ? layers.front : g;
   const head = pts[0]!;
   const next = pts[Math.min(2, pts.length - 1)]!;
   const ang = Math.atan2(head.y - next.y, head.x - next.x);
@@ -188,25 +228,27 @@ function serpent(f: Graphics, g: Graphics, P: Project, s: Serpent, t: number, pr
   const ny = hx;
   const gape = s.phase === 'hunt' ? 0.5 + 0.5 * Math.sin(t * 6) * 0.3 : 0.9;
   const pt = (a: number, b: number): number[] => [head.x + hx * a + nx * b, head.y + hy * a + ny * b];
-  g.poly([
+  hg.poly([
     ...pt(-0.12, -0.17),
     ...pt(0.22, -0.09 - 0.03 * gape),
     ...pt(0.34, -0.02),
     ...pt(0.22, 0.02),
     ...pt(-0.1, 0.17),
   ]).fill({ color: BLACK, alpha: fade });
-  g.poly([...pt(0.02, 0.06), ...pt(0.3, 0.03 + 0.12 * gape), ...pt(0.2, 0.12 + 0.12 * gape), ...pt(-0.06, 0.15)]).fill({
-    color: INK,
-    alpha: fade,
-  });
-  g.poly([...pt(-0.02, -0.14), ...pt(-0.2, -0.3), ...pt(0.04, -0.17)]).fill({ color: BLACK, alpha: fade });
-  g.circle(head.x + hx * 0.12 + nx * -0.07, head.y + hy * 0.12 + ny * -0.07, 0.03).fill({ color: PALE, alpha: fade });
+  hg.poly([...pt(0.02, 0.06), ...pt(0.3, 0.03 + 0.12 * gape), ...pt(0.2, 0.12 + 0.12 * gape), ...pt(-0.06, 0.15)]).fill(
+    {
+      color: INK,
+      alpha: fade,
+    },
+  );
+  hg.poly([...pt(-0.02, -0.14), ...pt(-0.2, -0.3), ...pt(0.04, -0.17)]).fill({ color: BLACK, alpha: fade });
+  hg.circle(head.x + hx * 0.12 + nx * -0.07, head.y + hy * 0.12 + ny * -0.07, 0.03).fill({ color: PALE, alpha: fade });
   for (const k of [-1, 1]) {
     const wp = [0, 1, 2, 3].map((i) => ({
       x: head.x + hx * (0.2 - i * 0.12) + nx * k * (0.06 + i * 0.07) + Math.sin(t * 6 + i) * 0.02,
       y: head.y + hy * (0.2 - i * 0.12) + ny * k * (0.06 + i * 0.07) + Math.cos(t * 6 + i) * 0.02,
     }));
-    ribbon(g, wp, [0.022, 0.018, 0.012, 0.004], BLACK, fade);
+    ribbon(hg, wp, [0.022, 0.018, 0.012, 0.004], BLACK, fade);
   }
 }
 
@@ -225,6 +267,9 @@ type Local = readonly [number, number, number?]; // forward, height, side (metre
  * pupils. It rises out of a burst of ink on the ground, lowers its head and paws the earth, gallops leaning into its turns, drives its
  * horns in on a hit, and scatters into ink when it is done.
  */
+/** How big the Ink Bull is drawn, relative to its first design. */
+const BULL_SCALE = 0.84;
+
 function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
   const spec = b.spec;
   const hx = Math.cos(b.heading);
@@ -235,19 +280,30 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
     b.phase === 'fade' ? clamp01(b.phaseS / 0.6) : b.phase === 'ram' ? ease(clamp01((b.phaseS - 0.15) / 0.4)) : 0;
   const alpha = Math.min(1, 0.15 + rise) * (1 - fadeOut);
   const sink = (1 - rise) * 1.1;
-  const L = (fw: number, z: number, side = 0): Point => {
-    const lean = b.lean * 0.28 * z;
-    return P(b.x + hx * fw - hy * (side + lean), b.y + hy * fw + hx * (side + lean), Math.max(0, z - sink));
+  // A little smaller than first drawn (still heavy and bulky): everything is placed through this scale.
+  const S = BULL_SCALE;
+  // The gallop's rhythm: the whole body bobs and pitches with each stride, the head and neck dipping a beat behind.
+  const running = b.phase === 'charge' || b.phase === 'slow' || b.phase === 'ram';
+  const stride = running ? b.gait * 2 : 0;
+  const bob = running && b.speed > 0.6 ? Math.sin(stride) * 0.055 : 0;
+  const pitch = running && b.speed > 0.6 ? Math.sin(stride + 0.9) * 0.05 : 0;
+  const L = (fw0: number, z0: number, side0 = 0): Point => {
+    const fw = fw0 * S;
+    const z = (z0 + bob + pitch * fw0) * S;
+    // Turning bends the whole spine: the shoulders lean into the corner while the haunch swings the other way.
+    const lean = b.lean * 0.28 * z - b.lean * 0.12 * fw;
+    const side = side0 * S + lean;
+    return P(b.x + hx * fw - hy * side, b.y + hy * fw + hx * side, Math.max(0, z - sink));
   };
   const rough = (i: number, k = 0.045): number => (noise(i * 7.31 + b.ageS * 0.0) - 0.5) * k;
   /** A closed, smoothed, slightly ragged blob through local control points. */
-  const blob = (ctrl: readonly Local[], seed: number, colour: number, a = alpha, raggedness = 0.045): void => {
+  const blob = (ctrl: readonly Local[], seed: number, colour: number, a = alpha, raggedness = 0.02): void => {
     if (a <= 0.01) return;
     const pts = ctrl.map((c, i) => {
       const p = L(c[0] + rough(seed + i, raggedness), c[1] + rough(seed + i + 40, raggedness), c[2] ?? 0);
       return p;
     });
-    const { pts: sm } = smoothPath([...pts, pts[0]!, pts[1]!], new Array(pts.length + 2).fill(0.1), 3);
+    const { pts: sm } = smoothPath([...pts, pts[0]!, pts[1]!, pts[2]!], new Array(pts.length + 3).fill(0.1), 6);
     g.poly(sm.flatMap((p) => [p.x, p.y])).fill({ color: colour, alpha: a });
   };
   const stroke = (ctrl: readonly Local[], widths: readonly number[], colour: number, a = alpha): void => {
@@ -255,7 +311,7 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
     ribbon(
       g,
       ctrl.map((c) => L(c[0], c[1], c[2] ?? 0)),
-      widths,
+      widths.map((w) => w * S),
       colour,
       a,
     );
@@ -272,15 +328,16 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
     (b.phase === 'form' ? 0.95 : b.phase === 'paw' ? 0.85 : 0.55 * (1 - fadeOut)) *
     (b.phase === 'fade' ? 1 - fadeOut : 1);
   if (poolA > 0.02) {
-    const R = 2.6 * burstK;
+    const R = 2.6 * S * burstK;
     const ring: Point[] = [];
     for (let i = 0; i < 28; i++) {
       const a = (i / 28) * Math.PI * 2;
-      const r = R * (0.55 + noise(i * 3.7) * 0.6) * (0.85 + 0.15 * Math.sin(t * 2 + i));
+      const r = R * (0.72 + noise(i * 3.7) * 0.32) * (0.9 + 0.1 * Math.sin(t * 2 + i));
       ring.push(P(b.home.x + Math.cos(a) * r, b.home.y + Math.sin(a) * r, 0.02));
     }
-    f.poly(ring.flatMap((p) => [p.x, p.y])).fill({ color: BLACK, alpha: poolA * 0.35 });
-    g.poly(ring.flatMap((p) => [p.x, p.y])).fill({ color: BLACK, alpha: poolA * 0.8 });
+    const round = smoothPath([...ring, ring[0]!, ring[1]!], new Array(ring.length + 2).fill(0.1), 4).pts;
+    f.poly(round.flatMap((p) => [p.x, p.y])).fill({ color: BLACK, alpha: poolA * 0.35 });
+    g.poly(round.flatMap((p) => [p.x, p.y])).fill({ color: BLACK, alpha: poolA * 0.8 });
     for (let i = 0; i < 9; i++) {
       const a = (i / 9) * Math.PI * 2 + noise(i) * 0.5;
       const r0 = R * 0.5;
@@ -310,7 +367,7 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
   }
   // The shadow.
   const sh = P(b.x, b.y, 0);
-  f.ellipse(sh.x, sh.y, 1.1, 0.4).fill({ color: BLACK, alpha: 0.3 * alpha });
+  f.ellipse(sh.x, sh.y, 1.1 * S, 0.4 * S).fill({ color: BLACK, alpha: 0.3 * alpha });
 
   // Legs: a gallop cycle while charging, a scraping front hoof while it paws, still otherwise.
   const hips: ReadonlyArray<{ fw: number; side: number; front: boolean; offs: number }> = [
@@ -331,26 +388,30 @@ function bull(f: Graphics, g: Graphics, P: Project, b: Bull, t: number): void {
       kneeBend = 0.28;
     } else if (charging && b.speed > 0.6) {
       const ph = b.gait + h.offs;
-      foot = [h.fw + Math.sin(ph) * 0.6, Math.max(0, Math.cos(ph)) * 0.45];
+      // The planted foot slides back steadily, then the leg swings forward quickly and lifts in a smooth arc (not a plain sine).
+      const c = (((ph / (Math.PI * 2)) % 1) + 1) % 1;
+      const reach = c < 0.6 ? 0.6 - (c / 0.6) * 1.2 : -0.6 + ease((c - 0.6) / 0.4) * 1.2;
+      const lift = c < 0.6 ? 0 : Math.sin(((c - 0.6) / 0.4) * Math.PI) * 0.5;
+      foot = [h.fw + reach, lift];
     } else foot = [h.fw + (h.front ? 0.05 : -0.05), 0];
     const hip: Local = [h.fw, hipZ, h.side];
     const knee: Local = [(h.fw + foot[0]) / 2 + kneeBend, (hipZ + foot[1]) / 2 - 0.05, h.side];
     const hoof: Local = [foot[0], foot[1], h.side];
     // A thigh/shoulder mass where the leg joins, so no gap can show between the leg and the body.
     const top = L(h.fw, hipZ - 0.15, h.side);
-    g.ellipse(top.x, top.y, 0.3, 0.26).fill({ color: near ? BLACK : INK, alpha });
+    g.ellipse(top.x, top.y, 0.3 * S, 0.26 * S).fill({ color: near ? BLACK : INK, alpha });
     stroke([hip, knee, hoof], [0.5, 0.3, 0.2], near ? BLACK : INK, alpha * (near ? 1 : 0.85));
     // The hoof: a small cloven wedge.
     const hp = L(foot[0], foot[1], h.side);
     g.poly([
-      hp.x - 0.09,
+      hp.x - 0.09 * S,
       hp.y + 0.02,
-      hp.x + 0.1,
+      hp.x + 0.1 * S,
       hp.y + 0.02,
-      hp.x + 0.07,
-      hp.y - 0.07,
-      hp.x - 0.06,
-      hp.y - 0.07,
+      hp.x + 0.07 * S,
+      hp.y - 0.07 * S,
+      hp.x - 0.06 * S,
+      hp.y - 0.07 * S,
     ]).fill({
       color: BLACK,
       alpha,
@@ -952,11 +1013,19 @@ export function drawInk(
   ink: InkWorld,
   t: number,
   preyAt: (id: string | null) => Prey | null,
+  layers: InkLayers | null = null,
 ): void {
   for (const sl of ink.slashes) inkSlash(g, P, sl);
   for (const fig of ink.figures) drawnFigure(f, g, P, fig, t);
   for (const v of ink.vortices) vortex(f, g, P, v, t);
   for (const m of ink.masterpieces) masterpiece(f, g, P, m, t);
-  for (const s of ink.serpents) serpent(f, g, P, s, t, s.phase === 'wrap' ? preyAt(s.targetId) : null);
+  for (const s of ink.serpents) {
+    const prey = s.phase === 'wrap' ? preyAt(s.targetId) : null;
+    serpent(f, g, P, s, t, prey, prey ? layers : null);
+    if (prey && layers && prey.depth !== undefined) {
+      layers.back.zIndex = prey.depth - 0.02;
+      layers.front.zIndex = prey.depth + 0.02;
+    }
+  }
   for (const b of ink.bulls) bull(f, g, P, b, t);
 }

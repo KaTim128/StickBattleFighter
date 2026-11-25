@@ -3952,7 +3952,15 @@ export class FightArenaScene implements ArenaScene {
             world: this.abilities.world.ink,
             at: (id) => {
               const f = id ? this.fighterByName(id) : null;
-              return f ? { x: f.x, y: f.y, lift: f.hop.heightM + f.abilityLift, lean: f.view?.motion ?? 0 } : null;
+              return f
+                ? {
+                    x: f.x,
+                    y: f.y,
+                    lift: f.hop.heightM + f.abilityLift,
+                    lean: f.view?.motion ?? 0,
+                    depth: f.view?.root.zIndex,
+                  }
+                : null;
             },
           }
         : undefined,

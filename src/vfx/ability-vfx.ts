@@ -302,7 +302,7 @@ export interface AbilityVfxInput {
   /** Inkmaster's living ink (serpent, dragon, cyclone, the Masterpiece) and where a fighter stands by name. */
   readonly ink?: {
     readonly world: InkWorld;
-    readonly at: (id: string | null) => { x: number; y: number; lift?: number; lean?: number } | null;
+    readonly at: (id: string | null) => { x: number; y: number; lift?: number; lean?: number; depth?: number } | null;
   };
   /**
    * Spectral chains this frame (Grave Chains, owner 12/11/2026): from the caster's staff to the
@@ -442,10 +442,18 @@ export class AbilityVfx {
   attach(floor: Container, world: Container, actors: Container): void {
     floor.addChild(this.floor);
     world.addChildAt(this.air, world.getChildIndex(actors) + 1);
+    // The coils of the Ink Serpent round a fighter are drawn among the fighters themselves, so some pass behind and some in front.
+    actors.addChild(this.inkBack, this.inkFront);
   }
+
+  /** The serpent's coils behind and in front of the fighter it holds (in the fighters' depth sort). */
+  private readonly inkBack = new Graphics();
+  private readonly inkFront = new Graphics();
 
   update(dtS: number, input: AbilityVfxInput): void {
     this.timeS += dtS;
+    this.inkBack.clear();
+    this.inkFront.clear();
     for (const fx of input.fx) this.onFx(fx);
     for (const hit of input.impacts) this.burst(hit);
     for (const d of input.dust) this.dustFrom(d);
@@ -2100,7 +2108,7 @@ export class AbilityVfx {
       }
     }
 
-    if (input.ink) drawInk(f, g, P, input.ink.world, t, input.ink.at);
+    if (input.ink) drawInk(f, g, P, input.ink.world, t, input.ink.at, { back: this.inkBack, front: this.inkFront });
 
     // Grenades: a shadow on the floor, then the olive body tumbling through its arc (or sitting, or stuck to someone),
     // with a light that blinks faster as the fuse runs down.
