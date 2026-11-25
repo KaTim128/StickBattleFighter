@@ -37,7 +37,7 @@ describe('the roomier house', () => {
     }
   });
 
-  it('every room can be walked to from the player start, upstairs included', () => {
+  it('every room can be walked to from the player start, one floor: no staircase (owner, 25/11/2026)', () => {
     for (const r of HOUSE.rooms.filter((x) => !x.outdoors)) {
       const at = { floor: r.floor, x: (r.rect.x0 + r.rect.x1) / 2, y: (r.rect.y0 + r.rect.y1) / 2 };
       // The middle of a room may be under a table; find any free point in it.
@@ -140,32 +140,5 @@ describe.each([
           offenders.push(`${f.kind} ${f.id} blocks ${d.id}`);
     }
     expect(offenders).toEqual([]);
-  });
-});
-
-/** The stairs stand against a wall, not in the middle of the hall, and clear of every door (owner, 18/11/2026). */
-describe.each([
-  ['the authored plan', HOUSE_PLAN, 0.6],
-  ['the real, roomier house', HOUSE, 1.0],
-])('the stairs in %s', (_name, house, clearM) => {
-  const ramp = house.stairs[0]!.ramp;
-  it('stand against a wall', () => {
-    const gaps = house.walls
-      .filter((w) => w.floor === 0 && w.y1 > ramp.y0 && w.y0 < ramp.y1)
-      .map((w) => Math.max(w.x0 - ramp.x1, ramp.x0 - w.x1));
-    expect(Math.min(...gaps)).toBeLessThanOrEqual(0.3); // the rail touches the wall beside it
-  });
-  it('are clear of every door and arch on both floors', () => {
-    for (const d of house.doors) {
-      const gap = Math.max(
-        Math.max(ramp.x0 - d.rect.x1, d.rect.x0 - ramp.x1),
-        Math.max(ramp.y0 - d.rect.y1, d.rect.y0 - ramp.y1),
-      );
-      expect(gap, `${d.id} is too close to the stairs`).toBeGreaterThanOrEqual(clearM);
-    }
-  });
-  it('the hall is tighter: little more than the stairs and a walkway wide', () => {
-    const hall = house.rooms.find((r) => r.id === 'hall')!.rect;
-    expect(hall.x1 - hall.x0).toBeLessThanOrEqual((ramp.x1 - ramp.x0) * 3.2);
   });
 });

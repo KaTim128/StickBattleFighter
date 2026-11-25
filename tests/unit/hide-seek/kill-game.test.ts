@@ -9,7 +9,7 @@ const DT = 1 / 60;
 function hiddenAndFound() {
   const g = new HideSeekGame(HOUSE_PLAN);
   g.round.update(21);
-  const spot = g.spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 1)!;
+  const spot = g.spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 0)!;
   g.player.floor = spot.floor;
   (g as unknown as { enterHiding(s: typeof spot): void }).enterHiding(spot);
   const out = exitPoint(g.world, spot);

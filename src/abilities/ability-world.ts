@@ -1200,6 +1200,8 @@ export class AbilityWorld {
         this.ink.release(casterId, def, aim, host);
         break;
       case 'summon':
+        // A summon that is drawn first (Ink Clone) rises once its figure is finished; others rise at once.
+        if (d.drawS && this.ink.release(casterId, def, aim, host)) break;
         host.summon?.(casterId, d);
         host.emit({
           kind: 'impact',

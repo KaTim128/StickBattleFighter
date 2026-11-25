@@ -54,20 +54,55 @@ describe('Ink Serpent', () => {
 });
 
 describe('Ink Dragon', () => {
-  it('breathes at most once per warning, hits each fighter once per breath, and leaves when its time is up', () => {
+  it('charges once: one warning, one breath that hits once, then it dissolves', () => {
     const a = arena([{ x: 5, y: 0 }]);
     a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
-    run(a, 4.2);
+    const phases = new Set<string>();
+    let breathStarts = 0;
+    let last = '';
+    for (let i = 0; i < 8 * 60; i++) {
+      a.world.update(1 / 60, a.host);
+      const d = a.world.ink.dragons[0];
+      if (!d) break;
+      phases.add(d.phase);
+      if (d.phase === 'breathe' && last !== 'breathe') breathStarts++;
+      last = d.phase;
+    }
+    expect(phases.has('rear')).toBe(true); // the warning
+    expect(breathStarts).toBe(1);
     expect(a.hits.length).toBeLessThanOrEqual(1);
-    run(a, 14);
+    run(a, 2);
     expect(a.world.ink.dragons).toHaveLength(0);
-    expect(a.hits.length).toBeLessThanOrEqual(4);
+  });
+  it('is quick: drawn in about half a second and breathing within about two seconds', () => {
+    const a = arena([{ x: 5, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
+    run(a, 2.2);
+    expect(a.hits.length + (a.world.ink.dragons[0]?.phase === 'breathe' ? 1 : 0)).toBeGreaterThanOrEqual(1);
   });
   it('a new dragon replaces the old one (one at a time)', () => {
     const a = arena([{ x: 5, y: 0 }]);
     a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
     a.world.release('me', INKMASTER_KIT.a3, { x: 5, y: 0 }, a.host);
     expect(a.world.ink.dragons).toHaveLength(1);
+  });
+});
+
+describe('Ink Clone drawing', () => {
+  it('draws the stick figure first, then the clone rises; nothing rises if he falls while drawing', () => {
+    const a = arena([{ x: 5, y: 0 }]);
+    a.world.release('me', INKMASTER_KIT.a4, { x: 5, y: 0 }, a.host);
+    expect(a.world.ink.figures).toHaveLength(1);
+    run(a, 0.3);
+    expect(a.summons).toEqual([]);
+    run(a, 0.4);
+    expect(a.summons).toHaveLength(1);
+    expect(a.world.ink.figures).toHaveLength(0);
+    const b = arena([{ x: 5, y: 0 }]);
+    b.world.release('me', INKMASTER_KIT.a4, { x: 5, y: 0 }, b.host);
+    b.me.hittable = false;
+    run(b, 1);
+    expect(b.summons).toEqual([]);
   });
 });
 

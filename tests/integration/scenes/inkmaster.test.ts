@@ -80,7 +80,7 @@ describe('Inkmaster', () => {
     const phases = new Set<string>();
     let breaths = 0;
     let last = '';
-    for (let i = 0; i < 14 / STEP; i++) {
+    for (let i = 0; i < 9 / STEP; i++) {
       run(STEP);
       const d = world().dragons[0];
       if (!d) break;
@@ -90,8 +90,7 @@ describe('Inkmaster', () => {
     }
     expect(phases.has('form')).toBe(true);
     expect(phases.has('rear')).toBe(true); // a visible warning before every breath
-    expect(breaths).toBeGreaterThanOrEqual(1);
-    expect(breaths).toBeLessThanOrEqual(4);
+    expect(breaths).toBe(1); // it charges once
     runUntil(() => world().dragons.length === 0, 4);
     expect(world().dragons).toHaveLength(0); // it dissolves when its time is up
     scenes.clear();

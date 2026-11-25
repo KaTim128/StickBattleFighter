@@ -1,5 +1,5 @@
 import type { ArenaLayout, DoorSpec, FloorZone, WallRect } from '../data/arenas/arena-layout';
-import { HOUSE_DOORS, HOUSE_FURNITURE, HOUSE_ROOMS, HOUSE_STAIRS, HOUSE_WALLS } from '../data/arenas/house';
+import { HOUSE_DOORS, HOUSE_FURNITURE, HOUSE_ROOMS, HOUSE_WALLS } from '../data/arenas/house';
 import type { PropKindId, PropPlacement } from '../data/objects/props';
 import { facingFor } from '../rendering/furniture-facing';
 import { PLASTER_AGED } from '../rendering/house-decor';
@@ -33,7 +33,6 @@ const KIND_MAP: Readonly<Record<string, PropKindId>> = {
   bookshelf: 'house-storage',
   cupboard: 'house-storage',
   chest: 'house-chest',
-  curtain: 'house-curtain',
   sink: 'house-counter',
   stove: 'house-counter',
   counter: 'house-counter',
@@ -65,17 +64,6 @@ function props(): PropPlacement[] {
       house: { kind: f.kind, colour: f.colour, id: f.id },
     });
   }
-  // The staircase stands in the hall as in Hide and Seek, but it is closed: nobody climbs it (D6). It is solid scenery.
-  const st = HOUSE_STAIRS[0]!;
-  out.push({
-    kind: 'house-stairs',
-    x: (st.ramp.x0 + st.ramp.x1) / 2 - OX,
-    y: (st.ramp.y0 + st.ramp.y1) / 2 - OY,
-    w: st.ramp.x1 - st.ramp.x0,
-    d: st.ramp.y1 - st.ramp.y0,
-    h: st.riseM,
-    house: { kind: 'stairs', colour: 0x58442f, id: 'stairs' },
-  });
   return out;
 }
 

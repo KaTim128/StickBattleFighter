@@ -3,7 +3,6 @@ import { footprint, kindOf, PROP_KINDS, type PropPlacement } from '../data/objec
 import type { FurnitureDef } from '../modes/hide-seek/house-types';
 import { drawBookshelf } from './bookshelf-view';
 import { drawHouseRug, drawInto } from './house-furniture';
-import { drawStairs } from './house-view';
 import { face, faceQuad, isoBlock, isoCylinder, isoShadow, shade, withMaterial } from './iso-draw';
 import { iso } from './projection';
 
@@ -95,15 +94,7 @@ export function buildPropView(p: PropPlacement): Container {
       blocksSight: false,
       colour: p.house.colour,
     };
-    if (p.house.kind === 'stairs') {
-      // The staircase, closed off in a fight: the house's own treads, rising toward the north.
-      const steps = drawStairs(
-        { id: 'main', ramp: { x0, y0, x1, y1 }, rises: 'n', riseM: h, bottomFloor: 0, topFloor: 1 },
-        0,
-      );
-      // Far treads first, so each nearer tread draws over the one behind it.
-      for (const step of steps.reverse()) root.addChild(step.g);
-    } else drawInto(g, piece, [], [], p.facing);
+    drawInto(g, piece, [], [], p.facing);
     const at = iso(p.x, p.y);
     root.position.set(at.x, at.y);
     return root;
@@ -511,7 +502,6 @@ function drawKind(
     }
     case 'rug':
     // The house's pieces are drawn from the house's own art before this switch is reached.
-    case 'house-stairs':
     case 'house-chair':
     case 'house-armchair':
     case 'house-sofa':
@@ -521,7 +511,6 @@ function drawKind(
     case 'house-chest':
     case 'house-storage':
     case 'house-counter':
-    case 'house-curtain':
     case 'house-rug':
       break;
     default: {

@@ -16,13 +16,13 @@ const idle = (g: HideSeekGame, seconds: number, extra: object = {}) => {
 describe('hiding places (sections B and F)', () => {
   const spots = hideSpots(HOUSE_PLAN);
 
-  it('there are hiding places of every kind the brief lists, on both floors (all indoors)', () => {
+  it('there are hiding places of every kind the brief lists, on the one floor (all indoors)', () => {
     const kinds = new Set(spots.map((s) => s.spec.kind));
-    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain', 'under-table'])
+    for (const k of ['wardrobe', 'cupboard', 'chest', 'box', 'under-table'])
       expect(kinds.has(k as never), k).toBe(true);
-    expect(spots.some((s) => s.floor === 1)).toBe(true);
+    expect(spots.some((s) => s.floor === 1)).toBe(false); // no staircase, no upper floor (owner, 25/11/2026)
     expect(spots.some((s) => s.floor === 0)).toBe(true);
-    expect(spots.length).toBeGreaterThanOrEqual(14); // a smaller house (owner, 18/11/2026); the sofa is no longer one (19/11/2026)
+    expect(spots.length).toBeGreaterThanOrEqual(8); // one floor, no beds or curtains (owner, 25/11/2026)
     // The game is played inside the house: no hiding place is in a yard.
     const w = new HouseWorld(HOUSE_PLAN);
     for (const sp of spots) expect(w.roomAt(sp.floor, sp.spec.at.x, sp.spec.at.y)?.outdoors, sp.id).not.toBe(true);
@@ -65,15 +65,14 @@ describe('hiding places (sections B and F)', () => {
       press(g);
       expect(g.takeEvents().some((e) => e.kind === 'hide-exit' && e.loudness > 0)).toBe(true);
     }
-    expect(noise.wardrobe).toBeGreaterThan(noise.curtain!);
-    expect(noise['under-bed']).toBeGreaterThan(noise.curtain!);
+    expect(noise.wardrobe).toBeGreaterThan(noise['under-table']!);
     expect(new Set(Object.values(noise)).size).toBeGreaterThan(3); // different places, different noise
   });
 
   it('hidden: the body stays put and the view narrows by itself, with nothing to lean or hold', () => {
     const g = new HideSeekGame(HOUSE_PLAN);
-    const wardrobe = spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 1)!;
-    g.player.floor = 1;
+    const wardrobe = spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 0)!;
+    g.player.floor = 0;
     const out = exitPoint(g.world, wardrobe);
     g.player.x = out.x;
     g.player.y = out.y;
@@ -110,7 +109,7 @@ describe('hiding places (sections B and F)', () => {
   });
 
   it('exposure: a hunter in front of the opening sees most, from the side less, from behind least; distance helps', () => {
-    const bed = spots.find((s) => s.spec.kind === 'under-bed' && s.floor === 1 && s.spec.opensToward === 's')!;
+    const bed = spots.find((s) => s.spec.kind === 'wardrobe' && s.spec.opensToward === 's')!;
     const at = bed.spec.at;
     const front = exposure(bed, { x: at.x, y: at.y + 2 });
     const side = exposure(bed, { x: at.x + 2, y: at.y });
@@ -278,7 +277,7 @@ describe('a hunter who knows where the hider is actually grabs them (owner, 19/1
 describe('hiding shows a small view by itself, and looking out never gives the player away (owner, 19/11/2026)', () => {
   const setup = () => {
     const g = new HideSeekGame(HOUSE_PLAN);
-    const spot = g.spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 1)!;
+    const spot = g.spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 0)!;
     const out = exitPoint(g.world, spot);
     g.player.floor = spot.floor;
     g.player.x = out.x;

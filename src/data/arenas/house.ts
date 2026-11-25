@@ -98,7 +98,7 @@ const room = (
   ...(outdoors ? { outdoors: true } : {}),
 });
 
-export const HOUSE_ROOMS: readonly RoomDef[] = [
+const ROOMS_ALL: readonly RoomDef[] = [
   // Ground floor: a compact home, entered through the hall (owner, 18/11/2026: smaller, no long corridor)
   room('kitchen', 'Kitchen', 0, 15, 9, 20, 14, 'room', 0.9),
   room('dining', 'Dining room', 0, 20, 9, 25, 14, 'room', 0.85),
@@ -180,7 +180,7 @@ const wallsUpper: WallDef[] = [
   seg(1, STAIR_X0, STAIR_BOTTOM_Y + 0.35, STAIR_X1, STAIR_BOTTOM_Y + 0.5, 'rail'),
 ];
 
-export const HOUSE_WALLS: readonly WallDef[] = [...wallsGround, ...wallsUpper];
+const WALLS_ALL: readonly WallDef[] = [...wallsGround, ...wallsUpper];
 
 const door = (
   id: string,
@@ -203,7 +203,7 @@ const door = (
 const gapH = (y: number, x0: number, x1: number): Rect => ({ x0, y0: y - T / 2, x1, y1: y + T / 2 });
 const gapV = (x: number, y0: number, y1: number): Rect => ({ x0: x - T / 2, y0, x1: x + T / 2, y1 });
 
-export const HOUSE_DOORS: readonly DoorDef[] = [
+const DOORS_ALL: readonly DoorDef[] = [
   door('d-kitchen-living', 0, 'door', gapH(14, 16, 17.6), 'kitchen', 'living', false),
   door('a-kitchen-dining', 0, 'arch', gapV(20, 11.0, 13.0), 'kitchen', 'dining', true),
   door('a-dining-living', 0, 'arch', gapH(14, 22, 24.5), 'dining', 'living', true),
@@ -213,17 +213,6 @@ export const HOUSE_DOORS: readonly DoorDef[] = [
   { ...door('d-front', 0, 'door', gapH(21, 26.4, 27.6), 'hall', 'frontyard', false, true), locked: true },
   door('d-bed1', 1, 'door', gapV(25, 10.3, 11.7), 'bed1', 'uphall', false),
   door('d-bed2', 1, 'door', gapV(25, 16.5, 17.9), 'bed2', 'uphall', false),
-];
-
-export const HOUSE_STAIRS: readonly StairDef[] = [
-  {
-    id: 'main',
-    ramp: { x0: STAIR_X0, y0: STAIR_TOP_Y, x1: STAIR_X1, y1: STAIR_BOTTOM_Y },
-    rises: 'n',
-    riseM: 3,
-    bottomFloor: 0,
-    topFloor: 1,
-  },
 ];
 
 let n = 0;
@@ -272,7 +261,18 @@ const DARK_WOOD = 0x5a4430;
 const FABRIC = 0x7d6b9c;
 const WHITE = 0xd9d6cf;
 
-export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
+const FURNITURE_ALL: readonly FurnitureDef[] = [
+  // ---------------------------------------------------------------- Hall (no staircase: wardrobes and a box to hide in)
+  item('wardrobe', 0, 27.4, 9.3, 28.7, 10.2, 2.0, DARK_WOOD, {
+    blocksSight: true,
+    hide: hide('wardrobe', 0.9, 0.45, 0.9, 28.05, 9.9, 's'),
+  }),
+  item('wardrobe', 0, 27.6, 12.9, 28.8, 13.8, 2.0, DARK_WOOD, {
+    blocksSight: true,
+    hide: hide('wardrobe', 0.9, 0.45, 0.9, 28.2, 13.5, 'w'),
+  }),
+  item('box', 0, 28.2, 15.6, 28.8, 16.3, 0.6, WOOD, { hide: hide('box', 0.8, 0.4, 0.6, 28.5, 15.95, 'w') }),
+  item('box', 0, 20.0, 20.1, 20.7, 20.8, 0.6, WOOD, { hide: hide('box', 0.8, 0.4, 0.6, 20.35, 20.45, 'n') }),
   // ---------------------------------------------------------------- Living room
   item('rug', 0, 16.6, 15.5, 21.6, 19.5, 0.02, 0x7a3a3a, { solid: false }),
   item('sofa', 0, 17.3, 18.0, 20.0, 19.2, 0.9, FABRIC),
@@ -373,7 +373,7 @@ export const HOUSE_FURNITURE: readonly FurnitureDef[] = [
   item('tree', 0, 10, 5, 11, 6, 3.6, 0x4a3a2a),
 ];
 
-export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
+const THROWABLES_ALL: readonly ThrowableDef[] = [
   { id: 't1', kind: 'bottle', floor: 0, x: 20.6, y: 17.9 },
   { id: 't2', kind: 'can', floor: 0, x: 18.9, y: 13.1 },
   { id: 't3', kind: 'toy', floor: 0, x: 18.6, y: 15.2 },
@@ -384,6 +384,22 @@ export const HOUSE_THROWABLES: readonly ThrowableDef[] = [
   { id: 't8', kind: 'can', floor: 1, x: 22.4, y: 18.3 },
   { id: 't9', kind: 'toy', floor: 1, x: 26.4, y: 15.5 },
 ];
+
+/**
+ * Owner, 25/11/2026: no staircase and no curtains. The house is the ground floor only (the upper floor was reached by the stairs), and the
+ * curtains are gone from the furniture. The upper floor, the stairs and the curtains stay in the authored lists above (the engine still
+ * supports stairs), but nothing of them is part of the playable house.
+ */
+export const HOUSE_ROOMS: readonly RoomDef[] = ROOMS_ALL.filter((r) => r.floor === 0);
+export const HOUSE_WALLS: readonly WallDef[] = WALLS_ALL.filter(
+  (w) => w.floor === 0 && !(w.kind === 'rail') && w.heightM !== 3,
+);
+export const HOUSE_DOORS: readonly DoorDef[] = DOORS_ALL.filter((d) => d.floor === 0);
+export const HOUSE_STAIRS: readonly StairDef[] = [];
+export const HOUSE_FURNITURE: readonly FurnitureDef[] = FURNITURE_ALL.filter(
+  (f) => f.floor === 0 && f.kind !== 'curtain',
+);
+export const HOUSE_THROWABLES: readonly ThrowableDef[] = THROWABLES_ALL.filter((t) => t.floor === 0);
 
 /** Who is in the house: the standard dummy as the player, the masked slasher as the one hunter (Phase 2). */
 export const HOUSE_CAST = { player: 'training-dummy', hunter: 'shroud' } as const;
@@ -410,9 +426,6 @@ export const HOUSE_PLAN: HouseDef = {
     { floor: 0, x: 23.3, y: 10.5 },
     { floor: 0, x: 18.9, y: 11.3 },
     { floor: 0, x: 18.2, y: 15.45 },
-    // Upstairs too, so no floor is a safe haven (he climbs the stairs on his rounds).
-    { floor: 1, x: 21.4, y: 12.4 },
-    { floor: 1, x: 21, y: 17.6 },
   ],
 };
 

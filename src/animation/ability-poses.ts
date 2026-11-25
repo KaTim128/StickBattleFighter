@@ -1063,6 +1063,38 @@ const SHAPES: Record<string, CastShape> = {
  * Pose for an ability cast. `airborne` is true while a leap carries the fighter
  * (a leap shows its air pose, then the landing slam).
  */
+/**
+ * Inkmaster's drawing motions: the brush is raised, then it traces what he is drawing in the air, the arm sweeping through the strokes
+ * while the body leans into them, before easing back to the stance. `cycles` is how many strokes the recovery holds.
+ */
+const INK_DRAWING: Readonly<Record<string, { cycles: number; amp: number; lean: number }>> = {
+  inkSerpent: { cycles: 2, amp: 38, lean: 6 }, // an S: two waves
+  inkDragon: { cycles: 1.5, amp: 60, lean: 10 }, // one great sweep out and back
+  inkClone: { cycles: 4, amp: 26, lean: 4 }, // quick short strokes: head, body, arms, legs
+  inkCyclone: { cycles: 3, amp: 58, lean: 8 }, // round and round
+  masterpiece: { cycles: 8, amp: 52, lean: 12 }, // a long, sweeping drawing
+};
+
+function inkDrawingPose(base: Pose, id: string, phase: 'windup' | 'recovery', progress: number): Pose | null {
+  const d = INK_DRAWING[id];
+  if (!d) return null;
+  const raised: Pose = { ...base, lean: deg(-4), head: deg(-4), armFront: limb(112, 44), armBack: limb(60, 70) };
+  if (phase === 'windup') return blendPose(base, raised, ease(Math.min(1, progress * 1.4)));
+  // Drawing: the arm swings through its strokes (a sine for the sweep, a cosine for the elbow), the body leans with it.
+  const t = Math.min(1, progress / 0.88);
+  const w = Math.sin(t * Math.PI * 2 * d.cycles);
+  const c = Math.cos(t * Math.PI * 2 * d.cycles);
+  const drawing: Pose = {
+    ...raised,
+    lean: deg(-4 - d.lean * 0.5 + d.lean * 0.5 * w),
+    head: deg(-2 + 4 * c),
+    armFront: limb(100 + d.amp * w * 0.6, 40 + 22 * c),
+    armBack: limb(54 + d.amp * 0.5 * c * 0.6, 66 - 14 * w),
+  };
+  if (progress < 0.88) return drawing;
+  return blendPose(drawing, base, ease((progress - 0.88) / 0.12));
+}
+
 export function abilityPose(
   base: Pose,
   abilityId: string,
@@ -1072,6 +1104,8 @@ export function abilityPose(
   driving = false,
   grab?: GrabPhase,
 ): Pose {
+  const ink = inkDrawingPose(base, abilityId, phase, progress);
+  if (ink) return ink;
   const shape = SHAPES[abilityId];
   if (!shape) return base;
   const windup = { ...base, ...shape.windup };
@@ -1320,5 +1354,6 @@ export function stalkPose(base: Pose, amount: number): Pose {
 
 /** Abilities with an animation (tests check every kit ability has one). */
 export function hasAbilityPose(abilityId: string): boolean {
+  if (INK_DRAWING[abilityId]) return true;
   return abilityId in SHAPES;
 }

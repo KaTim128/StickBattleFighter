@@ -7,22 +7,22 @@ const placed = (floor: 0 | 1, x: number, y: number): Placed => ({ floor, x, y, z
 describe('the house data (Phase 2 section A)', () => {
   const world = new HouseWorld(HOUSE_PLAN);
 
-  it('has the rooms the brief asks for on both floors', () => {
+  it('has the rooms the brief asks for on one floor', () => {
     const names = HOUSE_PLAN.rooms.map((r) => r.id);
     // A compact home (owner, 18/11/2026): four rooms downstairs, two bedrooms and the landing upstairs.
-    for (const id of ['living', 'dining', 'kitchen', 'hall', 'bed1', 'bed2', 'uphall']) expect(names, id).toContain(id);
-    expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && !r.outdoors)).toHaveLength(3);
-    expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1 && r.id.startsWith('bed'))).toHaveLength(2);
+    for (const id of ['living', 'dining', 'kitchen', 'hall']) expect(names, id).toContain(id);
+    // No staircase and no upper floor (owner, 25/11/2026).
+    expect(HOUSE_PLAN.rooms.filter((r) => r.floor === 1)).toHaveLength(0);
     expect(names).not.toContain('corridor'); // no long corridor
   });
 
-  it('has one front door, locked for good, no other way out, and a staircase', () => {
+  it('has one front door, locked for good, no other way out, and no staircase', () => {
     expect(world.door('d-front')?.exterior).toBe(true);
     expect(world.door('d-front')?.locked).toBe(true);
     expect(HOUSE_PLAN.doors.filter((d) => d.exterior)).toHaveLength(1);
     expect(world.setDoor('d-front', true)).toBe(false);
     expect(world.isOpen('d-front')).toBe(false);
-    expect(HOUSE_PLAN.stairs).toHaveLength(1);
+    expect(HOUSE_PLAN.stairs).toHaveLength(0);
   });
 
   it('rooms on one floor never overlap', () => {
@@ -57,8 +57,7 @@ describe('the house data (Phase 2 section A)', () => {
       if (f.hide) expect(world.roomAt(f.floor, f.hide.at.x, f.hide.at.y), `${f.id} hide spot`).not.toBeNull();
     }
     const kinds = new Set(HOUSE_PLAN.furniture.flatMap((f) => (f.hide ? [f.hide.kind] : [])));
-    for (const k of ['under-bed', 'wardrobe', 'cupboard', 'chest', 'curtain'])
-      expect(kinds.has(k as never), k).toBe(true);
+    for (const k of ['wardrobe', 'cupboard', 'chest', 'box']) expect(kinds.has(k as never), k).toBe(true);
   });
 
   it('the start spots are free, and the player starts inside the house', () => {
@@ -73,15 +72,14 @@ describe('the house data (Phase 2 section A)', () => {
     for (const w of HOUSE_PLAN.patrol) expect(world.fits(w.floor, w.x, w.y), `${w.x},${w.y}`).toBe(true);
   });
 
-  it('there are throwable objects on both floors', () => {
+  it('there are throwable objects on the floor', () => {
     expect(HOUSE_PLAN.throwables.some((t) => t.floor === 0)).toBe(true);
-    expect(HOUSE_PLAN.throwables.some((t) => t.floor === 1)).toBe(true);
     // They lie on tables, counters and the floor: each is inside a room (a table top is not floor space).
     for (const t of HOUSE_PLAN.throwables) expect(world.roomAt(t.floor, t.x, t.y), t.id).not.toBeNull();
   });
 });
 
-describe('movement, doors and stairs', () => {
+describe('movement and doors', () => {
   it('walls and shut doors stop a body; opening a door lets it through', () => {
     const w = new HouseWorld(HOUSE_PLAN);
     // The dining-room door to the hall (x=25, y 10.2 to 11.8), shut at the start.
@@ -106,49 +104,6 @@ describe('movement, doors and stairs', () => {
     const q = placed(0, 2, 2);
     for (let i = 0; i < 80; i++) w.move(q, -0.1, 0);
     expect(q.x).toBeGreaterThanOrEqual(BODY_RADIUS_M);
-  });
-
-  it('walking up the stairs lifts the body and puts it on the upper floor; walking down brings it back', () => {
-    const w = new HouseWorld(HOUSE_PLAN);
-    const r = HOUSE_PLAN.stairs[0]!.ramp;
-    const p = placed(0, (r.x0 + r.x1) / 2, r.y1 + 2);
-    const zs: number[] = [];
-    for (let i = 0; i < 140 && p.floor === 0; i++) {
-      w.move(p, 0, -0.05);
-      zs.push(p.z);
-    }
-    expect(p.floor).toBe(1);
-    expect(Math.max(...zs)).toBeGreaterThan(2.5); // it really climbed
-    // Smooth: the floor changes in place (no teleport) and the height above sea level never jumps.
-    const climb = zs.slice(0, -1);
-    const stepY = p.y;
-    expect(zs.at(-1)! - climb.at(-1)!).toBeLessThan(0.2);
-    expect(p.onStairs).not.toBeNull(); // still on the ramp when the floor changes
-    let prevAbs = HOUSE_PLAN.stairs[0]!.riseM + p.z;
-    for (let i = 0; i < 40 && p.onStairs; i++) {
-      w.move(p, 0, -0.05);
-      const abs = HOUSE_PLAN.stairs[0]!.riseM + p.z;
-      expect(Math.abs(abs - prevAbs)).toBeLessThan(0.2);
-      prevAbs = abs;
-    }
-    expect(p.y).toBeLessThan(stepY);
-    expect(p.onStairs).toBeNull();
-    expect(p.z).toBe(0);
-    for (let i = 0; i < 160 && p.floor === 1; i++) w.move(p, 0, 0.05);
-    expect(p.floor).toBe(0);
-    for (let i = 0; i < 20 && p.onStairs; i++) w.move(p, 0, 0.05);
-    expect(p.y).toBeGreaterThanOrEqual(HOUSE_PLAN.stairs[0]!.ramp.y1 - 0.01);
-    expect(p.z).toBe(0);
-  });
-
-  it('the ground floor stairs cannot be entered from the side', () => {
-    const w = new HouseWorld(HOUSE_PLAN);
-    const r = HOUSE_PLAN.stairs[0]!.ramp;
-    const p = placed(0, r.x0 - 1, (r.y0 + r.y1) / 2); // beside the stairs, in the hall
-    for (let i = 0; i < 40; i++) w.move(p, 0.1, 0);
-    expect(p.floor).toBe(0);
-    expect(p.onStairs).toBeNull();
-    expect(p.x).toBeLessThan(r.x0);
   });
 });
 
@@ -189,10 +144,8 @@ describe('sight, sound and rooms', () => {
 
   it('finds the room under a point, and the neighbours of a room', () => {
     expect(w.roomAt(0, 23, 11)?.id).toBe('dining');
-    expect(w.roomAt(1, 17, 11)?.id).toBe('bed1');
     expect(w.roomAt(0, 5, 4)?.id).toBe('backyard');
     expect(w.neighbours('dining').sort()).toEqual(['hall', 'kitchen', 'living']);
-    expect(w.neighbours('hall')).toContain('uphall'); // the stairs
   });
 });
 
@@ -215,7 +168,7 @@ describe('routing across floors', () => {
     return { floor: best.floor, x: best.x, y: best.y };
   }
 
-  it('every room can be reached from the player start, upstairs included', () => {
+  it('every room can be reached from the player start', () => {
     const from = HOUSE_PLAN.playerStart;
     for (const room of HOUSE_PLAN.rooms.filter((r) => !r.outdoors)) {
       const to = spotIn(room.id);
@@ -243,26 +196,14 @@ describe('routing across floors', () => {
     expect(i).toBe(route.length);
   });
 
-  it('a route to another floor climbs the stairs exactly once', () => {
-    const route = w.route(HOUSE_PLAN.playerStart, spotIn('bed2'))!;
-    expect(route.filter((p) => p.stairs === 'up')).toHaveLength(1);
-    expect(route.filter((p) => p.stairs === 'down')).toHaveLength(0);
-    expect(route.at(-1)!.floor).toBe(1);
-    const down = w.route(spotIn('bed2'), spotIn('kitchen'))!;
-    expect(down.filter((p) => p.stairs === 'down')).toHaveLength(1);
-  });
-
-  it('a body can actually walk a cross-floor route, opening doors as it goes', () => {
+  it('a body can actually walk a route to a far room, opening doors as it goes', () => {
     const world = new HouseWorld(HOUSE_PLAN);
-    const target = { floor: 1 as const, x: 21, y: 17.6 }; // mid-bedroom, through its door
+    const target = { floor: 0 as const, x: 21, y: 11.4 }; // the dining room, through its doors
     const route = world.route(HOUSE_PLAN.playerStart, target)!;
     const p = placed(HOUSE_PLAN.playerStart.floor, HOUSE_PLAN.playerStart.x, HOUSE_PLAN.playerStart.y);
     let i = 0;
     for (let step = 0; step < 6000 && i < route.length; step++) {
       const wp = route[i]!;
-      if (wp.floor !== p.floor && !p.onStairs) {
-        // Reached the next floor through the ramp: carry on to its first waypoint.
-      }
       const dx = wp.x - p.x;
       const dy = wp.y - p.y;
       const d = Math.hypot(dx, dy);
@@ -275,7 +216,7 @@ describe('routing across floors', () => {
       if (r.pushedDoor) world.setDoor(r.pushedDoor, true);
     }
     expect(i).toBe(route.length);
-    expect(p.floor).toBe(1);
+    expect(p.floor).toBe(0);
     expect(Math.hypot(p.x - target.x, p.y - target.y)).toBeLessThan(0.5);
   });
 });

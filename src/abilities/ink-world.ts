@@ -1,4 +1,11 @@
-import type { AbilityDef, DragonDelivery, MasterpieceDelivery, SerpentDelivery, VortexDelivery } from './ability-def';
+import type {
+  AbilityDef,
+  DragonDelivery,
+  MasterpieceDelivery,
+  SerpentDelivery,
+  SummonSpec,
+  VortexDelivery,
+} from './ability-def';
 import type { AbilityHost, AbilityTarget } from './ability-world';
 
 type Vec2 = { x: number; y: number };
@@ -52,6 +59,8 @@ export interface Dragon {
   phase: 'form' | 'fly' | 'rear' | 'breathe' | 'fade';
   phaseS: number;
   sinceBreathS: number;
+  /** Breaths made so far. */
+  breathsDone: number;
   orbit: number;
   /** The breath's line: where it starts, its direction (locked when the warning starts) and how far it really reaches. */
   breathDir: Vec2;
@@ -76,6 +85,16 @@ export interface Vortex {
   collapseS: number;
 }
 
+/** A stick figure being brushed onto the floor (Ink Clone): quick strokes, then the clone rises from its pool. */
+export interface DrawnFigure {
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly spec: SummonSpec;
+  x: number;
+  y: number;
+  ageS: number;
+}
+
 export interface Masterpiece {
   readonly casterId: string;
   readonly def: AbilityDef;
@@ -87,6 +106,9 @@ export interface Masterpiece {
   ageS: number;
   /** The monster has torn out: the scroll tears and fades for this long. */
   awakenS: number;
+  /** Where the artist stands (an ink stream runs from his brush to the scroll). */
+  cx: number;
+  cy: number;
 }
 
 const norm = (v: Vec2): Vec2 => {
@@ -107,6 +129,7 @@ export class InkWorld {
   readonly dragons: Dragon[] = [];
   readonly vortices: Vortex[] = [];
   readonly masterpieces: Masterpiece[] = [];
+  readonly figures: DrawnFigure[] = [];
   /** A wrapped target cannot be wrapped again until this world time. */
   private readonly wrapImmuneUntilS = new Map<string, number>();
   private nowS = 0;
@@ -170,7 +193,8 @@ export class InkWorld {
           leftS: d.durationS,
           phase: 'form',
           phaseS: 0,
-          sinceBreathS: d.breathEveryS * 0.55, // the first breath comes soon after it is drawn, never at once
+          sinceBreathS: 0,
+          breathsDone: 0,
           orbit: Math.atan2(-dir.y, -dir.x),
           breathDir: dir,
           breathFrom: home,
@@ -199,6 +223,11 @@ export class InkWorld {
         });
         return true;
       }
+      case 'summon': {
+        // Ink Clone: a stick figure is drawn on the floor first, then the clone rises where it was drawn.
+        this.figures.push({ casterId, def, spec: d, x: at.x + dir.x * 1.9, y: at.y + dir.y * 1.9, ageS: 0 });
+        return true;
+      }
       case 'masterpiece': {
         this.masterpieces.push({
           casterId,
@@ -209,6 +238,8 @@ export class InkWorld {
           y: at.y + dir.y * 2.1,
           ageS: 0,
           awakenS: 0,
+          cx: at.x,
+          cy: at.y,
         });
         return true;
       }
@@ -219,7 +250,9 @@ export class InkWorld {
 
   /** Everything of this caster ends (it fell, or the battle reset). */
   clearOf(casterId: string): void {
-    for (const list of [this.serpents, this.dragons, this.vortices, this.masterpieces] as { casterId: string }[][])
+    for (const list of [this.serpents, this.dragons, this.vortices, this.masterpieces, this.figures] as {
+      casterId: string;
+    }[][])
       for (let i = list.length - 1; i >= 0; i--) if (list[i]!.casterId === casterId) list.splice(i, 1);
   }
 
@@ -228,6 +261,7 @@ export class InkWorld {
     this.dragons.length = 0;
     this.vortices.length = 0;
     this.masterpieces.length = 0;
+    this.figures.length = 0;
     this.wrapImmuneUntilS.clear();
   }
 
@@ -242,6 +276,7 @@ export class InkWorld {
     this.updateDragons(dtS, host);
     this.updateVortices(dtS, host);
     this.updateMasterpieces(dtS, host);
+    this.updateFigures(dtS, host);
   }
 
   private updateSerpents(dtS: number, host: AbilityHost): void {
@@ -402,7 +437,7 @@ export class InkWorld {
       if (d.phase === 'fly') {
         d.sinceBreathS += dtS;
         this.flyStep(d, target, dtS);
-        if (target && d.sinceBreathS >= spec.breathEveryS) {
+        if (target && d.sinceBreathS >= spec.breathEveryS && d.breathsDone < spec.breaths) {
           // The warning: it rears and the line it will breathe along is marked, locked at this moment.
           const dir = norm({ x: target.x - d.x, y: target.y - d.y });
           const from = { x: d.x + dir.x * 0.9, y: d.y + dir.y * 0.9 };
@@ -447,7 +482,9 @@ export class InkWorld {
       } else if (d.phase === 'breathe') {
         this.breathe(d, host);
         if (d.phaseS >= BREATH_S) {
-          d.phase = 'fly';
+          d.breathsDone++;
+          // Its one charge spent, the dragon dissolves back into ink.
+          d.phase = d.breathsDone >= spec.breaths ? 'fade' : 'fly';
           d.phaseS = 0;
         }
       }
@@ -548,6 +585,31 @@ export class InkWorld {
     }
   }
 
+  private updateFigures(dtS: number, host: AbilityHost): void {
+    for (let i = this.figures.length - 1; i >= 0; i--) {
+      const f = this.figures[i]!;
+      f.ageS += dtS;
+      if (!this.casterStanding(f.casterId, host)) {
+        this.figures.splice(i, 1);
+        continue;
+      }
+      if (f.ageS >= (f.spec.drawS ?? 0)) {
+        this.figures.splice(i, 1);
+        host.emit({
+          kind: 'impact',
+          ability: f.def.id,
+          look: f.def.look,
+          vfx: 'ink-clone-rise',
+          sfx: f.def.sfx.impact,
+          x: f.x,
+          y: f.y,
+          radiusM: 1.4,
+        });
+        host.summon?.(f.casterId, f.spec);
+      }
+    }
+  }
+
   private updateMasterpieces(dtS: number, host: AbilityHost): void {
     for (let i = this.masterpieces.length - 1; i >= 0; i--) {
       const m = this.masterpieces[i]!;
@@ -557,6 +619,9 @@ export class InkWorld {
         continue;
       }
       m.ageS += dtS;
+      const cp = host.position(m.casterId);
+      m.cx = cp.x;
+      m.cy = cp.y;
       if (!this.casterStanding(m.casterId, host)) {
         // The drawing is ruined: the ink runs off the scroll.
         host.emit({ kind: 'fizzle', ability: m.def.id, look: m.def.look, vfx: 'ink-ruin', sfx: null, x: m.x, y: m.y });

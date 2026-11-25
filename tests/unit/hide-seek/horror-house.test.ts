@@ -8,7 +8,7 @@ import { buildingBounds, isFrontWallOf, onBuilding } from '../../../src/renderin
 
 describe('floating HIDE bubbles (owner, 18/11/2026)', () => {
   const g = new HideSeekGame(HOUSE_PLAN);
-  const bed = g.spots.find((s) => s.spec.kind === 'under-bed' && s.floor === 1)!;
+  const bed = g.spots.find((s) => s.spec.kind === 'wardrobe' && s.floor === 0)!;
 
   it('shows near a hiding place and not far from it', () => {
     const near = hideCues(g.spots, bed.floor, { x: bed.spec.at.x, y: bed.spec.at.y + 1 }, true);
@@ -25,9 +25,10 @@ describe('floating HIDE bubbles (owner, 18/11/2026)', () => {
   });
 
   it('only shows places on the player floor, and nothing while hidden or carrying', () => {
-    const upstairs = hideCues(g.spots, 1, { x: bed.spec.at.x, y: bed.spec.at.y }, true);
-    expect(upstairs.every((c) => c.spot.floor === 1)).toBe(true);
-    expect(hideCues(g.spots, 1, { x: bed.spec.at.x, y: bed.spec.at.y }, false)).toEqual([]);
+    const here = hideCues(g.spots, 0, { x: bed.spec.at.x, y: bed.spec.at.y }, true);
+    expect(here.every((c) => c.spot.floor === 0)).toBe(true);
+    expect(hideCues(g.spots, 1, { x: bed.spec.at.x, y: bed.spec.at.y }, true)).toEqual([]); // no other floor
+    expect(hideCues(g.spots, 0, { x: bed.spec.at.x, y: bed.spec.at.y }, false)).toEqual([]);
   });
 
   it('every hiding place in the real house can show its bubble', () => {
@@ -102,27 +103,9 @@ describe('the front walls of the occupied room are see-through (owner, 18/11/202
 });
 
 describe('hiding under a bed (owner, 18/11/2026): the whole body fits and is out of sight', () => {
-  it.each([
-    ['the authored plan', HOUSE_PLAN, 1],
-    ['the real, roomier house', HOUSE, 1.8],
-  ])('every bed in %s is a four-legged frame with room to crawl under', (_n, house, minLongSide) => {
-    const beds = house.furniture.filter((f) => f.kind === 'bed');
-    expect(beds.length).toBeGreaterThanOrEqual(2);
-    for (const bed of beds) {
-      // Four legs lift the rails to BED_RAIL_TOP_M: a body lying flat (about 0.3 m) fits with room to spare.
-      expect(BED_RAIL_TOP_M, bed.id).toBeGreaterThanOrEqual(0.4);
-      expect(bed.heightM, bed.id).toBeGreaterThan(BED_RAIL_TOP_M + 0.2);
-      // The footprint is longer than a body, and the hiding point is well inside it (never at an edge, where legs would show).
-      const long = Math.max(bed.x1 - bed.x0, bed.y1 - bed.y0);
-      const wide = Math.min(bed.x1 - bed.x0, bed.y1 - bed.y0);
-      expect(long, bed.id).toBeGreaterThanOrEqual(minLongSide + 0.3);
-      expect(wide, bed.id).toBeGreaterThanOrEqual(0.9);
-      const at = bed.hide!.at;
-      const margin = Math.min(at.x - bed.x0, bed.x1 - at.x, at.y - bed.y0, bed.y1 - at.y);
-      expect(margin, bed.id).toBeGreaterThanOrEqual(wide * 0.3);
-      expect(bed.hide!.kind).toBe('under-bed');
-      expect(bed.hide!.concealment).toBeGreaterThanOrEqual(0.85);
-    }
+  it('the house has no beds now: there is no upper floor (owner, 25/11/2026)', () => {
+    expect(HOUSE.furniture.filter((f) => f.kind === 'bed')).toHaveLength(0);
+    expect(BED_RAIL_TOP_M).toBeGreaterThanOrEqual(0.4); // the bed drawing itself is unchanged for any later use
   });
 
   it('the player figure is not drawn at all inside an under-bed hiding place', () => {
@@ -134,10 +117,10 @@ describe('hiding under a bed (owner, 18/11/2026): the whole body fits and is out
 });
 
 describe('the bigger house has more to hide in', () => {
-  it('has a fair number of hiding places (fewer after the rooms were reduced), spread over both floors (none outdoors)', () => {
+  it('has a fair number of hiding places on the one floor (none outdoors)', () => {
     const spots = HOUSE.furniture.filter((f) => f.hide);
-    expect(spots.length).toBeGreaterThanOrEqual(14); // fewer after the house was shrunk (owner, 18/11/2026); no sofa spot (19/11/2026)
-    expect(spots.filter((f) => f.floor === 1).length).toBeGreaterThanOrEqual(6);
+    expect(spots.length).toBeGreaterThanOrEqual(8); // one floor, no beds or curtains (owner, 25/11/2026)
+    expect(spots.filter((f) => f.floor === 1)).toHaveLength(0);
     expect(spots.filter((f) => f.floor === 0 && world(f)).length).toBe(0);
   });
 
@@ -168,13 +151,12 @@ describe('the bigger house has more to hide in', () => {
     const sofa = (h: typeof HOUSE) => h.furniture.find((f) => f.kind === 'sofa')!;
     const ratio = (sofa(HOUSE).x1 - sofa(HOUSE).x0) / (sofa(HOUSE_PLAN).x1 - sofa(HOUSE_PLAN).x0);
     expect(ratio).toBeCloseTo(FURNITURE_SCALE, 2);
-    expect(HOUSE.furniture.length).toBeGreaterThanOrEqual(60);
+    expect(HOUSE.furniture.length).toBeGreaterThanOrEqual(36);
   });
 });
 
 /** Indoors or in a yard (anything on the ground floor that is not a hall, toilet and so on): a place to hide outside is a bonus. */
-const world = (f: { hide?: { kind: string } }): boolean =>
-  f.hide?.kind === 'bush' || f.hide?.kind === 'shed-cabinet' || f.hide?.kind === 'box';
+const world = (f: { hide?: { kind: string } }): boolean => f.hide?.kind === 'bush' || f.hide?.kind === 'shed-cabinet';
 
 describe('front walls of the occupied room in the real, thick-walled house', () => {
   it("every block of the kitchen's south and east walls is picked, whatever its shape", () => {

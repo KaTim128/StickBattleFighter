@@ -174,28 +174,3 @@ describe('the game is played inside the house (owner, 18/11/2026)', () => {
     for (const s of g.spots) expect(g.world.roomAt(s.floor, s.spec.at.x, s.spec.at.y)?.outdoors, s.id).not.toBe(true);
   });
 });
-
-describe('climbing the stairs with a diagonal push (owner, 18/11/2026: the player could not get up)', () => {
-  it.each([
-    ['the authored plan', HOUSE_PLAN],
-    ['the real house', HOUSE],
-  ])('pushing straight up, or up and to the right, gets the player upstairs in %s', (_name, house) => {
-    for (const move of [
-      { x: 0, y: -1 },
-      { x: 0.7, y: -0.7 },
-      { x: 0.3, y: -0.95 },
-    ]) {
-      const g = new HideSeekGame(house);
-      g.round.update(20.1);
-      const r = house.stairs[0]!.ramp;
-      g.player.floor = 0;
-      g.player.x = (r.x0 + r.x1) / 2;
-      g.player.y = r.y1 + 1.5;
-      for (let i = 0; i < 60 * 8; i++) {
-        g.hunter.x = -99; // keep the hunter out of it
-        g.step(STEP, { ...NO_INPUT, move });
-      }
-      expect(g.player.floor, `pushing ${move.x},${move.y}`).toBe(1);
-    }
-  });
-});

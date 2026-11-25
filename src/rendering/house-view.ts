@@ -187,7 +187,7 @@ function wallChunks(w: WallDef, heightM: number, colour: number, exterior: boole
   return out;
 }
 
-export function drawStairs(s: StairDef, zBase: number, thin = false): { g: Graphics; rect: Rect; sortY: number }[] {
+function drawStairs(s: StairDef, zBase: number, thin = false): { g: Graphics; rect: Rect; sortY: number }[] {
   const r = s.ramp;
   const n = 15;
   const out: { g: Graphics; rect: Rect; sortY: number }[] = [];

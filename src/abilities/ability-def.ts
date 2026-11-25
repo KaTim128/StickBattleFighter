@@ -298,6 +298,8 @@ export interface SummonSpec {
   readonly near?: 'caster' | 'enemy';
   /** They stay even if the summoner falls. */
   readonly persistent?: boolean;
+  /** Seconds the summoner spends drawing them before they appear (Ink Clone: a stick figure is brushed on the floor, then it rises). */
+  readonly drawS?: number;
 }
 
 /**
@@ -735,8 +737,8 @@ export interface SerpentDelivery {
 
 /**
  * Ink Dragon (Inkmaster): a flying dragon drawn in `formS` seconds, which circles the nearest enemy for `durationS`.
- * Every `breathEveryS` it rears (a visible warning `windupS` long, marked on the floor) and then breathes a line of
- * ink `breathRangeM` long, hitting each fighter in it once with the payload. It never breathes twice at once.
+ * After `breathEveryS` of flying it rears (a visible warning `windupS` long, marked on the floor) and breathes a line of
+ * ink `breathRangeM` long, hitting each fighter in it once with the payload, `breaths` times in all, then dissolves.
  */
 export interface DragonDelivery {
   readonly type: 'dragon';
@@ -748,6 +750,8 @@ export interface DragonDelivery {
   readonly windupS: number;
   readonly breathRangeM: number;
   readonly breathWidthM: number;
+  /** How many breaths it makes before it dissolves (one: it charges once, breathes, and is gone). */
+  readonly breaths: number;
 }
 
 /**

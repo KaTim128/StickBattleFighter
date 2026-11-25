@@ -13,6 +13,11 @@ Persistent record of project state. Update after every meaningful piece of work 
 | Runnable game | `npm run dev`: **training yard**, where a jointed greybox stickman walks and hops freely (keyboard or touch) with a follow camera. `?scene=engine-check` opens the physics test. No combat yet. |
 | Installed dependencies | pixi.js 8.22, @dimforge/rapier2d 0.21; dev: TypeScript 7.0.2, Vite 8.3.7, vite-plugin-wasm 3.6, Vitest 5.1, Playwright 1.63.0, Biome 2.6 |
 
+## Owner feedback 25/11/2026 (TD-161)
+- Hide and Seek and House Fight: no staircase, no upper floor, no curtains; two wardrobes and two boxes added to the hall and rooms. Hide and Seek unit tests rewritten for one floor, e2e visibility test replaced.
+- Inkmaster: drawing animations for the serpent, dragon, clone (stick figure drawn fast) and ultimate; the dragon charges once and is faster.
+- Verified: full suite, hide-seek and menu e2e, screenshots of the clone drawing, the dragon, the scroll with the ink stream, and the house without stairs. Not re-run: the balance probe (dragon now one 70-damage breath per 16 s).
+
 ## Batch 7: arenas and environment (25/11/2026, TD-160)
 - Added `src/data/arenas/house-fight.ts`, the admin Game Modes card and arena, `furnitureHides` in the occlusion fader, the Tutorial Zone rename and Office default, the curved-wall end fix.
 - Tests: unit (arena order, furniture occlusion), integration (House Fight 40 s AI fight inside the arena), full suite 1312 passed, menu, front-end and Hide and Seek e2e green.

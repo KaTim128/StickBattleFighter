@@ -3,6 +3,7 @@ import {
   COLLAPSE_S,
   DRAGON_HEIGHT_M,
   type Dragon,
+  type DrawnFigure,
   type InkWorld,
   type Masterpiece,
   type Serpent,
@@ -243,7 +244,7 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
   const widths: number[] = [];
   for (let i = 0; i < n; i++) {
     const u = i / (n - 1);
-    const back = u * 4.6 * grow;
+    const back = u * 4.6;
     const wave = Math.sin(t * 3 - u * 7) * 0.55 * Math.min(1, u * 2.4) * (1 - rear * 0.7);
     body.push(
       P(
@@ -254,18 +255,24 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     );
     widths.push((0.34 * (1 - u) ** 0.9 + 0.03) * (0.4 + 0.6 * grow));
   }
+  // Being drawn: the brush lays the stroke down from the tail forward, so only the part already painted shows, with the wet brush tip at its end.
+  const drawing = d.phase === 'form';
+  const k = clamp01(d.phaseS / spec.formS);
+  const start = drawing ? Math.floor((n - 1) * (1 - ease(k))) : 0;
+  const shown = body.slice(start);
+  const shownW = widths.slice(start);
   ribbon(
     g,
-    body,
-    widths.map((w) => w + 0.05),
+    shown,
+    shownW.map((w) => w + 0.05),
     PALE,
     0.3 * fade,
   );
-  ribbon(g, body, widths, BLACK, fade);
+  ribbon(g, shown, shownW, BLACK, fade);
   ribbon(
     g,
-    body.map((p) => ({ x: p.x, y: p.y - 0.04 })),
-    widths.map((w) => w * 0.22),
+    shown.map((p) => ({ x: p.x, y: p.y - 0.04 })),
+    shownW.map((w) => w * 0.22),
     INK_LIT,
     0.85 * fade,
   );
@@ -278,12 +285,19 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
       alpha: (1 - ph) * fade,
     });
   }
+  if (drawing && shown.length > 0) {
+    const tip = shown[0]!;
+    g.circle(tip.x, tip.y, 0.07).fill({ color: PALE, alpha: 0.9 });
+    g.circle(tip.x, tip.y, 0.17).fill({ color: PALE, alpha: 0.18 });
+    splatter(g, tip, 0.35, (t * 1.9) % 1, tip.x * 5, 6);
+  }
+  const headFade = fade * (drawing ? clamp01((k - 0.8) / 0.2) : 1);
   // The head, in front: horned, whiskered, with a lion's mane and a jaw that opens for the breath.
   const hp = P(d.x, d.y, hover + rear * 0.55);
   const gape = rear;
   const side = dirx >= 0 ? 1 : -1;
   const hr = 0.3 * (0.4 + 0.6 * grow);
-  g.circle(hp.x - side * hr * 0.4, hp.y, hr * 1.25).fill({ color: BLACK, alpha: 0.9 * fade });
+  g.circle(hp.x - side * hr * 0.4, hp.y, hr * 1.25).fill({ color: BLACK, alpha: 0.9 * headFade });
   for (let i = 0; i < 7; i++) {
     const a = (i / 7) * Math.PI * 1.2 + 1.9;
     g.poly([
@@ -295,10 +309,10 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
       hp.y + hr * 0.4,
     ]).fill({
       color: BLACK,
-      alpha: 0.85 * fade,
+      alpha: 0.85 * headFade,
     });
   }
-  g.ellipse(hp.x, hp.y, hr * 1.1, hr * 0.85).fill({ color: BLACK, alpha: fade });
+  g.ellipse(hp.x, hp.y, hr * 1.1, hr * 0.85).fill({ color: BLACK, alpha: headFade });
   g.poly([
     hp.x + side * hr * 0.4,
     hp.y - hr * 0.35,
@@ -308,7 +322,7 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     hp.y + hr * 0.1,
     hp.x + side * hr * 0.3,
     hp.y + hr * 0.3,
-  ]).fill({ color: BLACK, alpha: fade });
+  ]).fill({ color: BLACK, alpha: headFade });
   g.poly([
     hp.x + side * hr * 0.3,
     hp.y + hr * 0.25,
@@ -320,7 +334,7 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     hp.y + hr * 0.6,
   ]).fill({
     color: BLACK,
-    alpha: fade,
+    alpha: headFade,
   });
   if (gape > 0.1)
     g.poly([
@@ -334,7 +348,7 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
       hp.y + hr * 0.5,
     ]).fill({
       color: 0x330909,
-      alpha: 0.9 * fade,
+      alpha: 0.9 * headFade,
     });
   for (const k of [-1, 1]) {
     g.moveTo(hp.x - side * hr * 0.2, hp.y - hr * 0.7)
@@ -344,20 +358,20 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
         hp.x - side * hr * (2 + k * 0.7),
         hp.y - hr * (1.2 + k * 0.6),
       )
-      .stroke({ width: 0.07 * (0.5 + 0.5 * grow), color: BLACK, alpha: fade, cap: 'round' });
+      .stroke({ width: 0.07 * (0.5 + 0.5 * grow), color: BLACK, alpha: headFade, cap: 'round' });
     const w = [0, 1, 2, 3, 4].map((i) => ({
       x: hp.x + side * hr * (1.7 - i * 0.55),
       y: hp.y + k * hr * (0.2 + i * 0.25) + Math.sin(t * 5 + i * 0.9 + k) * 0.05,
     }));
-    ribbon(g, w, [0.022, 0.018, 0.012, 0.008, 0.003], BLACK, fade);
+    ribbon(g, w, [0.022, 0.018, 0.012, 0.008, 0.003], BLACK, headFade);
   }
-  g.circle(hp.x + side * hr * 0.55, hp.y - hr * 0.25, hr * 0.17).fill({ color: PALE, alpha: fade });
-  g.circle(hp.x + side * hr * 0.55, hp.y - hr * 0.25, hr * 0.4).fill({ color: PALE, alpha: 0.15 * fade });
+  g.circle(hp.x + side * hr * 0.55, hp.y - hr * 0.25, hr * 0.17).fill({ color: PALE, alpha: headFade });
+  g.circle(hp.x + side * hr * 0.55, hp.y - hr * 0.25, hr * 0.4).fill({ color: PALE, alpha: 0.15 * headFade });
   for (let i = 0; i < 4; i++) {
     const tx = hp.x + side * hr * (0.9 + i * 0.28);
     g.poly([tx, hp.y + hr * 0.1, tx + 0.015, hp.y + hr * 0.1, tx + 0.008, hp.y + hr * 0.22]).fill({
       color: PALE,
-      alpha: fade,
+      alpha: headFade,
     });
   }
 }
@@ -415,6 +429,61 @@ function vortex(f: Graphics, g: Graphics, P: Project, v: Vortex, t: number): voi
     const h = 0.2 + ((t * 0.9 + i * 0.13) % 1) * 2;
     const c = P(v.x + Math.cos(ang) * rad, v.y + Math.sin(ang) * rad, h);
     g.circle(c.x, c.y, 0.035 + (i % 3) * 0.015).fill({ color: BLACK, alpha: 0.85 * open });
+  }
+}
+
+/** A stick figure brushed onto the floor in quick strokes: head, body, arms, then legs, with an ink pool spreading beneath it. */
+function drawnFigure(f: Graphics, g: Graphics, P: Project, fig: DrawnFigure, t: number): void {
+  const total = fig.spec.drawS ?? 0.5;
+  const k = clamp01(fig.ageS / total);
+  f.ellipse(fig.x, fig.y, 0.95 * ease(k), 0.95 * ease(k) * 0.9).fill({ color: BLACK, alpha: 0.55 });
+  const strokes: Point[][] = [
+    // head (a loop), body, both arms in one stroke, then the legs
+    Array.from({ length: 9 }, (_, i) => ({
+      x: Math.cos((i / 8) * Math.PI * 2) * 0.16,
+      y: 1.3 + Math.sin((i / 8) * Math.PI * 2) * 0.16,
+    })),
+    [
+      { x: 0, y: 1.12 },
+      { x: 0, y: 0.58 },
+    ],
+    [
+      { x: -0.36, y: 0.78 },
+      { x: 0, y: 0.96 },
+      { x: 0.36, y: 0.78 },
+    ],
+    [
+      { x: -0.2, y: 0 },
+      { x: 0, y: 0.58 },
+      { x: 0.2, y: 0 },
+    ],
+  ];
+  const progress = k * strokes.length;
+  let tip: Point | null = null;
+  strokes.forEach((st, i) => {
+    const done = clamp01(progress - i);
+    if (done <= 0) return;
+    const count = Math.max(2, Math.ceil(st.length * done));
+    const pts = st.slice(0, count).map((p) => P(fig.x + p.x, fig.y, p.y));
+    ribbon(
+      g,
+      pts,
+      pts.map(() => 0.075),
+      BLACK,
+    );
+    ribbon(
+      g,
+      pts,
+      pts.map(() => 0.02),
+      PALE,
+      0.5,
+    );
+    if (done < 1) tip = pts[pts.length - 1]!;
+  });
+  if (tip) {
+    const p: Point = tip;
+    g.circle(p.x, p.y, 0.06).fill({ color: PALE, alpha: 0.9 });
+    splatter(g, p, 0.3, (t * 3) % 1, p.x * 7, 5);
   }
 }
 
@@ -626,6 +695,17 @@ function masterpiece(f: Graphics, g: Graphics, P: Project, m: Masterpiece, t: nu
     g.circle(tipAt.x, tipAt.y, 0.18).fill({ color: PALE, alpha: 0.15 });
     splatter(g, tipAt, 0.4, (t * 2.4) % 1, tipAt.x * 9, 7);
   }
+  // The artist's brush and the scroll are joined by a thin stream of ink while he works: the drawing really comes from his hand.
+  if (tipAt && !awakening) {
+    const hand = P(m.cx, m.cy, 1.5);
+    const mid = { x: (hand.x + tipAt.x) / 2, y: Math.min(hand.y, tipAt.y) - 0.5 };
+    g.moveTo(hand.x, hand.y)
+      .quadraticCurveTo(mid.x, mid.y, tipAt.x, tipAt.y)
+      .stroke({ width: 0.05, color: BLACK, alpha: 0.85 * dim, cap: 'round' });
+    g.moveTo(hand.x, hand.y)
+      .quadraticCurveTo(mid.x, mid.y, tipAt.x, tipAt.y)
+      .stroke({ width: 0.012, color: PALE, alpha: 0.4 * dim, cap: 'round' });
+  }
   // Black ink particles float up round the canvas, and a spray bursts out of it when the monster tears free.
   for (let i = 0; i < 20; i++) {
     const a = i * 1.7 + t * 0.6;
@@ -655,6 +735,7 @@ export function drawInk(
   t: number,
   preyAt: (id: string | null) => Point | null,
 ): void {
+  for (const fig of ink.figures) drawnFigure(f, g, P, fig, t);
   for (const v of ink.vortices) vortex(f, g, P, v, t);
   for (const m of ink.masterpieces) masterpiece(f, g, P, m, t);
   for (const s of ink.serpents) serpent(f, g, P, s, t, s.phase === 'wrap' ? preyAt(s.targetId) : null);

@@ -95,7 +95,7 @@ describe.each([
       const opposite = { n: 's', s: 'n', e: 'w', w: 'e' }[side];
       expect(face(f), `${f.kind} ${f.id} against the ${side} wall`).toBe(opposite);
     }
-    expect(checked).toBeGreaterThan(15);
+    expect(checked).toBeGreaterThan(8); // fewer wall pieces now: no upper floor (owner, 25/11/2026)
   });
 
   it('the camera sees fronts that face south or east only', () => {

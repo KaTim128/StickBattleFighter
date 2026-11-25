@@ -74,38 +74,6 @@ describe('room-based visibility (section C)', () => {
     expect(vis.explored.has('bed1')).toBe(false);
   });
 
-  it('on the stairs the other floor is revealed progressively; at the bottom it stays hidden', () => {
-    const { world, vis } = setup();
-    const s = HOUSE_PLAN.stairs[0]!;
-    const cx = (s.ramp.x0 + s.ramp.x1) / 2;
-    const bottom = s.ramp.y1;
-    const onRamp = (y: number): Viewer => ({ floor: 0, x: cx, y, onStairs: s.id, stairT: world.rampT(s, cx, y) });
-    vis.settle(onRamp(bottom - 0.1));
-    expect(vis.floorOpacity(1)).toBeLessThan(0.05);
-    vis.settle(onRamp(bottom - 1.4));
-    const mid = vis.floorOpacity(1);
-    // Halfway up nothing of the upper floor is laid over the hall, and the hall stays fully lit (owner, 18/11/2026).
-    expect(mid).toBe(0);
-    expect(vis.floorOpacity(0)).toBe(1);
-    expect(vis.roomLight('hall')).toBeGreaterThan(0.9);
-    vis.settle(onRamp(bottom - 3));
-    const high = vis.floorOpacity(1);
-    expect(high).toBeGreaterThan(mid);
-    expect(high).toBeGreaterThan(0.6);
-    expect(vis.roomLight('uphall')).toBeGreaterThan(0.05); // the landing shows
-    expect(vis.roomLight('bed1')).toBe(0); // bedrooms behind their doors do not
-  });
-
-  it('upstairs: the ground floor is hidden; closed bedroom doors hide the bedrooms', () => {
-    const { vis } = setup();
-    vis.settle(at(1, 27, 9.8));
-    expect(vis.occupiedRoom).toBe('uphall');
-    expect(vis.floorOpacity(0)).toBe(0);
-    expect(vis.floorOpacity(1)).toBe(1);
-    expect(vis.roomLight('living')).toBe(0);
-    expect(vis.roomLight('bed2')).toBe(0);
-  });
-
   it('peeking leans the view through a doorway without moving the body', () => {
     const world = new HouseWorld(HOUSE_PLAN);
     const vis = new Visibility(world);

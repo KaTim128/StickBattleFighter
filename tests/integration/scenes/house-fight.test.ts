@@ -17,7 +17,8 @@ describe('House of Nightmare Fight', () => {
     expect(HOUSE_FIGHT.props.length).toBeGreaterThan(15);
     expect(HOUSE_FIGHT.doors!.length).toBeGreaterThanOrEqual(2);
     expect(HOUSE_FIGHT.interiorWalls!.length).toBeGreaterThan(5);
-    expect(HOUSE_FIGHT.props.some((p) => p.kind === 'house-stairs')).toBe(true); // closed: solid scenery
+    // No staircase and no curtains (owner, 25/11/2026).
+    expect(HOUSE_FIGHT.props.some((p) => p.house?.kind === 'curtain' || p.house?.kind === 'stairs')).toBe(false);
     // The furniture is the house's own, drawn with the house's art.
     expect(HOUSE_FIGHT.props.filter((p) => p.house).length).toBe(HOUSE_FIGHT.props.length);
     // Chairs, lamps and small tables can be thrown in a fight; the cupboards and the staircase stay put.
@@ -26,7 +27,7 @@ describe('House of Nightmare Fight', () => {
       expect(kinds.has(k)).toBe(true);
       expect(PROP_KINDS[k].throwable).toBe(true);
     }
-    expect(PROP_KINDS['house-stairs'].movable).toBe(false);
+    expect(PROP_KINDS['house-storage'].movable).toBe(false);
     const scene = new FightArenaScene(
       HOUSE_FIGHT,
       new Container(),
@@ -45,9 +46,6 @@ describe('House of Nightmare Fight', () => {
         expect(f.x).toBeLessThan(HOUSE_FIGHT.widthM);
         expect(f.y).toBeGreaterThan(0);
         expect(f.y).toBeLessThan(HOUSE_FIGHT.heightM);
-        // Never inside the closed stairwell.
-        const inStairs = f.x > 12.3 && f.x < 13.7 && f.y > 1.3 && f.y < 4.8;
-        expect(inStairs).toBe(false);
       }
     }
     scenes.clear();
