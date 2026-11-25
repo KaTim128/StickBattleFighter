@@ -34,3 +34,5 @@ The Hide and Seek background track is `assets/audio/music-hide-seek-house.{ogg,m
 | assets/ui/mode-tournament.webp | image (static) | Katim / Claude | Still frame captured from the game's own Colosseum (original art, graded and vignetted) | project-owned | wip | Game mode card, spec section 8 |
 | assets/ui/mode-tag-team.webp | image (static) | Katim / Claude | Still frame captured from the game's own Office arena | project-owned | wip | Game mode card |
 | assets/ui/mode-hide-seek.webp | image (static) | Katim / Claude | Still frame captured from the game's own Hide and Seek house | project-owned | wip | Game mode card |
+| assets/ui/mode-tutorial.webp | image (static) | Katim / Claude | Still frame captured from the game's own Tutorial Zone | project-owned | wip | Practice card |
+| assets/ui/mode-open-zone.webp | image (static) | Katim / Claude | Still frame captured from the game's own Colosseum | project-owned | wip | Practice card |

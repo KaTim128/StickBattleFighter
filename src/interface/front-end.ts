@@ -1,6 +1,8 @@
 import hideSeekCard from '../../assets/ui/mode-hide-seek.webp?url';
+import openZoneCard from '../../assets/ui/mode-open-zone.webp?url';
 import tagTeamCard from '../../assets/ui/mode-tag-team.webp?url';
 import tournamentCard from '../../assets/ui/mode-tournament.webp?url';
+import tutorialCard from '../../assets/ui/mode-tutorial.webp?url';
 import titleArt from '../../assets/ui/title-menu.webp?url';
 import type { NormalSlot } from '../abilities/loadout';
 import { RATING_KEYS, RATING_LABELS } from '../characters/ratings';
@@ -564,9 +566,11 @@ export class FrontEnd {
   private buildPractice(sec: HTMLElement): void {
     sec.append(el('h2', 'fe-h fe-screen-title', 'PRACTICE'));
     const list = el('div', 'fe-mode-list');
-    const card = (id: string, name: string, text: string, onClick: () => void) => {
+    const card = (id: string, name: string, text: string, onClick: () => void, image: string) => {
       const b = button('fe-mode', '', onClick);
       b.dataset.practice = id;
+      b.style.backgroundImage = `url("${image}")`;
+      b.setAttribute('aria-label', `${name}. ${text}`);
       b.append(el('strong', 'fe-mode-name', name), el('span', 'fe-mode-text', text));
       list.append(b);
     };
@@ -575,9 +579,14 @@ export class FrontEnd {
       'Tutorial',
       'Learn to move, punch, combo, block, dodge and use your abilities, step by step.',
       () => this.o.startTutorial(this.choice.fighter),
+      tutorialCard,
     );
-    card('open-zone', 'Open Zone', 'Try any fighter against the training dummy or an AI fighter, in any arena.', () =>
-      this.openSelect('practice'),
+    card(
+      'open-zone',
+      'Open Zone',
+      'Try any fighter against the training dummy or an AI fighter, in any arena.',
+      () => this.openSelect('practice'),
+      openZoneCard,
     );
     sec.append(list);
     const row = el('div', 'fe-row');
