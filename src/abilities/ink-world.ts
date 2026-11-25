@@ -205,8 +205,8 @@ export class InkWorld {
           def,
           drawS: d.drawS,
           summon: d.summon,
-          x: at.x + dir.x * 1.5,
-          y: at.y + dir.y * 1.5,
+          x: at.x + dir.x * 2.1,
+          y: at.y + dir.y * 2.1,
           ageS: 0,
           awakenS: 0,
         });

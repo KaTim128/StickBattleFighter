@@ -364,12 +364,12 @@ function calligrapherIdle(timeS: number, bones: BoneLengths): Pose {
   const stroke = Math.max(0, Math.sin(timeS * TAU * 0.2)) ** 2;
   const legs = bones.thigh + bones.shin;
   return {
-    lean: deg(-2 + sway * 1.5),
-    head: deg(-2 + stroke * 4),
-    armFront: { root: deg(30 + stroke * 24 + breath * 2), bend: deg(46 - stroke * 14) },
-    armBack: { root: deg(-6 + sway * 3), bend: deg(70) },
-    legFront: legIk(0.18 + sway * 0.015, legs * 0.97 - breath * 0.006, bones.thigh, bones.shin),
-    legBack: legIk(-0.22 - sway * 0.015, legs * 0.97 - breath * 0.006, bones.thigh, bones.shin),
+    lean: deg(-9 + sway * 1.5),
+    head: deg(4 + stroke * 3),
+    armFront: { root: deg(38 + stroke * 14 + breath * 2), bend: deg(44 - stroke * 10) },
+    armBack: { root: deg(28 + sway * 3), bend: deg(62) },
+    legFront: legIk(0.34 + sway * 0.015, legs * 0.8 - breath * 0.008, bones.thigh, bones.shin),
+    legBack: legIk(-0.4 - sway * 0.015, legs * 0.8 - breath * 0.008, bones.thigh, bones.shin),
   };
 }
 
@@ -553,13 +553,13 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   if (style === 'calligrapher') {
     // Light, even steps like a dancer's, the brush arm trailing loosely, the other hand near the waist.
     return gaitPose(phase, bones, {
-      pelvisM: 0.8,
+      pelvisM: 0.68,
       bob: 0.02,
-      leadX: 0.16,
-      rearX: -0.2,
+      leadX: 0.22,
+      rearX: -0.28,
       reach: 0.17 * k,
-      lift: 0.07,
-      lean: -3,
+      lift: 0.06,
+      lean: -8,
       sway: 1,
       head: -2,
       arms: { lead: { x: 0.22, y: 0.5 }, rear: { x: -0.04, y: 0.46 }, swingX: 0.12, swingY: 0.03 },

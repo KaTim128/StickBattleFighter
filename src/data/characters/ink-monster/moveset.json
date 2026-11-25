@@ -17,8 +17,8 @@
       "recoveryS": 0.8,
       "cancelAt": 1,
       "hitbox": {
-        "reachM": 2.3,
-        "radiusM": 0.9
+        "reachM": 1.9,
+        "radiusM": 0.8
       },
       "damage": 56,
       "strength": 900,
@@ -43,8 +43,8 @@
       "recoveryS": 0.7,
       "cancelAt": 1,
       "hitbox": {
-        "reachM": 1.6,
-        "radiusM": 0.8
+        "reachM": 1.4,
+        "radiusM": 0.7
       },
       "damage": 50,
       "strength": 800,

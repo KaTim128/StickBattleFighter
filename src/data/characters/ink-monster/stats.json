@@ -12,8 +12,8 @@
     "gravityMps2": 20
   },
   "body": {
-    "footRadiusM": 0.7,
-    "massKg": 260
+    "footRadiusM": 0.42,
+    "massKg": 160
   },
   "power": 1.0,
   "defence": 1.0,

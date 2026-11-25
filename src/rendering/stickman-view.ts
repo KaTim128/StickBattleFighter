@@ -47,6 +47,8 @@ const KNIFE_TILT_RAD = (50 * Math.PI) / 180;
 /** The katana's line is the lead forearm tilted this far up (counter-clockwise on screen), and its length, metres. */
 const KATANA_TILT_RAD = (-40 * Math.PI) / 180;
 const KATANA_LENGTH_M = 0.95;
+/** Inkmaster's brush: held across the body, the bristles up and forward (counter-clockwise on screen). */
+const BRUSH_TILT_RAD = (-52 * Math.PI) / 180;
 
 export class StickmanView {
   private last: { s: ReturnType<typeof solveSkeleton>; facing: 1 | -1; heightM: number; rot: number } | null = null;
@@ -234,7 +236,12 @@ export class StickmanView {
         ? turnSkeleton(solveSkeleton(pose, this.bones), this.bones, this.turn, this.shoulderSpread)
         : solveSkeleton(pose, this.bones);
     // A katana is always held in both hands: the rear hand follows the lead hand onto the hilt.
-    const s = this.held === 'katana' ? this.gripHilt(solved) : solved;
+    const s =
+      this.held === 'katana'
+        ? this.gripHilt(solved)
+        : this.held === 'brush'
+          ? this.gripHilt(solved, BRUSH_TILT_RAD, 0.3)
+          : solved;
     this.last = { s, facing, heightM, rot: -facing * tiltRad };
     const { limbWidthM: w, outlineWidthM: o } = this.look;
     const limb = toward(this.look.limb, flashColour, flash);
@@ -1017,17 +1024,21 @@ export class StickmanView {
    * Puts the rear hand on the hilt behind the lead hand (a two-handed grip): the sword's line is the lead forearm's
    * direction tilted up a little, the rear hand sits 0.17 m back along it, and the rear arm bends to reach it.
    */
-  private gripHilt(s: ReturnType<typeof solveSkeleton>): ReturnType<typeof solveSkeleton> {
+  private gripHilt(
+    s: ReturnType<typeof solveSkeleton>,
+    tiltRad = KATANA_TILT_RAD,
+    gapM = 0.26,
+  ): ReturnType<typeof solveSkeleton> {
     const [, e, h] = s.armFront;
     const fx = h.x - e.x;
     const fy = h.y - e.y;
     const len = Math.hypot(fx, fy) || 1;
-    const c = Math.cos(KATANA_TILT_RAD);
-    const sn = Math.sin(KATANA_TILT_RAD);
+    const c = Math.cos(tiltRad);
+    const sn = Math.sin(tiltRad);
     const ux = (fx / len) * c - (fy / len) * sn;
     const uy = (fx / len) * sn + (fy / len) * c;
     const shoulder = s.armBack[0];
-    const target = { x: h.x - ux * 0.26, y: h.y - uy * 0.26 };
+    const target = { x: h.x - ux * gapM, y: h.y - uy * gapM };
     const l1 = this.bones.upperArm;
     const l2 = this.bones.foreArm;
     let dx = target.x - shoulder.x;
@@ -1525,8 +1536,8 @@ export class StickmanView {
       return;
     }
     if (this.held === 'brush') {
-      // Inkmaster's brush: wetter while he is casting, drier after.
-      this.bladeTip = drawInkBrush(g, elbow, hand, o, this.clockS, 1);
+      // Inkmaster's brush: held in both hands at the middle of the handle, a hand's width apart.
+      this.bladeTip = drawInkBrush(g, s.armBack[2], hand, o, this.clockS, 1);
       return;
     }
     if (this.held === 'ink-sword') {

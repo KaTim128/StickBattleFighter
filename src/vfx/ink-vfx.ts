@@ -8,6 +8,7 @@ import {
   type Serpent,
   type Vortex,
 } from '../abilities/ink-world';
+import { smoothPath } from '../rendering/ink-parts';
 import { ISO_T } from '../rendering/projection';
 
 type Point = { x: number; y: number };
@@ -26,10 +27,14 @@ const PALE = 0xf2eee3;
 const PAPER = 0xe9dfc6;
 const PAPER_SHADE = 0xc9bd9c;
 const WOOD = 0x4a2c18;
+/** The scroll is a modest hanging picture, not a wall: about a metre wide and two high. */
+const SCROLL_W_M = 1.05;
+const SCROLL_H_M = 1.9;
 
 /** A tapered ribbon through projected points `pts` with `widths` (screen metres). */
-function ribbon(g: Graphics, pts: readonly Point[], widths: readonly number[], colour: number, alpha = 1): void {
-  if (pts.length < 2) return;
+function ribbon(g: Graphics, rawPts: readonly Point[], rawWidths: readonly number[], colour: number, alpha = 1): void {
+  if (rawPts.length < 2) return;
+  const { pts, widths } = smoothPath(rawPts, rawWidths);
   const left: Point[] = [];
   const right: Point[] = [];
   for (let i = 0; i < pts.length; i++) {
@@ -180,6 +185,67 @@ function serpent(f: Graphics, g: Graphics, P: Project, s: Serpent, t: number, pr
   }
 }
 
+/**
+ * One dragon wing: an arm of ink (shoulder, elbow, wrist) with a clawed thumb and four long finger bones fanning out; the membrane between
+ * the fingers has a scalloped trailing edge that sweeps back to the body, so the whole wing is attached at the back. `flap` (-1..1) beats it.
+ */
+function wing(g: Graphics, root: Point, tail: Point, side: -1 | 1, flap: number, grow: number, fade: number): void {
+  const lift = (0.8 + 0.5 * flap) * grow;
+  const sp = side;
+  const E = { x: root.x + sp * 0.32, y: root.y - 0.55 * lift };
+  const W = { x: E.x + sp * 0.75 * (0.7 + 0.3 * grow), y: E.y - 0.22 * lift + 0.06 };
+  const tips: Point[] = [
+    { x: W.x + sp * 0.55, y: W.y - 0.35 * lift + 0.1 },
+    { x: W.x + sp * 0.85, y: W.y + 0.18 + 0.1 * lift },
+    { x: W.x + sp * 0.7, y: W.y + 0.75 * grow + 0.15 * lift },
+    { x: W.x + sp * 0.34, y: W.y + 1.1 * grow + 0.1 * lift },
+  ];
+  const edge = (a: Point, b: Point): Point => ({
+    x: (a.x + b.x) / 2 - sp * 0.05,
+    y: (a.y + b.y) / 2 + 0.16 * grow,
+  });
+  // The membrane: arm, the leading edge out to the first fingertip, then scallops tip to tip and back to the body.
+  g.moveTo(root.x, root.y);
+  g.quadraticCurveTo((root.x + E.x) / 2, E.y + 0.02, E.x, E.y);
+  g.quadraticCurveTo((E.x + W.x) / 2, W.y - 0.06, W.x, W.y);
+  g.lineTo(tips[0]!.x, tips[0]!.y);
+  for (let i = 1; i < tips.length; i++) {
+    const c = edge(tips[i - 1]!, tips[i]!);
+    g.quadraticCurveTo(c.x, c.y, tips[i]!.x, tips[i]!.y);
+  }
+  const last = edge(tips[tips.length - 1]!, tail);
+  g.quadraticCurveTo(last.x, last.y, tail.x, tail.y);
+  g.quadraticCurveTo((tail.x + root.x) / 2 + sp * 0.05, (tail.y + root.y) / 2, root.x, root.y);
+  g.fill({ color: INK, alpha: 0.94 * fade });
+  // A lighter wash near the arm gives the membrane depth, and veins run from the wrist to each fingertip.
+  g.moveTo(root.x, root.y);
+  g.quadraticCurveTo((root.x + E.x) / 2, E.y + 0.02, E.x, E.y);
+  g.quadraticCurveTo((E.x + W.x) / 2, W.y - 0.06, W.x, W.y);
+  g.lineTo(W.x + (tips[2]!.x - W.x) * 0.5, W.y + (tips[2]!.y - W.y) * 0.5);
+  g.lineTo(root.x + (tail.x - root.x) * 0.3, root.y + (tail.y - root.y) * 0.3);
+  g.fill({ color: INK_LIT, alpha: 0.35 * fade });
+  for (const tip of tips) {
+    g.moveTo(W.x, W.y).lineTo(tip.x, tip.y).stroke({ width: 0.026, color: BLACK, alpha: fade, cap: 'round' });
+    g.moveTo(W.x, W.y)
+      .lineTo(tip.x, tip.y)
+      .stroke({ width: 0.007, color: PALE, alpha: 0.4 * fade, cap: 'round' });
+  }
+  // The arm bones, thick at the shoulder, with the thumb claw at the wrist.
+  g.moveTo(root.x, root.y)
+    .lineTo(E.x, E.y)
+    .lineTo(W.x, W.y)
+    .stroke({ width: 0.07, color: BLACK, alpha: fade, cap: 'round', join: 'round' });
+  g.moveTo(root.x, root.y)
+    .lineTo(E.x, E.y)
+    .lineTo(W.x, W.y)
+    .stroke({ width: 0.012, color: PALE, alpha: 0.45 * fade, cap: 'round', join: 'round' });
+  g.poly([W.x - sp * 0.02, W.y - 0.03, W.x + sp * 0.04, W.y - 0.2 * grow, W.x + sp * 0.07, W.y - 0.02]).fill({
+    color: PALE,
+    alpha: fade,
+  });
+  g.circle(root.x, root.y, 0.06).fill({ color: BLACK, alpha: fade });
+}
+
 /** The dragon's whole body: head, whiskered and horned, an S-curved serpentine body with scales and a mane, four clawed legs, two wings. */
 function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): void {
   const spec = d.spec;
@@ -249,37 +315,14 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     );
     widths.push((0.5 * (1 - u) ** 0.7 + 0.04) * (0.4 + 0.6 * grow));
   }
-  // Wings first (behind the body): two big, ribbed, flapping wings.
+  // Wings: each one grows from the back (the shoulder sits on the spine, the trailing edge meets the body further down), so they are part of
+  // the dragon. Far wing first, drawn behind the body.
   const flap = Math.sin(t * 6.5);
-  const wingBase = body[3]!;
-  for (const side of [-1, 1]) {
-    const lift = (0.55 + 0.45 * flap) * side * 0 + (0.7 + 0.5 * flap);
-    const tipx = wingBase.x + side * (0.9 + 0.5 * Math.abs(flap)) + 0.2 * grow * side;
-    const tipy = wingBase.y - 1.05 * lift * grow;
-    const ribs = [0, 1, 2, 3].map((i) => ({
-      x: wingBase.x + (tipx - wingBase.x) * (0.45 + i * 0.18) + side * 0.1 * i,
-      y: wingBase.y + (tipy - wingBase.y) * (0.45 + i * 0.18) + 0.45 * grow * (i % 2),
-    }));
-    g.poly([
-      wingBase.x,
-      wingBase.y,
-      tipx,
-      tipy,
-      ...ribs.flatMap((r) => [r.x, r.y]),
-      wingBase.x + side * 0.1,
-      wingBase.y + 0.55 * grow,
-    ]).fill({
-      color: INK,
-      alpha: 0.92 * fade,
-    });
-    for (const r of ribs)
-      g.moveTo(wingBase.x, wingBase.y)
-        .lineTo(r.x, r.y)
-        .stroke({ width: 0.016, color: PALE, alpha: 0.5 * fade });
-    g.moveTo(wingBase.x, wingBase.y)
-      .lineTo(tipx, tipy)
-      .stroke({ width: 0.035, color: BLACK, alpha: fade, cap: 'round' });
-  }
+  const rootI = 3;
+  const tailI = 8;
+  const rootP = { x: body[rootI]!.x, y: body[rootI]!.y - widths[rootI]! * 0.45 };
+  const tailP = { x: body[tailI]!.x, y: body[tailI]!.y - widths[tailI]! * 0.3 };
+  wing(g, rootP, tailP, -1, flap, grow, fade);
   ribbon(
     g,
     body,
@@ -295,6 +338,7 @@ function dragon(f: Graphics, g: Graphics, P: Project, d: Dragon, t: number): voi
     INK_LIT,
     0.85 * fade,
   );
+  wing(g, rootP, tailP, 1, flap, grow, fade);
   // Belly scales and the mane along the back.
   for (let i = 1; i < n - 2; i++) {
     const p = body[i]!;
@@ -606,19 +650,19 @@ function masterpiece(f: Graphics, g: Graphics, P: Project, m: Masterpiece, t: nu
   const k = awakening ? 1 : clamp01(m.ageS / m.drawS);
   // The arena dims for the ritual, brightens as the monster tears free.
   const dim = awakening ? clamp01(1 - m.awakenS / 1.2) : ease(clamp01(m.ageS / 0.6));
-  f.circle(m.x, m.y, 16).fill({ color: BLACK, alpha: 0.36 * dim });
-  f.circle(m.x, m.y, 9).fill({ color: BLACK, alpha: 0.2 * dim });
+  f.circle(m.x, m.y, 12).fill({ color: BLACK, alpha: 0.3 * dim });
+  f.circle(m.x, m.y, 6).fill({ color: BLACK, alpha: 0.2 * dim });
   const base = P(m.x, m.y, 0);
   const unroll = ease(clamp01(m.ageS / 0.8));
-  const W = 1.9;
-  const H = 3.2 * (awakening ? 1 : unroll);
+  const W = SCROLL_W_M;
+  const H = SCROLL_H_M * (awakening ? 1 : unroll);
   const cx = base.x;
-  const bottom = base.y - 0.35;
+  const bottom = base.y - 0.2;
   const top = bottom - H;
   // The scroll hangs in the air; it tears and falls apart when the monster comes out.
   const tear = awakening ? clamp01(m.awakenS / 0.8) : 0;
   const alpha = awakening ? clamp01(1 - m.awakenS / 1.4) : 1;
-  g.ellipse(cx, base.y, 1.1, 0.35).fill({ color: BLACK, alpha: 0.3 * alpha });
+  g.ellipse(cx, base.y, 0.7, 0.22).fill({ color: BLACK, alpha: 0.3 * alpha });
   for (const [side, off] of [
     [-1, 0],
     [1, 1],
@@ -648,7 +692,7 @@ function masterpiece(f: Graphics, g: Graphics, P: Project, m: Masterpiece, t: nu
   const total = MONSTER_STROKES.length;
   const progress = k * (total + 0.25);
   const sx = (u: number) => cx + u * (W * 0.46);
-  const sy = (v: number) => (top + bottom) / 2 - v * (3.2 * 0.44) * (H / 3.2);
+  const sy = (v: number) => (top + bottom) / 2 - v * (SCROLL_H_M * 0.44) * (H / SCROLL_H_M);
   let tipAt: Point | null = null;
   for (let i = 0; i < total; i++) {
     const done = clamp01(progress - i);

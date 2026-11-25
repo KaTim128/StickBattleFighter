@@ -32,60 +32,67 @@ function along(from: Point, to: Point, liftRad: number): { ux: number; uy: numbe
  */
 export function drawInkBrush(
   g: Graphics,
-  elbow: Point,
-  hand: Point,
+  rear: Point,
+  front: Point,
   o: number,
   t: number,
   wet = 1,
 ): { tip: Point; inner: Point } {
-  const { ux, uy } = along(elbow, hand, (38 * Math.PI) / 180);
+  // Held in both hands near the middle of the handle, a hand's width of space between them: the line runs rear hand -> front hand,
+  // and the handle reaches 0.5 m behind the rear hand and the bristles stand beyond the front hand.
+  const dx = front.x - rear.x;
+  const dy = front.y - rear.y;
+  const dl = Math.hypot(dx, dy) || 1;
+  const ux = dx / dl;
+  const uy = dy / dl;
   const nx = -uy;
   const ny = ux;
+  const hand = front;
   const at = (k: number, side = 0): Point => ({ x: hand.x + ux * k + nx * side, y: hand.y + uy * k + ny * side });
-  const butt = at(-0.5);
-  const ferrule = at(0.98);
+  const butt = at(-0.5 - dl);
+  const ferrule = at(0.62);
   // The handle: dark lacquered wood, a pale highlight along its lit side, two gold bands.
   g.moveTo(butt.x, butt.y)
     .lineTo(ferrule.x, ferrule.y)
     .stroke({ width: 0.052 + o * 2, color: INK_BLACK, cap: 'round' });
   g.moveTo(butt.x, butt.y).lineTo(ferrule.x, ferrule.y).stroke({ width: 0.04, color: WOOD, cap: 'round' });
   g.moveTo(at(-0.46, -0.012).x, at(-0.46, -0.012).y)
-    .lineTo(at(0.94, -0.012).x, at(0.94, -0.012).y)
+    .lineTo(at(0.58, -0.012).x, at(0.58, -0.012).y)
     .stroke({ width: 0.011, color: WOOD_LIT, alpha: 0.8, cap: 'round' });
-  for (const k of [-0.44, 0.9]) {
+  for (const k of [-0.44 - dl, 0.54]) {
     g.moveTo(at(k, -0.026).x, at(k, -0.026).y)
       .lineTo(at(k, 0.026).x, at(k, 0.026).y)
       .stroke({ width: 0.016, color: GOLD, cap: 'round' });
   }
   // The ferrule: a short gold collar where the bristles begin.
-  g.moveTo(at(0.96, 0).x, at(0.96, 0).y)
-    .lineTo(at(1.08, 0).x, at(1.08, 0).y)
+  g.moveTo(at(0.6, 0).x, at(0.6, 0).y)
+    .lineTo(at(0.72, 0).x, at(0.72, 0).y)
     .stroke({ width: 0.062 + o * 2, color: INK_BLACK, cap: 'butt' });
-  g.moveTo(at(0.96, 0).x, at(0.96, 0).y)
-    .lineTo(at(1.08, 0).x, at(1.08, 0).y)
+  g.moveTo(at(0.6, 0).x, at(0.6, 0).y)
+    .lineTo(at(0.72, 0).x, at(0.72, 0).y)
     .stroke({ width: 0.05, color: GOLD, cap: 'butt' });
   // The bristles: a plump, flowing teardrop of black, swaying a little with the clock, ending in a fine point.
   const sway = Math.sin(t * 5.2) * 0.012;
   const len = 0.5;
-  const tip = at(1.08 + len, sway * 3);
+  const tip = at(0.72 + len, sway * 3);
   const head = [
-    at(1.08, -0.04),
-    at(1.2, -0.075 + sway),
-    at(1.36, -0.05 + sway * 1.4),
+    at(0.72, -0.04),
+    at(0.84, -0.075 + sway),
+    at(1.0, -0.05 + sway * 1.4),
     tip,
-    at(1.36, 0.052 + sway),
-    at(1.2, 0.078),
-    at(1.08, 0.04),
+    at(1.0, 0.052 + sway),
+    at(0.84, 0.078),
+    at(0.72, 0.04),
   ];
   const flat = head.flatMap((p) => [p.x, p.y]);
   g.poly(flat).fill(INK_BLACK);
   g.poly(flat).stroke({ width: o * 1.4 + 0.004, color: INK_BLACK, join: 'round' });
   // Glints of wet ink along the bristles, and the strands that part at the tip.
-  g.moveTo(at(1.14, -0.035).x, at(1.14, -0.035).y)
-    .quadraticCurveTo(at(1.3, -0.04).x, at(1.3, -0.04).y, at(1.46, -0.006).x, at(1.46, -0.006).y)
+  g.moveTo(at(0.78, -0.035).x, at(0.78, -0.035).y)
+    .quadraticCurveTo(at(0.94, -0.04).x, at(0.94, -0.04).y, at(1.1, -0.006).x, at(1.1, -0.006).y)
     .stroke({ width: 0.007, color: PALE, alpha: 0.35 + 0.25 * wet, cap: 'round' });
-  g.moveTo(at(1.14, 0.03).x, at(1.14, 0.03).y)
-    .quadraticCurveTo(at(1.3, 0.04).x, at(1.3, 0.04).y, at(1.5, 0.012).x, at(1.5, 0.012).y)
+  g.moveTo(at(0.78, 0.03).x, at(0.78, 0.03).y)
+    .quadraticCurveTo(at(0.94, 0.04).x, at(0.94, 0.04).y, at(1.14, 0.012).x, at(1.14, 0.012).y)
     .stroke({ width: 0.006, color: INK_WET, alpha: 0.9, cap: 'round' });
   // Drips from the point, falling on a loop.
   if (wet > 0.05) {
@@ -96,10 +103,12 @@ export function drawInkBrush(
       g.ellipse(dx + nx * 0.01 * i, dy, 0.011, 0.016 + p * 0.012).fill({ color: INK_BLACK, alpha: (1 - p) * wet });
     }
   }
-  // The gripping hand.
-  g.circle(hand.x, hand.y, 0.046 + o).fill(INK_BLACK);
-  g.circle(hand.x, hand.y, 0.036).fill(0x22222a);
-  return { tip, inner: at(1.1) };
+  // Both gripping hands.
+  for (const h of [front, rear]) {
+    g.circle(h.x, h.y, 0.046 + o).fill(INK_BLACK);
+    g.circle(h.x, h.y, 0.036).fill(0x22222a);
+  }
+  return { tip, inner: at(0.75) };
 }
 
 /** An ink sword: a slim black blade with a pale edge and a wrapped grip. */

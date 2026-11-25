@@ -20,9 +20,53 @@ const INK_LIT = 0x2e2e38;
 const PALE = 0xf2eee3;
 const WHITE_EYE = 0xffffff;
 
-/** A tapered ribbon along `pts`, `widths` wide at each point (metres): the stroke of a brush. */
-function ribbon(g: Graphics, pts: readonly Point[], widths: readonly number[], colour: number, alpha = 1): void {
-  if (pts.length < 2) return;
+/** Catmull-Rom upsampling: `sub` extra points between each pair, so a stroke curves smoothly instead of showing its corners. */
+export function smoothPath<T extends { x: number; y: number }>(
+  pts: readonly T[],
+  widths: readonly number[],
+  sub = 3,
+): { pts: { x: number; y: number }[]; widths: number[] } {
+  if (pts.length < 3) return { pts: pts.map((p) => ({ x: p.x, y: p.y })), widths: [...widths] };
+  const out: { x: number; y: number }[] = [];
+  const w: number[] = [];
+  const at = (i: number) => pts[Math.max(0, Math.min(pts.length - 1, i))]!;
+  const wd = (i: number) => widths[Math.max(0, Math.min(widths.length - 1, i))] ?? 0.05;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = at(i - 1);
+    const p1 = at(i);
+    const p2 = at(i + 1);
+    const p3 = at(i + 2);
+    for (let k = 0; k < sub; k++) {
+      const t = k / sub;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      out.push({
+        x:
+          0.5 *
+          (2 * p1.x +
+            (-p0.x + p2.x) * t +
+            (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+            (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+        y:
+          0.5 *
+          (2 * p1.y +
+            (-p0.y + p2.y) * t +
+            (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+            (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
+      });
+      w.push(wd(i) + (wd(i + 1) - wd(i)) * t);
+    }
+  }
+  const last = pts[pts.length - 1]!;
+  out.push({ x: last.x, y: last.y });
+  w.push(wd(pts.length - 1));
+  return { pts: out, widths: w };
+}
+
+/** A tapered ribbon along `pts`, `widths` wide at each point (metres): the stroke of a brush, smoothed into a curve. */
+function ribbon(g: Graphics, rawPts: readonly Point[], rawWidths: readonly number[], colour: number, alpha = 1): void {
+  if (rawPts.length < 2) return;
+  const { pts, widths } = smoothPath(rawPts, rawWidths);
   const left: Point[] = [];
   const right: Point[] = [];
   for (let i = 0; i < pts.length; i++) {
