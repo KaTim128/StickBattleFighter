@@ -208,6 +208,11 @@ export class FrontEnd {
     for (const img of this.root.querySelectorAll<HTMLImageElement>(`[data-face="${id}"]`)) img.src = url;
   }
 
+  /** The fighter now picked on the select screen (the one drawn first). */
+  get selectedFighter(): string {
+    return this.choice.fighter;
+  }
+
   setStrip(id: string, strip: StanceStrip): void {
     this.strips.set(id, strip);
     for (const m of this.root.querySelectorAll<HTMLElement>(`.fe-model[data-model="${id}"]`)) playStrip(m, strip);

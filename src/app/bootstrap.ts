@@ -38,6 +38,7 @@ import { attachTouchControls, showDodgeReady, showStickAiming, showUtilityAction
 import { AbilityHud } from '../interface/ability-hud';
 import { AimHint } from '../interface/aim-hint';
 import { BlindVeil, InkSplatVeil } from '../interface/blind-veil';
+import { CharacterPicker } from '../interface/character-picker';
 import { ClashHud } from '../interface/clash-hud';
 import { CombatText } from '../interface/combat-text';
 import { FightIntro } from '../interface/fight-intro';
@@ -60,6 +61,7 @@ import { createTextureLoader } from '../rendering/pixi-assets';
 import { renderIdleStrips, renderPortraits } from '../rendering/portraits';
 import { screenDirToWorld } from '../rendering/projection';
 import { createRenderSurface } from '../rendering/renderer';
+import { getStrips, putStrip, stripKey } from '../rendering/strip-cache';
 import { TutorialRun } from '../tutorial/tutorial';
 import { fighterSettingsHost } from './fighter-settings';
 import type { ArenaScene } from './scenes/arena-scene';
@@ -102,6 +104,8 @@ export interface EngineDebugInfo {
   musicPlaying: boolean;
   /** 3 vs 3: both teams as the HUD shows them. */
   team?: unknown;
+  /** Select-screen timings, ms (S1): the portraits sheet and the idle strips, measured with performance marks. */
+  timings: { portraitsMs?: number; selectStripsMs?: number; firstStripMs?: number; stripsFromCache?: number };
   /** The tutorial step on screen (`done` at the end), when the tutorial runs. */
   tutorial?: string;
   /** Interface button clicks that played the click sound (owner, 13/11/2026). */
@@ -444,6 +448,7 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
 
   const debug: EngineDebugInfo = {
     ready: false,
+    timings: {},
     scene: scenes.active?.name ?? null,
     physicsSteps: 0,
     framesRendered: 0,
@@ -799,6 +804,11 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
     {
       leave: () => leave(),
       fighterControls: () => openActiveFighterControls(),
+      // Open Zone only (owner plan O1): the fighter can be changed on the spot, as often as wanted.
+      changeCharacter:
+        scene instanceof FightArenaScene && !params.has('mode') && !params.has('tutorial') && !scene.match
+          ? () => openCharacterPicker()
+          : undefined,
     },
     () => {
       // Escape while aiming cancels the aim (owner, 12/11/2026) rather than opening the settings.
@@ -807,6 +817,30 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       return true;
     },
   );
+  const characterPicker = new CharacterPicker(
+    document.body,
+    (id) => switchPlayerCharacter(id),
+    (open) => setPaused('picker', open),
+  );
+  function openCharacterPicker(): void {
+    if (!(scene instanceof FightArenaScene)) return;
+    characterPicker.open(
+      menuFighters().map((f) => ({ id: f.id, name: f.name, colour: f.colour })),
+      portraitById,
+      scene.playerFighter.def.id,
+    );
+  }
+  /** Swap the player's fighter in place (O1): the scene disposes the old one; the HUD, keys and abilities follow it. */
+  function switchPlayerCharacter(id: string): void {
+    if (!(scene instanceof FightArenaScene)) return;
+    desktop.releaseAll();
+    if (!scene.replacePlayerFighter(id, loadoutStore.get(playerName, id))) return;
+    const left = portraitById.get(id);
+    const right = portraitById.get(scene.dummyFighter.def.id);
+    if (left && right) topHud.setPortraits(left, right);
+    settings.activate(playerName, id);
+    status.textContent = readyStatus();
+  }
   // The front end (owner, 13/11/2026): title screen, name, Game Modes, fighter select. The old
   // set-up screen (practice opponent, both modes, fighter settings and Move Config) is now the
   // Admin Panel, shown only to the admin name (TD-065: a screen choice, not security).
@@ -1099,7 +1133,10 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
       const fighters = adminFighters(); // every card in the Admin Panel needs its portrait
       const defs = fighters.map((f) => resolveCharacter(f.id, tunedLibrary()));
       if (scene instanceof FightArenaScene) defs.push(scene.playerFighter.def, scene.dummyFighter.def);
+      performance.mark('portraits-start');
       const urls = await renderPortraits(app, defs);
+      performance.mark('portraits-end');
+      debug.timings.portraitsMs = performance.measure('portraits', 'portraits-start', 'portraits-end').duration;
       fighters.forEach((f, i) => {
         menu.setPortrait(f.id, urls[i]!);
         front.setPortrait(f.id, urls[i]!);
@@ -1119,16 +1156,47 @@ export async function bootstrap({ container, status, debugPanel }: BootstrapElem
   drawStances = async (): Promise<void> => {
     if (stancesDrawn) return;
     stancesDrawn = true;
+    performance.mark('select-strips-start');
     try {
       const fighters = menuFighters();
-      const strips = await renderIdleStrips(
-        app,
-        fighters.map((f) => resolveCharacter(f.id, tunedLibrary())),
-        (d) => SELECT_STANCES[d.id],
-      );
-      fighters.forEach((f, i) => {
-        front.setStrip(f.id, strips[i]!);
+      const defs = fighters.map((f) => resolveCharacter(f.id, tunedLibrary()));
+      // Strips drawn on an earlier visit come straight from the browser's cache (S1); only the rest are drawn.
+      const keys = defs.map((d, i) => stripKey(fighters[i]!.id, { def: d, stance: SELECT_STANCES[d.id] }));
+      const cached = await getStrips(keys);
+      const shown = (): void => {
+        debug.timings.firstStripMs ??= performance.measure('first-strip', 'select-strips-start').duration;
+      };
+      const missing: number[] = [];
+      cached.forEach((strip, i) => {
+        if (strip) {
+          front.setStrip(fighters[i]!.id, strip);
+          shown();
+        } else missing.push(i);
       });
+      // The fighter on show is drawn first and the others follow one at a time, so the screen is usable at once.
+      const chosen = front.selectedFighter;
+      missing.sort((x, y) => Number(fighters[y]!.id === chosen) - Number(fighters[x]!.id === chosen));
+      if (missing.length > 0)
+        await renderIdleStrips(
+          app,
+          missing.map((i) => defs[i]!),
+          (d) => SELECT_STANCES[d.id],
+          30,
+          440,
+          (k, strip) => {
+            const i = missing[k]!;
+            front.setStrip(fighters[i]!.id, strip);
+            void putStrip(keys[i]!, strip);
+            shown();
+          },
+        );
+      performance.mark('select-strips-end');
+      debug.timings.selectStripsMs = performance.measure(
+        'select-strips',
+        'select-strips-start',
+        'select-strips-end',
+      ).duration;
+      debug.timings.stripsFromCache = cached.filter((c) => c !== null).length;
     } catch (error) {
       console.warn('[select stances] could not draw the fighters', error);
     }

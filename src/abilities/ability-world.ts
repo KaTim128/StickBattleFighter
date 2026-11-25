@@ -1402,6 +1402,19 @@ export class AbilityWorld {
     }
   }
 
+  /** Everything this caster has set going (shots, clouds, mines, beams, marks, the ink it drew...) ends now. */
+  clearOf(casterId: string): void {
+    for (const value of Object.values(this)) {
+      if (!Array.isArray(value)) continue;
+      for (let i = value.length - 1; i >= 0; i--) {
+        const item: unknown = value[i];
+        if (typeof item === 'object' && item !== null && (item as { casterId?: unknown }).casterId === casterId)
+          value.splice(i, 1);
+      }
+    }
+    this.ink.clearOf(casterId);
+  }
+
   update(dtS: number, host: AbilityHost): void {
     this.nowS += dtS;
     // Time Stop: only its own clock runs. Everything else in the ability world waits where it is.

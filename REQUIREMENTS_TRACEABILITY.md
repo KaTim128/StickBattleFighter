@@ -30,8 +30,8 @@ Prompt key: P1 19/11 15:13 (Shard Blade, Necro, hit detection) · P2 19/11 15:53
 | E1 | Obstruction-based furniture fade | MS7.1 | 7 | occlusion-fader.ts | unit + screenshots | build-verified | tests/unit/rendering/occlusion-fader.test.ts (furnitureHides); browser check pending |
 | E2 | Continuous curved wall | MS7.2 | 7 | office.ts, arena-view.ts | screenshots | build-verified | Overview screenshot: the arc runs into the walls; close-up pending |
 | H1–H5 | House Fight (ground floor), admin toggle and picks, destruction, Hide and Seek intact | MS6 | 7 | new house-arena.ts, main-menu.ts | e2e | build-verified | tests/integration/scenes/house-fight.test.ts; screenshot of the arena; Hide and Seek e2e still green |
-| S1 | Select screen performance (measured) | MS4 | 8 | portraits.ts, front-end.ts, bootstrap.ts | timings | todo | |
-| O1 | Open Zone in-game character switch | MS5 | 8 | fight-arena-scene.ts, settings-panel.ts | e2e | todo | |
+| S1 | Select screen performance (measured) | MS4 | 8 | portraits.ts, strip-cache.ts, bootstrap.ts | timings | gameplay-verified | docs/qa/select-performance-25-11-2026.md (13.2 s blocking -> first strip 1.1-2.7 s, all 1.25 s when cached); tile-click rebuild not changed |
+| O1 | Open Zone in-game character switch | MS5 | 8 | fight-arena-scene.ts, settings-panel.ts, character-picker.ts | e2e | gameplay-verified | tests/integration/scenes/character-switch.test.ts; browser: 3 switches, HUD, portrait and abilities follow, no console errors (25/11/2026) |
 | PX1–PX7 | Pixel pipeline, environment, lighting, fighters, VFX, UI, mandate | P10 | 9 | renderer.ts, new pixel-pipeline.ts, index.html | screenshots + tests | todo | |
 | U1–U4 | UI reference guide, design system, buttons, consistency | MS8 | 0, 9 | UI_REFERENCE_GUIDE.md, index.html | screenshots | todo | |
 | L1 | Loading screen (darkened menu art, bottom-right text) | MS9 | 9 | index.html, bootstrap.ts | e2e | todo | |

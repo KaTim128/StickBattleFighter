@@ -272,9 +272,11 @@ export async function renderIdleStrips(
   stanceFor: (def: FighterDef) => SelectStance | undefined = () => undefined,
   frames = 30,
   cellH = 440,
+  /** Called with each strip the moment it is drawn, and the page gets a turn between fighters (the select screen stays usable). */
+  onStrip?: (index: number, strip: IdleStrip) => void,
 ): Promise<IdleStrip[]> {
   const out: IdleStrip[] = [];
-  for (const def of defs) {
+  for (const [defIndex, def] of defs.entries()) {
     const stance = stanceFor(def);
     let poseAt: (k: number) => Pose;
     let spanS: number;
@@ -338,10 +340,13 @@ export async function renderIdleStrips(
         for (let i = 0; i < n; i++)
           ctx?.drawImage(canvas, i * pitch, 0, cellW, cellH, (f0 + i) * cellW, 0, cellW, cellH);
       }
-      out.push({ url: strip.toDataURL('image/png'), frames, cellW, cellH, spanS });
+      const made = { url: strip.toDataURL('image/png'), frames, cellW, cellH, spanS };
+      out.push(made);
+      onStrip?.(defIndex, made);
     } finally {
       sheet.destroy({ children: true });
     }
+    if (onStrip) await new Promise<void>((r) => setTimeout(r, 0));
   }
   return out;
 }

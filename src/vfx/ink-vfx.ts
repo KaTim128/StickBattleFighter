@@ -450,50 +450,114 @@ function dragonHead(g: Graphics, hp: Point, s: 1 | -1, u: number, gape: number, 
   g.fill({ color: BLACK, alpha: a });
   upper();
   g.stroke({ width: 0.012, color: PALE, alpha: 0.3 * a });
-  // The lower jaw, hinged under the skull and drawn as one curved shape, drops open for the breath.
-  const lowerJaw = (): void => {
-    g.moveTo(at(0.1, -0.02).x, at(0.1, -0.02).y);
-    for (const [cf, cv, f, v] of [
-      [1.1, -0.06 - jaw * 0.4, 2.0, -0.06 - jaw],
-      [2.15, -0.2 - jaw, 1.95, -0.36 - jaw],
-      [1.2, -0.55 - jaw * 0.7, 0.25, -0.5 - jaw * 0.3],
-      [-0.2, -0.4, 0.1, -0.02],
-    ] as const)
-      g.quadraticCurveTo(at(cf, cv).x, at(cf, cv).y, at(f, v).x, at(f, v).y);
+  // The lower jaw swings open about a hinge at the back of the skull, so it stays joined to the head however wide the mouth is.
+  const hinge = { f: 0.15, v: -0.04 };
+  const ang = Math.min(0.85, gape * 0.62);
+  const sin = Math.sin(ang);
+  const cos = Math.cos(ang);
+  const rot = (f: number, v: number): [number, number] => {
+    const df = f - hinge.f;
+    const dv = v - hinge.v;
+    return [hinge.f + df * cos + dv * sin, hinge.v - df * sin + dv * cos];
   };
+  const jawPoint = (f: number, v: number): Point => {
+    const [rf, rv] = rot(f, v);
+    return pt(rf, rv);
+  };
+  const flatJaw = (pts: readonly (readonly [number, number])[]): number[] =>
+    pts.flatMap(([f, v]) => {
+      const q = jawPoint(f, v);
+      return [q.x, q.y];
+    });
   if (gape > 0.1) {
-    g.poly(
-      flat([
-        [0.5, -0.02],
-        [2.2, 0.0],
-        [2.0, -0.1 - jaw],
-        [0.5, -0.26 - jaw * 0.3],
-      ]),
-    ).fill({ color: 0x330909, alpha: 0.95 * a });
+    // The inside of the mouth: a dark grey-red throat between the two jaws, with a shaded roof, palate ridges, a red tongue and wet glints.
+    const roof: [number, number][] = [
+      [0.15, -0.02],
+      [1.2, -0.04],
+      [2.28, 0.0],
+    ];
+    const floor: [number, number][] = [
+      [2.12, -0.1],
+      [1.2, -0.12],
+      [0.15, -0.1],
+    ];
+    const inside = [...roof, ...floor].map(([f, v], i) => (i < 3 ? pt(f, v) : jawPoint(f, v)));
+    const flatIn = inside.flatMap((q) => [q.x, q.y]);
+    g.poly(flatIn).fill({ color: 0x2b1b20, alpha: a });
+    // Throat: deeper toward the hinge.
+    const throat = [pt(0.15, -0.02), pt(0.9, -0.03), jawPoint(0.9, -0.11), jawPoint(0.15, -0.1)];
+    g.poly(throat.flatMap((q) => [q.x, q.y])).fill({ color: 0x120a0d, alpha: 0.9 * a });
+    // Grey-red roof band and palate ridges across it.
+    const band = [pt(0.9, -0.03), pt(2.2, -0.01), pt(2.1, -0.1 * 1), pt(0.9, -0.1)];
+    g.poly(band.flatMap((q) => [q.x, q.y])).fill({ color: 0x4a3036, alpha: 0.55 * a });
+    for (let i = 0; i < 6; i++) {
+      const f = 0.45 + i * 0.3;
+      const q0 = pt(f, -0.03);
+      const q1 = pt(f + 0.08, -0.03 - 0.11 * Math.min(1, ang * 1.2));
+      g.moveTo(q0.x, q0.y)
+        .lineTo(q1.x, q1.y)
+        .stroke({ width: 0.012 * u * 3, color: 0x6a4248, alpha: 0.8 * a });
+    }
+    // The tongue: a ridged red mound along the lower jaw's floor.
+    const tongue = flatJaw([
+      [0.3, -0.1],
+      [0.9, -0.05],
+      [1.6, -0.07],
+      [2.0, -0.1],
+      [1.2, -0.13],
+    ]);
+    g.poly(tongue).fill({ color: 0x6b2b31, alpha: 0.95 * a });
+    for (let i = 0; i < 4; i++) {
+      const q0 = jawPoint(0.55 + i * 0.35, -0.07);
+      const q1 = jawPoint(0.6 + i * 0.35, -0.11);
+      g.moveTo(q0.x, q0.y)
+        .lineTo(q1.x, q1.y)
+        .stroke({ width: 0.01 * u * 3, color: 0x3d161a, alpha: 0.8 * a });
+    }
+    // Wet glints.
+    for (const [f, v] of [
+      [0.8, -0.04],
+      [1.5, -0.05],
+    ] as const) {
+      const q = pt(f, v);
+      g.circle(q.x, q.y, 0.008 * u * 3).fill({ color: 0xc9a7ad, alpha: 0.7 * a });
+    }
   }
-  lowerJaw();
-  g.fill({ color: BLACK, alpha: a });
-  lowerJaw();
-  g.stroke({ width: 0.01, color: PALE, alpha: 0.28 * a });
+  // The lower jaw itself: one solid shape from the hinge to the chin, black like the head, with a pale lit lip.
+  const lowerShape = flatJaw([
+    [0.0, -0.02],
+    [0.9, -0.06],
+    [2.0, -0.08],
+    [2.28, -0.2],
+    [2.02, -0.38],
+    [1.2, -0.5],
+    [0.4, -0.46],
+    [-0.12, -0.28],
+  ]);
+  g.poly(lowerShape).fill({ color: BLACK, alpha: a });
+  const lip = [jawPoint(0.0, -0.025), jawPoint(0.9, -0.065), jawPoint(2.0, -0.085), jawPoint(2.26, -0.2)];
+  g.moveTo(lip[0]!.x, lip[0]!.y);
+  for (const q of lip.slice(1)) g.lineTo(q.x, q.y);
+  g.stroke({ width: 0.012, color: PALE, alpha: 0.3 * a });
   // A lit ridge along the top of the snout, thin and following its curve.
   g.moveTo(at(0.3, 0.84).x, at(0.3, 0.84).y)
     .quadraticCurveTo(at(1.1, 0.62).x, at(1.1, 0.62).y, at(2.2, 0.36).x, at(2.2, 0.36).y)
     .stroke({ width: 0.02, color: INK_LIT, alpha: 0.9 * a, cap: 'round' });
-  // Small fangs: upper ones down, lower ones up.
+  // Small fangs: upper ones down from the roof, lower ones up from the swung jaw.
   for (let i = 0; i < 4; i++) {
     const f = 1.05 + i * 0.3;
     g.poly(
       flat([
-        [f, 0.0],
-        [f + 0.08, 0.0],
-        [f + 0.04, -0.17],
+        [f, -0.01],
+        [f + 0.08, -0.01],
+        [f + 0.04, -0.2],
       ]),
     ).fill({ color: PALE, alpha: a });
     g.poly(
-      flat([
-        [f + 0.05, -0.05 - jaw],
-        [f + 0.13, -0.05 - jaw],
-        [f + 0.09, 0.1 - jaw],
+      flatJaw([
+        [f + 0.05, -0.08],
+        [f + 0.13, -0.08],
+        [f + 0.09, 0.1],
       ]),
     ).fill({ color: PALE, alpha: a });
   }

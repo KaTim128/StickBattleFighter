@@ -775,4 +775,6 @@ Proposed commands (exist from Phase 0): `npm run typecheck` · `npm test` · `np
 - [ ] Psion: Toss raises an object straight up from where it stands on a purple glow and throws it; Psychic Rupture builds up visibly, then a distortion wave hits for damage, knockback and stagger.
 - [ ] Each fighter's current move shows beside their own portrait; an ultimate shows a large themed banner.
 - [ ] The curved office wall meets the north wall with no patch.
+- [ ] Fighter select: the picked fighter's animation shows within a few seconds on a phone; a second visit is near instant.
+- [ ] Open Zone: Settings -> Change Character swaps the fighter on the spot, repeatedly, with no reload; HUD, keys and abilities follow.
 

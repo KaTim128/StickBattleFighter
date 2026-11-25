@@ -2395,6 +2395,34 @@ export class FightArenaScene implements ArenaScene {
     this.tags++;
   }
 
+  /**
+   * Open Zone character switch (owner plan O1): the fighter the player controls becomes another one, on the spot, with no page
+   * reload and as often as wanted. The old fighter's body, view, casts, carried or floated object, summons and everything it had set
+   * going are disposed first; the new one takes its place and facing. Practice only (a match or a team fight keeps its fighters).
+   */
+  replacePlayerFighter(id: string, loadout?: Loadout): boolean {
+    if (this.match || this.teams || !this.physics || !this.view || this.playerFighter.def.id === id) return false;
+    const out = this.playerFighter;
+    const loaded = withLoadout(loadCharacter(id, this.library), loadout);
+    // What the old fighter had going: summons, shots, clouds, drawn ink, a prop held by his mind.
+    this.summons.clearOwnedBy(out);
+    this.abilities?.world.clearOf(out.name);
+    for (let i = this.levitations.length - 1; i >= 0; i--) {
+      const l = this.levitations[i]!;
+      if (l.f !== out) continue;
+      this.props?.release(l.prop, { x: 0, y: 0 }, l.spec.heightM, 0, false);
+      this.levitations.splice(i, 1);
+    }
+    this.pointAim = null;
+    this.ultAimPoint = null;
+    this.moveCalls.delete(out);
+    const incoming = new FighterEntity('player', loaded.def, out, true);
+    this.swapIn('player', incoming);
+    this.tags--; // a swap here is not a 3 vs 3 tag
+    (this.characters as { player: LoadedCharacter }).player = loaded;
+    return true;
+  }
+
   /** Tags made so far (tests and the HUD's swap flash). */
   tags = 0;
 

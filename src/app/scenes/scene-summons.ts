@@ -234,6 +234,16 @@ export class SceneSummons {
     return false;
   }
 
+  /** Everything this fighter raised is gone at once (it left the arena, Open Zone character switch). */
+  clearOwnedBy(owner: FighterEntity): void {
+    for (let i = this.list.length - 1; i >= 0; i--) {
+      const f = this.list[i]!;
+      if (f.summon?.owner !== owner) continue;
+      this.host.detach(f);
+      this.list.splice(i, 1);
+    }
+  }
+
   /** Everyone gone at once (scene exit). */
   clear(): void {
     for (const f of this.list) this.host.detach(f);

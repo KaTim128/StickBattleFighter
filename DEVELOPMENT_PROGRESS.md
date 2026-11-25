@@ -986,3 +986,7 @@ Done: Temporal Echo, Harmonic Shield, Gravity Well, two drones, Prismor and pass
 
 ## 25/11/2026: Owner "Requested Updates" (TD-162)
 Done: Ink Monster 450 HP; Ink Slash brush swipe with 3 s blind and 40 % slow; Ink Dragon lunge and bite with ink splat veil (1.5 s, 40 % slow); orange stray line fixed (`arcPath`); Battle Skip instant (`skipToEnd`); draw Skip settles only the shown stage (test); Psion Toss rises in place then throws, Psychic Rupture replaces Slam; per-portrait move display with ultimate banner; curved wall patch fixed; info button top-left and the controls hint moved to a tutorial-only Keys button. Checks: typecheck, biome, full vitest (1289 passed), production build, e2e tournament/menu/front-end (desktop) green; screenshots for Geargrind mine, Psion, move HUD, wall, info/Keys. Not verified: dragon lunge screenshot and a Reson/Monster-ultimate line check in the browser, phone layout of the Keys button. Next: Batch 8 (select-screen performance S1, Open Zone character switch O1).
+
+## 25/11/2026: Batch 8 (S1, O1; TD-163)
+Done: select-screen strip cache and incremental drawing (before/after numbers in docs/qa); Open Zone Change Character (picker, `replacePlayerFighter`, integration test, browser check with three switches). Next: Batch 9 (pixel renderer, UI design system, loading screen), then Batch 10.
+

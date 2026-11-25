@@ -19,7 +19,7 @@ export class SettingsPanel {
     private readonly settings: SettingsState,
     private readonly onOpenChange: (open: boolean) => void,
     /** Game actions shown at the bottom: leave the fight; open the controls of the fighter being played. */
-    actions: { leave?: () => void; fighterControls?: () => void } = {},
+    actions: { leave?: () => void; fighterControls?: () => void; changeCharacter?: () => void } = {},
     /** Escape cancels an ability being aimed instead (owner, 12/11/2026); true when it did. */
     private readonly escapeTaken: () => boolean = () => false,
   ) {
@@ -65,6 +65,7 @@ export class SettingsPanel {
           <button type="button" class="settings-name-save">Save name</button>
         </section>
         <div class="settings-actions">
+          <button type="button" class="settings-change-character" hidden>Change Character</button>
           <button type="button" class="settings-fighter-keys">Change Fighter Keybinds</button>
           <button type="button" class="settings-leave">Leave</button>
         </div>
@@ -72,6 +73,12 @@ export class SettingsPanel {
     parent.appendChild(this.root);
     const leave = this.root.querySelector<HTMLButtonElement>('.settings-leave')!;
     const keys = this.root.querySelector<HTMLButtonElement>('.settings-fighter-keys')!;
+    const change = this.root.querySelector<HTMLButtonElement>('.settings-change-character')!;
+    change.hidden = !actions.changeCharacter;
+    change.addEventListener('click', () => {
+      this.setOpen(false);
+      actions.changeCharacter?.();
+    });
     leave.hidden = !actions.leave;
     keys.hidden = !actions.fighterControls;
     leave.addEventListener('click', () => {
