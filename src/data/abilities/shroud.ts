@@ -34,7 +34,7 @@ export const SHROUD_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 78,
+      damage: 70,
       knockbackMps: 2.5,
       heavy: false,
       strength: 500,
@@ -81,7 +81,7 @@ export const SHROUD_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: true,
     payload: {
-      damage: 26,
+      damage: 23,
       knockbackMps: 0.8,
       heavy: false,
       strength: 300,

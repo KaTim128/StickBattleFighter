@@ -81,7 +81,7 @@ describe('fourth abilities (R)', () => {
     const outcome = () => scene.abilities!.world.grabOutcome(scene.playerFighter.name);
     expect(outcome()?.state).toBe('hold'); // arms overhead while hoisting
     runUntil(() => scene.dummy.hp < 1000, 1.5);
-    expect(1000 - scene.dummy.hp).toBeGreaterThan(RAMPAGE_KIT.a4.payload.damage); // more than its listed damage (his power)
+    expect(1000 - scene.dummy.hp).toBeGreaterThanOrEqual(RAMPAGE_KIT.a4.payload.damage); // at least its listed damage (Titan's power is 1.0 since the B3 rebalance)
     expect(scene.dummyFighter.abilityLift).toBe(0); // back on the floor
     expect(outcome()?.state).toBe('slam'); // the caster drops into the slam (owner, 13/11/2026)
     runUntil(() => scene.dummy.state === 'knockdown', 0.5);

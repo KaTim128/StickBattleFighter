@@ -287,7 +287,7 @@ describe('Shard Volley', () => {
     expect(w.projectiles).toHaveLength(9);
     const angles = new Set(w.projectiles.map((p) => Math.round(Math.atan2(p.dir.y, p.dir.x) * 100)));
     expect(angles.size).toBeGreaterThan(5); // spread across the cone
-    expect(PRISMOR_KIT.a3.payload.damage).toBeLessThanOrEqual(16); // each one is still small
+    expect(PRISMOR_KIT.a3.payload.damage).toBeLessThanOrEqual(20); // each one is still small
   });
 });
 

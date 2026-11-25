@@ -205,7 +205,7 @@ describe('Shroud', () => {
     intents.pressAbility('a2');
     run(5);
     expect(1000 - scene.dummy.hp).toBeLessThan(260);
-    expect(1000 - scene.dummy.hp).toBeGreaterThan(150);
+    expect(1000 - scene.dummy.hp).toBeGreaterThan(135); // B3 rebalance: Stalker Lunge stabs and Shroud power were trimmed
     scenes.clear();
   });
 

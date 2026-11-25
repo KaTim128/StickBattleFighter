@@ -16,7 +16,7 @@
     "massKg": 64
   },
   "power": 0.95,
-  "defence": 1.12,
+  "defence": 1.09,
   "critChance": 0.1,
   "critMultiplier": 1.5,
   "knockbackResistance": 0,

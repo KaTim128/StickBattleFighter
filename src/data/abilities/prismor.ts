@@ -60,7 +60,7 @@ export const PRISMOR_KIT: AbilityKit = {
     aimRangeM: 8,
     moveFactor: 0.4,
     interruptible: true,
-    payload: { damage: 26, knockbackMps: 4, heavy: false, strength: 400, impact: 'knuckle-heavy', stunS: 0.6 },
+    payload: { damage: 33, knockbackMps: 4, heavy: false, strength: 400, impact: 'knuckle-heavy', stunS: 0.6 },
     delivery: {
       type: 'dash',
       distanceM: 7.5,
@@ -95,7 +95,7 @@ export const PRISMOR_KIT: AbilityKit = {
     aimRangeM: 8,
     moveFactor: 0.5,
     interruptible: true,
-    payload: { damage: 14, knockbackMps: 1.2, heavy: false, strength: 120, impact: 'knuckle-light' },
+    payload: { damage: 18, knockbackMps: 1.2, heavy: false, strength: 120, impact: 'knuckle-light' },
     delivery: {
       type: 'projectile',
       speedMps: 16,
@@ -150,7 +150,7 @@ export const PRISMOR_KIT: AbilityKit = {
     aimRangeM: 6,
     moveFactor: 0,
     interruptible: true,
-    payload: { damage: 38, knockbackMps: 5, heavy: true, strength: 800, impact: 'knuckle-heavy', wallDamage: 200 },
+    payload: { damage: 51, knockbackMps: 5, heavy: true, strength: 800, impact: 'knuckle-heavy', wallDamage: 200 },
     delivery: { type: 'eruptions', count: 4, radiusM: 1.45, warnS: 0.9, staggerS: 0.18, spreadM: 4.6 },
     vfx: 'crystal-groundstrike',
     sfx: { cast: 'ground-plant', release: 'ground-plant', impact: 'ground-erupt' },

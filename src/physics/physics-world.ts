@@ -380,6 +380,8 @@ export class PhysicsWorld {
   thaw(): void {
     const type = rapier().RigidBodyType;
     for (const f of this.frozenBodies.splice(0, this.frozenBodies.length)) {
+      // A body removed while time was stopped (a summon that crumbled, debris that expired) is gone: touching it would trap the engine.
+      if (!this.world.getRigidBody(f.body.handle) || !f.body.isValid()) continue;
       f.body.setBodyType(type.Dynamic, true);
       f.body.setLinvel(f.lin, true);
       f.body.setAngvel(f.ang, true);

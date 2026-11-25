@@ -79,7 +79,7 @@ describe('Fire Beam (B4)', () => {
     expect(rootedLate).toBe(true); // still casting right up to its end: he cannot walk off
     run(0.8);
     expect(scene.playerFighter.caster!.cast).toBeNull(); // free again a moment later
-    expect(scene.dummy.hp).toBeLessThan(1000 - 250); // it really hurt: a long beam on a standing target
+    expect(scene.dummy.hp).toBeLessThan(1000 - 220); // it really hurt (B3 rebalance: Fire Beam damage -12 %): a long beam on a standing target
     scenes.clear();
   });
 

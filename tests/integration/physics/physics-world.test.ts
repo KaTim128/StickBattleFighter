@@ -23,6 +23,25 @@ describe('PhysicsWorld (Rapier 2D, top-down, TD-021)', () => {
     physics.dispose();
   });
 
+  it('thaw skips a body that was removed while time was stopped (regression: Time Stop ending trapped the engine)', () => {
+    const physics = new PhysicsWorld();
+    const a = physics.addDynamicBox({
+      halfExtents: { x: 0.5, y: 0.5 },
+      position: { x: 2, y: 2 },
+      velocity: { x: 1, y: 0 },
+    });
+    const b = physics.addDynamicBox({
+      halfExtents: { x: 0.5, y: 0.5 },
+      position: { x: 5, y: 2 },
+      velocity: { x: 1, y: 0 },
+    });
+    physics.freeze([]);
+    physics.removeBody(a); // crumbled while time was stopped
+    expect(() => physics.thaw()).not.toThrow();
+    expect(b.linvel().x).toBeCloseTo(1, 5); // the survivor moves again as before
+    physics.dispose();
+  });
+
   it('slides the engine-check crate, bounces it off walls and brings it to rest inside the arena', () => {
     const physics = new PhysicsWorld();
     const { crate } = addEngineCheckColliders(physics);

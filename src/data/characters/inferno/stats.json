@@ -2,7 +2,7 @@
   "id": "inferno-stats",
   "maxHp": 1000,
   "maxStamina": 100,
-  "staminaRegenPerS": 30,
+  "staminaRegenPerS": 31,
   "staminaRegenDelayS": 0.7,
   "movement": {
     "maxSpeedMps": 5,
@@ -15,8 +15,8 @@
     "footRadiusM": 0.32,
     "massKg": 70
   },
-  "power": 1,
-  "defence": 1.1,
+  "power": 1.0,
+  "defence": 1.05,
   "critChance": 0.05,
   "critMultiplier": 1.5,
   "knockbackResistance": 0,

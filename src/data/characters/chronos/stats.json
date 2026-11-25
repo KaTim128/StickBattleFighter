@@ -2,7 +2,7 @@
   "id": "chronos-stats",
   "maxHp": 960,
   "maxStamina": 100,
-  "staminaRegenPerS": 34,
+  "staminaRegenPerS": 30,
   "staminaRegenDelayS": 0.7,
   "movement": {
     "maxSpeedMps": 5.0,
@@ -15,8 +15,8 @@
     "footRadiusM": 0.3,
     "massKg": 58
   },
-  "power": 1.0,
-  "defence": 1.1,
+  "power": 1.1,
+  "defence": 1.17,
   "critChance": 0.08,
   "critMultiplier": 1.6,
   "knockbackResistance": 0,

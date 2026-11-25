@@ -36,7 +36,7 @@ export const SHARD_BLADE_MOVESET: ShardBladeMoveset = {
       reachM: 1.4,
       hitRadiusM: 0.5,
       strength: 700,
-      damage: 22,
+      damage: 26,
       heavy: false,
       knockbackSpeedMps: 3,
       moveFactor: 0.6,

@@ -158,7 +158,7 @@ describe('Chronos kit', () => {
     a.world.release('me', CHRONOS_KIT.a5!, { x: 4, y: 0 }, a.host);
     expect(a.hits).toHaveLength(1);
     expect(a.hits[0]!.aging).toBe(true);
-    expect(CHRONOS_KIT.a5!.payload.aging).toEqual({ durationS: 4, dps: 14, defenceFactor: 0.75 });
+    expect(CHRONOS_KIT.a5!.payload.aging).toEqual({ durationS: 4, dps: 22, defenceFactor: 0.75 });
     expect(a.world.executingIds('me').has('ageAcceleration')).toBe(true);
     a.run(4.2);
     expect(a.world.executingIds('me').has('ageAcceleration')).toBe(false);

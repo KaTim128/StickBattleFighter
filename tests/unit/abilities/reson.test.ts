@@ -105,7 +105,7 @@ describe('Reson kit', () => {
     run(a, 0.5);
     expect(a.hits).toHaveLength(1);
     expect(a.hits[0]).toMatchObject({ disrupt: true });
-    expect(a.hits[0]!.damage).toBeLessThanOrEqual(20);
+    expect(a.hits[0]!.damage).toBeLessThanOrEqual(30);
     expect(RESON_KIT.a5!.payload.stunS).toBeUndefined();
     expect(RESON_KIT.a5!.payload.knockbackMps).toBe(0);
     expect(RESON_KIT.a5!.payload.disrupt?.durationS).toBeGreaterThanOrEqual(3);
@@ -142,9 +142,9 @@ describe('Resonance Barrier and Dissonance effects', () => {
     critMultiplier: 1,
     knockbackResistance: 0,
   };
-  it('the barrier is a sonic one that soaks 60 damage for 5 seconds', () => {
+  it('the barrier is a sonic one that soaks 90 damage for 5 seconds', () => {
     expect(RESON_KIT.a3.look?.barrierStyle).toBe('sonic');
-    expect(RESON_KIT.a3.delivery).toMatchObject({ type: 'barrier', hp: 60, durationS: 5 });
+    expect(RESON_KIT.a3.delivery).toMatchObject({ type: 'barrier', hp: 90, durationS: 5 });
   });
   it('Resonance Break mutes: a muted fighter cannot cast, for exactly 4 seconds', () => {
     const c = new Combatant(STATS);

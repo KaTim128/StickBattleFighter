@@ -35,7 +35,7 @@ export const NECRO_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: {
-      damage: 60,
+      damage: 56,
       knockbackMps: 2,
       heavy: false,
       strength: 200,
@@ -71,7 +71,7 @@ export const NECRO_KIT: AbilityKit = {
     aimRangeM: 7,
     moveFactor: 0,
     interruptible: true,
-    payload: { damage: 110, knockbackMps: 0.5, heavy: false, strength: 600, impact: 'knuckle-heavy', stunS: 1.2 },
+    payload: { damage: 102, knockbackMps: 0.5, heavy: false, strength: 600, impact: 'knuckle-heavy', stunS: 1.2 },
     delivery: { type: 'nova', radiusM: 1.6, telegraphS: 0.6, atTarget: true },
     vfx: 'death-eruption',
     sfx: { cast: 'grave-call', release: 'grave-rumble', impact: 'bone-eruption' },

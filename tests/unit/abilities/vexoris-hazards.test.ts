@@ -52,7 +52,7 @@ describe('Chemical Trap is a landmine', () => {
     expect(a.world.clouds[0]?.mine).toBeUndefined();
     expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
     expect(a.hits[0]?.damage).toBeGreaterThan(20);
-    expect(a.hits[0]?.poison).toBe(3);
+    expect(a.hits[0]?.poison).toBe(2);
     run(a, 6); // the cloud ends; no second dose for standing in it
     expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
     expect(a.world.clouds).toHaveLength(0);
@@ -75,14 +75,14 @@ describe('Chemical Trap is a landmine', () => {
 });
 
 describe('Toxic Jar', () => {
-  it('flies as a thrown jar and shatters on the enemy for damage and three stacks of poison', () => {
+  it('flies as a thrown jar and shatters on the enemy for damage and two stacks of poison', () => {
     const a = arena({ x: 4, y: 0 });
     a.world.release('me', VEXORIS_KIT.a2, { x: 4, y: 0 }, a.host);
     expect(VEXORIS_KIT.a2.look?.flight?.jar).toBe(true);
     run(a, 1);
     const hit = a.hits.find((h) => h.target === 'foe');
     expect(hit?.damage).toBeGreaterThanOrEqual(20);
-    expect(hit?.poison).toBe(3);
+    expect(hit?.poison).toBe(2);
     expect(VEXORIS_KIT.a2.look?.impact?.shards).toBeGreaterThan(0);
   });
 });
@@ -144,8 +144,8 @@ describe('Plague Bloom fog', () => {
     const early = a.fog.at(-1)!.chipDps;
     run(a, 4);
     const late = a.fog.at(-1)!.chipDps;
-    expect(late).toBeGreaterThan(early * 1.5);
-    expect(late).toBeLessThanOrEqual(10 * 3 + 0.001); // capped at x3
+    expect(late).toBeGreaterThan(early * 1.3);
+    expect(late).toBeLessThanOrEqual(8 * 2 + 0.001); // capped at x2
     a.them.x = 20;
     run(a, 0.5); // a short step out keeps the ramp
     a.them.x = 2;

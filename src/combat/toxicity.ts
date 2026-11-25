@@ -35,9 +35,9 @@ export const POISON: PoisonConfig = {
   ],
   tickIntervalS: 3,
   tickDamageSpecHp: [1, 2, 3, 4],
-  hpPerSpecHp: 10,
-  damagePerStack: 0.04,
-  maxDamageFactor: 2.5,
+  hpPerSpecHp: 7,
+  damagePerStack: 0.02,
+  maxDamageFactor: 1.8,
 };
 
 /** The movement-speed multiplier for a toxicity level (1 = none). */

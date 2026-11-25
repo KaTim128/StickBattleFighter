@@ -38,7 +38,7 @@ export const PSION_KIT: AbilityKit = {
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 64,
+      damage: 110,
       knockbackMps: 5,
       heavy: true,
       strength: 520,
@@ -109,7 +109,7 @@ export const PSION_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: true, strength: 0 },
-    delivery: { type: 'slam', speedFactor: 1.35, powerFactor: 1 },
+    delivery: { type: 'slam', speedFactor: 1.35, powerFactor: 1.15 },
     vfx: 'psychic-slam',
     sfx: { cast: 'psi-gather', release: 'psi-hurl', impact: 'psi-hurl' },
     look: {
@@ -136,7 +136,7 @@ export const PSION_KIT: AbilityKit = {
     moveFactor: 0.1,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 300, impact: 'knuckle-light', psi: true },
-    delivery: { type: 'lift', reachM: 6, liftS: 1, liftM: 1.5, fallDamage: 20, immuneS: 4 },
+    delivery: { type: 'lift', reachM: 6, liftS: 1, liftM: 1.5, fallDamage: 38, immuneS: 4 },
     vfx: 'floating-prison',
     sfx: { cast: 'psi-gather', release: 'prison-lift', impact: 'psi-drop' },
     look: {
@@ -164,7 +164,7 @@ export const PSION_KIT: AbilityKit = {
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 14,
+      damage: 28,
       knockbackMps: 0,
       heavy: false,
       strength: 200,
@@ -209,7 +209,7 @@ export const PSION_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: false,
     payload: {
-      damage: 70,
+      damage: 84,
       knockbackMps: 12,
       heavy: true,
       strength: 900,

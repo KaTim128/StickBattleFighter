@@ -2,7 +2,7 @@
   "id": "prismor-stats",
   "maxHp": 1080,
   "maxStamina": 100,
-  "staminaRegenPerS": 32,
+  "staminaRegenPerS": 29,
   "staminaRegenDelayS": 0.7,
   "movement": {
     "maxSpeedMps": 4.7,
@@ -15,7 +15,7 @@
     "footRadiusM": 0.3,
     "massKg": 82
   },
-  "power": 1.1,
+  "power": 1.18,
   "defence": 1.15,
   "critChance": 0.08,
   "critMultiplier": 1.6,

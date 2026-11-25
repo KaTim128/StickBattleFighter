@@ -39,7 +39,7 @@ export const RESON_KIT: AbilityKit = {
     interruptible: true,
     breaksOnHit: true,
     payload: {
-      damage: 8,
+      damage: 18,
       knockbackMps: 0.8,
       heavy: false,
       strength: 160,
@@ -75,7 +75,7 @@ export const RESON_KIT: AbilityKit = {
     moveFactor: 0.1,
     interruptible: true,
     payload: {
-      damage: 68,
+      damage: 117,
       knockbackMps: 15,
       heavy: true,
       strength: 900,
@@ -109,7 +109,7 @@ export const RESON_KIT: AbilityKit = {
     moveFactor: 0.5,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'barrier', hp: 60, durationS: 5 },
+    delivery: { type: 'barrier', hp: 90, durationS: 5 },
     vfx: 'resonance-barrier',
     sfx: { cast: 'sonic-charge', release: 'sonic-barrier-up', impact: 'sonic-barrier-hit' },
     look: {
@@ -135,7 +135,7 @@ export const RESON_KIT: AbilityKit = {
     moveFactor: 0.1,
     interruptible: true,
     payload: {
-      damage: 14,
+      damage: 39,
       knockbackMps: 3,
       heavy: false,
       strength: 220,
@@ -173,7 +173,7 @@ export const RESON_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: {
-      damage: 12,
+      damage: 24,
       knockbackMps: 0,
       heavy: false,
       strength: 200,
@@ -209,7 +209,7 @@ export const RESON_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: false,
     payload: {
-      damage: 45,
+      damage: 74,
       knockbackMps: 8,
       heavy: true,
       strength: 1000,

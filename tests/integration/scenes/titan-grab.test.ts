@@ -89,7 +89,7 @@ describe("Titan's Grapple Slam (B9)", () => {
     expect(Math.hypot(titan.x - before.x, titan.y - before.y)).toBeGreaterThan(0.8); // he was pushed
     expect(followed).toBe(true); // and still holds on to the target
     run(40);
-    expect(held.combatant.hp).toBeLessThan(hp - 100); // the slam still happened
+    expect(held.combatant.hp).toBeLessThanOrEqual(hp - 100); // the slam still happened
     scenes.clear();
   });
 });

@@ -2,7 +2,7 @@
   "id": "reson-stats",
   "maxHp": 1000,
   "maxStamina": 100,
-  "staminaRegenPerS": 38,
+  "staminaRegenPerS": 36,
   "staminaRegenDelayS": 0.7,
   "movement": {
     "maxSpeedMps": 5.2,
@@ -15,7 +15,7 @@
     "footRadiusM": 0.3,
     "massKg": 66
   },
-  "power": 1.05,
+  "power": 1.12,
   "defence": 0.9,
   "critChance": 0.08,
   "critMultiplier": 1.6,

@@ -38,7 +38,7 @@ export const AERION_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: false,
     payload: {
-      damage: 72,
+      damage: 100,
       knockbackMps: 9,
       heavy: true,
       strength: 560,
@@ -81,7 +81,7 @@ export const AERION_KIT: AbilityKit = {
     aimRangeM: 0,
     moveFactor: 0.4,
     interruptible: true,
-    payload: { damage: 20, knockbackMps: 2.6, heavy: false, strength: 220, noFlinch: true, impact: 'knuckle-light' },
+    payload: { damage: 32, knockbackMps: 2.6, heavy: false, strength: 220, noFlinch: true, impact: 'knuckle-light' },
     delivery: { type: 'whirl', radiusM: 2.3, durationS: 0.8, tickS: 0.2 },
     vfx: 'wind-blade',
     sfx: { cast: 'wing-flap', release: 'blade-whoosh', impact: 'blade-cut' },
@@ -108,7 +108,7 @@ export const AERION_KIT: AbilityKit = {
     aimRangeM: 9,
     moveFactor: 0.1,
     interruptible: true,
-    payload: { damage: 20, knockbackMps: 0.4, heavy: false, strength: 300, noFlinch: true, impact: 'knuckle-light' },
+    payload: { damage: 31, knockbackMps: 0.4, heavy: false, strength: 300, noFlinch: true, impact: 'knuckle-light' },
     delivery: {
       type: 'projectile',
       speedMps: 11,
@@ -195,7 +195,7 @@ export const AERION_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: false,
     payload: {
-      damage: 90,
+      damage: 99,
       knockbackMps: 12,
       heavy: true,
       strength: 900,

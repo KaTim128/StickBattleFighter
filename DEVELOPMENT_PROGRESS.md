@@ -957,3 +957,6 @@ Done: posture reading (stats, health, phase), recovery punishing, rhythm reads, 
 
 ## 24/11/2026: difficulty capability tiers (A7, TD-155)
 Done: hazard sense, cast awareness, ultimate patience and moment, movement skill and furniture use now differ clearly by tier; the scene passes the opponent's rings, clouds, mines, beams, shots and cast to the brain. Tests: typecheck clean, vitest 1252 passed. Not checked: watching Easy and Expert fights in the browser; the tuning numbers are first values and may need a pass after the Batch 5 matrix.
+
+## 25/11/2026: Batch 5 balance framework and rebalance (B1-B3, TD-156)
+Done: matrix harness for all 12 fighters, `BALANCE_FRAMEWORK.md`, `balance-framework.test.ts`, five tuning rounds (every change in `FIGHTER_SYSTEM_CHANGELOG.md`), final matrix 35-63 % for everyone including Inferno (60 %). The matrix also found and fixed two engine crashes (Time Stop ending with a removed frozen body; status list shrinking under a fatal damage tick, with regression tests). Not done: other difficulties and arenas, per-ability hit rates, AI decision logging. Next: Batch 6 (tournament overtime, Skip Battle, spectate).

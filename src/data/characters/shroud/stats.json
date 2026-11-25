@@ -2,7 +2,7 @@
   "id": "shroud-stats",
   "maxHp": 990,
   "maxStamina": 100,
-  "staminaRegenPerS": 30,
+  "staminaRegenPerS": 34,
   "staminaRegenDelayS": 0.7,
   "movement": {
     "maxSpeedMps": 5.2,
@@ -15,8 +15,8 @@
     "footRadiusM": 0.3,
     "massKg": 58
   },
-  "power": 1.1,
-  "defence": 1.122,
+  "power": 1.0,
+  "defence": 1.07,
   "critChance": 0.22,
   "critMultiplier": 1.9,
   "knockbackResistance": 0,
