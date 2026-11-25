@@ -19,21 +19,34 @@ const GOLD = 0xe3b94a;
 const PINK = 0xf2a6b6;
 
 /**
- * Magix's head: a tall black top hat with a red band, a pale face with a mischievous one-sided smile and a raised eyebrow, and the
+ * Magix's head: a tall black top hat with a red band, a plain white face with only a curled black moustache, and the
  * red bow tie at his throat. Drawn in the model's local frame (x forward).
  */
 export function drawMagixHead(g: Graphics, s: Skel, st: MagixDrawState): void {
   const r = st.headRadius;
   const h = s.head;
-  // The face: a pale mask over the front of the head with a crooked grin.
-  g.ellipse(h.x + r * 0.3, h.y + r * 0.1, r * 0.62, r * 0.78).fill({ color: WHITE, alpha: 0.95 });
-  g.circle(h.x + r * 0.45, h.y - r * 0.1, r * 0.1).fill(BLACK);
-  g.moveTo(h.x + r * 0.2, h.y - r * 0.3)
-    .lineTo(h.x + r * 0.7, h.y - r * 0.42)
-    .stroke({ width: 0.012, color: BLACK, cap: 'round' });
-  g.moveTo(h.x + r * 0.1, h.y + r * 0.4)
-    .quadraticCurveTo(h.x + r * 0.5, h.y + r * 0.72, h.x + r * 0.85, h.y + r * 0.3)
-    .stroke({ width: 0.016, color: BAND, cap: 'round' });
+  // The face: a plain white head with nothing on it but a thick, curled black moustache.
+  g.circle(h.x, h.y, r * 0.97).fill(WHITE);
+  const mx = h.x + r * 0.3;
+  const my = h.y + r * 0.32;
+  // Two thick lobes swelling out from the middle and drooping a little, each ending in a tight upward curl (a handlebar).
+  for (const side of [-1, 1]) {
+    g.moveTo(mx, my - r * 0.14)
+      .bezierCurveTo(
+        mx + side * r * 0.25,
+        my - r * 0.3,
+        mx + side * r * 0.62,
+        my - r * 0.12,
+        mx + side * r * 0.66,
+        my + r * 0.12,
+      )
+      .bezierCurveTo(mx + side * r * 0.5, my + r * 0.34, mx + side * r * 0.2, my + r * 0.3, mx, my + r * 0.12)
+      .fill(BLACK);
+    // The curled tip: a small hook turning up and back.
+    g.circle(mx + side * r * 0.68, my + r * 0.0, r * 0.12).fill(BLACK);
+    g.circle(mx + side * r * 0.62, my - r * 0.1, r * 0.07).fill(BLACK);
+  }
+  g.ellipse(mx, my - r * 0.02, r * 0.14, r * 0.14).fill(BLACK);
   // The hat: a wide brim, then a tall crown that tips a little with his movement.
   const tip = Math.sin(st.t * 2.2) * 0.012;
   const brimY = h.y - r * 0.78;
