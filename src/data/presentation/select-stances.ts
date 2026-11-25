@@ -76,6 +76,8 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     front: { x: -0.08, y: 0.72 },
     back: { x: 0.06, y: 0.72, elbowOut: true },
     turn: 0.6,
+    // The shoulders spread only part of the way with the turn, so the chest does not look wider than the body under it (owner, 25/11/2026).
+    shoulderSpread: 0.1,
     scale: 1.3,
     breath: { lean: 1.5, pelvis: 0.01, hands: 0.02 },
   },
@@ -265,11 +267,11 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     rearFoot: -0.4,
     lean: -6,
     head: 0,
-    // Both upper fists up and out like a boxer's guard, both lower fists held out low and wide: four clear arms, the face left open.
-    front: { x: 0.8, y: -0.34 },
-    back: { x: -0.35, y: -0.42 },
-    front2: { x: 0.92, y: 0.32 },
-    back2: { x: -0.5, y: 0.5 },
+    // The upper fists are held up and a little back, the lower fists low and a little forward, so the four arms do not overlap: four clear arms, the face left open.
+    front: { x: 0.52, y: -0.36 },
+    back: { x: -0.5, y: -0.46 },
+    front2: { x: 1.0, y: 0.3 },
+    back2: { x: 0.2, y: 0.55 },
     turn: 0.58,
     scale: 1.04,
     breath: { lean: 1.5, pelvis: 0.012, hands: 0.025 },

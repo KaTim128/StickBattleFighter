@@ -408,10 +408,11 @@ function fourArmIdle(timeS: number, bones: BoneLengths): Pose {
   return {
     lean: deg(-4 + breath * 1.2 + shift * 1),
     head: deg(-2),
-    armFront: { root: deg(62 + breath * 3), bend: deg(112) },
-    armBack: { root: deg(48 + breath * 3), bend: deg(116) },
-    armFront2: { root: deg(26 + flex * 8), bend: deg(70 + flex * 14) },
-    armBack2: { root: deg(8 - flex * 5), bend: deg(60) },
+    // The upper pair held up and a little back, the lower pair low and a little forward, so the four arms never overlap.
+    armFront: { root: deg(44 + breath * 3), bend: deg(118) },
+    armBack: { root: deg(22 + breath * 3), bend: deg(122) },
+    armFront2: { root: deg(54 + flex * 8), bend: deg(60 + flex * 14) },
+    armBack2: { root: deg(34 - flex * 5), bend: deg(54) },
     legFront: legIk(0.36 + shift * 0.02, legs * 0.93 - breath * 0.012, bones.thigh, bones.shin),
     legBack: legIk(-0.34 - shift * 0.02, legs * 0.93 - (1 - breath) * 0.012, bones.thigh, bones.shin),
   };
