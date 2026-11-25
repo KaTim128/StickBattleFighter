@@ -567,7 +567,8 @@ export interface EchoDelivery {
 
 /**
  * Telekinetic Toss (Psion): the nearest real prop within `rangeM` (any mass the props system carries) stays exactly where it is
- * until he takes hold of it. Then it rises straight up from its own spot over `riseS` to `heightM` with a purple psychic glow beneath
+ * until he takes hold of it. Then it rises straight up from its own spot to `heightM`, taking longer the heavier it is
+ * (`riseS + riseSqrtS * sqrt(massKg)`, never more than `riseMaxS`; owner 25/11/2026) with a purple psychic glow beneath
  * it, and is thrown at his opponent as a real thrown body, `speedFactor` times a normal throw's speed and `powerFactor` times its
  * power. Damage and knockback come from its mass and speed through the throwing rules and land only on a real collision. Nothing in
  * reach: the cast is refused before stamina or cooldown is spent ('noObject').
@@ -575,7 +576,12 @@ export interface EchoDelivery {
 export interface TossDelivery {
   readonly type: 'toss';
   readonly rangeM: number;
+  /** The quickest it ever rises (a weightless thing), seconds. */
   readonly riseS: number;
+  /** Extra seconds per square root of the object's mass, kg. */
+  readonly riseSqrtS: number;
+  /** The longest any object takes to rise, seconds. */
+  readonly riseMaxS: number;
   readonly heightM: number;
   readonly speedFactor: number;
   readonly powerFactor: number;

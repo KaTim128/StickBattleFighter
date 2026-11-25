@@ -1333,6 +1333,8 @@ export class FightArenaScene implements ArenaScene {
     f: FighterEntity;
     prop: ArenaProp;
     spec: TossDelivery;
+    /** How long this object takes to rise: longer the heavier it is. */
+    riseS: number;
     ageS: number;
     at: { x: number; y: number };
   }[] = [];
@@ -1354,7 +1356,8 @@ export class FightArenaScene implements ArenaScene {
     const r = prop.rect;
     const at = { x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 };
     props.pickUp(prop, this.fighters.indexOf(f), { ...at, heightM: 0 });
-    this.levitations.push({ f, prop, spec, ageS: 0, at });
+    const riseS = Math.min(spec.riseMaxS, spec.riseS + spec.riseSqrtS * Math.sqrt(Math.max(0, prop.kind.massKg)));
+    this.levitations.push({ f, prop, spec, riseS, ageS: 0, at });
     this.characterSound(f, 'jump', 0.4);
     return true;
   }
@@ -1365,7 +1368,7 @@ export class FightArenaScene implements ArenaScene {
     for (let i = this.levitations.length - 1; i >= 0; i--) {
       const l = this.levitations[i]!;
       l.ageS += stepS;
-      const k = Math.min(1, l.ageS / l.spec.riseS);
+      const k = Math.min(1, l.ageS / l.riseS);
       const heightM = l.spec.heightM * k * k * (3 - 2 * k);
       if (!props || l.prop.broken || !l.prop.held) {
         this.levitations.splice(i, 1);
@@ -1377,7 +1380,7 @@ export class FightArenaScene implements ArenaScene {
         this.levitations.splice(i, 1);
         continue;
       }
-      if (l.ageS < l.spec.riseS) continue;
+      if (l.ageS < l.riseS) continue;
       const dir = this.tossDir(l.f);
       const speed = this.throwSpeed(l.f, l.prop) * l.spec.speedFactor;
       l.f.faceToward(dir.x, dir.y);
@@ -3751,7 +3754,7 @@ export class FightArenaScene implements ArenaScene {
         : undefined,
       limbFlames,
       levitations: this.levitations.map((l) => {
-        const k = Math.min(1, l.ageS / l.spec.riseS);
+        const k = Math.min(1, l.ageS / l.riseS);
         const sz = l.prop.size;
         return {
           x: l.at.x,

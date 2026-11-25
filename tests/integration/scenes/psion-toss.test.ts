@@ -65,4 +65,24 @@ describe('Psion Telekinetic Toss (PS1)', () => {
     expect(scene.dummy.hp).toBeLessThan(1000);
     scenes.clear();
   });
+
+  it('the heavier the object, the slower it rises before it is thrown (a chair is quick, a stone block takes about twice as long)', async () => {
+    const timeToThrow = async (kind: string): Promise<number> => {
+      const { intents, scene, scenes, run } = await setup([{ kind, x: 12, y: 13.4 }]);
+      intents.pressAbility('a2');
+      let steps = 0;
+      for (; steps < 60 * 6; steps++) {
+        run(STEP);
+        const p = scene.props!.props.find((q) => q.placement.kind === kind)!;
+        if (p.flight !== null) break;
+      }
+      scenes.clear();
+      return steps * STEP;
+    };
+    const chair = await timeToThrow('office-chair');
+    const block = await timeToThrow('stone-block');
+    expect(chair).toBeLessThan(1.1);
+    expect(block).toBeGreaterThan(chair + 0.5);
+    expect(block).toBeLessThan(3); // but never slow to the point of uselessness
+  }, 60_000);
 });

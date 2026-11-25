@@ -72,7 +72,7 @@ export const PSION_KIT: AbilityKit = {
     name: 'Telekinetic Toss',
     label: 'TOSS',
     description:
-      'Takes hold of the nearest object in reach, a chair, a monitor, even a desk. It rises straight up from where it stands on a purple glow, then flies at his opponent. Heavier objects hit harder, and damage lands only where it actually strikes. If there is nothing in reach, nothing is spent.',
+      'Takes hold of the nearest object in reach, a chair, a monitor, even a desk. It rises straight up from where it stands on a purple glow, then flies at his opponent. Heavier objects take longer to lift but hit harder, and damage lands only where it actually strikes. If there is nothing in reach, nothing is spent.',
     icon: 'telekinetic-toss',
     slot: 'a2',
     staminaCost: 22,
@@ -83,7 +83,16 @@ export const PSION_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'toss', rangeM: 6, riseS: 0.55, heightM: 1.7, speedFactor: 1.35, powerFactor: 1.15 },
+    delivery: {
+      type: 'toss',
+      rangeM: 6,
+      riseS: 0.3,
+      riseSqrtS: 0.09,
+      riseMaxS: 2.6,
+      heightM: 1.7,
+      speedFactor: 1.35,
+      powerFactor: 1.15,
+    },
     vfx: 'telekinetic-toss',
     sfx: { cast: 'psi-gather', release: 'psi-lift', impact: 'psi-hurl' },
     look: {

@@ -38,3 +38,6 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 
 ## 25/11/2026 — Reson: Dissonance buffed
 - Dissonance now hurts as well as scrambles movement: damage 24 → 55 (description updated). Still no push or stun, same 3.2 m radius, 10 s cooldown and 22 stamina. Reason: owner asked for a buff that makes it deal real damage. The balance harness test still passes; no full matrix was run.
+
+## 25/11/2026 — Psion: Telekinetic Toss lift time follows weight
+- The rise before the throw is now `0.3 s + 0.09 s × √mass`, capped at 2.6 s (a chair about 0.6 s, a 160 kg stone block about 1.4 s, the heaviest ruins 2.6 s). Previously every object rose in a flat 0.55 s. Heavier objects still hit harder. Description updated. Provisional values.
