@@ -1063,3 +1063,5 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 ## 25/11/2026 — portraits (owner): Inkmaster, Magix and Bohemeth added to the premium portrait looks (they had none, so were cropped tight and looked bigger); Bohemeth's window widened for his second pair of arms and its hero pose set. Screenshot-checked on the select grid.
 
 ## 25/11/2026 — Titan slimmer (premium muscle skin bulk 1.7 to 1.5, select scale 1.2) and Bohemeth's four arms fanned out clear of each other and of his face (select stance, idle, portrait). Screenshot-checked.
+
+## 25/11/2026 — abdominal rows removed from the stickman bodies (owner): `premium-model.ts` (Titan and the other muscle builds) and `magma-model.ts` (Inferno). Screenshot-checked on Titan.

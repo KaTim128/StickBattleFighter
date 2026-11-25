@@ -8,7 +8,7 @@ import { shadedBall } from './shaded-ball';
  * reference images 2 and 3). Drawn on the same jointed rig as every fighter, so every existing
  * animation, attack, ability, dodge, reaction and KO drives it unchanged. A heroic, athletic build
  * in the painted fighting-game style of the references:
- * - anatomy: deltoid caps, biceps and forearm masses, a sculpted chest and abdominals, a narrow
+ * - anatomy: deltoid caps, biceps and forearm masses, a sculpted chest, a narrow
  *   waist, quads and calves; head, neck, trapezius, shoulders, torso and pelvis joined as one body;
  * - materials: ember-orange skin painted in three tones (lit face, mid, shadow side) with a warm rim
  *   light, thick dark-ember outlines; charcoal armour (shoulder guard, bracers, knee and shin
@@ -454,7 +454,7 @@ export class MagmaModel {
       });
   }
 
-  /** Pelvis to neck: one sculpted body with chest, abdominals, waist, belt and the molten core. */
+  /** Pelvis to neck: one sculpted body with chest, waist, belt and the molten core. */
   private torso(g: Graphics, fire: Graphics, s: Skel): void {
     const w = this.st.w;
     const base = s.pelvis;
@@ -528,24 +528,6 @@ export class MagmaModel {
         this.c(MAGMA.skinLit),
         0.55,
       );
-    }
-    // Abdominals: three rows of two, toward his front.
-    for (let row = 0; row < 3; row++) {
-      const p = lerp(base, top, 0.22 + row * 0.13);
-      for (const col of [0.18, 0.55]) {
-        const c = { x: p.x + u.nx * w * col * fwd, y: p.y + u.ny * w * col * fwd };
-        oval(g, c, u.ux, u.uy, w * 0.2, w * 0.17, this.c(MAGMA.skinShade), 0.45);
-        oval(
-          g,
-          { x: c.x + this.lx * w * 0.04, y: c.y + this.ly * w * 0.04 },
-          u.ux,
-          u.uy,
-          w * 0.13,
-          w * 0.11,
-          this.c(MAGMA.skinLit),
-          0.5,
-        );
-      }
     }
     // Belt with a glowing buckle, just above the hips.
     const b0 = lerp(base, top, 0.02);

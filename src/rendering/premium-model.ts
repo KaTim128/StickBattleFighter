@@ -18,7 +18,7 @@ import { shadedBall } from './shaded-ball';
  * everything"; reference images 2 and 3). One painter, drawn on the same jointed rig as every
  * fighter, so every existing animation, attack, ability, dodge, reaction and KO drives it unchanged;
  * each fighter's look is a SKIN (palette, build and gear), chosen by its body style:
- * - anatomy: deltoid caps, biceps and forearm masses, chest and abdominals, a narrow waist, quads and
+ * - anatomy: deltoid caps, biceps and forearm masses, chest, a narrow waist, quads and
  *   calves (scaled by the skin's `muscle`); head, neck, trapezius, shoulders and pelvis are one body;
  * - materials: skin or fabric painted in three tones with a rim light and thick dark outlines;
  *   armour, cuffs, wraps, belts, trunks or long trousers, boots or bare feet;
@@ -157,7 +157,7 @@ export const MAGMA: PremiumPalette = {
 export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
   // Titan (owner, 13/11/2026: "recreate Titan exactly like the image"): a dark grey mannequin
   // brawler with thick black outlines. Big ball shoulders, ball knees and a ball at the pelvis, a
-  // V-shaped torso with a white panel slanting across the chest, blocky abdominals, plated shins,
+  // V-shaped torso with a white panel slanting across the chest, plated shins,
   // grey boots; a round shaded head with one white eye.
   muscle: {
     palette: {
@@ -2807,7 +2807,7 @@ export class PremiumModel {
 
   /**
    * Pelvis to neck: one sculpted body (or the garment's bodice) with, by skin, the chest and
-   * abdominals, a belt, a bone ribcage plate and a molten core.
+   * a belt, a bone ribcage plate and a molten core.
    */
   private torso(g: Graphics, fire: Graphics, s: Skel): void {
     const w = this.st.w * (this.st.bodyWidthK ?? 1);
@@ -2927,24 +2927,6 @@ export class PremiumModel {
           this.c(this.P.skinLit),
           0.55,
         );
-      }
-      // Abdominals: three rows of two, toward the front.
-      for (let row = 0; row < 3; row++) {
-        const p = lerp(base, top, 0.22 + row * 0.13);
-        for (const col of [0.18, 0.55]) {
-          const c = { x: p.x + u.nx * w * col * fwd, y: p.y + u.ny * w * col * fwd };
-          oval(g, c, u.ux, u.uy, w * 0.2, w * 0.17, this.c(this.P.skinShade), 0.45);
-          oval(
-            g,
-            { x: c.x + this.lx * w * 0.04, y: c.y + this.ly * w * 0.04 },
-            u.ux,
-            u.uy,
-            w * 0.13,
-            w * 0.11,
-            this.c(this.P.skinLit),
-            0.5,
-          );
-        }
       }
     } else {
       // Cloth: a fold from the shoulder down across the chest, and a lit lapel edge.
