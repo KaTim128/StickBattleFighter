@@ -339,6 +339,7 @@ export class Combatant {
     if (this.barrierHp > 0) {
       const taken = Math.min(this.barrierHp, raw);
       this.barrierHp -= taken;
+      this.barrierReflectPending += taken * this.barrierReflect;
       raw -= taken;
       this.barrierHitS = 0;
       if (this.barrierHp <= 0) this.endBarrier();
@@ -560,8 +561,20 @@ export class Combatant {
   barrierHitS = 9;
   private barrierBreakPending = false;
 
-  raiseBarrier(hp: number, seconds: number): void {
+  /** Share of what the barrier absorbs that is returned to the attacker (Reson's Harmonic Shield), and what is waiting to be returned. */
+  private barrierReflect = 0;
+  private barrierReflectPending = 0;
+
+  /** The damage the barrier has bounced back since the last call (the scene applies it to the attacker). */
+  takeBarrierReflect(): number {
+    const r = this.barrierReflectPending;
+    this.barrierReflectPending = 0;
+    return r;
+  }
+
+  raiseBarrier(hp: number, seconds: number, reflect = 0): void {
     if (this.koAgeS >= 0) return;
+    this.barrierReflect = reflect;
     this.barrierHp = hp;
     this.barrierMaxHp = hp;
     this.barrierLeftS = seconds;

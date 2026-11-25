@@ -14,11 +14,11 @@ export const RESON_KIT: AbilityKit = {
     id: 'resonance',
     name: 'Resonance',
     description:
-      'Every attack and ability that lands builds resonance. At 6, his next sonic ability is 30% stronger, and the resonance is spent.',
-    maxStacks: 6,
+      'Every attack and ability that lands builds resonance. At 4, his next sonic ability is 35% stronger, and the resonance is spent.',
+    maxStacks: 4,
     durationS: 0,
     speedPerStack: 0,
-    mastery: { threshold: 6, damageFactor: 1.3, windowS: 3 },
+    mastery: { threshold: 4, damageFactor: 1.35, windowS: 3 },
   },
   // A1 (Q): Sonic Boom. He roars for three seconds, rooted, sending rings of sound out toward the enemy. Anyone it connects with is
   // interrupted once; it no longer pins them (owner, 20/11/2026), and he steers it like Fire Beam.
@@ -31,7 +31,7 @@ export const RESON_KIT: AbilityKit = {
     icon: 'sonic-boom',
     slot: 'a1',
     staminaCost: 32,
-    cooldownS: 12,
+    cooldownS: 10,
     castS: 0.5,
     recoveryS: 0.6, // the scream holds the cast open while it lasts; this is only the tail after it ends
     aimRangeM: 8.5,
@@ -68,7 +68,7 @@ export const RESON_KIT: AbilityKit = {
     icon: 'vibration-punch',
     slot: 'a2',
     staminaCost: 28,
-    cooldownS: 9,
+    cooldownS: 7,
     castS: 0.45,
     recoveryS: 0.45,
     aimRangeM: 2,
@@ -92,24 +92,25 @@ export const RESON_KIT: AbilityKit = {
       hitFlash: 0xeafcff,
     },
   },
-  // A3 (F): Resonance Barrier. A sonic bubble that ripples where it is struck and shatters in a burst of sound when spent.
+  // A3 (F): Harmonic Shield. A sonic bubble that soaks 90 damage over 5 seconds and throws 40 % of everything it soaks back at whoever struck
+  // it, so attacking him through it hurts. It ripples where it is struck and shatters in a burst of sound when it is spent.
   a3: {
-    id: 'resonanceBarrier',
-    name: 'Resonance Barrier',
-    label: 'BARRIER',
+    id: 'harmonicShield',
+    name: 'Harmonic Shield',
+    label: 'SHIELD',
     description:
-      'Generates a circular sonic barrier around his body that absorbs up to 60 damage over 5 seconds. Sound-wave distortions spread across it wherever it is hit, and it shatters in a burst of sound when it is spent.',
+      'Generates a circular sonic barrier around his body that absorbs up to 90 damage over 5 seconds and throws 40% of what it absorbs back at whoever struck it. Sound-wave distortions spread across it wherever it is hit, and it shatters in a burst of sound when it is spent.',
     icon: 'resonance-barrier',
     slot: 'a3',
     staminaCost: 24,
-    cooldownS: 15,
+    cooldownS: 14,
     castS: 0.3,
     recoveryS: 0.3,
     aimRangeM: 0,
     moveFactor: 0.5,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'barrier', hp: 90, durationS: 5 },
+    delivery: { type: 'barrier', hp: 90, durationS: 5, reflect: 0.4 },
     vfx: 'resonance-barrier',
     sfx: { cast: 'sonic-charge', release: 'sonic-barrier-up', impact: 'sonic-barrier-hit' },
     look: {

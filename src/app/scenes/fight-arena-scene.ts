@@ -2540,6 +2540,9 @@ export class FightArenaScene implements ArenaScene {
       attacker.def.stats.critChance,
       attacker.def.stats.critMultiplier,
     );
+    // Harmonic Shield: part of what the barrier soaked is thrown back at the attacker (damage only, no flinch).
+    const reflected = target.combatant.takeBarrierReflect();
+    if (reflected > 0 && !attacker.combatant.isKo) attacker.combatant.takeUnguardedDamage(reflected);
     // Rewind Time counts the hit points a blow really removed (never the damage it attempted).
     this.abilities?.world.recordDealt(attacker.name, Math.max(0, hpBefore - target.combatant.hp));
     if (result.outcome === 'ignored') return false;

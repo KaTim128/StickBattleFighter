@@ -146,6 +146,21 @@ describe('Resonance Barrier and Dissonance effects', () => {
     expect(RESON_KIT.a3.look?.barrierStyle).toBe('sonic');
     expect(RESON_KIT.a3.delivery).toMatchObject({ type: 'barrier', hp: 90, durationS: 5 });
   });
+  it('Harmonic Shield throws 40% of what it soaks back at the attacker, and never more than it soaked (no other fighter reflects damage)', () => {
+    const c = new Combatant(STATS);
+    c.raiseBarrier(90, 5, 0.4);
+    const hit = { baseDamage: 50, attackerPower: 1, heavy: false, fromFront: true, critRoll: 0.99 };
+    c.receive(hit, 0, 1);
+    expect(c.takeBarrierReflect()).toBeCloseTo(20, 5); // 40 % of the 50 absorbed
+    expect(c.takeBarrierReflect()).toBe(0); // returned once
+    c.receive({ ...hit, baseDamage: 200 }, 0, 1); // only the 40 left is soaked and reflected
+    expect(c.takeBarrierReflect()).toBeCloseTo(16, 5);
+    expect((RESON_KIT.a3.delivery as { reflect?: number }).reflect).toBe(0.4);
+    const plain = new Combatant(STATS);
+    plain.raiseBarrier(90, 5);
+    plain.receive(hit, 0, 1);
+    expect(plain.takeBarrierReflect()).toBe(0);
+  });
   it('Resonance Break mutes: a muted fighter cannot cast, for exactly 4 seconds', () => {
     const c = new Combatant(STATS);
     c.mute(4);

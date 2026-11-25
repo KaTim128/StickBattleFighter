@@ -536,10 +536,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 16, '#fff4cf', 0.25),
     `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="16" stroke="#ffd36a" stroke-width="2.8"/><circle cx="24" cy="24" r="11" stroke="#2f7bff" stroke-width="1.8" opacity=".7"/></g><g fill="none" stroke="#fff4cf" stroke-width="2.8" stroke-linecap="round"><path d="M17 20 A9 9 0 1 1 15 28"/><path d="M12 14 V22 H20"/></g>`,
   ),
-  'time-snare': icon(
+  'temporal-echo': icon(
     'time',
-    rays(24, 24, 16, '#fff4cf', 0.2),
-    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="24" cy="24" r="17" stroke="#ffd36a" stroke-width="2.8"/><circle cx="24" cy="24" r="12" stroke="#2f7bff" stroke-width="2" stroke-dasharray="4 3"/></g><g stroke="#fff4cf" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M24 24 V13 M24 24 L31 29"/><path d="M10 10 L15 15 M38 10 L33 15 M10 38 L15 33 M38 38 L33 33" opacity=".7"/></g>`,
+    rays(24, 24, 16, '#fff4cf', 0.3),
+    `<g fill="none" stroke-linecap="round" filter="url(#gl)"><circle cx="30" cy="24" r="10" stroke="#ffd66b" stroke-width="2.6"/><path d="M30 24 V17 M30 24 L35 27" stroke="#fff4cf" stroke-width="2.4"/><path d="M6 24 H18 M12 18 L6 24 L12 30" stroke="#ffd66b" stroke-width="2.6" opacity=".85"/><circle cx="10" cy="24" r="4" stroke="#fff4cf" stroke-width="1.6" stroke-dasharray="2 3" opacity=".7"/></g>`,
   ),
   'chrono-slash': icon(
     'time',

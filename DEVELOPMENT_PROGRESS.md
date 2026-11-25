@@ -960,3 +960,6 @@ Done: hazard sense, cast awareness, ultimate patience and moment, movement skill
 
 ## 25/11/2026: Batch 5 balance framework and rebalance (B1-B3, TD-156)
 Done: matrix harness for all 12 fighters, `BALANCE_FRAMEWORK.md`, `balance-framework.test.ts`, five tuning rounds (every change in `FIGHTER_SYSTEM_CHANGELOG.md`), final matrix 35-63 % for everyone including Inferno (60 %). The matrix also found and fixed two engine crashes (Time Stop ending with a removed frozen body; status list shrinking under a fatal damage tick, with regression tests). Not done: other difficulties and arenas, per-ability hit rates, AI decision logging. Next: Batch 6 (tournament overtime, Skip Battle, spectate).
+
+## 25/11/2026: bottom-five kit improvements (TD-157)
+Done: Temporal Echo, Harmonic Shield, Gravity Well, two drones, Prismor and passives tuned; new tests including a real-scene test. Tests: typecheck clean, vitest 1259 passed. Light sanity run of 100 fights against the five strongest. Not done: a fresh full matrix (not requested), browser check of the Echo and Shield visuals (the Echo reuses Chronos's clock field, the shield its sonic bubble; their icons: Echo is new, Shield keeps the barrier icon).

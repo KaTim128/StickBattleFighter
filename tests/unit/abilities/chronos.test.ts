@@ -56,7 +56,13 @@ function arena(foe = { x: 1.5, y: 0 }) {
 describe('Chronos kit', () => {
   it('has the owners five abilities and Time Stop, and every ability holds its cooldown until its effects end', () => {
     const all = [CHRONOS_KIT.a1, CHRONOS_KIT.a2, CHRONOS_KIT.a3, CHRONOS_KIT.a4, CHRONOS_KIT.a5!];
-    expect(all.map((a) => a.id)).toEqual(['rewindTime', 'timeSnare', 'chronoSlash', 'afterimage', 'ageAcceleration']);
+    expect(all.map((a) => a.id)).toEqual([
+      'rewindTime',
+      'temporalEcho',
+      'chronoSlash',
+      'afterimage',
+      'ageAcceleration',
+    ]);
     expect(CHRONOS_KIT.ult.id).toBe('timeStop');
     for (const a of all) expect(a.holdsCooldown, a.id).toBe(true);
     expect(CHRONOS_KIT.passive?.id).toBe('temporal');
@@ -96,16 +102,34 @@ describe('Chronos kit', () => {
     expect(a.world.executingIds('me').has('rewindTime')).toBe(false);
   });
 
-  it('Time Snare slows by 60% for 3 seconds', () => {
+  it('Temporal Echo marks the foe, then after 2 s hits it and drags it back to the marked spot (a snap-back no other fighter has)', () => {
     const a = arena({ x: 3, y: 0 });
+    const drives: { id: string; x: number }[] = [];
+    const orig = a.host.drive;
+    a.host.drive = (id, v, h) => {
+      if (id === 'foe' && v) drives.push({ id, x: v.x });
+      return orig(id, v, h);
+    };
     a.world.release('me', CHRONOS_KIT.a2, { x: 3, y: 0 }, a.host);
     a.run(1);
-    expect(a.fogged.length).toBeGreaterThan(0);
-    expect(a.fogged.every((s) => s === 0.4)).toBe(true);
-    expect(a.world.executingIds('me').has('timeSnare')).toBe(true);
+    expect(a.hits).toHaveLength(0); // still only a mark
+    expect(a.world.echoes).toHaveLength(1);
+    a.them.x = 6; // it runs away
+    a.run(1.2);
+    expect(a.hits.filter((h) => h.target === 'foe')).toHaveLength(1);
+    expect(a.hits[0]!.slow).toBe(true);
+    expect(a.world.echoes).toHaveLength(0);
+    a.run(0.3);
+    expect(drives.some((d) => d.x < 0)).toBe(true); // dragged back toward the marked spot
+    expect(CHRONOS_KIT.a2.delivery.type).toBe('echo');
+  });
+
+  it('Temporal Echo does nothing if nobody is in reach', () => {
+    const a = arena({ x: 20, y: 0 });
+    a.world.release('me', CHRONOS_KIT.a2, { x: 3, y: 0 }, a.host);
     a.run(3);
-    expect(a.world.clouds).toHaveLength(0);
-    expect(a.world.executingIds('me').has('timeSnare')).toBe(false);
+    expect(a.hits).toHaveLength(0);
+    expect(a.world.echoes).toHaveLength(0);
   });
 
   it('Chrono Slash is a travelling slash that staggers what it hits', () => {
@@ -224,11 +248,11 @@ describe('Combatant effects', () => {
     expect(c.slowed).toBe(false);
   });
 
-  it('five landed hits sharpen the next temporal ability by 25%, then it is spent', () => {
+  it('four landed hits sharpen the next temporal ability by 35%, then it is spent', () => {
     const m = CHRONOS_KIT.passive!.mastery!;
     const c = new Combatant(STATS);
-    c.gainMastery(m.threshold, 5);
-    expect(c.swordFactor(m.threshold, m.damageFactor, m.windowS)).toBe(1.25);
+    c.gainMastery(m.threshold, 4);
+    expect(c.swordFactor(m.threshold, m.damageFactor, m.windowS)).toBe(1.35);
     expect(c.masteryStacks).toBe(0);
   });
 });

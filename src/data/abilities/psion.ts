@@ -15,11 +15,11 @@ export const PSION_KIT: AbilityKit = {
     id: 'focus',
     name: 'Mental Focus',
     description:
-      'Every attack and ability that lands builds mental focus. At 6, his next ability is 30% stronger, and the focus is spent.',
-    maxStacks: 6,
+      'Every attack and ability that lands builds mental focus. At 4, his next ability is 35% stronger, and the focus is spent.',
+    maxStacks: 4,
     durationS: 0,
     speedPerStack: 0,
-    mastery: { threshold: 6, damageFactor: 1.3, windowS: 2.5 },
+    mastery: { threshold: 4, damageFactor: 1.35, windowS: 2.5 },
   },
   // A1 (Q): Mind Crush. An unseen force closes in round the target (the ring shows it shrinking), then releases in one psychic impact.
   a1: {
@@ -31,7 +31,7 @@ export const PSION_KIT: AbilityKit = {
     icon: 'mind-crush',
     slot: 'a1',
     staminaCost: 28,
-    cooldownS: 9,
+    cooldownS: 7,
     castS: 0.25,
     recoveryS: 0.4,
     aimRangeM: 8,
@@ -136,7 +136,7 @@ export const PSION_KIT: AbilityKit = {
     moveFactor: 0.1,
     interruptible: true,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 300, impact: 'knuckle-light', psi: true },
-    delivery: { type: 'lift', reachM: 6, liftS: 1, liftM: 1.5, fallDamage: 38, immuneS: 4 },
+    delivery: { type: 'lift', reachM: 6, liftS: 1.4, liftM: 1.5, fallDamage: 45, immuneS: 4 },
     vfx: 'floating-prison',
     sfx: { cast: 'psi-gather', release: 'prison-lift', impact: 'psi-drop' },
     look: {
@@ -157,14 +157,14 @@ export const PSION_KIT: AbilityKit = {
     icon: 'gravity-well',
     slot: 'a3',
     staminaCost: 26,
-    cooldownS: 13,
+    cooldownS: 11,
     castS: 0.3,
     recoveryS: 0.3,
     aimRangeM: 0,
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 28,
+      damage: 56,
       knockbackMps: 0,
       heavy: false,
       strength: 200,
@@ -173,7 +173,7 @@ export const PSION_KIT: AbilityKit = {
       noFlinch: true,
       pull: { speedMps: 11, stopM: 1.2 },
     },
-    delivery: { type: 'nova', radiusM: 4, telegraphS: 0.4 },
+    delivery: { type: 'nova', radiusM: 4.5, telegraphS: 0.4 },
     vfx: 'gravity-well',
     sfx: { cast: 'psi-gather', release: 'repulse-burst', impact: 'repulse-burst' },
     look: {

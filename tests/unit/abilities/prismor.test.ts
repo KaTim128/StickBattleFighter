@@ -64,13 +64,13 @@ describe('Shard Blade', () => {
     expect(PRISMOR_KIT.ult.id).toBe('crystalSovereign');
   });
 
-  it('casting it grows the crystal swords for 8 seconds', () => {
+  it('casting it grows the crystal swords for 10 seconds', () => {
     const { host, log } = arena();
     const w = new AbilityWorld();
     w.release('me', PRISMOR_KIT.a1, { x: 3, y: 0 }, host);
-    expect(log.armed).toEqual([8]);
+    expect(log.armed).toEqual([10]);
     const d = PRISMOR_KIT.a1.delivery;
-    expect(d.type === 'arsenal' && d.durationS).toBe(8);
+    expect(d.type === 'arsenal' && d.durationS).toBe(10);
   });
 
   it('the swords bring a tap chain ending in a heavy blow and a heavy hammer slam, each hitting hard', () => {
@@ -284,7 +284,7 @@ describe('Shard Volley', () => {
     const { host } = arena();
     const w = new AbilityWorld(mulberry(3));
     w.release('me', PRISMOR_KIT.a3, { x: 5, y: 0 }, host);
-    expect(w.projectiles).toHaveLength(9);
+    expect(w.projectiles).toHaveLength(11);
     const angles = new Set(w.projectiles.map((p) => Math.round(Math.atan2(p.dir.y, p.dir.x) * 100)));
     expect(angles.size).toBeGreaterThan(5); // spread across the cone
     expect(PRISMOR_KIT.a3.payload.damage).toBeLessThanOrEqual(20); // each one is still small

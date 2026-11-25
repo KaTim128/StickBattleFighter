@@ -105,7 +105,7 @@ export interface AbilityHost {
   /** Keep a fighter helpless for this long (seized by a grab). Optional. */
   hold?(targetId: string, seconds: number): void;
   /** Put a telekinetic barrier round a caster: it absorbs `hp` damage over at most `durationS` seconds. Optional. */
-  barrier?(casterId: string, hp: number, durationS: number): void;
+  barrier?(casterId: string, hp: number, durationS: number, reflect?: number): void;
   /** Hold a target in a scream: for `seconds` it cannot walk toward the caster (`awayX/awayY` is the direction from the caster). Optional. */
   pin?(targetId: string, away: Vec2, seconds: number): void;
   /** Crystal Arsenal: the caster's fists turn to crystal for `durationS` seconds (replacing its unarmed moves). Optional. */
@@ -429,6 +429,8 @@ interface PullAction {
   readonly abilityId?: string;
   readonly speedMps: number;
   readonly stopM: number;
+  /** Drag the target to this spot instead of to the caster (Temporal Echo). */
+  readonly toPoint?: Vec2;
   ageS: number;
 }
 
@@ -525,6 +527,8 @@ const GRAB_GAIN_PER_S = 16;
 
 export class AbilityWorld {
   readonly projectiles: Projectile[] = [];
+  /** Temporal Echo marks waiting to snap their target back (Chronos). */
+  readonly echoes: { casterId: string; def: AbilityDef; targetId: string; at: Vec2; leftS: number }[] = [];
   readonly drones: Drone[] = [];
   readonly decoys: Decoy[] = [];
   readonly rewinds: RewindTrack[] = [];
@@ -945,6 +949,25 @@ export class AbilityWorld {
         });
         break;
       }
+      case 'echo': {
+        const foe = this.nearestEnemy(casterId, at, d.rangeM, host);
+        if (!foe) {
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+          break;
+        }
+        this.echoes.push({ casterId, def, targetId: foe.id, at: { x: foe.x, y: foe.y }, leftS: d.delayS });
+        host.emit({
+          kind: 'telegraph',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.release,
+          x: foe.x,
+          y: foe.y,
+          radiusM: 0.9,
+        });
+        break;
+      }
       case 'toss': {
         const ok = host.telekineticToss?.(casterId, d.rangeM) ?? false;
         host.emit({
@@ -972,7 +995,7 @@ export class AbilityWorld {
         break;
       }
       case 'barrier':
-        host.barrier?.(casterId, d.hp, d.durationS);
+        host.barrier?.(casterId, d.hp, d.durationS, d.reflect);
         host.emit({
           kind: 'release',
           ability: def.id,
@@ -1399,6 +1422,7 @@ export class AbilityWorld {
     this.updateProjectiles(dtS, host);
     this.updateBeams(dtS, host);
     this.updateActions(dtS, host);
+    this.updateEchoes(dtS, host);
     this.updateTelegraphs(dtS, host);
     this.updateZones(dtS, host);
     this.updateClouds(dtS, host);
@@ -1707,12 +1731,63 @@ export class AbilityWorld {
     }
   }
 
+  /** Temporal Echo: when the mark's time is up, the target is hit and dragged back to where it was marked. */
+  private updateEchoes(dtS: number, host: AbilityHost): void {
+    for (let i = this.echoes.length - 1; i >= 0; i--) {
+      const e = this.echoes[i]!;
+      e.leftS -= dtS;
+      if (e.leftS > 0) continue;
+      this.echoes.splice(i, 1);
+      const d = e.def.delivery;
+      const target = host.fighters().find((f) => f.id === e.targetId);
+      if (d.type !== 'echo' || !target?.hittable) continue;
+      const from = { x: target.x, y: target.y };
+      const away = Math.hypot(e.at.x - from.x, e.at.y - from.y);
+      this.hit(
+        host,
+        e.casterId,
+        e.targetId,
+        e.def.payload,
+        norm({ x: e.at.x - from.x, y: e.at.y - from.y }),
+        e.def.look?.hitFlash,
+      );
+      // Time runs backwards for it: back to the marked spot, however far it has gone (a hit that did not move it is only a hit).
+      if (away > 0.6) {
+        for (let k = this.actions.length - 1; k >= 0; k--) {
+          const a = this.actions[k]!;
+          if ((a.kind === 'pull' || a.kind === 'grab' || a.kind === 'lift') && a.targetId === e.targetId)
+            this.actions.splice(k, 1);
+        }
+        this.actions.push({
+          kind: 'pull',
+          casterId: e.casterId,
+          targetId: e.targetId,
+          abilityId: e.def.id,
+          speedMps: d.snapSpeedMps,
+          stopM: 0,
+          toPoint: e.at,
+          ageS: 0,
+        });
+      }
+      host.emit({
+        kind: 'impact',
+        ability: e.def.id,
+        look: e.def.look,
+        vfx: e.def.vfx,
+        sfx: e.def.sfx.impact,
+        x: e.at.x,
+        y: e.at.y,
+        radiusM: 1,
+      });
+    }
+  }
+
   /** Drag the target toward the caster until it is `stopM` away, stuck, or out of time. */
   private stepPull(a: PullAction, dtS: number, host: AbilityHost): boolean {
     a.ageS += dtS;
     const target = host.fighters().find((f) => f.id === a.targetId);
     if (!target?.hittable || a.ageS > PULL_MAX_S) return true;
-    const c = host.position(a.casterId);
+    const c = a.toPoint ?? host.position(a.casterId);
     const dx = c.x - target.x;
     const dy = c.y - target.y;
     const d = Math.hypot(dx, dy);

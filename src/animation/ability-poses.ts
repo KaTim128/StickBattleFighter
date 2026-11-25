@@ -672,7 +672,7 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.45,
   },
   // Resonance Barrier: both gauntlets crossed at the chest, then swept wide in a circle.
-  resonanceBarrier: {
+  harmonicShield: {
     windup: {
       lean: deg(4),
       head: deg(0),
@@ -754,8 +754,8 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.4,
   },
-  // Time Snare: the dial arm held out flat with the palm down, then pressed toward the floor.
-  timeSnare: {
+  // Temporal Echo: the dial arm held out flat with the palm down, then drawn sharply back to the chest.
+  temporalEcho: {
     windup: {
       lean: deg(2),
       head: deg(0),

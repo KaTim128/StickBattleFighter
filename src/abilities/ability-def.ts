@@ -516,6 +516,8 @@ export interface BarrierDelivery {
   readonly type: 'barrier';
   readonly hp: number;
   readonly durationS: number;
+  /** Share of the damage it absorbs that is thrown back at the attacker (Reson's Harmonic Shield). */
+  readonly reflect?: number;
 }
 
 /**
@@ -538,6 +540,18 @@ export interface LegTrapDelivery {
   readonly rangeM: number;
   readonly reactS: number;
   readonly holdS: number;
+}
+
+/**
+ * Temporal Echo (Chronos): the nearest enemy within `rangeM` is marked where it stands. After `delayS` seconds time runs backwards
+ * for it: it is dragged at `snapSpeedMps` back to that spot, taking the payload (damage and slow) as it goes. An enemy that has not
+ * moved is only hit; one that ran or was knocked away is yanked back into the open.
+ */
+export interface EchoDelivery {
+  readonly type: 'echo';
+  readonly rangeM: number;
+  readonly delayS: number;
+  readonly snapSpeedMps: number;
 }
 
 /**
@@ -727,6 +741,7 @@ export type Delivery =
   | TeleportDelivery
   | GrabDelivery
   | TossDelivery
+  | EchoDelivery
   | SlamDelivery
   | AssaultDelivery;
 

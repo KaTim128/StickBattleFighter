@@ -189,10 +189,10 @@ describe('Psion combo, heavy and Mental Focus', () => {
       critMultiplier: 1,
       knockbackResistance: 0,
     });
-    c.gainMastery(m.threshold - 1, 6);
+    c.gainMastery(m.threshold - 1, 4);
     expect(c.swordFactor(m.threshold, m.damageFactor, m.windowS)).toBe(1);
-    c.gainMastery(1, 6);
-    expect(c.swordFactor(m.threshold, m.damageFactor, m.windowS)).toBe(1.3);
+    c.gainMastery(1, 4);
+    expect(c.swordFactor(m.threshold, m.damageFactor, m.windowS)).toBe(1.35);
     expect(c.masteryStacks).toBe(0);
     expect(finisherFactor(PSION_KIT.a1.payload, 0.1)).toBe(1); // no execute bonus here
   });

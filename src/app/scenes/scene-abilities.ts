@@ -346,8 +346,8 @@ export class SceneAbilities implements AbilityHost {
     if (t) t.pinned = { awayX: away.x, awayY: away.y, leftS: seconds };
   }
 
-  barrier(casterId: string, hp: number, durationS: number): void {
-    this.byName(casterId)?.combatant.raiseBarrier(hp, durationS);
+  barrier(casterId: string, hp: number, durationS: number, reflect = 0): void {
+    this.byName(casterId)?.combatant.raiseBarrier(hp, durationS, reflect);
   }
 
   parryWindowFactor(casterId: string): number {

@@ -64,13 +64,14 @@ describe('Geargrind kit', () => {
     expect(a.hits).toHaveLength(0);
   });
 
-  it('Combat Drone shoots the nearest foe, lasts 10 seconds, is limited to one, and is worn down by enemy shots', () => {
+  it('Combat Drone shoots the nearest foe, lasts 10 seconds, is limited to two at once, and is worn down by enemy shots', () => {
     const a = arena({ x: 4, y: 0 });
     const d = GEARGRIND_KIT.a2.delivery;
     if (d.type !== 'drone') throw new Error('Combat Drone is a drone');
     a.world.release('me', GEARGRIND_KIT.a2, { x: 4, y: 0 }, a.host);
     a.world.release('me', GEARGRIND_KIT.a2, { x: 4, y: 0 }, a.host);
-    expect(a.world.drones).toHaveLength(1);
+    a.world.release('me', GEARGRIND_KIT.a2, { x: 4, y: 0 }, a.host);
+    expect(a.world.drones).toHaveLength(2); // a third replaces the oldest
     run(a, 3);
     const shots = a.hits.filter((h) => h.damage === d.shot.payload.damage);
     expect(shots.length).toBeGreaterThanOrEqual(2);

@@ -14,11 +14,11 @@ export const GEARGRIND_KIT: AbilityKit = {
     id: 'efficiency',
     name: 'Mechanical Efficiency',
     description:
-      'Every attack and gadget that lands builds mechanical charge. At 6, his next gadget is 35% stronger, and the charge is spent.',
-    maxStacks: 6,
+      'Every attack and gadget that lands builds mechanical charge. At 4, his next gadget is 40% stronger, and the charge is spent.',
+    maxStacks: 4,
     durationS: 0,
     speedPerStack: 0,
-    mastery: { threshold: 6, damageFactor: 1.35, windowS: 3 },
+    mastery: { threshold: 4, damageFactor: 1.4, windowS: 3 },
   },
   // A1 (Q): Rocket Fist. The mechanical fist fires out on its arm, hits what it meets, hangs a beat, and winds back.
   a1: {
@@ -52,11 +52,11 @@ export const GEARGRIND_KIT: AbilityKit = {
     name: 'Combat Drone',
     label: 'DRONE',
     description:
-      'Deploys a small drone that hovers beside him for 10 seconds and fires at the nearest opponent in range. It has limited durability: enemy shots that hit it wear it down. Only one at a time.',
+      'Deploys a small drone that hovers beside him for 10 seconds and fires at the nearest opponent in range. It has limited durability: enemy shots that hit it wear it down. Up to two drones at once, so a second cast adds another gun.',
     icon: 'combat-drone',
     slot: 'a2',
     staminaCost: 26,
-    cooldownS: 18,
+    cooldownS: 14,
     castS: 0.5,
     recoveryS: 0.3,
     aimRangeM: 0,
@@ -66,13 +66,13 @@ export const GEARGRIND_KIT: AbilityKit = {
     delivery: {
       type: 'drone',
       durationS: 10,
-      hp: 45,
+      hp: 60,
       rangeM: 7,
-      intervalS: 1.1,
-      maxAlive: 1,
+      intervalS: 0.9,
+      maxAlive: 2,
       shot: {
         payload: {
-          damage: 8,
+          damage: 11,
           knockbackMps: 1.5,
           heavy: false,
           strength: 120,
@@ -183,7 +183,7 @@ export const GEARGRIND_KIT: AbilityKit = {
     moveFactor: 0.2,
     interruptible: true,
     payload: {
-      damage: 30,
+      damage: 42,
       knockbackMps: 4,
       heavy: false,
       strength: 300,
