@@ -153,7 +153,7 @@ describe('Inkmaster', () => {
     const monster = scene.summonStates[0]!;
     expect(monster.character).toBe('ink-monster');
     expect(monster.leftS).toBeGreaterThan(14);
-    expect(monster.hp).toBeLessThanOrEqual(620);
+    expect(monster.hp).toBeLessThanOrEqual(380);
     expect(scene.summonStates.length).toBe(1); // never more than one
     // It fights: over some seconds the opponent takes damage from it, without being knocked down for good.
     run(10);

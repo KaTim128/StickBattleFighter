@@ -116,7 +116,7 @@ export const INK_MONSTER_KIT: AbilityKit = {
     aimRangeM: 6,
     moveFactor: 0,
     interruptible: false,
-    payload: { damage: 13, knockbackMps: 0.5, heavy: false, strength: 100, impact: 'knuckle-light', noFlinch: true },
+    payload: { damage: 9, knockbackMps: 0.5, heavy: false, strength: 100, impact: 'knuckle-light', noFlinch: true },
     delivery: { type: 'beam', rangeM: 6, widthM: 1.5, durationS: 1.5, tickS: 0.4 },
     vfx: 'ink-monster-breath',
     sfx: { cast: 'monster-roar', release: 'monster-breath', impact: 'monster-breath-hit' },

@@ -1,6 +1,6 @@
 {
   "id": "ink-monster-stats",
-  "maxHp": 620,
+  "maxHp": 380,
   "maxStamina": 100,
   "staminaRegenPerS": 30,
   "staminaRegenDelayS": 0.7,

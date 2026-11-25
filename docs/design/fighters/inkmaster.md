@@ -25,8 +25,8 @@ A wandering calligrapher from a mountain temple. Charcoal skin with cream rim li
 | I | The Masterpiece | `masterpiece` | 3 s drawing ritual (he is exposed), then the monster for 16 s |
 
 ### The ink monster (`ink-monster`)
-620 health, 3.4 m/s, scale 1.3 (about Titan's size, a little taller), knockback resistance 0.6. Four attacks, each with a visible wind-up and its own cooldown:
-claw swipe (basic, 0.7 s wind-up, 56 damage), bite (heavy, 0.55 s wind-up, 50), ground slam (0.5 s cast and 0.85 s ring warning, 48, 7 s), ink breath (0.9 s wind-up, 1.5 s stream, 13 per 0.4 s tick, no flinch, 11 s). No attack knocks down or chains, so nobody is trapped. The summon ends with a burst of ink when its time is up or its health is gone, and also if Inkmaster is knocked out.
+380 health, 3.4 m/s, scale 1.3 (about Titan's size, a little taller), knockback resistance 0.6. Four attacks, each with a visible wind-up and its own cooldown:
+claw swipe (basic, 0.7 s wind-up, 38 damage), bite (heavy, 0.55 s wind-up, 34), ground slam (0.5 s cast and 0.85 s ring warning, 32, 7 s), ink breath (0.9 s wind-up, 1.5 s stream, 9 per 0.4 s tick, no flinch, 11 s). No attack knocks down or chains, so nobody is trapped. The summon ends with a burst of ink when its time is up or its health is gone, and also if Inkmaster is knocked out.
 
 ## Counterplay and limits
 - The serpent turns slowly (dodgeable), only holds the legs for 1.1 s, and the held target can still guard and use abilities.
