@@ -22,6 +22,8 @@ const TICK_MS = 120;
 const LOOKAHEAD_S = 0.4;
 /** Ambience sits under the effects. */
 const AMBIENCE_LEVEL = 0.5;
+/** The recorded cheer's gain never exceeds this (the clip is normalised; overlapping or boosted copies clip). */
+const CHEER_MAX_GAIN = 0.45;
 /** A new soundscape fades in over this long; the old one fades out. */
 const FADE_S = 1.2;
 
@@ -57,6 +59,8 @@ export class AmbiencePlayer {
   private seed = 4242;
   /** The recorded crowd cheer; until it has loaded (or if it cannot) the synthesised cheer plays instead. */
   private readonly cheerClip = new AudioClip(CROWD_CHEER);
+  /** When the cheer now sounding ends (context seconds). */
+  private cheerUntilS = 0;
 
   /**
    * @param lookaheadS how far ahead events are scheduled. Live play keeps it short; an offline
@@ -494,7 +498,11 @@ export class AmbiencePlayer {
     setTimeout(() => pan.disconnect(), 8000);
   }
 
-  /** Play the recorded cheer through `pan` (lowpassed to `lowpassHz`); false if it is not loaded, so the caller synthesises instead. */
+  /**
+   * Play the recorded cheer through `pan` (lowpassed to `lowpassHz`). One cheer at a time: a second one starting over the first would
+   * stack the same recording and clip into static, so while one is sounding a new request is skipped (returns true: nothing is
+   * synthesised instead either). False only if the clip is not loaded, so the caller synthesises.
+   */
   private sample(
     ctx: BaseAudioContext,
     t: number,
@@ -505,13 +513,15 @@ export class AmbiencePlayer {
   ): boolean {
     const buffer = this.cheerClip.ready;
     if (!buffer) return false;
+    if (t < this.cheerUntilS) return true;
+    this.cheerUntilS = t + buffer.duration / rate;
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     src.playbackRate.value = rate;
     const g = ctx.createGain();
-    g.gain.value = gain;
+    g.gain.value = Math.min(CHEER_MAX_GAIN, gain); // the file is already loud: never push it past clean headroom
     src
-      .connect(this.filter(ctx, 'lowpass', lowpassHz, 0.7))
+      .connect(this.filter(ctx, 'lowpass', lowpassHz, 0.5))
       .connect(g)
       .connect(pan);
     src.start(t);
