@@ -1051,4 +1051,4 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 - `select-stances.ts`: Chronos upright and formal (feet together, level head, dial arm at the chest, other hand behind his back); Reson's far hand cups his ear while the lead gauntlet points straight ahead. Chronos's arena idle: head level, a smaller sway. Checked on the select screen in the browser (screenshots).
 
 ## 25/11/2026 — Magix's face: plain white head with only a curled moustache (owner). Checked on the select screen (screenshot).
-- Magix's moustache textured: combed hair strands, a sheen along the top edge and a small curl at each tip (screenshot-checked at select-screen size).
+- Magix's moustache texture was tried and reverted (owner): back to the plain handlebar moustache.
