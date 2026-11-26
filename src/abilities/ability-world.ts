@@ -2466,7 +2466,7 @@ export class AbilityWorld {
         const side = d.burst.aimable ? 0 : b.fired % 2 === 0 ? 1 : -1; // left hand, right hand (a machine gun has one muzzle)
         const last = b.fired === d.burst.count - 1 && d.burst.finalFactor !== undefined;
         host.face?.(b.casterId, shot);
-        b.dir = shot; // where the guns point now (the view aims the weapons along it)
+        b.dir = dir; // where the guns point now (the view aims along it); the aim without the shot's own jitter, so the spread never drifts
         this.projectiles.push({
           casterId: b.casterId,
           def: b.def,

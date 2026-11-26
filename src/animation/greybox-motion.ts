@@ -342,10 +342,10 @@ function gunslingerIdle(timeS: number, bones: BoneLengths): Pose {
 
 /**
  * CRAWLER (Kamaw, owner 26/11/2026): a human ape. He never stands upright: the body leans far forward over bent legs with the hips a little
- * raised, the far hand planted on its knuckles, the sickle hand held forward at chest height with the elbow bent back and the chain hanging from it. `ape` places each
+ * raised, the far hand planted on its knuckles, the sickle hand hanging down and back behind him, the chain and blade trailing on the floor, wound up to swing. `ape` places each
  * hand in the world (the knuckles exactly on the floor) and takes the lean back out, as the select stance does.
  */
-const APE = { leanDeg: -58, pelvis: 0.47, knuckleX: 0.08, raised: { x: 0.62, y: 0.1 } } as const;
+const APE = { leanDeg: -58, pelvis: 0.47, knuckleX: 0.08, raised: { x: -0.34, y: 0.86 } } as const;
 
 function apePose(
   bones: BoneLengths,

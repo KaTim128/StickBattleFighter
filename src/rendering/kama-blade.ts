@@ -27,7 +27,7 @@ export function drawKama(g: Graphics, base: Pt, dir: Pt, side: 1 | -1 = 1, scale
     g.moveTo(w0.x, w0.y).lineTo(w1.x, w1.y).stroke({ width: 0.006 * scale, color: 0x4a3a2c });
   }
   const ring = P(0, 0);
-  g.circle(ring.x, ring.y, 0.024 * scale).fill(0x7a808e).stroke({ width: outline, color: INK });
+  g.circle(ring.x, ring.y, 0.014 * scale).stroke({ width: 0.014 * scale, color: INK }).stroke({ width: 0.007 * scale, color: 0xc8ccd8 });
   // The blade is 30% shorter than the first cut (owner, 26/11/2026): every blade point is scaled about the top of the handle.
   const B = (a: number, sd: number): Pt => P(0.2 + (a - 0.2) * 0.7, sd * 0.7);
   // The crescent: the outer (spine) curve and the inner (cutting) curve meet at the point.

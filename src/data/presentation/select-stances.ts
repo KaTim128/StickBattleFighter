@@ -33,7 +33,7 @@ export interface SelectStance {
    * "face diagonally towards the camera at approximately 30 to 45 degrees"): 0.5 is 30°, 0.71 is 45°.
    */
   readonly turn: number;
-  /** Moves the figure back in its frame, metres (a fighter leaning far forward with a long weapon out front stays in view). */
+  /** Moves the figure back in its frame, metres; negative moves it forward (a long weapon trailing behind stays in view). */
   readonly backM?: number;
   /** Drawn size on the select screen (1 = as in the arena; the giant is larger). */
   readonly scale: number;
@@ -234,18 +234,20 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   'sickle-wielder': {
     title: 'The Mire Reaper',
     style: 'Crawling sickle fighter: low slashes, leg sweeps, hooks and drags, and a leap on a tether',
-    pelvis: 0.5,
-    leadFoot: 0.24,
-    rearFoot: -0.32,
-    lean: -56,
-    head: 30,
-    front: { x: 0.62, y: 0.1 }, // held forward at chest height, the elbow bent back (owner, 26/11/2026)
-    back: { x: 0.14, y: 0.985 },
+    // Winding up (owner, 26/11/2026): a deeper crouch so the torso leans forward only a little and the head sits up over the shoulders, facing
+    // the opponent; the sickle arm hangs down and back behind the body with the weapon trailing low, ready to swing forward.
+    pelvis: 0.36,
+    leadFoot: 0.3,
+    rearFoot: -0.3,
+    lean: -40,
+    head: 0,
+    front: { x: -0.34, y: 0.86 },
+    back: { x: 0.22, y: 0.985 },
     turn: 0.55,
     scale: 1.05,
-    backM: 0.45,
+    backM: -0.2,
     breath: { lean: 1.6, pelvis: 0.012, hands: 0.0 },
-    idle: { weight: 0.03, head: 4, shoulder: 1.5, sway: { x: 0.04, y: 0.03 } },
+    idle: { weight: 0.03, head: 3, shoulder: 1.5, sway: { x: -0.04, y: 0.02 } },
   },
   // Voltar: a Wing Chun guard, narrow stance, lead hand up on the centreline, rear hand tucked behind it, elbows in.
   voltar: {

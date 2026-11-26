@@ -105,6 +105,8 @@ export class StickmanView {
   gunAim: number | null = null;
   /** Kamaw: his chained sickle is out (thrown, embedded or hooked on someone); only the handle and the start of the chain stay in his hand. */
   sickleOut = false;
+  /** Where the chain leaves the sickle handle's ring, in skeleton space (set each draw). */
+  private chainRing: Point | null = null;
   /** 0..1 how far the bow clone's bow is drawn (the string and arrow follow it). */
   bowDraw = 0;
   /** Stunned: stars circle the head (PRS-6). */
@@ -1704,41 +1706,72 @@ export class StickmanView {
     g.moveTo(h0.x, h0.y).lineTo(h1.x, h1.y).stroke({ width: 0.056 + o * 0.5, color: OUT, cap: 'round' });
     g.moveTo(h0.x, h0.y).lineTo(h1.x, h1.y).stroke({ width: 0.04, color: 0x4a3420, cap: 'round' });
     g.moveTo(h0.x + ux * 0.04, h0.y + uy * 0.04).lineTo(h1.x - ux * 0.04, h1.y - uy * 0.04).stroke({ width: 0.012, color: 0x7a5a38, cap: 'round' });
-    g.circle(h1.x, h1.y, 0.03 + o).fill(0x8a90a0).stroke({ width: 0.01, color: OUT });
-    const c0 = { x: h1.x + ux * 0.03, y: h1.y + uy * 0.03 };
-    const L = this.sickleOut ? 0.3 : 1.05;
-    // Where the far end hangs: straight down under gravity (swaying a little), or along the floor when the hand is too low for the chain.
+    // A small, neat steel ring on the end of the handle; the chain's first link hangs from it.
+    const c0 = { x: h1.x + ux * 0.022, y: h1.y + uy * 0.022 };
+    g.circle(c0.x, c0.y, 0.016).stroke({ width: 0.016, color: OUT }).stroke({ width: 0.008, color: 0xc8ccd8 });
+    this.chainRing = c0;
+    if (this.sickleOut) return; // the chain runs from this ring out to the thrown blade (drawn in the world)
+    const L = 1.4; // a long chain: nunchucks, but much longer (owner, 26/11/2026)
     const sway = Math.sin(t * 1.9) * 0.05 + Math.sin(t * 3.1 + 1) * 0.02;
-    const drop = Math.min(L * 0.92, Math.max(0, -0.03 - c0.y));
-    const along = Math.sqrt(Math.max(0, L * L * 0.85 - drop * drop));
-    const end = this.sickleOut
-      ? { x: c0.x + ux * 0.18 + 0.05, y: c0.y + 0.16 }
-      : { x: c0.x - along * 0.9 + sway, y: c0.y + drop }; // the slack lies back towards him, so the blade rests in front of his planted hand
-    const slack = Math.max(0, L - Math.hypot(end.x - c0.x, end.y - c0.y));
-    const mid = { x: (c0.x + end.x) / 2, y: (c0.y + end.y) / 2 + slack * 0.6 + 0.02 };
-    const Q = (k: number): Point => ({
-      x: (1 - k) * (1 - k) * c0.x + 2 * (1 - k) * k * mid.x + k * k * end.x,
-      y: Math.min(-0.01, (1 - k) * (1 - k) * c0.y + 2 * (1 - k) * k * mid.y + k * k * end.y),
-    });
-    // The links: alternately face-on and edge-on ovals along the curve.
-    const links = Math.max(3, Math.round(L / 0.055));
-    for (let i = 0; i < links; i++) {
-      const p = Q((i + 0.5) / links);
-      const q = Q((i + 1) / links);
-      const ang = Math.atan2(q.y - p.y, q.x - p.x);
-      const face = i % 2 === 0;
-      const pts: number[] = [];
-      for (let k = 0; k < 8; k++) {
-        const a = (k / 8) * Math.PI * 2;
-        const lx = Math.cos(a) * 0.034;
-        const ly = Math.sin(a) * (face ? 0.02 : 0.008);
-        pts.push(p.x + lx * Math.cos(ang) - ly * Math.sin(ang), p.y + lx * Math.sin(ang) + ly * Math.cos(ang));
+    const FLOOR = 0.035; // resting on the ground, a touch in front of his feet so nothing floats
+    // The chain's path. Hanging from a raised hand it falls in a gravity curve; from a low hand it reaches the floor, lies in a neat round
+    // coil (so the whole length fits beside him) and runs on to the kama lying behind him.
+    const path: Point[] = [c0];
+    let end: Point;
+    if (c0.y > -0.45) {
+      const foot = { x: c0.x - 0.05, y: FLOOR };
+      for (let k = 1; k <= 4; k++) path.push({ x: c0.x + (foot.x - c0.x) * (k / 4), y: c0.y + (foot.y - c0.y) * (k / 4) });
+      // Two turns of a coil seen at a slant: wider than tall, shrinking a little each turn.
+      const cx = foot.x - 0.17;
+      const turns = 1;
+      const n = 26;
+      for (let i = 0; i <= n; i++) {
+        const k = i / n;
+        const a = Math.PI * 2 * turns * k;
+        const r = 0.15 - 0.03 * k;
+        path.push({ x: cx + Math.cos(a) * r, y: FLOOR - Math.sin(a) * r * 0.4 });
       }
-      g.poly(pts).stroke({ width: 0.014, color: OUT }).stroke({ width: 0.008, color: face ? 0xc8ccd8 : 0x8a909e });
+      end = { x: cx - 0.3 + sway * 0.2, y: FLOOR };
+      const last = path[path.length - 1]!;
+      for (let k = 1; k <= 6; k++) path.push({ x: last.x + (end.x - last.x) * (k / 6), y: last.y + (end.y - last.y) * (k / 6) });
+    } else {
+      end = { x: c0.x + sway, y: Math.min(FLOOR, c0.y + L * 0.9) };
+      const mid = { x: (c0.x + end.x) / 2 + 0.06, y: (c0.y + end.y) / 2 };
+      for (let k = 1; k <= 16; k++) {
+        const u = k / 16;
+        path.push({
+          x: (1 - u) * (1 - u) * c0.x + 2 * (1 - u) * u * mid.x + u * u * end.x,
+          y: (1 - u) * (1 - u) * c0.y + 2 * (1 - u) * u * mid.y + u * u * end.y,
+        });
+      }
     }
-    if (this.sickleOut) return; // the blade is out on the end of the long chain (drawn in the world)
-    // The blade on the far end: a tang ring, then a long curved white knife-sickle hooking forward and up, needle-pointed.
-    const e0 = Q(0.94);
+    // The links, evenly spaced along the path, alternately face-on and edge-on.
+    const SP = 0.062;
+    let carry = 0;
+    let face = true;
+    for (let i = 1; i < path.length; i++) {
+      const p0 = path[i - 1]!;
+      const p1 = path[i]!;
+      const seg = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+      if (seg < 1e-6) continue;
+      const ang = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+      for (let d = SP - carry; d <= seg; d += SP) {
+        const p = { x: p0.x + ((p1.x - p0.x) * d) / seg, y: p0.y + ((p1.y - p0.y) * d) / seg };
+        const pts: number[] = [];
+        for (let k = 0; k < 8; k++) {
+          const a = (k / 8) * Math.PI * 2;
+          const lx = Math.cos(a) * 0.03;
+          const ly = Math.sin(a) * (face ? 0.018 : 0.007);
+          pts.push(p.x + lx * Math.cos(ang) - ly * Math.sin(ang), p.y + lx * Math.sin(ang) + ly * Math.cos(ang));
+        }
+        g.poly(pts).stroke({ width: 0.012, color: OUT }).stroke({ width: 0.007, color: face ? 0xc8ccd8 : 0x8a909e });
+        face = !face;
+        carry = seg - d;
+      }
+      if (SP - carry > seg) carry += seg;
+    }
+    const e0 = path[path.length - 2] ?? c0;
+    // The kama on the chain's end: its handle carries straight on from the last link.
     const tx = end.x - e0.x;
     const ty = end.y - e0.y;
     const tl = Math.hypot(tx, ty) || 1;
@@ -2307,6 +2340,18 @@ export class StickmanView {
    * Where the fists and feet were last drawn: floor position (x, y) relative to the
    * fighter's feet, plus height z (for effects that follow the limbs, TD-039).
    */
+  /** Where the chain leaves Kamaw's handle, as a limb tip (x across the screen, z height), or null. */
+  chainTip(): { x: number; y: number; z: number } | null {
+    const l = this.last;
+    const r = this.chainRing;
+    if (!l || !r || this.held !== 'sickle') return null;
+    const c = Math.cos(l.rot);
+    const sn = Math.sin(l.rot);
+    const lx = r.x * l.facing * this.size;
+    const ly = r.y * this.size - l.heightM;
+    return { x: lx * c - ly * sn, y: 0, z: -(lx * sn + ly * c) };
+  }
+
   limbTips(): { fists: { x: number; y: number; z: number }[]; feet: { x: number; y: number; z: number }[] } {
     const l = this.last;
     if (!l) return { fists: [], feet: [] };
