@@ -333,7 +333,7 @@ export async function renderIdleStrips(
       view.root.scale.set(px);
       // A floating fighter hangs above the floor and bobs a little with the breath.
       const lift = (stance?.floatM ?? 0) * (1 + 0.14 * Math.sin((2 * Math.PI * i) / frames)) * px;
-      view.root.position.set(i * pitch + cellW / 2, floorY - lift);
+      view.root.position.set(i * pitch + cellW / 2 + (stance?.backM ?? 0) * px, floorY - lift);
       sheet.addChild(view.root);
     }
     try {

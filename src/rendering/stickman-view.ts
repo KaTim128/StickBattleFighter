@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import type { BoneLengths, Point, Pose } from '../animation/skeleton';
+import { drawKama } from './kama-blade';
 import { solveSkeleton } from '../animation/skeleton';
 import type { BodyStyle, HeadStyle, HeldItem } from '../characters/schema';
 import { drawInkBow, drawInkBrush, drawInkSpear, drawInkSword } from './ink-props';
@@ -1712,7 +1713,7 @@ export class StickmanView {
     const along = Math.sqrt(Math.max(0, L * L * 0.85 - drop * drop));
     const end = this.sickleOut
       ? { x: c0.x + ux * 0.18 + 0.05, y: c0.y + 0.16 }
-      : { x: c0.x + along * 0.9 + sway, y: c0.y + drop };
+      : { x: c0.x - along * 0.9 + sway, y: c0.y + drop }; // the slack lies back towards him, so the blade rests in front of his planted hand
     const slack = Math.max(0, L - Math.hypot(end.x - c0.x, end.y - c0.y));
     const mid = { x: (c0.x + end.x) / 2, y: (c0.y + end.y) / 2 + slack * 0.6 + 0.02 };
     const Q = (k: number): Point => ({
@@ -1745,26 +1746,12 @@ export class StickmanView {
     let by = ty / tl;
     if (end.y > -0.06) {
       // Lying on the floor: the blade lies flat with its edge up.
-      bx = Math.sign(bx || 1);
+      bx = -1; // lying back under him, clear of the frame's edge
       by = 0;
     }
-    g.circle(end.x, end.y, 0.026).fill(0x8a90a0).stroke({ width: 0.01, color: OUT });
-    const base = { x: end.x + bx * 0.03, y: end.y + by * 0.03 };
-    const P = (f: number, side: number): Point => ({ x: base.x + bx * f - by * side, y: base.y + by * f + bx * side });
-    const hook = by === 0 ? -1 : 1;
-    const spine = [P(0, 0.02 * hook), P(0.16, 0.14 * hook), P(0.3, 0.36 * hook), P(0.36, 0.58 * hook)];
-    const edge = [P(0, -0.02 * hook), P(0.12, 0.06 * hook), P(0.24, 0.24 * hook), P(0.36, 0.58 * hook)];
-    g.moveTo(spine[0]!.x, spine[0]!.y)
-      .quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y)
-      .quadraticCurveTo(P(0.34, 0.47 * hook).x, P(0.34, 0.47 * hook).y, spine[3]!.x, spine[3]!.y)
-      .quadraticCurveTo(edge[2]!.x, edge[2]!.y, edge[1]!.x, edge[1]!.y)
-      .quadraticCurveTo(P(0.05, 0).x, P(0.05, 0).y, edge[0]!.x, edge[0]!.y)
-      .closePath()
-      .fill(0xf4f6fa)
-      .stroke({ width: 0.01 + o * 0.25, color: 0x1a1c24, join: 'round' });
-    g.moveTo(spine[0]!.x, spine[0]!.y).quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y).stroke({ width: 0.016, color: 0xaab0c0, cap: 'round' });
-    g.moveTo(edge[0]!.x, edge[0]!.y).quadraticCurveTo(edge[1]!.x, edge[1]!.y, edge[2]!.x, edge[2]!.y).stroke({ width: 0.008, color: 0xffffff, cap: 'round' });
-    this.bladeTip = { tip: spine[3]!, inner: base };
+    // The kama on the chain's end: the ring at the base of its dark handle, the crescent rising off it.
+    const tipPt = drawKama(g, end, { x: bx, y: by }, 1, 0.8, 0.01 + o * 0.25);
+    this.bladeTip = { tip: tipPt, inner: end };
   }
 
   private drawHeld(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number): void {

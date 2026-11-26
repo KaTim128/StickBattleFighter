@@ -1,3 +1,4 @@
+import { drawKama } from '../rendering/kama-blade';
 import { type Container, Graphics } from 'pixi.js';
 import type { MagicLook } from '../abilities/ability-def';
 import type { AbilityFx, Beam, Cloud, FireZone, Grenade, Projectile, Telegraph } from '../abilities/ability-world';
@@ -2606,19 +2607,7 @@ export class AbilityVfx {
     const ang = st.blade === 'spin' ? t * 16 : st.blade === 'embedded' ? Math.PI / 2 + 0.3 : Math.atan2(uy, ux);
     const bx = Math.cos(ang);
     const by = Math.sin(ang);
-    const B = (f: number, side: number) => ({ x: a1.x + bx * f - by * side, y: a1.y + by * f + bx * side });
-    g.circle(a1.x, a1.y, 0.03).fill(0x8a90a0).stroke({ width: 0.012, color: 0x14161c });
-    const sp = [B(0.03, 0.02), B(0.2, 0.15), B(0.34, 0.38), B(0.4, 0.62)];
-    const ed = [B(0.03, -0.02), B(0.15, 0.07), B(0.28, 0.26)];
-    g.moveTo(sp[0]!.x, sp[0]!.y)
-      .quadraticCurveTo(sp[1]!.x, sp[1]!.y, sp[2]!.x, sp[2]!.y)
-      .quadraticCurveTo(B(0.38, 0.5).x, B(0.38, 0.5).y, sp[3]!.x, sp[3]!.y)
-      .quadraticCurveTo(ed[2]!.x, ed[2]!.y, ed[1]!.x, ed[1]!.y)
-      .quadraticCurveTo(B(0.08, 0).x, B(0.08, 0).y, ed[0]!.x, ed[0]!.y)
-      .closePath()
-      .fill(0xf4f6fa)
-      .stroke({ width: 0.018, color: 0x1a1c24, join: 'round' });
-    g.moveTo(ed[0]!.x, ed[0]!.y).quadraticCurveTo(ed[1]!.x, ed[1]!.y, ed[2]!.x, ed[2]!.y).stroke({ width: 0.01, color: 0xffffff, cap: 'round' });
+    drawKama(g, a1, { x: bx, y: by }, 1, 0.9, 0.016);
   }
 
   private magicProjectile(f: Graphics, g: Graphics, p: Projectile, look: MagicLook, t: number): void {

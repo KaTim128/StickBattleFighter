@@ -5,7 +5,7 @@ import { BUILT_IN_LIBRARY } from '../../../src/characters/library';
 import { loadCharacter } from '../../../src/characters/load';
 import { SICKLE_WIELDER_KIT } from '../../../src/data/abilities/sickle-wielder';
 
-/** Kamaw moves like a human ape (owner, 26/11/2026): never upright, a knuckle on the floor, the sickle hand raised. */
+/** Kamaw moves like a human ape (owner, 26/11/2026): never upright, a knuckle on the floor, the sickle hand held forward. */
 describe('Kamaw: ape posture', () => {
   const def = loadCharacter('sickle-wielder', BUILT_IN_LIBRARY).def;
   const poses = [
@@ -18,10 +18,11 @@ describe('Kamaw: ape posture', () => {
     for (const p of poses) expect(p.lean).toBeLessThan(-(50 * Math.PI) / 180);
   });
 
-  it('keeps the sickle hand raised above the shoulder and the other hand down at the floor', () => {
+  it('holds the sickle hand forward at chest height and keeps the other hand down at the floor', () => {
     for (const p of poses) {
       const sk = solveSkeleton(p, def.bones);
-      expect(sk.armFront[2].y).toBeLessThan(sk.chest.y);
+      expect(sk.armFront[2].x).toBeGreaterThan(sk.chest.x + 0.15); // out in front
+      expect(Math.abs(sk.armFront[2].y - sk.chest.y)).toBeLessThan(0.25); // about chest height
       expect(sk.armBack[2].y).toBeGreaterThan(-0.2);
     }
     const still = solveSkeleton(idlePose(0, def.bones, 'crawler'), def.bones);

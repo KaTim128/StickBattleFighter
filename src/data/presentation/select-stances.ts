@@ -33,6 +33,8 @@ export interface SelectStance {
    * "face diagonally towards the camera at approximately 30 to 45 degrees"): 0.5 is 30°, 0.71 is 45°.
    */
   readonly turn: number;
+  /** Moves the figure back in its frame, metres (a fighter leaning far forward with a long weapon out front stays in view). */
+  readonly backM?: number;
   /** Drawn size on the select screen (1 = as in the arena; the giant is larger). */
   readonly scale: number;
   /**
@@ -228,7 +230,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     idle: { weight: 0.03, head: 2.5, shoulder: 0.8, fidget: { x: 0.08, y: -0.07 } },
   },
   // Kamaw (owner, 26/11/2026): a human ape on all fours, leaning far forward over bent legs, hips a little raised, the far hand planted on
-  // its knuckles, the sickle hand raised beside the head with the long chain hanging from it to the blade on the floor.
+  // its knuckles, the sickle hand held forward at chest height, elbow bent back, the long chain hanging from it to the blade on the floor.
   'sickle-wielder': {
     title: 'The Mire Reaper',
     style: 'Crawling sickle fighter: low slashes, leg sweeps, hooks and drags, and a leap on a tether',
@@ -237,10 +239,11 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     rearFoot: -0.32,
     lean: -56,
     head: 30,
-    front: { x: 0.36, y: -0.74, elbowOut: true }, // the raised arm's elbow points down (owner, 26/11/2026)
+    front: { x: 0.62, y: 0.1 }, // held forward at chest height, the elbow bent back (owner, 26/11/2026)
     back: { x: 0.14, y: 0.985 },
     turn: 0.55,
     scale: 1.05,
+    backM: 0.45,
     breath: { lean: 1.6, pelvis: 0.012, hands: 0.0 },
     idle: { weight: 0.03, head: 4, shoulder: 1.5, sway: { x: 0.04, y: 0.03 } },
   },

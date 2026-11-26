@@ -342,10 +342,10 @@ function gunslingerIdle(timeS: number, bones: BoneLengths): Pose {
 
 /**
  * CRAWLER (Kamaw, owner 26/11/2026): a human ape. He never stands upright: the body leans far forward over bent legs with the hips a little
- * raised, the far hand planted on its knuckles, the sickle hand held up beside the head with the chain hanging from it. `ape` places each
+ * raised, the far hand planted on its knuckles, the sickle hand held forward at chest height with the elbow bent back and the chain hanging from it. `ape` places each
  * hand in the world (the knuckles exactly on the floor) and takes the lean back out, as the select stance does.
  */
-const APE = { leanDeg: -58, pelvis: 0.47, knuckleX: 0.08, raised: { x: 0.24, y: -0.36 } } as const;
+const APE = { leanDeg: -58, pelvis: 0.47, knuckleX: 0.08, raised: { x: 0.62, y: 0.1 } } as const;
 
 function apePose(
   bones: BoneLengths,
@@ -355,17 +355,15 @@ function apePose(
   const arm = bones.upperArm + bones.foreArm;
   // The shoulder's height above the floor, and its distance forward of the hips.
   const shoulderY = o.pelvisM + Math.cos(lean) * bones.spine;
-  const hand = (hx: number, hy: number, elbowDown = false) => {
+  const hand = (hx: number, hy: number) => {
     const ik = armIk(hx, hy, bones.upperArm, bones.foreArm);
-    // The raised arm uses the other elbow solution so the elbow hangs down under the hand (owner, 26/11/2026).
-    if (elbowDown) return { root: 2 * Math.atan2(hx, hy) - ik.root - lean, bend: -ik.bend };
     return { root: ik.root - lean, bend: ik.bend };
   };
   const reach = Math.min(shoulderY - o.knuckle.lift, arm * 0.995);
   return {
     lean,
     head: deg(o.head),
-    armFront: hand(o.raised.x * arm, o.raised.y * arm, true),
+    armFront: hand(o.raised.x * arm, o.raised.y * arm),
     armBack: hand(o.knuckle.x, reach),
     legFront: legIk(o.lead.x, o.pelvisM - o.lead.lift, bones.thigh, bones.shin),
     legBack: legIk(o.rear.x, o.pelvisM - o.rear.lift, bones.thigh, bones.shin),
