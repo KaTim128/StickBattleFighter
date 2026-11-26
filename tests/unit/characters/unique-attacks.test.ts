@@ -20,10 +20,17 @@ describe('every attack of every playable fighter is its own', () => {
       return { id: c.id, kit: c.abilityKit ? ABILITY_KITS[c.abilityKit] : undefined, moves };
     });
 
+  /**
+   * Names the owner has explicitly asked two fighters to share (the latest instruction wins): Bohemeth's ability is called plain
+   * "Ground Smash" like Titan's (owner, 26/11/2026). Ids, icons, effects, sounds and animations stay unique.
+   */
+  const OWNER_SHARED_NAMES: ReadonlySet<string> = new Set(['Ground Smash']);
+
   const noDuplicates = (what: string, pairs: { owner: string; value: string | undefined }[]) => {
     const seen = new Map<string, string>();
     for (const { owner, value } of pairs) {
       if (!value) continue;
+      if (what === 'ability name' && OWNER_SHARED_NAMES.has(value)) continue;
       const first = seen.get(value);
       // A fighter may reuse its own id or effect for its own variants; only another fighter's is a copy.
       expect(first === undefined || first === owner, `${what} "${value}" is used by both ${owner} and ${first}`).toBe(

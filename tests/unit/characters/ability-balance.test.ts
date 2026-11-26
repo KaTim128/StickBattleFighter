@@ -17,6 +17,9 @@ function castDamage(a: AbilityDef): number {
   if (d.type === 'assault') return a.payload.damage * (d.stabs + (d.finalFactor ? d.finalFactor - 1 : 0));
   if (d.type === 'beam') return (a.payload.damage * Math.round(d.durationS / d.tickS)) / 2; // half the ticks connect
   if (d.type === 'whirl') return a.payload.damage * Math.round(d.durationS / d.tickS);
+  // Spin Cycle: the clap, then the launch at about 70% of its full distance. Uppercut Combo: the uppercut and the punch that follows it.
+  if (d.type === 'spin') return d.clap.damage + d.launch.baseDamage + d.launch.damagePerM * d.launch.maxDistM * 0.7;
+  if (d.type === 'grab' && d.uppercut?.followUp) return a.payload.damage + d.uppercut.followUp.payload.damage;
   if (d.type === 'drone') return (d.shot.payload.damage * (d.durationS / d.intervalS)) / 2; // half its shots land
   if (d.type === 'dash' && d.afterimages) return a.payload.damage;
   // Crystal Slide: the slide itself and the thorns where it stops. Shard Volley: about half the fan lands on one target.

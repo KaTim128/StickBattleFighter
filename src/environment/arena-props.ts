@@ -82,6 +82,8 @@ const BEHIND_PENALTY_M = 0.6;
 const ROLL_SETTLE_RADPS = 7;
 /** Downward pull on a loose piece's height, m/s². */
 const FLIGHT_GRAVITY = 18;
+/** A level throw falls this much slower, so it carries across the arena. */
+const FLAT_GRAVITY_FACTOR = 0.3;
 
 /**
  * The face a tumbling box comes to rest on: the nearest quarter turn (upright, either side, upside
@@ -195,6 +197,8 @@ export class ArenaProp {
   awake = false;
   /** Fell off its (broken) parent: now a loose piece on the floor. */
   looseFall: { heightM: number; vz: number } | null = null;
+  /** Thrown level and fast (Bohemeth's Spin Cycle): it falls slowly and does not tumble until it lands. */
+  flat = false;
   /** Seconds of fire left (flammable props hit by fire). */
   burnS = 0;
   /** Carried overhead (Phase 7): where it is, and who holds it. */
@@ -411,7 +415,7 @@ export class ArenaProps {
           this.physics.setFlyingHigh(prop.body, high);
         }
         if (f.heightM > 0 || f.vz > 0) {
-          f.vz -= FLIGHT_GRAVITY * stepS;
+          f.vz -= FLIGHT_GRAVITY * (prop.flat ? FLAT_GRAVITY_FACTOR : 1) * stepS;
           f.heightM = Math.max(0, f.heightM + f.vz * stepS);
           prop.roll += prop.rollVel * stepS; // tumbling through the air
           if (f.heightM === 0 && f.vz < 0) this.land(prop);
@@ -518,7 +522,7 @@ export class ArenaProps {
     heightM: number,
     upMps: number,
     thrown: boolean,
-    style: { power: number; fire: boolean } = { power: 1, fire: false },
+    style: { power: number; fire: boolean; flat?: boolean } = { power: 1, fire: false },
   ): void {
     const from = prop.held;
     if (!from) return;
@@ -538,7 +542,8 @@ export class ArenaProps {
     // Owner, 12/11/2026: a steady, intentional arc. Released from overhead, it pitches forward a
     // little over the whole flight (at most a quarter turn, less for heavy pieces), never spinning
     // freely; it turns toward the side of the screen it is thrown to. Put down: no turn at all.
-    prop.rollVel = thrown ? throwRollRadPs(velocity, heightM, upMps, prop.kind.massKg) : 0;
+    prop.flat = thrown && style.flat === true;
+    prop.rollVel = thrown && !prop.flat ? throwRollRadPs(velocity, heightM, upMps, prop.kind.massKg) : 0;
     prop.looseFall = { heightM, vz: upMps };
     prop.flyingHigh = false; // set on the next update from the height
     prop.flight =
@@ -606,6 +611,7 @@ export class ArenaProps {
       prop.roll = wrapAngle(prop.roll);
       prop.rollVel = Math.sign(prop.rollVel) * 1e-3;
     }
+    prop.flat = false;
     const body = prop.body;
     const v = body ? body.linvel() : { x: 0, y: 0 };
     const along = Math.hypot(v.x, v.y);

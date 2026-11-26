@@ -37,7 +37,8 @@
     "maxLiftKg": 60,
     "throwPower": 1.8,
     "ignitesThrown": false,
-    "liftsFurniture": true
+    "liftsFurniture": true,
+    "liftTimeFactor": 1.25
   },
   "landingImpact": {
     "radiusM": 3.4,

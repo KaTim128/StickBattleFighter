@@ -169,6 +169,8 @@ export class FighterEntity {
   /** Lifting what it just grabbed (owner, 12/11/2026): time left, and the whole lift's length. */
   liftS = 0;
   liftTotalS = 0;
+  /** The carried object is being swung round by an ability (Spin Cycle): the usual hold point must not move it. */
+  spinHold = false;
   /** Presentation: how far into the arms-up carry pose (0..1), and time left in a throw follow-through. */
   carryWeight = 0;
   /** 0..1 how far into the stalking crouch (Death Mark), and how brightly the eyes glow once it is charged. */

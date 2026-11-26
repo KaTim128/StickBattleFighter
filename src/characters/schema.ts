@@ -249,6 +249,8 @@ export interface ObjectHandling {
    * (Inferno, owner 12/11/2026: "significantly better at breaking walls"). Default 1.
    */
   readonly wallBreakPower?: number;
+  /** Multiplies how long it takes to heave a thing up (Bohemeth, owner 26/11/2026: 1.25, a touch slower than Titan). Default 1. */
+  readonly liftTimeFactor?: number;
 }
 
 export const DEFAULT_OBJECT_HANDLING: ObjectHandling = { maxLiftKg: 15, throwPower: 1, ignitesThrown: false };

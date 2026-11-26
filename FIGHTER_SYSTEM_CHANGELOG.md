@@ -85,3 +85,11 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 ## Ink Slash: three slashes (26/11/2026)
 - **Ink Slash (Q):** three quick brush cuts 0.22 s apart (18 damage each, 54 in all, same as before), each turning to the nearest foe in reach; every cut blinds 3 s and slows. Each cut has its own ink streak (left to right, back again, then a wider, heavier finish) and Inkmaster's brush arm swings to each one.
 - New: strike delivery `repeat { extra, gapS }`; `InkSlash.index`; `inkSlashPose`.
+
+## Bohemeth rework (26/11/2026, TD-175)
+- **Spin Cycle (Q, replaces Directional Charge):** object form swings a held object twice and throws it level at 20 m/s; opponent form clap-dazes (12 damage, 0.7 s), takes a leg and swings them 2 to 5 times by weight, then flings up to 7 m (25 + 7 per metre flown, +35 on a collision); 12 s.
+- **Uppercut Combo (E, was Four Arm Uppercut):** uppercut 50 damage, then a follow-up punch 0.3 s later (40 damage) that sends them back down; fall damage as before.
+- **Thunder Clap (F):** radius 3.2 to 7.5 m, knockback 8 to 12 m/s.
+- **Ground Smash (R, was Four Arm Ground Smash):** leap 5 to 9 m, landing radius 4.2 to 2.6 m; in the ultimate it leaps up to 26 m, deals +15% and lands in fire.
+- **Fiery Fists (ultimate):** also +5% size, +50% knockback, lift limit 60 to 80 kg, heave 40% quicker (Titan: 60 kg, normal speed), easier carry, +25% throw power. Outside it his heave is 25% slower than Titan's.
+- **Select stance:** four-arm pose (hands on waist, flexed far arm, level guard).

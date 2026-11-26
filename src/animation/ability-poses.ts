@@ -34,6 +34,12 @@ interface CastShape {
    */
   slam?: Partial<Pose>;
   miss?: Partial<Pose>;
+  /**
+   * A second blow `followAtS` seconds after the slam (Uppercut Combo: the other hand punches the rising target back down). It must match
+   * the delivery's `followUp.atS`.
+   */
+  followUp?: Partial<Pose>;
+  followAtS?: number;
 }
 
 /** How a grab cast is going (see AbilityWorld.grabOutcome). */
@@ -44,6 +50,8 @@ export type GrabPhase =
 
 /** The slam snaps down this fast (seconds), is held, and the last part of the recovery eases out. */
 const SLAM_DROP_S = 0.09;
+/** A follow-up punch snaps in over this long, ending at its own time. */
+const FOLLOW_SNAP_S = 0.08;
 
 const CROUCH: Partial<Pose> = { legFront: limb(50, -95), legBack: limb(-20, -70) };
 
@@ -1001,51 +1009,45 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.45,
   },
   // ---- Bohemeth. Each ability poses all four arms, so every one reads differently.
-  // Directional Charge: a short crouch with the shoulders dropped and all four arms pulled back; then the upper body driven forward,
-  // both upper forearms up as a ram and the lower pair swept behind; the collision bends him over his lead shoulder.
-  directionalCharge: {
+  // Spin Cycle: the upper hands reach out wide to seize (the windup); the release is the level follow-through after the throw or the let-go,
+  // all four arms flung forward; the miss closes all four hands on air. The swing itself is `spinPose`.
+  spinCycle: {
     windup: {
-      lean: deg(-38),
-      head: deg(30),
-      armFront: limb(-30, 80),
-      armBack: limb(-44, 70),
-      armFront2: limb(-50, 60),
-      armBack2: limb(-60, 50),
-      legFront: limb(46, -74),
-      legBack: limb(-36, -24),
+      lean: deg(-18),
+      head: deg(10),
+      armFront: limb(104, 22),
+      armBack: limb(96, 26),
+      armFront2: limb(34, 44),
+      armBack2: limb(22, 50),
+      legFront: limb(36, -56),
+      legBack: limb(-26, -40),
     },
-    tremble: deg(2.5),
-    run: {
-      lean: deg(-44),
-      head: deg(34),
-      armFront: limb(74, 112),
-      armBack: limb(60, 116),
-      armFront2: limb(-56, 50),
-      armBack2: limb(-66, 44),
-    },
+    tremble: deg(1.5),
     release: {
-      lean: deg(-44),
-      head: deg(34),
-      armFront: limb(74, 112),
-      armBack: limb(60, 116),
-      armFront2: limb(-56, 50),
-      armBack2: limb(-66, 44),
+      lean: deg(-26),
+      head: deg(14),
+      armFront: limb(98, 6),
+      armBack: limb(94, 8),
+      armFront2: limb(88, 8),
+      armBack2: limb(84, 10),
+      legFront: limb(44, -50),
+      legBack: limb(-32, -34),
     },
-    after: {
-      lean: deg(-54),
-      head: deg(40),
-      armFront: limb(98, 70),
-      armBack: limb(84, 76),
-      armFront2: limb(60, 80),
-      armBack2: limb(40, 90),
-      legFront: limb(60, -94),
-      legBack: limb(-34, -20),
+    miss: {
+      lean: deg(-34),
+      head: deg(26),
+      armFront: limb(86, 70),
+      armBack: limb(80, 80),
+      armFront2: limb(56, 88),
+      armBack2: limb(48, 92),
     },
     settle: 0.4,
   },
-  // Four Arm Uppercut: both upper hands reach out wide and low to seize; held up at the chest while both lower hands are drawn right back
-  // (the release = the hold); then both lower arms swing up together from below the knee to high over the head (the slam = the uppercut).
-  fourArmUppercut: {
+  // Uppercut Combo: both upper hands reach out wide and low to seize; held up at the chest while both lower hands are drawn right back
+  // (the release = the hold); then ONE lower hand (the front one) swings up from below the knee to high over the head (the slam = the
+  // uppercut) while the upper hands let go and the other lower fist stays cocked; then that other fist drives forward and down (the
+  // follow-up), the body turning into it.
+  uppercutCombo: {
     windup: {
       lean: deg(-22),
       head: deg(14),
@@ -1066,15 +1068,26 @@ const SHAPES: Record<string, CastShape> = {
       legBack: limb(-28, -50),
     },
     slam: {
-      lean: deg(14),
-      head: deg(-22),
-      armFront: limb(70, 60),
-      armBack: limb(62, 66),
-      armFront2: limb(168, 22),
-      armBack2: limb(160, 28),
+      lean: deg(10),
+      head: deg(-20),
+      armFront: limb(120, 40),
+      armBack: limb(70, 70),
+      armFront2: limb(170, 18),
+      armBack2: limb(-44, 112),
       legFront: limb(20, -20),
       legBack: limb(-16, -12),
     },
+    followUp: {
+      lean: deg(-30),
+      head: deg(18),
+      armFront: limb(150, 50),
+      armBack: limb(96, 60),
+      armFront2: limb(66, 70),
+      armBack2: limb(122, 6),
+      legFront: limb(48, -60),
+      legBack: limb(-34, -30),
+    },
+    followAtS: 0.3,
     miss: {
       lean: deg(-34),
       head: deg(26),
@@ -1109,9 +1122,9 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.5,
   },
-  // Four Arm Ground Smash: crouch and spring with all four arms thrown high; down, all four fists driven into the floor in a deep squat,
+  // Ground Smash: crouch and spring with all four arms thrown high; down, all four fists driven into the floor in a deep squat,
   // and held there crouched with the hands on the ground (the long settle).
-  fourArmGroundSmash: {
+  bohemethGroundSmash: {
     windup: {
       lean: deg(10),
       head: deg(-10),
@@ -1142,6 +1155,42 @@ const SHAPES: Record<string, CastShape> = {
       legBack: limb(-22, -98),
     },
     settle: 0.5,
+  },
+  // Ground Smash in the ultimate: a deeper, more violent crouch with the fists already glowing, a higher and longer flight with the
+  // arms thrown fully back, and a landing so heavy he drives his fists into the floor on his knees.
+  bohemethGroundSmashEmpowered: {
+    windup: {
+      lean: deg(18),
+      head: deg(-14),
+      armFront: limb(-44, 70),
+      armBack: limb(-54, 70),
+      armFront2: limb(-64, 60),
+      armBack2: limb(-70, 56),
+      legFront: limb(58, -110),
+      legBack: limb(-26, -84),
+    },
+    tremble: deg(4),
+    air: {
+      lean: deg(-6),
+      head: deg(-22),
+      armFront: limb(178, 20),
+      armBack: limb(172, 24),
+      armFront2: limb(162, 28),
+      armBack2: limb(154, 30),
+      legFront: limb(36, -64),
+      legBack: limb(-24, -54),
+    },
+    release: {
+      lean: deg(-74),
+      head: deg(48),
+      armFront: limb(34, 4),
+      armBack: limb(24, 8),
+      armFront2: limb(28, 6),
+      armBack2: limb(18, 12),
+      legFront: limb(84, -134),
+      legBack: limb(-28, -112),
+    },
+    settle: 0.55,
   },
   // Chain Grab: one upper hand reaches across to unwind the chain from his body, whirls it, and throws it out straight; the other arms
   // brace. The release holds the throw; the pull is held with both upper hands hauling back.
@@ -1357,9 +1406,95 @@ function grabPose(base: Pose, shape: CastShape, windup: Pose, progress: number, 
   const hoist = { ...base, ...shape.release };
   if (grab.state === 'slam' && shape.slam) {
     const slam = { ...base, ...shape.slam };
-    return out(blendPose(hoist, slam, ease(grab.sinceS / SLAM_DROP_S)));
+    const first = blendPose(hoist, slam, ease(grab.sinceS / SLAM_DROP_S));
+    if (shape.followUp && shape.followAtS !== undefined && grab.sinceS >= shape.followAtS - FOLLOW_SNAP_S) {
+      // The other hand's punch follows straight on from the uppercut.
+      const follow = { ...base, ...shape.followUp };
+      return out(blendPose(slam, follow, ease((grab.sinceS - (shape.followAtS - FOLLOW_SNAP_S)) / FOLLOW_SNAP_S)));
+    }
+    return out(first);
   }
   return progress < 0.12 ? blendPose(windup, hoist, ease(progress / 0.12)) : hoist;
+}
+
+
+/** Spin Cycle's state for its animation (AbilityWorld.spinOf). */
+export interface SpinPoseState {
+  readonly variant: 'object' | 'opponent';
+  readonly phase: 'clap' | 'grab' | 'spin';
+  readonly elapsedS: number;
+  readonly clapS: number;
+  readonly grabS: number;
+  readonly progress: number;
+  readonly turns: number;
+}
+
+const SPIN_OPEN: Partial<Pose> = {
+  lean: deg(8),
+  head: deg(-8),
+  armFront: limb(140, 14),
+  armBack: limb(-130, 16),
+  armFront2: limb(30, 40),
+  armBack2: limb(20, 44),
+  legFront: limb(34, -50),
+  legBack: limb(-28, -40),
+};
+const SPIN_CLAP: Partial<Pose> = {
+  lean: deg(-22),
+  head: deg(12),
+  armFront: limb(100, 70),
+  armBack: limb(96, 74),
+  armFront2: limb(34, 44),
+  armBack2: limb(22, 50),
+  legFront: limb(40, -56),
+  legBack: limb(-28, -42),
+};
+/** The lower hands take hold of a leg: bent low over the body. */
+const SPIN_LEG: Partial<Pose> = {
+  lean: deg(-30),
+  head: deg(16),
+  armFront: limb(70, 90),
+  armBack: limb(64, 96),
+  armFront2: limb(54, 8),
+  armBack2: limb(44, 12),
+  legFront: limb(46, -80),
+  legBack: limb(-28, -60),
+};
+/** Mid-swing: all four arms out level at arm's length, the body leaning back against the weight. */
+const SPIN_SWING: Partial<Pose> = {
+  lean: deg(14),
+  head: deg(-8),
+  armFront: limb(98, 8),
+  armBack: limb(94, 10),
+  armFront2: limb(90, 6),
+  armBack2: limb(86, 8),
+  legFront: limb(36, -48),
+  legBack: limb(-34, -42),
+};
+
+/**
+ * Spin Cycle's keyed animation (owner, 26/11/2026). Opponent form: the upper arms open wide and clap shut on the head, the lower arms
+ * drop to a leg, then all four arms go out level and the body leans back as he turns, the lean pulsing with each turn. Object form:
+ * straight from the carry into the swing. Each step blends from the one before, so nothing snaps.
+ */
+export function spinPose(base: Pose, st: SpinPoseState): Pose {
+  const at = (p: Partial<Pose>): Pose => ({ ...base, ...p });
+  const swing = (): Pose => {
+    const w = Math.sin(st.progress * st.turns * Math.PI * 2 * 2);
+    const s = at(SPIN_SWING);
+    return { ...s, lean: s.lean + deg(4) * w, head: s.head - deg(3) * w };
+  };
+  if (st.variant === 'object') return blendPose(base, swing(), ease(Math.min(1, st.elapsedS / 0.2)));
+  const e = st.elapsedS;
+  const c = st.clapS;
+  if (st.phase === 'clap') {
+    if (e < 0.2 * c) return blendPose(at(SPIN_CLAP), at(SPIN_OPEN), ease(e / (0.2 * c)));
+    if (e < 0.5 * c) return blendPose(at(SPIN_OPEN), at(SPIN_CLAP), ease((e - 0.2 * c) / (0.3 * c)));
+    return at(SPIN_CLAP);
+  }
+  if (st.phase === 'grab') return blendPose(at(SPIN_CLAP), at(SPIN_LEG), ease((e - c) / st.grabS));
+  const into = Math.min(1, (e - c - st.grabS) / 0.15);
+  return blendPose(at(SPIN_LEG), swing(), ease(into));
 }
 
 /** A knife assault under way (AbilityWorld.assaultOf). */

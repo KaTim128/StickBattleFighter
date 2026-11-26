@@ -1658,33 +1658,30 @@ export class PremiumModel {
   }
 
   /**
-   * Bohemeth's chains over the torso: two heavy bandoliers crossing the chest from each shoulder to the opposite hip, a loop round
-   * the waist, and a loose length hanging from the belt that swings with his motion and trails behind a charge.
+   * Bohemeth's chains over the torso: a heavy bandolier from one shoulder to the opposite hip, a loop round the waist, and a loose
+   * length hanging from the belt that swings with his motion and trails behind a charge.
    */
   private chains(g: Graphics, s: Skel): void {
     if (!this.skin.chains) return;
     const { t, w } = this.st;
-    const size = w * 0.19;
+    const size = w * 0.15;
     const chest = s.chest;
     const pelvis = s.pelvis;
     const sw = this.st.w * 0.9;
     const shL = { x: chest.x - sw * 0.7, y: chest.y + 0.05 };
-    const shR = { x: chest.x + sw * 0.7, y: chest.y + 0.05 };
     const hipL = { x: pelvis.x - sw * 0.6, y: pelvis.y - 0.04 };
     const hipR = { x: pelvis.x + sw * 0.6, y: pelvis.y - 0.04 };
-    this.chainRun(g, shL, hipR, w * 0.08, size);
-    this.chainRun(g, shR, hipL, w * 0.08, size);
-    // The waist loop, and a padlock-sized ring where the bandoliers cross.
-    this.chainRun(g, hipL, hipR, w * 0.1, size);
-    const mid = { x: (chest.x + pelvis.x) / 2, y: (chest.y + pelvis.y) / 2 };
-    this.link(g, mid, 0, true, size * 1.5);
-    // The loose end: swings from the belt.
+    // One clean bandolier from the far shoulder to the near hip and a loop round the waist (a second crossing one, and a big ring where
+    // they met, piled up over the chest and the folded arms).
+    this.chainRun(g, shL, hipR, w * 0.06, size);
+    this.chainRun(g, hipL, hipR, w * 0.08, size);
+    // The loose end: a short length swinging from the belt.
     const swing = Math.sin(t * 2.6) * 0.04 + (this.st.motion ?? 0) * 0.08 * Math.sin(t * 9);
     this.chainRun(
       g,
       { x: pelvis.x + this.lx * 0.1, y: pelvis.y },
-      { x: pelvis.x - this.st.facing * (0.18 + swing), y: pelvis.y + 0.42 },
-      w * 0.1,
+      { x: pelvis.x - this.st.facing * (0.14 + swing), y: pelvis.y + 0.3 },
+      w * 0.08,
       size * 0.9,
     );
   }

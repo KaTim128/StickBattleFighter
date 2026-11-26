@@ -1,24 +1,28 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { solveSkeleton } from '../../../src/animation/skeleton';
+import { spinTurns } from '../../../src/abilities/ability-world';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
+import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
+import { ABILITY_KITS } from '../../../src/abilities/kits';
+import { BOHEMETH_KIT } from '../../../src/data/abilities/bohemeth';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
 
 const STEP = 1 / 60;
 
 /** Bohemeth in the real fight scene against a chosen opponent. */
-async function setup(opponent = 'training-dummy', gap = 4) {
+async function setup(opponent = 'training-dummy', gap = 4, from = 13, extra: Partial<ArenaLayout> = {}, player = 'bohemeth') {
   const intents = new PlayerIntents();
   const scene = new FightArenaScene(
-    { ...TRAINING_YARD, playerStart: { x: 13, y: 13 }, dummyStart: { x: 13 + gap, y: 13 } },
+    { ...TRAINING_YARD, ...extra, playerStart: { x: from, y: 13 }, dummyStart: { x: from + gap, y: 13 } },
     new Container(),
     intents,
     () => ({ width: 1280, height: 720 }),
     false,
-    { player: 'bohemeth', opponent },
+    { player, opponent },
   );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
@@ -82,20 +86,82 @@ describe('Bohemeth', () => {
     scenes.clear();
   });
 
-  it('Directional Charge: locked direction, a short rush that hurts the first fighter it reaches', async () => {
-    const { scene, scenes, run, runUntil, cast, me } = await setup('training-dummy', 4);
+  it('Spin Cycle (opponent): clap-dazes, takes a leg, swings round (lighter fighters more times) and flings them along the aim', async () => {
+    // Lighter bodies are spun more times than heavier ones.
+    const d = BOHEMETH_KIT.a1.delivery;
+    if (d.type !== 'spin') throw new Error('Spin Cycle must be a spin delivery');
+    expect(spinTurns(d, 60)).toBeGreaterThan(spinTurns(d, 140));
+    expect(spinTurns(d, 1)).toBe(d.turns.max);
+    expect(spinTurns(d, 1000)).toBe(d.turns.min);
+    const { scene, scenes, run, runUntil, cast, me, foe } = await setup('training-dummy', 1.3);
     me().combatant.stamina = 100;
-    const x0 = me().x;
+    const x0 = foe().x;
+    const maxHp = foe().combatant.stats.maxHp;
     cast('a1');
-    runUntil(() => scene.dummy.hp < scene.dummyFighter.combatant.stats.maxHp, 3);
-    expect(scene.dummy.hp).toBeLessThan(scene.dummyFighter.combatant.stats.maxHp);
-    run(1);
-    expect(Math.abs(me().y - 13)).toBeLessThan(0.4); // straight along the aim
-    expect(me().x - x0).toBeLessThan(6.5); // short: nothing like Titan's run to the wall
+    runUntil(() => scene.abilities!.world.spinOf(me().name)?.phase === 'spin', 3);
+    const spin = scene.abilities!.world.spinOf(me().name)!;
+    expect(spin.variant).toBe('opponent');
+    expect(spin.turns).toBe(spinTurns(d, foe().def.body.massKg));
+    expect(maxHp - scene.dummy.hp).toBeGreaterThan(0); // the head clap already hurt, and only slightly
+    expect(maxHp - scene.dummy.hp).toBeLessThan(d.clap.damage * 2);
+    let lifted = 0;
+    runUntil(() => {
+      lifted = Math.max(lifted, foe().abilityLift);
+      return scene.abilities!.world.spinOf(me().name) === null;
+    }, 6);
+    expect(lifted).toBeGreaterThan(0.3); // swung off the floor
+    run(1.8);
+    expect(foe().x - x0).toBeGreaterThan(d.launch.maxDistM * 0.6); // let go along his aim, far
+    expect(maxHp - scene.dummy.hp).toBeGreaterThan(d.clap.damage + d.launch.baseDamage + d.launch.damagePerM * 3);
     scenes.clear();
-  });
+  }, 60_000);
 
-  it('Four Arm Uppercut: the launch depends on weight (a light fighter flies higher than a heavy one)', async () => {
+  it('Spin Cycle (opponent): hitting a wall or furniture mid-flight adds collision damage and stops the flight short', async () => {
+    const hurtAt = async (from: number) => {
+      const t = await setup('training-dummy', 1.3, from);
+      t.me().combatant.stamina = 100;
+      const x0 = t.foe().x;
+      t.cast('a1');
+      t.runUntil(() => t.scene.abilities!.world.spinOf(t.me().name) !== null, 2);
+      t.runUntil(() => t.scene.abilities!.world.spinOf(t.me().name) === null, 6);
+      t.run(2);
+      const out = { dist: t.foe().x - x0, dmg: t.foe().combatant.stats.maxHp - t.scene.dummy.hp };
+      t.scenes.clear();
+      return out;
+    };
+    const free = await hurtAt(13);
+    const wall = await hurtAt(25.8);
+    expect(wall.dist).toBeLessThan(free.dist - 1.5);
+    expect(wall.dmg).toBeGreaterThan(free.dmg * 0.8); // a short flight, yet nearly as much damage: the collision adds
+    const d = BOHEMETH_KIT.a1.delivery;
+    if (d.type !== 'spin') throw new Error('spin');
+    expect(wall.dmg).toBeGreaterThan(d.clap.damage + d.launch.baseDamage + d.launch.collisionDamage * 0.9);
+  }, 90_000);
+
+  it('Spin Cycle (object): holding a thing, he swings it round and throws it level (not overhead) at the opponent', async () => {
+    const arena: Partial<ArenaLayout> = { props: [{ kind: 'cabinet', x: 13.9, y: 13 }] };
+    const { scene, scenes, run, runUntil, intents, me } = await setup('training-dummy', 6, 13, arena);
+    me().combatant.stamina = 100;
+    intents.interactPress();
+    run(STEP * 2);
+    intents.interactRelease();
+    runUntil(() => !scene.player.lifting && scene.player.carrying !== null, 3);
+    expect(scene.player.carrying).toBe('cabinet');
+    intents.pressAbility('a1'); // hands full, but this ability is made for it
+    run(STEP * 2);
+    runUntil(() => scene.abilities!.world.spinOf(me().name)?.variant === 'object', 2);
+    expect(scene.abilities!.world.spinOf(me().name)?.variant).toBe('object');
+    expect(me().spinHold).toBe(true);
+    runUntil(() => scene.player.carrying === null, 5);
+    expect(scene.player.carrying).toBeNull(); // thrown
+    expect(me().spinHold).toBe(false);
+    const hp0 = scene.dummy.hp;
+    run(0.7); // a level, fast throw covers the 6 m inside this; an overhead lob would not have landed yet
+    expect(scene.dummy.hp).toBeLessThan(hp0); // it flew level and struck the dummy 6 m away
+    scenes.clear();
+  }, 60_000);
+
+  it('Uppercut Combo: the launch depends on weight (a light fighter flies higher than a heavy one)', async () => {
     const heights: Record<string, number> = {};
     for (const who of ['shroud', 'rampage']) {
       const { scene, scenes, run, cast, me, foe } = await setup(who, 1.4);
@@ -125,7 +191,7 @@ describe('Bohemeth', () => {
     scenes.clear();
   }, 30_000);
 
-  it('Four Arm Ground Smash: jumps, lands and hurts the nearby more than the far', async () => {
+  it('Ground Smash: jumps, lands and hurts the nearby more than the far', async () => {
     const hurt = async (gap: number) => {
       const { scene, scenes, run, runUntil, cast, me } = await setup('training-dummy', gap);
       me().combatant.stamina = 100;
@@ -142,6 +208,145 @@ describe('Bohemeth', () => {
     const far = await hurt(2.9);
     expect(near).toBeGreaterThanOrEqual(far);
   }, 30_000);
+
+  it('Uppercut Combo: an uppercut launches them, then the other hand punches them back down (two separate hits)', async () => {
+    const { scene, scenes, run, cast, me, foe } = await setup('shroud', 1.4);
+    me().combatant.stamina = 100;
+    const d = BOHEMETH_KIT.a2.delivery;
+    if (d.type !== 'grab' || !d.uppercut?.followUp) throw new Error('Uppercut Combo must have a follow-up punch');
+    const hp: number[] = [];
+    let last = scene.dummy.hp;
+    cast('a2');
+    let peak = 0;
+    let peakAt = 0;
+    let landedAt = -1;
+    for (let i = 0; i < 3 / STEP; i++) {
+      run(STEP);
+      const h = foe().hop.heightM + foe().abilityLift;
+      if (h > peak) {
+        peak = h;
+        peakAt = i * STEP;
+      }
+      if (scene.dummy.hp < last) {
+        hp.push(last - scene.dummy.hp);
+        last = scene.dummy.hp;
+      }
+      if (peak > 0.5 && h < 0.05 && landedAt < 0) landedAt = i * STEP;
+    }
+    expect(hp.length).toBeGreaterThanOrEqual(3); // the uppercut, the follow-up punch, and the fall
+    expect(hp.some((x) => x >= d.uppercut!.followUp!.payload.damage * 0.5)).toBe(true);
+    // The punch sends them down before they reach the top of an uncut rise (0.7 s up + 0.4 s down is the plain launch).
+    expect(landedAt - peakAt).toBeLessThan(0.45);
+    scenes.clear();
+  }, 30_000);
+
+  it('Thunder Clap: the shockwave reaches 7.5 m (wider than Vexoris’s ultimate fog) and throws back everyone inside it', async () => {
+    const clap = BOHEMETH_KIT.a3.delivery;
+    if (clap.type !== 'nova') throw new Error('nova');
+    expect(clap.radiusM).toBeGreaterThanOrEqual(7.5);
+    const vexKit = ABILITY_KITS['vexoris-kit'];
+    const fog = vexKit?.ult.delivery;
+    if (fog?.type !== 'cloud') throw new Error('Vexoris ultimate is a cloud');
+    const vexUlt = fog.radiusM;
+    expect(clap.radiusM).toBeGreaterThan(vexUlt + 1.5);
+    const pushed = async (gap: number) => {
+      const { scene, scenes, run, cast, me, foe } = await setup('training-dummy', gap);
+      me().combatant.stamina = 100;
+      const x0 = foe().x;
+      cast('a3');
+      run(1.2);
+      const out = { moved: foe().x - x0, hurt: scene.dummyFighter.combatant.stats.maxHp - scene.dummy.hp };
+      scenes.clear();
+      return out;
+    };
+    const far = await pushed(7);
+    expect(far.hurt).toBeGreaterThan(0);
+    expect(far.moved).toBeGreaterThan(0.3);
+    const out = await pushed(8.6);
+    expect(out.hurt).toBe(0);
+  }, 30_000);
+
+  it('Ground Smash: a long normal leap (9 m) that lands on a small radius, and a much longer, harder, fiery one in the ultimate (+15%)', async () => {
+    const d = BOHEMETH_KIT.a4.delivery;
+    if (d.type !== 'leap' || !d.empowered) throw new Error('Ground Smash must be a leap with an empowered form');
+    expect(d.maxRangeM).toBeGreaterThan(5);
+    expect(d.maxRangeM).toBeLessThan(12);
+    expect(d.radiusM).toBeLessThan(3);
+    expect(d.empowered.maxRangeM).toBeGreaterThan(d.maxRangeM * 2.5);
+    expect(d.empowered.damageFactor).toBeCloseTo(1.15, 5);
+    const smash = async (gap: number, ult: boolean) => {
+      const { scene, scenes, run, runUntil, cast, me, foe } = await setup('training-dummy', gap, 3, { props: [], interiorWalls: [] });
+      me().combatant.stamina = 100;
+      if (ult) {
+        scene.playerFighter.caster!.fillMeter();
+        cast('ult');
+        runUntil(() => me().buff?.empowersLeap === true, 3);
+        run(1.2); // the ultimate's own recovery finishes before the next ability
+      }
+      const x0 = me().x;
+      scene.abilities!.tryCast(me(), 'a4', { x: foe().x, y: foe().y }); // aimed at the dummy, as the mouse would
+      runUntil(() => scene.dummy.hp < scene.dummyFighter.combatant.stats.maxHp, 4);
+      run(0.4);
+      const out = { travelled: me().x - x0, dmg: scene.dummyFighter.combatant.stats.maxHp - scene.dummy.hp, foeX: foe().x };
+      scenes.clear();
+      return out;
+    };
+    const near = await smash(1.8, false);
+    const nearUlt = await smash(1.8, true);
+    expect(nearUlt.dmg / near.dmg).toBeGreaterThan(1.1); // +15% (the dummy's own defence cancels out of the ratio)
+    expect(nearUlt.dmg / near.dmg).toBeLessThan(1.2);
+    // Aimed far: the normal leap falls short of a distant target, the ultimate's covers most of the arena.
+    const farNormal = await smash(22, false);
+    expect(farNormal.dmg).toBe(0);
+    const farUlt = await smash(22, true);
+    expect(farUlt.dmg).toBeGreaterThan(0);
+  }, 120_000);
+
+  it('Fiery Fists: 5% bigger, heavier knockback, a Ground Smash that crosses the arena, and it all ends cleanly', async () => {
+    const { scene, scenes, run, runUntil, cast, me } = await setup();
+    expect(me().growth).toBe(1);
+    scene.playerFighter.caster!.fillMeter();
+    cast('ult');
+    runUntil(() => me().buff?.fireFists === true, 3);
+    run(1.5);
+    expect(me().growth).toBeCloseTo(1.05, 2);
+    expect(me().buff?.knockbackFactor).toBeGreaterThan(1.3);
+    expect(me().buff?.empowersLeap).toBe(true);
+    run(12);
+    runUntil(() => me().buff === null, 3);
+    run(1.5);
+    expect(me().growth).toBe(1); // size and stats go back
+    expect(me().buff).toBeNull();
+    scenes.clear();
+  }, 60_000);
+
+  it('object handling: slower to heave things up than Titan normally, quicker and stronger than Titan in the ultimate', async () => {
+    const arena: Partial<ArenaLayout> = { props: [{ kind: 'cabinet', x: 13.9, y: 13 }] };
+    const heave = async (who: string, ult = false) => {
+      const t = await setup('training-dummy', 6, 13, arena, who);
+      if (ult) {
+        t.scene.playerFighter.caster!.fillMeter();
+        t.cast('ult');
+        t.runUntil(() => t.me().buff !== null, 3);
+      }
+      t.intents.interactPress();
+      t.run(STEP * 2);
+      t.intents.interactRelease();
+      t.run(STEP * 3);
+      const total = t.me().liftTotalS;
+      const maxLift = t.me().buff?.objects?.maxLiftKg ?? t.me().def.objects.maxLiftKg;
+      t.scenes.clear();
+      return { total, maxLift };
+    };
+    const titan = await heave('rampage');
+    const normal = await heave('bohemeth');
+    const ult = await heave('bohemeth', true);
+    expect(normal.total).toBeGreaterThan(titan.total);
+    expect(normal.total).toBeLessThan(titan.total * 1.5); // small but noticeable, not clumsy
+    expect(ult.total).toBeLessThan(titan.total);
+    expect(ult.maxLift).toBeGreaterThan(titan.maxLift);
+    expect(normal.maxLift).toBe(titan.maxLift); // the strength only comes with the ultimate
+  }, 60_000);
 
   it('Chain Grab: the chain travels, drags the opponent in, they arrive stunned and are punched down', async () => {
     const { scene, scenes, run, runUntil, cast, me, foe } = await setup('training-dummy', 6);

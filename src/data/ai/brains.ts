@@ -228,11 +228,11 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a2', 'a3'],
     ],
   },
-  // Bohemeth: a four-armed brawler. Walks straight in, claps to stop a charger, grabs for the uppercut up close, smashes crowds, chains a
-  // distant target in, and lights his fists once the fight is on.
+  // Bohemeth: a four-armed brawler. Walks straight in, claps to stop a charger, grabs for the spin or the uppercut up close, leaps in with
+  // the smash, chains a distant target in, and lights his fists once the fight is on.
   'bohemeth-ai': {
     style:
-      'Four-armed heavyweight: straight in, a clap against charges, uppercut and smash up close, a chain for anyone who keeps away.',
+      'Four-armed heavyweight: straight in, a clap against charges, spin and uppercut up close, a leaping smash, a chain for anyone who keeps away.',
     preferredRangeM: [0, 1.4],
     movement: 'direct',
     meleeBias: 0.9,
@@ -241,15 +241,15 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     retreatBelowHp: 0,
     hitAndRunS: 0,
     tactics: {
-      a1: { role: 'gapClose', minM: 3, maxM: 6, weight: 1 },
+      a1: { role: 'burst', minM: 0, maxM: 1.6, weight: 1.2 },
       a2: { role: 'burst', minM: 0, maxM: 1.6, weight: 1.4 },
-      a3: { role: 'zone', minM: 0, maxM: 3, weight: 1.1 },
-      a4: { role: 'burst', minM: 0, maxM: 3, weight: 1.2 },
+      a3: { role: 'zone', minM: 0, maxM: 5, weight: 1.1 },
+      a4: { role: 'gapClose', minM: 3, maxM: 8, weight: 1.2 },
       ult: { role: 'buff', minM: 0, maxM: 6, weight: 1.2, when: { selfHpBelow: 0.95 } },
     },
     combos: [
-      ['a2', 'a4'],
-      ['a1', 'a2'],
+      ['a4', 'a2'],
+      ['a1', 'a3'],
     ],
   },
   // Geargrind: a gadget fighter. Sets a drone and mines first, plates up when hurt, punches with the rocket fist at range and

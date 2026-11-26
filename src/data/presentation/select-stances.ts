@@ -258,20 +258,21 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.01, hands: 0.03 },
   },
-  // Bohemeth: a wide, planted brawler's stance, the upper fists raised in front of the face and the lower pair hanging heavy at the hips.
+  // Bohemeth (owner, 26/11/2026): a confident, dominant four-armed pose. The lower pair rest firmly on his waist; the far upper arm is raised
+  // and flexed like a bodybuilder's bicep; the near upper arm is bent level in a fighting guard with the fist forward and a little to the side,
+  // well below and clear of the face.
   bohemeth: {
     title: 'The Four Armed Brute',
-    style: 'Four-armed heavyweight: charges, grabs, claps and smashes with chains wrapped round him',
+    style: 'Four-armed heavyweight: spins, uppercuts, claps and smashes with chains wrapped round him',
     pelvis: 0.84,
     leadFoot: 0.4,
     rearFoot: -0.4,
-    lean: -6,
+    lean: -4,
     head: 0,
-    // The four arms fan out clear of each other and of the face: the near upper fist out front at shoulder height, the far upper fist back and up, the near lower fist low in front and the far lower fist low behind.
-    front: { x: 0.95, y: -0.12 },
-    back: { x: -0.62, y: -0.3 },
-    front2: { x: 0.8, y: 0.58 },
-    back2: { x: -0.28, y: 0.66 },
+    front: { x: 0.8, y: 0.1 },
+    back: { x: -0.8, y: -0.74 },
+    front2: { x: 0.3, y: 0.55, elbowOut: true },
+    back2: { x: -0.45, y: 0.62, elbowOut: true },
     turn: 0.58,
     scale: 1.04,
     breath: { lean: 1.5, pelvis: 0.012, hands: 0.025 },

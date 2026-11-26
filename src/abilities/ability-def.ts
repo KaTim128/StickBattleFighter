@@ -392,6 +392,12 @@ export interface SummonDelivery extends SummonSpec {
 }
 
 /** The caster leaps to the target spot (telegraphed while airborne) and slams down in an area. */
+/** The range, air time and height a leap really has: its empowered form while the caster's buff allows it. */
+export function leapForm(d: LeapDelivery, empowered: boolean): { maxRangeM: number; airS: number; peakM: number } {
+  const e = empowered ? d.empowered : undefined;
+  return { maxRangeM: e?.maxRangeM ?? d.maxRangeM, airS: e?.airS ?? d.airS, peakM: e?.peakM ?? d.peakM };
+}
+
 export interface LeapDelivery {
   readonly type: 'leap';
   readonly maxRangeM: number;
@@ -400,6 +406,18 @@ export interface LeapDelivery {
   readonly radiusM: number;
   /** How fast WASD or the joystick moves the landing spot while aiming (owner, 12/11/2026). */
   readonly aimSpeedMps?: number;
+  /**
+   * The form it takes while the caster's buff `empowersLeap` (Bohemeth's ultimate): it carries him further, hits harder
+   * (`damageFactor`) and lands with its own, hotter look, but keeps the same landing radius.
+   */
+  readonly empowered?: {
+    readonly maxRangeM: number;
+    readonly airS: number;
+    readonly peakM: number;
+    readonly damageFactor: number;
+    readonly vfx: string;
+    readonly look: MagicLook;
+  };
   /**
    * Fly and dive instead of jump and slam (Aerion's Sky Dive): up steeply with little forward travel, over the top in
    * a curve and down onto the end point, the whole path an upside-down J.
@@ -727,6 +745,18 @@ export interface BuffDelivery {
    * himself faintly). It ends, with the rest of the buff, the moment he lands any attack on an opponent (`endsOnHit`).
    */
   readonly invisible?: boolean;
+  /** Multiplies the knockback of everything the caster hits while it lasts (Bohemeth's ultimate: heavier blows). */
+  readonly knockbackFactor?: number;
+  /** Object handling while it lasts: a heavier lift limit, a quicker heave, an easier carry and a harder throw (Bohemeth's ultimate). */
+  readonly objects?: {
+    readonly maxLiftKg?: number;
+    readonly liftTimeFactor?: number;
+    /** Added to the carrying speed factor (0..1), so heavy things slow him less. */
+    readonly carrySpeedBonus?: number;
+    readonly throwPowerFactor?: number;
+  };
+  /** The caster's leaps use their `empowered` form while it lasts (Bohemeth's Ground Smash). */
+  readonly empowersLeap?: boolean;
   /** All four fists burn (Bohemeth's Fiery Fists): flames round the hands, fire trails on punches and hotter impacts. */
   readonly fireFists?: boolean;
   readonly endsOnHit?: boolean;
@@ -778,7 +808,43 @@ export interface GrabDelivery {
     readonly minK: number;
     readonly maxK: number;
     readonly fallDamage: number;
+    /**
+     * Uppercut Combo: while the target is still rising, the other hand punches it back down `atS` seconds after the launch;
+     * the payload lands (a heavy blow) and the fall is cut short.
+     */
+    readonly followUp?: { readonly atS: number; readonly payload: AbilityPayload };
   };
+}
+
+/**
+ * Spin Cycle (Bohemeth), one ability with two forms. Holding an object: he spins `object.turns` times with it at arm's length
+ * and hurls it level (flat, fast, not overhead). Otherwise: he seizes the nearest enemy within `reachM`, claps their head between
+ * the upper hands (`clap`: slight damage and a daze), takes a leg in the lower hands and swings them round `turns` times (lighter
+ * bodies more times, heavier fewer), then lets go: they fly along his aim up to `launch.maxDistM`, hurt more the further they
+ * go (`damagePerM`), and extra if they hit furniture or a wall (`collisionDamage`). Nobody in reach and nothing held: a grab at air.
+ */
+export interface SpinDelivery {
+  readonly type: 'spin';
+  readonly reachM: number;
+  readonly radiusM: number;
+  readonly clap: { readonly damage: number; readonly dazeS: number };
+  /** Seconds to drop to the leg after the clap. */
+  readonly grabS: number;
+  /** Seconds per full turn at speed. */
+  readonly turnS: number;
+  /** Turns by weight: `base * refKg / mass`, rounded and kept between `min` and `max`. */
+  readonly turns: { readonly refKg: number; readonly base: number; readonly min: number; readonly max: number };
+  /** How far from him the swung fighter circles, and how high they are swung. */
+  readonly orbitM: number;
+  readonly liftM: number;
+  readonly launch: {
+    readonly speedMps: number;
+    readonly maxDistM: number;
+    readonly baseDamage: number;
+    readonly damagePerM: number;
+    readonly collisionDamage: number;
+  };
+  readonly object: { readonly turns: number; readonly speedMps: number; readonly powerFactor: number; readonly heightM: number };
 }
 
 /**
@@ -939,7 +1005,8 @@ export type Delivery =
   | GrabDelivery
   | TossDelivery
   | EchoDelivery
-  | AssaultDelivery;
+  | AssaultDelivery
+  | SpinDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,

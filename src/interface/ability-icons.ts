@@ -635,10 +635,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 15, '#fff4c2', 0.14),
     `<g filter="url(#ds)"><path d="M10 40 L30 20" stroke="#15151c" stroke-width="4.4" stroke-linecap="round"/><path d="M10 40 L13 37" stroke="#f6f3ee" stroke-width="4.4" stroke-linecap="round"/></g><path d="M6 14 C16 4 34 6 42 20" fill="none" stroke="#ffd86b" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="1 5"/><path d="M36 28 L38 33 L43 35 L38 37 L36 42 L34 37 L29 35 L34 33 Z" fill="#b06cff"/>`,
   ),
-  'bohemeth-charge': icon(
+  'spin-cycle': icon(
     'earth',
     rays(24, 24, 16, '#f3e3c2', 0.18),
-    `<g filter="url(#ds)"><path d="M6 30 C14 20 26 18 38 22 L34 28 C26 26 18 28 12 34 Z" fill="#7a3a28" stroke="#22170c" stroke-width="1.6"/><circle cx="36" cy="22" r="6" fill="#a8573a" stroke="#22170c" stroke-width="1.6"/></g><path d="M4 22 H16 M2 28 H12 M6 34 H14" stroke="#f3e3c2" stroke-width="2" stroke-linecap="round" opacity=".7"/>`,
+    `<g filter="url(#ds)"><circle cx="24" cy="24" r="6" fill="#a8573a" stroke="#22170c" stroke-width="1.6"/><path d="M24 24 L40 14" stroke="#7a3a28" stroke-width="5" stroke-linecap="round"/><circle cx="41" cy="13" r="4" fill="#d8c8b0" stroke="#22170c" stroke-width="1.6"/></g><path d="M8 24 C8 12 18 6 28 8 M40 28 C38 38 30 42 22 40 M12 34 C14 38 18 41 22 42" fill="none" stroke="#f3e3c2" stroke-width="2.2" stroke-linecap="round" opacity=".75"/><path d="M28 8 L24 4 M28 8 L32 5" stroke="#f3e3c2" stroke-width="2" stroke-linecap="round"/>`,
   ),
   'four-arm-uppercut': icon(
     'earth',

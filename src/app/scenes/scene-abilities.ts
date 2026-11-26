@@ -6,6 +6,7 @@ import {
   type BuffEffect,
   type Burn,
   finisherFactor,
+  leapForm,
   type MirrorDelivery,
   type SummonSpec,
   type TossDelivery,
@@ -164,7 +165,8 @@ export class SceneAbilities implements AbilityHost {
     const ev = caster.update(stepS * f.combatant.abilityPace, this.world.driving(f.name), ongoing);
     if (ev.released) {
       const def = ev.released;
-      if (def.delivery.type === 'leap') f.combatant.grantInvulnerability(def.delivery.airS + 0.1); // airborne: untouchable
+      if (def.delivery.type === 'leap')
+        f.combatant.grantInvulnerability(leapForm(def.delivery, f.buff?.empowersLeap === true).airS + 0.1); // airborne: untouchable
       if (def.delivery.type === 'judgement')
         f.combatant.grantInvulnerability(
           def.delivery.strikes * def.delivery.strikeIntervalS + def.delivery.resolveDelayS + 0.6,
@@ -227,7 +229,7 @@ export class SceneAbilities implements AbilityHost {
       }
     }
     if (best) return { x: best.x, y: best.y };
-    const ahead = def.delivery.type === 'leap' ? def.delivery.maxRangeM * 0.6 : 5;
+    const ahead = def.delivery.type === 'leap' ? leapForm(def.delivery, f.buff?.empowersLeap === true).maxRangeM * 0.6 : 5;
     return { x: f.x + f.aim.x * ahead, y: f.y + f.aim.y * ahead };
   }
 
@@ -381,6 +383,38 @@ export class SceneAbilities implements AbilityHost {
   teleport(casterId: string, to: Vec2): Vec2 | null {
     const f = this.byName(casterId);
     return f ? this.teleportSource(f, to) : null;
+  }
+
+  carryingObject(casterId: string): boolean {
+    const f = this.byName(casterId);
+    return !!f?.carrying && f.liftS <= 0 && !f.carrying.broken;
+  }
+
+  swingHeld(casterId: string, at: Vec2 | null, heightM: number): void {
+    const f = this.byName(casterId);
+    if (!f) return;
+    f.spinHold = at !== null && f.carrying !== null;
+    if (at && f.carrying) this.props?.carry(f.carrying, { x: at.x, y: at.y, heightM: heightM + f.hop.heightM });
+  }
+
+  throwHeldFlat(casterId: string, dir: Vec2, spec: { speedMps: number; powerFactor: number; heightM: number }): void {
+    const f = this.byName(casterId);
+    const prop = f?.carrying;
+    if (!f || !prop || !this.props) return;
+    // Heavier things leave the hands slower, though still far faster than an overhead throw.
+    const speed = spec.speedMps * (1 - Math.min(0.4, prop.kind.massKg / 200));
+    const power = f.def.objects.throwPower * (f.buff?.objects?.throwPowerFactor ?? 1) * spec.powerFactor;
+    f.faceToward(dir.x, dir.y);
+    this.props.release(prop, { x: dir.x * speed, y: dir.y * speed }, spec.heightM, 0, true, { power, fire: false, flat: true });
+    f.carrying = null;
+    f.liftS = 0;
+    f.spinHold = false;
+    f.interactTracking = false;
+    f.throwFollowS = 0.28;
+  }
+
+  empowersLeap(casterId: string): boolean {
+    return this.byName(casterId)?.buff?.empowersLeap === true;
   }
 
   hold(targetId: string, seconds: number): void {

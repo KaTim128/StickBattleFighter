@@ -5,9 +5,11 @@ import {
   type Burn,
   beamRampFactor,
   type CloudSpec,
+  leapForm,
   type MagicLook,
   type MirrorDelivery,
   payloadAt,
+  type SpinDelivery,
   type StrikeDelivery,
   type SummonSpec,
   type TossDelivery,
@@ -133,6 +135,14 @@ export interface AbilityHost {
   standable?(at: Vec2): boolean;
   /** The size of the arena floor, metres (a flying creature stays inside it). Optional (unbounded when absent). */
   bounds?(): { readonly w: number; readonly h: number };
+  /** Is the caster holding an object, fully lifted? (Spin Cycle's object form.) Optional. */
+  carryingObject?(casterId: string): boolean;
+  /** Swing the caster's held object to this spot and height; `null` ends the swing (the object goes back to its usual hold point). Optional. */
+  swingHeld?(casterId: string, at: Vec2 | null, heightM: number): void;
+  /** Throw the held object level and fast along `dir`, not overhead. Optional. */
+  throwHeldFlat?(casterId: string, dir: Vec2, spec: { speedMps: number; powerFactor: number; heightM: number }): void;
+  /** Does the caster's buff empower its leaps right now (Bohemeth's ultimate)? Optional. */
+  empowersLeap?(casterId: string): boolean;
   /** Heal a fighter by `amount` (never above its maximum); returns false if it is down and nothing was done. Optional. */
   heal?(targetId: string, amount: number): boolean;
   /** Time Stop begins (`true`) or ends (`false`): the host freezes or releases everything but the caster. Optional. */
@@ -249,7 +259,11 @@ interface LiftAction {
     readonly liftM: number;
     readonly fallDamage: number;
     readonly immuneS: number;
+    /** Uppercut Combo: the other hand's punch while the target is still rising, which sends it straight back down. */
+    readonly followUp?: { readonly atS: number; readonly payload: AbilityPayload };
   };
+  /** Set once the follow-up has landed: when, and how high the target was. */
+  punched?: { readonly atS: number; readonly fromM: number };
 }
 
 /** A rocket fist flying out and back (see `FistDelivery`). */
@@ -429,6 +443,10 @@ interface LeapAction {
   volleysFired: number;
   /** The shots a volley carries: the ability with a projectile delivery and the volley's payload. */
   readonly volleyDef?: AbilityDef;
+  /** Cast while the caster's buff empowers leaps (Bohemeth's ultimate): flies further, lands harder and looks different. */
+  readonly empowered: boolean;
+  /** The range, air time and peak this leap really has. */
+  readonly form: { readonly maxRangeM: number; readonly airS: number; readonly peakM: number };
   /** The direction the first volley points (towards where the leap was aimed). */
   readonly baseDir: Vec2;
 }
@@ -460,6 +478,42 @@ interface GrabAction {
   ageS: number;
 }
 
+/** Spin Cycle under way (see `SpinDelivery`): the clap, the leg grab and the swing, or the swing of a held object. */
+interface SpinAction {
+  readonly kind: 'spin';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  readonly dir: Vec2;
+  readonly variant: 'object' | 'opponent';
+  readonly targetId: string | null;
+  phase: 'clap' | 'grab' | 'spin';
+  /** Seconds in the current phase, and since the ability's delivery began. */
+  t: number;
+  elapsedS: number;
+  readonly turns: number;
+  /** Seconds the swing lasts. */
+  readonly spinS: number;
+  /** The angle the target (or object) starts at, round the caster. */
+  readonly angle0: number;
+  clapped: boolean;
+  /** Fighters already struck by the swinging object. */
+  readonly struck: Set<string>;
+}
+
+/** A swung fighter flying off along the aim after the release (Spin Cycle), until it travels its distance or hits something. */
+interface FlingAction {
+  readonly kind: 'fling';
+  readonly casterId: string;
+  readonly targetId: string;
+  readonly def: AbilityDef;
+  readonly dir: Vec2;
+  ageS: number;
+  travelledM: number;
+  lastX: number;
+  lastY: number;
+  blocked: boolean;
+}
+
 /** A knife assault under way: rushing in, stabbing, springing back (Shroud). */
 interface AssaultAction {
   readonly kind: 'assault';
@@ -480,6 +534,8 @@ type Action =
   | PullAction
   | GrabAction
   | AssaultAction
+  | SpinAction
+  | FlingAction
   | JudgementAction
   | LiftAction
   | FistAction
@@ -535,6 +591,17 @@ const norm = (v: Vec2): Vec2 => {
 
 /** Gap kept between a grabber and the target it holds, metres (they must not touch). */
 const GRAB_HOLD_GAP_M = 0.12;
+/** Spin Cycle: the swing takes this much longer than its full-speed turns, as it builds up speed. */
+const SPIN_RAMP = 1.3;
+/** How the swing's angle builds with its progress (slow to start, fastest at the release). */
+const SPIN_EASE = 1.6;
+/** Fastest a swung body is driven to keep its place in the circle, m/s. */
+const SPIN_MAX_DRIVE_MPS = 45;
+
+/** How many times Spin Cycle swings a body of this weight (lighter: more; heavier: fewer). */
+export function spinTurns(d: SpinDelivery, massKg: number): number {
+  return Math.max(d.turns.min, Math.min(d.turns.max, Math.round((d.turns.base * d.turns.refKg) / Math.max(1, massKg))));
+}
 /** Within this of the hold point the held target is simply left still, metres. */
 const GRAB_SETTLE_M = 0.02;
 /** The fastest a held target is carried to its hold point, and how hard it is pulled in per second of distance. */
@@ -596,8 +663,8 @@ export class AbilityWorld {
     if (!a) return 0;
     const d = a.def.delivery;
     if (d.type !== 'leap') return 0;
-    const u = Math.min(1, a.t / d.airS);
-    return d.swoop ? swoopHeight(u, d.peakM) : 4 * d.peakM * u * (1 - u);
+    const u = Math.min(1, a.t / a.form.airS);
+    return d.swoop ? swoopHeight(u, a.form.peakM) : 4 * a.form.peakM * u * (1 - u);
   }
 
   /**
@@ -697,7 +764,7 @@ export class AbilityWorld {
     return (
       this.beams.some((b) => b.casterId === casterId) ||
       this.actions.some(
-        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault') && a.casterId === casterId,
+        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'spin') && a.casterId === casterId,
       )
     );
   }
@@ -1320,6 +1387,69 @@ export class AbilityWorld {
         this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0 });
         break;
       }
+      case 'spin': {
+        const angle0 = Math.atan2(dir.y, dir.x);
+        if (host.carryingObject?.(casterId)) {
+          // Holding something: swing it round and hurl it level.
+          const turns = d.object.turns;
+          this.actions.push({
+            kind: 'spin',
+            casterId,
+            def,
+            dir,
+            variant: 'object',
+            targetId: null,
+            phase: 'spin',
+            t: 0,
+            elapsedS: 0,
+            turns,
+            spinS: turns * d.turnS * SPIN_RAMP,
+            angle0,
+            clapped: true,
+            struck: new Set(),
+          });
+          break;
+        }
+        // Otherwise seize the nearest enemy in reach in front; nobody there: a grab at the air.
+        const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
+        let best: AbilityTarget | null = null;
+        let bestD = Number.POSITIVE_INFINITY;
+        for (const f of host.fighters()) {
+          if (this.friendly(f, casterId, host) || !f.hittable) continue;
+          if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
+          const dd = Math.hypot(f.x - at.x, f.y - at.y);
+          if (dd < bestD) {
+            best = f;
+            bestD = dd;
+          }
+        }
+        if (!best) {
+          this.grabOutcomes.set(casterId, { state: 'miss' });
+          host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: reach.x, y: reach.y });
+          break;
+        }
+        // Lighter fighters are swung more times, heavier ones fewer.
+        const turns = spinTurns(d, best.massKg ?? 70);
+        const spinS = turns * d.turnS * SPIN_RAMP;
+        host.hold?.(best.id, d.clap.dazeS + d.grabS + spinS + 0.4);
+        this.actions.push({
+          kind: 'spin',
+          casterId,
+          def,
+          dir,
+          variant: 'opponent',
+          targetId: best.id,
+          phase: 'clap',
+          t: 0,
+          elapsedS: 0,
+          turns,
+          spinS,
+          angle0,
+          clapped: false,
+          struck: new Set(),
+        });
+        break;
+      }
       case 'buff':
         {
           const { type: _type, summon: _summon, shockwave: _shockwave, ...effect } = d;
@@ -1349,7 +1479,9 @@ export class AbilityWorld {
         break;
       case 'leap': {
         // Land on the target (within range), short of any wall or furniture in the way.
-        const want = Math.min(d.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+        const empowered = d.empowered !== undefined && host.empowersLeap?.(casterId) === true;
+        const form = leapForm(d, empowered);
+        const want = Math.min(form.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
         const end = { x: at.x + dir.x * want, y: at.y + dir.y * want };
         const block = host.blocked(at, end);
         const reach = block === null ? want : Math.max(0, want * block - 0.5);
@@ -1360,7 +1492,7 @@ export class AbilityWorld {
           x: to.x,
           y: to.y,
           radiusM: d.radiusM,
-          durationS: d.airS,
+          durationS: form.airS,
           ageS: 0,
           onCaster: false,
         };
@@ -1392,6 +1524,8 @@ export class AbilityWorld {
           t: 0,
           telegraph,
           volleysFired: 0,
+          empowered,
+          form,
           ...(volleyDef ? { volleyDef } : {}),
           baseDir: dir,
         });
@@ -1409,7 +1543,10 @@ export class AbilityWorld {
     for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
-      if (this.actions[i]!.kind === 'lift') continue; // a tornado that has caught someone carries on without him
+      if (this.actions[i]!.kind === 'lift' || this.actions[i]!.kind === 'fling') continue; // a tornado, or a body already in flight, carries on without him
+      const gone = this.actions[i]!;
+      if (gone.kind === 'spin' && gone.targetId) host.drive(gone.targetId, null, 0); // the swung fighter is dropped
+      if (gone.kind === 'spin' && gone.variant === 'object') host.swingHeld?.(casterId, null, 0);
       this.actions.splice(i, 1);
       host.drive(casterId, null, 0);
     }
@@ -1814,8 +1951,12 @@ export class AbilityWorld {
                 ? this.stepAssault(a, dtS, host)
                 : a.kind === 'judgement'
                   ? this.stepJudgement(a, dtS, host)
-                  : a.kind === 'lift'
-                    ? this.stepLift(a, dtS, host)
+                  : a.kind === 'spin'
+                    ? this.stepSpin(a, dtS, host)
+                    : a.kind === 'fling'
+                      ? this.stepFling(a, dtS, host)
+                      : a.kind === 'lift'
+                        ? this.stepLift(a, dtS, host)
                     : a.kind === 'fist'
                       ? this.stepFist(a, dtS, host)
                       : a.kind === 'whirl'
@@ -1826,7 +1967,11 @@ export class AbilityWorld {
         const at = this.actions.indexOf(a);
         if (at >= 0) this.actions.splice(at, 1);
         if (a.kind === 'dash') this.slideThorns(a, host);
-        host.drive(a.kind === 'pull' || a.kind === 'grab' || a.kind === 'lift' ? a.targetId : a.casterId, null, 0);
+        host.drive(
+          a.kind === 'pull' || a.kind === 'grab' || a.kind === 'lift' || a.kind === 'fling' ? a.targetId : a.casterId,
+          null,
+          0,
+        );
       }
     }
   }
@@ -1947,8 +2092,28 @@ export class AbilityWorld {
     a.y = target.y;
     const { liftS, liftM, fallDamage, immuneS } = a.spec;
     const rise = Math.min(1, a.ageS / liftS);
-    const fall = Math.max(0, (a.ageS - liftS) / LIFT_FALL_S);
-    const height = fall > 0 ? liftM * (1 - fall * fall) : liftM * rise * (2 - rise);
+    let fall = Math.max(0, (a.ageS - liftS) / LIFT_FALL_S);
+    let height = fall > 0 ? liftM * (1 - fall * fall) : liftM * rise * (2 - rise);
+    const fu = a.spec.followUp;
+    if (fu && !a.punched && a.ageS >= fu.atS && fall === 0) {
+      // The second hand punches the rising target back down: a heavy blow, then a fast fall from where it was hit.
+      a.punched = { atS: a.ageS, fromM: height };
+      this.hit(host, a.casterId, a.targetId, fu.payload, a.dir, a.def.look?.hitFlash);
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: a.def.sfx.impact,
+        x: target.x,
+        y: target.y,
+        radiusM: 1.4,
+      });
+    }
+    if (a.punched) {
+      fall = (a.ageS - a.punched.atS) / (LIFT_FALL_S * 0.55);
+      height = a.punched.fromM * (1 - Math.min(1, fall) ** 2);
+    }
     host.drive(a.targetId, { x: 0, y: 0 }, Math.max(0, height));
     if (fall < 1) return false;
     host.drive(a.targetId, null, 0);
@@ -2060,7 +2225,13 @@ export class AbilityWorld {
         a.def,
         a.dir,
         target,
-        { liftS: d.uppercut.liftS, liftM: d.uppercut.liftM * k, fallDamage: d.uppercut.fallDamage * k, immuneS: 0 },
+        {
+          liftS: d.uppercut.liftS,
+          liftM: d.uppercut.liftM * k,
+          fallDamage: d.uppercut.fallDamage * k,
+          immuneS: 0,
+          ...(d.uppercut.followUp ? { followUp: d.uppercut.followUp } : {}),
+        },
         host,
       );
       host.emit({
@@ -2102,6 +2273,165 @@ export class AbilityWorld {
       y: land.y,
       radiusM: d.slamRadiusM,
     });
+    return true;
+  }
+
+  /** Spin Cycle's state for the caster's animation, or null when none is under way. */
+  spinOf(casterId: string): {
+    variant: 'object' | 'opponent';
+    phase: 'clap' | 'grab' | 'spin';
+    /** Seconds since the delivery began, and the lengths of the clap and the leg grab (for keyed animation). */
+    elapsedS: number;
+    clapS: number;
+    grabS: number;
+    /** 0..1 through the swing, and how many turns it makes. */
+    progress: number;
+    turns: number;
+  } | null {
+    const a = this.actions.find((x) => x.kind === 'spin' && x.casterId === casterId) as SpinAction | undefined;
+    const d = a?.def.delivery;
+    if (!a || d?.type !== 'spin') return null;
+    return {
+      variant: a.variant,
+      phase: a.phase,
+      elapsedS: a.elapsedS,
+      clapS: d.clap.dazeS,
+      grabS: d.grabS,
+      progress: a.phase === 'spin' ? Math.min(1, a.t / a.spinS) : 0,
+      turns: a.turns,
+    };
+  }
+
+  /** A swung body's height this step (render lift) while Spin Cycle flings it, or 0. */
+  private flingHeightM(d: SpinDelivery, travelledM: number): number {
+    return Math.max(0, d.liftM * 0.6 * (1 - travelledM / d.launch.maxDistM));
+  }
+
+  /** Spin Cycle: clap the head, take a leg, swing round, let go (or, holding an object, swing it and hurl it level). */
+  private stepSpin(a: SpinAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'spin') return true;
+    const caster = host.fighters().find((f) => f.id === a.casterId);
+    if (!caster?.hittable) return true; // the swinger fell: the swung one drops (cancel() clears the rest)
+    a.t += dtS;
+    a.elapsedS += dtS;
+    const me = { x: caster.x, y: caster.y };
+    const around = (angle: number, r: number): Vec2 => ({ x: me.x + Math.cos(angle) * r, y: me.y + Math.sin(angle) * r });
+    const swingAngle = (): number => {
+      const u = Math.min(1, a.t / a.spinS);
+      return a.angle0 + Math.PI * 2 * a.turns * u ** SPIN_EASE;
+    };
+    if (a.variant === 'object') {
+      const ang = swingAngle();
+      const spot = around(ang, d.orbitM * 0.85);
+      host.swingHeld?.(a.casterId, spot, d.object.heightM);
+      host.face?.(a.casterId, { x: Math.cos(ang), y: Math.sin(ang) });
+      // The swinging object catches anyone it passes (once each).
+      for (const f of host.fighters()) {
+        if (this.friendly(f, a.casterId, host) || !f.hittable || a.struck.has(f.id)) continue;
+        if (Math.hypot(f.x - spot.x, f.y - spot.y) > 0.75 + f.radiusM) continue;
+        a.struck.add(f.id);
+        const away = norm({ x: f.x - me.x, y: f.y - me.y });
+        if (this.hit(host, a.casterId, f.id, a.def.payload, away, a.def.look?.hitFlash))
+          host.emit({ kind: 'impact', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.impact, x: f.x, y: f.y, radiusM: 1 });
+      }
+      if (a.t < a.spinS) return false;
+      host.face?.(a.casterId, a.dir);
+      host.throwHeldFlat?.(a.casterId, a.dir, {
+        speedMps: d.object.speedMps,
+        powerFactor: d.object.powerFactor,
+        heightM: d.object.heightM,
+      });
+      host.emit({ kind: 'release', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.release, x: me.x, y: me.y });
+      return true;
+    }
+    const target = host.fighters().find((f) => f.id === a.targetId);
+    if (!target?.hittable || !a.targetId) return true; // gone: nothing left to swing
+    const front = caster.radiusM + target.radiusM + GRAB_HOLD_GAP_M;
+    // Move the swung body to a spot this step (a position, not a push, so it keeps pace however fast the swing).
+    const placeAt = (spot: Vec2, liftM: number): void => {
+      const v = { x: (spot.x - target.x) / Math.max(dtS, 1e-3), y: (spot.y - target.y) / Math.max(dtS, 1e-3) };
+      const sp = Math.hypot(v.x, v.y);
+      const k = sp > SPIN_MAX_DRIVE_MPS ? SPIN_MAX_DRIVE_MPS / sp : 1;
+      host.drive(a.targetId!, { x: v.x * k, y: v.y * k }, liftM);
+    };
+    if (a.phase === 'clap') {
+      // Held at the front, their head caught between the upper hands.
+      placeAt(around(a.angle0, front), 0.15);
+      if (!a.clapped && a.t >= d.clap.dazeS * 0.5) {
+        a.clapped = true;
+        const flash = a.def.look?.hitFlash;
+        if (this.hit(host, a.casterId, a.targetId, { ...a.def.payload, damage: d.clap.damage, heavy: false, knockbackMps: 0, stunS: d.clap.dazeS }, a.dir, flash))
+          host.emit({ kind: 'impact', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.impact, x: target.x, y: target.y, radiusM: 0.9 });
+      }
+      if (a.t >= d.clap.dazeS) {
+        a.phase = 'grab';
+        a.t = 0;
+      }
+      return false;
+    }
+    if (a.phase === 'grab') {
+      // The lower hands take a leg: the body is drawn out to arm's length and lifted off the floor.
+      const k = Math.min(1, a.t / d.grabS);
+      placeAt(around(a.angle0, front + (d.orbitM - front) * k), 0.15 + (d.liftM * 0.5 - 0.15) * k);
+      if (a.t >= d.grabS) {
+        a.phase = 'spin';
+        a.t = 0;
+      }
+      return false;
+    }
+    const ang = swingAngle();
+    const u = Math.min(1, a.t / a.spinS);
+    placeAt(around(ang, d.orbitM), d.liftM * (0.5 + 0.5 * Math.min(1, u * 3)));
+    host.face?.(a.casterId, { x: Math.cos(ang), y: Math.sin(ang) });
+    if (u < 1) return false;
+    // Let go: the body flies off along the aim.
+    host.face?.(a.casterId, a.dir);
+    host.hold?.(a.targetId, d.launch.maxDistM / d.launch.speedMps + 0.5);
+    host.emit({ kind: 'release', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.release, x: target.x, y: target.y });
+    this.actions.push({
+      kind: 'fling',
+      casterId: a.casterId,
+      targetId: a.targetId,
+      def: a.def,
+      dir: a.dir,
+      ageS: 0,
+      travelledM: 0,
+      lastX: target.x,
+      lastY: target.y,
+      blocked: false,
+    });
+    return true;
+  }
+
+  /** The flung body: it flies its distance (or until it hits something), then lands hard for more damage the further it flew. */
+  private stepFling(a: FlingAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'spin') return true;
+    const target = host.fighters().find((f) => f.id === a.targetId);
+    if (!target?.hittable) return true;
+    a.ageS += dtS;
+    const moved = Math.hypot(target.x - a.lastX, target.y - a.lastY);
+    a.lastX = target.x;
+    a.lastY = target.y;
+    a.travelledM += moved;
+    // It meets a wall or something heavy when it covers well under what it should this step.
+    if (a.ageS > 0.1 && moved < d.launch.speedMps * dtS * 0.3) a.blocked = true;
+    // Furniture in its way is shoved and broken as it ploughs through.
+    host.hitEnvironment(a.casterId, { x: target.x, y: target.y }, 0.8, { ...a.def.payload, heavy: true }, a.dir, true);
+    if (!a.blocked && a.travelledM < d.launch.maxDistM && a.ageS < 3) {
+      host.drive(
+        a.targetId,
+        { x: a.dir.x * d.launch.speedMps, y: a.dir.y * d.launch.speedMps },
+        this.flingHeightM(d, a.travelledM),
+      );
+      return false;
+    }
+    host.drive(a.targetId, null, 0);
+    const damage = d.launch.baseDamage + d.launch.damagePerM * a.travelledM + (a.blocked ? d.launch.collisionDamage : 0);
+    this.hit(host, a.casterId, a.targetId, { ...a.def.payload, damage, heavy: true, knockbackMps: a.blocked ? 1 : 2.5 }, a.dir, a.def.look?.hitFlash);
+    if (a.blocked) host.hitEnvironment(a.casterId, { x: target.x, y: target.y }, 1.3, { ...a.def.payload, damage: d.launch.collisionDamage }, { x: 0, y: 0 }, false);
+    host.emit({ kind: 'impact', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.impact, x: target.x, y: target.y, radiusM: a.blocked ? 2 : 1.4 });
     return true;
   }
 
@@ -2403,16 +2733,21 @@ export class AbilityWorld {
         a.volleysFired++;
       }
     }
-    if (a.t >= d.airS) {
+    if (a.t >= a.form.airS) {
       // Slam down where the caster actually is (the telegraph showed the planned spot).
       const at = host.position(a.casterId);
-      this.blast(a.casterId, a.def, at, d.radiusM, host);
+      const e = a.empowered ? d.empowered : undefined;
+      // The empowered smash hits harder and lands with its own look, on the same small radius.
+      const def = e
+        ? { ...a.def, vfx: e.vfx, look: e.look, payload: { ...a.def.payload, damage: a.def.payload.damage * e.damageFactor } }
+        : a.def;
+      this.blast(a.casterId, def, at, d.radiusM, host);
       const ti = this.telegraphs.indexOf(a.telegraph);
       if (ti >= 0) this.telegraphs.splice(ti, 1);
       return true;
     }
-    const k = d.swoop ? swoopSpeedFactor(Math.min(1, a.t / d.airS)) : 1;
-    const v = { x: ((a.to.x - a.from.x) / d.airS) * k, y: ((a.to.y - a.from.y) / d.airS) * k };
+    const k = d.swoop ? swoopSpeedFactor(Math.min(1, a.t / a.form.airS)) : 1;
+    const v = { x: ((a.to.x - a.from.x) / a.form.airS) * k, y: ((a.to.y - a.from.y) / a.form.airS) * k };
     host.drive(a.casterId, v, this.liftOf(a.casterId));
     return false;
   }

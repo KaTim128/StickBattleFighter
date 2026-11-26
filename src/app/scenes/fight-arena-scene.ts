@@ -7,6 +7,7 @@ import {
   type AbilityPayload,
   type AbilitySlot,
   type Burn,
+  leapForm,
   type MagicLook,
   type TossDelivery,
 } from '../../abilities/ability-def';
@@ -17,7 +18,7 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose, judgementPose, stalkPose, swoopPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose, judgementPose, spinPose, stalkPose, swoopPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -1103,7 +1104,10 @@ export class FightArenaScene implements ArenaScene {
     if (f.carrying) {
       // Hands full: the combat buttons do nothing until it is thrown or put down (CONTROL_SCHEME §2).
       this.intents.consumeMeleeEdges();
-      this.intents.consumeAbility();
+      // Hands full, except for an ability made for it (Bohemeth's Spin Cycle swings what he holds).
+      const held = this.intents.consumeAbility();
+      if (held && f.liftS <= 0 && f.caster?.def(held).delivery.type === 'spin' && this.abilities && !f.caster.cast)
+        this.lastAbilityBlock = this.abilities.tryCast(f, held);
       this.intents.consumeAimCancel();
       this.intents.consumeHeavy();
       if (c.state === 'guarding') c.setGuard(false);
@@ -1117,7 +1121,7 @@ export class FightArenaScene implements ArenaScene {
         this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
         return;
       }
-      const slow = THROWING.carrySpeedFactor(f.carrying.kind.massKg);
+      const slow = Math.min(1, THROWING.carrySpeedFactor(f.carrying.kind.massKg) + (f.buff?.objects?.carrySpeedBonus ?? 0));
       const m = this.intents.move;
       const jump = (this.intents.consumeJump() || jumpFromUtility) && f.def.capabilities.canJump && c.canAct;
       f.sprinting = false; // no sprinting with your hands full
@@ -1289,6 +1293,8 @@ export class FightArenaScene implements ArenaScene {
     let jump = false;
     const edge = this.intents.consumeInteract();
     const props = this.props;
+    if (f.spinHold && !this.abilities?.world.spinOf(f.name)) f.spinHold = false; // the swing ended without a throw (interrupted)
+    if (f.spinHold) return false; // swinging it: no throwing or putting down till the swing is done
     if (f.carrying && (f.carrying.broken || !f.combatant.canAct)) this.dropCarried(f, 0); // hit while carrying: it falls
     if (edge?.down) {
       if (f.carrying) {
@@ -1313,7 +1319,7 @@ export class FightArenaScene implements ArenaScene {
         this.throwCarried(f);
       }
     }
-    if (f.carrying && props) props.carry(f.carrying, this.holdPoint(f));
+    if (f.carrying && props && !f.spinHold) props.carry(f.carrying, this.holdPoint(f));
     return jump;
   }
 
@@ -1418,7 +1424,7 @@ export class FightArenaScene implements ArenaScene {
         Math.max(THROWING.launchHeightM, heightM),
         THROWING.launchUpMps,
         true,
-        { power: l.f.def.objects.throwPower * l.spec.powerFactor, fire: false },
+        { power: this.throwPowerOf(l.f) * l.spec.powerFactor, fire: false },
       );
       this.queueSound('psi-hurl', 0.8);
       this.levitations.splice(i, 1);
@@ -1447,7 +1453,8 @@ export class FightArenaScene implements ArenaScene {
   private liftProp(f: FighterEntity, grab: ArenaProp): void {
     this.props?.pickUp(grab, this.fighters.indexOf(f), this.holdPoint(f));
     f.carrying = grab;
-    f.liftTotalS = THROWING.liftTimeFor(grab.kind.massKg);
+    f.liftTotalS =
+      THROWING.liftTimeFor(grab.kind.massKg) * (f.def.objects.liftTimeFactor ?? 1) * (f.buff?.objects?.liftTimeFactor ?? 1);
     f.liftS = f.liftTotalS;
     this.characterSound(f, 'jump', 0.5);
   }
@@ -1472,13 +1479,21 @@ export class FightArenaScene implements ArenaScene {
     if (f.carrying && (f.carrying.broken || !c.canAct)) this.dropCarried(f, 0); // hit while carrying: it falls
     if (f.carrying) {
       f.aiHeldS += stepS;
-      props.carry(f.carrying, this.holdPoint(f));
+      if (!f.spinHold) props.carry(f.carrying, this.holdPoint(f));
     } else f.aiHeldS = 0;
     const free = c.canAct && !f.combo.attack && !f.caster?.cast && !f.airborne;
     const lift = f.def.objects;
     const cand = f.carrying
       ? null
-      : props.pickupCandidate(f.x, f.y, f.aim, PROP_SEEK_M, 99, lift.maxLiftKg, lift.liftsFurniture === true);
+      : props.pickupCandidate(
+          f.x,
+          f.y,
+          f.aim,
+          PROP_SEEK_M,
+          99,
+          f.buff?.objects?.maxLiftKg ?? lift.maxLiftKg,
+          lift.liftsFurniture === true,
+        );
     let propDist: number | null = null;
     let at = { x: 0, y: 0 };
     if (cand) {
@@ -1522,6 +1537,16 @@ export class FightArenaScene implements ArenaScene {
     return { approach: null, carrying: f.carrying !== null };
   }
 
+  /** The animation an ability plays: its own id, or its empowered form's while the caster's buff empowers it (Bohemeth's Ground Smash). */
+  private poseId(f: FighterEntity, def: AbilityDef): string {
+    return def.delivery.type === 'leap' && def.delivery.empowered && f.buff?.empowersLeap ? `${def.id}Empowered` : def.id;
+  }
+
+  /** How hard this fighter throws: its own power, raised while a buff (Bohemeth's ultimate) strengthens its arms. */
+  private throwPowerOf(f: FighterEntity): number {
+    return f.def.objects.throwPower * (f.buff?.objects?.throwPowerFactor ?? 1);
+  }
+
   /** Where a carried object rides: over the head, a touch in front so it draws over the fighter. */
   private holdPoint(f: FighterEntity): { x: number; y: number; heightM: number } {
     // While lifting, it rises from the hands to overhead (eased: slow off the floor, then up).
@@ -1545,7 +1570,7 @@ export class FightArenaScene implements ArenaScene {
         f.aim,
         THROWING.reachM + f.def.body.footRadiusM,
         THROWING.behindM,
-        f.def.objects.maxLiftKg,
+        f.buff?.objects?.maxLiftKg ?? f.def.objects.maxLiftKg,
         f.def.objects.liftsFurniture === true,
       ) ?? null
     );
@@ -1568,7 +1593,7 @@ export class FightArenaScene implements ArenaScene {
 
   /** Throw speed for this fighter and object: lighter flies faster; throw power (data) adds. */
   private throwSpeed(f: FighterEntity, prop: ArenaProp): number {
-    return THROWING.speedFor(prop.kind.massKg) * Math.sqrt(f.def.objects.throwPower);
+    return THROWING.speedFor(prop.kind.massKg) * Math.sqrt(this.throwPowerOf(f));
   }
 
   /** Throw the carried object (TD-044) in the fighter's own style (TD-047: power, fire). */
@@ -1586,7 +1611,7 @@ export class FightArenaScene implements ArenaScene {
       THROWING.launchUpMps,
       true,
       {
-        power: f.def.objects.throwPower * powerFactor,
+        power: this.throwPowerOf(f) * powerFactor,
         fire,
       },
     );
@@ -1628,6 +1653,7 @@ export class FightArenaScene implements ArenaScene {
     const prop = f.carrying;
     f.carrying = null;
     f.liftS = 0;
+    f.spinHold = false;
     f.interactTracking = false;
     if (!prop || !this.props || prop.broken) return;
     this.props.release(
@@ -2149,7 +2175,7 @@ export class FightArenaScene implements ArenaScene {
 
   private ultRange(f: FighterEntity): number {
     const d = f.caster?.def(this.leapSlot).delivery;
-    return d?.type === 'leap' ? d.maxRangeM : 0;
+    return d?.type === 'leap' ? leapForm(d, f.buff?.empowersLeap === true).maxRangeM : 0;
   }
 
   private clampToRange(f: FighterEntity, p: { x: number; y: number }): { x: number; y: number } {
@@ -2186,7 +2212,7 @@ export class FightArenaScene implements ArenaScene {
         to = { x: from.x + ((aim.x - from.x) / want) * reach, y: from.y + ((aim.y - from.y) / want) * reach };
       }
     }
-    return { from, to, radiusM: d.radiusM, maxRangeM: d.maxRangeM };
+    return { from, to, radiusM: d.radiusM, maxRangeM: leapForm(d, f.buff?.empowersLeap === true).maxRangeM };
   }
 
   /** The dummy holds its ground and faces you; with "dummy attacks" on it jabs back when you are close. */
@@ -2390,7 +2416,7 @@ export class FightArenaScene implements ArenaScene {
         this.stepFighter(f, stepS, { x: 0, y: 0 }, false);
         return;
       }
-      const slow = THROWING.carrySpeedFactor(f.carrying.kind.massKg);
+      const slow = Math.min(1, THROWING.carrySpeedFactor(f.carrying.kind.massKg) + (f.buff?.objects?.carrySpeedBonus ?? 0));
       this.stepFighter(f, stepS, { x: move.x * slow, y: move.y * slow }, false);
       return;
     }
@@ -2926,6 +2952,8 @@ export class FightArenaScene implements ArenaScene {
     },
   ): boolean {
     if (!target.body || target.combatant.isKo) return false;
+    // The ultimate's heavier blows (Bohemeth): everything he lands knocks back harder while it lasts.
+    if (attacker.buff?.knockbackFactor) s = { ...s, knockbackMps: s.knockbackMps * attacker.buff.knockbackFactor };
     // Time Stop: a blow on anything the stop holds is not applied; it is recorded and lands when time resumes.
     if (this.isFrozen(target)) {
       this.stopQueue.push({ attacker, target, s });
@@ -4187,7 +4215,7 @@ export class FightArenaScene implements ArenaScene {
       this.aimPrepT += frameDtS;
       pose = abilityPose(
         pose,
-        f.caster?.def(this.leapSlot).id ?? '',
+        f.caster ? this.poseId(f, f.caster.def(this.leapSlot)) : '',
         'windup',
         0.85 + 0.15 * Math.sin(this.aimPrepT * 7),
         false,
@@ -4205,7 +4233,7 @@ export class FightArenaScene implements ArenaScene {
     if (cast && f.caster) {
       pose = abilityPose(
         pose,
-        cast.def.id,
+        this.poseId(f, cast.def),
         cast.phase,
         f.caster.phaseProgress,
         f.abilityLift > 0.05,
@@ -4214,6 +4242,8 @@ export class FightArenaScene implements ArenaScene {
       );
       const assault = this.abilities?.world.assaultOf(f.name);
       if (assault) pose = assaultPose(pose, assault, cast.def.id);
+      const spin = this.abilities?.world.spinOf(f.name);
+      if (spin) pose = spinPose(pose, spin);
       const swoop = this.abilities?.world.swoopOf(f.name);
       if (swoop !== null && swoop !== undefined) pose = swoopPose(pose, swoop);
       const judgement = this.abilities?.world.judgementOf(f.name);
@@ -4238,7 +4268,7 @@ export class FightArenaScene implements ArenaScene {
     f.view.eyeGlow = f.eyeGlowAmount;
 
     // Carrying overhead: arms up (blended); a throw whips them forward for a moment.
-    const carryTarget = f.carrying ? this.liftProgress(f) : 0; // the arms rise with the lift
+    const carryTarget = f.carrying && !f.spinHold ? this.liftProgress(f) : 0; // the arms rise with the lift
     f.carryWeight += (carryTarget - f.carryWeight) * smoothing(16, frameDtS);
     if (f.carryWeight > 0.01) pose = blendPose(pose, carryPose(pose), f.carryWeight);
     if (f.throwFollowS > 0) {
