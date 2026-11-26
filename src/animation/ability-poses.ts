@@ -1236,8 +1236,8 @@ const SHAPES: Record<string, CastShape> = {
   },
   // Ricochet Shot: side-on, the shooting arm straight out along the gun and the other arm hanging straight down at his side, hand by the thigh.
   ricochetShot: {
-    windup: { lean: deg(6), head: deg(-4), armFront: limb(60, 30), armBack: limb(4, 6), legFront: limb(40, -42), legBack: limb(-40, -38) },
-    release: { lean: deg(-6), head: deg(0), armFront: limb(98, 4), armBack: limb(4, 6), legFront: limb(46, -46), legBack: limb(-44, -42) },
+    windup: { lean: deg(6), head: deg(-4), armFront: limb(60, 30), armBack: limb(4, 6), legFront: limb(20, -22), legBack: limb(-18, -18) },
+    release: { lean: deg(-4), head: deg(0), armFront: limb(98, 4), armBack: limb(4, 6), legFront: limb(22, -24), legBack: limb(-20, -20) },
     settle: 0.4,
   },
   // Tactical Counter: side-on to the opponent in a wide, planted stance, one pistol arm out front and the other tucked, ready to answer.
@@ -1246,11 +1246,11 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-6), head: deg(0), armFront: limb(98, 6), armBack: limb(94, 8), legFront: limb(46, -46), legBack: limb(-44, -42) },
     settle: 0.6,
   },
-  // Quick Draw: side-on to the target, the back arm hanging at his side with the other pistol in hand, one arm straight out with the pistol, a wide planted stance.
+  // Quick Draw: side-on to the target, the back arm hanging empty straight down at his side, one arm straight out with the pistol.
   quickdrawExecution: {
-    windup: { lean: deg(10), head: deg(-4), armFront: limb(-24, 60), armBack: limb(6, 8), legFront: limb(40, -44), legBack: limb(-40, -40) },
+    windup: { lean: deg(10), head: deg(-4), armFront: limb(-24, 60), armBack: limb(6, 8), legFront: limb(20, -22), legBack: limb(-18, -18) },
     tremble: deg(1.2),
-    release: { lean: deg(-8), head: deg(0), armFront: limb(100, 2), armBack: limb(4, 6), legFront: limb(46, -46), legBack: limb(-44, -42) },
+    release: { lean: deg(-8), head: deg(0), armFront: limb(100, 2), armBack: limb(4, 6), legFront: limb(22, -24), legBack: limb(-20, -20) },
     settle: 0.5,
   },
   machineGunRampage: {

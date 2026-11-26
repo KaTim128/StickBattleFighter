@@ -103,7 +103,7 @@ export class StickmanView {
   gunMgDir: 1 | -1 = 1;
   /** Which weapon the swap brings out: the machine gun, or the shotgun (Shotgun Blast, held in one hand). */
   gunKind: 'mg' | 'sg' = 'mg';
-  /** Quick Draw: only the front pistol is aimed; the back hand holds its pistol down at his side. */
+  /** Ricochet Shot and Quick Draw: seen from the side with one shooting arm; the other hand hangs empty at his side. */
   gunOne = false;
   /** Gunsmith: the on-screen angle his guns aim along while firing (in the figure's own facing; down positive), or null. */
   gunAim: number | null = null;
@@ -474,7 +474,8 @@ export class StickmanView {
               ? { colour: BRUTE.rage, k: this.rage * 0.3 }
               : undefined,
         drawHead,
-        bodyWidthK: 1 + 0.6 * this.turn,
+        bodyWidthK: (1 + 0.6 * this.turn) * (this.gunOne ? 0.82 : 1),
+        profile: this.gunOne,
         eyeGlow: this.eyeGlow,
         wingSpread: this.wingSpread,
         plating: this.plating,
@@ -1617,7 +1618,9 @@ export class StickmanView {
         const holster = { x: s.pelvis.x + (n === 1 ? 0.1 : -0.06), y: s.pelvis.y - 0.04 };
         const at = { x: holster.x + (arm[2].x - holster.x) * q, y: holster.y + (arm[2].y - holster.y) * q };
         // A one-gun draw (Quick Draw): the back hand keeps its pistol down at his side, pointing at the floor.
-        this.drawPistol(g, at, this.gunOne && n === 0 ? 1.45 : this.gunAngle(arm[1], arm[2]), 0.68, o);
+        // One-arm shots (Ricochet Shot, Quick Draw): the non-shooting hand hangs empty, straight down at his side.
+        if (this.gunOne && n === 0) return;
+        this.drawPistol(g, at, this.gunAngle(arm[1], arm[2]), 0.68, o);
       });
     }
     if (dir > 0 && t > 0 && t < 0.42) {

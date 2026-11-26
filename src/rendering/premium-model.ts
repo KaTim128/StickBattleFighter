@@ -909,6 +909,8 @@ export interface PremiumDrawState {
    * are drawn this much wider, as the chest is seen more from the front. 1 = profile.
    */
   readonly bodyWidthK?: number;
+  /** Seen purely from the side (a one-armed gunslinger shot): the front-facing chest panel (the white shirt) is not drawn. */
+  readonly profile?: boolean;
 }
 
 const toward = (colour: number, target: number, k: number): number => {
@@ -3002,7 +3004,7 @@ export class PremiumModel {
       return { x: p.x + u.nx * w * n * fwd, y: p.y + u.ny * w * n * fwd };
     };
     if (brute) this.bruteDefinition(g, at, w);
-    if (this.skin.chestPanel !== undefined) {
+    if (this.skin.chestPanel !== undefined && !this.st.profile) {
       // The light chest panel: from the collar down to a point above the navel, shaded like the skin.
       // A white panel slanting from the collar across the near pectoral down to the abdomen.
       const panel = [at(1.08, 0.05), at(1.03, 1.0), at(0.82, 1.42), at(0.5, 1.0), at(0.44, 0.55), at(0.8, 0.25)];
