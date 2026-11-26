@@ -501,7 +501,7 @@ export const GENERIC_DESIGN: BrainDesign = {
  */
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   // Quickdraw Execution: finish a hurt target in range. Gravehook Launch: leap over distance onto a target in the open.
-  quickdrawExecution: { role: 'burst', minM: 2, maxM: 10, weight: 1.2, when: { targetHpBelow: 0.6 } },
+  quickdrawExecution: { role: 'burst', minM: 1.5, maxM: 6.5, weight: 1.2 }, // mid to close range only
   crescentExecution: { role: 'burst', minM: 0, maxM: 2.6, weight: 1.3 },
   // Thunder Circuit: a three-second charge is only worth it against a target that is stunned, bound or far enough to be out of reach of a punish.
   thunderCircuit: { role: 'control', minM: 3, maxM: 7.5, weight: 1, when: { targetHelpless: true } },

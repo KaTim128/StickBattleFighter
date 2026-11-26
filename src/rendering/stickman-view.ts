@@ -101,6 +101,8 @@ export class StickmanView {
   /** Gunsmith: 0..1 how far the machine gun is out (0 the pistols are in hand), and which way it is going (1 drawing it, -1 putting it away). */
   gunMg = 0;
   gunMgDir: 1 | -1 = 1;
+  /** Quick Draw: only the front pistol is aimed; the back hand holds its pistol down at his side. */
+  gunOne = false;
   /** Gunsmith: the on-screen angle his guns aim along while firing (in the figure's own facing; down positive), or null. */
   gunAim: number | null = null;
   /** Kamaw: his chained sickle is out (thrown, embedded or hooked on someone); only the handle and the start of the chain stay in his hand. */
@@ -1612,7 +1614,8 @@ export class StickmanView {
       hands.forEach((arm, n) => {
         const holster = { x: s.pelvis.x + (n === 1 ? 0.1 : -0.06), y: s.pelvis.y - 0.04 };
         const at = { x: holster.x + (arm[2].x - holster.x) * q, y: holster.y + (arm[2].y - holster.y) * q };
-        this.drawPistol(g, at, this.gunAngle(arm[1], arm[2]), 0.68, o);
+        // A one-gun draw (Quick Draw): the back hand keeps its pistol down at his side, pointing at the floor.
+        this.drawPistol(g, at, this.gunOne && n === 0 ? 1.45 : this.gunAngle(arm[1], arm[2]), 0.68, o);
       });
     }
     if (dir > 0 && t > 0 && t < 0.42) {

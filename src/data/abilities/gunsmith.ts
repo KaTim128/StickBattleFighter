@@ -3,7 +3,7 @@ import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Gunsmith's kit (owner, 26/11/2026): a gunslinger with two pistols. Dual Barrage (a volley from both guns), Explosive Rounds (a bullet that
- * bursts), Ricochet Shot (a bullet that bounces off the arena), Tactical Roll (a rolling dodge that fires as it goes) and Quickdraw Execution
+ * bursts), Ricochet Shot (a bullet that bounces off the arena), Tactical Roll (a rolling dodge that fires as it goes) and Quick Draw
  * (a rapid run of targeted shots ending in a powerful one); the ultimate is a sustained, aimable Machine Gun Rampage. Values are PROVISIONAL (OQ-05).
  */
 const BRASS = { deep: 0x3a1d08, hot: 0xd98a1a, bright: 0xffd070, core: 0xfff6d0 } as const;
@@ -74,7 +74,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     name: 'Ricochet Shot',
     label: 'RICOCHET',
     description:
-      'Fires a bullet that bounces off walls and furniture, up to three times, before it finds the opponent: angle it off the arena to hit someone who is covered.',
+      'Fires a bullet that bounces off walls and furniture, up to six times, before it finds the opponent: angle it off the arena to hit someone who is covered.',
     icon: 'ricochet-shot',
     slot: 'a3',
     staminaCost: 24,
@@ -85,7 +85,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: { damage: 46, knockbackMps: 1.5, heavy: false, strength: 300, impact: 'knuckle-light' },
-    delivery: { type: 'projectile', speedMps: 30, radiusM: 0.2, maxRangeM: 24, bounces: 3 },
+    delivery: { type: 'projectile', speedMps: 30, radiusM: 0.2, maxRangeM: 36, bounces: 6 },
     vfx: 'ricochet-shot',
     sfx: { cast: 'gun-draw', release: 'gun-ricochet', impact: 'bullet-ping' },
     look: { palette: BRASS, flight: { trailPerS: 120, sparksPerS: 24, bullet: 0.3, shimmer: true }, impact: muzzle(0.6, 0.15), hitFlash: 0xffe9b0 },
@@ -120,30 +120,31 @@ export const GUNSMITH_KIT: AbilityKit = {
   },
   a5: {
     id: 'quickdrawExecution',
-    name: 'Quickdraw Execution',
-    label: 'EXECUTE',
+    name: 'Quick Draw',
+    label: 'DRAW',
     description:
-      'Draws both pistols faster than the eye follows and fires a run of six targeted shots at the nearest enemy, finishing with one powerful final shot that hits three times as hard and throws them back.',
+      'A swift, single-shot execution for mid to close range: he turns side-on, one hand aimed at the opponent and the other pistol down at his side, and delivers an instant, precise shot that hits harder than any one shot of Dual Barrage but for moderate damage overall.',
     icon: 'quickdraw-execution',
     slot: 'a4',
-    staminaCost: 36,
-    cooldownS: 15,
-    castS: 0.45,
-    recoveryS: 0.6,
-    aimRangeM: 11,
+    staminaCost: 22,
+    cooldownS: 9,
+    castS: 0.15,
+    recoveryS: 0.4,
+    aimRangeM: 7,
     moveFactor: 0,
     interruptible: true,
-    payload: { damage: 11, knockbackMps: 1, heavy: false, strength: 200, impact: 'knuckle-light', noFlinch: true },
+    // One precise round, no scatter: harder than a single Dual Barrage shot (9).
+    payload: { damage: 32, knockbackMps: 1.6, heavy: false, strength: 220, impact: 'knuckle-light', noFlinch: true },
     delivery: {
       type: 'projectile',
-      speedMps: 38,
+      speedMps: 60,
       radiusM: 0.2,
-      maxRangeM: 12,
-      burst: { count: 7, gapS: 0.11, finalFactor: 4.5 },
+      maxRangeM: 7.5,
+      burst: { count: 1, gapS: 0.1 },
     },
     vfx: 'quickdraw-execution',
     sfx: { cast: 'gun-quickdraw', release: 'gun-shot-fast', impact: 'bullet-execute' },
-    look: { palette: BRASS, flight: { trailPerS: 100, sparksPerS: 20, bullet: 0.28, shimmer: true }, impact: muzzle(1, 0.4), hitFlash: 0xfff0c0 },
+    look: { palette: BRASS, flight: { trailPerS: 100, sparksPerS: 20, bullet: 0.28, shimmer: true }, impact: muzzle(0.8, 0.3), hitFlash: 0xfff0c0 },
   },
   ult: {
     id: 'machineGunRampage',

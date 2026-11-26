@@ -1243,10 +1243,11 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-66), head: deg(30), armFront: limb(90, 10), armBack: limb(84, 12), legFront: limb(60, -110), legBack: limb(-40, -100) },
     settle: 0.4,
   },
+  // Quick Draw: side-on to the target, the back arm hanging at his side with the other pistol in hand, one arm straight out with the pistol, a wide planted stance.
   quickdrawExecution: {
-    windup: { lean: deg(8), head: deg(-4), armFront: limb(-24, 60), armBack: limb(-30, 64), legFront: limb(30, -36), legBack: limb(-30, -34) },
-    tremble: deg(1.5),
-    release: { lean: deg(-12), head: deg(0), armFront: limb(100, 2), armBack: limb(96, 6), legFront: limb(38, -40), legBack: limb(-32, -34) },
+    windup: { lean: deg(10), head: deg(-4), armFront: limb(-24, 60), armBack: limb(6, 8), legFront: limb(40, -44), legBack: limb(-40, -40) },
+    tremble: deg(1.2),
+    release: { lean: deg(-8), head: deg(0), armFront: limb(100, 2), armBack: limb(4, 6), legFront: limb(46, -46), legBack: limb(-44, -42) },
     settle: 0.5,
   },
   machineGunRampage: {

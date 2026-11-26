@@ -84,6 +84,13 @@ describe('Gunsmith', () => {
     expect(far).toBeLessThan(near * 0.4); // fewer pellets reach it, each at a fraction of the damage
   }, 60_000);
 
+  it('Ricochet Shot bounces up to six times; Quick Draw only reaches mid to close range', () => {
+    const d = GUNSMITH_KIT.a3.delivery;
+    expect(d.type === 'projectile' && d.bounces).toBe(6);
+    const q = GUNSMITH_KIT.a5!.delivery;
+    expect(q.type === 'projectile' && q.maxRangeM).toBeLessThanOrEqual(8);
+  });
+
   it('Ricochet Shot: aimed at the far wall with the dummy behind him, the bullet bounces back and hits it', async () => {
     const { scenes, fire, run, me, foe } = await setup('gunsmith', 8, 20);
     scenes.clear();
@@ -121,13 +128,15 @@ describe('Gunsmith', () => {
     scenes.clear();
   }, 30_000);
 
-  it('Quickdraw Execution: a run of seven shots, the last far more powerful', async () => {
-    const { scenes, fire, hitsOver } = await setup('gunsmith', 5, 13, {}, ['dualBarrage', 'explosiveRounds', 'ricochetShot', 'quickdrawExecution']);
+  it('Quick Draw: one precise shot with one pistol, harder than a single Dual Barrage shot, and the view shows one gun out', async () => {
+    const { scene, scenes, fire, run, hitsOver } = await setup('gunsmith', 5, 13, {}, ['dualBarrage', 'explosiveRounds', 'ricochetShot', 'quickdrawExecution']);
     expect(fire('a4')).toBeNull();
-    const hits = hitsOver(3);
-    expect(hits.length).toBeGreaterThanOrEqual(6);
-    const last = hits[hits.length - 1]!;
-    expect(last).toBeGreaterThan(Math.min(...hits) * 3);
+    run(0.05);
+    expect(scene.playerFighter.view?.gunOne).toBe(true);
+    const hits = hitsOver(2);
+    expect(hits).toHaveLength(1); // a single round
+    expect(hits[0]!).toBeGreaterThan(GUNSMITH_KIT.a1.payload.damage * 2);
+    expect(hits[0]!).toBeLessThan(GUNSMITH_KIT.a5!.payload.damage * 3); // moderate: one round, even a critical one
     scenes.clear();
   }, 30_000);
 

@@ -155,3 +155,5 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - AI channel awareness: a foe pouring a beam or stream (which a hit stops) is closed in on and attacked by smarter tiers; a planner does not start a channelled ability with a free foe at its shoulder.
 - Top HUD shows the hit points left, level with each fighter's name.
 - DX07's Explosive Rounds (id unchanged) is now the Shotgun Blast: eight pellets in a cone, full damage within 2 m falling to a fifth at 9 m (per-pellet projectile falloff); the AI uses it at close range.
+- DX07's Quickdraw Execution is now Quick Draw: a single instant, precise shot with one pistol (the other stays holstered), 32 damage (more than one Dual Barrage shot of 9), thrown from a side-on stance. Always available to the AI (no longer only against a wounded target).
+- Ricochet Shot bounces up to six times (was three). Quick Draw works at mid to close range only (about 7.5 m), the back hand keeping its pistol down at his side.

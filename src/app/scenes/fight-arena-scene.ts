@@ -4710,6 +4710,7 @@ export class FightArenaScene implements ArenaScene {
     if (f.def.effects.held === 'pistols') {
       const mgOn = f.caster?.cast?.def.id === 'machineGunRampage' || this.abilities?.world.burstOf(f.name) === 'machineGunRampage';
       const v = f.view;
+      v.gunOne = f.caster?.cast?.def.id === 'quickdrawExecution' || this.abilities?.world.burstOf(f.name) === 'quickdrawExecution';
       if (mgOn) v.gunMgDir = 1;
       else if (v.gunMg > 0) v.gunMgDir = -1;
       v.gunMg = Math.min(1, Math.max(0, v.gunMg + (mgOn ? 1 : -1) * frameDtS * 1.7));
