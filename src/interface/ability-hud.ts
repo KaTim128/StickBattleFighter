@@ -16,11 +16,8 @@ export class AbilityHud {
   private readonly targets = new Map<string, HTMLElement[]>();
   private readonly keyLabels = new Map<keyof typeof SLOT_ACTION, HTMLElement>();
   private shownKeys: Bindings | null = null;
-  private readonly notice: HTMLElement;
   private readonly infoButton: HTMLButtonElement;
   private readonly panel: HTMLElement;
-  private lastCasting: string | null = null;
-  private noticeTimer = 0;
   private latest: AbilityHudState | null = null;
 
   /** The key labels on the desktop bar follow the player's own bindings. */
@@ -43,12 +40,6 @@ export class AbilityHud {
     }
     root.appendChild(this.bar);
 
-    // A short notice with the name of the ability just cast (master plan B14).
-    this.notice = document.createElement('div');
-    this.notice.className = 'ability-notice';
-    this.notice.setAttribute('aria-live', 'polite');
-    this.notice.hidden = true;
-    root.appendChild(this.notice);
 
     // An info control that never casts: it lists the equipped abilities, their keys, cooldowns and what they do.
     this.infoButton = document.createElement('button');
@@ -125,22 +116,6 @@ export class AbilityHud {
       this.panel.hidden = true;
       return;
     }
-    // The name of an ability appears briefly as it is cast.
-    if (state.casting !== this.lastCasting) {
-      this.lastCasting = state.casting;
-      const cast = state.casting ? state.slots.find((s) => s.id === state.casting) : undefined;
-      if (cast) {
-        this.notice.textContent = cast.name;
-        this.notice.hidden = false;
-        this.notice.classList.remove('show');
-        void this.notice.offsetWidth; // restart the fade
-        this.notice.classList.add('show');
-        clearTimeout(this.noticeTimer);
-        this.noticeTimer = window.setTimeout(() => {
-          this.notice.hidden = true;
-        }, 1400);
-      }
-    }
     const keys = this.keys();
     if (keys !== this.shownKeys) {
       // Only when the bindings object changes (a rebind), never every frame.
@@ -151,8 +126,6 @@ export class AbilityHud {
   }
 
   destroy(): void {
-    clearTimeout(this.noticeTimer);
-    this.notice.remove();
     this.infoButton.remove();
     this.panel.remove();
     this.bar.remove();

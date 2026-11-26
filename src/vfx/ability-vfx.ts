@@ -2759,9 +2759,12 @@ export class AbilityVfx {
       // A bullet: a short, bright tracer pointing the way it flies, with a thin fading streak behind it (small, so a rampage reads as a hail of
       // bullets rather than glowing orbs).
       const L = look.flight.bullet;
-      const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);
-      const ux = Math.cos(ang);
-      const uy = Math.sin(ang);
+      // The world direction as it appears on screen: the isometric view maps (x, y) to ((x - y), (x + y) / 2), not to (x, y / 2).
+      const sx = p.dir.x - p.dir.y;
+      const sy = (p.dir.x + p.dir.y) * ISO_T;
+      const sl = Math.hypot(sx, sy) || 1;
+      const ux = sx / sl;
+      const uy = sy / sl;
       p.trail.forEach((q, i) => {
         const k = (i + 1) / (p.trail.length + 1);
         const tc = P(q.x, q.y, BOLT_HEIGHT_M);

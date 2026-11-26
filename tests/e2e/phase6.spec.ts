@@ -174,7 +174,7 @@ test('ability HUD (B14): a name notice appears when an ability is cast; the info
   await expect(panel).toBeHidden();
   // Casting shows the ability's name for a moment.
   await page.keyboard.press('KeyQ');
-  await expect(page.locator('.ability-notice')).toBeVisible();
-  await expect(page.locator('.ability-notice')).toHaveText('Fireball');
+  // The cast's name is shown beside the fighter's portrait (the top HUD), not as a floating notice.
+  await expect(page.locator('.ability-notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
