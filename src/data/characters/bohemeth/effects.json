@@ -5,7 +5,7 @@
   "heavyImpact": "impact-crush",
   "blockImpact": "block-guard",
   "limbTrail": null,
-  "aura": null,
+  "aura": "dust-steps",
   "clash": "clash-white",
   "finisher": "finisher-white",
   "disintegration": "dust-grey",

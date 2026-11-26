@@ -129,7 +129,7 @@ export const BOHEMETH_KIT: AbilityKit = {
     name: 'Four Arm Ground Smash',
     label: 'SMASH',
     description:
-      'Crouches, jumps with all four arms raised and brings all four fists down onto the floor together. The landing sends out a ground shockwave that hurts and throws back everyone nearby, more the closer they are, and he stays crouched with his hands on the ground for a moment afterwards.',
+      'Crouches, jumps up to 5 metres with all four arms raised and brings all four fists down onto the floor together. The landing sends out a wide ground shockwave that hurts and throws back everyone within 4 metres, more the closer they are, and he stays crouched with his hands on the ground for a moment afterwards.',
     icon: 'four-arm-smash',
     slot: 'a4',
     staminaCost: 34,
@@ -147,7 +147,7 @@ export const BOHEMETH_KIT: AbilityKit = {
       impact: 'knuckle-heavy',
       falloff: { fullWithinM: 1.2, minFactor: 0.4 },
     },
-    delivery: { type: 'leap', maxRangeM: 3, airS: 0.65, peakM: 1.6, radiusM: 3.0, aimSpeedMps: 3 },
+    delivery: { type: 'leap', maxRangeM: 5, airS: 0.75, peakM: 2.2, radiusM: 4.2, aimSpeedMps: 4 },
     vfx: 'four-arm-smash',
     sfx: { cast: 'bohemeth-grunt', release: 'bohemeth-leap', impact: 'bohemeth-quake' },
     look: { palette: IRON, impact: { ...dust(3.0, 0.9), scorchM: 0.8 }, hitFlash: 0xffffff },

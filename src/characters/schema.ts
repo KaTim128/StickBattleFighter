@@ -193,6 +193,18 @@ export interface StatsProfile {
     readonly decelMps2: number;
     readonly jumpSpeedMps: number;
     readonly gravityMps2: number;
+    /** Airborne top speed relative to the ground one: above 1 a jump carries further sideways (Bohemeth). Default 1. */
+    readonly jumpCarry?: number;
+  };
+  /**
+   * A heavy landing (Bohemeth): coming down from at least `minHeightM` shoves every opponent within `radiusM` away at up to `knockbackMps`
+   * (falling off with distance) and staggers it for `staggerS`, with dust and a shake. No damage. Absent: landings do nothing to others.
+   */
+  readonly landingImpact?: {
+    readonly radiusM: number;
+    readonly knockbackMps: number;
+    readonly minHeightM: number;
+    readonly staggerS: number;
   };
   readonly body: { readonly footRadiusM: number; readonly massKg: number };
   readonly power: number;

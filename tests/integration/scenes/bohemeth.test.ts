@@ -177,4 +177,29 @@ describe('Bohemeth', () => {
     expect(me().view!.fireFists).toBe(0);
     scenes.clear();
   }, 60_000);
+
+  it('moves like a mobile powerhouse: quick on foot, a high long jump, and a heavy landing that shoves nearby opponents', async () => {
+    const { intents, scene, scenes, run, me, foe } = await setup('training-dummy', 2.2);
+    expect(me().def.movement.maxSpeedMps).toBeGreaterThan(4.5);
+    expect(me().def.movement.jumpSpeedMps ** 2 / (2 * me().def.movement.hopGravityMps2)).toBeGreaterThan(1.4); // jump height, metres
+    expect(me().def.landingImpact?.radiusM).toBeGreaterThan(3);
+    const x0 = foe().x;
+    // A running jump toward the dummy: it covers real ground and the landing shoves it away.
+    intents.setMove('t', { x: 1, y: 0 });
+    intents.sprint = true;
+    run(0.3);
+    intents.pressJump();
+    let peak = 0;
+    for (let i = 0; i < 2 / STEP; i++) {
+      run(STEP);
+      peak = Math.max(peak, me().hop.heightM);
+    }
+    intents.setMove('t', { x: 0, y: 0 });
+    intents.sprint = false;
+    expect(peak).toBeGreaterThan(1.2);
+    expect(me().x - 13).toBeGreaterThan(3); // far further than a normal hop
+    expect(foe().x - x0 + 0.01).toBeGreaterThan(0); // pushed along, never pulled in
+    expect(scene.abilities).toBeTruthy();
+    scenes.clear();
+  }, 30_000);
 });

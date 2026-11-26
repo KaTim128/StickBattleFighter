@@ -1065,3 +1065,5 @@ Done: round Colosseum arena (data, view, nine prop kinds, crowd, banners, torche
 ## 25/11/2026 — Titan slimmer (premium muscle skin bulk 1.7 to 1.5, select scale 1.2) and Bohemeth's four arms fanned out clear of each other and of his face (select stance, idle, portrait). Screenshot-checked.
 
 ## 25/11/2026 — abdominal rows removed from the stickman bodies (owner): `premium-model.ts` (Titan and the other muscle builds) and `magma-model.ts` (Inferno). Screenshot-checked on Titan.
+
+## 26/11/2026 — Bohemeth mobility (owner): speed 3.7 to 4.9 m/s, jump 0.6 to 1.7 m with jumpCarry 1.4 (further), landingImpact (3.4 m shove and stagger, no damage), Ground Smash range 5 m and radius 4.2 m, four-arm walk/run/idle animations, dust-steps aura; defence 1.0 and stamina regen 29 to keep the stat budget. Strip cache renderer version bumped to 2 (stale Magix face on devices). Full vitest 1371 passing. Not verified on a phone or in long fights.

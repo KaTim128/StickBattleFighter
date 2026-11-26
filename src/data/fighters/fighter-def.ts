@@ -27,7 +27,14 @@ export interface FighterDef {
   readonly combatStyle: string;
   readonly characterType: string;
   readonly weapon: Weapon;
-  readonly movement: MovementTuning & HopTuning;
+  readonly movement: MovementTuning & HopTuning & { readonly jumpCarry?: number };
+  /** A heavy landing that shoves and staggers nearby opponents (see `StatsProfile.landingImpact`). */
+  readonly landingImpact?: {
+    readonly radiusM: number;
+    readonly knockbackMps: number;
+    readonly minHeightM: number;
+    readonly staggerS: number;
+  };
   readonly body: { readonly footRadiusM: number; readonly massKg: number };
   readonly bones: BoneLengths;
   /** Drawn size relative to a standard fighter (1 when absent). */

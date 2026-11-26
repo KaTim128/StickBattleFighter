@@ -8,7 +8,7 @@ import type { IdleStrip } from './portraits';
  */
 
 /** Bump when the strip drawing itself changes in a way the fighter's data does not show. */
-export const STRIP_RENDERER_VERSION = 1;
+export const STRIP_RENDERER_VERSION = 2; // bumped for: Magix moustache face, slimmer Titan, no abs, Bohemeth arms (a drawing change does not change the fighter data hash)
 
 const DB_NAME = 'stickman-arena-strips';
 const STORE = 'strips';

@@ -2801,6 +2801,7 @@ export class FightArenaScene implements ArenaScene {
           // Crouched and stalking, he creeps (Death Mark).
           maxSpeedMps:
             finalMaxSpeedMps(f.def, sprinting, f.buff, c.status) *
+            (air ? (f.def.movement.jumpCarry ?? 1) : 1) *
             (stalking && stalkDelivery?.def.delivery.type === 'mark' ? stalkDelivery.def.delivery.moveFactor : 1),
           decelMps2: decel,
         },
@@ -2839,6 +2840,7 @@ export class FightArenaScene implements ArenaScene {
     f.hop = stepHop(f.hop, jump, tuning, stepS);
     this.climbing?.land(f, air);
     if (air && !f.airborne) {
+      this.landingImpact(f);
       f.combo.landed();
       f.airJumpReady = false;
       f.airSprint = false;
@@ -2846,6 +2848,43 @@ export class FightArenaScene implements ArenaScene {
     }
 
     if (ev.hit) this.resolveHit(f, ev.hit);
+  }
+
+  /**
+   * A heavy landing (Bohemeth, owner 26/11/2026): coming down from a real height shoves everyone close away and staggers them for a
+   * moment, with dust, a thud and a shake. No damage (his abilities carry the damage); the landing itself is a firm squat.
+   */
+  private landingImpact(f: FighterEntity): void {
+    const li = f.def.landingImpact;
+    if (!li || f.combatant.isKo) return;
+    const dropM = f.fallPeakM - f.hop.heightM;
+    if (dropM < li.minHeightM) return;
+    const k = Math.min(1.4, dropM / (li.minHeightM * 2));
+    for (const o of this.fighters) {
+      if (o.team === f.team || o.combatant.isKo || !o.body || o.airborne) continue;
+      const gap = Math.hypot(o.x - f.x, o.y - f.y);
+      if (gap > li.radiusM + o.def.body.footRadiusM) continue;
+      const near = 1 - 0.6 * Math.min(1, gap / li.radiusM);
+      const away = gap > 1e-6 ? { x: (o.x - f.x) / gap, y: (o.y - f.y) / gap } : { x: 1, y: 0 };
+      const push = li.knockbackMps * near * k * (1 - o.def.stats.knockbackResistance * 0.5);
+      o.body.setLinvel({ x: away.x * push, y: away.y * push }, true);
+      o.knockFlightS = Math.max(o.knockFlightS, 0.2);
+      this.abilities?.hold(o.name, li.staggerS);
+    }
+    f.landDip = { depth: 1, ageS: 0 };
+    f.landHoldS = Math.max(f.landHoldS, 0.22);
+    this.shake.addTrauma(Math.min(0.7, 0.35 + dropM * 0.12));
+    this.queueSound('wall-thud', 1.1);
+    this.abilities?.emit({
+      kind: 'impact',
+      ability: 'landing',
+      look: f.caster?.kit.a4.look,
+      vfx: 'four-arm-smash',
+      sfx: null,
+      x: f.x,
+      y: f.y,
+      radiusM: li.radiusM,
+    });
   }
 
   /**

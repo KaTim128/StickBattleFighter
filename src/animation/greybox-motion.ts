@@ -397,24 +397,50 @@ function magicianIdle(timeS: number, bones: BoneLengths): Pose {
 }
 
 /**
+ * FOUR ARM GAIT (Bohemeth): the base walk or run with the four arms coordinated. Upper and lower arms on the same side swing in
+ * opposite directions (the near upper arm with the far lower arm), so the four read as two crossing pairs and never overlap; the
+ * torso rolls and bobs against the steps with a lean that grows with effort (`effort` 0 = a walk, 1 = a full sprint), and the
+ * shoulders drive forward on each footfall.
+ */
+function fourArmGait(base: Pose, phase: number, effort: number): Pose {
+  const s = Math.sin(phase * TAU);
+  const c = Math.cos(phase * TAU);
+  const wide = 1 + effort * 0.6;
+  return {
+    ...base,
+    lean: base.lean - deg(3 + effort * 7) + deg(s * (1.4 + effort * 1.8)),
+    head: base.head + deg(-s * 1.5),
+    armFront: {
+      root: base.armFront.root + deg(s * 8 * wide) + deg(effort * 10),
+      bend: base.armFront.bend - deg(effort * 12),
+    },
+    armBack: { root: base.armBack.root - deg(s * 8 * wide), bend: base.armBack.bend },
+    armFront2: { root: deg(36 - s * 34 * wide - effort * 6), bend: deg(56 + effort * 22 - Math.abs(c) * 10) },
+    armBack2: { root: deg(8 + s * 34 * wide), bend: deg(44 + effort * 20 + Math.abs(c) * 8) },
+  };
+}
+
+/**
  * FOUR ARM (Bohemeth): a wide, planted brawler's stance with a slow, heavy breath. The upper fists are held up in front of the face,
  * the lower pair hangs low and forward at the hips, and the weight rocks gently from foot to foot; the lower hands flex in turn.
  */
 function fourArmIdle(timeS: number, bones: BoneLengths): Pose {
-  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.4);
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.45);
   const shift = Math.sin(timeS * TAU * 0.2);
+  const roll = Math.sin(timeS * TAU * 0.3 + 1);
   const flex = Math.max(0, Math.sin(timeS * TAU * 0.35)) ** 2;
   const legs = bones.thigh + bones.shin;
   return {
-    lean: deg(-4 + breath * 1.2 + shift * 1),
-    head: deg(-2),
-    // The upper pair held up and a little back, the lower pair low and a little forward, so the four arms never overlap.
-    armFront: { root: deg(78 + breath * 3), bend: deg(80) },
-    armBack: { root: deg(-70 + breath * 3), bend: deg(90) },
-    armFront2: { root: deg(54 + flex * 8), bend: deg(60 + flex * 14) },
-    armBack2: { root: deg(-14 - flex * 5), bend: deg(50) },
-    legFront: legIk(0.36 + shift * 0.02, legs * 0.93 - breath * 0.012, bones.thigh, bones.shin),
-    legBack: legIk(-0.34 - shift * 0.02, legs * 0.93 - (1 - breath) * 0.012, bones.thigh, bones.shin),
+    // Low and forward like a bull about to move: the shoulders rolling slowly, the head down and level, the weight shifting.
+    lean: deg(-9 + breath * 1.4 + shift * 1.4),
+    head: deg(5 + roll * 1.5),
+    // The upper pair held up and a little back, the lower pair low and a little forward, flexing in turn so the four arms never overlap.
+    armFront: { root: deg(76 + breath * 4 + roll * 3), bend: deg(82 - flex * 6) },
+    armBack: { root: deg(-68 + breath * 3 - roll * 3), bend: deg(92) },
+    armFront2: { root: deg(52 + flex * 10 + roll * 2), bend: deg(58 + flex * 14) },
+    armBack2: { root: deg(-14 - flex * 6 - roll * 2), bend: deg(50 + flex * 6) },
+    legFront: legIk(0.4 + shift * 0.03, legs * 0.9 - breath * 0.014, bones.thigh, bones.shin),
+    legBack: legIk(-0.38 - shift * 0.03, legs * 0.9 - (1 - breath) * 0.014, bones.thigh, bones.shin),
   };
 }
 
@@ -596,7 +622,8 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
   // A longer stride (a brisk walk) reaches further with each step, within what a walk can do.
   const k = Math.min(1.45, Math.max(1, strideM / WALK_STRIDE_M));
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0);
-  if (style === 'heavyweight' || style === 'fourarm') return heavyWalkPose(phase, bones, k);
+  if (style === 'fourarm') return fourArmGait(heavyWalkPose(phase, bones, k), phase, 0);
+  if (style === 'heavyweight') return heavyWalkPose(phase, bones, k);
   if (style === 'magician') {
     // A strut with a flourish: high light steps, chest out, the wand arm sweeping up and out with each stride.
     return gaitPose(phase, bones, {
@@ -1095,12 +1122,14 @@ const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
 /** POWER RUN: the running cycle at a run. */
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0.7);
+  if (style === 'fourarm') return fourArmGait(runningPose(phase, bones, runStyleFor(style, false)), phase, 0.7);
   return runningPose(phase, bones, runStyleFor(style, false));
 }
 
 /** SPRINT: the running cycle at full effort. */
 export function sprintPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 1);
+  if (style === 'fourarm') return fourArmGait(runningPose(phase, bones, runStyleFor(style, true)), phase, 1);
   return runningPose(phase, bones, runStyleFor(style, true));
 }
 
