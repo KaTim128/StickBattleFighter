@@ -107,6 +107,8 @@ export interface InkSlash {
   readonly dirX: number;
   readonly dirY: number;
   readonly reachM: number;
+  /** Which slash of the three this is (0 = left to right, 1 = back the other way, 2 = a wide overhead cut). */
+  readonly index: number;
   ageS: number;
 }
 
@@ -268,8 +270,8 @@ export class InkWorld {
 
   /** Everything of this caster ends (it fell, or the battle reset). */
   /** A brush slash for the ink look (the hit itself is the ability's strike): shown briefly in front of the caster. */
-  slash(at: Vec2, dir: Vec2, reachM: number): void {
-    this.slashes.push({ x: at.x, y: at.y, dirX: dir.x, dirY: dir.y, reachM, ageS: 0 });
+  slash(at: Vec2, dir: Vec2, reachM: number, index = 0): void {
+    this.slashes.push({ x: at.x, y: at.y, dirX: dir.x, dirY: dir.y, reachM, index, ageS: 0 });
   }
 
   clearOf(casterId: string): void {

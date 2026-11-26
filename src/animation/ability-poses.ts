@@ -1267,7 +1267,29 @@ const INK_DRAWING: Readonly<Record<string, { cycles: number; amp: number; lean: 
   masterpiece: { cycles: 8, amp: 52, lean: 12 }, // a long, sweeping drawing
 };
 
+/**
+ * Ink Slash: the brush is drawn back, then cuts three times (left to right, back again, then a wide finishing cut). The strikes
+ * land at the start of recovery and 0.22 s and 0.44 s later (progress 0, 0.29, 0.59 of its 0.75 s), so the arm and the body
+ * turn to each one in step with its streak of ink.
+ */
+function inkSlashPose(base: Pose, phase: 'windup' | 'recovery', progress: number): Pose {
+  const cocked: Pose = { ...base, lean: deg(-6), head: deg(-4), armFront: limb(150, 30), armBack: limb(60, 70) };
+  if (phase === 'windup') return blendPose(base, cocked, ease(Math.min(1, progress * 1.4)));
+  const sweep = Math.cos((progress / 0.293) * Math.PI);
+  const finale = progress > 0.45 ? 1.25 : 1;
+  const cut: Pose = {
+    ...cocked,
+    lean: deg(-4 + 10 * sweep),
+    head: deg(-2 * sweep),
+    armFront: limb(95 + 55 * sweep * finale, 18 + 14 * (1 - Math.abs(sweep))),
+    armBack: limb(55 - 20 * sweep, 66),
+  };
+  if (progress < 0.85) return cut;
+  return blendPose(cut, base, ease((progress - 0.85) / 0.15));
+}
+
 function inkDrawingPose(base: Pose, id: string, phase: 'windup' | 'recovery', progress: number): Pose | null {
+  if (id === 'inkSlash') return inkSlashPose(base, phase, progress);
   const d = INK_DRAWING[id];
   if (!d) return null;
   const raised: Pose = { ...base, lean: deg(-4), head: deg(-4), armFront: limb(112, 44), armBack: limb(60, 70) };
@@ -1546,6 +1568,6 @@ export function stalkPose(base: Pose, amount: number): Pose {
 
 /** Abilities with an animation (tests check every kit ability has one). */
 export function hasAbilityPose(abilityId: string): boolean {
-  if (INK_DRAWING[abilityId]) return true;
+  if (INK_DRAWING[abilityId] || abilityId === 'inkSlash') return true;
   return abilityId in SHAPES;
 }

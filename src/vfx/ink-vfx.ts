@@ -774,8 +774,12 @@ function inkSlash(g: Graphics, P: Project, sl: InkSlash): void {
   const k = clamp01(sl.ageS / 0.4);
   const ang = Math.atan2(sl.dirY, sl.dirX);
   const sweep = ease(Math.min(1, k * 3.2));
-  const a0 = ang - 1.15;
-  const span = 2.3;
+  // Three cuts: across one way, back the other way, then a wider, heavier finishing sweep.
+  const flip = sl.index === 1 ? -1 : 1;
+  const a0 = ang - 1.15 * flip - (sl.index === 2 ? 0.1 : 0);
+  const span = (sl.index === 2 ? 2.6 : 2.3) * flip;
+  const reachMul = sl.index === 2 ? 1.12 : 1;
+  const heavy = sl.index === 2 ? 1.3 : 1;
   const head = a0 + span * sweep;
   const n = 18;
   const fade = 1 - ease(clamp01((k - 0.35) / 0.65));
@@ -785,11 +789,11 @@ function inkSlash(g: Graphics, P: Project, sl: InkSlash): void {
     for (let i = 0; i < n; i++) {
       const u = i / (n - 1);
       const a = a0 + (head - a0) * u;
-      const r = sl.reachM * (0.8 + 0.2 * Math.sin(u * Math.PI)) + rOff;
+      const r = sl.reachM * reachMul * (0.8 + 0.2 * Math.sin(u * Math.PI)) + rOff;
       pts.push(P(sl.x + Math.cos(a) * r, sl.y + Math.sin(a) * r, 1.0 + lift + 0.12 * Math.sin(u * Math.PI)));
       // thin entry, heavy belly in the first half, long tapering tail towards the head of the swing
       const body = Math.sin(Math.min(1, u * 1.15) * Math.PI) ** 0.8;
-      widths.push((0.03 + 0.3 * body) * wMul * (u < from ? 0 : 1));
+      widths.push((0.03 + 0.3 * body) * heavy * wMul * (u < from ? 0 : 1));
     }
     return { pts, widths };
   };

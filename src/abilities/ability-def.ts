@@ -677,6 +677,8 @@ export interface StrikeDelivery {
   readonly type: 'strike';
   readonly reachM: number;
   readonly radiusM: number;
+  /** Ink Slash: `extra` more blows follow the first, one every `gapS` seconds, each re-aimed at the nearest enemy; an interruption stops them. */
+  readonly repeat?: { readonly extra: number; readonly gapS: number };
 }
 
 /**

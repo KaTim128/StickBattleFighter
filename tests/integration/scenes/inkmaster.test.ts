@@ -46,11 +46,23 @@ describe('Inkmaster', () => {
     await initPhysics();
   });
 
-  it('Ink Slash: a close brush cut that damages the opponent, and blinds some of the time', async () => {
-    const { scene, scenes, runUntil, cast } = await setup('training-dummy', 1.6);
+  it('Ink Slash: three quick brush cuts, each damaging the opponent, with one cut mark per slash', async () => {
+    const { scene, scenes, runUntil, cast, world } = await setup('training-dummy', 1.6);
+    const lost = () => scene.dummyFighter.combatant.stats.maxHp - scene.dummy.hp;
     cast('a1');
-    runUntil(() => scene.dummy.hp < scene.dummyFighter.combatant.stats.maxHp, 3);
-    expect(scene.dummyFighter.combatant.stats.maxHp - scene.dummy.hp).toBeGreaterThan(20);
+    runUntil(() => lost() > 0, 3);
+    const first = lost();
+    expect(first).toBeGreaterThan(10);
+    let seen = world().slashes.length;
+    let marks = seen;
+    runUntil(() => {
+      const n = world().slashes.length;
+      if (n > seen) marks += n - seen;
+      seen = n;
+      return lost() >= first * 2.5;
+    }, 3);
+    expect(marks).toBeGreaterThanOrEqual(3);
+    expect(lost()).toBeGreaterThan(first * 2.5);
     scenes.clear();
   });
 

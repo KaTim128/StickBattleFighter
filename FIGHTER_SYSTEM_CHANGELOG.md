@@ -81,3 +81,7 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - **Chain Grab (fifth):** chain 18 m/s to 8.5 m, 14 damage and a 1.4 s stun, hauled in at 12 m/s (slower for heavy), then a 50 damage knockdown punch; 17 s.
 - **Fiery Fists (ultimate):** 12 s, attack speed x1.2, flames on all four fists; no extra damage.
 - New: `Pose.armFront2/armBack2`, `BoneLengths.lowerArms`, `AbilityTarget.massKg`, grab `uppercut`, nova `interruptsCharges`, pull `refKg`/`followUp`, buff `fireFists`.
+
+## Ink Slash: three slashes (26/11/2026)
+- **Ink Slash (Q):** three quick brush cuts 0.22 s apart (18 damage each, 54 in all, same as before), each turning to the nearest foe in reach; every cut blinds 3 s and slows. Each cut has its own ink streak (left to right, back again, then a wider, heavier finish) and Inkmaster's brush arm swings to each one.
+- New: strike delivery `repeat { extra, gapS }`; `InkSlash.index`; `inkSlashPose`.

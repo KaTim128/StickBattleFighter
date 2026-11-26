@@ -8,6 +8,7 @@ import {
   type MagicLook,
   type MirrorDelivery,
   payloadAt,
+  type StrikeDelivery,
   type SummonSpec,
   type TossDelivery,
 } from './ability-def';
@@ -581,6 +582,8 @@ export class AbilityWorld {
     return this.nowS;
   }
 
+  /** Repeating strikes still to swing (Ink Slash's 2nd and 3rd slash). */
+  readonly strikes: { casterId: string; def: AbilityDef; d: StrikeDelivery; nextS: number; done: number; total: number; dir: Vec2 }[] = [];
   readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -1281,40 +1284,8 @@ export class AbilityWorld {
         break;
       }
       case 'strike': {
-        // One heavy blow straight ahead: everyone in reach, then whatever furniture or door it meets.
-        if (def.vfx === 'ink-slash') this.ink.slash(at, dir, d.reachM);
-        const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
-        let landed = false;
-        for (const f of host.fighters()) {
-          if (this.friendly(f, casterId, host) || !f.hittable) continue;
-          if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
-          if (this.hit(host, casterId, f.id, def.payload, dir, def.look?.hitFlash)) {
-            landed = true;
-            host.emit({
-              kind: 'impact',
-              ability: def.id,
-              look: def.look,
-              vfx: def.vfx,
-              sfx: def.sfx.impact,
-              x: f.x,
-              y: f.y,
-              radiusM: 0.8,
-            });
-          }
-        }
-        host.hitEnvironment(casterId, reach, d.radiusM, def.payload, dir, false);
-        if (!landed) {
-          host.emit({
-            kind: 'impact',
-            ability: def.id,
-            look: def.look,
-            vfx: def.vfx,
-            sfx: def.sfx.impact,
-            x: reach.x,
-            y: reach.y,
-            radiusM: 0.8,
-          });
-        }
+        this.strikeBlow(casterId, def, d, dir, host, 0);
+        if (d.repeat) this.strikes.push({ casterId, def, d, nextS: this.nowS + d.repeat.gapS, done: 1, total: 1 + d.repeat.extra, dir });
         break;
       }
       case 'grab': {
@@ -1434,6 +1405,7 @@ export class AbilityWorld {
     // Being hit or knocked out breaks a stalk (a mark already charged survives a flinch).
     this.cancelStalk(casterId, host);
     this.magix.cancel(casterId);
+    for (let i = this.strikes.length - 1; i >= 0; i--) if (this.strikes[i]!.casterId === casterId) this.strikes.splice(i, 1);
     for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
@@ -1446,6 +1418,53 @@ export class AbilityWorld {
       if (t.casterId !== casterId) continue;
       this.telegraphs.splice(i, 1);
       host.emit({ kind: 'fizzle', ability: t.def.id, look: t.def.look, vfx: t.def.vfx, sfx: null, x: t.x, y: t.y });
+    }
+  }
+
+  /** One blow of a strike ability: everyone in reach in front, then the furniture or door it meets. `index` varies the ink slash's look. */
+  private strikeBlow(casterId: string, def: AbilityDef, d: StrikeDelivery, dir: Vec2, host: AbilityHost, index: number): void {
+    const at = host.position(casterId);
+    if (def.vfx === 'ink-slash') this.ink.slash(at, dir, d.reachM, index);
+    const reach = { x: at.x + dir.x * d.reachM, y: at.y + dir.y * d.reachM };
+    let landed = false;
+    for (const f of host.fighters()) {
+      if (this.friendly(f, casterId, host) || !f.hittable) continue;
+      if (segmentDistance(at, reach, f) > d.radiusM + f.radiusM) continue;
+      if (this.hit(host, casterId, f.id, def.payload, dir, def.look?.hitFlash)) {
+        landed = true;
+        host.emit({
+          kind: 'impact',
+          ability: def.id,
+          look: def.look,
+          vfx: def.vfx,
+          sfx: def.sfx.impact,
+          x: f.x,
+          y: f.y,
+          radiusM: 0.8,
+        });
+      }
+    }
+    host.hitEnvironment(casterId, reach, d.radiusM, def.payload, dir, false);
+    if (!landed) {
+      host.emit({ kind: 'impact', ability: def.id, look: def.look, vfx: def.vfx, sfx: def.sfx.impact, x: reach.x, y: reach.y, radiusM: 0.8 });
+    }
+  }
+
+  /** The follow-up blows of repeating strikes (Ink Slash): each turns to the nearest enemy in reach and swings again. */
+  private updateStrikes(host: AbilityHost): void {
+    for (let i = this.strikes.length - 1; i >= 0; i--) {
+      const q = this.strikes[i]!;
+      if (this.nowS < q.nextS) continue;
+      const at = host.position(q.casterId);
+      const foe = this.nearestEnemy(q.casterId, at, q.d.reachM + 1.5, host);
+      const dir = foe ? norm({ x: foe.x - at.x, y: foe.y - at.y }) : q.dir;
+      host.face?.(q.casterId, dir);
+      this.strikeBlow(q.casterId, q.def, q.d, dir, host, q.done);
+      host.emit({ kind: 'release', ability: q.def.id, look: q.def.look, vfx: q.def.vfx, sfx: q.def.sfx.release, x: at.x, y: at.y });
+      q.done++;
+      q.dir = dir;
+      if (q.done >= q.total) this.strikes.splice(i, 1);
+      else q.nextS = this.nowS + (q.d.repeat?.gapS ?? 0.3);
     }
   }
 
@@ -1498,6 +1517,7 @@ export class AbilityWorld {
     this.updateGrenades(dtS, host);
     this.updatePrisons(dtS, host);
     this.ink.update(dtS, host);
+    this.updateStrikes(host);
     this.magix.update(dtS, host);
     for (let i = this.slideTrail.length - 1; i >= 0; i--) {
       const m = this.slideTrail[i]!;
