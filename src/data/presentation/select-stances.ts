@@ -247,13 +247,14 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   inkmaster: {
     title: 'The Living Brush',
     style: 'Ink painter: waves, a serpent, a bull, clones and a drawn monster',
-    pelvis: 0.78,
-    leadFoot: 0.36,
-    rearFoot: -0.42,
-    lean: -9,
+    // Kung fu bow stance: wide and low, the brush hand forward and low like a guard, the free hand raised in an open palm by the chin.
+    pelvis: 0.74,
+    leadFoot: 0.42,
+    rearFoot: -0.46,
+    lean: -7,
     head: 4,
-    front: { x: 0.5, y: 0.42 },
-    back: { x: 0.18, y: 0.46 },
+    front: { x: 0.66, y: 0.32 },
+    back: { x: 0.28, y: -0.2 },
     turn: 0.52,
     scale: 1,
     breath: { lean: 1, pelvis: 0.01, hands: 0.025 },
@@ -275,10 +276,10 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   },
   // Bohemeth (owner, 26/11/2026, after the "Behemoth, the Quadruple Colossus" reference): a wide, planted power pose facing the viewer.
   // Both upper fists are raised high and out at the sides, elbows bent, like a double flex; both lower fists hang clenched out low and wide,
-  // clear of the legs; the face is open and the chains cross the chest. A little taller than before.
+  // clear of the legs; the face is open. A little taller than before.
   bohemeth: {
     title: 'The Four Armed Brute',
-    style: 'Four-armed heavyweight: spins, uppercuts, claps and smashes with chains wrapped round him',
+    style: 'Four-armed heavyweight: spins, uppercuts, claps, smashes and unleashes rapid four-fisted barrages',
     pelvis: 0.84,
     leadFoot: 0.44,
     rearFoot: -0.44,

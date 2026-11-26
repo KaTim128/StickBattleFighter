@@ -1192,76 +1192,29 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.55,
   },
-  // Chain Grab: one upper hand reaches across to unwind the chain from his body, whirls it, and throws it out straight; the other arms
-  // brace. The release holds the throw; the pull is held with both upper hands hauling back.
-  chainGrab: {
+  // Quake Barrage: braced low and forward with all four fists up (the windup and the release), the punches themselves are `barragePose`.
+  quakeBarrage: {
     windup: {
-      lean: deg(6),
-      head: deg(8),
-      armFront: limb(-20, 100),
-      armBack: limb(40, 120),
-      armFront2: limb(30, 100),
-      armBack2: limb(10, 100),
-      legFront: limb(26, -30),
+      lean: deg(-12),
+      head: deg(6),
+      armFront: limb(60, 120),
+      armBack: limb(40, 122),
+      armFront2: limb(36, 110),
+      armBack2: limb(18, 112),
+      legFront: limb(36, -50),
+      legBack: limb(-30, -36),
     },
     release: {
-      lean: deg(-26),
-      head: deg(10),
-      armFront: limb(96, 6),
-      armBack: limb(40, 110),
-      armFront2: limb(34, 96),
-      armBack2: limb(14, 96),
-      legFront: limb(46, -52),
-      legBack: limb(-36, -26),
+      lean: deg(-16),
+      head: deg(8),
+      armFront: limb(70, 116),
+      armBack: limb(48, 118),
+      armFront2: limb(44, 104),
+      armBack2: limb(24, 108),
+      legFront: limb(40, -54),
+      legBack: limb(-32, -38),
     },
-    settle: 0.35,
-  },
-  // ---- Voltar. Every pose leans into the motion; the windups are tiny, the releases long and extended.
-  // Flashstep: a crouched coil, then (the release) a low, stretched lunge, one fist driven through.
-  flashstep: {
-    windup: { lean: deg(-16), head: deg(4), armFront: limb(30, 130), armBack: limb(40, 120), legFront: limb(46, -80), legBack: limb(-30, -50) },
-    release: { lean: deg(-34), head: deg(-6), armFront: limb(100, 4), armBack: limb(-30, 110), legFront: limb(58, -30), legBack: limb(-36, -20) },
     settle: 0.4,
-  },
-  // Arc Lash: the free hand gathers, then both palms thrust out at the target.
-  arcLash: {
-    windup: { lean: deg(4), head: deg(-4), armFront: limb(110, 100), armBack: limb(120, 110), legFront: limb(26, -36), legBack: limb(-26, -30) },
-    tremble: deg(2),
-    release: { lean: deg(-22), head: deg(-4), armFront: limb(94, 4), armBack: limb(90, 8), legFront: limb(40, -44), legBack: limb(-30, -30) },
-    settle: 0.4,
-  },
-  // Voltage Rush: low and tight before, then the long kick the last blow ends in.
-  voltageRush: {
-    windup: { lean: deg(-18), head: deg(6), armFront: limb(60, 126), armBack: limb(50, 126), legFront: limb(40, -70), legBack: limb(-30, -40) },
-    release: { lean: deg(-26), head: deg(-4), armFront: limb(120, 60), armBack: limb(-110, 50), legFront: limb(104, -6), legBack: limb(-14, -44) },
-    settle: 0.5,
-  },
-  // Static Break: arms flung wide as he bursts away, the body turning with it.
-  staticBreak: {
-    windup: { lean: deg(6), head: deg(0), armFront: limb(70, 110), armBack: limb(60, 110) },
-    release: { lean: deg(-30), head: deg(-8), armFront: limb(-40, 30), armBack: limb(150, 40), legFront: limb(50, -46), legBack: limb(-40, -30) },
-    settle: 0.45,
-  },
-  // Thunder Circuit: planted wide, both arms raised to the sky for the whole three-second charge, trembling harder as it builds; then both palms
-  // driven forward as the beam leaves.
-  thunderCircuit: {
-    windup: { lean: deg(8), head: deg(-18), armFront: limb(168, 24), armBack: limb(160, 30), legFront: limb(34, -40), legBack: limb(-34, -36) },
-    tremble: deg(4),
-    release: { lean: deg(-18), head: deg(-4), armFront: limb(94, 4), armBack: limb(88, 6), legFront: limb(46, -46), legBack: limb(-34, -34) },
-    settle: 0.5,
-  },
-  // Overdrive: arms flung out, chest open, as the lightning takes him.
-  voltOverdrive: {
-    windup: { lean: deg(-8), head: deg(-12), armFront: limb(40, 120), armBack: limb(30, 120), legFront: limb(30, -50), legBack: limb(-26, -40) },
-    tremble: deg(3),
-    release: { lean: deg(8), head: deg(-20), armFront: limb(120, 30), armBack: limb(-120, 30), legFront: limb(26, -34), legBack: limb(-26, -30) },
-    settle: 0.4,
-  },
-  // Lightning Execution: crouched, then a dive pose: one fist thrust down, the body stretched.
-  lightningExecution: {
-    windup: { lean: deg(-12), head: deg(4), armFront: limb(40, 130), armBack: limb(30, 130), legFront: limb(46, -90), legBack: limb(-30, -60) },
-    release: { lean: deg(-60), head: deg(20), armFront: limb(30, 6), armBack: limb(20, 14), legFront: limb(60, -20), legBack: limb(-30, -50) },
-    settle: 0.5,
   },
   // Fiery Fists: all four arms raised and the fists clenched, trembling, then driven down and out in a roar as the flames take.
   fieryFists: {
@@ -1542,6 +1495,71 @@ export function spinPose(base: Pose, st: SpinPoseState): Pose {
   if (st.phase === 'grab') return blendPose(at(SPIN_CLAP), at(SPIN_LEG), ease((e - c) / st.grabS));
   const into = Math.min(1, (e - c - st.grabS) / 0.15);
   return blendPose(at(SPIN_LEG), swing(), ease(into));
+}
+
+
+/** Quake Barrage's state for its animation (AbilityWorld.barrageOf). */
+export interface BarragePoseState {
+  readonly k: number;
+  readonly arm: 0 | 1 | 2 | 3;
+  readonly thrown: number;
+  readonly finisher: number | null;
+}
+
+/**
+ * Quake Barrage (owner, 26/11/2026): each punch drives one arm out while the others stay up and ready, the body turning into it and the weight
+ * rocking forward as he advances. Upper arms (0 near, 2 far) swing heavy hooks across the body, lower arms (1 far, 3 near) drive straight out; each
+ * punch eases out and back so the next flows from it, and a little variety in reach keeps it from repeating exactly. The finisher pulls all four
+ * arms back, then drives all four forward together.
+ */
+export function barragePose(base: Pose, st: BarragePoseState): Pose {
+  const ready: Pose = {
+    ...base,
+    lean: deg(-14),
+    head: deg(6),
+    armFront: limb(64, 118),
+    armBack: limb(44, 120),
+    armFront2: limb(40, 108),
+    armBack2: limb(20, 110),
+    legFront: limb(38, -52),
+    legBack: limb(-30, -36),
+  };
+  if (st.finisher !== null) {
+    const pulled: Pose = {
+      ...ready,
+      lean: deg(10),
+      head: deg(-8),
+      armFront: limb(-30, 90),
+      armBack: limb(-40, 92),
+      armFront2: limb(-24, 80),
+      armBack2: limb(-34, 84),
+    };
+    const driven: Pose = {
+      ...ready,
+      lean: deg(-34),
+      head: deg(14),
+      armFront: limb(96, 6),
+      armBack: limb(92, 8),
+      armFront2: limb(88, 6),
+      armBack2: limb(84, 8),
+      legFront: limb(50, -50),
+    };
+    return st.finisher < 1 ? blendPose(ready, pulled, ease(st.finisher)) : driven;
+  }
+  // 0 at the start of the punch, 1 at full extension at about a third of the way, back to 0 at the end.
+  const out = st.k < 0.33 ? ease(st.k / 0.33) : ease(1 - (st.k - 0.33) / 0.67);
+  const vary = 1 + 0.12 * Math.sin(st.thrown * 2.3);
+  const turn = st.arm === 0 || st.arm === 3 ? -1 : 1;
+  const pose: Pose = { ...ready, lean: ready.lean + deg(turn * 5 * out) };
+  const swing = (rest: Limb, hit: Limb): Limb => ({
+    root: rest.root + (hit.root - rest.root) * out * vary,
+    bend: rest.bend + (hit.bend - rest.bend) * out,
+  });
+  if (st.arm === 0) pose.armFront = swing(ready.armFront, limb(120, 70)); // a heavy hook across, elbow high
+  else if (st.arm === 2) pose.armBack = swing(ready.armBack, limb(110, 60));
+  else if (st.arm === 3 && ready.armFront2) pose.armFront2 = swing(ready.armFront2, limb(94, 4)); // a straight
+  else if (ready.armBack2) pose.armBack2 = swing(ready.armBack2, limb(90, 4));
+  return pose;
 }
 
 /** A knife assault under way (AbilityWorld.assaultOf). */

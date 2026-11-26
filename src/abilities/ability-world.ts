@@ -503,6 +503,21 @@ interface SpinAction {
   readonly struck: Set<string>;
 }
 
+/** Quake Barrage under way (see `BarrageDelivery`). */
+interface BarrageAction {
+  readonly kind: 'barrage';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  /** Seconds since it began, since the last punch, and how long no enemy has been in reach. */
+  ageS: number;
+  sinceS: number;
+  lostS: number;
+  /** Punches thrown so far (landed or not), landed ones, and the finisher's wind-up (null until it starts). */
+  thrown: number;
+  landed: number;
+  finisherS: number | null;
+}
+
 /** A swung fighter flying off along the aim after the release (Spin Cycle), until it travels its distance or hits something. */
 interface FlingAction {
   readonly kind: 'fling';
@@ -538,6 +553,7 @@ type Action =
   | GrabAction
   | AssaultAction
   | SpinAction
+  | BarrageAction
   | FlingAction
   | JudgementAction
   | LiftAction
@@ -602,6 +618,12 @@ const FLASH_CHAIN_GAP_S = 0.25;
 const SPIN_EASE = 1.6;
 /** Fastest a swung body is driven to keep its place in the circle, m/s. */
 const SPIN_MAX_DRIVE_MPS = 45;
+
+/** Which arm throws punch number `n` of a Quake Barrage: the four in turn, with an occasional double on one pair so it never reads as a fixed count. */
+export function barrageArm(n: number): 0 | 1 | 2 | 3 {
+  const order = [0, 1, 2, 3, 0, 3, 2, 1, 0, 2, 1, 3] as const;
+  return order[n % order.length]!;
+}
 
 /** How many times Spin Cycle swings a body of this weight (lighter: more; heavier: fewer). */
 export function spinTurns(d: SpinDelivery, massKg: number): number {
@@ -771,7 +793,7 @@ export class AbilityWorld {
     return (
       this.beams.some((b) => b.casterId === casterId) ||
       this.actions.some(
-        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'spin') && a.casterId === casterId,
+        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'spin' || a.kind === 'barrage') && a.casterId === casterId,
       )
     );
   }
@@ -1429,6 +1451,9 @@ export class AbilityWorld {
         this.actions.push({ kind: 'grab', casterId, targetId: best.id, def, dir, ageS: 0 });
         break;
       }
+      case 'barrage':
+        this.actions.push({ kind: 'barrage', casterId, def, ageS: 0, sinceS: d.hitIntervalS, lostS: 0, thrown: 0, landed: 0, finisherS: null });
+        break;
       case 'spin': {
         const angle0 = Math.atan2(dir.y, dir.x);
         if (host.carryingObject?.(casterId)) {
@@ -1996,7 +2021,9 @@ export class AbilityWorld {
                 ? this.stepAssault(a, dtS, host)
                 : a.kind === 'judgement'
                   ? this.stepJudgement(a, dtS, host)
-                  : a.kind === 'spin'
+                  : a.kind === 'barrage'
+                    ? this.stepBarrage(a, dtS, host)
+                    : a.kind === 'spin'
                     ? this.stepSpin(a, dtS, host)
                     : a.kind === 'fling'
                       ? this.stepFling(a, dtS, host)
@@ -2373,6 +2400,66 @@ export class AbilityWorld {
     if (!landed) return;
     host.face?.(casterId, dir);
     host.emit({ kind: 'release', ability: def.id, look: def.look, vfx: `${def.vfx}-streak`, sfx: def.sfx.release, x: at.x, y: at.y, dirX: dir.x, dirY: dir.y });
+  }
+
+  /** Quake Barrage's state for the caster's animation: which arm pair and punch is out, and whether the four-fist finisher is winding up. */
+  barrageOf(casterId: string): {
+    /** 0..1 through the current punch. */
+    k: number;
+    /** Which arm throws it: 0 near upper hook, 1 far lower straight, 2 far upper hook, 3 near lower straight, then varied. */
+    arm: 0 | 1 | 2 | 3;
+    thrown: number;
+    /** 0..1 through the finisher's wind-up, 1 while the four fists land, or null when it is not under way. */
+    finisher: number | null;
+  } | null {
+    const a = this.actions.find((x) => x.kind === 'barrage' && x.casterId === casterId) as BarrageAction | undefined;
+    const d = a?.def.delivery;
+    if (!a || d?.type !== 'barrage') return null;
+    if (a.finisherS !== null) return { k: 0, arm: 0, thrown: a.thrown, finisher: Math.min(1, a.finisherS / d.finisher.windupS) };
+    return { k: Math.min(1, a.sinceS / d.hitIntervalS), arm: barrageArm(a.thrown), thrown: a.thrown, finisher: null };
+  }
+
+  /** Quake Barrage: punch after punch at the nearest enemy in reach, then, if it is never escaped or broken, the four-fist finisher. */
+  private stepBarrage(a: BarrageAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'barrage') return true;
+    const caster = host.fighters().find((f) => f.id === a.casterId);
+    if (!caster?.hittable) return true;
+    a.ageS += dtS;
+    const at = { x: caster.x, y: caster.y };
+    const foe = this.nearestEnemy(a.casterId, at, d.reachM + 1.2, host);
+    const inReach = foe && Math.hypot(foe.x - at.x, foe.y - at.y) <= d.reachM + foe.radiusM + d.radiusM;
+    if (foe) host.face?.(a.casterId, norm({ x: foe.x - at.x, y: foe.y - at.y }));
+    // Out of reach for a moment: the barrage stops naturally, nobody is held in it.
+    a.lostS = inReach ? 0 : a.lostS + dtS;
+    if (a.lostS >= d.loseContactS || a.thrown >= d.maxHits) return true;
+    if (a.finisherS !== null) {
+      a.finisherS += dtS;
+      if (a.finisherS < d.finisher.windupS) return false;
+      if (foe?.hittable && inReach) {
+        const dir = norm({ x: foe.x - at.x, y: foe.y - at.y });
+        if (this.hit(host, a.casterId, foe.id, { ...a.def.payload, damage: d.finisher.damage, knockbackMps: d.finisher.knockbackMps, heavy: true, noFlinch: false }, dir, a.def.look?.hitFlash))
+          host.emit({ kind: 'impact', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.impact, x: foe.x, y: foe.y, radiusM: 1.8 });
+      }
+      return true;
+    }
+    a.sinceS += dtS;
+    if (a.sinceS < d.hitIntervalS) return false;
+    a.sinceS = 0;
+    if (!foe?.hittable || !inReach) return false;
+    if (a.landed >= d.finisherAfterHits) {
+      a.finisherS = 0;
+      return false;
+    }
+    const arm = barrageArm(a.thrown);
+    const punch = arm === 0 || arm === 2 ? d.hook : d.straight;
+    a.thrown++;
+    const dir = norm({ x: foe.x - at.x, y: foe.y - at.y });
+    if (this.hit(host, a.casterId, foe.id, { ...a.def.payload, damage: punch.damage, knockbackMps: punch.knockbackMps, noFlinch: true }, dir, a.def.look?.hitFlash)) {
+      a.landed++;
+      host.emit({ kind: 'impact', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.release, x: foe.x, y: foe.y, radiusM: 0.55 });
+    }
+    return false;
   }
 
   /** Spin Cycle's state for the caster's animation, or null when none is under way. */

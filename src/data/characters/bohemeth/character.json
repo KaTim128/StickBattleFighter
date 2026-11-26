@@ -2,7 +2,7 @@
   "id": "bohemeth",
   "template": "base-stickman",
   "displayName": "Bohemeth",
-  "description": "Nobody has ever counted how many blows Bohemeth throws in a second, because nobody has stayed standing long enough to try. Four arms, wrapped in the chains of every cage that failed to hold him, and a temper those chains were never going to hold either. He does not circle or posture: he walks straight at you, grabs what he can reach with two hands and hits it with the other two.",
+  "description": "Nobody has ever counted how many blows Bohemeth throws in a second, because nobody has stayed standing long enough to try. Four arms, and a temper no cage was ever going to hold. He does not circle or posture: he walks straight at you, grabs what he can reach with two hands and hits it with the other two.",
   "characterType": "fighter",
   "element": "none",
   "combatStyle": "brawling",

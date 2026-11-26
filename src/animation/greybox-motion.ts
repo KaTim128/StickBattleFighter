@@ -387,13 +387,15 @@ function calligrapherIdle(timeS: number, bones: BoneLengths): Pose {
   const sway = Math.sin(timeS * TAU * 0.14);
   const stroke = Math.max(0, Math.sin(timeS * TAU * 0.2)) ** 2;
   const legs = bones.thigh + bones.shin;
+  // Kung fu (owner, 26/11/2026): a low bow stance with the weight settling over the front leg, the brush hand extended low like a guard, the
+  // free hand held up in an open palm near the chin, shifting a little as if flowing between forms.
   return {
-    lean: deg(-9 + sway * 1.5),
+    lean: deg(-7 + sway * 1.5),
     head: deg(4 + stroke * 3),
-    armFront: { root: deg(38 + stroke * 14 + breath * 2), bend: deg(44 - stroke * 10) },
-    armBack: { root: deg(28 + sway * 3), bend: deg(62) },
-    legFront: legIk(0.34 + sway * 0.015, legs * 0.8 - breath * 0.008, bones.thigh, bones.shin),
-    legBack: legIk(-0.4 - sway * 0.015, legs * 0.8 - breath * 0.008, bones.thigh, bones.shin),
+    armFront: { root: deg(52 + stroke * 14 + breath * 2), bend: deg(34 - stroke * 10) },
+    armBack: { root: deg(82 + sway * 4), bend: deg(104 + breath * 3) },
+    legFront: legIk(0.42 + sway * 0.02, legs * 0.76 - breath * 0.01, bones.thigh, bones.shin),
+    legBack: legIk(-0.46 - sway * 0.02, legs * 0.78 - breath * 0.01, bones.thigh, bones.shin),
   };
 }
 

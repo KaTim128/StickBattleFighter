@@ -98,3 +98,7 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - 900 HP, 6.4 m/s, 62 kg; very fast, fragile. Taps: Volt jab, Arc cross, Spark elbow, Thunder spin kick; heavy Surge blast.
 - **Flashstep (Q):** 38 damage, 6 s. **Arc Lash (E):** 45 damage and a 3 s stun, 12 s. **Voltage Rush (F):** 5 hits of 13 (last x2.4), 11 s. **Static Break (R):** 42 damage counter, 10 s. **Thunder Circuit (fifth):** 3 s charge, 2 s beam, 18 per 0.15 s, 8 m, stun only in contact, 14 s.
 - **Overdrive (ult):** 8 s, +12% speed and attack speed, +6% melee damage, up to 2 chained Flashsteps. **Lightning Execution (ult button again):** 6 afterimage strikes of 13, then a dive blast (3 m, 11 m/s knockback).
+
+## Bohemeth: Quake Barrage; no chains; Inkmaster kung fu (26/11/2026)
+- **Bohemeth:** the chains are removed from his body and arms. **Chain Grab is replaced by Quake Barrage (fifth ability):** a run of rapid punches from all four arms (upper hooks 9, lower straights 11, one every 0.2 s, in a varied order of up to 24 punches) while he walks forward at half speed; no lock: it stops when the target is out of reach for 0.4 s or he is hit; after 10 landed blows he pulls all four arms back (0.4 s) and drives four fists into the chest for 55 damage and a 7 m/s push; 16 s. No stun on the barrage's punches.
+- **Inkmaster:** the three taps borrow kung fu forms (crane-stance palm strike, tiger-claw rake, dragon lunge in a bow stance) and the idle and select stance is a low bow stance with an open palm by the chin. Damage and timing unchanged.

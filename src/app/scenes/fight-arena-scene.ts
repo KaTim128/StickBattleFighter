@@ -18,7 +18,7 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose, judgementPose, spinPose, stalkPose, swoopPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose, barragePose, judgementPose, spinPose, stalkPose, swoopPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -4266,6 +4266,8 @@ export class FightArenaScene implements ArenaScene {
       if (assault) pose = assaultPose(pose, assault, cast.def.id);
       const spin = this.abilities?.world.spinOf(f.name);
       if (spin) pose = spinPose(pose, spin);
+      const barrage = this.abilities?.world.barrageOf(f.name);
+      if (barrage) pose = barragePose(pose, barrage);
       const swoop = this.abilities?.world.swoopOf(f.name);
       if (swoop !== null && swoop !== undefined) pose = swoopPose(pose, swoop);
       const judgement = this.abilities?.world.judgementOf(f.name);

@@ -122,8 +122,6 @@ export interface PremiumSkin {
   readonly ink?: 'master' | 'clone' | 'beast';
   /** Magix's top hat, bow tie and grin, or the white rabbit's ears and face. */
   readonly magic?: 'magician' | 'rabbit';
-  /** Heavy chains wrapped over the torso, shoulders and forearms, and a loose length swinging from the belt (Bohemeth). */
-  readonly chains?: { readonly iron: number; readonly lit: number; readonly shade: number };
   /** A second, lower pair of arms (the rig's `lowerArms` gives them their shoulders). */
   readonly fourArms?: boolean;
   /** Lightning that flickers round the hands and feet all the time, and in forks when he moves or is electrified (Voltar). */
@@ -731,7 +729,7 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     head: 'own',
     magic: 'rabbit',
   },
-  // Bohemeth: a dark reddish-brown four-armed brute wrapped in heavy iron chains: Titan's heavy build a little lighter and shorter, a bald
+  // Bohemeth: a dark reddish-brown four-armed brute: Titan's heavy build a little lighter and shorter, a bald
   // brow, iron bracers, dark trousers and a second pair of arms below the first.
   bohemeth: {
     palette: {
@@ -762,7 +760,6 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     fire: { core: false, veins: false, fists: false },
     head: 'brute',
     fourArms: true,
-    chains: { iron: 0x5a5058, lit: 0xb8b0b8, shade: 0x2a2228 },
   },
   // Training mannequin: a pale shell, ball joints, grey guards with hazard-yellow seams.
   solid: {
@@ -1011,9 +1008,7 @@ export class PremiumModel {
       if (this.st.shout) this.shoutMouth(g, fire, s);
     }
     if (s.armFront2) this.arm(g, fire, s.armFront2, false);
-    if (this.skin.chains) this.chains(g, s);
     this.arm(g, fire, s.armFront, false);
-    if (this.skin.chains) this.armChains(g, s);
     if (this.skin.gauntlets) this.gauntlet(g, fire, s.armFront, false);
     if (this.skin.ink === 'beast') {
       drawBeastClaws(g, s.armFront[1], s.armFront[2], 1.1);
@@ -1656,87 +1651,6 @@ export class PremiumModel {
     if (k > 0.6 && k < 0.95) {
       const b = (k - 0.6) / 0.35;
       fire.circle(c.x, c.y, 0.3 + b * 1.4).stroke({ width: 0.12 * (1 - b), color: 0xe9e2ff, alpha: 0.8 * (1 - b) });
-    }
-  }
-
-  /** One chain link: an oval, alternately face-on (a ring with a dark hole) and edge-on (a thin bar), lit from the top-left. */
-  private link(g: Graphics, at: Point, ang: number, face: boolean, size: number): void {
-    const ch = this.skin.chains!;
-    const out = this.c(this.P.outline);
-    const rx = face ? size : size * 0.42;
-    const ry = size * 0.62;
-    const ca = Math.cos(ang);
-    const sa = Math.sin(ang);
-    const pts = (k: number): number[] => {
-      const o: number[] = [];
-      for (let i = 0; i < 10; i++) {
-        const t = (i / 10) * Math.PI * 2;
-        const x = Math.cos(t) * rx * k;
-        const y = Math.sin(t) * ry * k;
-        o.push(at.x + x * ca - y * sa, at.y + x * sa + y * ca);
-      }
-      return o;
-    };
-    g.poly(pts(1.18)).fill(out);
-    g.poly(pts(1)).fill(this.c(ch.iron));
-    g.poly(pts(0.55)).fill({ color: this.c(face ? ch.shade : ch.lit), alpha: face ? 0.95 : 0.8 });
-    g.circle(at.x - rx * 0.3, at.y - ry * 0.4, size * 0.16).fill({ color: this.c(ch.lit), alpha: 0.9 });
-  }
-
-  /** A hanging or stretched run of links from `a` to `b`, sagging by `sag` metres, with a rolling shimmer along it. */
-  private chainRun(g: Graphics, a: Point, b: Point, sag: number, size: number): void {
-    const len = Math.hypot(b.x - a.x, b.y - a.y);
-    const n = Math.max(3, Math.round(len / (size * 1.5)));
-    let prev = a;
-    for (let i = 0; i <= n; i++) {
-      const u = i / n;
-      const p = { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u + Math.sin(u * Math.PI) * sag };
-      if (i > 0) this.link(g, p, Math.atan2(p.y - prev.y, p.x - prev.x), i % 2 === 0, size);
-      prev = p;
-    }
-  }
-
-  /**
-   * Bohemeth's chains over the torso: a heavy bandolier from one shoulder to the opposite hip, a loop round the waist, and a loose
-   * length hanging from the belt that swings with his motion and trails behind a charge.
-   */
-  private chains(g: Graphics, s: Skel): void {
-    if (!this.skin.chains) return;
-    const { t, w } = this.st;
-    const size = w * 0.15;
-    const chest = s.chest;
-    const pelvis = s.pelvis;
-    const sw = this.st.w * 0.9;
-    const shL = { x: chest.x - sw * 0.7, y: chest.y + 0.05 };
-    const hipL = { x: pelvis.x - sw * 0.6, y: pelvis.y - 0.04 };
-    const hipR = { x: pelvis.x + sw * 0.6, y: pelvis.y - 0.04 };
-    // One clean bandolier from the far shoulder to the near hip and a loop round the waist (a second crossing one, and a big ring where
-    // they met, piled up over the chest and the folded arms).
-    this.chainRun(g, shL, hipR, w * 0.06, size);
-    this.chainRun(g, hipL, hipR, w * 0.08, size);
-    // The loose end: a short length swinging from the belt.
-    const swing = Math.sin(t * 2.6) * 0.04 + (this.st.motion ?? 0) * 0.08 * Math.sin(t * 9);
-    this.chainRun(
-      g,
-      { x: pelvis.x + this.lx * 0.1, y: pelvis.y },
-      { x: pelvis.x - this.st.facing * (0.14 + swing), y: pelvis.y + 0.3 },
-      w * 0.08,
-      size * 0.9,
-    );
-  }
-
-  /** Chain wound round both upper forearms (drawn over the arms): a few links close to the wrist, with a loop at the elbow. */
-  private armChains(g: Graphics, s: Skel): void {
-    const ch = this.skin.chains;
-    if (!ch) return;
-    const size = this.st.w * 0.15;
-    // Not the far upper arm: it is drawn behind the head, and its chain, drawn on top, floated in front of the face.
-    for (const arm of [s.armFront, s.armFront2, s.armBack2]) {
-      if (!arm) continue;
-      const [, el, hand] = arm;
-      const a = { x: el.x + (hand.x - el.x) * 0.2, y: el.y + (hand.y - el.y) * 0.2 };
-      const b = { x: el.x + (hand.x - el.x) * 0.68, y: el.y + (hand.y - el.y) * 0.68 };
-      this.chainRun(g, a, b, this.st.w * 0.05, size);
     }
   }
 

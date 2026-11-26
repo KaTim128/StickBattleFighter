@@ -229,10 +229,10 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     ],
   },
   // Bohemeth: a four-armed brawler. Walks straight in, claps to stop a charger, grabs for the spin or the uppercut up close, leaps in with
-  // the smash, chains a distant target in, and lights his fists once the fight is on.
+  // the smash, barrages anyone up close, and lights his fists once the fight is on.
   'bohemeth-ai': {
     style:
-      'Four-armed heavyweight: straight in, a clap against charges, spin and uppercut up close, a leaping smash, a chain for anyone who keeps away.',
+      'Four-armed heavyweight: straight in, a clap against charges, spin and uppercut up close, a leaping smash, a punching barrage up close.',
     preferredRangeM: [0, 1.4],
     movement: 'direct',
     meleeBias: 0.9,
@@ -459,8 +459,8 @@ export const GENERIC_DESIGN: BrainDesign = {
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   // Thunder Circuit: a three-second charge is only worth it against a target that is stunned, bound or far enough to be out of reach of a punish.
   thunderCircuit: { role: 'control', minM: 3, maxM: 7.5, weight: 1, when: { targetHelpless: true } },
-  // Chain Grab: reach out at anyone keeping away.
-  chainGrab: { role: 'control', minM: 3, maxM: 8, weight: 1.3 },
+  // Quake Barrage: a punching barrage on anyone in reach.
+  quakeBarrage: { role: 'burst', minM: 0, maxM: 1.8, weight: 1.3 },
   // Lucky Hat: a gamble worth taking at any range, a little more readily once a fight is under way.
   luckyHat: { role: 'buff', minM: 0, maxM: 9, weight: 1, when: { selfHpBelow: 0.95 } },
   // Ink Spear: a transformation to use when the target is within a spear's reach of closing in.

@@ -847,6 +847,26 @@ export interface GrabDelivery {
 }
 
 /**
+ * Quake Barrage (Bohemeth): a continuous run of rapid punches from all four arms at the nearest enemy in reach, one every `hitIntervalS`,
+ * the upper arms alternating heavy hooks (`hook`) and the lower arms powerful straights (`straight`), in a varied order. He can walk
+ * while it lasts (the ability's `moveFactor`). It is never a lock: it stops if no enemy has been within `reachM` for `loseContactS`, if
+ * he is hit (`breaksOnHit`), or after `maxHits`. After `finisherAfterHits` landed blows he pulls all four arms back for `windupS` and
+ * drives all four fists into the chest at once (the payload multiplied by `finisher.damageFactor`, with its knockback).
+ */
+export interface BarrageDelivery {
+  readonly type: 'barrage';
+  readonly reachM: number;
+  readonly radiusM: number;
+  readonly hitIntervalS: number;
+  readonly hook: { readonly damage: number; readonly knockbackMps: number };
+  readonly straight: { readonly damage: number; readonly knockbackMps: number };
+  readonly loseContactS: number;
+  readonly maxHits: number;
+  readonly finisherAfterHits: number;
+  readonly finisher: { readonly windupS: number; readonly damage: number; readonly knockbackMps: number };
+}
+
+/**
  * Spin Cycle (Bohemeth), one ability with two forms. Holding an object: he spins `object.turns` times with it at arm's length
  * and hurls it level (flat, fast, not overhead). Otherwise: he seizes the nearest enemy within `reachM`, claps their head between
  * the upper hands (`clap`: slight damage and a daze), takes a leg in the lower hands and swings them round `turns` times (lighter
@@ -1036,7 +1056,8 @@ export type Delivery =
   | TossDelivery
   | EchoDelivery
   | AssaultDelivery
-  | SpinDelivery;
+  | SpinDelivery
+  | BarrageDelivery;
 
 /**
  * How a magic attack looks and feels, stage by stage (the Magic Attack VFX Standard,

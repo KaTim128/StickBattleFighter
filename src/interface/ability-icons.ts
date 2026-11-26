@@ -700,10 +700,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 18, '#f3e3c2', 0.2),
     `<g filter="url(#ds)"><path d="M10 6 L16 24 M18 4 L21 24 M30 4 L27 24 M38 6 L32 24" stroke="#7a3a28" stroke-width="4.4" stroke-linecap="round"/><circle cx="16" cy="26" r="3.4" fill="#a8573a"/><circle cx="21" cy="26" r="3.4" fill="#a8573a"/><circle cx="27" cy="26" r="3.4" fill="#a8573a"/><circle cx="32" cy="26" r="3.4" fill="#a8573a"/></g><path d="M4 38 L12 32 L20 38 L24 30 L28 38 L36 32 L44 38" stroke="#22170c" stroke-width="2.4" fill="none" stroke-linejoin="round"/><path d="M6 42 H42" stroke="#f3e3c2" stroke-width="2" opacity=".6"/>`,
   ),
-  'chain-grab': icon(
+  'quake-barrage': icon(
     'earth',
-    rays(24, 24, 16, '#f3e3c2', 0.16),
-    `<g filter="url(#ds)" fill="#5a5058" stroke="#22170c" stroke-width="1.4"><ellipse cx="9" cy="36" rx="5" ry="3" transform="rotate(-30 9 36)"/><ellipse cx="17" cy="30" rx="5" ry="3" transform="rotate(-30 17 30)" fill="#9a909a"/><ellipse cx="25" cy="24" rx="5" ry="3" transform="rotate(-30 25 24)"/><ellipse cx="33" cy="18" rx="5" ry="3" transform="rotate(-30 33 18)" fill="#9a909a"/></g><path d="M36 8 L44 10 L42 18 L36 16 Z" fill="#8a8490" stroke="#22170c" stroke-width="1.6" stroke-linejoin="round"/>`,
+    rays(24, 24, 16, '#f3e3c2', 0.2),
+    `<g filter="url(#ds)" fill="#a8573a" stroke="#22170c" stroke-width="1.6"><circle cx="12" cy="14" r="5.5"/><circle cx="36" cy="14" r="5.5"/><circle cx="14" cy="32" r="5.5"/><circle cx="34" cy="32" r="5.5"/></g><path d="M18 14 H30 M18 32 H30 M6 22 H42" stroke="#f3e3c2" stroke-width="2.4" stroke-linecap="round" opacity=".75"/><circle cx="24" cy="24" r="4.5" fill="#fff4c2" opacity=".85"/>`,
   ),
   'fiery-fists': icon(
     'fire',

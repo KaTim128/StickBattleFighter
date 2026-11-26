@@ -1602,23 +1602,25 @@ const STRIKES = {
   ),
   // Necro: the staff swept back over his shoulder, then driven forward in a soul-charged thrust.
   // Inkmaster: the brush is held in the lead hand like a calligrapher's, and every blow is a stroke written in the air.
+  // Kung fu (owner, 26/11/2026): the taps borrow the forms of a martial art. The sweep is a crane-stance palm strike (knee lifted, open palm
+  // driven out while the brush arcs), the flick a tiger-claw rake from a turned horse stance, the heavy stroke a dragon-form lunge in a deep bow stance.
   'inkmaster.brush-sweep': strike(
-    { lean: deg(10), head: deg(4), armBack: limb(-25, 100), armFront: limb(8, 64), legFront: limb(20, -20) },
-    { lean: deg(-12), head: deg(10), armBack: limb(70, 30), armFront: limb(70, 14), legBack: limb(-22, -8) },
+    { lean: deg(6), head: deg(4), armBack: limb(-20, 108), armFront: limb(8, 64), legFront: limb(58, -104), legBack: limb(-8, -14) },
+    { lean: deg(-14), head: deg(10), armBack: limb(92, 12), armFront: limb(70, 14), legFront: limb(34, -22), legBack: limb(-30, -26) },
   ),
   'inkmaster.brush-flick': strike(
-    { lean: deg(-6), head: deg(2), armBack: limb(20, 110), armFront: limb(96, 72) },
-    { lean: deg(-22), head: deg(12), armBack: limb(34, 100), armFront: limb(20, 8), legFront: limb(34, -34) },
+    { lean: deg(14), head: deg(0), armBack: limb(30, 84), armFront: limb(112, 72), legFront: limb(30, -44), legBack: limb(-36, -44) },
+    { lean: deg(-24), head: deg(12), armBack: limb(88, 90), armFront: limb(24, 8), legFront: limb(42, -36), legBack: limb(-44, -30) },
   ),
   'inkmaster.heavy-stroke': strike(
-    { lean: deg(16), head: deg(-4), armBack: limb(-70, 100), armFront: limb(160, 50), legFront: limb(24, -22) },
+    { lean: deg(14), head: deg(-4), armBack: limb(-60, 96), armFront: limb(150, 50), legFront: limb(24, -60), legBack: limb(-34, -56) },
     {
-      lean: deg(-32),
+      lean: deg(-34),
       head: deg(16),
-      armBack: limb(100, 20),
+      armBack: limb(100, 6),
       armFront: limb(52, 6),
-      legFront: limb(48, -58),
-      legBack: limb(-34, -10),
+      legFront: limb(58, -74),
+      legBack: limb(-40, -14),
     },
   ),
   'inkmaster.plunge': strike(

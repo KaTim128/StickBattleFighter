@@ -14,7 +14,14 @@ import { initPhysics } from '../../../src/physics/physics-world';
 const STEP = 1 / 60;
 
 /** Bohemeth in the real fight scene against a chosen opponent. */
-async function setup(opponent = 'training-dummy', gap = 4, from = 13, extra: Partial<ArenaLayout> = {}, player = 'bohemeth') {
+async function setup(
+  opponent = 'training-dummy',
+  gap = 4,
+  from = 13,
+  extra: Partial<ArenaLayout> = {},
+  player = 'bohemeth',
+  equipped: string[] = [],
+) {
   const intents = new PlayerIntents();
   const scene = new FightArenaScene(
     { ...TRAINING_YARD, ...extra, playerStart: { x: from, y: 13 }, dummyStart: { x: from + gap, y: 13 } },
@@ -22,7 +29,7 @@ async function setup(opponent = 'training-dummy', gap = 4, from = 13, extra: Par
     intents,
     () => ({ width: 1280, height: 720 }),
     false,
-    { player, opponent },
+    { player, opponent, loadouts: { player: { equipped } } },
   );
   const scenes = new SceneManager();
   await scenes.switchTo(() => scene);
@@ -348,23 +355,71 @@ describe('Bohemeth', () => {
     expect(normal.maxLift).toBe(titan.maxLift); // the strength only comes with the ultimate
   }, 60_000);
 
-  it('Chain Grab: the chain travels, drags the opponent in, they arrive stunned and are punched down', async () => {
-    const { scene, scenes, run, runUntil, cast, me, foe } = await setup('training-dummy', 6);
-    me().combatant.stamina = 100;
-    const startGap = Math.hypot(foe().x - me().x, foe().y - me().y);
-    scene.abilities!.world.release(me().name, me().caster!.kit.a5!, { x: foe().x, y: foe().y }, scene.abilities!);
-    void cast;
-    runUntil(() => scene.abilities!.world.projectiles.length > 0, 1);
-    expect(scene.abilities!.world.projectiles.length).toBeGreaterThan(0); // visibly in flight
-    runUntil(() => scene.abilities!.world.projectiles.length === 0, 2);
-    run(0.2);
-    const gapNow = Math.hypot(foe().x - me().x, foe().y - me().y);
-    expect(gapNow).toBeLessThan(startGap); // hauled in, not teleported
-    const hp = scene.dummy.hp;
-    run(1.5);
-    expect(scene.dummy.hp).toBeLessThan(hp); // the finishing punch
-    scenes.clear();
-  }, 30_000);
+  describe('Quake Barrage', () => {
+    const quake = async (gap = 1.2) => {
+      // The fifth ability is on the bench: the loadout puts it on the third slot.
+      const t = await setup('training-dummy', gap, 13, {}, 'bohemeth', ['spinCycle', 'uppercutCombo', 'quakeBarrage', 'bohemethGroundSmash']);
+      t.me().combatant.stamina = 100;
+      t.cast('a3');
+      return t;
+    };
+
+    it('throws a long run of punches from all four arms (more than four, in a varied order) and ends in a four-fist finisher', async () => {
+      const { scene, scenes, run, runUntil, me, foe } = await quake();
+      const arms = new Set<number>();
+      let last = foe().combatant.hp;
+      const hits: number[] = [];
+      let beforeFinisher: number | null = null;
+      for (let i = 0; i < 9 / STEP; i++) {
+        run(STEP); // each landed blow also freezes the sim for a hit-stop, so real time runs longer than the barrage
+        const st = scene.abilities!.world.barrageOf(me().name);
+        if (st && st.finisher === null) arms.add(st.arm);
+        if (st && st.finisher !== null && beforeFinisher === null) beforeFinisher = foe().x;
+        const hp = foe().combatant.hp;
+        if (hp < last) hits.push(last - hp);
+        last = hp;
+      }
+      expect(hits.length).toBeGreaterThan(8); // far more than a fixed four-hit string
+      expect(arms.size).toBe(4); // all four arms throw
+      expect(Math.max(...hits)).toBeGreaterThan(40); // the finisher
+      expect(foe().x - beforeFinisher!).toBeGreaterThan(0.25); // and it knocks them back
+      void runUntil;
+      scenes.clear();
+    }, 60_000);
+
+    it('is no lock: a target that gets out of reach ends the barrage with no finisher', async () => {
+      const { scene, scenes, run, me, foe } = await quake();
+      run(0.8);
+      expect(scene.abilities!.world.barrageOf(me().name)).not.toBeNull();
+      foe().body!.setTranslation({ x: me().x + 4, y: me().y }, true);
+      run(0.8);
+      expect(scene.abilities!.world.barrageOf(me().name)).toBeNull();
+      const hp = foe().combatant.hp;
+      run(1);
+      expect(foe().combatant.hp).toBe(hp); // nothing more lands
+      scenes.clear();
+    }, 60_000);
+
+    it('stops when Bohemeth is hit, and he can walk forward while it runs', async () => {
+      const { scene, scenes, run, me, foe, intents } = await quake(1.4);
+      intents.setMove('t', { x: 1, y: 0 });
+      const x0 = me().x;
+      run(0.8);
+      expect(me().x).toBeGreaterThan(x0 + 0.2); // walking in while punching
+      intents.setMove('t', { x: 0, y: 0 });
+      (scene as unknown as { applyStrike: (a: unknown, t: unknown, s: unknown) => boolean }).applyStrike(foe(), me(), {
+        damage: 40,
+        heavy: true,
+        knockbackMps: 2,
+        dir: { x: -1, y: 0 },
+        melee: true,
+        impact: 'knuckle-heavy',
+      });
+      run(0.2);
+      expect(scene.abilities!.world.barrageOf(me().name)).toBeNull();
+      scenes.clear();
+    }, 60_000);
+  });
 
   it('Fiery Fists: 20% faster attacks for 12 s, flames on all four fists, nothing left behind afterwards', async () => {
     const { scene, scenes, run, runUntil, cast, me } = await setup();

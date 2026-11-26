@@ -2,10 +2,10 @@ import type { AbilityKit } from '../../abilities/ability-def';
 import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
- * Bohemeth's kit (owner, 25/11/2026; reworked 26/11/2026): a four-armed, chain-wrapped heavyweight. His extra arms create mechanics
+ * Bohemeth's kit (owner, 25/11/2026; reworked 26/11/2026): a four-armed heavyweight. His extra arms create mechanics
  * rather than multiplying damage: Spin Cycle (swing a held object, or a seized opponent, round and let go), an Uppercut Combo
  * (upper hands seize, one hand uppercuts, the other punches them back down), a huge Thunder Clap that stops charges, a long Ground
- * Smash leap, and a chain that drags opponents in for a punch. The ultimate sets all four fists alight: 20% faster attacks, heavier
+ * Smash leap, and a quake barrage of four-fisted punches. The ultimate sets all four fists alight: 20% faster attacks, heavier
  * knockback, 5% more size, stronger than Titan with heavy objects, and a Ground Smash that crosses almost the whole arena.
  * Values are PROVISIONAL (OQ-05).
  */
@@ -191,45 +191,39 @@ export const BOHEMETH_KIT: AbilityKit = {
     sfx: { cast: 'bohemeth-grunt', release: 'bohemeth-leap', impact: 'bohemeth-quake' },
     look: { palette: IRON, impact: { ...dust(2.6, 0.9), scorchM: 0.8 }, hitFlash: 0xffffff },
   },
-  // A5 (fifth): Chain Grab. He frees a length of chain, throws it, drags the opponent in and punches them to the floor.
+  // A5 (fifth): Quake Barrage. A run of rapid punches from all four arms while he advances; if it is never escaped, a four-fist finisher.
   a5: {
-    id: 'chainGrab',
-    name: 'Chain Grab',
-    label: 'CHAIN',
+    id: 'quakeBarrage',
+    name: 'Quake Barrage',
+    label: 'BARRAGE',
     description:
-      'Unwinds a length of the chain from his body and throws it at the opponent. If it catches, it wraps round them and he hauls them in, heavier fighters more slowly. They arrive stunned, and he punches them to the floor. A miss rattles back to him.',
-    icon: 'chain-grab',
+      'Unleashes a continuous barrage of rapid punches from all four arms: heavy hooks from the upper pair, powerful straights from the lower, in a changing order. He can walk or run slowly forward while punching to follow someone who backs away. It is no lock: it stops if the target gets out of reach or he is hit. If it keeps going long enough, he pulls all four arms back and drives all four fists into their chest at once for a heavy blow and a push.',
+    icon: 'quake-barrage',
     slot: 'a3',
-    staminaCost: 30,
-    cooldownS: 17,
-    castS: 0.4,
+    staminaCost: 32,
+    cooldownS: 16,
+    castS: 0.3,
     recoveryS: 0.7,
-    aimRangeM: 8.5,
-    moveFactor: 0.2,
+    aimRangeM: 2,
+    moveFactor: 0.5,
     interruptible: true,
-    payload: {
-      damage: 14,
-      knockbackMps: 0,
-      heavy: false,
-      strength: 300,
-      impact: 'knuckle-light',
-      stunS: 1.4,
-      pull: {
-        speedMps: 12,
-        stopM: 0.9,
-        refKg: 100,
-        followUp: { damage: 50, knockbackMps: 5, heavy: true, strength: 1200, impact: 'knuckle-heavy' },
-      },
+    breaksOnHit: true,
+    payload: { damage: 10, knockbackMps: 0.8, heavy: false, strength: 700, impact: 'knuckle-heavy' },
+    delivery: {
+      type: 'barrage',
+      reachM: 1.5,
+      radiusM: 0.55,
+      hitIntervalS: 0.2,
+      hook: { damage: 9, knockbackMps: 0.9 },
+      straight: { damage: 11, knockbackMps: 0.7 },
+      loseContactS: 0.4,
+      maxHits: 24,
+      finisherAfterHits: 10,
+      finisher: { windupS: 0.4, damage: 55, knockbackMps: 7 },
     },
-    delivery: { type: 'projectile', speedMps: 18, radiusM: 0.35, maxRangeM: 8.5 },
-    vfx: 'chain-grab',
-    sfx: { cast: 'chain-unwind', release: 'chain-throw', impact: 'chain-snap' },
-    look: {
-      palette: IRON,
-      flight: { trailPerS: 40, sparksPerS: 10, shimmer: false },
-      impact: dust(1.2, 0.3),
-      hitFlash: 0xffd0a0,
-    },
+    vfx: 'quake-barrage',
+    sfx: { cast: 'bohemeth-grunt', release: 'quake-punch', impact: 'quake-finisher' },
+    look: { palette: IRON, impact: dust(1.4, 0.35), hitFlash: 0xffd0a0 },
   },
   // ULT (I): Fiery Fists. All four fists catch fire; his attacks are 20% faster until it burns out.
   ult: {

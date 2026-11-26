@@ -18,6 +18,8 @@ function castDamage(a: AbilityDef): number {
   if (d.type === 'beam') return (a.payload.damage * Math.round(d.durationS / d.tickS)) / 2; // half the ticks connect
   if (d.type === 'whirl') return a.payload.damage * Math.round(d.durationS / d.tickS);
   // Spin Cycle: the clap, then the launch at about 70% of its full distance. Uppercut Combo: the uppercut and the punch that follows it.
+  // Quake Barrage: every punch landing up to the finisher, then the finisher.
+  if (d.type === 'barrage') return d.finisherAfterHits * ((d.hook.damage + d.straight.damage) / 2) + d.finisher.damage;
   if (d.type === 'spin') return d.clap.damage + d.launch.baseDamage + d.launch.damagePerM * d.launch.maxDistM * 0.7;
   if (d.type === 'grab' && d.uppercut?.followUp) return a.payload.damage + d.uppercut.followUp.payload.damage;
   if (d.type === 'drone') return (d.shot.payload.damage * (d.durationS / d.intervalS)) / 2; // half its shots land

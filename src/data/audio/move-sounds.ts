@@ -877,6 +877,8 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   'volt-overdrive-pop': [tone('sine', 80, 30, 0.4, 0.6), noise('highpass', 2000, undefined, 0.4, 0.3, 1, 0, { flutter: 40 })],
   'volt-vanish': [tone('sawtooth', 200, 3000, 0.25, 0.22), noise('highpass', 3000, undefined, 0.25, 0.3, 1)],
   'volt-vanish-out': [tone('square', 2500, 150, 0.25, 0.2), noise('highpass', 2500, undefined, 0.25, 0.26, 1, 0, { flutter: 70 })],
+  'quake-punch': [tone('sine', 110, 50, 0.1, 0.6), noise('lowpass', 1400, 400, 0.08, 0.5, 0.9)],
+  'quake-finisher': [tone('sine', 80, 28, 0.4, 0.95, 0, 0.3), noise('lowpass', 1000, 150, 0.35, 0.7, 0.9), tone('sine', 220, 70, 0.2, 0.4)],
   'hit-voltar-surge-blast': [tone('sine', 150, 50, 0.3, 0.6), tone('square', 1400, 150, 0.25, 0.25), noise('highpass', 2200, undefined, 0.3, 0.4, 1)],
   // ---------------------------------------------------------------- Bohemeth: four heavy fists, iron chain and thunder
   'hit-bohemeth-upper-jab': [tone('sine', 140, 60, 0.12, 0.7), noise('lowpass', 1500, 500, 0.08, 0.5, 0.9)],
