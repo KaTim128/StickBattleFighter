@@ -1544,33 +1544,76 @@ export class StickmanView {
       g.circle(sh.x + ux * 0.06, sh.y + uy * 0.06, r * 0.22).fill(0xd9c8ff);
     }
     if (this.held === 'pistols') {
-      // Gunsmith: a pistol in each hand, barrels along the forearms.
+      // Gunsmith: a detailed pistol in each hand. A steel slide with a lighter top edge and serrations, a dark barrel with a muzzle ring, a
+      // rear sight and hammer, a trigger guard with the trigger, a chequered walnut grip with a brass medallion, all along the forearm.
       for (const arm of [s.armFront, s.armBack]) {
         const [, el, hd] = arm;
         const px = hd.x - el.x;
         const py = hd.y - el.y;
         const pl = Math.hypot(px, py) || 1;
-        const qx = px / pl;
-        const qy = py / pl;
-        const tip = { x: hd.x + qx * 0.34, y: hd.y + qy * 0.34 };
-        g.moveTo(hd.x, hd.y).lineTo(tip.x, tip.y).stroke({ width: 0.07 + o * 2, color: 0x0c0c10, cap: 'round' });
-        g.moveTo(hd.x, hd.y).lineTo(tip.x, tip.y).stroke({ width: 0.055, color: 0x8a8f9a, cap: 'round' });
-        g.moveTo(hd.x + qx * 0.04, hd.y + qy * 0.04)
-          .lineTo(hd.x - qy * 0.1 - qx * 0.02, hd.y + qx * 0.1 - qy * 0.02)
-          .stroke({ width: 0.05, color: 0x5a3a1c, cap: 'round' });
+        const ux2 = px / pl;
+        const uy2 = py / pl;
+        const nx = -uy2; // sideways (up for a pistol pointing along +x)
+        const ny = ux2;
+        const GUN = 0.68; // sized to sit in the hand: the grip is what the fist closes round
+        const at = (along: number, side: number) => ({ x: hd.x + (ux2 * along + nx * side) * GUN, y: hd.y + (uy2 * along + ny * side) * GUN });
+        const poly = (pts: { x: number; y: number }[], fill: number, edge = 0x0a0a0e) =>
+          g.poly(pts.flatMap((p) => [p.x, p.y])).fill(fill).stroke({ width: 0.012 + o, color: edge, join: 'round' });
+        // Grip, set back and down from the frame, with chequering and a medallion.
+        poly([at(-0.07, 0.01), at(0.05, 0.01), at(0.02, 0.2), at(-0.1, 0.19)], 0x6b3f1c);
+        g.moveTo(at(-0.06, 0.05).x, at(-0.06, 0.05).y).lineTo(at(0.0, 0.17).x, at(0.0, 0.17).y).stroke({ width: 0.006, color: 0x3a210e, alpha: 0.9 });
+        g.circle(at(-0.03, 0.11).x, at(-0.03, 0.11).y, 0.014).fill(0xd9a030);
+        // Trigger guard and trigger.
+        g.moveTo(at(0.05, 0.02).x, at(0.05, 0.02).y)
+          .quadraticCurveTo(at(0.1, 0.12).x, at(0.1, 0.12).y, at(0.16, 0.03).x, at(0.16, 0.03).y)
+          .stroke({ width: 0.016, color: 0x2a2d36, cap: 'round' });
+        g.moveTo(at(0.1, 0.03).x, at(0.1, 0.03).y).lineTo(at(0.1, 0.075).x, at(0.1, 0.075).y).stroke({ width: 0.012, color: 0xb8bcc8, cap: 'round' });
+        // Frame, then the slide with its lit top edge, serrations, ejection port and front sight.
+        poly([at(-0.08, -0.02), at(0.18, -0.02), at(0.18, 0.03), at(-0.08, 0.04)], 0x4a4e5a);
+        poly([at(-0.1, -0.1), at(0.36, -0.1), at(0.36, -0.02), at(-0.1, -0.02)], 0x9aa0ae);
+        g.moveTo(at(-0.1, -0.1).x, at(-0.1, -0.1).y).lineTo(at(0.36, -0.1).x, at(0.36, -0.1).y).stroke({ width: 0.012, color: 0xf2f4fa, cap: 'round' });
+        for (let k = 0; k < 4; k++) {
+          const q = -0.085 + k * 0.022;
+          g.moveTo(at(q, -0.095).x, at(q, -0.095).y).lineTo(at(q - 0.012, -0.03).x, at(q - 0.012, -0.03).y).stroke({ width: 0.007, color: 0x2e323c });
+        }
+        poly([at(0.1, -0.09), at(0.2, -0.09), at(0.2, -0.05), at(0.1, -0.05)], 0x1a1c22);
+        // Barrel with a muzzle ring and the sights.
+        poly([at(0.36, -0.085), at(0.46, -0.085), at(0.46, -0.04), at(0.36, -0.04)], 0x2a2d36);
+        g.circle(at(0.46, -0.0625).x, at(0.46, -0.0625).y, 0.02).fill(0x08080a).stroke({ width: 0.008, color: 0xc8ccd8 });
+        poly([at(0.33, -0.12), at(0.36, -0.12), at(0.36, -0.1), at(0.33, -0.1)], 0x0a0a0e);
+        poly([at(-0.1, -0.13), at(-0.07, -0.13), at(-0.07, -0.1), at(-0.1, -0.1)], 0x0a0a0e);
+        // The hammer at the back.
+        g.moveTo(at(-0.1, -0.08).x, at(-0.1, -0.08).y).lineTo(at(-0.14, -0.12).x, at(-0.14, -0.12).y).stroke({ width: 0.014, color: 0x5a5f6c, cap: 'round' });
       }
       return;
     }
     if (this.held === 'sickle') {
-      // Sickle Wielder: a short handle in the lead hand and a long, curved, rusted blade hooking forward and down.
-      const tip = { x: hand.x + ux * 0.3, y: hand.y + uy * 0.3 };
-      g.moveTo(hand.x - ux * 0.1, hand.y - uy * 0.1).lineTo(tip.x, tip.y).stroke({ width: 0.05 + o * 2, color: 0x2a1c10, cap: 'round' });
-      const b1 = { x: tip.x + ux * 0.3 - uy * 0.22, y: tip.y + uy * 0.3 + ux * 0.22 };
-      const b2 = { x: tip.x + ux * 0.46 - uy * 0.52, y: tip.y + uy * 0.46 + ux * 0.52 };
-      g.moveTo(tip.x, tip.y).quadraticCurveTo(b1.x, b1.y, b2.x, b2.y).stroke({ width: 0.09 + o * 2, color: 0x14160e, cap: 'round' });
-      g.moveTo(tip.x, tip.y).quadraticCurveTo(b1.x, b1.y, b2.x, b2.y).stroke({ width: 0.06, color: 0x9aa58a, cap: 'round' });
-      g.moveTo(tip.x, tip.y).quadraticCurveTo(b1.x, b1.y, b2.x, b2.y).stroke({ width: 0.016, color: 0xe6efd6, cap: 'round', alpha: 0.9 });
-      this.bladeTip = { tip: b2, inner: tip };
+      // Sickle Wielder: a short dark handle and a long, razor-sharp white steel blade: a wide curve tapering to a needle point, with a bright
+      // cutting edge on the inside, a darker spine and a bright glint along it.
+      const tip = { x: hand.x + ux * 0.2, y: hand.y + uy * 0.2 };
+      g.moveTo(hand.x - ux * 0.12, hand.y - uy * 0.12).lineTo(tip.x, tip.y).stroke({ width: 0.05 + o * 2, color: 0x1a120a, cap: 'round' });
+      g.moveTo(hand.x - ux * 0.08, hand.y - uy * 0.08).lineTo(tip.x - ux * 0.02, tip.y - uy * 0.02).stroke({ width: 0.03, color: 0x4a3420, cap: 'round' });
+      g.circle(tip.x, tip.y, 0.04 + o).fill(0x2a2d36); // the guard
+      const P = (f: number, side: number) => ({
+        x: tip.x + ux * f * 0.72 - uy * side * 0.8,
+        y: tip.y + uy * f * 0.72 + ux * side * 0.8,
+      });
+      // Outer (spine) edge and inner (cutting) edge of a curved blade that ends in a point.
+      const spine = [P(0.0, 0.03), P(0.22, 0.2), P(0.42, 0.5), P(0.5, 0.82)];
+      const edge = [P(0.0, -0.03), P(0.17, 0.08), P(0.33, 0.34), P(0.5, 0.82)];
+      g.moveTo(spine[0]!.x, spine[0]!.y)
+        .quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y)
+        .quadraticCurveTo(P(0.47, 0.66).x, P(0.47, 0.66).y, spine[3]!.x, spine[3]!.y)
+        .quadraticCurveTo(edge[2]!.x, edge[2]!.y, edge[1]!.x, edge[1]!.y)
+        .quadraticCurveTo(P(0.08, 0.0).x, P(0.08, 0.0).y, edge[0]!.x, edge[0]!.y)
+        .closePath()
+        .fill(0xf4f6fa)
+        .stroke({ width: 0.016 + o, color: 0x1a1c24, join: 'round' });
+      // The darker spine strip and the bright cutting edge.
+      g.moveTo(spine[0]!.x, spine[0]!.y).quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y).stroke({ width: 0.022, color: 0xaab0c0, cap: 'round' });
+      g.moveTo(edge[0]!.x, edge[0]!.y).quadraticCurveTo(edge[1]!.x, edge[1]!.y, edge[2]!.x, edge[2]!.y).stroke({ width: 0.01, color: 0xffffff, cap: 'round' });
+      g.moveTo(P(0.06, 0.02).x, P(0.06, 0.02).y).quadraticCurveTo(P(0.24, 0.14).x, P(0.24, 0.14).y, P(0.38, 0.4).x, P(0.38, 0.4).y).stroke({ width: 0.008, color: 0xcfe0ff, alpha: 0.9, cap: 'round' });
+      this.bladeTip = { tip: spine[3]!, inner: tip };
       return;
     }
     if (this.held === 'staff') {

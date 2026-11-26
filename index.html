@@ -885,10 +885,10 @@
       /* Fighter picker (owner, 21/11/2026): beside the stickman, on the right, four tiles to a row, scrolling for the rest. */
       .fe-roster {
         grid-area: roster; display: grid; grid-template-columns: repeat(4, 66px); gap: 8px; justify-content: end; align-content: start;
-        min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 3px 6px 3px 3px;
+        min-height: 0; max-height: 100%; align-self: stretch; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 3px 6px 3px 3px;
         scrollbar-width: thin; scrollbar-color: rgba(255, 138, 61, 0.6) transparent; -webkit-overflow-scrolling: touch;
       }
-      .fe-tile { position: relative; width: 66px; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid rgba(232, 237, 245, 0.2); background: #12151c; cursor: pointer; transform: skewX(-6deg); }
+      .fe-tile { position: relative; width: 66px; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid rgba(232, 237, 245, 0.2); background: #12151c; cursor: pointer; transform: skewX(-6deg); touch-action: pan-y; }
       .fe-tile-face { display: block; width: 100%; aspect-ratio: 1; }
       .fe-tile-name { display: block; padding: 2px 0; font: 800 10px system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: rgba(0, 0, 0, 0.6); }
       .fe-tile.selected { border-color: var(--tile, #ff8a3d); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tile, #ff8a3d) 45%, transparent), 0 0 16px color-mix(in srgb, var(--tile, #ff8a3d) 55%, transparent); }

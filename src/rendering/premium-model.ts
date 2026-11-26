@@ -504,7 +504,7 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     fire: { core: false, veins: false, fists: false },
     head: 'own',
     garment: { hem: 'coat', trim: 0xc89030, cloth: [0x2a1c12, 0x4a3422, 0x120a04] },
-    glasses: { frame: 0x111114, lens: 0x9fd0ff },
+    glasses: { frame: 0x050507, lens: 0x07080c },
     holsters: { leather: 0x4a2c14, metal: 0x8a8f9a },
   },
   // Sickle Wielder (owner, 26/11/2026): a sinister swamp-green stickman, lean and bare, in a tattered dark green wrap, always low to the ground.
@@ -1751,11 +1751,12 @@ export class PremiumModel {
     const r = this.st.headRadius;
     const h = s.head;
     const lens = [{ x: h.x + r * 0.62, y: h.y - r * 0.02 }, { x: h.x + r * 0.12, y: h.y - r * 0.02 }];
-    g.moveTo(lens[1]!.x - r * 0.26, lens[1]!.y).lineTo(h.x - r * 0.8, h.y - r * 0.06).stroke({ width: r * 0.1, color: this.c(gl.frame) });
+    g.moveTo(lens[1]!.x - r * 0.26, lens[1]!.y).lineTo(h.x - r * 0.8, h.y - r * 0.06).stroke({ width: r * 0.12, color: this.c(gl.frame) });
     g.moveTo(lens[0]!.x - r * 0.26, lens[0]!.y).lineTo(lens[1]!.x + r * 0.26, lens[1]!.y).stroke({ width: r * 0.1, color: this.c(gl.frame) });
     for (const l of lens) {
-      g.circle(l.x, l.y, r * 0.3).fill({ color: this.c(gl.lens), alpha: 0.85 }).stroke({ width: r * 0.12, color: this.c(gl.frame) });
-      g.circle(l.x - r * 0.08, l.y - r * 0.09, r * 0.07).fill({ color: 0xffffff, alpha: 0.9 });
+      // Dark, cool shades: near-black lenses with a thick black frame and a thin cold glint across each.
+      g.circle(l.x, l.y, r * 0.3).fill({ color: this.c(gl.lens), alpha: 1 }).stroke({ width: r * 0.14, color: this.c(gl.frame) });
+      g.moveTo(l.x - r * 0.16, l.y - r * 0.12).lineTo(l.x + r * 0.04, l.y - r * 0.2).stroke({ width: r * 0.05, color: 0x7fb8ff, alpha: 0.75, cap: 'round' });
     }
   }
 

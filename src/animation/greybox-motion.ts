@@ -349,12 +349,13 @@ function crawlerIdle(timeS: number, bones: BoneLengths): Pose {
   const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.4);
   const legs = bones.thigh + bones.shin;
   return {
-    lean: deg(-52 + creep * 2),
-    head: deg(30 + breath * 3),
-    armFront: { root: deg(22 + creep * 4), bend: deg(18) },
-    armBack: { root: deg(8 - creep * 4), bend: deg(24) },
-    legFront: legIk(0.42 + creep * 0.02, legs * 0.62, bones.thigh, bones.shin),
-    legBack: legIk(-0.34 - creep * 0.02, legs * 0.6 - breath * 0.01, bones.thigh, bones.shin),
+    // Stalking: spine almost horizontal, hips high over bent legs, the arms reaching out ahead to plant, the head lifted to watch the prey.
+    lean: deg(-66 + creep * 2.5),
+    head: deg(46 + breath * 3),
+    armFront: { root: deg(34 + creep * 5), bend: deg(10) },
+    armBack: { root: deg(18 - creep * 5), bend: deg(16) },
+    legFront: legIk(0.38 + creep * 0.02, legs * 0.66, bones.thigh, bones.shin),
+    legBack: legIk(-0.3 - creep * 0.02, legs * 0.64 - breath * 0.01, bones.thigh, bones.shin),
   };
 }
 
@@ -1159,10 +1160,10 @@ const CRAWL_RUN: RunStyle = {
   pushM: 0.34,
   stance: 0.4,
   swingLiftM: 0.16,
-  lean: -56,
+  lean: -68,
   drive: 4,
-  head: 30,
-  pumpFront: { shoulder: 30, elbow: 40 },
+  head: 42,
+  pumpFront: { shoulder: 36, elbow: 24 },
   pumpBack: { shoulder: 12, elbow: 50 },
 };
 
