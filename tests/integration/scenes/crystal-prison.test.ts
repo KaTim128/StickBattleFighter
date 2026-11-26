@@ -43,6 +43,15 @@ describe('Crystal Prison in the real scene (R0.2)', () => {
     expect(scene.abilities!.world.prisons.length).toBe(1);
     expect(scene.abilities!.world.prisons[0]!.phase).toBe('held');
     expect(foe.combatant.trapLeftS).toBeGreaterThan(0);
+    // Owner 26/11/2026: held in its exact position; nothing pushes, knocks back, pulls or launches it until the prison ends.
+    const x0 = foe.x;
+    const y0 = foe.y;
+    const apply = (scene as unknown as { applyStrike: (a: unknown, t: unknown, s: unknown) => boolean }).applyStrike.bind(scene);
+    apply(scene.playerFighter, foe, { damage: 5, heavy: true, knockbackMps: 14, dir: { x: 1, y: 0 }, melee: false, impact: 'knuckle-heavy' });
+    foe.body!.setLinvel({ x: 9, y: -6 }, true); // any other shove (a pull, a launch, a blast)
+    run(0.5);
+    expect(Math.hypot(foe.x - x0, foe.y - y0)).toBeLessThan(1e-3);
+    expect(foe.combatant.trapLeftS).toBeGreaterThan(0);
     scenes.clear();
   });
 });

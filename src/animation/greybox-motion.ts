@@ -323,8 +323,8 @@ function sonicIdle(timeS: number, bones: BoneLengths): Pose {
 }
 
 /**
- * GUNSLINGER (Gunsmith): a loose, confident duellist's stance. Weight on the back foot, the chest turned a little, both pistols held low and
- * ready at the hips with the barrels angled forward, and a lazy sway as if listening for the other man's hand to move.
+ * GUNSLINGER (Gunsmith): a loose, confident duellist's stance. Weight on the back foot, the chest turned a little, both pistols aimed at the opponent: one arm
+ * out straight, the other bent close to the waist, barrels forward, and a lazy sway as if listening for the other man's hand to move.
  */
 function gunslingerIdle(timeS: number, bones: BoneLengths): Pose {
   const sway = Math.sin(timeS * TAU * 0.3);
@@ -333,8 +333,10 @@ function gunslingerIdle(timeS: number, bones: BoneLengths): Pose {
   return {
     lean: deg(-3 + sway * 1.2),
     head: deg(2),
-    armFront: { root: deg(58 + breath * 3), bend: deg(40) },
-    armBack: { root: deg(44 - breath * 3), bend: deg(46) },
+    // Both pistols aimed at the opponent (owner, 26/11/2026): one arm out straight at shoulder height, the other bent with the elbow in and
+    // the hand close to the waist, its gun pointing forward.
+    armFront: { root: deg(96 + breath * 2), bend: deg(4) },
+    armBack: { root: deg(16 - breath * 2), bend: deg(94) },
     legFront: legIk(0.32 + sway * 0.015, legs * 0.93, bones.thigh, bones.shin),
     legBack: legIk(-0.28 - sway * 0.015, legs * 0.94 - breath * 0.006, bones.thigh, bones.shin),
   };

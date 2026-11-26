@@ -7,6 +7,10 @@ import { chargeFor } from '../../abilities/ultimate-charge';
  * (a rapid run of targeted shots ending in a powerful one); the ultimate is a sustained, aimable Machine Gun Rampage. Values are PROVISIONAL (OQ-05).
  */
 const BRASS = { deep: 0x3a1d08, hot: 0xd98a1a, bright: 0xffd070, core: 0xfff6d0 } as const;
+/** Where each gun's muzzle is, at shoulder height and out along the aimed arm (see `ProjectileDelivery.muzzle`): every bullet starts there. */
+const PISTOL_MUZZLE = { heightM: 1.36, reachM: 0.95 } as const;
+const SHOTGUN_MUZZLE = { heightM: 1.36, reachM: 1.35 } as const;
+const MACHINE_GUN_MUZZLE = { heightM: 1.42, reachM: 1.05 } as const;
 const muzzle = (ringM: number, shake: number) => ({
   flashM: ringM * 0.5,
   sparks: 14,
@@ -37,7 +41,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     moveFactor: 0.4,
     interruptible: true,
     payload: { damage: 9, knockbackMps: 0.4, heavy: false, strength: 160, impact: 'knuckle-light', noFlinch: true },
-    delivery: { type: 'projectile', speedMps: 34, radiusM: 0.18, maxRangeM: 11, burst: { count: 8, gapS: 0.07, jitterRad: 0.05 } },
+    delivery: { type: 'projectile', speedMps: 34, radiusM: 0.18, maxRangeM: 11, burst: { count: 8, gapS: 0.07, jitterRad: 0.05 }, muzzle: PISTOL_MUZZLE },
     vfx: 'dual-barrage',
     sfx: { cast: 'gun-draw', release: 'gun-shot', impact: 'bullet-hit' },
     look: { palette: BRASS, flight: { trailPerS: 60, sparksPerS: 10, bullet: 0.3, shimmer: false }, impact: muzzle(0.5, 0.1), hitFlash: 0xffe9b0 },
@@ -59,7 +63,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     interruptible: true,
     // Per pellet: full damage inside 2 m, falling to a fifth at the end of its range (owner, 26/11/2026).
     payload: { damage: 15, knockbackMps: 1.2, heavy: false, strength: 160, impact: 'knuckle-light', noFlinch: true, falloff: { fullWithinM: 2, minFactor: 0.2 } },
-    delivery: { type: 'projectile', speedMps: 40, radiusM: 0.16, maxRangeM: 9, fan: { count: 8, spreadRad: 0.36 } },
+    delivery: { type: 'projectile', speedMps: 40, radiusM: 0.16, maxRangeM: 9, fan: { count: 8, spreadRad: 0.36 }, muzzle: SHOTGUN_MUZZLE },
     vfx: 'explosive-rounds',
     sfx: { cast: 'gun-load-heavy', release: 'gun-boom', impact: 'bullet-explode' },
     look: {
@@ -74,7 +78,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     name: 'Ricochet Shot',
     label: 'RICOCHET',
     description:
-      'Fires a bullet that bounces off walls and furniture, up to six times, before it finds the opponent: angle it off the arena to hit someone who is covered.',
+      'Fires a bullet that bounces off walls and furniture, up to twelve times, before it finds the opponent: angle it off the arena to hit someone who is covered.',
     icon: 'ricochet-shot',
     slot: 'a3',
     staminaCost: 24,
@@ -85,7 +89,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     moveFactor: 0.3,
     interruptible: true,
     payload: { damage: 46, knockbackMps: 1.5, heavy: false, strength: 300, impact: 'knuckle-light' },
-    delivery: { type: 'projectile', speedMps: 30, radiusM: 0.2, maxRangeM: 36, bounces: 6 },
+    delivery: { type: 'projectile', speedMps: 30, radiusM: 0.2, maxRangeM: 60, bounces: 12, muzzle: PISTOL_MUZZLE },
     vfx: 'ricochet-shot',
     sfx: { cast: 'gun-draw', release: 'gun-ricochet', impact: 'bullet-ping' },
     look: { palette: BRASS, flight: { trailPerS: 120, sparksPerS: 24, bullet: 0.3, shimmer: true }, impact: muzzle(0.6, 0.15), hitFlash: 0xffe9b0 },
@@ -110,7 +114,7 @@ export const GUNSMITH_KIT: AbilityKit = {
       type: 'parry',
       windowS: 1.5,
       stunS: 0,
-      answer: { shots: 3, gapS: 0.1, speedMps: 44, radiusM: 0.2, maxRangeM: 11 },
+      answer: { shots: 3, gapS: 0.1, speedMps: 44, radiusM: 0.2, maxRangeM: 11, muzzle: PISTOL_MUZZLE },
     },
     vfx: 'tactical-roll',
     sfx: { cast: 'roll-whoosh', release: 'gun-shot-light', impact: 'bullet-hit-light' },
@@ -139,6 +143,7 @@ export const GUNSMITH_KIT: AbilityKit = {
       radiusM: 0.2,
       maxRangeM: 7.5,
       burst: { count: 1, gapS: 0.1 },
+      muzzle: PISTOL_MUZZLE,
     },
     vfx: 'quickdraw-execution',
     sfx: { cast: 'gun-quickdraw', release: 'gun-shot-fast', impact: 'bullet-execute' },
@@ -165,7 +170,8 @@ export const GUNSMITH_KIT: AbilityKit = {
       speedMps: 36,
       radiusM: 0.2,
       maxRangeM: 12,
-      burst: { count: 44, gapS: 0.065, jitterRad: 0.07, aimable: true, muzzle: { heightM: 1.42, reachM: 1.05 } },
+      burst: { count: 44, gapS: 0.065, jitterRad: 0.07, aimable: true },
+      muzzle: MACHINE_GUN_MUZZLE,
     },
     vfx: 'machine-gun',
     sfx: { cast: 'gun-machine-ready', release: 'gun-machine-burst', impact: 'bullet-hit-heavy' },

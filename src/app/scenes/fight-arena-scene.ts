@@ -1099,8 +1099,26 @@ export class FightArenaScene implements ArenaScene {
       if (p) Object.assign(f.curr, { x: p.x, y: p.y });
       this.keepInsideMap(f);
       this.climbing?.afterPhysics(f);
+      this.pinTrapped(f);
     }
     for (const fl of flying) if (fl) this.wallImpact(fl.f, fl.v);
+  }
+
+  /**
+   * Crystal Prison (owner, 26/11/2026): a fighter locked in the crystals stays in its exact position, whatever hits, pulls, pushes, launches
+   * or teleports it, until the prison ends. The spot is taken when the lock begins and re-imposed after every physics step.
+   */
+  private pinTrapped(f: FighterEntity): void {
+    if (!f.body || f.combatant.isKo || !f.combatant.trapped) {
+      f.trapAnchor = null;
+      return;
+    }
+    const p = f.body.translation();
+    f.trapAnchor ??= { x: p.x, y: p.y };
+    if (Math.hypot(p.x - f.trapAnchor.x, p.y - f.trapAnchor.y) > 1e-6) f.body.setTranslation(f.trapAnchor, true);
+    f.body.setLinvel({ x: 0, y: 0 }, true);
+    f.knockFlightS = 0;
+    Object.assign(f.curr, f.trapAnchor);
   }
 
   /** Movement, jump, Button 1 (tap = attack, hold = block) and dodge for the player. */
@@ -3126,6 +3144,7 @@ export class FightArenaScene implements ArenaScene {
     }
 
     const speed = staggers ? s.knockbackMps * result.knockbackScale : 0;
+    if (target.combatant.trapped && result.outcome !== 'ko') return true; // held in crystal: no knock-back
     if (!staggers && result.outcome !== 'ko') return true; // no push: leave the target's own movement alone
     target.body.setLinvel({ x: s.dir.x * speed, y: s.dir.y * speed }, true);
     target.knockFlightS = speed >= HEAVY_KNOCKBACK_MPS ? KNOCK_FLIGHT_S : 0;
@@ -4746,12 +4765,35 @@ export class FightArenaScene implements ArenaScene {
             ? { ...pose, armFront: { root: root + 0.05, bend: 0.12 }, armBack: { root: root - 0.5, bend: 1.45 } }
             : { ...pose, armFront: { root, bend: 0.06 }, armBack: { root: root - 0.06, bend: 0.1 } };
       } else v.gunAim = null;
-      if (!aim && v.gunKind === 'sg' && v.gunMg > 0.3 && !c.isKo) {
-        // One-handed shotgun: the front arm points along the aim, the other hangs straight down at his side.
+      // Idle (owner, 26/11/2026): both pistols aimed at the opponent, one arm straight out, the other bent close to the waist, its gun forward.
+      if (!aim && !c.isKo && v.gunMg <= 0 && !f.caster?.cast && !f.combo.attack && c.canAct && !f.airborne && v.motion < 0.08) {
+        let foe: FighterEntity | null = null;
+        let best = Infinity;
+        for (const o of this.fighters) {
+          if (o.team === f.team || o.combatant.isKo) continue;
+          const d = Math.hypot(o.x - f.x, o.y - f.y);
+          if (d < best) {
+            best = d;
+            foe = o;
+          }
+        }
+        if (foe) {
+          const sc = iso(foe.x - f.x, foe.y - f.y);
+          const ang = Math.max(-1.0, Math.min(1.0, Math.atan2(sc.y, Math.abs(sc.x) + 1e-3)));
+          v.gunAim = v.gunAim === null ? ang : v.gunAim + (ang - v.gunAim) * smoothing(10, frameDtS);
+          const root = Math.PI / 2 - v.gunAim - pose.lean;
+          pose = { ...pose, armFront: { root, bend: 0.07 }, armBack: { root: 0.28, bend: Math.max(0.5, root - 0.28) } };
+        }
+      }
+      // A one-arm shot (Quick Draw's burst): the non-shooting arm stays straight down at his side.
+      if (aim && v.gunOne) pose = { ...pose, armBack: { root: 0.07, bend: 0.1 } };
+      // A single shot (Ricochet Shot, Quick Draw's wind-up, the shotgun): the shooting arm points along the aim, so the muzzle is where the bullet leaves.
+      const singleShot = castId === 'ricochetShot' || castId === 'quickdrawExecution';
+      if (!aim && !c.isKo && (singleShot || (v.gunKind === 'sg' && v.gunMg > 0.3))) {
         const sc = iso(f.aim.x, f.aim.y);
         const ang = Math.max(-1.2, Math.min(1.2, Math.atan2(sc.y, Math.abs(sc.x) + 1e-3)));
         v.gunAim = v.gunAim === null ? ang : v.gunAim + (ang - v.gunAim) * smoothing(18, frameDtS);
-        if (v.gunMg > 0.7) {
+        if (singleShot || v.gunMg > 0.7) {
           const root = Math.PI / 2 - v.gunAim - pose.lean;
           pose = { ...pose, armFront: { root, bend: 0.05 }, armBack: { root: 0.07, bend: 0.1 } };
         }

@@ -69,6 +69,8 @@ export class FighterEntity {
   fallWeight = 0;
   /** Its body currently passes over furniture (in the air or standing on top of a piece). */
   overFurniture = false;
+  /** Where Crystal Prison locked this fighter; it is held exactly here (no push, pull, launch or knock moves it) until the prison ends. */
+  trapAnchor: { x: number; y: number } | null = null;
   /** Seconds since this fighter last fought (attacked, cast, blocked, dodged or was hit): presentation only. */
   calmS = 0;
   /** Soul Drain's absorption (Necro): seconds left and the share of damage dealt that returns as healing. */

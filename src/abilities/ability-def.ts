@@ -227,17 +227,17 @@ export interface ProjectileDelivery {
    * aim the player steers while it lasts), alternating between the two hands. The last is `finalFactor` times stronger. `jitterRad` is the
    * random scatter of each shot.
    */
+  /**
+   * Where the gun's muzzle really is (owner, 26/11/2026): every shot (and its flash) starts `heightM` above the floor and `reachM` out along the
+   * aim on screen, so bullets leave the barrel instead of an empty point in front of the body.
+   */
+  readonly muzzle?: { readonly heightM: number; readonly reachM: number };
   readonly burst?: {
     readonly count: number;
     readonly gapS: number;
     readonly jitterRad?: number;
     readonly finalFactor?: number;
     readonly aimable?: boolean;
-    /**
-     * Where the gun's muzzle really is (owner, 26/11/2026): the shots start `heightM` above the floor and `reachM` out along the aim on
-     * screen, so the bullets leave the barrel instead of an empty point in front of the body.
-     */
-    readonly muzzle?: { readonly heightM: number; readonly reachM: number };
     /** Every shot after the first flies this many times faster (Kamaw's Double Pounce: the second throw is the quicker). */
     readonly laterSpeedFactor?: number;
   };
@@ -336,6 +336,7 @@ export interface NovaDelivery {
     readonly speedMps: number;
     readonly radiusM: number;
     readonly maxRangeM: number;
+    readonly muzzle?: { readonly heightM: number; readonly reachM: number };
   };
 }
 
@@ -792,6 +793,7 @@ export interface ParryDelivery {
     readonly speedMps: number;
     readonly radiusM: number;
     readonly maxRangeM: number;
+    readonly muzzle?: { readonly heightM: number; readonly reachM: number };
   };
 }
 

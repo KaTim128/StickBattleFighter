@@ -610,6 +610,17 @@ const PULL_MAX_S = 1.2;
 
 const TRAIL_SPACING_M = 0.45;
 const TRAIL_POINTS = 8;
+/**
+ * Where a gun's muzzle is in the world: out along the aim by its on-screen reach (the isometric view shortens a world metre by `shown`), at
+ * the gun's height. The reach is capped so a shot never starts beyond a target standing close.
+ */
+function muzzleSpot(at: Vec2, dir: Vec2, mz: { heightM: number; reachM: number } | undefined, fallbackM: number): Vec2 & { z?: number } {
+  if (!mz) return { x: at.x + dir.x * fallbackM, y: at.y + dir.y * fallbackM };
+  const shown = Math.hypot((dir.x - dir.y) * Math.SQRT1_2, (dir.x + dir.y) * Math.SQRT1_2 * 0.5) || 1;
+  const out = Math.min(1.4, mz.reachM / shown);
+  return { x: at.x + dir.x * out, y: at.y + dir.y * out, z: mz.heightM };
+}
+
 /** A projectile flies at chest height: it starts this far in front of the caster. */
 const MUZZLE_M = 0.5;
 /** A beam pours from just in front of the caster's hands. */
@@ -885,7 +896,7 @@ export class AbilityWorld {
     const a = d.answer;
     const shotDef: AbilityDef = {
       ...def,
-      delivery: { type: 'projectile', speedMps: a.speedMps, radiusM: a.radiusM, maxRangeM: a.maxRangeM, burst: { count: a.shots, gapS: a.gapS, jitterRad: 0.02 } },
+      delivery: { type: 'projectile', speedMps: a.speedMps, radiusM: a.radiusM, maxRangeM: a.maxRangeM, burst: { count: a.shots, gapS: a.gapS, jitterRad: 0.02 }, ...(a.muzzle ? { muzzle: a.muzzle } : {}) },
     };
     this.bursts.push({ casterId, def: shotDef, dir, fired: 0, nextS: this.nowS });
   }
@@ -990,6 +1001,11 @@ export class AbilityWorld {
     const d = def.delivery;
     switch (d.type) {
       case 'projectile': {
+        if (d.muzzle) {
+          // The puff of the shot leaves the barrel, not the body.
+          const m = muzzleSpot(at, dir, d.muzzle, MUZZLE_M);
+          host.emit({ kind: 'release', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: m.x, y: m.y, dirX: dir.x, dirY: dir.y, z: d.muzzle.heightM });
+        }
         if (d.roll) {
           // Tactical Roll: a quick roll along the aim, no hit of its own, while the volley below is fired.
           this.actions.push({
@@ -1022,14 +1038,16 @@ export class AbilityWorld {
                   x: dir.x * Math.cos(spread) - dir.y * Math.sin(spread),
                   y: dir.x * Math.sin(spread) + dir.y * Math.cos(spread),
                 };
+          const m = muzzleSpot(at, shotDir, d.muzzle, MUZZLE_M);
           this.projectiles.push({
             casterId,
             def,
-            x: at.x + shotDir.x * MUZZLE_M,
-            y: at.y + shotDir.y * MUZZLE_M,
+            x: m.x,
+            y: m.y,
             dir: shotDir,
             travelledM: 0,
             trail: [],
+            ...(d.muzzle ? { z: d.muzzle.heightM } : {}),
             ...(d.bounces ? { bouncesLeft: d.bounces } : {}),
           });
         }
@@ -2664,11 +2682,10 @@ export class AbilityWorld {
         const side = d.burst.aimable ? 0 : b.fired % 2 === 0 ? 1 : -1; // left hand, right hand (a machine gun has one muzzle)
         const last = b.fired === d.burst.count - 1 && d.burst.finalFactor !== undefined;
         // The barrel's tip: out along the aim by the muzzle's on-screen reach (the isometric view shortens a world metre by `shown`), at gun height.
-        const mz = d.burst.muzzle;
-        const shown = Math.hypot((shot.x - shot.y) * Math.SQRT1_2, (shot.x + shot.y) * Math.SQRT1_2 * 0.5) || 1;
-        const out = mz ? Math.min(1.1, mz.reachM / shown) : MUZZLE_M;
-        const mx = at.x + shot.x * out - (mz ? 0 : shot.y * 0.18 * side);
-        const my = at.y + shot.y * out + (mz ? 0 : shot.x * 0.18 * side);
+        const mz = d.muzzle;
+        const spot = muzzleSpot(at, shot, mz, MUZZLE_M);
+        const mx = spot.x - (mz ? 0 : shot.y * 0.18 * side);
+        const my = spot.y + (mz ? 0 : shot.x * 0.18 * side);
         host.face?.(b.casterId, shot);
         b.dir = dir; // where the guns point now (the view aims along it); the aim without the shot's own jitter, so the spread never drifts
         this.projectiles.push({

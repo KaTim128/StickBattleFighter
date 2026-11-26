@@ -99,9 +99,9 @@ describe('Gunsmith', () => {
     expect(far).toBeLessThan(near * 0.4); // fewer pellets reach it, each at a fraction of the damage
   }, 60_000);
 
-  it('Ricochet Shot bounces up to six times; Quick Draw only reaches mid to close range', () => {
+  it('Ricochet Shot bounces up to twelve times; Quick Draw only reaches mid to close range', () => {
     const d = GUNSMITH_KIT.a3.delivery;
-    expect(d.type === 'projectile' && d.bounces).toBe(6);
+    expect(d.type === 'projectile' && d.bounces).toBe(12);
     const q = GUNSMITH_KIT.a5!.delivery;
     expect(q.type === 'projectile' && q.maxRangeM).toBeLessThanOrEqual(8);
   });
@@ -176,6 +176,29 @@ describe('Gunsmith', () => {
     scenes.clear();
   }, 60_000);
 
+  it('every DX07 gun ability fires from a muzzle at gun height, never from the body', async () => {
+    for (const def of [GUNSMITH_KIT.a1, GUNSMITH_KIT.a2, GUNSMITH_KIT.a3, GUNSMITH_KIT.a5!, GUNSMITH_KIT.ult]) {
+      const d = def.delivery;
+      expect(d.type === 'projectile' && d.muzzle !== undefined, def.id).toBe(true);
+    }
+    const tc = GUNSMITH_KIT.a4.delivery;
+    expect(tc.type === 'parry' && tc.answer?.muzzle !== undefined).toBe(true);
+    for (const slot of ['a1', 'a2', 'a3'] as const) {
+      const { scene, scenes, fire, run } = await setup('gunsmith', 12);
+      scene.playerFighter.combatant.stamina = 100;
+      expect(fire(slot)).toBeNull();
+      run(slot === 'a3' ? 0.28 : 0.6);
+      const me = scene.playerFighter;
+      const shots = scene.abilities!.world.projectiles.filter((p) => p.casterId === me.name);
+      expect(shots.length, slot).toBeGreaterThan(0);
+      for (const p of shots) {
+        expect(p.z, slot).toBeGreaterThan(1.2);
+        expect(Math.hypot(p.x - me.x, p.y - me.y) + p.travelledM, slot).toBeGreaterThan(0.45);
+      }
+      scenes.clear();
+    }
+  }, 60_000);
+
   it('Machine Gun Rampage: the rounds leave the muzzle, at gun height, not an empty point in front of the body', async () => {
     const { scene, scenes, fire, run } = await setup('gunsmith');
     scene.playerFighter.caster!.fillMeter();
@@ -183,7 +206,7 @@ describe('Gunsmith', () => {
     run(1.2);
     const shots = scene.abilities!.world.projectiles.filter((p) => p.casterId === scene.playerFighter.name);
     expect(shots.length).toBeGreaterThan(0);
-    for (const p of shots) expect(p.z).toBeCloseTo(GUNSMITH_KIT.ult.delivery.type === 'projectile' ? GUNSMITH_KIT.ult.delivery.burst!.muzzle!.heightM : 0, 5);
+    for (const p of shots) expect(p.z).toBeCloseTo(GUNSMITH_KIT.ult.delivery.type === 'projectile' ? GUNSMITH_KIT.ult.delivery.muzzle!.heightM : 0, 5);
     scenes.clear();
   }, 60_000);
 
