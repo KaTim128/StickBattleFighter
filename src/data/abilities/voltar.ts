@@ -5,7 +5,7 @@ import { chargeFor } from '../../abilities/ultimate-charge';
  * Voltar's kit (owner, 26/11/2026): an electric stickman built on speed. Flashstep streaks through the enemy and punches from behind; Arc
  * Lash zaps and carries him through the target, stunning it for exactly 3 seconds; Voltage Rush zigzags round the enemy with a spinning
  * finishing kick; Static Break is a reactive lightning dodge that counters from behind; Thunder Circuit (the fifth ability) gathers
- * lightning from the sky for exactly 3 seconds, then fires a beam a little longer than Fire Beam that stuns only while it touches. The
+ * lightning from the sky for 2.4 seconds, then discharges a jagged lightning bolt a little longer than Fire Beam that stuns only while it touches. The
  * ultimate, Overdrive, is a controlled burst of mobility; pressing it again while it lasts triggers the finisher, Lightning Execution.
  * Values are PROVISIONAL (OQ-05).
  */
@@ -128,18 +128,18 @@ export const VOLTAR_KIT: AbilityKit = {
     sfx: { cast: 'volt-evade', release: 'volt-evade-out', impact: 'volt-counter' },
     look: { palette: VOLT, impact: spark(1.6, 0.4), hitFlash: 0xfffbd0 },
   },
-  // A5 (fifth): Thunder Circuit. Exactly 3 seconds gathering lightning from the sky, then a beam that stuns only while it touches.
+  // A5 (fifth): Thunder Circuit. 2.4 seconds gathering lightning from the sky (shortened from 3), then a jagged lightning discharge that stuns only while it touches.
   a5: {
     id: 'thunderCircuit',
     name: 'Thunder Circuit',
     label: 'THUNDER',
     description:
-      'Stands his ground and gathers lightning from the sky for exactly 3 seconds, currents pouring down round his body and hands and growing fiercer all the while; any hit on him breaks the charge. Then he fires a roaring beam of lightning, a little longer than Fire Beam, that hurts as much as Fire Beam up close and stuns whoever it touches for only as long as it keeps touching them.',
+      'Stands his ground and gathers lightning from the sky for 2.4 seconds, with both hands raised overhead and currents pouring down round his body and hands and growing fiercer all the while; any hit on him breaks the charge. Then he unleashes a jagged, crackling discharge of lightning, a little longer than Fire Beam, that hurts as much as Fire Beam up close and stuns whoever it touches for only as long as it keeps touching them.',
     icon: 'thunder-circuit',
     slot: 'a3',
     staminaCost: 40,
     cooldownS: 14,
-    castS: 3,
+    castS: 2.4,
     recoveryS: 0.7,
     aimRangeM: 8,
     moveFactor: 0,
@@ -160,7 +160,8 @@ export const VOLTAR_KIT: AbilityKit = {
     sfx: { cast: 'volt-charge-long', release: 'volt-beam', impact: 'volt-beam-hit' },
     look: {
       palette: VOLT,
-      charge: { gatherRadiusM: 1.6, motesPerS: 160, coreMaxM: 0.45 },
+      charge: { gatherRadiusM: 1.6, motesPerS: 160, coreMaxM: 0.2, crackle: true },
+      beamStyle: 'lightning',
       flight: { trailPerS: 120, sparksPerS: 60, shimmer: true },
       impact: spark(1.4, 0.4),
       hitFlash: 0xcffcff,

@@ -1110,6 +1110,8 @@ export interface MagicLook {
     readonly motesPerS: number;
     /** Core radius in the palm at release, metres. */
     readonly coreMaxM: number;
+    /** Short jagged arcs of electricity crackle round the hands and are drawn down from the sky to them (Voltar's Thunder Circuit). */
+    readonly crackle?: boolean;
   };
   /** In flight: a streaming trail of element particles and sparks; heat shimmer around the core. */
   readonly flight?: {
@@ -1172,7 +1174,7 @@ export interface MagicLook {
    */
   readonly field?: 'clock' | 'vibration';
   /** A beam drawn as expanding rings of sound from the caster's mouth (Reson's Sonic Boom). */
-  readonly beamStyle?: 'scream';
+  readonly beamStyle?: 'scream' | 'lightning';
   /** The caster's mouth opens while the ability runs: a wide roar or a thin high screech (Reson). */
   readonly shout?: 'scream' | 'screech';
   /** Afterimages trail the caster while this ability runs (Chronos). */

@@ -3919,10 +3919,12 @@ export class FightArenaScene implements ArenaScene {
       if (cast?.phase === 'windup' && cast.def.look?.charge && f.view && !c.isKo) {
         const tip = f.view.limbTips().fists[0];
         const hand = tip ? besideOnScreen(f.x, f.y, tip.x, tip.z) : { x: f.x, y: f.y, z: 1 };
+        const hands = cast.def.look.charge.crackle ? f.view.limbTips().fists.map((t) => besideOnScreen(f.x, f.y, t.x, t.z + f.abilityLift)) : undefined;
         charges.push({
           x: f.x,
           y: f.y,
           hand,
+          ...(hands ? { hands } : {}),
           progress: f.caster!.phaseProgress,
           look: cast.def.look,
           body: cast.def.delivery.type !== 'projectile',

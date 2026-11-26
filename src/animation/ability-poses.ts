@@ -1214,6 +1214,14 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.4,
   },
+  // Thunder Circuit (owner, 26/11/2026): both hands slowly rise above his head with the elbows slightly bent, drawing the lightning down from
+  // the sky, a faint tremble building; the release brings both arms forward and level, aimed at the target.
+  thunderCircuit: {
+    windup: { lean: deg(-4), head: deg(-14), armFront: limb(158, 28), armBack: limb(-150, 30), legFront: limb(22, -24), legBack: limb(-22, -22) },
+    tremble: deg(0.9),
+    release: { lean: deg(-12), head: deg(2), armFront: limb(96, 10), armBack: limb(86, 14), legFront: limb(30, -30), legBack: limb(-26, -26) },
+    settle: 0.4,
+  },
   // ---- Gunsmith: two pistols. Windups bring the guns up; releases hold them level and recoiling.
   dualBarrage: {
     windup: { lean: deg(-4), head: deg(0), armFront: limb(50, 70), armBack: limb(46, 74), legFront: limb(30, -34), legBack: limb(-28, -30) },

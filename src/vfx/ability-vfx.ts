@@ -89,6 +89,8 @@ export interface ChargeFx {
   readonly x: number;
   readonly y: number;
   readonly hand: { readonly x: number; readonly y: number; readonly z: number };
+  /** Both hands, when the cast raises them (Thunder Circuit's crackle gathers round each). */
+  readonly hands?: readonly { readonly x: number; readonly y: number; readonly z: number }[];
   readonly progress: number;
   readonly look: MagicLook;
   readonly body: boolean;
@@ -390,6 +392,12 @@ const CRYSTAL_ERUPTIONS: Readonly<Record<string, { count: number; h: number; rin
   'prison-lock': { count: 8, h: 0.7, ring: true },
 };
 /** Grave Chains run at the staff's height. */
+/** A stable pseudo-random 0..1 from a number (lightning shapes hold for a flicker frame, then change). */
+function hash01(n: number): number {
+  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 const CHAIN_HEIGHT_M = 1.05;
 
 export class AbilityVfx {
@@ -2150,7 +2158,7 @@ export class AbilityVfx {
       const ch = c.look.charge!;
       const pal = c.look.palette;
       const k = c.progress * c.progress * (3 - 2 * c.progress);
-      if (c.body) {
+      if (c.body && !ch.crackle) {
         const pulse = 0.85 + 0.15 * Math.sin(t * 18);
         f.circle(c.x, c.y, 0.5 + 0.6 * k).fill({ color: pal.deep, alpha: 0.18 * k * pulse });
         f.circle(c.x, c.y, (0.5 + 0.6 * k) * 0.6).fill({ color: pal.hot, alpha: 0.22 * k * pulse });
@@ -2161,6 +2169,21 @@ export class AbilityVfx {
         const r = ch.coreMaxM * (0.25 + 0.75 * k) * (1 + 0.07 * Math.sin(t * 37));
         const h = P(c.hand.x, c.hand.y, c.hand.z);
         this.core(g, h.x, h.y, r, pal, t, c.look.flight?.shimmer ?? false);
+      }
+      if (ch.crackle) {
+        // Lightning drawn down from the sky to each raised hand, and short jagged arcs snapping about the hands, more and longer as the charge grows.
+        const hs = c.hands ?? [c.hand];
+        hs.forEach((hand, n) => {
+          const h = P(hand.x, hand.y, hand.z);
+          const seed = Math.floor(t * 22) * 7 + n * 131;
+          this.bolt(g, { x: h.x + (n === 0 ? 0.1 : -0.1) * (1 - k), y: h.y - 1.9 }, h, 0.2 + 0.16 * k, seed, pal, 0.35 + 0.5 * k, 0.7);
+          const arcs = 2 + Math.round(4 * k);
+          for (let i = 0; i < arcs; i++) {
+            const a = hash01(seed * 3 + i * 17) * Math.PI * 2;
+            const len = (0.14 + 0.3 * k) * (0.6 + hash01(seed + i * 5));
+            this.bolt(g, h, { x: h.x + Math.cos(a) * len, y: h.y + Math.sin(a) * len }, 0.07, seed + i * 31, pal, 0.5 + 0.4 * k, 0.4);
+          }
+        });
       }
     }
 
@@ -2229,6 +2252,10 @@ export class AbilityVfx {
         const pulse = 1 + 0.25 * Math.sin(t * 52);
         g.circle(mouth.x, mouth.y, 0.2 * pulse).fill({ color: pal.hot, alpha: 0.35 * amount });
         g.circle(mouth.x, mouth.y, 0.1 * pulse).fill({ color: pal.core, alpha: 0.8 * amount });
+        continue;
+      }
+      if (b.def.look?.beamStyle === 'lightning') {
+        this.lightningBeam(f, g, b, d.widthM, Math.min(1, b.ageS / 0.08, (d.durationS - b.ageS) / 0.15), t);
         continue;
       }
       const amount = Math.min(1, b.ageS / 0.08, (d.durationS - b.ageS) / 0.15);
@@ -2574,6 +2601,88 @@ export class AbilityVfx {
   }
 
   /** A magic projectile in flight: a shadow, a tapering tail of flame streaming behind, and the core. */
+  /**
+   * One jagged bolt between two screen points: a polyline that wanders sideways (more in the middle, none at the ends), drawn as a soft
+   * glow, the bolt and a white-hot core. `seed` fixes the shape, so it holds still for a flicker frame and then snaps to a new one.
+   */
+  private bolt(
+    g: Graphics,
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    jag: number,
+    seed: number,
+    pal: Palette,
+    alpha: number,
+    thickness: number,
+  ): { x: number; y: number }[] {
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 0.02) return [];
+    const nx = -(b.y - a.y) / len;
+    const ny = (b.x - a.x) / len;
+    const steps = Math.max(3, Math.round(len / 0.16));
+    const pts: { x: number; y: number }[] = [{ x: a.x, y: a.y }];
+    for (let i = 1; i < steps; i++) {
+      const u = i / steps;
+      const off = (hash01(seed + i * 13) - 0.5) * 2 * jag * Math.sin(u * Math.PI) ** 0.6;
+      pts.push({ x: a.x + (b.x - a.x) * u + nx * off, y: a.y + (b.y - a.y) * u + ny * off });
+    }
+    pts.push({ x: b.x, y: b.y });
+    const line = (w: number, colour: number, al: number): void => {
+      g.moveTo(pts[0]!.x, pts[0]!.y);
+      for (let i = 1; i < pts.length; i++) g.lineTo(pts[i]!.x, pts[i]!.y);
+      g.stroke({ width: w, color: colour, alpha: al, cap: 'round', join: 'round' });
+    };
+    line(0.16 * thickness, pal.hot, 0.22 * alpha);
+    line(0.06 * thickness, pal.bright, 0.9 * alpha);
+    line(0.022 * thickness, 0xffffff, alpha);
+    return pts;
+  }
+
+  /**
+   * Voltar's Thunder Circuit: not a smooth stream but a violent discharge. A faint flickering corridor shows what it can hit; inside it a
+   * jagged main bolt and a lesser twin snap to new shapes every few frames, branches fork off the main bolt, crackling arcs spit at the
+   * far end, and a white flash burns at the hands.
+   */
+  private lightningBeam(f: Graphics, g: Graphics, b: Beam, widthM: number, amount: number, t: number): void {
+    const pal = b.def.look?.palette ?? FIRE;
+    const a0 = iso(b.from.x, b.from.y, BEAM_HEIGHT_M);
+    const a1 = iso(b.to.x, b.to.y, BEAM_HEIGHT_M);
+    const flick = Math.floor(t * 26);
+    const flash = 0.6 + 0.4 * hash01(flick * 3.7);
+    f.moveTo(b.from.x, b.from.y)
+      .lineTo(b.to.x, b.to.y)
+      .stroke({ width: widthM * amount, color: pal.deep, alpha: 0.14 * amount * flash, cap: 'round' });
+    const len = Math.hypot(a1.x - a0.x, a1.y - a0.y) || 1;
+    const jag = Math.min(0.55, 0.16 + len * 0.045) * widthM * 1.1;
+    const main = this.bolt(g, a0, a1, jag, flick * 11 + 5, pal, amount, 1);
+    this.bolt(g, a0, a1, jag * 1.3, flick * 17 + 91, pal, 0.55 * amount, 0.55);
+    // Branches: forks off the main bolt, each a short jagged bolt that kinks off at an angle.
+    for (let i = 1; i < main.length - 1; i++) {
+      if (hash01(flick * 29 + i * 7) > 0.42) continue;
+      const p = main[i]!;
+      const side = hash01(flick * 5 + i) > 0.5 ? 1 : -1;
+      const dir = Math.atan2(a1.y - a0.y, a1.x - a0.x) + side * (0.5 + hash01(flick + i * 3) * 0.7);
+      const bl = (0.4 + hash01(flick * 2 + i * 9) * 0.9) * widthM * 1.4;
+      const end = { x: p.x + Math.cos(dir) * bl, y: p.y + Math.sin(dir) * bl };
+      const fork = this.bolt(g, p, end, bl * 0.35, flick * 31 + i * 101, pal, 0.8 * amount, 0.55);
+      if (fork.length > 3 && hash01(flick + i * 11) > 0.6) {
+        const q = fork[fork.length - 2]!;
+        const d2 = dir + (hash01(flick * 9 + i) - 0.5) * 1.4;
+        this.bolt(g, q, { x: q.x + Math.cos(d2) * bl * 0.5, y: q.y + Math.sin(d2) * bl * 0.5 }, bl * 0.2, flick * 41 + i, pal, 0.6 * amount, 0.4);
+      }
+    }
+    // The ends: a flash at the hands and crackling arcs where it strikes.
+    for (const [p, r] of [[a0, 0.34], [a1, 0.46]] as const) {
+      g.circle(p.x, p.y, r * (0.7 + 0.5 * flash) * amount).fill({ color: pal.hot, alpha: 0.35 * amount });
+      g.circle(p.x, p.y, r * 0.38 * (0.7 + 0.5 * flash) * amount).fill({ color: 0xffffff, alpha: 0.9 * amount });
+    }
+    for (let i = 0; i < 4; i++) {
+      const ang = hash01(flick * 13 + i * 23) * Math.PI * 2;
+      const al = 0.3 + 0.5 * hash01(flick + i);
+      this.bolt(g, a1, { x: a1.x + Math.cos(ang) * 0.5, y: a1.y + Math.sin(ang) * 0.4 }, 0.12, flick * 53 + i * 7, pal, al * amount, 0.5);
+    }
+  }
+
   /** Kamaw's chain in the world: steel links from his hand to the far end with a little sag, and the white sickle blade on it. */
   private steelChain(
     g: Graphics,

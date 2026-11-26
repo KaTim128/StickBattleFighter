@@ -141,23 +141,24 @@ describe('Voltar', () => {
     scenes.clear();
   }, 30_000);
 
-  it('Thunder Circuit: charges for exactly 3 s, then fires a beam longer than Fire Beam that stuns only while it touches', async () => {
+  it('Thunder Circuit: charges for 2.4 s, then discharges a lightning bolt longer than Fire Beam that stuns only while it touches', async () => {
     const d = VOLTAR_KIT.a5!.delivery;
     if (d.type !== 'beam') throw new Error('beam');
-    expect(VOLTAR_KIT.a5!.castS).toBe(3);
+    expect(VOLTAR_KIT.a5!.castS).toBe(2.4);
+    expect(VOLTAR_KIT.a5!.look?.beamStyle).toBe('lightning');
     expect(d.rangeM).toBeGreaterThan(INFERNO_BEAM.rangeM);
     expect(d.rangeM).toBeLessThan(INFERNO_BEAM.rangeM + 3); // a modest advantage
     expect(VOLTAR_KIT.a5!.payload.damage).toBe(INFERNO_BEAM.damage);
     const { scene, scenes, run, runUntil, cast, me, foe, lost } = await setup('training-dummy', 2, {}, ['flashstep', 'arcLash', 'thunderCircuit', 'staticBreak']);
     me().combatant.stamina = 100;
     cast('a3');
-    run(2.8);
+    run(2.2);
     expect(lost()).toBe(0); // still gathering
     expect(me().caster!.cast?.phase).toBe('windup');
     run(0.4);
     runUntil(() => lost() > 0, 1);
     expect(lost()).toBeGreaterThan(0);
-    expect(foe().combatant.state).toBe('stunned'); // held in the beam
+    expect(foe().combatant.state).toBe('stunned'); // held in the bolt
     // Walk out of the beam's line: the stun ends soon after contact does.
     scene.abilities!.world.cancel(me().name, scene.abilities!);
     me().caster!.interrupt(true);
