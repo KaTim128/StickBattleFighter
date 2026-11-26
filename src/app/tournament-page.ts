@@ -7,6 +7,7 @@ import {
   createTournament,
   entrant,
   fightersInRound,
+  openAiMatches,
   findMatch,
   playerMatch,
   recordResult,
@@ -218,14 +219,18 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
             : saved.arena === 'house'
               ? HOUSE_FIGHT
               : OFFICE;
+      // Show the work at once: a slow device otherwise looks like a dead button until the first fight ends.
+      screen.setLatest(`Simulating battles… 0/${openAiMatches(saved.state).length}`);
+      screen.show(saved.state, tournamentHistory());
       void skipBattles(
         saved.state,
-        async (a, b, seed) => await simulateFightHeadless(seed, a.fighter, b.fighter, arena, saved.difficulty),
+        // Nothing is drawn, so a long slice per frame is fine and finishes the stage sooner.
+        async (a, b, seed) => await simulateFightHeadless(seed, a.fighter, b.fighter, arena, saved.difficulty, 30),
         (done, total) => {
           screen.setLatest(`Simulating battles… ${done}/${total}`);
           screen.show(saved.state, tournamentHistory());
         },
-      ).then(() => {
+      ).finally(() => {
         skipping = false;
         commit(saved);
         screen.setLatest(null);

@@ -51,7 +51,9 @@ export async function skipBattles(
     if (!m.winner) {
       const a = entrant(state, m.a)!;
       const b = entrant(state, m.b)!;
-      const side = await fight(a, b, matchSeed(m, a, b));
+      const seed = matchSeed(m, a, b);
+      // A fight that cannot run must not leave the stage stuck: settle that one match from its seed.
+      const side = await fight(a, b, seed).catch((): 'a' | 'b' => (seed % 2 === 0 ? 'a' : 'b'));
       if (!m.winner) recordResult(state, m.id, side === 'a' ? a.id : b.id, 'simulated');
     }
     onProgress?.(++done, open.length);

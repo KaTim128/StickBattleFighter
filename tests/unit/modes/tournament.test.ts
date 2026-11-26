@@ -196,6 +196,18 @@ describe('tournament flow between stages', () => {
     });
   });
 
+  it('a battle that cannot be simulated is still settled, so the stage skip never sticks', async () => {
+    const { settleStage, skipBattles } = await import('../../../src/modes/tournament/tournament-flow');
+    const t = createTournament(16, PLAYER, POOL, seeded(5));
+    settleStage(t);
+    recordResult(t, playerMatch(t)!.id, 'p', 'played');
+    const broken = async (): Promise<'a' | 'b'> => {
+      throw new Error('simulation failed');
+    };
+    await skipBattles(t, broken);
+    expect(t.stage).toBe(1);
+  });
+
   it('a knocked-out player can still watch or skip until a champion is crowned', async () => {
     const { settleStage, skipBattles } = await import('../../../src/modes/tournament/tournament-flow');
     const rand = seeded(23);
