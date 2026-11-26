@@ -69,6 +69,21 @@ describe('Gunsmith', () => {
     scenes.clear();
   }, 30_000);
 
+  it('Shotgun Blast brings the shotgun out (pistols dropped, one hand); Ricochet Shot keeps one arm down at the side', async () => {
+    const sg = await setup('gunsmith');
+    expect(sg.fire('a2')).toBeNull();
+    sg.run(0.4);
+    const v = sg.scene.playerFighter.view!;
+    expect(v.gunKind).toBe('sg');
+    expect(v.gunMg).toBeGreaterThan(0.9); // fully swapped
+    sg.scenes.clear();
+    const ric = await setup('gunsmith');
+    expect(ric.fire('a3')).toBeNull();
+    ric.run(0.05);
+    expect(ric.scene.playerFighter.view?.gunOne).toBe(true);
+    ric.scenes.clear();
+  }, 60_000);
+
   it('Shotgun Blast: a close target takes far more than a distant one', async () => {
     const dmg = async (gap: number) => {
       const { scenes, fire, hitsOver, foe } = await setup('gunsmith', gap);

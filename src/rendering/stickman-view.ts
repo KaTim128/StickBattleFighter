@@ -101,6 +101,8 @@ export class StickmanView {
   /** Gunsmith: 0..1 how far the machine gun is out (0 the pistols are in hand), and which way it is going (1 drawing it, -1 putting it away). */
   gunMg = 0;
   gunMgDir: 1 | -1 = 1;
+  /** Which weapon the swap brings out: the machine gun, or the shotgun (Shotgun Blast, held in one hand). */
+  gunKind: 'mg' | 'sg' = 'mg';
   /** Quick Draw: only the front pistol is aimed; the back hand holds its pistol down at his side. */
   gunOne = false;
   /** Gunsmith: the on-screen angle his guns aim along while firing (in the figure's own facing; down positive), or null. */
@@ -1634,7 +1636,60 @@ export class StickmanView {
     if (t > 0.3) {
       const alpha = smooth(0.3, 0.42, t);
       const held = smooth(0.5, 0.78, t);
-      this.drawMachineGun(g, s, o, alpha, held);
+      if (this.gunKind === 'sg') this.drawShotgun(g, s, o, alpha, held);
+      else this.drawMachineGun(g, s, o, alpha, held);
+    }
+  }
+
+  /**
+   * The shotgun (Shotgun Blast): a stocked pump-action, held and fired in ONE hand (the front one) with the other arm hanging at his side.
+   * Stowed it hangs slung across the back, as the machine gun does; the swap is the same (the pistols drop, this comes round into the hand).
+   */
+  private drawShotgun(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number, alpha: number, held: number): void {
+    const hf = s.armFront[2];
+    const ang = this.gunAim ?? this.gunAngle(s.armFront[1], hf);
+    const stowAng = -2.1;
+    const stow = { x: s.pelvis.x - 0.22, y: s.pelvis.y - 0.5 };
+    const gripAng = ang * held + stowAng * (1 - held);
+    const grip = { x: stow.x + (hf.x - stow.x) * held, y: stow.y + (hf.y - stow.y) * held };
+    const S = 0.62;
+    const ux = Math.cos(gripAng);
+    const uy = Math.sin(gripAng);
+    const nx = -uy;
+    const ny = ux;
+    // Local gun space: a along the barrel (the grip is at 0.55), side down towards the grip.
+    const at = (a: number, sd: number): Point => ({
+      x: grip.x + (ux * (a - 0.55) + nx * (sd - 0.1)) * S,
+      y: grip.y + (uy * (a - 0.55) + ny * (sd - 0.1)) * S,
+    });
+    const poly = (pts: Point[], fill: number, edge = 0x08080c): void => {
+      g.poly(pts.flatMap((p) => [p.x, p.y])).fill({ color: fill, alpha }).stroke({ width: 0.012 + o, color: edge, alpha, join: 'round' });
+    };
+    const WOOD = 0x6a4224;
+    const WOOD_LIT = 0x9a6a3c;
+    const MET = 0x3a3e49;
+    // The wooden stock, with a butt pad, and the wrist behind the receiver.
+    poly([at(-0.2, -0.04), at(0.3, -0.07), at(0.5, -0.05), at(0.5, 0.08), at(0.3, 0.1), at(-0.22, 0.2), at(-0.26, 0.04)], WOOD);
+    g.moveTo(at(-0.18, -0.01).x, at(-0.18, -0.01).y).lineTo(at(0.4, -0.04).x, at(0.4, -0.04).y).stroke({ width: 0.01, color: WOOD_LIT, alpha, cap: 'round' });
+    poly([at(-0.27, 0.02), at(-0.22, 0.01), at(-0.24, 0.2), at(-0.29, 0.18)], 0x0c0c10);
+    // The receiver, the loading port and the trigger guard.
+    poly([at(0.5, -0.09), at(0.95, -0.09), at(0.95, 0.06), at(0.5, 0.06)], MET);
+    g.moveTo(at(0.5, -0.09).x, at(0.5, -0.09).y).lineTo(at(0.95, -0.09).x, at(0.95, -0.09).y).stroke({ width: 0.012, color: 0x8a90a0, alpha, cap: 'round' });
+    poly([at(0.62, -0.05), at(0.84, -0.05), at(0.84, 0.0), at(0.62, 0.0)], 0x16161c);
+    g.moveTo(at(0.56, 0.06).x, at(0.56, 0.06).y)
+      .quadraticCurveTo(at(0.6, 0.18).x, at(0.6, 0.18).y, at(0.7, 0.06).x, at(0.7, 0.06).y)
+      .stroke({ width: 0.014, color: 0x16161c, alpha, cap: 'round' });
+    // The barrel and the magazine tube under it, the wooden pump slide, the bead sight and a flared muzzle.
+    poly([at(0.95, -0.075), at(1.78, -0.075), at(1.78, -0.01), at(0.95, -0.01)], 0x2e313b);
+    poly([at(0.95, -0.005), at(1.7, -0.005), at(1.7, 0.04), at(0.95, 0.04)], 0x23252d);
+    poly([at(1.02, 0.04), at(1.38, 0.04), at(1.38, 0.15), at(1.02, 0.15)], WOOD);
+    g.moveTo(at(1.04, 0.07).x, at(1.04, 0.07).y).lineTo(at(1.36, 0.07).x, at(1.36, 0.07).y).stroke({ width: 0.008, color: WOOD_LIT, alpha, cap: 'round' });
+    poly([at(1.74, -0.1), at(1.84, -0.1), at(1.84, 0.03), at(1.74, 0.03)], 0x50545f);
+    g.circle(at(1.68, -0.1).x, at(1.68, -0.1).y, 0.014).fill({ color: 0xe0a830, alpha });
+    // The one hand round the pistol grip behind the receiver (the other arm hangs at his side, out of this).
+    if (held > 0.5) {
+      const fist = at(0.55, 0.1);
+      g.circle(fist.x, fist.y, 0.06).fill({ color: 0xe8c9a0, alpha }).stroke({ width: 0.008, color: 0xb08a5c, alpha });
     }
   }
 

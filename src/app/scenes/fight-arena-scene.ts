@@ -4720,10 +4720,18 @@ export class FightArenaScene implements ArenaScene {
     if (f.def.effects.held === 'pistols') {
       const mgOn = f.caster?.cast?.def.id === 'machineGunRampage' || this.abilities?.world.burstOf(f.name) === 'machineGunRampage';
       const v = f.view;
-      v.gunOne = f.caster?.cast?.def.id === 'quickdrawExecution' || this.abilities?.world.burstOf(f.name) === 'quickdrawExecution';
-      if (mgOn) v.gunMgDir = 1;
+      const castId = f.caster?.cast?.def.id;
+      // One shooting arm out, the other straight down at his side (Ricochet Shot, Quick Draw).
+      v.gunOne =
+        castId === 'quickdrawExecution' || castId === 'ricochetShot' || this.abilities?.world.burstOf(f.name) === 'quickdrawExecution';
+      // Shotgun Blast: both pistols drop and a shotgun comes out into one hand (the machine gun swap, quicker).
+      const sgOn = castId === 'explosiveRounds';
+      if (sgOn) v.gunKind = 'sg';
+      else if (mgOn) v.gunKind = 'mg';
+      const swapOn = mgOn || sgOn;
+      if (swapOn) v.gunMgDir = 1;
       else if (v.gunMg > 0) v.gunMgDir = -1;
-      v.gunMg = Math.min(1, Math.max(0, v.gunMg + (mgOn ? 1 : -1) * frameDtS * 1.7));
+      v.gunMg = Math.min(1, Math.max(0, v.gunMg + (swapOn ? 1 : -1) * frameDtS * (v.gunKind === 'sg' ? 2.6 : 1.7)));
       if (f.combatant.isKo) v.gunMg = 0;
       pose = gunSwapPose(pose, v.gunMg, v.gunMgDir);
       // Firing: the arms and guns turn to point where the shots go (the muzzle on the enemy), up or down the screen as well as ahead.
@@ -4738,6 +4746,16 @@ export class FightArenaScene implements ArenaScene {
             ? { ...pose, armFront: { root: root + 0.05, bend: 0.12 }, armBack: { root: root - 0.5, bend: 1.45 } }
             : { ...pose, armFront: { root, bend: 0.06 }, armBack: { root: root - 0.06, bend: 0.1 } };
       } else v.gunAim = null;
+      if (!aim && v.gunKind === 'sg' && v.gunMg > 0.3 && !c.isKo) {
+        // One-handed shotgun: the front arm points along the aim, the other hangs straight down at his side.
+        const sc = iso(f.aim.x, f.aim.y);
+        const ang = Math.max(-1.2, Math.min(1.2, Math.atan2(sc.y, Math.abs(sc.x) + 1e-3)));
+        v.gunAim = v.gunAim === null ? ang : v.gunAim + (ang - v.gunAim) * smoothing(18, frameDtS);
+        if (v.gunMg > 0.7) {
+          const root = Math.PI / 2 - v.gunAim - pose.lean;
+          pose = { ...pose, armFront: { root, bend: 0.05 }, armBack: { root: 0.07, bend: 0.1 } };
+        }
+      }
     }
     // Rampage Mode (owner, 13/11/2026): he swells 10% bigger over a moment, and back when it ends.
     const growTo = f.buff?.sizeFactor ?? 1;

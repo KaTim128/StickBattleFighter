@@ -47,12 +47,12 @@ export const GUNSMITH_KIT: AbilityKit = {
     name: 'Shotgun Blast',
     label: 'BLAST',
     description:
-      'Fires a shotgun blast of eight pellets in a spreading cone. Up close the pellets all land and hit very hard; the further the target, the more the cone spreads and the weaker each pellet gets.',
+      'Drops both pistols, brings out a shotgun in one hand and fires a blast of eight pellets in a spreading cone. Up close the pellets all land and hit very hard; the further the target, the more the cone spreads and the weaker each pellet gets.',
     icon: 'explosive-rounds',
     slot: 'a2',
     staminaCost: 30,
     cooldownS: 11,
-    castS: 0.3,
+    castS: 0.45, // long enough to drop the pistols and bring the shotgun out
     recoveryS: 0.45,
     aimRangeM: 8,
     moveFactor: 0.2,

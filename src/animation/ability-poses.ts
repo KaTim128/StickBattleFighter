@@ -1228,14 +1228,16 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-8), head: deg(-2), armFront: limb(98, 4), armBack: limb(94, 8), legFront: limb(34, -34), legBack: limb(-30, -30) },
     settle: 0.4,
   },
+  // Shotgun Blast: the pistols drop, the shotgun comes out into the front hand; the other arm hangs at his side, a braced stance for the kick.
   explosiveRounds: {
-    windup: { lean: deg(6), head: deg(0), armFront: limb(110, 90), armBack: limb(100, 96), legFront: limb(32, -40), legBack: limb(-30, -36) },
-    release: { lean: deg(-14), head: deg(-4), armFront: limb(96, 4), armBack: limb(92, 12), legFront: limb(40, -44), legBack: limb(-34, -34) },
+    windup: { lean: deg(6), head: deg(0), armFront: limb(60, 40), armBack: limb(4, 6), legFront: limb(36, -42), legBack: limb(-36, -38) },
+    release: { lean: deg(-12), head: deg(-4), armFront: limb(100, 4), armBack: limb(4, 6), legFront: limb(44, -44), legBack: limb(-40, -40) },
     settle: 0.5,
   },
+  // Ricochet Shot: side-on, the shooting arm straight out along the gun and the other arm hanging straight down at his side, hand by the thigh.
   ricochetShot: {
-    windup: { lean: deg(8), head: deg(-4), armFront: limb(30, 60), armBack: limb(90, 90), legFront: limb(30, -36), legBack: limb(-30, -34) },
-    release: { lean: deg(-10), head: deg(0), armFront: limb(72, 4), armBack: limb(40, 80), legFront: limb(38, -40), legBack: limb(-32, -34) },
+    windup: { lean: deg(6), head: deg(-4), armFront: limb(60, 30), armBack: limb(4, 6), legFront: limb(40, -42), legBack: limb(-40, -38) },
+    release: { lean: deg(-6), head: deg(0), armFront: limb(98, 4), armBack: limb(4, 6), legFront: limb(46, -46), legBack: limb(-44, -42) },
     settle: 0.4,
   },
   // Tactical Counter: side-on to the opponent in a wide, planted stance, one pistol arm out front and the other tucked, ready to answer.
