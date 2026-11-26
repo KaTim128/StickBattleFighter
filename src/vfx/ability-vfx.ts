@@ -707,7 +707,7 @@ export class AbilityVfx {
     switch (fx.kind) {
       case 'release':
         // A small puff where the hand was, in the ability's own colours (never fire for others).
-        this.emitAt(fx.x, fx.y, 1.0, 8, 1.5, 0.35, 0.1, fx.look?.palette);
+        this.emitAt(fx.x, fx.y, fx.z ?? 1.0, 8, 1.5, 0.35, 0.1, fx.look?.palette);
         break;
       case 'impact': {
         // Bigger blasts: more embers, a shockwave ring and a scorch mark.
@@ -2831,7 +2831,8 @@ export class AbilityVfx {
     const pal = look.palette;
     const radius = p.def.delivery.type === 'projectile' ? p.def.delivery.radiusM : 0.3;
     f.circle(p.x, p.y, radius * 0.9).fill({ color: 0x000000, alpha: 0.25 });
-    const c = P(p.x, p.y, BOLT_HEIGHT_M);
+    const bz = p.z ?? BOLT_HEIGHT_M;
+    const c = P(p.x, p.y, bz);
     if (look.flight?.jar) {
       this.flyingJar(g, c, p, pal, t);
       return;
@@ -2852,7 +2853,7 @@ export class AbilityVfx {
       const uy = sy / sl;
       p.trail.forEach((q, i) => {
         const k = (i + 1) / (p.trail.length + 1);
-        const tc = P(q.x, q.y, BOLT_HEIGHT_M);
+        const tc = P(q.x, q.y, bz);
         g.circle(tc.x, tc.y, 0.012 * k).fill({ color: pal.bright, alpha: 0.5 * k });
       });
       g.moveTo(c.x - ux * L, c.y - uy * L).lineTo(c.x, c.y).stroke({ width: 0.03, color: pal.hot, alpha: 0.55, cap: 'round' });

@@ -223,4 +223,36 @@ describe('intelligent AI (Batch 4)', () => {
     };
     expect(backed('expert')).toBeGreaterThan(backed('easy'));
   });
+
+  it('a foe pouring a beam is open to being hit: a smart tier closes in and attacks it, an easy one does not read it', () => {
+    const engaged = (difficulty: 'easy' | 'expert', foeChannel: boolean) => {
+      let n = 0;
+      for (let seed = 1; seed <= 30; seed++) {
+        const v = { ...view({ target: { x: 3.4 }, difficulty }), random: rng(seed), foeChannel, abilities: [] };
+        const b = new FighterBrain();
+        const o = run(b, v, 40);
+        if (o.move.x > 0.3 || o.melee || o.heavy) n++;
+      }
+      return n;
+    };
+    expect(engaged('expert', true)).toBeGreaterThanOrEqual(engaged('expert', false));
+    expect(engaged('expert', true)).toBeGreaterThan(0);
+  });
+
+  it('a planner does not start a channelled ability with a free foe at its shoulder', () => {
+    const casts = (channel: boolean) => {
+      let n = 0;
+      for (let seed = 1; seed <= 30; seed++) {
+        const v = {
+          ...view({ target: { x: 1.4 }, difficulty: 'expert' }),
+          random: rng(seed),
+          abilities: [{ slot: 'a3' as const, ready: true, channel }],
+        };
+        const b = new FighterBrain();
+        for (let i = 0; i < 20; i++) if (b.think({ ...v, timeS: 10 + i * 0.5 }).ability?.slot === 'a3') n++;
+      }
+      return n;
+    };
+    expect(casts(true)).toBeLessThanOrEqual(casts(false));
+  });
 });

@@ -146,3 +146,11 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - 26/11/2026: Magix's Reaper Hook is renamed Fatal Stitch. Its aiming guide is now a straight, low line from his hand to the spot (the hook flies straight, so the arc a leap needs was misleading); leaps and Aerion-style dives keep their arcs.
 
 - 26/11/2026: Fatal Stitch's kick leaves the target bleeding for 3 seconds (3 damage per second plus the shared bleeding vulnerability; reapplying refreshes it, never stacks). New optional `bleedS` on ability payloads for a wound shorter or longer than the shared 6 s.
+
+## 26/11/2026: AI beams and streams, DX07 rampage, rabbit KO, HP numbers
+- Spectated and tournament matches: the "player" side is AI-driven, so its beams (Fire Beam, Thunder Circuit, Sonic Boom, Masterpiece) now track the enemy instead of waiting for human input.
+- A no-flinch hit (a machine-gun round) no longer freezes the whole fight (hit-stop per bullet slowed the barrage and its target to a crawl). AI fighters also weave across the line of fire while a long stream is aimed at them.
+- DX07's Machine Gun Rampage rounds and muzzle flash start at the barrel (new `burst.muzzle` data: height and reach).
+- Magix's rabbit going off no longer shows "KO!" or plays a defeat sound.
+- AI channel awareness: a foe pouring a beam or stream (which a hit stops) is closed in on and attacked by smarter tiers; a planner does not start a channelled ability with a free foe at its shoulder.
+- Top HUD shows the hit points left, level with each fighter's name.

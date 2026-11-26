@@ -63,6 +63,8 @@ class Side {
   private readonly name: HTMLDivElement;
   private readonly hp: HTMLDivElement;
   private readonly hpLag: HTMLDivElement;
+  private readonly hpNum: HTMLDivElement;
+  private shownHp = -1;
   private readonly st: HTMLDivElement;
   private readonly status: HTMLDivElement;
   private readonly move: HTMLDivElement;
@@ -77,6 +79,7 @@ class Side {
       <div class="th-portrait"><span></span></div>
       <div class="th-info">
         <div class="th-name"></div>
+        <div class="th-hpnum"></div>
         <div class="th-bar th-hp"><div class="th-lag"></div><div class="th-fill"></div></div>
         <div class="th-bar th-st"><div class="th-fill"></div></div>
         <div class="th-status"></div>
@@ -86,6 +89,7 @@ class Side {
     this.name = this.root.querySelector('.th-name')!;
     this.hp = this.root.querySelector('.th-hp .th-fill')!;
     this.hpLag = this.root.querySelector('.th-hp .th-lag')!;
+    this.hpNum = this.root.querySelector('.th-hpnum')!;
     this.st = this.root.querySelector('.th-st .th-fill')!;
     this.status = this.root.querySelector('.th-status')!;
     this.move = this.root.querySelector('.th-move')!;
@@ -109,6 +113,12 @@ class Side {
     this.lag = Math.max(hp, this.lag - 0.012);
     if (hp > this.lag) this.lag = hp;
     this.hp.style.width = `${hp * 100}%`;
+    // The hit points left, as a number on the bar's inner end (owner, 26/11/2026).
+    const left = Math.ceil(Math.max(0, f.hp));
+    if (left !== this.shownHp) {
+      this.shownHp = left;
+      this.hpNum.textContent = String(left);
+    }
     this.hpLag.style.width = `${this.lag * 100}%`;
     this.st.style.width = `${Math.max(0, Math.min(1, f.stamina / f.maxStamina)) * 100}%`;
     const mv = f.move ?? null;

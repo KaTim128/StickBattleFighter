@@ -1803,7 +1803,7 @@ export class FightArenaScene implements ArenaScene {
    * Opponents track the nearest standing fighter.
    */
   private beamSteer(f: FighterEntity, fresh: boolean): { x: number; y: number } | null {
-    if (f === this.playerFighter) {
+    if (f === this.playerFighter && !this.match?.spectate) {
       const beam = this.abilities?.world.beams.find((b) => b.casterId === f.name);
       const angle = beam ? Math.atan2(beam.dir.y, beam.dir.x) : Math.atan2(f.aim.y, f.aim.x);
       if (fresh) {
@@ -1870,7 +1870,7 @@ export class FightArenaScene implements ArenaScene {
 
   /** Where an AI's beam points as it is released: its delayed, slew-limited aim, not the target's true position. */
   private aiBeamAim(f: FighterEntity, def: AbilityDef): { x: number; y: number } | null {
-    if (def.delivery.type !== 'beam' || f === this.playerFighter || !f.aiBeam.active) return null;
+    if (def.delivery.type !== 'beam' || (f === this.playerFighter && !this.match?.spectate) || !f.aiBeam.active) return null;
     return { x: f.x + Math.cos(f.aiBeam.angle) * 5, y: f.y + Math.sin(f.aiBeam.angle) * 5 };
   }
 
@@ -2336,6 +2336,7 @@ export class FightArenaScene implements ArenaScene {
       ? AI_SLOTS.map((slot) => ({
           slot,
           ready: caster.check(slot, ctx) === null && (slot === 'ult' || c.stamina >= caster.def(slot).staminaCost),
+          channel: isChannelled(caster.def(slot)),
         }))
       : [];
     const pc = p.combatant.state;
@@ -2382,6 +2383,8 @@ export class FightArenaScene implements ArenaScene {
         : null,
       hazards: this.hazardsAgainst(f),
       foeCast: this.foeCastOf(p),
+      foeFiring: this.abilities?.world.streamFiring(p.name) ?? false,
+      foeChannel: this.foeChannelling(p),
       meleeReachM: this.aiMeleeReachM(f),
       canClimb: f.def.capabilities.canJump,
       abilities,
@@ -3046,13 +3049,15 @@ export class FightArenaScene implements ArenaScene {
     if (result.outcome === 'ignored') return false;
     this.tallyHit(attacker, target, hpBefore, wasDown, result.outcome);
     this.absorbHealing(attacker, target, hpBefore - target.combatant.hp);
-    this.events.push({
-      kind: result.outcome,
-      target: target.name,
-      x: t.x,
-      y: t.y - headTop(target),
-      amount: result.damage,
-    });
+    // Magix's rabbit going off is not a knock-out: no "KO!" pops up over it.
+    if (!(result.outcome === 'ko' && target.summon?.rabbit))
+      this.events.push({
+        kind: result.outcome,
+        target: target.name,
+        x: t.x,
+        y: t.y - headTop(target),
+        amount: result.damage,
+      });
 
     if (result.outcome === 'dodged') return false;
     this.abilities?.noteLanded(attacker);
@@ -3164,6 +3169,7 @@ export class FightArenaScene implements ArenaScene {
       sfx?: string;
       effect?: string | null;
       flashColour?: number;
+      noFlinch?: boolean;
     },
     profile: ImpactProfile,
     outcome: HitOutcome,
@@ -3182,7 +3188,8 @@ export class FightArenaScene implements ArenaScene {
     }
     // A skeleton's blow neither freezes the fight nor shakes the screen (B5: no hit-reaction loops).
     if (attacker.def.capabilities.staggersTargets !== false) {
-      this.hitstopS = Math.max(this.hitstopS, profile.hitstopS * fx.hitstopScale);
+      // A no-flinch hit (a machine-gun round) never freezes the fight: a freeze per bullet slows the whole barrage and its target to a crawl.
+      if (!s.noFlinch) this.hitstopS = Math.max(this.hitstopS, profile.hitstopS * fx.hitstopScale);
       this.shake.addTrauma(profile.shake * fx.shakeScale);
     }
     // The look of the contact comes from the attacker's Effects Profile (TD-039).
@@ -3209,7 +3216,7 @@ export class FightArenaScene implements ArenaScene {
       if (s.sfx && !guarded && outcome !== 'parried') this.queueSound(s.sfx);
       else this.characterSound(guarded ? target : attacker, key);
     }
-    if (outcome === 'ko') this.characterSound(target, 'defeat');
+    if (outcome === 'ko' && !target.summon?.rabbit) this.characterSound(target, 'defeat');
     if (s.melee && profile.recoilMps > 0 && attacker.body) {
       // The striker bounces back a little off the contact.
       const v = attacker.body.linvel();
@@ -3355,6 +3362,15 @@ export class FightArenaScene implements ArenaScene {
         });
     }
     return out;
+  }
+
+  /** Is this fighter pouring a beam, firing a stream or winding up an ability a hit breaks (so hitting it stops the ability)? */
+  private foeChannelling(p: FighterEntity): boolean {
+    if (p.combatant.isKo) return false;
+    const cast = p.caster?.cast;
+    if (cast && isChannelled(cast.def)) return true;
+    const w = this.abilities?.world;
+    return Boolean(w && (w.beams.some((b) => b.casterId === p.name) || w.streamFiring(p.name)));
   }
 
   /** The opponent's cast under way, as a player can see it: how far it reaches and whether it is the ultimate. */
@@ -4975,4 +4991,10 @@ export class FightArenaScene implements ArenaScene {
     this.debrisView = null;
     this.grounded.clear();
   }
+}
+
+/** A long ability that stops when its caster is hit: a beam, a long stream of shots, or anything flagged `breaksOnHit` (owner, 26/11/2026). */
+function isChannelled(def: AbilityDef): boolean {
+  const d = def.delivery;
+  return Boolean(def.breaksOnHit) || d.type === 'beam' || (d.type === 'projectile' && (d.burst?.count ?? 0) >= 20);
 }

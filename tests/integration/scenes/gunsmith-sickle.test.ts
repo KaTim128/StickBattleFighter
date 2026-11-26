@@ -130,9 +130,22 @@ describe('Gunsmith', () => {
     const { scene, scenes, fire, hitsOver, me } = await setup('gunsmith');
     scene.playerFighter.caster!.fillMeter();
     expect(fire('ult')).toBeNull();
-    const hits = hitsOver(9); // each landed shot also freezes the sim for a hit-stop, so it runs longer than its 3 s
+    // No hit-stop per bullet (owner 26/11/2026): a freeze on every round slowed the whole barrage and its target to a crawl,
+    // so the 44 rounds finish on schedule (about 3 s of firing plus the wind-up).
+    const hits = hitsOver(5);
     expect(hits.length).toBeGreaterThan(25);
     expect(me().caster!.cast).toBeNull(); // it ends by itself
+    scenes.clear();
+  }, 60_000);
+
+  it('Machine Gun Rampage: the rounds leave the muzzle, at gun height, not an empty point in front of the body', async () => {
+    const { scene, scenes, fire, run } = await setup('gunsmith');
+    scene.playerFighter.caster!.fillMeter();
+    expect(fire('ult')).toBeNull();
+    run(1.2);
+    const shots = scene.abilities!.world.projectiles.filter((p) => p.casterId === scene.playerFighter.name);
+    expect(shots.length).toBeGreaterThan(0);
+    for (const p of shots) expect(p.z).toBeCloseTo(GUNSMITH_KIT.ult.delivery.type === 'projectile' ? GUNSMITH_KIT.ult.delivery.burst!.muzzle!.heightM : 0, 5);
     scenes.clear();
   }, 60_000);
 

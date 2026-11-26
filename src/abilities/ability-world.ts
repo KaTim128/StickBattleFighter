@@ -63,6 +63,8 @@ export interface AbilityFx {
   /** The direction of the blow (blood sprays along it). */
   readonly dirX?: number;
   readonly dirY?: number;
+  /** Height the effect happens at (a muzzle flash); the default when absent. */
+  readonly z?: number;
 }
 
 export interface AbilityHost {
@@ -184,6 +186,8 @@ export interface Projectile {
   damageFactor?: number;
   /** Recent positions for the trail (newest last). */
   readonly trail: Vec2[];
+  /** Height the shot is drawn at (a gun's muzzle); the default bolt height when absent. */
+  z?: number;
 }
 
 /** A continuous beam pouring from a caster (Fire Beam). Origin and end are refreshed every step. */
@@ -2617,6 +2621,11 @@ export class AbilityWorld {
   }
 
   /** The id of the burst a caster is firing, if any (Gunsmith's machine gun shows its weapon while it lasts). */
+  /** Whether this caster is firing a long volley (a machine gun), so targets know to keep moving. */
+  streamFiring(casterId: string): boolean {
+    return this.bursts.some((b) => b.casterId === casterId && b.def.delivery.type === 'projectile' && (b.def.delivery.burst?.count ?? 0) >= 20);
+  }
+
   burstOf(casterId: string): string | null {
     return this.bursts.find((b) => b.casterId === casterId)?.def.id ?? null;
   }
@@ -2640,22 +2649,29 @@ export class AbilityWorld {
         const shot = { x: dir.x * Math.cos(jit) - dir.y * Math.sin(jit), y: dir.x * Math.sin(jit) + dir.y * Math.cos(jit) };
         const side = d.burst.aimable ? 0 : b.fired % 2 === 0 ? 1 : -1; // left hand, right hand (a machine gun has one muzzle)
         const last = b.fired === d.burst.count - 1 && d.burst.finalFactor !== undefined;
+        // The barrel's tip: out along the aim by the muzzle's on-screen reach (the isometric view shortens a world metre by `shown`), at gun height.
+        const mz = d.burst.muzzle;
+        const shown = Math.hypot((shot.x - shot.y) * Math.SQRT1_2, (shot.x + shot.y) * Math.SQRT1_2 * 0.5) || 1;
+        const out = mz ? Math.min(1.1, mz.reachM / shown) : MUZZLE_M;
+        const mx = at.x + shot.x * out - (mz ? 0 : shot.y * 0.18 * side);
+        const my = at.y + shot.y * out + (mz ? 0 : shot.x * 0.18 * side);
         host.face?.(b.casterId, shot);
         b.dir = dir; // where the guns point now (the view aims along it); the aim without the shot's own jitter, so the spread never drifts
         this.projectiles.push({
           casterId: b.casterId,
           def: b.def,
-          x: at.x + shot.x * MUZZLE_M - shot.y * 0.18 * side,
-          y: at.y + shot.y * MUZZLE_M + shot.x * 0.18 * side,
+          x: mx,
+          y: my,
           dir: shot,
           travelledM: 0,
           trail: [],
+          ...(mz ? { z: mz.heightM } : {}),
           ...(d.bounces ? { bouncesLeft: d.bounces } : {}),
           ...(last ? { damageFactor: d.burst.finalFactor } : {}),
           ...(b.fired > 0 && d.burst.laterSpeedFactor ? { speedFactor: d.burst.laterSpeedFactor } : {}),
         });
         // The flash at the muzzle, where the bullet leaves, not at the chest.
-        host.emit({ kind: 'release', ability: b.def.id, look: b.def.look, vfx: b.def.vfx, sfx: b.def.sfx.release, x: at.x + shot.x * MUZZLE_M, y: at.y + shot.y * MUZZLE_M, dirX: shot.x, dirY: shot.y });
+        host.emit({ kind: 'release', ability: b.def.id, look: b.def.look, vfx: b.def.vfx, sfx: b.def.sfx.release, x: mx, y: my, dirX: shot.x, dirY: shot.y, ...(mz ? { z: mz.heightM } : {}) });
         b.fired++;
         b.nextS += d.burst.gapS;
       }

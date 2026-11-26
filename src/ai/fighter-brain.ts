@@ -86,9 +86,14 @@ export interface BrainView {
   readonly hazards?: readonly Hazard[];
   /** The opponent is mid-cast: how far its ability reaches and whether it is its ultimate (cast awareness). */
   readonly foeCast?: { readonly reachM: number; readonly ult: boolean } | null;
+  /** The opponent is firing a sustained stream of shots (a machine gun): keep moving, never stand in it. */
+  readonly foeFiring?: boolean;
   readonly meleeReachM: number;
   readonly canClimb: boolean;
-  readonly abilities: readonly { readonly slot: AbilitySlot; readonly ready: boolean }[];
+  /** `channel`: a long ability (a beam, a machine-gun stream, a wind-up that a hit breaks) that stops if its caster is hit. */
+  readonly abilities: readonly { readonly slot: AbilitySlot; readonly ready: boolean; readonly channel?: boolean }[];
+  /** The opponent is pouring a beam or firing a stream, or winding up an ability a hit breaks: hitting it stops the ability. */
+  readonly foeChannel?: boolean;
   readonly profile: { readonly aggression: number; readonly attackEveryS: number; readonly reactionS: number };
   readonly design: BrainDesign;
   /** Overtime: never retreat or hit-and-run, always engage (tournament T1). */
@@ -140,6 +145,8 @@ export class FighterBrain {
   private nextPullS = 0;
   private nextJumpS = 0;
   private strafe = 1;
+  private nextWeaveS = 0;
+  private channelSeenS = -1;
   private nextStrafeS = 0;
   private hesitateUntilS = 0;
   private guardUntilS = 0;
@@ -482,6 +489,11 @@ export class FighterBrain {
     // Seeing an opening takes its reaction time; spotting it at all takes skill.
     let punishing = false;
     const opening = t.helpless || (diff.punishSkill >= 0.35 && t.recovering === true && dist <= v.meleeReachM * 2.2);
+    // A foe pouring a beam or stream is open to being hit, and a hit stops it: a smart tier closes in to break it.
+    if (v.foeChannel && diff.castAwareness >= 0.3 && dist <= v.meleeReachM * 5) {
+      if (this.channelSeenS < 0) this.channelSeenS = now;
+      punishing = now - this.channelSeenS >= diff.reactionS;
+    } else this.channelSeenS = -1;
     if (t.frozen)
       punishing = true; // CH2: a foe frozen in Time Stop cannot answer: pile every blow in
     else if (opening) {
@@ -606,6 +618,16 @@ export class FighterBrain {
       this.nextStrafeS = now + (1 + v.random() * 1.5) * (1.4 - 0.6 * diff.moveSkill);
     }
     const side = { x: -toward.y * this.strafe, y: toward.x * this.strafe };
+    // Under a sustained stream of fire it keeps moving across the line of fire, switching side often, rather than standing in it.
+    if (v.foeFiring && diff.moveSkill > 0 && dist > v.meleeReachM * 1.5 && !t.down) {
+      if (now >= this.nextWeaveS) {
+        this.strafe = -this.strafe;
+        this.nextWeaveS = now + 0.35 + v.random() * 0.4 * (1.3 - diff.moveSkill);
+      }
+      const w = { x: -toward.y * this.strafe, y: toward.x * this.strafe };
+      out.move = { x: w.x * 0.95 + toward.x * 0.2, y: w.y * 0.95 + toward.y * 0.2 };
+      return out;
+    }
     const away = (k: number, sideK: number): Vec2 => ({
       x: -toward.x * k + side.x * sideK,
       y: -toward.y * k + side.y * sideK,
@@ -702,6 +724,11 @@ export class FighterBrain {
           punishing || t.helpless || t.hpFrac < 0.5 || this.phase === 'behind' || this.phase === 'critical';
         if (diff.ultNeedsMoment && !moment) continue;
       }
+      // A channelled ability stops when its caster is hit: a planner does not start one with a free foe at its shoulder, and a foe that
+      // is itself channelling cannot answer, so a channel is safer then.
+      if (a.channel && diff.cooldownPlanning && dist < v.meleeReachM * 2 && !t.helpless && !t.down && !t.frozen && !t.attacking) w *= 0.2;
+      if (a.channel && v.foeChannel) w *= 0.5; // two channels trading in the open: hitting it matters more
+      if (v.foeChannel && diff.castAwareness >= 0.3 && (tac.role === 'burst' || tac.role === 'gapClose')) w *= 2;
       // Interrupting an ultimate that is winding up (a smart tier closes in on it).
       if (v.foeCast?.ult && diff.castAwareness >= 0.6 && (tac.role === 'burst' || tac.role === 'gapClose')) w *= 2.5;
       // Movement abilities (dashes, teleports) are used readily only by those who move well.

@@ -165,7 +165,7 @@ export const GUNSMITH_KIT: AbilityKit = {
       speedMps: 36,
       radiusM: 0.2,
       maxRangeM: 12,
-      burst: { count: 44, gapS: 0.065, jitterRad: 0.07, aimable: true },
+      burst: { count: 44, gapS: 0.065, jitterRad: 0.07, aimable: true, muzzle: { heightM: 1.42, reachM: 1.05 } },
     },
     vfx: 'machine-gun',
     sfx: { cast: 'gun-machine-ready', release: 'gun-machine-burst', impact: 'bullet-hit-heavy' },

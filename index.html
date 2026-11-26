@@ -345,7 +345,9 @@
       }
       .th-side { position: relative; --accent: #ffb27a; --slant: -18deg; display: flex; gap: 10px; align-items: flex-start; }
       .th-right { --slant: 18deg; flex-direction: row-reverse; text-align: right; }
-      .th-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .th-hpnum { position: absolute; top: 0; right: 8px; font: italic 800 12px/17px system-ui, sans-serif; color: #eaffea; text-shadow: 0 1px 0 #0b0d12, 0 0 4px rgba(0, 0, 0, 0.8); letter-spacing: 0.04em; pointer-events: none; }
+      .th-right .th-hpnum { right: auto; left: 8px; }
+      .th-info { position: relative; flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
       .th-name {
         padding: 0 10px; font: italic 900 14px system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase;
         color: #fff; text-shadow: 0 2px 0 #000, 0 0 6px var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
