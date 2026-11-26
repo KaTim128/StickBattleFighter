@@ -82,6 +82,11 @@ export interface AbilityPayload {
   /** Restores this fraction of the damage to the caster when it lands (Soul Drain, owner 12/11/2026). */
   readonly lifesteal?: number;
   /**
+   * Soul Drain (owner, 26/11/2026): when it lands, the caster absorbs `fraction` of every successful damage instance he or his summons deal for
+   * `durationS` seconds, as healing (never above his maximum health).
+   */
+  readonly absorb?: { readonly durationS: number; readonly fraction: number };
+  /**
    * Blinds the target this long when it lands (Soul Drain, owner 12/11/2026): it cannot lock on
    * to anyone; a computer-controlled fighter cannot find its target; a player's view goes dark.
    */

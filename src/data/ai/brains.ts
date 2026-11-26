@@ -394,7 +394,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       a3: { role: 'curse', minM: 2, maxM: 10, weight: 1.6, when: { targetCursed: false } },
       a1: { role: 'poke', minM: 2, maxM: 10, weight: 1.1 },
       a2: { role: 'zone', minM: 1.5, maxM: 9, weight: 1.2, when: { targetCursed: true } },
-      a4: { role: 'control', minM: 3, maxM: 10, weight: 0.9 },
+      a4: { role: 'summon', minM: 0, maxM: 10, weight: 0.9 },
       ult: { role: 'summon', minM: 0, maxM: 10, weight: 1, when: { selfHpBelow: 0.9 } },
     },
     combos: [

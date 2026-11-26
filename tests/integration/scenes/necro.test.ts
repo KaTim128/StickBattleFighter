@@ -39,7 +39,7 @@ async function setup(
   run(0.2);
   scene.drainEvents();
   /** Face the dummy (soft lock picks it) and cast. */
-  const cast = (slot: 'a1' | 'a2' | 'a3' | 'ult') => {
+  const cast = (slot: 'a1' | 'a2' | 'a3' | 'a4' | 'ult') => {
     intents.pressAbility(slot);
     run(STEP * 2);
   };
@@ -71,31 +71,100 @@ describe('Necro (owner, 12/11/2026): the death mage', () => {
     scenes.clear();
   });
 
-  it('Soul Drain: a projectile that hurts the target, gives Necro back 15% of the damage and blinds it', async () => {
+  type Strike = (a: unknown, t: unknown, s: unknown) => boolean;
+  const blow = (scene: unknown, by: unknown, target: unknown, damage: number) =>
+    (scene as { applyStrike: Strike }).applyStrike(by, target, {
+      damage,
+      heavy: false,
+      knockbackMps: 0,
+      dir: { x: 1, y: 0 },
+      melee: false,
+      impact: 'knuckle-light',
+      noFlinch: true,
+    });
+
+  it('Soul Drain: a purple bolt that hurts and blinds the target and opens a 10 s absorption (the bolt itself heals nothing)', async () => {
     const { scene, scenes, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
     scene.playerFighter.combatant.hp = 600;
+    expect(K.a1.look?.palette.hot).toBe(0x6a2bb0); // the violet look is back
     cast('a1');
     runUntil(() => scene.dummy.hp < 1000, 3);
-    const dealt = 1000 - scene.dummy.hp;
-    expect(dealt).toBeGreaterThan(0);
-    expect(scene.player.hp).toBeGreaterThan(600);
-    expect(scene.player.hp - 600).toBeCloseTo(K.a1.payload.damage * K.a1.payload.lifesteal!, 0);
-    expect(scene.dummyFighter.combatant.blinded).toBe(true); // blinded for 3 s
+    expect(1000 - scene.dummy.hp).toBeGreaterThan(0);
+    expect(scene.player.hp).toBe(600);
+    expect(scene.dummyFighter.combatant.blinded).toBe(true);
+    expect(scene.playerFighter.absorbS).toBeGreaterThan(9.5);
+    expect(scene.playerFighter.absorbS).toBeLessThanOrEqual(10);
     scenes.clear();
   });
 
-  it('Soul Drain heals 15% of the HP actually removed, not of the nominal damage (HL, N2)', async () => {
-    const { scene, scenes, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });
-    scene.playerFighter.combatant.hp = 600;
-    scene.dummyFighter.combatant.hp = 10; // the bolt can remove only 10 of its 60
+  it('Soul Drain absorption: 5% of every real damage instance by Necro or his skeletons, once each, capped at max health, gone after 10 s', async () => {
+    const { scene, scenes, run, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 15, y: 13 });
+    const necro = scene.playerFighter;
+    const foe = scene.dummyFighter;
+    necro.combatant.stamina = 100;
+    necro.combatant.hp = 600;
     cast('a1');
-    runUntil(() => scene.dummy.hp < 10, 3);
-    const removed = 10 - scene.dummy.hp;
+    runUntil(() => necro.absorbS > 0, 3);
+    run(0.5);
+    const hp0 = necro.combatant.hp;
+    // 100 damage dealt = 5 health (no defence on the dummy for this check: measure what was really removed).
+    const before = foe.combatant.hp;
+    blow(scene, necro, foe, 100);
+    const removed = before - foe.combatant.hp;
     expect(removed).toBeGreaterThan(0);
-    expect(removed).toBeLessThan(K.a1.payload.damage);
-    expect(scene.player.hp - 600).toBeCloseTo(removed * K.a1.payload.lifesteal!, 5);
+    expect(necro.combatant.hp - hp0).toBeCloseTo(removed * 0.05, 5);
+    // A skeleton's blow counts too.
+    const summons = (scene as unknown as { summons: { spawn: (o: unknown, s: unknown) => number; list: { summon: { owner: unknown } | null }[] } }).summons;
+    summons.spawn(necro, K.a4.delivery);
+    const skeleton = summons.list.find((m) => m.summon?.owner === necro)!;
+    const hp1 = necro.combatant.hp;
+    const before2 = foe.combatant.hp;
+    blow(scene, skeleton, foe, 80);
+    expect(necro.combatant.hp - hp1).toBeCloseTo((before2 - foe.combatant.hp) * 0.05, 5);
+    // Never above the maximum.
+    necro.combatant.hp = necro.combatant.stats.maxHp - 1;
+    blow(scene, necro, foe, 400);
+    expect(necro.combatant.hp).toBeLessThanOrEqual(necro.combatant.stats.maxHp);
+    // After 10 s it is over: no more healing.
+    run(10.2);
+    expect(necro.absorbS).toBe(0);
+    necro.combatant.hp = 500;
+    blow(scene, necro, foe, 100);
+    expect(necro.combatant.hp).toBe(500);
     scenes.clear();
-  });
+  }, 60_000);
+
+  it('Skeletal Brute: two armoured skeletons with swords and shields fight for exactly 8 seconds, never more than two, and can be killed', async () => {
+    const d = K.a4.delivery;
+    if (d.type !== 'summon') throw new Error('summon');
+    expect(d.count).toBe(2);
+    expect(d.lifeS).toBe(8);
+    expect(d.maxAlive).toBe(2);
+    const { scene, scenes, run, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 17, y: 13 });
+    const necro = scene.playerFighter;
+    necro.combatant.stamina = 100;
+    const list = () =>
+      (scene as unknown as { summons: { list: { summon: { owner: unknown } | null; combatant: { isKo: boolean; hp: number }; def: { id: string; effects: { held?: string } } }[] } }).summons.list.filter(
+        (m) => m.summon?.owner === necro && !m.combatant.isKo,
+      );
+    cast('a4');
+    runUntil(() => list().length > 0, 2);
+    expect(list()).toHaveLength(2);
+    expect(list()[0]!.def.id).toBe('skeleton-brute');
+    expect(list()[0]!.def.effects.held).toBe('shield-sword'); // sword and shield
+    const t0 = (scene as unknown as { simTimeS: number }).simTimeS;
+    // They fight: the dummy is hurt.
+    runUntil(() => scene.dummy.hp < 1000, 5);
+    expect(scene.dummy.hp).toBeLessThan(1000);
+    // No third and fourth: another cast is refused while two stand.
+    expect(scene.abilities!.tryCast(necro, 'a4')).not.toBeNull();
+    runUntil(() => list().length === 0, 10);
+    expect(list()).toHaveLength(0);
+    expect((scene as unknown as { simTimeS: number }).simTimeS - t0).toBeGreaterThan(7.2); // about 8 s after they rose, not before
+    expect((scene as unknown as { simTimeS: number }).simTimeS - t0).toBeLessThan(9.2);
+    void run;
+    scenes.clear();
+  }, 60_000);
 
   it('Death Eruption: bursts up under the target at range, hurting and trapping it in place', async () => {
     const { scene, scenes, run, runUntil, cast } = await setup({ x: 13, y: 13 }, { x: 18, y: 13 });

@@ -108,3 +108,7 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 
 ## Clash strength: weight and martial art (26/11/2026)
 - A fighter's clash factor is now `clashPower x weight factor x (1 + clashParry)`: the weight factor is (mass/80)^0.2 kept between 0.92 and 1.12, and `clashParry` is the martial art's bonus (Wing Chun 0.2 for Voltar; kung fu 0.06 for Inkmaster; karate 0.06 for Vexoris). It multiplies the player's mash presses (each press counts the factor, not 1) and the opponent's mash rate. Titan's strength went from 1.3 to 1.12, so its factor is about 1.25 (was 1.3): still the hardest, a little easier; Bohemeth 1.08 (about 1.21). Light fighters without a martial art now sit near 0.95.
+
+## Necro: Skeletal Brute and Soul Drain absorption (26/11/2026)
+- **Skeletal Brute (R, replaces Grave Chains):** two armoured skeletons (170 HP, sword and round shield, new `skeleton-brute` summon) rise beside him, follow him, fight and block, and crumble after exactly 8 s; never more than two; 18 s cooldown, 32 stamina.
+- **Soul Drain:** its violet look is back; it no longer heals directly. A landed bolt opens a 10 s absorption: 5% of every real damage instance (hit points actually removed) dealt by Necro or his skeletons returns to Necro as healing, once per blow, capped at his maximum; particles run red from the victim to violet into Necro.

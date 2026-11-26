@@ -334,6 +334,11 @@ export class SceneAbilities implements AbilityHost {
       const d = payload.decay;
       target.combatant.decay(d.durationS, d.attackFactor, d.defenceFactor);
     }
+    // Soul Drain (owner, 26/11/2026): a landed bolt opens a 10 s absorption on the caster.
+    if (landed && payload.absorb) {
+      attacker.absorbS = payload.absorb.durationS;
+      attacker.absorbFraction = payload.absorb.fraction;
+    }
     // Soul Drain (HL, N2): the caster takes back a share of the HP the blow actually removed; a blocked,
     // absorbed or missed blow removes none, so it heals none.
     if (landed && payload.lifesteal && !attacker.combatant.isKo) {

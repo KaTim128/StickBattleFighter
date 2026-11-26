@@ -1,0 +1,67 @@
+{
+  "id": "skeleton-brute",
+  "template": "base-stickman",
+  "displayName": "Skeletal Brute",
+  "description": "An armoured skeleton raised by Necro's Skeletal Brute: it follows him, hunts the nearest enemy with a sword, blocks with its shield, then crumbles.",
+  "characterType": "summon",
+  "element": "none",
+  "combatStyle": "blade",
+  "profiles": {
+    "animation": "base-stickman-animation",
+    "moveset": "brute-moveset",
+    "stats": "brute-stats",
+    "effects": "brute-effects",
+    "audio": "default-audio",
+    "ai": "brute-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.5,
+      "neck": 0.08,
+      "headRadius": 0.16,
+      "upperArm": 0.28,
+      "foreArm": 0.26,
+      "thigh": 0.4,
+      "shin": 0.4
+    },
+    "colour": "#d8cfe6",
+    "colourBack": "#a99fbd",
+    "outline": "#2a241c",
+    "limbWidthM": 0.075,
+    "outlineWidthM": 0.035,
+    "scale": 1.0
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": true,
+    "canUsePunchClash": true,
+    "staggersTargets": false,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": false,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": true
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Practice only."
+  },
+  "abilityKit": null
+}

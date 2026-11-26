@@ -10,8 +10,8 @@ import { chargeFor } from '../../abilities/ultimate-charge';
  * and the energy gathering round him is subtle so it never hides him (CHARACTER_STYLE_QA S7). All numbers
  * PROVISIONAL (OQ-05).
  */
-/** Soul Drain's own colours: grey ghost-light with a subtle red glow burning at its centre. */
-const DRAIN = { deep: 0x1e1e23, hot: 0x6f6f78, bright: 0xc4c4cc, core: 0xff6a58 } as const;
+/** Soul Drain's colours (restored, owner 26/11/2026): the violet of drawn souls with a pale core. */
+const DRAIN = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff } as const;
 const SOUL = { deep: 0x2a0d3d, hot: 0x6a2bb0, bright: 0xa970ff, core: 0xeee2ff } as const;
 /** Curse of Decay's colours: rot green over the grave's dark. */
 const DECAY = { deep: 0x1c2410, hot: 0x5d8a1e, bright: 0xa8d84c, core: 0xecffc8 } as const;
@@ -27,7 +27,7 @@ export const NECRO_KIT: AbilityKit = {
     label: 'DRAIN',
     icon: 'soul-drain',
     description:
-      'A bolt of drawn souls. It drains life from the target, healing Necro for 15% of the damage dealt, and blinds it for 3 seconds.',
+      'A bolt of drawn souls that blinds the target for 3 seconds. Once it hits, Necro absorbs 5% of every successful hit he or his skeletons land for 10 seconds, red life drawn out of the enemy and returned to him as purple healing.',
     slot: 'a1',
     staminaCost: 20,
     cooldownS: 4.5,
@@ -42,7 +42,7 @@ export const NECRO_KIT: AbilityKit = {
       heavy: false,
       strength: 200,
       impact: 'knuckle-light',
-      lifesteal: 0.15,
+      absorb: { durationS: 10, fraction: 0.05 },
       blindS: 3,
     },
     delivery: { type: 'projectile', speedMps: 14, radiusM: 0.3, maxRangeM: 10 },
@@ -122,41 +122,30 @@ export const NECRO_KIT: AbilityKit = {
       hitFlash: 0xc8f08a,
     },
   },
-  // A4 (R): Grave Chains (owner, 12/11/2026). He thrusts the staff forward and spectral chains lash
-  // out (16 m/s, up to 8 m); the first enemy they catch is dragged back to his feet and held for a
-  // moment, set up for his staff combo.
+  // A4 (R): Skeletal Brute (owner, 26/11/2026, replacing Grave Chains). Two armoured skeletons with swords and shields claw out of the ground
+  // beside him, follow him, hunt the nearest enemy, strike with their swords and block with their shields, and crumble after exactly 8 seconds.
   a4: {
-    id: 'graveChains',
-    name: 'Grave Chains',
-    label: 'CHAIN',
+    id: 'skeletalBrute',
+    name: 'Skeletal Brute',
+    label: 'BRUTE',
     description:
-      'Spectral chains lash out from his staff; the first enemy caught is dragged back to him and held for a moment.',
-    icon: 'grave-chains',
+      'Two armoured skeleton warriors with swords and shields claw out of the ground beside him. They follow him, hunt the nearest enemy, strike with their swords and block with their shields for exactly 8 seconds, then crumble. They can be fought and destroyed, and no more than two stand at once.',
+    icon: 'skeletal-brute',
     slot: 'a4',
-    staminaCost: 25,
-    cooldownS: 8,
-    castS: 0.3,
-    recoveryS: 0.3,
-    aimRangeM: 8,
-    moveFactor: 0.2,
+    staminaCost: 32,
+    cooldownS: 18,
+    castS: 0.5,
+    recoveryS: 0.4,
+    aimRangeM: 0,
+    moveFactor: 0,
     interruptible: true,
-    payload: {
-      damage: 40,
-      knockbackMps: 0,
-      heavy: false,
-      strength: 150,
-      impact: 'knuckle-light',
-      stunS: 0.8,
-      pull: { speedMps: 16, stopM: 0.9 },
-    },
-    delivery: { type: 'projectile', speedMps: 16, radiusM: 0.3, maxRangeM: 8 },
-    vfx: 'grave-chains',
-    sfx: { cast: 'soul-gather', release: 'chain-lash', impact: 'chain-catch' },
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: { type: 'summon', character: 'skeleton-brute', count: 2, lifeS: 8, maxAlive: 2, near: 'caster' },
+    vfx: 'skeletal-brute',
+    sfx: { cast: 'soul-gather', release: 'brute-rise', impact: 'brute-clatter' },
     look: {
       palette: SOUL,
-      flight: { trailPerS: 70, sparksPerS: 16, shimmer: false },
-      impact: { flashM: 0.6, sparks: 16, motes: 16, ringM: 0.8, groundFire: false, smokeColour: 0x3a2050 },
-      hitFlash: 0xd9c2ff,
+      impact: { flashM: 0.4, sparks: 6, motes: 18, ringM: 2.2, smoke: 6, groundFire: false, smokeColour: 0x2e2438 },
     },
   },
   // A5 (master plan B13): Soul Tether. A slow bolt of bound souls: it drains life (80% flows back to

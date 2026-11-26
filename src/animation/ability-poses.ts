@@ -992,10 +992,8 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.25,
   },
 
-  // Grave Chains (owner, 12/11/2026): the staff drawn back over the shoulder as the free hand
-  // curls in, then the staff thrust straight out and the free hand yanking back, dragging the
-  // caught enemy in.
-  graveChains: {
+  // Skeletal Brute (owner, 26/11/2026): the staff raised over his head in both hands, then slammed down into the ground to split it open.
+  skeletalBrute: {
     windup: { lean: deg(6), head: deg(-2), armBack: limb(130, 40), armFront: limb(40, 90) },
     release: { lean: deg(-14), head: deg(10), armBack: limb(92, 6), armFront: limb(-20, 100), legFront: limb(30, -30) },
     settle: 0.45,

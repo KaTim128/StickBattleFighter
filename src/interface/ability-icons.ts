@@ -215,11 +215,11 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 30, 14, '#e8dcff', 0.18),
     `<path d="M0 41 H48 V48 H0 Z" fill="#170622"/><g fill="url(#bn)" stroke="#2a241c" stroke-width="1.4" filter="url(#ds)"><circle cx="11" cy="31" r="6.4"/><circle cx="24" cy="21" r="8"/><circle cx="37" cy="31" r="6.4"/><rect x="8" y="35" width="7" height="5.5" rx="1.6"/><rect x="20" y="27" width="8" height="6.5" rx="1.6"/><rect x="34" y="35" width="7" height="5.5" rx="1.6"/></g><g fill="#160f1f"><ellipse cx="9" cy="31" rx="1.7" ry="2.1"/><ellipse cx="13" cy="31" rx="1.7" ry="2.1"/><ellipse cx="21.3" cy="21" rx="2.2" ry="2.6"/><ellipse cx="26.7" cy="21" rx="2.2" ry="2.6"/><ellipse cx="35" cy="31" rx="1.7" ry="2.1"/><ellipse cx="39" cy="31" rx="1.7" ry="2.1"/></g>`,
   ),
-  // Grave Chains: heavy spectral chain links ending in a bone hook.
-  'grave-chains': icon(
+  // Skeletal Brute: a round shield between two skulls and crossed bones.
+  'skeletal-brute': icon(
     'soul',
-    swirl('#e8dcff', 0.35),
-    `<g fill="none" stroke-width="3.6" stroke-linecap="round" filter="url(#gl)"><ellipse cx="10" cy="37" rx="5.6" ry="3.6" transform="rotate(-35 10 37)" stroke="#e8dcff"/><ellipse cx="18.5" cy="31" rx="5.6" ry="3.6" transform="rotate(-35 18.5 31)" stroke="#a970ff"/><ellipse cx="27" cy="25" rx="5.6" ry="3.6" transform="rotate(-35 27 25)" stroke="#e8dcff"/></g><path d="M31 21 C38 13 45 18 41 25 C39 28.5 34 27.5 34 24" stroke="#2a241c" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M31 21 C38 13 45 18 41 25 C39 28.5 34 27.5 34 24" stroke="url(#bn)" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    rays(24, 24, 16, '#d9c8ff', 0.18),
+    `<g filter="url(#ds)"><circle cx="24" cy="26" r="13" fill="#4a3d66" stroke="#16101f" stroke-width="2"/><circle cx="24" cy="26" r="8" fill="#6a5a8c" stroke="#16101f" stroke-width="1.4"/><circle cx="24" cy="26" r="3" fill="#d9c8ff"/></g><path d="M8 40 L18 30 M40 40 L30 30" stroke="#e6dfcf" stroke-width="3.4" stroke-linecap="round"/><circle cx="12" cy="12" r="5" fill="#e6dfcf" stroke="#2a241c" stroke-width="1.4"/><circle cx="36" cy="12" r="5" fill="#e6dfcf" stroke="#2a241c" stroke-width="1.4"/>`,
   ),
   // Necro's combo: a bone staff sweeping round in a violet arc.
   'staff-swing': icon(

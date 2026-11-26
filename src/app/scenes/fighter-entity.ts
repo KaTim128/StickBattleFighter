@@ -71,6 +71,9 @@ export class FighterEntity {
   overFurniture = false;
   /** Seconds since this fighter last fought (attacked, cast, blocked, dodged or was hit): presentation only. */
   calmS = 0;
+  /** Soul Drain's absorption (Necro): seconds left and the share of damage dealt that returns as healing. */
+  absorbS = 0;
+  absorbFraction = 0;
   /** Health last frame, to notice being hit. */
   calmHp = Number.NaN;
   /** Burn damage not yet shown as a floating number. */

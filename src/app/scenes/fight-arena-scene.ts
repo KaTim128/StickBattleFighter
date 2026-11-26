@@ -994,6 +994,7 @@ export class FightArenaScene implements ArenaScene {
       f.burnTextS = Math.max(0, f.burnTextS - stepS);
       f.flashS = Math.max(0, f.flashS - stepS);
       f.shieldS = Math.max(0, f.shieldS - stepS);
+      f.absorbS = f.combatant.isKo ? 0 : Math.max(0, f.absorbS - stepS);
       // A timed self-buff runs out (or ends at a KO).
       if (f.buff) {
         f.buff.leftS -= stepS;
@@ -1360,6 +1361,20 @@ export class FightArenaScene implements ArenaScene {
       f.aiTargetS = 0;
     } else f.aiTargetS += stepS;
     return foes.find((o) => o.name === id) ?? main;
+  }
+
+  /**
+   * Soul Drain's absorption (owner, 26/11/2026): while it lasts, a share of the damage Necro or one of his skeletons really removes (the hit
+   * points that were taken, never the damage attempted, so a block or a dodge heals nothing) comes back to Necro as healing, once per blow,
+   * never above his maximum.
+   */
+  private absorbHealing(attacker: FighterEntity, target: FighterEntity, dealt: number): void {
+    const owner = attacker.summon?.owner ?? attacker;
+    if (owner.absorbS <= 0 || dealt <= 0 || owner.combatant.isKo || owner.team === target.team) return;
+    const before = owner.combatant.hp;
+    owner.combatant.heal(dealt * owner.absorbFraction);
+    const healed = owner.combatant.hp - before;
+    if (healed > 0) this.drainFx.push({ by: owner, target, ageS: 0, count: Math.min(10, 3 + Math.round(healed / 2)) });
   }
 
   /** Soul Drain's returning particles: who was drained, who takes it back, how long since it landed. */
@@ -3010,6 +3025,7 @@ export class FightArenaScene implements ArenaScene {
     this.abilities?.world.recordDealt(attacker.name, Math.max(0, hpBefore - target.combatant.hp));
     if (result.outcome === 'ignored') return false;
     this.tallyHit(attacker, target, hpBefore, wasDown, result.outcome);
+    this.absorbHealing(attacker, target, hpBefore - target.combatant.hp);
     this.events.push({
       kind: result.outcome,
       target: target.name,

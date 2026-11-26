@@ -1614,9 +1614,18 @@ export class AbilityVfx {
           (1 - e) * (1 - e) * a + 2 * (1 - e) * e * b + e * e * c;
         const q = P(bez(dr.from.x, cx, dr.to.x), bez(dr.from.y, cy, dr.to.y), bez(dr.from.z, cz, dr.to.z));
         const sz = 0.065 * (1 - 0.4 * e);
-        g.circle(q.x, q.y, sz * 2.6).fill({ color: pal.core, alpha: 0.22 * (1 - e * 0.5) });
-        g.circle(q.x, q.y, sz).fill({ color: pal.bright, alpha: 0.9 });
-        g.circle(q.x, q.y, sz * 0.5).fill({ color: pal.core, alpha: 0.95 });
+        // Red where it leaves the victim, turning violet on the way to the drainer, and a purple healing pulse when it arrives.
+        const mixc = (c0: number, c1: number, k: number): number => {
+          const r = Math.round(((c0 >> 16) & 255) * (1 - k) + ((c1 >> 16) & 255) * k);
+          const gg = Math.round(((c0 >> 8) & 255) * (1 - k) + ((c1 >> 8) & 255) * k);
+          const bb = Math.round((c0 & 255) * (1 - k) + (c1 & 255) * k);
+          return (r << 16) | (gg << 8) | bb;
+        };
+        const col = mixc(0xff2a2a, pal.bright, Math.min(1, e * 1.4));
+        const core = mixc(0xff8a8a, pal.core, Math.min(1, e * 1.4));
+        g.circle(q.x, q.y, sz * 2.6).fill({ color: col, alpha: 0.22 * (1 - e * 0.5) });
+        g.circle(q.x, q.y, sz).fill({ color: col, alpha: 0.9 });
+        g.circle(q.x, q.y, sz * 0.5).fill({ color: core, alpha: 0.95 });
         // A short fading tail behind it.
         const e2 = Math.max(0, e - 0.035);
         const t0 = P(
@@ -1626,11 +1635,11 @@ export class AbilityVfx {
         );
         g.moveTo(t0.x, t0.y)
           .lineTo(q.x, q.y)
-          .stroke({ width: sz * 1.3, color: pal.bright, alpha: 0.4, cap: 'round' });
+          .stroke({ width: sz * 1.3, color: col, alpha: 0.4, cap: 'round' });
         if (u > 0.9) {
           const p2 = P(dr.to.x, dr.to.y, dr.to.z);
           const k = (u - 0.9) / 0.1;
-          g.circle(p2.x, p2.y, 0.12 + 0.18 * k).fill({ color: pal.core, alpha: 0.28 * (1 - k) });
+          g.circle(p2.x, p2.y, 0.12 + 0.18 * k).fill({ color: pal.bright, alpha: 0.32 * (1 - k) });
         }
       }
     }

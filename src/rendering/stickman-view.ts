@@ -1534,6 +1534,15 @@ export class StickmanView {
     const ux = dx / l;
     const uy = dy / l;
     const D = StickmanView.DEATH;
+    if (this.held === 'shield-sword') {
+      // Skeletal Brute: a round bone-and-iron shield on the back arm (the sword is the grave blade below).
+      const sh = s.armBack[2];
+      const r = 0.2;
+      g.circle(sh.x + ux * 0.06, sh.y + uy * 0.06, r + o).fill(0x16101f);
+      g.circle(sh.x + ux * 0.06, sh.y + uy * 0.06, r).fill(0x4a3d66);
+      g.circle(sh.x + ux * 0.06, sh.y + uy * 0.06, r * 0.72).fill(0x6a5a8c);
+      g.circle(sh.x + ux * 0.06, sh.y + uy * 0.06, r * 0.22).fill(0xd9c8ff);
+    }
     if (this.held === 'staff') {
       this.drawStaff(g, s, o);
       return;

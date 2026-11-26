@@ -362,14 +362,14 @@ const RECIPES: Readonly<Record<string, readonly Layer[]>> = {
     { tone: { wave: 'sine', f0: 140, f1: 55, dur: 0.2, gain: 0.7 } },
     { noise: { dur: 0.45, gain: 0.35, type: 'bandpass', freq: 400, freqEnd: 2200, q: 2.5, attack: 0.2, delay: 0.05 } },
   ],
-  // Grave Chains (owner, 12/11/2026): iron links lashing out, a cold metallic rattle on a hollow whoosh.
-  'chain-lash': [
+  // Skeletal Brute (owner, 26/11/2026): the ground splitting and bones and armour clattering up out of it.
+  'brute-rise': [
     { noise: { dur: 0.3, gain: 0.35, type: 'bandpass', freq: 900, freqEnd: 2400, q: 1.2, attack: 0.02 } },
     { crackle: { dur: 0.35, gain: 0.22, count: 12 } },
     { tone: { wave: 'triangle', f0: 1650, f1: 1500, dur: 0.18, gain: 0.05, delay: 0.04 } },
   ],
-  // The chains biting and yanking: a clank, a taut snap and a dragging scrape.
-  'chain-catch': [
+  // The skeletons settling into their armour: a clank, a rattle of bone and a scrape.
+  'brute-clatter': [
     { tone: { wave: 'triangle', f0: 980, f1: 760, dur: 0.12, gain: 0.18 } },
     { noise: { dur: 0.05, gain: 0.55, type: 'bandpass', freq: 2600, q: 2 } },
     { noise: { dur: 0.45, gain: 0.28, type: 'bandpass', freq: 700, freqEnd: 300, q: 1.5, attack: 0.05, delay: 0.06 } },

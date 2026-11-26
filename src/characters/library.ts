@@ -130,6 +130,11 @@ import shroudCharacter from '../data/characters/shroud/character.json';
 import shroudEffects from '../data/characters/shroud/effects.json';
 import shroudMoveset from '../data/characters/shroud/moveset.json';
 import shroudStats from '../data/characters/shroud/stats.json';
+import skeletonBruteAi from '../data/characters/skeleton-brute/ai.json';
+import skeletonBruteCharacter from '../data/characters/skeleton-brute/character.json';
+import skeletonBruteEffects from '../data/characters/skeleton-brute/effects.json';
+import skeletonBruteMoveset from '../data/characters/skeleton-brute/moveset.json';
+import skeletonBruteStats from '../data/characters/skeleton-brute/stats.json';
 import skeletonAi from '../data/characters/skeleton-warrior/ai.json';
 import skeletonCharacter from '../data/characters/skeleton-warrior/character.json';
 import skeletonEffects from '../data/characters/skeleton-warrior/effects.json';
@@ -196,6 +201,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     resonCharacter,
     chronosCharacter,
     skeletonCharacter,
+    skeletonBruteCharacter,
     dummyCharacter,
   ]),
   animation: byId<AnimationProfile>([
@@ -247,6 +253,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     resonMoveset,
     chronosMoveset,
     skeletonMoveset,
+    skeletonBruteMoveset,
   ]),
   stats: byId<StatsProfile>([
     baseStats,
@@ -271,6 +278,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     resonStats,
     chronosStats,
     skeletonStats,
+    skeletonBruteStats,
     dummyStats,
   ]),
   effects: byId<EffectsProfile>([
@@ -296,6 +304,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     resonEffects,
     chronosEffects,
     skeletonEffects,
+    skeletonBruteEffects,
   ]),
   audio: byId<AudioProfile>([
     defaultAudio,
@@ -320,6 +329,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     defaultAi,
     dummyAi,
     skeletonAi,
+    skeletonBruteAi,
     infernoAi,
     rampageAi,
     necroAi,

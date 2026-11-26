@@ -1,0 +1,8 @@
+{
+  "id": "brute-ai",
+  "attackEveryS": 0.85,
+  "aggression": 0.5,
+  "clashMashRate": 4,
+  "settleDecelMps2": 18,
+  "reactionS": 0.3
+}
