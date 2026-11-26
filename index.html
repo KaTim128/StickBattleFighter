@@ -675,9 +675,9 @@
       .tn-champion-name { font: 900 30px system-ui, sans-serif; }
       .tn-placement, .tn-record { opacity: 0.85; }
       .tn-banner.tn-overtime { background: rgba(120, 20, 10, 0.9); color: #ffd7c9; }
-      .tn-skip-battle { position: fixed; top: 64px; right: 16px; z-index: 21; padding: 8px 16px; border: 2px solid #c9a24a; border-radius: 0; background: rgba(13, 15, 20, 0.9); color: #ffcf9e; font: 800 13px system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+      .tn-skip-battle { position: fixed; top: auto; bottom: 10px; right: 10px; z-index: 21; padding: 4px 10px; min-height: 0; font-size: 10px; border: 2px solid #c9a24a; border-radius: 0; background: rgba(13, 15, 20, 0.9); color: #ffcf9e; font: 800 13px system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
       .tn-skip-battle:disabled { opacity: 0.6; cursor: default; }
-      .tn-banner { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 4px 14px; border-radius: 999px; background: rgba(13, 15, 20, 0.8); color: #ffcf9e; font: 800 12px system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; pointer-events: none; }
+      .tn-banner { position: fixed; top: auto; bottom: 10px; left: 10px; transform: none; z-index: 20; padding: 2px 8px; border-radius: 999px; background: rgba(13, 15, 20, 0.7); color: #ffcf9e; font: 800 9px system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; pointer-events: none; }
       /* Combat controls only in an active fight (owner, 13/11/2026; set by bootstrap). */
       body:not(.fighting) .ability-bar, body:not(.fighting) .touch-controls { display: none; }
       body.spectating .clash-prompt { visibility: hidden; } /* nothing to mash while watching */
@@ -1070,6 +1070,7 @@
       .ui-btn--primary, :is(.fe-go, .tn-fight, .tn-skip-all) { --btn-bg: linear-gradient(#ffa866, #e86f1f); --btn-fg: #1b120a; --btn-edge: #ffd9a8; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35); }
       .ui-btn--secondary { --btn-bg: linear-gradient(#5a3fb0, #3a2680); --btn-edge: #b9a2ff; }
       .ui-btn--danger, :is(.settings-leave) { --btn-bg: linear-gradient(#7a2a24, #4a1612); --btn-edge: var(--ui-danger); }
+      .tn-skip-battle { padding: 4px 10px; min-height: 0; font-size: 10px; letter-spacing: 0.08em; }
       .ui-btn--skip, :is(.tn-skip-battle) { --btn-bg: linear-gradient(rgba(30, 36, 48, 0.95), rgba(13, 15, 20, 0.95)); --btn-fg: var(--ui-gold); }
       :is(.tn-fight, .tn-skip-all) { padding: 12px 44px; font-size: 16px; letter-spacing: 0.14em; border-radius: var(--ui-radius); }
       .tn-leave, .fe-back { --btn-edge: var(--ui-border); }
