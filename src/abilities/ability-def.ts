@@ -104,6 +104,8 @@ export interface AbilityPayload {
   readonly decay?: { readonly durationS: number; readonly attackFactor: number; readonly defenceFactor: number };
   /** Deep cuts: the target bleeds (takes 10% more damage for 6 s, `BLEED`; Shroud's knife). */
   readonly bleed?: boolean;
+  /** The bleeding also costs this much health per second while it lasts (Kamaw); it refreshes, never stacks. */
+  readonly bleedDps?: number;
   /** Toxicity stacks the target gets when it lands (Vexoris, TD-115). One application per target per hit event. */
   readonly poison?: number;
   /**
@@ -229,6 +231,8 @@ export interface ProjectileDelivery {
     readonly jitterRad?: number;
     readonly finalFactor?: number;
     readonly aimable?: boolean;
+    /** Every shot after the first flies this many times faster (Kamaw's Double Pounce: the second throw is the quicker). */
+    readonly laterSpeedFactor?: number;
   };
   /**
    * Thrown on a curve (Kamaw's chained sickle, owner 26/11/2026): the flight bends sideways through this many radians in total, so it swings
@@ -449,7 +453,12 @@ export interface LeapDelivery {
    * Gravehook Launch (Sickle Wielder): a sickle is first thrown at the ground up to `throwRangeM` ahead and must embed (a wall or furniture in the way, and
    * it fails with nothing moving: no teleport); `embedS` later a tether pulls him up and across in the leap, to land with the slice.
    */
-  readonly anchor?: { readonly throwRangeM: number; readonly embedS: number };
+  readonly anchor?: {
+    readonly throwRangeM: number;
+    readonly embedS: number;
+    /** The hook is thrown this far past the aimed spot, so it bites into the ground beyond the enemy (Kamaw's Reaper Hook). */
+    readonly pastM?: number;
+  };
   /**
    * The form it takes while the caster's buff `empowersLeap` (Bohemeth's ultimate): it carries him further, hits harder
    * (`damageFactor`) and lands with its own, hotter look, but keeps the same landing radius.
@@ -710,6 +719,44 @@ export interface WhirlDelivery {
   readonly radiusM: number;
   readonly durationS: number;
   readonly tickS: number;
+  /**
+   * The caster spins across the floor under the player's own steering (Kamaw's Human Sickle Beyblade): he moves at this speed in whatever
+   * direction the movement keys or stick hold (never locked on to anyone), eases to a stop when nothing is held, and cannot pass walls. The
+   * ultimate button again ends it early.
+   */
+  readonly steered?: { readonly speedMps: number; readonly accelMps2: number; readonly spinTurnsPerS: number; readonly endS: number };
+}
+
+/**
+ * A timed run of blows, optionally while moving (Kamaw's Predator Rush and Crescent Execution). The caster drives along his steering (the player's
+ * movement input, or the enemy for the AI) at `moveSpeedMps`, so a quarry that doubles back is still followed; each `hits` entry lands at its own
+ * time, as a real hit on everything inside its shape (a cone in front, or a full circle round him), with the payload scaled by its factors.
+ */
+export interface FlurryHit {
+  readonly atS: number;
+  readonly shape: 'cone' | 'circle';
+  readonly reachM: number;
+  /** Half-angle of a cone, radians. */
+  readonly halfArcRad?: number;
+  readonly damageFactor: number;
+  readonly knockbackFactor: number;
+  /** Knocks down instead of a flinch. */
+  readonly heavy?: boolean;
+  /** Throws the target into the air a little (a rising hook). */
+  readonly lift?: { readonly liftS: number; readonly liftM: number; readonly fallDamage: number };
+  /** A short forward leap with this blow, metres, at `moveSpeedMps` of the flurry's `leapSpeedMps`. */
+  readonly leapM?: number;
+  readonly sfx?: string;
+}
+export interface FlurryDelivery {
+  readonly type: 'flurry';
+  readonly durationS: number;
+  /** 0 = in place. */
+  readonly moveSpeedMps: number;
+  /** Follows the movement input while it runs. */
+  readonly steered?: boolean;
+  readonly leapSpeedMps?: number;
+  readonly hits: readonly FlurryHit[];
 }
 
 /**
@@ -1090,6 +1137,7 @@ export type Delivery =
   | EchoDelivery
   | AssaultDelivery
   | SpinDelivery
+  | FlurryDelivery
   | BarrageDelivery;
 
 /**

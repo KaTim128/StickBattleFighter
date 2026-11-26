@@ -19,7 +19,7 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose, barragePose, gunSwapPose, judgementPose, spinPose, stalkPose, swoopPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose, barragePose, beybladePose, gunSwapPose, kamawFlurryPose, judgementPose, spinPose, stalkPose, swoopPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -891,6 +891,7 @@ export class FightArenaScene implements ArenaScene {
     this.abilities.random = () => this.rng();
     this.abilities.boundsSource = () => ({ w: this.arena.widthM, h: this.arena.heightM });
     this.abilities.steerSource = (f, fresh) => this.beamSteer(f, fresh);
+    this.abilities.moveSource = (f) => this.steeringOf(f);
     this.abilities.releaseAimSource = (f, def) => this.aiBeamAim(f, def);
     this.abilities.summonSource = (f, spec) => this.summons.spawn(f, spec);
     this.abilities.mirrorSource = (f, spec) => this.beginMirror(f, spec);
@@ -1832,6 +1833,19 @@ export class FightArenaScene implements ArenaScene {
     // (master plan B4): never an instant, perfect lock. Blinded or in the dark it holds its line.
     if (f.combatant.blinded) return null;
     if (f.aiBeam.active) return { x: Math.cos(f.aiBeam.angle), y: Math.sin(f.aiBeam.angle) };
+    const foe = this.nearestSeenEnemy(f);
+    return foe ? { x: foe.x - f.x, y: foe.y - f.y } : null;
+  }
+
+  /**
+   * Where a fighter steers a flurry or a spin: the player's movement keys or stick (never a lock-on), a computer-controlled fighter's way to
+   * the nearest enemy it can see. Null when nothing is held.
+   */
+  private steeringOf(f: FighterEntity): { x: number; y: number } | null {
+    if (f === this.playerFighter && !this.match?.spectate) {
+      const m = this.intents.move;
+      return Math.hypot(m.x, m.y) > 0.15 ? { x: m.x, y: m.y } : null;
+    }
     const foe = this.nearestSeenEnemy(f);
     return foe ? { x: foe.x - f.x, y: foe.y - f.y } : null;
   }
@@ -3404,7 +3418,7 @@ export class FightArenaScene implements ArenaScene {
       if (this.applyStrike(attacker, target, { ...strike, dir: { x: kx / kl, y: ky / kl } })) {
         connected = true;
         hitFighter = true;
-        if (frenzy?.meleeBleed || a.bleed) target.combatant.bleed();
+        if (frenzy?.meleeBleed || a.bleed) target.combatant.bleed(a.bleedDps ?? 0);
         if (a.poison) target.combatant.poison(a.poison);
       }
     }
@@ -4017,7 +4031,7 @@ export class FightArenaScene implements ArenaScene {
     };
     const out = new Map<string, { x: number; y: number }>();
     for (const p of world.projectiles) {
-      const caster = p.def.payload.pull && p.def.look ? this.fighterByName(p.casterId) : null;
+      const caster = (p.def.payload.pull || p.def.look?.steelChain) && p.def.look ? this.fighterByName(p.casterId) : null;
       if (!caster || !p.def.look) continue;
       const ring = p.def.look.steelChain ? ringOf(caster) : null;
       const steel = ring ? { blade: 'spin' as const, toZ: 0.55, fromZ: ring.fromZ } : undefined;
@@ -4218,7 +4232,7 @@ export class FightArenaScene implements ArenaScene {
         ];
       }),
       whirls: this.fighters.flatMap((f) => {
-        const w = world.whirlOf(f.name);
+        const w = f.caster?.cast?.def.id === 'humanSickleBeyblade' ? null : world.whirlOf(f.name); // Kamaw's spin has its own look
         return w ? [{ x: f.x, y: f.y, ...w, palette: f.caster?.cast?.def.look?.palette ?? null }] : [];
       }),
       parries: world.parries.flatMap((p) => {
@@ -4237,6 +4251,10 @@ export class FightArenaScene implements ArenaScene {
       auras,
       trails,
       beams: world.beams,
+      beyblades: this.fighters.flatMap((f) => {
+        const w = f.caster?.cast?.def.id === 'humanSickleBeyblade' ? world.whirlOf(f.name) : null;
+        return w && f.view ? [{ x: f.x, y: f.y, lift: f.abilityLift, angle: f.view.spinAngle, radiusM: w.radiusM, ending: w.ending ?? 0 }] : [];
+      }),
       chains,
       smoke,
     });
@@ -4346,6 +4364,11 @@ export class FightArenaScene implements ArenaScene {
       if (spin) pose = spinPose(pose, spin);
       const barrage = this.abilities?.world.barrageOf(f.name);
       if (barrage) pose = barragePose(pose, barrage);
+      // Kamaw: his flurries follow the blow that has just landed; the beyblade is a tight crouch, the sickle held out.
+      const kamawFlurry = this.abilities?.world.flurryOf(f.name);
+      if (kamawFlurry) pose = kamawFlurryPose(pose, kamawFlurry, cast.def.id);
+      if (cast.def.id === 'humanSickleBeyblade' && (this.abilities?.world.whirlOf(f.name) || cast.phase === 'windup'))
+        pose = cast.phase === 'windup' ? blendPose(pose, beybladePose(pose), f.caster.phaseProgress ** 2) : beybladePose(pose);
       const swoop = this.abilities?.world.swoopOf(f.name);
       if (swoop !== null && swoop !== undefined) pose = swoopPose(pose, swoop);
       const judgement = this.abilities?.world.judgementOf(f.name);
@@ -4510,7 +4533,22 @@ export class FightArenaScene implements ArenaScene {
     }
     // Wind Blade: the whole body turns, and the wings stay spread and beating hard.
     const whirl = this.abilities?.world.whirlOf(f.name);
-    f.view.spinAngle = whirl ? whirl.ageS * Math.PI * 2 * 3.2 : 0;
+    const beyCast = f.caster?.cast?.def.id === 'humanSickleBeyblade' ? f.caster.cast : null;
+    const kamawSpin = this.abilities?.world.flurryOf(f.name);
+    if (beyCast) {
+      // Human Sickle Beyblade: the body speeds up into the spin over the wrap, spins steadily while it runs, and slows as it ends.
+      const rate = beyCast.phase === 'windup' ? Math.max(0, f.caster!.phaseProgress - 0.35) * 1.5 : whirl ? 1 - (whirl.ending ?? 0) : 0.3;
+      f.view.spinAngle = (f.view.spinAngle + frameDtS * Math.PI * 2 * 4 * rate) % (Math.PI * 2 * 64);
+      const wrapIn = beyCast.phase === 'windup' ? Math.min(1, Math.max(0, (f.caster!.phaseProgress - 0.15) / 0.75)) : whirl ? 1 - (whirl.ending ?? 0) * 0.9 : Math.max(0, 1 - f.caster!.phaseProgress * 1.6);
+      f.view.chainWrap = wrapIn;
+    } else {
+      f.view.chainWrap = 0;
+      if (kamawSpin && f.caster?.cast?.def.id === 'crescentExecution') {
+        // Crescent Execution: a full turn one way, then a full turn back.
+        const a = kamawSpin.ageS;
+        f.view.spinAngle = a > 0.04 && a < 0.36 ? ((a - 0.04) / 0.32) * Math.PI * 2 : a > 0.4 && a < 0.78 ? -((a - 0.4) / 0.38) * Math.PI * 2 : 0;
+      } else f.view.spinAngle = whirl ? whirl.ageS * Math.PI * 2 * 3.2 : 0;
+    }
     // Winged fighters (Aerion) hover a little off the floor while standing, bobbing gently, and their wings follow what
     // they do: folded close for Feather Guard, wide in the air or under Tailwind, beating harder with momentum.
     let hoverLift = 0;

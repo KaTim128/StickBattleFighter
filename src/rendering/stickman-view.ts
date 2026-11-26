@@ -105,6 +105,10 @@ export class StickmanView {
   gunAim: number | null = null;
   /** Kamaw: his chained sickle is out (thrown, embedded or hooked on someone); only the handle and the start of the chain stay in his hand. */
   sickleOut = false;
+  /** Kamaw: show the long chain coiled beside him (the select screen). In battle it stays hidden until an ability throws the blade. */
+  chainShown = false;
+  /** Kamaw's ultimate: 0..1 how far his chain has wrapped round his body (it winds on over the wind-up and unwinds at the end). */
+  chainWrap = 0;
   /** Where the chain leaves the sickle handle's ring, in skeleton space (set each draw). */
   private chainRing: Point | null = null;
   /** 0..1 how far the bow clone's bow is drawn (the string and arrow follow it). */
@@ -1707,6 +1711,19 @@ export class StickmanView {
     g.moveTo(h0.x, h0.y).lineTo(h1.x, h1.y).stroke({ width: 0.04, color: 0x4a3420, cap: 'round' });
     g.moveTo(h0.x + ux * 0.04, h0.y + uy * 0.04).lineTo(h1.x - ux * 0.04, h1.y - uy * 0.04).stroke({ width: 0.012, color: 0x7a5a38, cap: 'round' });
     // A small, neat steel ring on the end of the handle; the chain's first link hangs from it.
+    if (!this.chainShown) {
+      // In battle the chain stays concealed and retracted: just the handle, and the medium crescent blade on its end, in his hand. While
+      // the blade is out on its chain (an ability threw it) only the handle with its ring stays here.
+      const c = { x: h1.x + ux * 0.022, y: h1.y + uy * 0.022 };
+      this.chainRing = c;
+      if (this.sickleOut) {
+        g.circle(c.x, c.y, 0.016).stroke({ width: 0.016, color: OUT }).stroke({ width: 0.008, color: 0xc8ccd8 });
+        return;
+      }
+      const tipPt = drawKama(g, { x: h1.x - ux * 0.17 * 1.15, y: h1.y - uy * 0.17 * 1.15 }, { x: ux, y: uy }, 1, 1.15, 0.01 + o * 0.25, false);
+      this.bladeTip = { tip: tipPt, inner: h1 };
+      return;
+    }
     const c0 = { x: h1.x + ux * 0.022, y: h1.y + uy * 0.022 };
     g.circle(c0.x, c0.y, 0.016).stroke({ width: 0.016, color: OUT }).stroke({ width: 0.008, color: 0xc8ccd8 });
     this.chainRing = c0;
@@ -1787,6 +1804,66 @@ export class StickmanView {
     this.bladeTip = { tip: tipPt, inner: end };
   }
 
+  /**
+   * The chain winding round his whole body (Human Sickle Beyblade): three overlapping spirals up the torso and round each thigh, the free end
+   * travelling on as `chainWrap` grows (so the chain is seen going round him rather than appearing), and a few slack links leading from the
+   * handle's ring to that end. Only the turns that face the viewer are drawn, which reads as the chain passing round the back.
+   */
+  private drawChainWrap(g: Graphics, s: ReturnType<typeof solveSkeleton>, hand: Point, o: number): void {
+    const OUT = 0x14161c;
+    const link = (x: number, y: number, ang: number, face: boolean, scale: number): void => {
+      const pts: number[] = [];
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        const lx = Math.cos(a) * 0.03 * scale;
+        const ly = Math.sin(a) * (face ? 0.018 : 0.008) * scale;
+        pts.push(x + lx * Math.cos(ang) - ly * Math.sin(ang), y + lx * Math.sin(ang) + ly * Math.cos(ang));
+      }
+      g.poly(pts).stroke({ width: 0.012 + o * 0.2, color: OUT }).stroke({ width: 0.007, color: face ? 0xc8ccd8 : 0x8a909e });
+    };
+    // A spiral along a limb: from `a` to `b`, `turns` turns, `layers` of them offset round it, the free end at `reach` (0..1).
+    let tip: Point = hand;
+    const spiral = (a: Point, b: Point, turns: number, radius: number, layer: number, reach: number): void => {
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const steps = Math.round(34 * turns);
+      let last: Point | null = null;
+      for (let i = 0; i <= steps; i++) {
+        const u = i / steps;
+        if (u > reach) break;
+        const th = u * turns * Math.PI * 2 + layer * 2.1;
+        if (Math.cos(th) < 0.05) continue;
+        const off = Math.sin(th) * radius;
+        const p = { x: a.x + dx * u + nx * off, y: a.y + dy * u + ny * off };
+        const ang = last ? Math.atan2(p.y - last.y, p.x - last.x) : Math.atan2(dy, dx);
+        link(p.x, p.y, ang, i % 2 === 0, 1);
+        last = p;
+      }
+      if (last && reach < 1.001) tip = last;
+    };
+    const reach = Math.min(1, this.chainWrap * 1.15);
+    for (let layer = 0; layer < 3; layer++) {
+      // Each layer starts a little after the last, so the chain visibly travels up the body and round again.
+      const r = Math.max(0, Math.min(1, reach * 1.5 - layer * 0.22));
+      spiral(s.pelvis, s.chest, 5.5 + layer, 0.085 - layer * 0.006, layer, r);
+    }
+    const legReach = Math.max(0, Math.min(1, reach * 1.3 - 0.2));
+    spiral(s.legFront[0], s.legFront[1], 3, 0.06, 0, legReach);
+    spiral(s.legBack[0], s.legBack[1], 3, 0.06, 1, legReach);
+    // The slack run from the handle's ring to the chain's free end, sagging a little.
+    const ring = this.chainRing ?? hand;
+    if (this.chainWrap < 0.995) {
+      const n = Math.max(3, Math.round(Math.hypot(tip.x - ring.x, tip.y - ring.y) / 0.05));
+      for (let i = 1; i < n; i++) {
+        const u = i / n;
+        link(ring.x + (tip.x - ring.x) * u, ring.y + (tip.y - ring.y) * u + Math.sin(u * Math.PI) * 0.06, Math.atan2(tip.y - ring.y, tip.x - ring.x), i % 2 === 0, 1);
+      }
+    }
+  }
+
   private drawHeld(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number): void {
     const [, elbow, hand] = s.armFront;
     const dx = hand.x - elbow.x;
@@ -1810,6 +1887,7 @@ export class StickmanView {
     }
     if (this.held === 'sickle') {
       this.drawChainSickle(g, hand, ux, uy, o);
+      if (this.chainWrap > 0.01) this.drawChainWrap(g, s, hand, o);
       return;
     }
     if (this.held === 'staff') {

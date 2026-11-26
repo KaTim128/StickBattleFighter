@@ -60,6 +60,7 @@ const MAX_FX_LOG = 60;
 /** Deliveries that move the caster's own body: refused while his legs are held (Crystal Prison). */
 const MOVEMENT_DELIVERIES: ReadonlySet<string> = new Set([
   'dash',
+  'flurry',
   'leap',
   'teleport',
   'rewindTime',
@@ -89,6 +90,8 @@ export class SceneAbilities implements AbilityHost {
   summonRoom: (f: FighterEntity, spec: SummonSpec) => number = () => Number.POSITIVE_INFINITY;
   /** Where a fighter is steering its beam (set by the scene: player input or the AI's target). */
   steerSource: (f: FighterEntity, fresh: boolean) => Vec2 | null = () => null;
+  /** Where a fighter wants to move (the player's keys or stick; the AI heads for its enemy). */
+  moveSource: (f: FighterEntity) => Vec2 | null = () => null;
   /**
    * Where an AI aims an ability at its release, when it aims imperfectly (the scene's beam tracker,
    * master plan B4); null means the usual aim at the nearest enemy.
@@ -122,6 +125,8 @@ export class SceneAbilities implements AbilityHost {
     if (c.bound) return 'bound';
     // Crystal Prison: legs held in crystal, so no ability that moves the body.
     if (c.trapped && MOVEMENT_DELIVERIES.has(caster.def(slot).delivery.type)) return 'trapped';
+    // Human Sickle Beyblade: the ultimate button again while it spins winds it down (it is the designated ending action).
+    if (slot === 'ult' && this.world.endWhirl(f.name)) return null;
     // The finisher (Voltar's Lightning Execution): the ultimate button again while Overdrive still runs. It ends Overdrive and costs nothing.
     const finisher = caster.kit.finisher;
     if (slot === 'ult' && finisher && f.buff?.electrified && f.buffSourceId === caster.kit.ult.id) {
@@ -302,7 +307,7 @@ export class SceneAbilities implements AbilityHost {
       noFlinch: payload.noFlinch,
     });
     // Shroud's knife: deep cuts bleed.
-    if (landed && payload.bleed) target.combatant.bleed();
+    if (landed && payload.bleed) target.combatant.bleed(payload.bleedDps ?? 0);
     // Vexoris's poison: toxicity stacks.
     if (landed && payload.poison) target.combatant.poison(payload.poison);
     // Mental Focus (Psion): every ability that lands builds focus.
@@ -507,6 +512,11 @@ export class SceneAbilities implements AbilityHost {
   steer(casterId: string, fresh: boolean): Vec2 | null {
     const f = this.byName(casterId);
     return f ? this.steerSource(f, fresh) : null;
+  }
+
+  moveInput(casterId: string): Vec2 | null {
+    const f = this.byName(casterId);
+    return f ? this.moveSource(f) : null;
   }
 
   face(casterId: string, dir: Vec2): void {

@@ -2,16 +2,17 @@
   "id": "sickle-wielder-animation",
   "extends": "style-taekwondo",
   "states": {
-    "Jab": "sickle.low",
-    "Hook": "sickle.sweep",
-    "SideKick": "sickle.rising",
-    "RoundhouseKick": "sickle.spin",
+    "Jab": "kamaw.stab1",
+    "Hook": "kamaw.stab3",
     "FrontKick": "sickle.lunge",
     "JumpingFrontKick": "sickle.leap",
     "DownwardAerialKick": "sickle.stab",
-    "HeavyAttack": "sickle.dig",
+    "HeavyAttack": "kamaw.axe",
     "Idle": "proc.idle.crawler",
     "FightingStance": "proc.idle.crawler",
-    "Turn": "proc.idle.crawler"
+    "Turn": "proc.idle.crawler",
+    "StraightPunch": "kamaw.stab2",
+    "Uppercut": "kamaw.stab4",
+    "HeavyPunch": "kamaw.stab5"
   }
 }

@@ -163,6 +163,8 @@ export interface MoveDef {
     readonly burn?: { readonly dps: number; readonly durationS: number };
     /** The target bleeds (Shroud's knife). */
     readonly bleed?: boolean;
+    /** The bleeding also deals this much damage per second while it lasts (Kamaw's sickle). */
+    readonly bleedDps?: number;
     /** Toxicity stacks the target gets when this hit lands (Vexoris, TD-115); once per hit. */
     readonly poison?: number;
   };

@@ -882,6 +882,33 @@ const STRIKES = {
     },
   ),
   // ---- Sickle Wielder: always low. Slashes are made from a crouch with the body close to the ground, rising or sweeping through the legs.
+  // ---- Kamaw (owner, 26/11/2026): the default sickle, chain stowed. A five-stab combo (each stab a fast thrust, then pulled straight back) from his
+  // low, wide predator crouch, and an overhead axe chop. The body drives each blow: lean and the opposite arm counter-rotate, the front foot steps in.
+  'kamaw.stab1': strike(
+    { lean: deg(-30), head: deg(0), armFront: limb(52, 118), armBack: limb(24, 60), legFront: limb(34, -82), legBack: limb(-30, -76) },
+    { lean: deg(-48), head: deg(2), armFront: limb(98, 8), armBack: limb(-8, 72), legFront: limb(46, -72), legBack: limb(-34, -86) },
+  ),
+  'kamaw.stab2': strike(
+    { lean: deg(-38), head: deg(0), armFront: limb(60, 104), armBack: limb(42, 50), legFront: limb(36, -78), legBack: limb(-32, -80) },
+    { lean: deg(-44), head: deg(2), armFront: limb(106, 12), armBack: limb(18, 44), legFront: limb(50, -66), legBack: limb(-30, -84) },
+  ),
+  'kamaw.stab3': strike(
+    { lean: deg(-30), head: deg(0), armFront: limb(-4, 92), armBack: limb(30, 56), legFront: limb(30, -86), legBack: limb(-34, -72) },
+    { lean: deg(-54), head: deg(4), armFront: limb(90, 10), armBack: limb(-14, 80), legFront: limb(48, -74), legBack: limb(-36, -90) },
+  ),
+  'kamaw.stab4': strike(
+    { lean: deg(-44), head: deg(0), armFront: limb(14, 58), armBack: limb(36, 54), legFront: limb(40, -96), legBack: limb(-28, -88) },
+    { lean: deg(-36), head: deg(-2), armFront: limb(128, 8), armBack: limb(24, 70), legFront: limb(44, -70), legBack: limb(-34, -80) },
+  ),
+  'kamaw.stab5': strike(
+    { lean: deg(-24), head: deg(0), armFront: limb(8, 124), armBack: limb(40, 50), legFront: limb(30, -88), legBack: limb(-32, -70) },
+    { lean: deg(-62), head: deg(6), armFront: limb(96, 4), armBack: limb(-20, 86), legFront: limb(64, -52), legBack: limb(-46, -62) },
+  ),
+  'kamaw.axe': strike(
+    { lean: deg(-6), head: deg(-4), armFront: limb(176, 18), armBack: limb(152, 26), legFront: limb(30, -64), legBack: limb(-34, -60) },
+    { lean: deg(-66), head: deg(8), armFront: limb(54, 4), armBack: limb(64, 10), legFront: limb(52, -84), legBack: limb(-38, -86) },
+    { lean: deg(-44), head: deg(0), armFront: limb(120, 40), armBack: limb(120, 40) },
+  ),
   'sickle.low': strike(
     {
       lean: deg(-38),

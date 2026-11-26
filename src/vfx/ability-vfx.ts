@@ -297,6 +297,8 @@ export interface AbilityVfxInput {
   readonly trails?: readonly DashTrailFx[];
   /** Continuous beams (Fire Beam). */
   readonly beams?: readonly Beam[];
+  /** Kamaw's spinning sickles (Human Sickle Beyblade): where he is, how far round the blade has turned, and how far the spin has wound down (0..1). */
+  readonly beyblades?: readonly { readonly x: number; readonly y: number; readonly lift: number; readonly angle: number; readonly radiusM: number; readonly ending: number }[];
   /** Magix's cards, hat items and mirror dust. */
   readonly magix?: MagixWorld;
   /** Inkmaster's living ink (serpent, dragon, cyclone, the Masterpiece) and where a fighter stands by name. */
@@ -2306,6 +2308,26 @@ export class AbilityVfx {
       this.core(g, a0.x, a0.y, w * 0.55, pal, t, false);
       g.circle(a1.x, a1.y, w * (0.8 + 0.15 * Math.sin(t * 40))).fill({ color: pal.bright, alpha: 0.7 * amount });
       g.circle(a1.x, a1.y, w * 0.4).fill({ color: pal.core, alpha: amount });
+    }
+
+    // Human Sickle Beyblade: a pale ring on the floor marking the cutting radius, the sickle out at the end of its arm, and a few fading ghosts of it
+    // along its circle for the motion blur. Kept thin so Kamaw and whoever he is cutting stay readable.
+    for (const bb of input.beyblades ?? []) {
+      const power = 1 - bb.ending;
+      f.ellipse(bb.x, bb.y, bb.radiusM, bb.radiusM).stroke({ width: 0.05, color: 0xd6f08a, alpha: 0.22 * power });
+      const R = 1.15;
+      const GHOSTS = 7;
+      for (let k = GHOSTS; k >= 0; k--) {
+        const th = bb.angle - k * 0.2;
+        const a = 0.55 * (1 - k / (GHOSTS + 1)) * power;
+        const c = P(bb.x + Math.cos(th) * R, bb.y + Math.sin(th) * R, bb.lift + 0.55);
+        const t0 = P(bb.x + Math.cos(th - 0.1) * (R + 0.15), bb.y + Math.sin(th - 0.1) * (R + 0.15), bb.lift + 0.55);
+        g.moveTo(t0.x, t0.y).lineTo(c.x, c.y).stroke({ width: 0.09 * (1 - k / (GHOSTS + 2)), color: k === 0 ? 0xffffff : 0xcfe8a0, alpha: a, cap: 'round' });
+      }
+      const tipP = P(bb.x + Math.cos(bb.angle) * R, bb.y + Math.sin(bb.angle) * R, bb.lift + 0.55);
+      const inP = P(bb.x + Math.cos(bb.angle) * 0.35, bb.y + Math.sin(bb.angle) * 0.35, bb.lift + 0.55);
+      g.moveTo(inP.x, inP.y).lineTo(tipP.x, tipP.y).stroke({ width: 0.035, color: 0x14161c, alpha: 0.9 * power, cap: 'round' });
+      g.circle(tipP.x, tipP.y, 0.05).fill({ color: 0xf4f6fa, alpha: power });
     }
 
     // Spectral chains: a line of interlocking links, alternately face-on and edge-on, glowing

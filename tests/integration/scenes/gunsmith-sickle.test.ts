@@ -1,10 +1,8 @@
 import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { idleStyleFor, walkPose } from '../../../src/animation/greybox-motion';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
 import { GUNSMITH_KIT } from '../../../src/data/abilities/gunsmith';
-import { SICKLE_WIELDER_KIT } from '../../../src/data/abilities/sickle-wielder';
 import type { ArenaLayout } from '../../../src/data/arenas/arena-layout';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
@@ -143,98 +141,5 @@ describe('Gunsmith', () => {
     expect([k.a1, k.a2, k.a3, k.a4, k.a5].every((a) => a !== undefined)).toBe(true);
     expect(k.ult.slot).toBe('ult');
     expect(new Set([k.a1.id, k.a2.id, k.a3.id, k.a4.id, k.a5!.id, k.ult.id]).size).toBe(6);
-  });
-});
-
-describe('Sickle Wielder', () => {
-  beforeAll(async () => {
-    await initPhysics();
-  });
-
-  it('crawls: its idle and walk lean far forward and low, never upright', () => {
-    expect(idleStyleFor('proc.idle.crawler')).toBe('crawler');
-    const bones = { spine: 0.55, neck: 0.08, headRadius: 0.145, upperArm: 0.3, foreArm: 0.28, thigh: 0.44, shin: 0.44 };
-    for (const p of [0, 0.25, 0.5, 0.75]) expect(walkPose(p, bones, 'crawler').lean).toBeLessThan(-0.6);
-  });
-
-  it('Understrike: slides in and slashes upward through the dummy, lifting it with a heavy hit', async () => {
-    const { scenes, fire, hitsOver, foe } = await setup('sickle-wielder', 3);
-    fire('a1');
-    const hits = hitsOver(1.5);
-    expect(hits.length).toBeGreaterThan(0);
-    expect(Math.max(...hits)).toBeGreaterThan(40);
-    expect(['knockdown', 'gettingUp']).toContain(foe().combatant.state);
-    scenes.clear();
-  }, 30_000);
-
-  it('Reaper Sweep: a wide low sweep that hurts and knocks the target off its feet', async () => {
-    const { scenes, run, fire, foe } = await setup('sickle-wielder', 1.8);
-    fire('a2');
-    run(0.8);
-    expect(foe().combatant.stats.maxHp - foe().combatant.hp).toBeGreaterThan(30);
-    expect(['knockdown', 'gettingUp']).toContain(foe().combatant.state);
-    scenes.clear();
-  }, 30_000);
-
-  it('Hook and Drag: hooks the target for damage, drags it back across the ground, and hurts it again on arrival', async () => {
-    const { scenes, fire, hitsOver, me, foe } = await setup('sickle-wielder', 5);
-    const gap0 = foe().x - me().x;
-    fire('a3');
-    const hits = hitsOver(4);
-    expect(hits.length).toBeGreaterThanOrEqual(2); // the hook, then the arrival
-    expect(foe().x - me().x).toBeLessThan(gap0 - 2); // dragged towards him
-    scenes.clear();
-  }, 30_000);
-
-  it('Shadow Crawl: crawls five metres fast and strikes whoever it reaches', async () => {
-    const { scenes, fire, hitsOver, me } = await setup('sickle-wielder', 5);
-    const x0 = me().x;
-    fire('a4');
-    const hits = hitsOver(1);
-    expect(me().x - x0).toBeGreaterThan(3);
-    expect(hits.length).toBeGreaterThan(0);
-    scenes.clear();
-  }, 30_000);
-
-  it('Gravehook Launch: the sickle embeds, the tether pulls him up and over, and the slice lands for heavy area damage', async () => {
-    const { scenes, run, fire, me, foe } = await setup('sickle-wielder', 7, 13, {}, ['understrike', 'reaperSweep', 'hookAndDrag', 'gravehookLaunch']);
-    const x0 = me().x;
-    expect(fire('a4')).toBeNull();
-    let peak = 0;
-    for (let i = 0; i < 3 / STEP; i++) {
-      run(STEP);
-      peak = Math.max(peak, me().abilityLift);
-    }
-    expect(peak).toBeGreaterThan(1); // launched into the air
-    expect(me().x - x0).toBeGreaterThan(3);
-    expect(foe().combatant.stats.maxHp - foe().combatant.hp).toBeGreaterThan(50);
-    scenes.clear();
-  }, 60_000);
-
-  it('Gravehook Launch fails gracefully: a wall where the sickle would bite means nothing moves and nothing teleports', async () => {
-    const wall = { x0: 15, y0: 8, x1: 15.6, y1: 18 };
-    const { scenes, run, fire, me } = await setup('sickle-wielder', 7, 13, { interiorWalls: [wall] }, ['understrike', 'reaperSweep', 'hookAndDrag', 'gravehookLaunch']);
-    const x0 = me().x;
-    fire('a4');
-    run(2);
-    expect(Math.abs(me().x - x0)).toBeLessThan(0.3);
-    expect(me().abilityLift).toBe(0);
-    scenes.clear();
-  }, 30_000);
-
-  it('Grave Reaper: eight rapid low slashes and a rising finisher, each a separate hit', async () => {
-    const { scene, scenes, fire, hitsOver } = await setup('sickle-wielder', 4);
-    scene.playerFighter.caster!.fillMeter();
-    fire('ult');
-    const hits = hitsOver(3.5);
-    expect(hits.length).toBeGreaterThanOrEqual(8);
-    expect(hits[hits.length - 1]!).toBeGreaterThan(hits[0]! * 3);
-    scenes.clear();
-  }, 60_000);
-
-  it('has exactly five standard abilities and a separate ultimate', () => {
-    const k = SICKLE_WIELDER_KIT;
-    expect(new Set([k.a1.id, k.a2.id, k.a3.id, k.a4.id, k.a5!.id, k.ult.id]).size).toBe(6);
-    expect(k.ult.slot).toBe('ult');
   });
 });

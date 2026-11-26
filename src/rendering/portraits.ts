@@ -61,7 +61,7 @@ function heroPose(def: FighterDef): Pose {
 
 /** The fighter's own view, drawn as in the arena. */
 function makeView(def: FighterDef): StickmanView {
-  return new StickmanView(
+  const view = new StickmanView(
     def.bones,
     def.look,
     def.effects.head === 'flame' && !def.capabilities.usesFireEffects ? 'round' : (def.effects.head ?? 'round'),
@@ -71,6 +71,9 @@ function makeView(def: FighterDef): StickmanView {
     1,
     def.effects.held ?? null,
   );
+  // Kamaw's select pose shows his chain coiled beside him; in battle it is concealed.
+  view.chainShown = true;
+  return view;
 }
 
 function placeFighter(def: FighterDef): Slot {

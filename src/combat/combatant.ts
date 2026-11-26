@@ -286,9 +286,11 @@ export class Combatant {
    * takes `BLEED.damageTakenFactor` times the damage from every source. A new cut refreshes the time
    * and never raises the factor.
    */
-  bleed(): void {
+  bleed(dps = 0): void {
     if (this.isKo) return;
-    this.status.apply('bleed', BLEED.durationS, { damageTakenFactor: BLEED.damageTakenFactor });
+    // `dps` > 0 (Kamaw's cuts, owner 26/11/2026): the wound also costs health while it lasts. Reapplying refreshes the time and keeps the
+    // strongest rate; it never stacks.
+    this.status.apply('bleed', BLEED.durationS, { damageTakenFactor: BLEED.damageTakenFactor, ...(dps > 0 ? { dps } : {}) });
   }
 
   /**

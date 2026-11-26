@@ -1256,38 +1256,38 @@ const SHAPES: Record<string, CastShape> = {
     tremble: deg(1.2),
     settle: 0.5,
   },
-  // ---- Sickle Wielder: always low. Everything he does starts and ends near the ground.
-  understrike: {
-    windup: { lean: deg(-50), head: deg(26), armFront: limb(30, 40), armBack: limb(14, 40), legFront: limb(46, -100), legBack: limb(-26, -92) },
-    release: { lean: deg(-28), head: deg(8), armFront: limb(150, 10), armBack: limb(30, 50), legFront: limb(54, -80), legBack: limb(-34, -70) },
+  // ---- Kamaw (owner, 26/11/2026): everything starts and ends low, from his wide predator crouch.
+  reaperHook: {
+    windup: { lean: deg(-30), head: deg(0), armFront: limb(-64, 50), armBack: limb(32, 50), legFront: limb(40, -84), legBack: limb(-34, -80) },
+    release: { lean: deg(-48), head: deg(0), armFront: limb(112, 10), armBack: limb(-10, 70), legFront: limb(46, -78), legBack: limb(-34, -84) },
+    // The slingshot: stretched out flat behind the kick, arms trailing, the front leg driven straight out at the enemy's chest.
+    air: { lean: deg(16), head: deg(-4), armFront: limb(-70, 30), armBack: limb(-46, 40), legFront: limb(100, -4), legBack: limb(26, -92) },
+    settle: 0.5,
+  },
+  doublePounce: {
+    windup: { lean: deg(-52), head: deg(0), armFront: limb(-50, 60), armBack: limb(40, 50), legFront: limb(50, -110), legBack: limb(-26, -100) },
+    release: { lean: deg(-58), head: deg(0), armFront: limb(96, 8), armBack: limb(20, 70), legFront: limb(54, -104), legBack: limb(-30, -96) },
+    settle: 0.5,
+  },
+  predatorRush: {
+    windup: { lean: deg(-48), head: deg(0), armFront: limb(24, 80), armBack: limb(30, 60), legFront: limb(46, -90), legBack: limb(-34, -86) },
+    release: { lean: deg(-50), head: deg(0), armFront: limb(60, 8), armBack: limb(10, 60), legFront: limb(50, -84), legBack: limb(-36, -86) },
     settle: 0.45,
   },
-  reaperSweep: {
-    windup: { lean: deg(-40), head: deg(20), armFront: limb(-50, 40), armBack: limb(20, 50), legFront: limb(46, -100), legBack: limb(-28, -90) },
-    release: { lean: deg(-56), head: deg(28), armFront: limb(100, 6), armBack: limb(40, 50), legFront: limb(58, -94), legBack: limb(-32, -86) },
+  groundSnare: {
+    windup: { lean: deg(-54), head: deg(0), armFront: limb(24, 70), armBack: limb(40, 50), legFront: limb(52, -108), legBack: limb(-28, -100) },
+    release: { lean: deg(-62), head: deg(0), armFront: limb(84, 8), armBack: limb(10, 60), legFront: limb(58, -104), legBack: limb(-30, -98) },
     settle: 0.5,
   },
-  hookAndDrag: {
-    windup: { lean: deg(-72), head: deg(40), armFront: limb(18, 20), armBack: limb(8, 24), legFront: limb(54, -118), legBack: limb(-22, -110) },
-    release: { lean: deg(-78), head: deg(44), armFront: limb(96, 4), armBack: limb(30, 20), legFront: limb(60, -120), legBack: limb(-26, -112) },
-    settle: 0.4,
-  },
-  shadowCrawl: {
-    windup: { lean: deg(-70), head: deg(40), armFront: limb(24, 20), armBack: limb(12, 24), legFront: limb(54, -118), legBack: limb(-22, -110) },
-    release: { lean: deg(-72), head: deg(38), armFront: limb(90, 8), armBack: limb(40, 20), legFront: limb(60, -118), legBack: limb(-28, -110) },
-    settle: 0.4,
-  },
-  // An ape's leap (owner, 26/11/2026): a deep crouch gathering on the knuckles and the sickle cocked back; in the air the body stretches out
-  // flat, the free arm reaching ahead and the legs trailing, the sickle held high; then it comes down in one slicing chop.
-  gravehookLaunch: {
-    windup: { lean: deg(-72), head: deg(42), armFront: limb(-30, 70), armBack: limb(18, 16), legFront: limb(72, -134), legBack: limb(-6, -130) },
-    air: { lean: deg(-78), head: deg(46), armFront: limb(165, 30), armBack: limb(110, 12), legFront: limb(-20, -50), legBack: limb(-50, -30) },
-    release: { lean: deg(-44), head: deg(24), armFront: limb(26, 8), armBack: limb(64, 36), legFront: limb(62, -112), legBack: limb(-22, -100) },
+  crescentExecution: {
+    windup: { lean: deg(-38), head: deg(0), armFront: limb(-86, 40), armBack: limb(-62, 40), legFront: limb(42, -90), legBack: limb(-34, -84) },
+    release: { lean: deg(-60), head: deg(0), armFront: limb(60, 6), armBack: limb(40, 40), legFront: limb(62, -52), legBack: limb(-44, -62) },
     settle: 0.5,
   },
-  graveReaper: {
-    windup: { lean: deg(-60), head: deg(30), armFront: limb(10, 40), armBack: limb(14, 40), legFront: limb(50, -104), legBack: limb(-26, -96) },
-    release: { lean: deg(-40), head: deg(14), armFront: limb(150, 10), armBack: limb(30, 50), legFront: limb(56, -90), legBack: limb(-34, -80) },
+  // Human Sickle Beyblade: the sickle swung up and round, the body folding into a tight crouch as the chain wraps it.
+  humanSickleBeyblade: {
+    windup: { lean: deg(-46), head: deg(0), armFront: limb(120, 60), armBack: limb(36, 100), legFront: limb(48, -116), legBack: limb(-30, -110) },
+    release: { lean: deg(-30), head: deg(0), armFront: limb(98, 4), armBack: limb(24, 118), legFront: limb(46, -116), legBack: limb(-30, -112) },
     settle: 0.5,
   },
   // Fiery Fists: all four arms raised and the fists clenched, trembling, then driven down and out in a roar as the flames take.
@@ -1700,15 +1700,6 @@ export function assaultPose(base: Pose, a: AssaultState, abilityId?: string): Po
   if (a.phase !== 'stab') return base;
   if (abilityId === 'rendingFlurry') return flurryPose(base, a);
   if (abilityId === 'bladeTempest') return swordCut(base, a, 0);
-  if (abilityId === 'graveReaper') {
-    // Grave Reaper: low slashes alternating sides close to the ground; the last is the rising slash.
-    const k = a.t < 0.35 ? ease(a.t / 0.35) : 1;
-    const side = a.stab % 2 === 0 ? 1 : -1;
-    const low: Pose = { ...base, lean: deg(-58), head: deg(28), armFront: limb(-20 + 10 * side, 40), armBack: limb(14, 40), legFront: limb(50, -102), legBack: limb(-26, -94) };
-    const cut: Pose = { ...base, lean: deg(-60 + 8 * side), head: deg(30), armFront: limb(100 + 14 * side, 6), armBack: limb(30, 40), legFront: limb(56, -96), legBack: limb(-30, -88) };
-    const rise: Pose = { ...base, lean: deg(-30), head: deg(10), armFront: limb(160, 8), armBack: limb(30, 50), legFront: limb(56, -80), legBack: limb(-34, -70) };
-    return blendPose(low, a.stab >= 8 ? rise : cut, k);
-  }
   const s = STABS[a.stab % STABS.length]!;
   const cock = { ...base, ...s.cock };
   const strike = { ...base, ...s.strike };
@@ -1874,4 +1865,41 @@ export function gunSwapPose(base: Pose, t: number, dir: 1 | -1): Pose {
   }
   if (hips > 0) p = blendPose(p, { ...p, armFront: limb(18, 30), armBack: limb(10, 34) }, hips);
   return p;
+}
+
+
+/**
+ * Kamaw's flurries (Predator Rush and Crescent Execution): the pose follows the blow that has just landed, easing back to the base (his run, or
+ * his crouch) as it fades, with the wind-up before the first one. `fl` comes from the world: which blow came last (-1 = none yet), how long ago, and
+ * how long the flurry has run.
+ */
+export function kamawFlurryPose(base: Pose, fl: { blow: number; sinceS: number; ageS: number }, abilityId: string): Pose {
+  const rush: Partial<Pose>[] = [
+    { lean: deg(-52), armFront: limb(62, 6), armBack: limb(10, 60) }, // a low diagonal slash
+    { lean: deg(-30), armFront: limb(122, 6), armBack: limb(84, 30) }, // a reverse horizontal slash
+    { lean: deg(-18), armFront: limb(152, 10), armBack: limb(40, 70), legFront: limb(44, -60) }, // the rising hook
+  ];
+  const crescent: Partial<Pose>[] = [
+    { lean: deg(-34), armFront: limb(96, 4), armBack: limb(-84, 10) }, // a flat spinning slash, arms out
+    { lean: deg(-30), armFront: limb(100, 2), armBack: limb(-104, 6) }, // reversed and wider
+    { lean: deg(-66), armFront: limb(56, 6), armBack: limb(46, 30), legFront: limb(64, -48), legBack: limb(-46, -60) }, // the leaping diagonal cut
+  ];
+  const set = abilityId === 'crescentExecution' ? crescent : rush;
+  if (fl.blow < 0) {
+    // Winding up: the sickle drawn back, the body gathering.
+    const wind: Partial<Pose> = abilityId === 'crescentExecution' ? { lean: deg(-40), armFront: limb(-86, 40), armBack: limb(-62, 40) } : { lean: deg(-50), armFront: limb(20, 80) };
+    return blendPose(base, { ...base, ...wind }, ease(Math.min(1, fl.ageS / (abilityId === 'crescentExecution' ? 0.36 : 0.42)) * 0.9));
+  }
+  const hold = abilityId === 'crescentExecution' ? (fl.blow === 2 ? 0.45 : 0.4) : 0.3;
+  const k = 1 - Math.min(1, Math.max(0, fl.sinceS / hold));
+  const target = { ...base, ...set[Math.min(fl.blow, set.length - 1)] };
+  // Between the spins of Crescent Execution he coils for the next: the sickle drawn back and the knees bent for the leap.
+  if (abilityId === 'crescentExecution' && fl.blow === 1 && fl.sinceS > 0.2)
+    return blendPose(target, { ...base, lean: deg(-46), armFront: limb(-30, 70), armBack: limb(30, 60), legFront: limb(34, -96), legBack: limb(-26, -92) }, Math.min(1, (fl.sinceS - 0.2) / 0.3));
+  return blendPose(base, target, ease(k));
+}
+
+/** Kamaw spinning as the Human Sickle Beyblade: a tight crouch, the sickle arm straight out as the cutting edge, the other arm tucked in. */
+export function beybladePose(base: Pose): Pose {
+  return { ...base, lean: deg(-30), head: deg(0), armFront: limb(98, 4), armBack: limb(24, 118), legFront: limb(46, -116), legBack: limb(-30, -112) };
 }

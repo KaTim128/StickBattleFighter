@@ -36,7 +36,7 @@ export const ULTIMATE_POWER = {
   fieryFists: 1.2,
   voltOverdrive: 1.1,
   machineGunRampage: 1.3,
-  graveReaper: 1.3,
+  humanSickleBeyblade: 1.3,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

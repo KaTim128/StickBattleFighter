@@ -911,6 +911,12 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   'reaper-rise': [tone('sawtooth', 70, 160, 0.6, 0.22), noise('bandpass', 500, 200, 0.6, 0.2, 1.5)],
   'reaper-slash': [noise('bandpass', 1800, 500, 0.12, 0.45, 1.3), tone('triangle', 1200, 700, 0.1, 0.12)],
   'reaper-finish': [tone('sine', 110, 36, 0.4, 0.9), noise('bandpass', 2000, 400, 0.3, 0.6, 1.2)],
+  // Kamaw's chain work (owner, 26/11/2026): a whip of chain, a taut snap, a long rattle as it wraps, a rising whirr for the spin, and sharp cuts.
+  'hook-whip': [noise('bandpass', 2200, 800, 0.18, 0.4, 1.2), tone('triangle', 1600, 900, 0.14, 0.12), noise('highpass', 4000, undefined, 0.1, 0.16, 2, 0.05, { flutter: 60 })],
+  'hook-kick': [tone('sine', 140, 42, 0.3, 0.9), noise('bandpass', 2000, 500, 0.2, 0.6, 1.2)],
+  'chain-wrap': [noise('bandpass', 3400, 1800, 0.8, 0.22, 1.5, 0, { flutter: 38 }), tone('sawtooth', 90, 220, 0.8, 0.14)],
+  'beyblade-spin': [noise('bandpass', 1200, 2400, 0.4, 0.28, 1.1, 0, { flutter: 26 }), tone('sawtooth', 160, 300, 0.4, 0.1)],
+  'beyblade-cut': [noise('bandpass', 3200, 1200, 0.1, 0.5, 2), tone('triangle', 2000, 800, 0.08, 0.25)],
   'crawl-strike': [tone('sine', 160, 60, 0.12, 0.5), noise('bandpass', 2200, 700, 0.1, 0.45, 1.5)],
   'hit-sickle-gravedigger': [tone('sine', 90, 34, 0.35, 0.85), noise('lowpass', 1300, 200, 0.3, 0.7, 1)],
   'hit-voltar-surge-blast': [tone('sine', 150, 50, 0.3, 0.6), tone('square', 1400, 150, 0.25, 0.25), noise('highpass', 2200, undefined, 0.3, 0.4, 1)],

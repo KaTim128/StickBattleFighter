@@ -58,6 +58,8 @@ export interface AttackDef {
   readonly burn: { readonly dps: number; readonly durationS: number } | null;
   /** The target bleeds when hit (Shroud). */
   readonly bleed?: boolean;
+  /** Bleeding damage per second (Kamaw). */
+  readonly bleedDps?: number;
   /** Toxicity stacks the target gets when this hit lands (Vexoris). */
   readonly poison?: number;
   /** The target bounces off the floor. */

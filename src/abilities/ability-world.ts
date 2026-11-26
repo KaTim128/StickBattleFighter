@@ -16,6 +16,7 @@ import {
   type TossDelivery,
 } from './ability-def';
 
+import type { FlurryHit } from './ability-def';
 import { InkWorld } from './ink-world';
 import { MagixWorld } from './magix-world';
 /**
@@ -101,6 +102,11 @@ export interface AbilityHost {
    * beam has just started (the host can ignore a stale mouse position). Optional.
    */
   steer?(casterId: string, fresh: boolean): Vec2 | null;
+  /**
+   * Where a caster wants to move right now (the player's movement keys or stick; a computer-controlled fighter heads for its enemy): a vector of
+   * length 0..1, or null. Steers a flurry or a spin that runs across the floor (Kamaw). Optional.
+   */
+  moveInput?(casterId: string): Vec2 | null;
   /** Turn a caster to face a direction (it follows its steered beam). Optional. */
   face?(casterId: string, dir: Vec2): void;
   /** Start (or end, null) a timed self-buff on a caster. */
@@ -173,6 +179,8 @@ export interface Projectile {
   bouncesLeft?: number;
   /** A curved throw: how far the direction turns per metre travelled (radians). */
   arcPerM?: number;
+  /** Flies this many times the delivery's speed (a quicker second throw). */
+  speedFactor?: number;
   damageFactor?: number;
   /** Recent positions for the trail (newest last). */
   readonly trail: Vec2[];
@@ -318,6 +326,24 @@ interface WhirlAction {
   readonly def: AbilityDef;
   ageS: number;
   sinceTickS: number;
+  /** A steered spin: where it is moving now, and the time left in its winding down once ended (null while it spins). */
+  vel: Vec2;
+  endLeftS: number | null;
+}
+
+/** A timed run of blows (see `FlurryDelivery`). */
+interface FlurryAction {
+  readonly kind: 'flurry';
+  readonly casterId: string;
+  readonly def: AbilityDef;
+  ageS: number;
+  dir: Vec2;
+  /** Index of the next blow to land, and the leap in progress (metres left). */
+  next: number;
+  leapLeftM: number;
+  /** The blow that just landed and how long ago, for the caster's animation. */
+  lastHit: number;
+  sinceHitS: number;
 }
 
 /** A parry stance up (see `ParryDelivery`): the next attack from the front is deflected and answered. */
@@ -566,7 +592,8 @@ type Action =
   | JudgementAction
   | LiftAction
   | FistAction
-  | WhirlAction;
+  | WhirlAction
+  | FlurryAction;
 
 /** How a grab turned out, for the caster's animation. */
 export type GrabOutcome =
@@ -595,6 +622,9 @@ const LIFT_FALL_S = 0.4;
 const GRENADE_STICK_MAX_Z_M = 1.9;
 /** Out of the hand, a grenade ignores bodies for this long a flight (it cannot stick to its own thrower's side). */
 const GRENADE_ARM_K = 0.12;
+
+/** How fast a steered flurry can turn to follow its caster's steering, radians per second. */
+const FLURRY_TURN_RAD_PER_S = 7;
 
 const rotate = (v: Vec2, rad: number): Vec2 => ({
   x: v.x * Math.cos(rad) - v.y * Math.sin(rad),
@@ -806,7 +836,7 @@ export class AbilityWorld {
       this.bursts.some((b) => b.casterId === casterId) ||
       this.actions.some(
         (a) =>
-          (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'spin' || a.kind === 'barrage') &&
+          (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'spin' || a.kind === 'barrage' || a.kind === 'flurry' || (a.kind === 'whirl' && a.def.delivery.type === 'whirl' && a.def.delivery.steered !== undefined)) &&
           a.casterId === casterId,
       )
     );
@@ -894,10 +924,12 @@ export class AbilityWorld {
   }
 
   /** A spin under way (Wind Blade), for the wing blades and the turning body. */
-  whirlOf(casterId: string): { ageS: number; durationS: number; radiusM: number } | null {
+  whirlOf(casterId: string): { ageS: number; durationS: number; radiusM: number; speedMps: number; ending: number | null } | null {
     const a = this.actions.find((x) => x.kind === 'whirl' && x.casterId === casterId) as WhirlAction | undefined;
     const d = a?.def.delivery;
-    return a && d?.type === 'whirl' ? { ageS: a.ageS, durationS: d.durationS, radiusM: d.radiusM } : null;
+    return a && d?.type === 'whirl'
+      ? { ageS: a.ageS, durationS: d.durationS, radiusM: d.radiusM, speedMps: Math.hypot(a.vel.x, a.vel.y), ending: a.endLeftS === null || !d.steered ? null : 1 - a.endLeftS / d.steered.endS }
+      : null;
   }
 
   /** An extended rocket fist (Geargrind): its direction and how far out it is, or null when none is out. */
@@ -1193,7 +1225,10 @@ export class AbilityWorld {
         this.spawnEruptions(casterId, def, d, host, dir);
         break;
       case 'whirl':
-        this.actions.push({ kind: 'whirl', casterId, def, ageS: 0, sinceTickS: d.tickS });
+        this.actions.push({ kind: 'whirl', casterId, def, ageS: 0, sinceTickS: d.tickS, vel: { x: 0, y: 0 }, endLeftS: null });
+        break;
+      case 'flurry':
+        this.actions.push({ kind: 'flurry', casterId, def, ageS: 0, dir, next: 0, leapLeftM: 0, lastHit: -1, sinceHitS: 99 });
         break;
       case 'parry': {
         // One stance per caster; its window is longer under Focus Stance.
@@ -1585,7 +1620,7 @@ export class AbilityWorld {
         let anchorAt: Vec2 | undefined;
         if (d.anchor) {
           // The hook goes into the ground ahead; if anything blocks the throw it fails and nothing moves (never a teleport).
-          const wantA = Math.min(d.anchor.throwRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+          const wantA = Math.min(d.anchor.throwRangeM, Math.hypot(aim.x - at.x, aim.y - at.y) + (d.anchor.pastM ?? 0));
           const A = { x: at.x + dir.x * wantA, y: at.y + dir.y * wantA };
           if (wantA < 1 || host.blocked(at, A) !== null || (host.standable && !host.standable(A))) {
             host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: A.x, y: A.y });
@@ -1795,7 +1830,7 @@ export class AbilityWorld {
       const p = this.projectiles[i]!;
       const d = p.def.delivery;
       if (d.type !== 'projectile') continue;
-      const step = d.speedMps * dtS;
+      const step = d.speedMps * (p.speedFactor ?? 1) * dtS;
       if (d.arcRad && p.arcPerM === undefined) {
         // A curved throw: start turned out to one side by half the arc, then bend back round onto the target (or the end of the range).
         let dist = d.maxRangeM;
@@ -2119,8 +2154,10 @@ export class AbilityWorld {
                         ? this.stepLift(a, dtS, host)
                     : a.kind === 'fist'
                       ? this.stepFist(a, dtS, host)
-                      : a.kind === 'whirl'
-                        ? this.stepWhirl(a, dtS, host)
+                      : a.kind === 'flurry'
+                        ? this.stepFlurry(a, dtS, host)
+                        : a.kind === 'whirl'
+                          ? this.stepWhirl(a, dtS, host)
                         : this.stepGrab(a, dtS, host);
       if (finished) {
         // The action may have been removed meanwhile (a new pull on the same target).
@@ -2301,15 +2338,36 @@ export class AbilityWorld {
     return true;
   }
 
-  /** A spin: every tick, each enemy in reach is cut by the wings and pushed away. */
+  /** A spin: every tick, each enemy in reach is cut by the wings and pushed away. A steered spin also carries its caster across the floor. */
   private stepWhirl(a: WhirlAction, dtS: number, host: AbilityHost): boolean {
     const d = a.def.delivery;
     if (d.type !== 'whirl') return true;
     a.ageS += dtS;
     a.sinceTickS += dtS;
+    const st = d.steered;
+    if (st) {
+      if (a.endLeftS === null && a.ageS >= d.durationS) a.endLeftS = st.endS;
+      // The player's own steering, never a lock-on: nothing held means he coasts to a stop.
+      const m = a.endLeftS === null ? host.moveInput?.(a.casterId) : null;
+      const len = m ? Math.hypot(m.x, m.y) : 0;
+      const want = m && len > 0.15 ? { x: (m.x / Math.max(1, len)) * st.speedMps, y: (m.y / Math.max(1, len)) * st.speedMps } : { x: 0, y: 0 };
+      const dx = want.x - a.vel.x;
+      const dy = want.y - a.vel.y;
+      const dl = Math.hypot(dx, dy);
+      const maxDv = st.accelMps2 * dtS;
+      if (dl <= maxDv || dl < 1e-6) a.vel = want;
+      else a.vel = { x: a.vel.x + (dx / dl) * maxDv, y: a.vel.y + (dy / dl) * maxDv };
+      host.drive(a.casterId, a.vel, 0);
+      if (Math.hypot(a.vel.x, a.vel.y) > 0.5) host.face?.(a.casterId, a.vel);
+      // The whirr of the spin, every little while it runs.
+      if (a.endLeftS === null && Math.floor((a.ageS + dtS) / 0.45) > Math.floor(a.ageS / 0.45))
+        host.emit({ kind: 'release', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.release, x: host.position(a.casterId).x, y: host.position(a.casterId).y, dirX: 1, dirY: 0 });
+    }
     const me = host.position(a.casterId);
+    const cutting = !st || a.endLeftS === null || a.endLeftS > st.endS * 0.4;
     while (a.sinceTickS >= d.tickS) {
       a.sinceTickS -= d.tickS;
+      if (!cutting) continue;
       for (const f of host.fighters()) {
         if (this.friendly(f, a.casterId, host) || !f.hittable) continue;
         const gap = Math.hypot(f.x - me.x, f.y - me.y);
@@ -2320,7 +2378,7 @@ export class AbilityWorld {
             kind: 'impact',
             ability: a.def.id,
             look: a.def.look,
-            vfx: 'wing-slash',
+            vfx: st ? a.def.vfx : 'wing-slash',
             sfx: a.def.sfx.impact,
             x: f.x,
             y: f.y,
@@ -2329,7 +2387,109 @@ export class AbilityWorld {
       }
       host.hitEnvironment(a.casterId, me, d.radiusM, a.def.payload, { x: 0, y: 0 }, false);
     }
+    if (st && a.endLeftS !== null) {
+      a.endLeftS -= dtS;
+      return a.endLeftS <= 0;
+    }
+    return !st && a.ageS >= d.durationS;
+  }
+
+  /** Ends a steered spin early (the ultimate button pressed again): it winds down and stops. True if there was one to end. */
+  endWhirl(casterId: string): boolean {
+    const a = this.actions.find((x) => x.kind === 'whirl' && x.casterId === casterId) as WhirlAction | undefined;
+    const d = a?.def.delivery;
+    if (!a || d?.type !== 'whirl' || !d.steered || a.endLeftS !== null) return false;
+    a.endLeftS = d.steered.endS;
+    return true;
+  }
+
+  /**
+   * A flurry: the caster follows the steering, lands each blow at its time on everything inside its shape, throws the leap that comes before
+   * a blow, and is carried by `drive` (so walls and furniture stop him).
+   */
+  private stepFlurry(a: FlurryAction, dtS: number, host: AbilityHost): boolean {
+    const d = a.def.delivery;
+    if (d.type !== 'flurry') return true;
+    a.ageS += dtS;
+    a.sinceHitS += dtS;
+    if (d.steered) {
+      const m = host.moveInput?.(a.casterId);
+      const len = m ? Math.hypot(m.x, m.y) : 0;
+      if (m && len > 0.2) {
+        // Turn towards the steering at a limited rate: he can double back after a runner, but never snaps round.
+        const want = Math.atan2(m.y, m.x);
+        const cur = Math.atan2(a.dir.y, a.dir.x);
+        let diff = want - cur;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        const turn = Math.max(-1, Math.min(1, diff / Math.max(1e-6, FLURRY_TURN_RAD_PER_S * dtS))) * FLURRY_TURN_RAD_PER_S * dtS;
+        const ang = Math.abs(diff) < Math.abs(turn) ? want : cur + turn;
+        a.dir = { x: Math.cos(ang), y: Math.sin(ang) };
+      }
+      host.face?.(a.casterId, a.dir);
+    }
+    while (a.next < d.hits.length && a.ageS >= d.hits[a.next]!.atS) {
+      this.flurryBlow(a, d.hits[a.next]!, host);
+      a.lastHit = a.next;
+      a.sinceHitS = 0;
+      a.next++;
+    }
+    // The leap that leads into a blow: faster for the time it needs to cover its distance.
+    let speed = d.moveSpeedMps;
+    const leapSpeed = d.leapSpeedMps ?? speed;
+    for (const h of d.hits) {
+      if (h.leapM && a.ageS < h.atS && a.ageS >= h.atS - h.leapM / leapSpeed) speed = leapSpeed;
+    }
+    host.drive(a.casterId, speed > 0 ? { x: a.dir.x * speed, y: a.dir.y * speed } : { x: 0, y: 0 }, 0);
     return a.ageS >= d.durationS;
+  }
+
+  private flurryBlow(a: FlurryAction, h: FlurryHit, host: AbilityHost): void {
+    const me = host.position(a.casterId);
+    const payload = {
+      ...a.def.payload,
+      damage: a.def.payload.damage * h.damageFactor,
+      knockbackMps: a.def.payload.knockbackMps * h.knockbackFactor,
+      heavy: h.heavy ?? a.def.payload.heavy,
+    };
+    let any = false;
+    for (const f of host.fighters()) {
+      if (this.friendly(f, a.casterId, host) || !f.hittable) continue;
+      const vx = f.x - me.x;
+      const vy = f.y - me.y;
+      const gap = Math.hypot(vx, vy);
+      if (gap > h.reachM + f.radiusM) continue;
+      if (h.shape === 'cone' && gap > 0.5) {
+        const cos = (vx * a.dir.x + vy * a.dir.y) / gap;
+        if (Math.acos(Math.max(-1, Math.min(1, cos))) > (h.halfArcRad ?? 0.9)) continue;
+      }
+      const away = h.shape === 'cone' || gap < 1e-6 ? a.dir : { x: vx / gap, y: vy / gap };
+      if (!this.hit(host, a.casterId, f.id, payload, away, a.def.look?.hitFlash)) continue;
+      any = true;
+      if (h.lift) this.beginLift(a.casterId, a.def, away, f, { ...h.lift, immuneS: 0 }, host);
+      host.emit({
+        kind: 'impact',
+        ability: a.def.id,
+        look: a.def.look,
+        vfx: a.def.vfx,
+        sfx: h.sfx ?? a.def.sfx.impact,
+        x: f.x,
+        y: f.y,
+        radiusM: 0.7,
+      });
+    }
+    // Furniture and doors in the way take the blow too; a miss still swishes.
+    host.hitEnvironment(a.casterId, { x: me.x + a.dir.x * h.reachM * 0.6, y: me.y + a.dir.y * h.reachM * 0.6 }, Math.max(0.6, h.reachM * 0.5), payload, a.dir, false);
+    if (!any)
+      host.emit({ kind: 'release', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: h.sfx ?? a.def.sfx.release, x: me.x, y: me.y, dirX: a.dir.x, dirY: a.dir.y });
+  }
+
+  /** A flurry's state for the caster's animation: which blow came last, how long ago, and whether it is running. */
+  flurryOf(casterId: string): { blow: number; sinceS: number; ageS: number; shape: 'cone' | 'circle' | null } | null {
+    const a = this.actions.find((x) => x.kind === 'flurry' && x.casterId === casterId) as FlurryAction | undefined;
+    const d = a?.def.delivery;
+    if (!a || d?.type !== 'flurry') return null;
+    return { blow: a.lastHit, sinceS: a.sinceHitS, ageS: a.ageS, shape: a.lastHit >= 0 ? d.hits[a.lastHit]!.shape : null };
   }
 
   /** Hoist the seized target overhead in front of the caster, then slam it down. */
@@ -2477,6 +2637,7 @@ export class AbilityWorld {
           trail: [],
           ...(d.bounces ? { bouncesLeft: d.bounces } : {}),
           ...(last ? { damageFactor: d.burst.finalFactor } : {}),
+          ...(b.fired > 0 && d.burst.laterSpeedFactor ? { speedFactor: d.burst.laterSpeedFactor } : {}),
         });
         // The flash at the muzzle, where the bullet leaves, not at the chest.
         host.emit({ kind: 'release', ability: b.def.id, look: b.def.look, vfx: b.def.vfx, sfx: b.def.sfx.release, x: at.x + shot.x * MUZZLE_M, y: at.y + shot.y * MUZZLE_M, dirX: shot.x, dirY: shot.y });

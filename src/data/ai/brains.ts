@@ -295,9 +295,9 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a3', 'a1'],
     ],
   },
-  // Sickle Wielder: a crawling ambusher. Scuttles in low, sweeps and hooks the legs, drags runners back, launches over cover.
+  // Kamaw: a crawling predator. Rushes in low, snares and hooks runners, throws the sickle from range and spins up once the fight is on.
   'sickle-wielder-ai': {
-    style: 'Crawling ambusher: scuttles in under the guard, sweeps the legs, hooks and drags anyone who runs.',
+    style: 'Crawling predator: slingshots in on the hook, rushes low, snares runners and spins into a human sickle.',
     preferredRangeM: [0.8, 1.6],
     movement: 'direct',
     meleeBias: 0.75,
@@ -306,15 +306,15 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     retreatBelowHp: 0.15,
     hitAndRunS: 0.8,
     tactics: {
-      a1: { role: 'gapClose', minM: 1.5, maxM: 5, weight: 1.2 },
-      a2: { role: 'burst', minM: 0, maxM: 2.6, weight: 1.3 },
-      a3: { role: 'control', minM: 2.5, maxM: 7, weight: 1.1 },
-      a4: { role: 'gapClose', minM: 2, maxM: 6, weight: 1 },
+      a1: { role: 'gapClose', minM: 3, maxM: 9, weight: 1.2 },
+      a2: { role: 'poke', minM: 2.5, maxM: 8, weight: 1.1 },
+      a3: { role: 'gapClose', minM: 1.5, maxM: 6, weight: 1.2 },
+      a4: { role: 'control', minM: 2.5, maxM: 7, weight: 1.1 },
       ult: { role: 'burst', minM: 0, maxM: 7, weight: 1.2, when: { selfHpBelow: 0.95 } },
     },
     combos: [
-      ['a3', 'a2'],
-      ['a1', 'a2'],
+      ['a4', 'a3'],
+      ['a2', 'a1'],
     ],
   },
   // Voltar: a lightning skirmisher. Flashes in and out, zaps from range, rushes close, dodges reactively, and opens Overdrive once the fight is on.
@@ -503,7 +503,7 @@ export const GENERIC_DESIGN: BrainDesign = {
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
   // Quickdraw Execution: finish a hurt target in range. Gravehook Launch: leap over distance onto a target in the open.
   quickdrawExecution: { role: 'burst', minM: 2, maxM: 10, weight: 1.2, when: { targetHpBelow: 0.6 } },
-  gravehookLaunch: { role: 'gapClose', minM: 3, maxM: 8, weight: 1.1 },
+  crescentExecution: { role: 'burst', minM: 0, maxM: 2.6, weight: 1.3 },
   // Thunder Circuit: a three-second charge is only worth it against a target that is stunned, bound or far enough to be out of reach of a punish.
   thunderCircuit: { role: 'control', minM: 3, maxM: 7.5, weight: 1, when: { targetHelpless: true } },
   // Quake Barrage: a punching barrage on anyone in reach.
