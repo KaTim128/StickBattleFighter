@@ -233,7 +233,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   // its knuckles, the sickle hand held forward at chest height, elbow bent back, the long chain hanging from it to the blade on the floor.
   'sickle-wielder': {
     title: 'The Mire Reaper',
-    style: 'Crawling sickle fighter: low slashes, leg sweeps, hooks and drags, and a leap on a tether',
+    style: 'Silat sickle fighter: low wide stance, quick stabs, a hook on a chain and a spinning chain finish',
     // Winding up (owner, 26/11/2026): a deeper crouch so the torso leans forward only a little and the head sits up over the shoulders, facing
     // the opponent; the sickle arm hangs down and back behind the body with the weapon trailing low, ready to swing forward.
     pelvis: 0.36,

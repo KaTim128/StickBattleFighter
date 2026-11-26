@@ -224,7 +224,7 @@ export interface StatsProfile {
     readonly jumpForce: number;
     readonly clashPower: number;
     /**
-     * How well his martial art turns clash blows aside (owner, 26/11/2026): Wing Chun parries clash shots best (0.2), kung fu and karate help a
+     * How well his martial art turns clash blows aside (owner, 26/11/2026): Wing Chun parries clash shots best (0.2), silat turns them aside well (0.12), kung fu and karate help a
      * little (0.06). Adds to the clash factor; default 0.
      */
     readonly clashParry?: number;

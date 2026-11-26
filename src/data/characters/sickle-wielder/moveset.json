@@ -10,7 +10,7 @@
   "moves": [
     {
       "id": "stab-1",
-      "displayName": "Sickle stab",
+      "displayName": "Tikam",
       "animationState": "Jab",
       "category": "punch",
       "heavy": false,
@@ -41,7 +41,7 @@
     },
     {
       "id": "stab-2",
-      "displayName": "Return stab",
+      "displayName": "Tikam balas",
       "animationState": "StraightPunch",
       "category": "punch",
       "heavy": false,
@@ -73,7 +73,7 @@
     },
     {
       "id": "stab-3",
-      "displayName": "Twist stab",
+      "displayName": "Tikam putar",
       "animationState": "Hook",
       "category": "punch",
       "heavy": false,
@@ -105,7 +105,7 @@
     },
     {
       "id": "stab-4",
-      "displayName": "Low stab",
+      "displayName": "Tikam bawah",
       "animationState": "Uppercut",
       "category": "punch",
       "heavy": false,
@@ -137,7 +137,7 @@
     },
     {
       "id": "stab-5",
-      "displayName": "Bleeding thrust",
+      "displayName": "Tikam darah",
       "animationState": "HeavyPunch",
       "category": "punch",
       "heavy": false,

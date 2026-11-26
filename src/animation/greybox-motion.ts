@@ -341,7 +341,7 @@ function gunslingerIdle(timeS: number, bones: BoneLengths): Pose {
 }
 
 /**
- * CRAWLER (Kamaw, owner 26/11/2026): Shroud's hunched predator posture, but lower and wider. The knees are deeply bent with the feet planted
+ * CRAWLER (Kamaw, owner 26/11/2026; a silat fighter, so this is his low, wide kuda-kuda): Shroud's hunched predator posture, but lower and wider. The knees are deeply bent with the feet planted
  * far apart, the chest leans forward over them, the sickle hand held ready at the waist and the free hand hanging forward for balance.
  * (The select-screen pose is its own stance and is not affected.) He breathes slowly, shifts his weight and now and then flicks the sickle.
  */
