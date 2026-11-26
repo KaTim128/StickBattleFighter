@@ -258,24 +258,24 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.01, hands: 0.03 },
   },
-  // Bohemeth (owner, 26/11/2026): a confident, dominant four-armed pose. The lower pair rest firmly on his waist; the far upper arm is raised
-  // and flexed like a bodybuilder's bicep; the near upper arm is bent level in a fighting guard with the fist forward and a little to the side,
-  // well below and clear of the face.
+  // Bohemeth (owner, 26/11/2026, after the "Behemoth, the Quadruple Colossus" reference): a wide, planted power pose facing the viewer.
+  // Both upper fists are raised high and out at the sides, elbows bent, like a double flex; both lower fists hang clenched out low and wide,
+  // clear of the legs; the face is open and the chains cross the chest. A little taller than before.
   bohemeth: {
     title: 'The Four Armed Brute',
     style: 'Four-armed heavyweight: spins, uppercuts, claps and smashes with chains wrapped round him',
-    pelvis: 0.84,
-    leadFoot: 0.4,
-    rearFoot: -0.4,
-    lean: -4,
+    pelvis: 0.86,
+    leadFoot: 0.5,
+    rearFoot: -0.5,
+    lean: 0,
     head: 0,
-    front: { x: 0.8, y: 0.1 },
-    back: { x: -0.8, y: -0.74 },
-    front2: { x: 0.3, y: 0.55, elbowOut: true },
-    back2: { x: -0.45, y: 0.62, elbowOut: true },
-    turn: 0.58,
-    scale: 1.04,
-    breath: { lean: 1.5, pelvis: 0.012, hands: 0.025 },
+    front: { x: 0.62, y: -0.62 },
+    back: { x: -0.62, y: -0.58 },
+    front2: { x: 0.78, y: 0.5 },
+    back2: { x: -0.7, y: 0.52 },
+    turn: 0.3,
+    scale: 1.18,
+    breath: { lean: 1.2, pelvis: 0.012, hands: 0.03 },
   },
   shroud: {
     title: 'The Unseen Blade',
