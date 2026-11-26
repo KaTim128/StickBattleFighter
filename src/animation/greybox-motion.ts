@@ -355,15 +355,17 @@ function apePose(
   const arm = bones.upperArm + bones.foreArm;
   // The shoulder's height above the floor, and its distance forward of the hips.
   const shoulderY = o.pelvisM + Math.cos(lean) * bones.spine;
-  const hand = (hx: number, hy: number) => {
+  const hand = (hx: number, hy: number, elbowDown = false) => {
     const ik = armIk(hx, hy, bones.upperArm, bones.foreArm);
+    // The raised arm uses the other elbow solution so the elbow hangs down under the hand (owner, 26/11/2026).
+    if (elbowDown) return { root: 2 * Math.atan2(hx, hy) - ik.root - lean, bend: -ik.bend };
     return { root: ik.root - lean, bend: ik.bend };
   };
   const reach = Math.min(shoulderY - o.knuckle.lift, arm * 0.995);
   return {
     lean,
     head: deg(o.head),
-    armFront: hand(o.raised.x * arm, o.raised.y * arm),
+    armFront: hand(o.raised.x * arm, o.raised.y * arm, true),
     armBack: hand(o.knuckle.x, reach),
     legFront: legIk(o.lead.x, o.pelvisM - o.lead.lift, bones.thigh, bones.shin),
     legBack: legIk(o.rear.x, o.pelvisM - o.rear.lift, bones.thigh, bones.shin),

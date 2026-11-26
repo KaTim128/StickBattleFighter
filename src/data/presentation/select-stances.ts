@@ -237,7 +237,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     rearFoot: -0.32,
     lean: -56,
     head: 30,
-    front: { x: 0.36, y: -0.74 },
+    front: { x: 0.36, y: -0.74, elbowOut: true }, // the raised arm's elbow points down (owner, 26/11/2026)
     back: { x: 0.14, y: 0.985 },
     turn: 0.55,
     scale: 1.05,
