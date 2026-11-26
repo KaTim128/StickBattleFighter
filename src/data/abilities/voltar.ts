@@ -1,0 +1,235 @@
+import type { AbilityKit } from '../../abilities/ability-def';
+import { chargeFor } from '../../abilities/ultimate-charge';
+
+/**
+ * Voltar's kit (owner, 26/11/2026): an electric stickman built on speed. Flashstep streaks through the enemy and punches from behind; Arc
+ * Lash zaps and carries him through the target, stunning it for exactly 3 seconds; Voltage Rush zigzags round the enemy with a spinning
+ * finishing kick; Static Break is a reactive lightning dodge that counters from behind; Thunder Circuit (the fifth ability) gathers
+ * lightning from the sky for exactly 3 seconds, then fires a beam a little longer than Fire Beam that stuns only while it touches. The
+ * ultimate, Overdrive, is a controlled burst of mobility; pressing it again while it lasts triggers the finisher, Lightning Execution.
+ * Values are PROVISIONAL (OQ-05).
+ */
+const VOLT = { deep: 0x0b2f4a, hot: 0x19c4e0, bright: 0x8ff8ff, core: 0xfffbd0 } as const;
+const spark = (ringM: number, shake: number) => ({
+  flashM: ringM * 0.5,
+  sparks: 30,
+  motes: 40,
+  ringM,
+  smoke: 0,
+  groundFire: false,
+  smokeColour: 0x1b3a52,
+  shake,
+});
+
+export const VOLTAR_KIT: AbilityKit = {
+  comboIcon: 'volt-combo',
+  heavyIcon: 'surge-blast',
+  // A1 (Q): Flashstep. A lightning streak through the enemy, an afterimage where he began, a rapid punch from behind.
+  a1: {
+    id: 'flashstep',
+    name: 'Flashstep',
+    label: 'FLASH',
+    description:
+      'Streaks through the nearest enemy within 7 metres as a bolt of lightning, leaving an afterimage where he began, and reappears behind them with a rapid electrified punch. He can pass through opponents but never through walls or furniture: a wall in the way stops the flash short and no punch lands.',
+    icon: 'flashstep',
+    slot: 'a1',
+    staminaCost: 22,
+    cooldownS: 6,
+    castS: 0.12,
+    recoveryS: 0.35,
+    aimRangeM: 7,
+    moveFactor: 0,
+    interruptible: true,
+    payload: { damage: 38, knockbackMps: 3, heavy: false, strength: 420, impact: 'knuckle-light', noFlinch: false },
+    delivery: { type: 'teleport', maxRangeM: 7, behindTargetM: 0.7, flash: { lifeS: 0.35, chainMax: 2 } },
+    vfx: 'flashstep',
+    sfx: { cast: 'volt-charge-short', release: 'volt-dash', impact: 'volt-flash-hit' },
+    look: { palette: VOLT, impact: spark(1.4, 0.3), hitFlash: 0xcffcff },
+  },
+  // A2 (E): Arc Lash. A zap; on contact he travels through the target as a streak of lightning, which stuns for exactly 3 seconds.
+  a2: {
+    id: 'arcLash',
+    name: 'Arc Lash',
+    label: 'ZAP',
+    description:
+      'Releases a concentrated electrical zap at the opponent. If it connects he turns to lightning and streaks straight through them, emerging on the other side, and they take electrical damage and are stunned for exactly 3 seconds, outlined in a flash of sparks.',
+    icon: 'arc-lash',
+    slot: 'a2',
+    staminaCost: 30,
+    cooldownS: 12,
+    castS: 0.22,
+    recoveryS: 0.4,
+    aimRangeM: 8,
+    moveFactor: 0.2,
+    interruptible: true,
+    payload: { damage: 45, knockbackMps: 0, heavy: false, strength: 300, impact: 'knuckle-light', stunS: 3, noFlinch: false },
+    delivery: { type: 'projectile', speedMps: 34, radiusM: 0.4, maxRangeM: 8, passThrough: { exitM: 1.1 } },
+    vfx: 'arc-lash',
+    sfx: { cast: 'volt-charge-short', release: 'volt-zap', impact: 'volt-contact' },
+    look: {
+      palette: VOLT,
+      flight: { trailPerS: 140, sparksPerS: 40, shimmer: true },
+      impact: spark(2, 0.5),
+      hitFlash: 0xfffbd0,
+    },
+  },
+  // A3 (F): Voltage Rush. He zigzags round the enemy punching and kicking from every side, then a spinning kick throws them away.
+  a3: {
+    id: 'voltageRush',
+    name: 'Voltage Rush',
+    label: 'RUSH',
+    description:
+      'Rapidly zigzags round the opponent, striking from a different side each time with electrified punches and kicks, every blow a separate hit with its own burst of lightning. The last is a powerful spinning kick that launches them away.',
+    icon: 'voltage-rush',
+    slot: 'a3',
+    staminaCost: 34,
+    cooldownS: 11,
+    castS: 0.18,
+    recoveryS: 0.5,
+    aimRangeM: 5,
+    moveFactor: 0,
+    interruptible: true,
+    payload: { damage: 13, knockbackMps: 1.2, heavy: false, strength: 260, impact: 'knuckle-light', noFlinch: true },
+    delivery: {
+      type: 'assault',
+      approachSpeedMps: 26,
+      maxApproachS: 0.35,
+      reachM: 1.5,
+      radiusM: 0.7,
+      stabs: 5,
+      stabIntervalS: 0.13,
+      finalFactor: 2.4,
+      zigzag: { radiusM: 0.95, lifeS: 0.3 },
+      stabSfx: ['volt-hit', 'volt-hit', 'volt-hit', 'volt-hit', 'volt-finisher'],
+    },
+    vfx: 'voltage-rush',
+    sfx: { cast: 'volt-charge-short', release: 'volt-rush', impact: 'volt-hit' },
+    look: { palette: VOLT, impact: spark(1.1, 0.25), hitFlash: 0xcffcff },
+  },
+  // A4 (R): Static Break. A reactive lightning dodge: a blow that lands during it is avoided and answered from behind.
+  a4: {
+    id: 'staticBreak',
+    name: 'Static Break',
+    label: 'BREAK',
+    description:
+      'Bursts into electricity and dodges instantly in the direction he is moving. If an opponent attacks during the dodge he is not there: he reappears behind them in a flash and delivers an electrified counterpunch. A reactive dodge, not a block; it must be timed.',
+    icon: 'static-break',
+    slot: 'a4',
+    staminaCost: 24,
+    cooldownS: 10,
+    castS: 0.05,
+    recoveryS: 0.45,
+    aimRangeM: 5,
+    moveFactor: 0,
+    interruptible: false,
+    payload: { damage: 42, knockbackMps: 4, heavy: true, strength: 500, impact: 'knuckle-heavy', noFlinch: false },
+    delivery: { type: 'parry', windowS: 0.5, stunS: 0.5, evade: { distanceM: 4.5, speedMps: 22 } },
+    vfx: 'static-break',
+    sfx: { cast: 'volt-evade', release: 'volt-evade-out', impact: 'volt-counter' },
+    look: { palette: VOLT, impact: spark(1.6, 0.4), hitFlash: 0xfffbd0 },
+  },
+  // A5 (fifth): Thunder Circuit. Exactly 3 seconds gathering lightning from the sky, then a beam that stuns only while it touches.
+  a5: {
+    id: 'thunderCircuit',
+    name: 'Thunder Circuit',
+    label: 'THUNDER',
+    description:
+      'Stands his ground and gathers lightning from the sky for exactly 3 seconds, currents pouring down round his body and hands and growing fiercer all the while; any hit on him breaks the charge. Then he fires a roaring beam of lightning, a little longer than Fire Beam, that hurts as much as Fire Beam up close and stuns whoever it touches for only as long as it keeps touching them.',
+    icon: 'thunder-circuit',
+    slot: 'a3',
+    staminaCost: 40,
+    cooldownS: 14,
+    castS: 3,
+    recoveryS: 0.7,
+    aimRangeM: 8,
+    moveFactor: 0,
+    interruptible: true,
+    breaksOnHit: true,
+    payload: {
+      damage: 18,
+      knockbackMps: 0.4,
+      heavy: false,
+      strength: 320,
+      impact: 'knuckle-light',
+      // Re-applied every tick: it lasts a little longer than the gap between ticks, so contact stuns and the stun ends when contact does.
+      stunS: 0.22,
+      falloff: { fullWithinM: 1, minFactor: 0.35 },
+    },
+    delivery: { type: 'beam', rangeM: 8, widthM: 0.7, durationS: 2, tickS: 0.15, turnRadPerS: 1.8 },
+    vfx: 'thunder-circuit',
+    sfx: { cast: 'volt-charge-long', release: 'volt-beam', impact: 'volt-beam-hit' },
+    look: {
+      palette: VOLT,
+      charge: { gatherRadiusM: 1.6, motesPerS: 160, coreMaxM: 0.45 },
+      flight: { trailPerS: 120, sparksPerS: 60, shimmer: true },
+      impact: spark(1.4, 0.4),
+      hitFlash: 0xcffcff,
+    },
+  },
+  // ULT (I): Overdrive. Faster, with chained Flashsteps and electrified blows, for a short time; the ultimate button again is the finisher.
+  ult: {
+    id: 'voltOverdrive',
+    name: 'Overdrive',
+    label: 'ULT',
+    description:
+      'Overcharges his body for 8 seconds: he runs 12% faster, his punches and kicks are 12% quicker and crackle with lightning for a little extra damage, and Flashstep can chain up to two more dashes. Thunder Circuit still needs its full 3-second charge. Press the ultimate again while Overdrive lasts to end it with Lightning Execution.',
+    icon: 'volt-overdrive',
+    slot: 'ult',
+    staminaCost: 0,
+    cooldownS: 1,
+    castS: 0.7,
+    recoveryS: 0.4,
+    aimRangeM: 0,
+    moveFactor: 0.3,
+    interruptible: false,
+    payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
+    delivery: {
+      type: 'buff',
+      durationS: 8,
+      speedFactor: 1.12,
+      damageTakenFactor: 1,
+      attackSpeedFactor: 1.12,
+      meleeDamageFactor: 1.06,
+      flashChain: 2,
+      electrified: true,
+    },
+    vfx: 'volt-overdrive',
+    sfx: { cast: 'volt-charge-long', release: 'volt-overdrive', impact: 'volt-overdrive-pop' },
+    look: {
+      palette: VOLT,
+      charge: { gatherRadiusM: 1.4, motesPerS: 140, coreMaxM: 0.2 },
+      impact: spark(2.4, 0.4),
+      hitFlash: 0xcffcff,
+    },
+  },
+  // Lightning Execution (the finisher, ultimate button again during Overdrive): afterimages strike from every side, then a dive from above.
+  finisher: {
+    id: 'lightningExecution',
+    name: 'Lightning Execution',
+    label: 'EXECUTE',
+    description:
+      'Vanishes in a blinding flash. Afterimages surround the nearest enemy within 8 metres, each striking from a different direction, then he reappears above them, gathers lightning round his whole body and dives down like a bolt: a blast of electricity spreads across the ground and throws them away. It ends Overdrive.',
+    icon: 'lightning-execution',
+    slot: 'ult',
+    staminaCost: 0,
+    cooldownS: 0,
+    castS: 0.25,
+    recoveryS: 0.7,
+    aimRangeM: 8,
+    moveFactor: 0,
+    interruptible: false,
+    payload: { damage: 13, knockbackMps: 11, heavy: true, strength: 800, impact: 'knuckle-heavy', noFlinch: false },
+    delivery: {
+      type: 'judgement',
+      rangeM: 8,
+      strikes: 6,
+      strikeIntervalS: 0.07,
+      resolveDelayS: 0.35,
+      dive: { radiusM: 3, knockbackMps: 11 },
+    },
+    vfx: 'lightning-execution',
+    sfx: { cast: 'volt-vanish', release: 'volt-vanish-out', impact: 'volt-execution' },
+    look: { palette: VOLT, impact: spark(3.4, 0.9), hitFlash: 0xffffff },
+  },
+  charge: chargeFor('voltOverdrive'),
+};

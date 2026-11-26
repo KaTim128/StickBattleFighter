@@ -34,6 +34,7 @@ export const ULTIMATE_POWER = {
   masterpiece: 1.35,
   mirrorAct: 1.3,
   fieryFists: 1.2,
+  voltOverdrive: 1.1,
   rampageMode: 1.3,
   blueFire: 1.4,
 } as const;

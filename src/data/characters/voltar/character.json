@@ -1,0 +1,66 @@
+{
+  "id": "voltar",
+  "template": "base-stickman",
+  "displayName": "Voltar",
+  "description": "Voltar is what is left when a storm decides to walk. He does not run so much as arrive, and a fight against him is a series of flashes: a blur at your shoulder, a crackle behind you, a cape snapping as the lightning settles. He lives for the moment the sky answers, and he has learned to call it down himself.",
+  "characterType": "fighter",
+  "element": "electric",
+  "combatStyle": "lightning",
+  "profiles": {
+    "animation": "voltar-animation",
+    "moveset": "voltar-moveset",
+    "stats": "voltar-stats",
+    "effects": "voltar-effects",
+    "audio": "voltar-audio",
+    "ai": "voltar-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.44,
+      "shin": 0.44
+    },
+    "colour": "#f4f0d8",
+    "colourBack": "#dcd4a8",
+    "outline": "#1a2230",
+    "limbWidthM": 0.08,
+    "outlineWidthM": 0.03,
+    "spine": 0.55
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": true,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "voltar-kit"
+}

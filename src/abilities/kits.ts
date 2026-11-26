@@ -14,6 +14,7 @@ import { RAMPAGE_KIT } from '../data/abilities/rampage';
 import { RESON_KIT } from '../data/abilities/reson';
 import { SHROUD_KIT } from '../data/abilities/shroud';
 import { VEXORIS_KIT } from '../data/abilities/vexoris';
+import { VOLTAR_KIT } from '../data/abilities/voltar';
 import type { AbilityKit } from './ability-def';
 
 /** Ability kits by id: a Character Definition's `abilityKit` names one (TD-039). */
@@ -23,6 +24,7 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'necro-kit': NECRO_KIT,
   'shroud-kit': SHROUD_KIT,
   'vexoris-kit': VEXORIS_KIT,
+  'voltar-kit': VOLTAR_KIT,
   'aerion-kit': AERION_KIT,
   'kenshiro-kit': KENSHIRO_KIT,
   'chronos-kit': CHRONOS_KIT,

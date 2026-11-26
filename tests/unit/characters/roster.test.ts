@@ -25,6 +25,7 @@ describe('roster', () => {
       'reson',
       'shroud',
       'vexoris',
+      'voltar',
     ]);
   });
 
@@ -42,7 +43,7 @@ describe('roster', () => {
     ])
       expect(ids).toContain(id);
     expect(ids).not.toContain('base-stickman'); // the shared template is not a fighter
-    expect(ids.slice(0, 15).sort()).toEqual([
+    expect(ids.slice(0, 16).sort()).toEqual([
       'aerion',
       'bohemeth',
       'chronos',
@@ -58,6 +59,7 @@ describe('roster', () => {
       'reson',
       'shroud',
       'vexoris',
+      'voltar',
     ]); // the main roster first
     expect(new Set(ids).size).toBe(ids.length);
   });

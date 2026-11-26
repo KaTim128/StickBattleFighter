@@ -49,6 +49,7 @@ export const PROCEDURAL_CLIPS = [
   'proc.idle.calligrapher',
   'proc.idle.magician',
   'proc.idle.fourarm',
+  'proc.idle.storm',
   'proc.walk',
   'proc.run',
   'proc.air.rise',
@@ -749,6 +750,151 @@ const STRIKES = {
   ),
 
   // ---- Reson's sonic style: short rhythmic blows from a bouncing stance, the gauntlets leading, each with a snap of recoil.
+  // ---- Voltar's lightning style: very short windups and long snapping extensions, always leaning into the blow, with a blur of recoil.
+  'voltar.jab': strike(
+    {
+      lean: deg(-8),
+      head: deg(2),
+      armFront: limb(40, 130),
+      armBack: limb(58, 116),
+      legFront: limb(26, -30),
+      legBack: limb(-28, -26),
+    },
+    {
+      lean: deg(-18),
+      head: deg(-2),
+      armFront: limb(92, 2),
+      armBack: limb(54, 118),
+      legFront: limb(34, -34),
+      legBack: limb(-30, -24),
+    },
+  ),
+  'voltar.cross': strike(
+    {
+      lean: deg(2),
+      head: deg(2),
+      armFront: limb(64, 122),
+      armBack: limb(-24, 128),
+      legFront: limb(24, -30),
+      legBack: limb(-30, -28),
+    },
+    {
+      lean: deg(-28),
+      head: deg(-4),
+      armFront: limb(40, 116),
+      armBack: limb(96, 2),
+      legFront: limb(36, -34),
+      legBack: limb(-20, -34),
+    },
+  ),
+  'voltar.elbow': strike(
+    {
+      lean: deg(-4),
+      head: deg(0),
+      armFront: limb(120, 150),
+      armBack: limb(50, 120),
+      legFront: limb(30, -32),
+      legBack: limb(-26, -28),
+    },
+    {
+      lean: deg(-24),
+      head: deg(-6),
+      armFront: limb(70, 162),
+      armBack: limb(44, 118),
+      legFront: limb(42, -40),
+      legBack: limb(-24, -26),
+    },
+  ),
+  'voltar.spin-kick': strike(
+    {
+      lean: deg(10),
+      head: deg(4),
+      armFront: limb(80, 120),
+      armBack: limb(110, 120),
+      legFront: limb(18, -40),
+      legBack: limb(-40, -30),
+    },
+    {
+      lean: deg(-30),
+      head: deg(-8),
+      armFront: limb(130, 70),
+      armBack: limb(-120, 60),
+      legFront: limb(106, -4),
+      legBack: limb(-10, -50),
+    },
+  ),
+  'voltar.dart': strike(
+    {
+      lean: deg(-4),
+      head: deg(0),
+      armFront: limb(70, 120),
+      armBack: limb(54, 120),
+      legFront: limb(60, -110),
+      legBack: limb(-24, -30),
+    },
+    {
+      lean: deg(-14),
+      head: deg(-4),
+      armFront: limb(66, 116),
+      armBack: limb(40, 120),
+      legFront: limb(98, -6),
+      legBack: limb(-24, -34),
+    },
+  ),
+  'voltar.air-bolt': strike(
+    {
+      lean: deg(-2),
+      head: deg(0),
+      armFront: limb(60, 130),
+      armBack: limb(70, 124),
+      legFront: limb(70, -100),
+      legBack: limb(-30, -60),
+    },
+    {
+      lean: deg(-20),
+      head: deg(-6),
+      armFront: limb(96, 10),
+      armBack: limb(30, 120),
+      legFront: limb(96, -8),
+      legBack: limb(-40, -70),
+    },
+  ),
+  'voltar.down-strike': strike(
+    {
+      lean: deg(6),
+      head: deg(-4),
+      armFront: limb(150, 60),
+      armBack: limb(140, 70),
+      legFront: limb(40, -90),
+      legBack: limb(-30, -70),
+    },
+    {
+      lean: deg(-40),
+      head: deg(14),
+      armFront: limb(30, 20),
+      armBack: limb(24, 30),
+      legFront: limb(58, -6),
+      legBack: limb(-20, -80),
+    },
+  ),
+  'voltar.surge': strike(
+    {
+      lean: deg(12),
+      head: deg(-8),
+      armFront: limb(160, 50),
+      armBack: limb(-10, 130),
+      legFront: limb(34, -50),
+      legBack: limb(-34, -40),
+    },
+    {
+      lean: deg(-36),
+      head: deg(-4),
+      armFront: limb(96, 4),
+      armBack: limb(92, 6),
+      legFront: limb(50, -48),
+      legBack: limb(-32, -34),
+    },
+  ),
   // 1. Sonic jab: a quick jab with the forearm ring turned to face the target.
   'reson.jab': strike(
     {

@@ -635,6 +635,51 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 15, '#fff4c2', 0.14),
     `<g filter="url(#ds)"><path d="M10 40 L30 20" stroke="#15151c" stroke-width="4.4" stroke-linecap="round"/><path d="M10 40 L13 37" stroke="#f6f3ee" stroke-width="4.4" stroke-linecap="round"/></g><path d="M6 14 C16 4 34 6 42 20" fill="none" stroke="#ffd86b" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="1 5"/><path d="M36 28 L38 33 L43 35 L38 37 L36 42 L34 37 L29 35 L34 33 Z" fill="#b06cff"/>`,
   ),
+  'volt-combo': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<path d="M8 36 L18 26 L14 22 L26 12" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M8 36 L18 26 L14 22 L26 12" fill="none" stroke="#fffbd0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 40 L32 30 L28 26 L40 16" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M22 40 L32 30 L28 26 L40 16" fill="none" stroke="#fffbd0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+  ),
+  'surge-blast': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<path d="M6 24 H40" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M6 24 L16 18 L22 30 L30 18 L42 24" fill="none" stroke="#fffbd0" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="24" r="5" fill="#dfeeff" stroke="#0a1a2e" stroke-width="1.6"/>`,
+  ),
+  'flashstep': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<path d="M6 34 L42 14" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M6 34 L22 26 L18 22 L42 14" fill="none" stroke="#fffbd0" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="34" r="4" fill="#dfeeff" opacity=".5"/><circle cx="40" cy="15" r="5" fill="#dfeeff" stroke="#0a1a2e" stroke-width="1.4"/>`,
+  ),
+  'arc-lash': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<path d="M6 36 L18 26 L14 22 L30 14 L26 10 L42 8" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M6 36 L18 26 L14 22 L30 14 L26 10 L42 8" fill="none" stroke="#fffbd0" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="40" cy="9" r="4.5" fill="#fffbd0" filter="url(#gl)"/>`,
+  ),
+  'voltage-rush': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<path d="M8 14 L22 22 L12 30" fill="none" stroke="#19c4e0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M8 14 L22 22 L12 30" fill="none" stroke="#fffbd0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 14 L26 22 L36 30" fill="none" stroke="#19c4e0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M40 14 L26 22 L36 30" fill="none" stroke="#fffbd0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 40 L24 26 L32 40" fill="none" stroke="#19c4e0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M16 40 L24 26 L32 40" fill="none" stroke="#fffbd0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+  ),
+  'static-break': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<circle cx="24" cy="24" r="13" fill="none" stroke="#19c4e0" stroke-width="2.4" stroke-dasharray="4 4" filter="url(#gl)"/><path d="M30 4 L16 26 L25 26 L18 44 L36 20 L26 20 Z" fill="none" stroke="#19c4e0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M30 4 L16 26 L25 26 L18 44 L36 20 L26 20 Z" fill="#fffbd0" stroke="#0a1a2e" stroke-width="1.2" stroke-linejoin="round"/>`,
+  ),
+  'thunder-circuit': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<path d="M10 4 L14 14 L10 20 L16 30" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M10 4 L14 14 L10 20 L16 30" fill="none" stroke="#fffbd0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 2 L28 14 L22 22 L26 34" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M24 2 L28 14 L22 22 L26 34" fill="none" stroke="#fffbd0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M38 4 L34 14 L38 20 L32 30" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M38 4 L34 14 L38 20 L32 30" fill="none" stroke="#fffbd0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 42 H40" stroke="#8ff8ff" stroke-width="3" stroke-linecap="round" filter="url(#gl)"/><circle cx="24" cy="38" r="5" fill="#fffbd0" filter="url(#gl)"/>`,
+  ),
+  'volt-overdrive': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<circle cx="24" cy="26" r="14" fill="none" stroke="#19c4e0" stroke-width="3" filter="url(#gl)"/><path d="M30 4 L16 26 L25 26 L18 44 L36 20 L26 20 Z" fill="none" stroke="#19c4e0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M30 4 L16 26 L25 26 L18 44 L36 20 L26 20 Z" fill="#fffbd0" stroke="#0a1a2e" stroke-width="1.2" stroke-linejoin="round"/>`,
+  ),
+  'lightning-execution': icon(
+    'sonic',
+    rays(24, 24, 15, '#8ff8ff', 0.2),
+    `<path d="M24 2 L18 18 L28 18 L14 46" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M24 2 L18 18 L28 18 L14 46" fill="none" stroke="#fffbd0" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 44 H42" stroke="#8ff8ff" stroke-width="3" stroke-linecap="round" filter="url(#gl)"/><circle cx="14" cy="45" r="7" fill="none" stroke="#fffbd0" stroke-width="2" opacity=".7"/>`,
+  ),
   'spin-cycle': icon(
     'earth',
     rays(24, 24, 16, '#f3e3c2', 0.18),

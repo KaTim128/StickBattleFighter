@@ -140,6 +140,18 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 2.0, colour: 0x7ae8ff },
     mist: 4,
   },
+  // Voltar's lightning: cyan and white with a yellow fork; a sharp flash on every touch and a wide arc on the surge.
+  'volt-limbs': {
+    limbFlames: true,
+    limbPalette: { deep: 0x0b2f4a, hot: 0x19c4e0, bright: 0x8ff8ff, core: 0xfffbd0 },
+  },
+  'volt-hit': { sparks: { count: 12, speedMps: 8, colour: 0xfffbd0 }, ring: { sizeM: 0.6, colour: 0x2ee6ff } },
+  'volt-wave': {
+    sparks: { count: 26, speedMps: 11, colour: 0xffffff },
+    ring: { sizeM: 2.1, colour: 0x7ef6ff },
+    mist: 3,
+  },
+  'volt-aura': { bodyEmbers: true },
   // Chronos's time: pale cyan with a bronze glint; delayed rings echo every touch.
   'time-limbs': {
     limbFlames: true,

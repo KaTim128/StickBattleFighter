@@ -138,6 +138,13 @@ import skeletonStats from '../data/characters/skeleton-warrior/stats.json';
 import dummyAi from '../data/characters/training-dummy/ai.json';
 import dummyCharacter from '../data/characters/training-dummy/character.json';
 import dummyStats from '../data/characters/training-dummy/stats.json';
+import voltarAi from '../data/characters/voltar/ai.json';
+import voltarAnimation from '../data/characters/voltar/animation-profile.json';
+import voltarAudio from '../data/characters/voltar/audio.json';
+import voltarCharacter from '../data/characters/voltar/character.json';
+import voltarEffects from '../data/characters/voltar/effects.json';
+import voltarMoveset from '../data/characters/voltar/moveset.json';
+import voltarStats from '../data/characters/voltar/stats.json';
 import vexorisAi from '../data/characters/vexoris/ai.json';
 import vexorisAnimation from '../data/characters/vexoris/animation-profile.json';
 import vexorisAudio from '../data/characters/vexoris/audio.json';
@@ -173,6 +180,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     necroCharacter,
     shroudCharacter,
     vexorisCharacter,
+    voltarCharacter,
     aerionCharacter,
     kenshiroCharacter,
     psionCharacter,
@@ -200,6 +208,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     necroAnimation,
     shroudAnimation,
     vexorisAnimation,
+    voltarAnimation,
     aerionAnimation,
     kenshiroAnimation,
     psionAnimation,
@@ -222,6 +231,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     necroMoveset,
     shroudMoveset,
     vexorisMoveset,
+    voltarMoveset,
     aerionMoveset,
     kenshiroMoveset,
     psionMoveset,
@@ -245,6 +255,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     necroStats,
     shroudStats,
     vexorisStats,
+    voltarStats,
     aerionStats,
     kenshiroStats,
     psionStats,
@@ -269,6 +280,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     necroEffects,
     shroudEffects,
     vexorisEffects,
+    voltarEffects,
     aerionEffects,
     kenshiroEffects,
     psionEffects,
@@ -292,6 +304,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     necroAudio,
     shroudAudio,
     vexorisAudio,
+    voltarAudio,
     aerionAudio,
     kenshiroAudio,
     psionAudio,
@@ -312,6 +325,7 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     necroAi,
     shroudAi,
     vexorisAi,
+    voltarAi,
     aerionAi,
     kenshiroAi,
     psionAi,

@@ -1,0 +1,17 @@
+{
+  "id": "voltar-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Idle": "proc.idle.storm",
+    "FightingStance": "proc.idle.storm",
+    "Turn": "proc.idle.storm",
+    "Jab": "voltar.jab",
+    "Hook": "voltar.cross",
+    "SideKick": "voltar.elbow",
+    "RoundhouseKick": "voltar.spin-kick",
+    "FrontKick": "voltar.dart",
+    "JumpingFrontKick": "voltar.air-bolt",
+    "DownwardAerialKick": "voltar.down-strike",
+    "HeavyAttack": "voltar.surge"
+  }
+}

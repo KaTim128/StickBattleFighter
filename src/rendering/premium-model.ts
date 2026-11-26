@@ -126,6 +126,8 @@ export interface PremiumSkin {
   readonly chains?: { readonly iron: number; readonly lit: number; readonly shade: number };
   /** A second, lower pair of arms (the rig's `lowerArms` gives them their shoulders). */
   readonly fourArms?: boolean;
+  /** Lightning that flickers round the hands and feet all the time, and in forks when he moves or is electrified (Voltar). */
+  readonly storm?: { readonly bolt: number; readonly fork: number };
   /** A crystal crown of sharp points on the head (Prismor). */
   readonly crown?: { readonly body: number; readonly glow: number };
   /** Hovers this far above the floor when standing (render only; Aerion), metres. */
@@ -433,6 +435,40 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     head: 'own',
     backpack: { shell: 0x3a3f48, trim: 0xff7a1a, light: 0xffb455 },
     machineArm: { steel: 0x586070, stripe: 0xff7a1a },
+  },
+  // Voltar (owner, 26/11/2026, after the lightning reference): a pale white-blue stickman edged in glowing cyan lines, bare and fast, in a long black
+  // tattered cloak, with no face at all. Cyan and white lightning flickers round the hands and feet, with the odd yellow fork.
+  storm: {
+    palette: {
+      outline: 0x1a2230,
+      skin: 0xf4f0d8,
+      skinLit: 0xfffdf2,
+      skinShade: 0xc2b97e,
+      skinBack: 0xdcd4a8,
+      rim: 0xfff9d8,
+      armour: 0x14243a,
+      armourLit: 0x2a4768,
+      armourEdge: 0x0a1a2e,
+      seam: 0x2ee6ff,
+      lava: 0xfffbd0,
+      glow: 0x2ee6ff,
+      hand: 0xf4f0d8,
+    },
+    bulk: 0.92,
+    muscle: 0.2,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'none',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'bare',
+      belt: false,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'own',
+    garment: { hem: 'tattered', trim: 0x2ee6ff, cloth: [0x0d0d14, 0x23232e, 0x050508] },
+    storm: { bolt: 0x8ff8ff, fork: 0xfff07a },
   },
   // Reson (master plan section 4): a dark charcoal stickman with glowing cyan soundwave patterns, a resonance device on each
   // forearm and geometric amplification plates on the shoulders. Not Geargrind: no backpack, no machine arm, no orange.
@@ -793,6 +829,8 @@ export interface PremiumDrawState {
   /** 0..1 how fully the crystal armour has grown over his body (Prismor's Crystal Sovereign). */
   readonly crystalArmour?: number;
   readonly fireFists?: number;
+  /** 0..1 how fully Overdrive electrifies him (Voltar). */
+  readonly volt?: number;
   /** The mouth is open in a roar or a thin screech (Reson), with how wide (0..1). */
   readonly shout?: { readonly kind: 'scream' | 'screech'; readonly k: number } | null;
   /**
@@ -987,6 +1025,7 @@ export class PremiumModel {
     if (this.skin.machineArm) this.machineArm(g, fire, s.armFront);
     if ((this.st.crystalArmour ?? 0) > 0.02) this.crystalArmourOverlay(g, fire, s);
     if ((this.st.fireFists ?? 0) > 0.02) this.fistFlames(g, fire, s);
+    if (this.skin.storm) this.stormSparks(g, fire, s);
     const wp = this.st.weapon;
     if (wp?.kind === 'fists') this.crystalFists(g, fire, s, wp.form);
     else if (wp?.kind === 'blades') this.shardBlades(g, fire, s, wp.form);
@@ -1705,6 +1744,44 @@ export class PremiumModel {
    * Fiery Fists: a flame round each of the four fists: a hot white-yellow core, an orange body licking upward and leaning back from the way
    * the hand is moving, a red outer lick, and a few embers that rise off it. Grows from nothing as the fire takes hold.
    */
+  /**
+   * Voltar's lightning: short jagged bolts always flickering off both hands and both feet (cyan with a white core, now and then a yellow
+   * fork), more and longer with how fast he moves and when Overdrive electrifies him. Kept thin so the body stays readable.
+   */
+  private stormSparks(g: Graphics, fire: Graphics, s: Skel): void {
+    const st = this.skin.storm;
+    if (!st) return;
+    const { t, w } = this.st;
+    const k = Math.min(1, 0.3 + (this.st.motion ?? 0) * 0.5 + (this.st.volt ?? 0) * 0.5);
+    const ends = [s.armFront[2], s.armBack[2], s.legFront[2], s.legBack[2]];
+    ends.forEach((p, n) => {
+      const bolts = 1 + Math.round(k * 2);
+      for (let b = 0; b < bolts; b++) {
+        // A new shape every 0.07 s so it flickers rather than glides.
+        const seed = Math.floor(t * 14) * 7.31 + n * 3.7 + b * 1.9;
+        const rnd = (i: number): number => {
+          const v = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;
+          return v - Math.floor(v);
+        };
+        const ang = rnd(0) * Math.PI * 2;
+        const len = w * (0.9 + 1.6 * k) * (0.5 + rnd(1));
+        let x = p.x;
+        let y = p.y;
+        const pts: number[] = [x, y];
+        for (let i = 1; i <= 4; i++) {
+          const a = ang + (rnd(i + 2) - 0.5) * 1.6;
+          x += Math.cos(a) * (len / 4);
+          y += Math.sin(a) * (len / 4);
+          pts.push(x, y);
+        }
+        const yellow = rnd(9) > 0.82;
+        fire.poly(pts, false).stroke({ width: w * 0.16, color: yellow ? st.fork : st.bolt, alpha: 0.55 * k + 0.2, cap: 'round', join: 'round' });
+        fire.poly(pts, false).stroke({ width: w * 0.06, color: 0xffffff, alpha: 0.9, cap: 'round', join: 'round' });
+      }
+    });
+    void g;
+  }
+
   private fistFlames(g: Graphics, fire: Graphics, s: Skel): void {
     const k = Math.min(1, this.st.fireFists ?? 0);
     const { t, w } = this.st;

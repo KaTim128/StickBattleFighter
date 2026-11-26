@@ -1,0 +1,8 @@
+{
+  "id": "voltar-ai",
+  "attackEveryS": 0.9,
+  "aggression": 0.62,
+  "clashMashRate": 6,
+  "settleDecelMps2": 13,
+  "reactionS": 0.2
+}

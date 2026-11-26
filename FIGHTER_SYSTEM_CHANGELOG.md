@@ -93,3 +93,8 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - **Ground Smash (R, was Four Arm Ground Smash):** leap 5 to 9 m, landing radius 4.2 to 2.6 m; in the ultimate it leaps up to 26 m, deals +15% and lands in fire.
 - **Fiery Fists (ultimate):** also +5% size, +50% knockback, lift limit 60 to 80 kg, heave 40% quicker (Titan: 60 kg, normal speed), easier carry, +25% throw power. Outside it his heave is 25% slower than Titan's.
 - **Select stance:** four-arm pose (hands on waist, flexed far arm, level guard).
+
+## Voltar (26/11/2026, TD-176)
+- 900 HP, 6.4 m/s, 62 kg; very fast, fragile. Taps: Volt jab, Arc cross, Spark elbow, Thunder spin kick; heavy Surge blast.
+- **Flashstep (Q):** 38 damage, 6 s. **Arc Lash (E):** 45 damage and a 3 s stun, 12 s. **Voltage Rush (F):** 5 hits of 13 (last x2.4), 11 s. **Static Break (R):** 42 damage counter, 10 s. **Thunder Circuit (fifth):** 3 s charge, 2 s beam, 18 per 0.15 s, 8 m, stun only in contact, 14 s.
+- **Overdrive (ult):** 8 s, +12% speed and attack speed, +6% melee damage, up to 2 chained Flashsteps. **Lightning Execution (ult button again):** 6 afterimage strikes of 13, then a dive blast (3 m, 11 m/s knockback).

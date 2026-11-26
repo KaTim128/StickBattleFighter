@@ -273,6 +273,28 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     },
     combos: [['a3', 'a1']],
   },
+  // Voltar: a lightning skirmisher. Flashes in and out, zaps from range, rushes close, dodges reactively, and opens Overdrive once the fight is on.
+  'voltar-ai': {
+    style: 'Lightning skirmisher: flashes through the target, zaps to stun, rushes close, bursts away from blows.',
+    preferredRangeM: [1.8, 4],
+    movement: 'kite',
+    meleeBias: 0.55,
+    heavyBias: 0.2,
+    defence: 'dodge',
+    retreatBelowHp: 0.2,
+    hitAndRunS: 0.9,
+    tactics: {
+      a1: { role: 'gapClose', minM: 2, maxM: 7, weight: 1.2 },
+      a2: { role: 'control', minM: 2, maxM: 7.5, weight: 1.1 },
+      a3: { role: 'burst', minM: 0, maxM: 2.5, weight: 1.3 },
+      a4: { role: 'escape', minM: 0, maxM: 3, weight: 0.8, when: { selfHpBelow: 0.7 } },
+      ult: { role: 'buff', minM: 0, maxM: 7, weight: 1.1, when: { selfHpBelow: 0.95 } },
+    },
+    combos: [
+      ['a2', 'a3'],
+      ['a1', 'a3'],
+    ],
+  },
   // Reson: a sonic skirmisher. Opens with booms from range, dashes in and out, punches when close, shields when hurt.
   'reson-ai': {
     style: 'Sonic skirmisher: screams to pin the target, breaks its defence, punches close, shields when hurt.',
@@ -435,6 +457,8 @@ export const GENERIC_DESIGN: BrainDesign = {
  * ability in its slot, keyed by ability id. Anything not listed keeps its slot's tactic.
  */
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
+  // Thunder Circuit: a three-second charge is only worth it against a target that is stunned, bound or far enough to be out of reach of a punish.
+  thunderCircuit: { role: 'control', minM: 3, maxM: 7.5, weight: 1, when: { targetHelpless: true } },
   // Chain Grab: reach out at anyone keeping away.
   chainGrab: { role: 'control', minM: 3, maxM: 8, weight: 1.3 },
   // Lucky Hat: a gamble worth taking at any range, a little more readily once a fight is under way.

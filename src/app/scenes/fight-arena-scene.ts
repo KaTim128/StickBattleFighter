@@ -4513,6 +4513,9 @@ export class FightArenaScene implements ArenaScene {
     const fistsTo = f.buff?.fireFists && !c.isKo ? Math.min(1, f.buff.leftS / 0.8) : 0;
     f.view.fireFists += (fistsTo - f.view.fireFists) * smoothing(fistsTo > f.view.fireFists ? 6 : 8, frameDtS);
     if (f.view.fireFists < 0.01 && fistsTo === 0) f.view.fireFists = 0;
+    const voltTo = f.buff?.electrified && !c.isKo ? Math.min(1, f.buff.leftS / 0.5) : 0;
+    f.view.volt += (voltTo - f.view.volt) * smoothing(voltTo > f.view.volt ? 8 : 6, frameDtS);
+    if (f.view.volt < 0.01 && voltTo === 0) f.view.volt = 0;
     // Afterimage: temporal ghosts trail a fighter who is being driven by an ability that leaves them.
     const afterimageLook = f.caster?.cast?.def.look?.afterimages === true && f.driveVelocity !== null;
     if (afterimageLook && !c.isKo) {

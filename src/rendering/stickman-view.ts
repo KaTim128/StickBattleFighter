@@ -137,6 +137,8 @@ export class StickmanView {
   crystalArmour = 0;
   /** Fiery Fists (Bohemeth): 0..1 how far the flames round all four fists have taken hold. */
   fireFists = 0;
+  /** 0..1 how fully Overdrive electrifies the fighter (Voltar). */
+  volt = 0;
   /** 0..1 how far crystal has grown round both legs (Crystal Prison). */
   legTrap = 0;
   /** Shard Blade's two transformed strikes: the crystal piercing punch (`finale`) and the crystal hammer slam (`hammer`), and how far through (0..1). */
@@ -462,6 +464,7 @@ export class StickmanView {
         weaponStrike: this.weaponStrike,
         crystalArmour: this.crystalArmour,
         fireFists: this.fireFists,
+        volt: this.volt,
         shout: this.shout,
         wingFlap: this.wingFlap,
       });

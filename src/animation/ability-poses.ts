@@ -1216,6 +1216,53 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.35,
   },
+  // ---- Voltar. Every pose leans into the motion; the windups are tiny, the releases long and extended.
+  // Flashstep: a crouched coil, then (the release) a low, stretched lunge, one fist driven through.
+  flashstep: {
+    windup: { lean: deg(-16), head: deg(4), armFront: limb(30, 130), armBack: limb(40, 120), legFront: limb(46, -80), legBack: limb(-30, -50) },
+    release: { lean: deg(-34), head: deg(-6), armFront: limb(100, 4), armBack: limb(-30, 110), legFront: limb(58, -30), legBack: limb(-36, -20) },
+    settle: 0.4,
+  },
+  // Arc Lash: the free hand gathers, then both palms thrust out at the target.
+  arcLash: {
+    windup: { lean: deg(4), head: deg(-4), armFront: limb(110, 100), armBack: limb(120, 110), legFront: limb(26, -36), legBack: limb(-26, -30) },
+    tremble: deg(2),
+    release: { lean: deg(-22), head: deg(-4), armFront: limb(94, 4), armBack: limb(90, 8), legFront: limb(40, -44), legBack: limb(-30, -30) },
+    settle: 0.4,
+  },
+  // Voltage Rush: low and tight before, then the long kick the last blow ends in.
+  voltageRush: {
+    windup: { lean: deg(-18), head: deg(6), armFront: limb(60, 126), armBack: limb(50, 126), legFront: limb(40, -70), legBack: limb(-30, -40) },
+    release: { lean: deg(-26), head: deg(-4), armFront: limb(120, 60), armBack: limb(-110, 50), legFront: limb(104, -6), legBack: limb(-14, -44) },
+    settle: 0.5,
+  },
+  // Static Break: arms flung wide as he bursts away, the body turning with it.
+  staticBreak: {
+    windup: { lean: deg(6), head: deg(0), armFront: limb(70, 110), armBack: limb(60, 110) },
+    release: { lean: deg(-30), head: deg(-8), armFront: limb(-40, 30), armBack: limb(150, 40), legFront: limb(50, -46), legBack: limb(-40, -30) },
+    settle: 0.45,
+  },
+  // Thunder Circuit: planted wide, both arms raised to the sky for the whole three-second charge, trembling harder as it builds; then both palms
+  // driven forward as the beam leaves.
+  thunderCircuit: {
+    windup: { lean: deg(8), head: deg(-18), armFront: limb(168, 24), armBack: limb(160, 30), legFront: limb(34, -40), legBack: limb(-34, -36) },
+    tremble: deg(4),
+    release: { lean: deg(-18), head: deg(-4), armFront: limb(94, 4), armBack: limb(88, 6), legFront: limb(46, -46), legBack: limb(-34, -34) },
+    settle: 0.5,
+  },
+  // Overdrive: arms flung out, chest open, as the lightning takes him.
+  voltOverdrive: {
+    windup: { lean: deg(-8), head: deg(-12), armFront: limb(40, 120), armBack: limb(30, 120), legFront: limb(30, -50), legBack: limb(-26, -40) },
+    tremble: deg(3),
+    release: { lean: deg(8), head: deg(-20), armFront: limb(120, 30), armBack: limb(-120, 30), legFront: limb(26, -34), legBack: limb(-26, -30) },
+    settle: 0.4,
+  },
+  // Lightning Execution: crouched, then a dive pose: one fist thrust down, the body stretched.
+  lightningExecution: {
+    windup: { lean: deg(-12), head: deg(4), armFront: limb(40, 130), armBack: limb(30, 130), legFront: limb(46, -90), legBack: limb(-30, -60) },
+    release: { lean: deg(-60), head: deg(20), armFront: limb(30, 6), armBack: limb(20, 14), legFront: limb(60, -20), legBack: limb(-30, -50) },
+    settle: 0.5,
+  },
   // Fiery Fists: all four arms raised and the fists clenched, trembling, then driven down and out in a roar as the flames take.
   fieryFists: {
     windup: {

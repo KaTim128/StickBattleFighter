@@ -304,6 +304,7 @@ export const BODY_STYLES = [
   'psychic',
   'mechanic',
   'sonic',
+  'storm',
   'temporal',
   'crystal',
   'ink',

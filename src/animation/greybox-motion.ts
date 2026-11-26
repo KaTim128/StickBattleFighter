@@ -133,7 +133,8 @@ export type IdleStyle =
   | 'crystal'
   | 'calligrapher'
   | 'fourarm'
-  | 'magician';
+  | 'magician'
+  | 'storm';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -153,6 +154,7 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.calligrapher') return 'calligrapher';
   if (clipId === 'proc.idle.magician') return 'magician';
   if (clipId === 'proc.idle.fourarm') return 'fourarm';
+  if (clipId === 'proc.idle.storm') return 'storm';
   return 'boxer';
 }
 
@@ -317,6 +319,24 @@ function sonicIdle(timeS: number, bones: BoneLengths): Pose {
 }
 
 /**
+ * STORM (Voltar): a living lightning bolt at rest. Weight on the balls of the feet, leaning into the fight, both hands loose and ready at
+ * chest height, and a fine, fast tremor through the body as if the next flash were already building.
+ */
+function stormIdle(timeS: number, bones: BoneLengths): Pose {
+  const buzz = Math.sin(timeS * TAU * 9);
+  const bounce = Math.sin(timeS * TAU * 1.6);
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-9 + bounce * 0.8 + buzz * 0.35),
+    head: deg(3 + buzz * 0.3),
+    armFront: { root: deg(70 + bounce * 3 + buzz * 1.2), bend: deg(104) },
+    armBack: { root: deg(52 - bounce * 3 - buzz * 1.2), bend: deg(112) },
+    legFront: legIk(0.3 + bounce * 0.02, legs * 0.9 - Math.abs(bounce) * 0.016, bones.thigh, bones.shin),
+    legBack: legIk(-0.22 - bounce * 0.02, legs * 0.88, bones.thigh, bones.shin),
+  };
+}
+
+/**
  * TEMPORAL (Chronos): measured and exact, like a pendulum. The weight swings slowly from one foot to the other and back
  * (one beat every 2 s), the temporal device arm held up and out in front, the other arm folded behind, the head level
  * and still.
@@ -451,6 +471,7 @@ export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = '
   if (style === 'crystal') return crystalIdle(timeS, bones);
   if (style === 'temporal') return temporalIdle(timeS, bones);
   if (style === 'sonic') return sonicIdle(timeS, bones);
+  if (style === 'storm') return stormIdle(timeS, bones);
   if (style === 'mechanic') return mechanicIdle(timeS, bones);
   if (style === 'psychic') return psychicIdle(timeS, bones);
   if (style === 'samurai') return samuraiIdle(timeS, bones);
@@ -684,6 +705,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
       arms: { lead: { x: 0.3, y: 0.4 }, rear: { x: -0.04, y: 0.44 }, swingX: 0.07, swingY: 0.02 },
     });
   }
+  if (style === 'storm') {
+    // Quick, light steps leaning forward, the hands held ready: he never plods.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.8,
+      bob: 0.03,
+      leadX: 0.16,
+      rearX: -0.2,
+      reach: 0.2 * k,
+      lift: 0.12,
+      lean: -9,
+      sway: 1.6,
+      head: 2,
+      arms: { lead: { x: 0.28, y: 0.4 }, rear: { x: 0.08, y: 0.44 }, swingX: 0.1, swingY: 0.05 },
+    });
+  }
   if (style === 'sonic') {
     // A rhythmic stride on the beat: springy steps, the chest bobbing, both gauntlets held up in front.
     return gaitPose(phase, bones, {
@@ -792,6 +828,7 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
     style === 'psychic' ||
     style === 'mechanic' ||
     style === 'sonic' ||
+    style === 'storm' ||
     style === 'temporal' ||
     style === 'calligrapher' ||
     style === 'magician' ||
@@ -1051,6 +1088,35 @@ const MECHANIC_RUN: RunStyle = {
   pumpBack: { shoulder: -40, elbow: 90 },
 };
 
+/**
+ * STORM RUN (Voltar): a bolt along the ground. Leaning hard into the run, long reaching strides with a real flight phase, the arms
+ * pumped low and tight. The sprint leans further and drives harder.
+ */
+const STORM_RUN: RunStyle = {
+  pelvisM: 0.72,
+  bob: 0.045,
+  reachM: 0.4,
+  pushM: 0.46,
+  stance: 0.3,
+  swingLiftM: 0.36,
+  lean: -22,
+  drive: 6,
+  head: 8,
+  pumpFront: { shoulder: 70, elbow: 108 },
+  pumpBack: { shoulder: -50, elbow: 100 },
+};
+const STORM_SPRINT: RunStyle = {
+  ...STORM_RUN,
+  pelvisM: 0.69,
+  reachM: 0.46,
+  pushM: 0.52,
+  lean: -29,
+  drive: 8,
+  head: 11,
+  pumpFront: { shoulder: 78, elbow: 104 },
+  pumpBack: { shoulder: -58, elbow: 96 },
+};
+
 /** SONIC RUN: light and bouncing on the beat, the gauntlets pumping in front of the chest. */
 const SONIC_RUN: RunStyle = {
   pelvisM: 0.78,
@@ -1097,7 +1163,11 @@ const CRYSTAL_RUN: RunStyle = {
 };
 
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'crystal'
+  style === 'storm'
+    ? sprint
+      ? STORM_SPRINT
+      : STORM_RUN
+    : style === 'crystal'
     ? CRYSTAL_RUN
     : style === 'temporal'
       ? TEMPORAL_RUN

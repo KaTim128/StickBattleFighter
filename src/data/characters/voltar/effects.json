@@ -1,0 +1,17 @@
+{
+  "id": "voltar-effects",
+  "punchImpact": "volt-hit",
+  "kickImpact": "volt-hit",
+  "heavyImpact": "volt-wave",
+  "blockImpact": "block-guard",
+  "limbTrail": "volt-limbs",
+  "aura": "volt-aura",
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#7ef6ff",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "storm"
+}

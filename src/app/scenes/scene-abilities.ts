@@ -122,6 +122,18 @@ export class SceneAbilities implements AbilityHost {
     if (c.bound) return 'bound';
     // Crystal Prison: legs held in crystal, so no ability that moves the body.
     if (c.trapped && MOVEMENT_DELIVERIES.has(caster.def(slot).delivery.type)) return 'trapped';
+    // The finisher (Voltar's Lightning Execution): the ultimate button again while Overdrive still runs. It ends Overdrive and costs nothing.
+    const finisher = caster.kit.finisher;
+    if (slot === 'ult' && finisher && f.buff?.electrified && f.buffSourceId === caster.kit.ult.id) {
+      if (!c.canAct || f.combo.attack || f.airborne || !caster.startExtra(finisher)) return 'busy';
+      c.setGuard(false);
+      this.buff(f.name, null);
+      if (aimAt) this.aimOverrides.set(f.name, aimAt);
+      const at = aimAt ?? this.aimFor(f, finisher);
+      if (Math.hypot(at.x - f.x, at.y - f.y) > 0.05) f.faceToward(at.x - f.x, at.y - f.y);
+      this.emit({ kind: 'cast', ability: finisher.id, vfx: finisher.vfx, sfx: finisher.sfx.cast, x: f.x, y: f.y });
+      return null;
+    }
     const block = caster.check(slot, {
       canAct: c.canAct && !f.combo.attack,
       stamina: c.stamina,
