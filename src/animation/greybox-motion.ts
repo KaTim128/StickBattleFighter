@@ -341,22 +341,68 @@ function gunslingerIdle(timeS: number, bones: BoneLengths): Pose {
 }
 
 /**
- * CRAWLER (Sickle Wielder): he never stands up. Almost on all fours, the body leaning hard forward and low, the sickle hand hanging near the
- * ground and the other planted, the knees bent under him, shifting his weight like something about to pounce out of the reeds.
+ * CRAWLER (Kamaw, owner 26/11/2026): a human ape. He never stands upright: the body leans far forward over bent legs with the hips a little
+ * raised, the far hand planted on its knuckles, the sickle hand held up beside the head with the chain hanging from it. `ape` places each
+ * hand in the world (the knuckles exactly on the floor) and takes the lean back out, as the select stance does.
  */
-function crawlerIdle(timeS: number, bones: BoneLengths): Pose {
-  const creep = Math.sin(timeS * TAU * 0.6);
-  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.4);
-  const legs = bones.thigh + bones.shin;
-  return {
-    // Stalking: spine almost horizontal, hips high over bent legs, the arms reaching out ahead to plant, the head lifted to watch the prey.
-    lean: deg(-66 + creep * 2.5),
-    head: deg(46 + breath * 3),
-    armFront: { root: deg(34 + creep * 5), bend: deg(10) },
-    armBack: { root: deg(18 - creep * 5), bend: deg(16) },
-    legFront: legIk(0.38 + creep * 0.02, legs * 0.66, bones.thigh, bones.shin),
-    legBack: legIk(-0.3 - creep * 0.02, legs * 0.64 - breath * 0.01, bones.thigh, bones.shin),
+const APE = { leanDeg: -58, pelvis: 0.47, knuckleX: 0.08, raised: { x: 0.24, y: -0.36 } } as const;
+
+function apePose(
+  bones: BoneLengths,
+  o: { lean: number; pelvisM: number; head: number; lead: { x: number; lift: number }; rear: { x: number; lift: number }; knuckle: { x: number; lift: number }; raised: { x: number; y: number } },
+): Pose {
+  const lean = deg(o.lean);
+  const arm = bones.upperArm + bones.foreArm;
+  // The shoulder's height above the floor, and its distance forward of the hips.
+  const shoulderY = o.pelvisM + Math.cos(lean) * bones.spine;
+  const hand = (hx: number, hy: number) => {
+    const ik = armIk(hx, hy, bones.upperArm, bones.foreArm);
+    return { root: ik.root - lean, bend: ik.bend };
   };
+  const reach = Math.min(shoulderY - o.knuckle.lift, arm * 0.995);
+  return {
+    lean,
+    head: deg(o.head),
+    armFront: hand(o.raised.x * arm, o.raised.y * arm),
+    armBack: hand(o.knuckle.x, reach),
+    legFront: legIk(o.lead.x, o.pelvisM - o.lead.lift, bones.thigh, bones.shin),
+    legBack: legIk(o.rear.x, o.pelvisM - o.rear.lift, bones.thigh, bones.shin),
+  };
+}
+
+function crawlerIdle(timeS: number, bones: BoneLengths): Pose {
+  const shift = Math.sin(timeS * TAU * 0.45);
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.35);
+  const legs = bones.thigh + bones.shin;
+  // Weight rocks between the planted fist and the feet; the chest heaves; the head twitches round now and then.
+  return apePose(bones, {
+    lean: APE.leanDeg + shift * 2 + breath * 1.5,
+    pelvisM: legs * (APE.pelvis + 0.01 * breath),
+    head: 30 + 6 * Math.sin(timeS * TAU * 0.23) ** 5,
+    lead: { x: legs * (0.22 + 0.02 * shift), lift: 0 },
+    rear: { x: legs * (-0.3 + 0.02 * shift), lift: 0 },
+    knuckle: { x: APE.knuckleX + 0.02 * shift, lift: 0 },
+    raised: { x: APE.raised.x + 0.02 * shift, y: APE.raised.y - 0.03 * breath },
+  });
+}
+
+/** The ape's knuckle-walk: legs stepping, the planted fist swinging forward and down in time with the far foot, the sickle hand held up. */
+function apeGait(phase: number, bones: BoneLengths, k: number, run: boolean): Pose {
+  const a = phase * TAU;
+  const sn = Math.sin(a);
+  const c = Math.cos(a);
+  const legs = bones.thigh + bones.shin;
+  const stride = (run ? 0.26 : 0.16) * k;
+  return apePose(bones, {
+    lean: (run ? -64 : APE.leanDeg) - (run ? 4 : 2) * Math.abs(sn),
+    pelvisM: legs * ((run ? 0.5 : APE.pelvis) + (run ? 0.04 : 0.02) * Math.cos(2 * a)),
+    head: run ? 36 : 30,
+    lead: { x: legs * (0.2 + stride * sn), lift: legs * (run ? 0.16 : 0.08) * Math.max(0, c) },
+    rear: { x: legs * (-0.28 - stride * sn), lift: legs * (run ? 0.16 : 0.08) * Math.max(0, -c) },
+    // The fist goes with the rear foot: forward while that foot pushes back, lifted while it swings through.
+    knuckle: { x: APE.knuckleX + (run ? 0.26 : 0.16) * -sn, lift: (run ? 0.14 : 0.08) * Math.max(0, -c) },
+    raised: { x: APE.raised.x + 0.03 * sn, y: APE.raised.y + (run ? 0.12 : 0.05) + 0.03 * Math.cos(2 * a) },
+  });
 }
 
 /**
@@ -752,21 +798,7 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
       arms: { lead: { x: 0.3, y: 0.4 }, rear: { x: -0.04, y: 0.44 }, swingX: 0.07, swingY: 0.02 },
     });
   }
-  if (style === 'crawler') {
-    // A crawl: low and forward on bent legs, the arms reaching and planting alternately close to the ground.
-    return gaitPose(phase, bones, {
-      pelvisM: 0.5,
-      bob: 0.02,
-      leadX: 0.2,
-      rearX: -0.2,
-      reach: 0.14 * k,
-      lift: 0.05,
-      lean: -48,
-      sway: 2.5,
-      head: 26,
-      arms: { lead: { x: 0.34, y: 0.62 }, rear: { x: 0.2, y: 0.64 }, swingX: 0.16, swingY: 0.05 },
-    });
-  }
+  if (style === 'crawler') return apeGait(phase, bones, k, false);
   if (style === 'storm') {
     // Quick, light steps leaning forward, the hands held ready: he never plods.
     return gaitPose(phase, bones, {
@@ -1152,21 +1184,6 @@ const MECHANIC_RUN: RunStyle = {
   pumpBack: { shoulder: -40, elbow: 90 },
 };
 
-/** CRAWL RUN (Sickle Wielder): a fast scuttle on all fours, belly low, the hands slapping down ahead of the knees. */
-const CRAWL_RUN: RunStyle = {
-  pelvisM: 0.46,
-  bob: 0.03,
-  reachM: 0.3,
-  pushM: 0.34,
-  stance: 0.4,
-  swingLiftM: 0.16,
-  lean: -68,
-  drive: 4,
-  head: 42,
-  pumpFront: { shoulder: 36, elbow: 24 },
-  pumpBack: { shoulder: 12, elbow: 50 },
-};
-
 /**
  * STORM RUN (Voltar): a bolt along the ground. Leaning hard into the run, long reaching strides with a real flight phase, the arms
  * pumped low and tight. The sprint leans further and drives harder.
@@ -1242,9 +1259,7 @@ const CRYSTAL_RUN: RunStyle = {
 };
 
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'crawler'
-    ? CRAWL_RUN
-    : style === 'storm'
+  style === 'storm'
     ? sprint
       ? STORM_SPRINT
       : STORM_RUN
@@ -1274,6 +1289,7 @@ const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
 export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 0.7);
   if (style === 'fourarm') return fourArmGait(runningPose(phase, bones, runStyleFor(style, false)), phase, 0.7);
+  if (style === 'crawler') return apeGait(phase, bones, 1, true);
   return runningPose(phase, bones, runStyleFor(style, false));
 }
 
@@ -1281,6 +1297,7 @@ export function runPose(phase: number, bones: BoneLengths, style: IdleStyle = 'b
 export function sprintPose(phase: number, bones: BoneLengths, style: IdleStyle = 'boxer'): Pose {
   if (style === 'psychic' || style === 'aerial') return hoverGait(phase, bones, style, 1);
   if (style === 'fourarm') return fourArmGait(runningPose(phase, bones, runStyleFor(style, true)), phase, 1);
+  if (style === 'crawler') return apeGait(phase, bones, 1.2, true);
   return runningPose(phase, bones, runStyleFor(style, true));
 }
 

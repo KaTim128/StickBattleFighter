@@ -309,6 +309,8 @@ export interface AbilityVfxInput {
     readonly from: { readonly x: number; readonly y: number };
     readonly to: { readonly x: number; readonly y: number };
     readonly palette: Palette;
+    /** A real steel chain (Kamaw): from his hand, sagging, with the sickle blade on the end, spinning in flight, bitten into the floor or hooked. */
+    readonly steel?: { readonly blade: 'spin' | 'hooked' | 'embedded'; readonly toZ: number; readonly fromZ?: number };
   }[];
   /** Smoke rising this frame (a burn going out, a body burning away), world points. */
   readonly smoke?: readonly { readonly x: number; readonly y: number; readonly z: number; readonly count: number }[];
@@ -2281,6 +2283,10 @@ export class AbilityVfx {
     // Spectral chains: a line of interlocking links, alternately face-on and edge-on, glowing
     // violet with a pale core, swaying a little; a hook at the far end.
     for (const ch of input.chains ?? []) {
+      if (ch.steel) {
+        this.steelChain(g, ch.from, ch.to, ch.steel, t);
+        continue;
+      }
       const a0 = P(ch.from.x, ch.from.y, CHAIN_HEIGHT_M);
       const a1 = P(ch.to.x, ch.to.y, CHAIN_HEIGHT_M);
       const len = Math.hypot(a1.x - a0.x, a1.y - a0.y);
@@ -2567,6 +2573,54 @@ export class AbilityVfx {
   }
 
   /** A magic projectile in flight: a shadow, a tapering tail of flame streaming behind, and the core. */
+  /** Kamaw's chain in the world: steel links from his hand to the far end with a little sag, and the white sickle blade on it. */
+  private steelChain(
+    g: Graphics,
+    from: { x: number; y: number },
+    to: { x: number; y: number },
+    st: { blade: 'spin' | 'hooked' | 'embedded'; toZ: number; fromZ?: number },
+    t: number,
+  ): void {
+    const a0 = iso(from.x, from.y, st.fromZ ?? 0.62);
+    const a1 = iso(to.x, to.y, st.toZ);
+    const len = Math.hypot(a1.x - a0.x, a1.y - a0.y);
+    if (len < 0.05) return;
+    const ux = (a1.x - a0.x) / len;
+    const uy = (a1.y - a0.y) / len;
+    const sag = Math.min(0.35, len * 0.08);
+    const Q = (k: number) => ({ x: a0.x + (a1.x - a0.x) * k, y: a0.y + (a1.y - a0.y) * k + Math.sin(k * Math.PI) * sag });
+    const links = Math.max(3, Math.floor(len / 0.07));
+    for (let i = 0; i < links; i++) {
+      const p = Q((i + 0.5) / links);
+      const face = i % 2 === 0;
+      const pts: number[] = [];
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        const lx = Math.cos(a) * 0.042;
+        const ly = Math.sin(a) * (face ? 0.024 : 0.009);
+        pts.push(p.x + ux * lx - uy * ly, p.y + uy * lx + ux * ly);
+      }
+      g.poly(pts).stroke({ width: 0.02, color: 0x14161c }).stroke({ width: 0.011, color: face ? 0xb8bcc8 : 0x7a808e });
+    }
+    // The blade: spinning end over end while it flies, otherwise pointing on along the chain (hooked) or down into the floor (embedded).
+    const ang = st.blade === 'spin' ? t * 16 : st.blade === 'embedded' ? Math.PI / 2 + 0.3 : Math.atan2(uy, ux);
+    const bx = Math.cos(ang);
+    const by = Math.sin(ang);
+    const B = (f: number, side: number) => ({ x: a1.x + bx * f - by * side, y: a1.y + by * f + bx * side });
+    g.circle(a1.x, a1.y, 0.03).fill(0x8a90a0).stroke({ width: 0.012, color: 0x14161c });
+    const sp = [B(0.03, 0.02), B(0.2, 0.15), B(0.34, 0.38), B(0.4, 0.62)];
+    const ed = [B(0.03, -0.02), B(0.15, 0.07), B(0.28, 0.26)];
+    g.moveTo(sp[0]!.x, sp[0]!.y)
+      .quadraticCurveTo(sp[1]!.x, sp[1]!.y, sp[2]!.x, sp[2]!.y)
+      .quadraticCurveTo(B(0.38, 0.5).x, B(0.38, 0.5).y, sp[3]!.x, sp[3]!.y)
+      .quadraticCurveTo(ed[2]!.x, ed[2]!.y, ed[1]!.x, ed[1]!.y)
+      .quadraticCurveTo(B(0.08, 0).x, B(0.08, 0).y, ed[0]!.x, ed[0]!.y)
+      .closePath()
+      .fill(0xf4f6fa)
+      .stroke({ width: 0.018, color: 0x1a1c24, join: 'round' });
+    g.moveTo(ed[0]!.x, ed[0]!.y).quadraticCurveTo(ed[1]!.x, ed[1]!.y, ed[2]!.x, ed[2]!.y).stroke({ width: 0.01, color: 0xffffff, cap: 'round' });
+  }
+
   private magicProjectile(f: Graphics, g: Graphics, p: Projectile, look: MagicLook, t: number): void {
     const P = iso;
     const pal = look.palette;
@@ -2577,6 +2631,8 @@ export class AbilityVfx {
       this.flyingJar(g, c, p, pal, t);
       return;
     }
+    // Kamaw's thrown sickle is drawn on the end of its chain (see `steelChain`).
+    if (look.flight?.sickle) return;
     // A tornado shot is drawn as its funnel (see `funnels`), not as a bolt.
     if (look.flight?.tornado) return;
     if (look.flight?.bullet) {

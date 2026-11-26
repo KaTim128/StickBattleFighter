@@ -1269,10 +1269,12 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-72), head: deg(38), armFront: limb(90, 8), armBack: limb(40, 20), legFront: limb(60, -118), legBack: limb(-28, -110) },
     settle: 0.4,
   },
+  // An ape's leap (owner, 26/11/2026): a deep crouch gathering on the knuckles and the sickle cocked back; in the air the body stretches out
+  // flat, the free arm reaching ahead and the legs trailing, the sickle held high; then it comes down in one slicing chop.
   gravehookLaunch: {
-    windup: { lean: deg(-46), head: deg(22), armFront: limb(-30, 40), armBack: limb(20, 50), legFront: limb(46, -100), legBack: limb(-28, -90) },
-    air: { lean: deg(-20), head: deg(-4), armFront: limb(160, 20), armBack: limb(120, 30), legFront: limb(50, -70), legBack: limb(-34, -60) },
-    release: { lean: deg(-66), head: deg(34), armFront: limb(30, 6), armBack: limb(24, 30), legFront: limb(60, -110), legBack: limb(-26, -100) },
+    windup: { lean: deg(-72), head: deg(42), armFront: limb(-30, 70), armBack: limb(18, 16), legFront: limb(72, -134), legBack: limb(-6, -130) },
+    air: { lean: deg(-78), head: deg(46), armFront: limb(165, 30), armBack: limb(110, 12), legFront: limb(-20, -50), legBack: limb(-50, -30) },
+    release: { lean: deg(-44), head: deg(24), armFront: limb(26, 8), armBack: limb(64, 36), legFront: limb(62, -112), legBack: limb(-22, -100) },
     settle: 0.5,
   },
   graveReaper: {

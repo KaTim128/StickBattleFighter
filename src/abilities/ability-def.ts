@@ -230,6 +230,11 @@ export interface ProjectileDelivery {
     readonly finalFactor?: number;
     readonly aimable?: boolean;
   };
+  /**
+   * Thrown on a curve (Kamaw's chained sickle, owner 26/11/2026): the flight bends sideways through this many radians in total, so it swings
+   * round in a horizontal arc and still arrives at the enemy it was thrown at (or the end of its range).
+   */
+  readonly arcRad?: number;
   /** Ricochet Shot: the bullet bounces off walls and furniture this many times before it ends. */
   readonly bounces?: number;
   /** Explosive Rounds: on impact (a fighter or a wall) it bursts for `damageFactor` of its damage on everyone within `radiusM`. */
@@ -1094,6 +1099,8 @@ export type Delivery =
  * element's colours. Purely presentation: none of it changes damage or timing.
  */
 export interface MagicLook {
+  /** A real steel chain with a sickle blade on its far end (Kamaw), instead of a glowing spectral chain. */
+  readonly steelChain?: boolean;
   /** The element's colours, darkest to hottest (fire: red, orange, amber, white-yellow). */
   readonly palette: { readonly deep: number; readonly hot: number; readonly bright: number; readonly core: number };
   /** Wind-up: motes drawn in from the air to the casting hand while a core swells in the palm. */
@@ -1111,6 +1118,8 @@ export interface MagicLook {
     readonly shimmer: boolean;
     /** Drawn as a tumbling glass jar of glowing liquid instead of a streaming bolt (Vexoris's Toxic Jar). */
     readonly jar?: boolean;
+    /** Drawn as the spinning chained sickle blade itself (Kamaw's Hook and Drag): the chain is drawn back to his hand. */
+    readonly sickle?: boolean;
     /** Drawn as a small bullet with a short tracer streak, this long in metres (Gunsmith's guns). */
     readonly bullet?: number;
     /** Drawn as a spinning tornado funnel instead of a streaming bolt (Aerion's Tornado Surge). */
@@ -1168,8 +1177,8 @@ export interface MagicLook {
   readonly shout?: 'scream' | 'screech';
   /** Afterimages trail the caster while this ability runs (Chronos). */
   readonly afterimages?: boolean;
-  /** What wraps the caster while a leap carries it: flames (default) or streaming wind (Aerion's dives). */
-  readonly airBody?: 'flames' | 'wind';
+  /** What wraps the caster while a leap carries it: flames (default), streaming wind (Aerion's dives) or nothing (Kamaw's leap on his chain). */
+  readonly airBody?: 'flames' | 'wind' | 'none';
   /**
    * A buff's aura while it lasts: 'full' (default) has rising embers and steam (a fury); 'quiet'
    * keeps only the soft ring on the floor, for casters whose own body glow shows the power

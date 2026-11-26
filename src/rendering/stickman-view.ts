@@ -102,6 +102,8 @@ export class StickmanView {
   gunMgDir: 1 | -1 = 1;
   /** Gunsmith: the on-screen angle his guns aim along while firing (in the figure's own facing; down positive), or null. */
   gunAim: number | null = null;
+  /** Kamaw: his chained sickle is out (thrown, embedded or hooked on someone); only the handle and the start of the chain stay in his hand. */
+  sickleOut = false;
   /** 0..1 how far the bow clone's bow is drawn (the string and arrow follow it). */
   bowDraw = 0;
   /** Stunned: stars circle the head (PRS-6). */
@@ -1688,6 +1690,83 @@ export class StickmanView {
     }
   }
 
+  /**
+   * Kamaw's weapon (owner, 26/11/2026): oversized chained "nunchucks". A stout handle in his fist, a long steel chain hanging from it in a
+   * gravity curve (lying along the floor when he holds it low), and a curved white knife-sickle on the far end, swaying with him.
+   */
+  private drawChainSickle(g: Graphics, hand: Point, ux: number, uy: number, o: number): void {
+    const t = this.clockS;
+    const OUT = 0x14161c;
+    // The handle: dark wood with a steel cap and the ring the chain hangs from.
+    const h0 = { x: hand.x - ux * 0.09, y: hand.y - uy * 0.09 };
+    const h1 = { x: hand.x + ux * 0.2, y: hand.y + uy * 0.2 };
+    g.moveTo(h0.x, h0.y).lineTo(h1.x, h1.y).stroke({ width: 0.056 + o * 0.5, color: OUT, cap: 'round' });
+    g.moveTo(h0.x, h0.y).lineTo(h1.x, h1.y).stroke({ width: 0.04, color: 0x4a3420, cap: 'round' });
+    g.moveTo(h0.x + ux * 0.04, h0.y + uy * 0.04).lineTo(h1.x - ux * 0.04, h1.y - uy * 0.04).stroke({ width: 0.012, color: 0x7a5a38, cap: 'round' });
+    g.circle(h1.x, h1.y, 0.03 + o).fill(0x8a90a0).stroke({ width: 0.01, color: OUT });
+    const c0 = { x: h1.x + ux * 0.03, y: h1.y + uy * 0.03 };
+    const L = this.sickleOut ? 0.3 : 1.05;
+    // Where the far end hangs: straight down under gravity (swaying a little), or along the floor when the hand is too low for the chain.
+    const sway = Math.sin(t * 1.9) * 0.05 + Math.sin(t * 3.1 + 1) * 0.02;
+    const drop = Math.min(L * 0.92, Math.max(0, -0.03 - c0.y));
+    const along = Math.sqrt(Math.max(0, L * L * 0.85 - drop * drop));
+    const end = this.sickleOut
+      ? { x: c0.x + ux * 0.18 + 0.05, y: c0.y + 0.16 }
+      : { x: c0.x + along * 0.9 + sway, y: c0.y + drop };
+    const slack = Math.max(0, L - Math.hypot(end.x - c0.x, end.y - c0.y));
+    const mid = { x: (c0.x + end.x) / 2, y: (c0.y + end.y) / 2 + slack * 0.6 + 0.02 };
+    const Q = (k: number): Point => ({
+      x: (1 - k) * (1 - k) * c0.x + 2 * (1 - k) * k * mid.x + k * k * end.x,
+      y: Math.min(-0.01, (1 - k) * (1 - k) * c0.y + 2 * (1 - k) * k * mid.y + k * k * end.y),
+    });
+    // The links: alternately face-on and edge-on ovals along the curve.
+    const links = Math.max(3, Math.round(L / 0.055));
+    for (let i = 0; i < links; i++) {
+      const p = Q((i + 0.5) / links);
+      const q = Q((i + 1) / links);
+      const ang = Math.atan2(q.y - p.y, q.x - p.x);
+      const face = i % 2 === 0;
+      const pts: number[] = [];
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        const lx = Math.cos(a) * 0.034;
+        const ly = Math.sin(a) * (face ? 0.02 : 0.008);
+        pts.push(p.x + lx * Math.cos(ang) - ly * Math.sin(ang), p.y + lx * Math.sin(ang) + ly * Math.cos(ang));
+      }
+      g.poly(pts).stroke({ width: 0.014, color: OUT }).stroke({ width: 0.008, color: face ? 0xc8ccd8 : 0x8a909e });
+    }
+    if (this.sickleOut) return; // the blade is out on the end of the long chain (drawn in the world)
+    // The blade on the far end: a tang ring, then a long curved white knife-sickle hooking forward and up, needle-pointed.
+    const e0 = Q(0.94);
+    const tx = end.x - e0.x;
+    const ty = end.y - e0.y;
+    const tl = Math.hypot(tx, ty) || 1;
+    let bx = tx / tl;
+    let by = ty / tl;
+    if (end.y > -0.06) {
+      // Lying on the floor: the blade lies flat with its edge up.
+      bx = Math.sign(bx || 1);
+      by = 0;
+    }
+    g.circle(end.x, end.y, 0.026).fill(0x8a90a0).stroke({ width: 0.01, color: OUT });
+    const base = { x: end.x + bx * 0.03, y: end.y + by * 0.03 };
+    const P = (f: number, side: number): Point => ({ x: base.x + bx * f - by * side, y: base.y + by * f + bx * side });
+    const hook = by === 0 ? -1 : 1;
+    const spine = [P(0, 0.02 * hook), P(0.16, 0.14 * hook), P(0.3, 0.36 * hook), P(0.36, 0.58 * hook)];
+    const edge = [P(0, -0.02 * hook), P(0.12, 0.06 * hook), P(0.24, 0.24 * hook), P(0.36, 0.58 * hook)];
+    g.moveTo(spine[0]!.x, spine[0]!.y)
+      .quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y)
+      .quadraticCurveTo(P(0.34, 0.47 * hook).x, P(0.34, 0.47 * hook).y, spine[3]!.x, spine[3]!.y)
+      .quadraticCurveTo(edge[2]!.x, edge[2]!.y, edge[1]!.x, edge[1]!.y)
+      .quadraticCurveTo(P(0.05, 0).x, P(0.05, 0).y, edge[0]!.x, edge[0]!.y)
+      .closePath()
+      .fill(0xf4f6fa)
+      .stroke({ width: 0.01 + o * 0.25, color: 0x1a1c24, join: 'round' });
+    g.moveTo(spine[0]!.x, spine[0]!.y).quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y).stroke({ width: 0.016, color: 0xaab0c0, cap: 'round' });
+    g.moveTo(edge[0]!.x, edge[0]!.y).quadraticCurveTo(edge[1]!.x, edge[1]!.y, edge[2]!.x, edge[2]!.y).stroke({ width: 0.008, color: 0xffffff, cap: 'round' });
+    this.bladeTip = { tip: spine[3]!, inner: base };
+  }
+
   private drawHeld(g: Graphics, s: ReturnType<typeof solveSkeleton>, o: number): void {
     const [, elbow, hand] = s.armFront;
     const dx = hand.x - elbow.x;
@@ -1710,32 +1789,7 @@ export class StickmanView {
       return;
     }
     if (this.held === 'sickle') {
-      // Sickle Wielder: a short dark handle and a long, razor-sharp white steel blade: a wide curve tapering to a needle point, with a bright
-      // cutting edge on the inside, a darker spine and a bright glint along it.
-      const tip = { x: hand.x + ux * 0.2, y: hand.y + uy * 0.2 };
-      g.moveTo(hand.x - ux * 0.12, hand.y - uy * 0.12).lineTo(tip.x, tip.y).stroke({ width: 0.05 + o * 2, color: 0x1a120a, cap: 'round' });
-      g.moveTo(hand.x - ux * 0.08, hand.y - uy * 0.08).lineTo(tip.x - ux * 0.02, tip.y - uy * 0.02).stroke({ width: 0.03, color: 0x4a3420, cap: 'round' });
-      g.circle(tip.x, tip.y, 0.04 + o).fill(0x2a2d36); // the guard
-      const P = (f: number, side: number) => ({
-        x: tip.x + ux * f * 0.72 - uy * side * 0.8,
-        y: tip.y + uy * f * 0.72 + ux * side * 0.8,
-      });
-      // Outer (spine) edge and inner (cutting) edge of a curved blade that ends in a point.
-      const spine = [P(0.0, 0.03), P(0.22, 0.2), P(0.42, 0.5), P(0.5, 0.82)];
-      const edge = [P(0.0, -0.03), P(0.17, 0.08), P(0.33, 0.34), P(0.5, 0.82)];
-      g.moveTo(spine[0]!.x, spine[0]!.y)
-        .quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y)
-        .quadraticCurveTo(P(0.47, 0.66).x, P(0.47, 0.66).y, spine[3]!.x, spine[3]!.y)
-        .quadraticCurveTo(edge[2]!.x, edge[2]!.y, edge[1]!.x, edge[1]!.y)
-        .quadraticCurveTo(P(0.08, 0.0).x, P(0.08, 0.0).y, edge[0]!.x, edge[0]!.y)
-        .closePath()
-        .fill(0xf4f6fa)
-        .stroke({ width: 0.016 + o, color: 0x1a1c24, join: 'round' });
-      // The darker spine strip and the bright cutting edge.
-      g.moveTo(spine[0]!.x, spine[0]!.y).quadraticCurveTo(spine[1]!.x, spine[1]!.y, spine[2]!.x, spine[2]!.y).stroke({ width: 0.022, color: 0xaab0c0, cap: 'round' });
-      g.moveTo(edge[0]!.x, edge[0]!.y).quadraticCurveTo(edge[1]!.x, edge[1]!.y, edge[2]!.x, edge[2]!.y).stroke({ width: 0.01, color: 0xffffff, cap: 'round' });
-      g.moveTo(P(0.06, 0.02).x, P(0.06, 0.02).y).quadraticCurveTo(P(0.24, 0.14).x, P(0.24, 0.14).y, P(0.38, 0.4).x, P(0.38, 0.4).y).stroke({ width: 0.008, color: 0xcfe0ff, alpha: 0.9, cap: 'round' });
-      this.bladeTip = { tip: spine[3]!, inner: tip };
+      this.drawChainSickle(g, hand, ux, uy, o);
       return;
     }
     if (this.held === 'staff') {

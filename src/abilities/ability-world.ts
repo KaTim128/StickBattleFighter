@@ -171,6 +171,8 @@ export interface Projectile {
   travelledM: number;
   /** Ricochet bounces still to come, and a damage multiplier for a final shot (Gunsmith). */
   bouncesLeft?: number;
+  /** A curved throw: how far the direction turns per metre travelled (radians). */
+  arcPerM?: number;
   damageFactor?: number;
   /** Recent positions for the trail (newest last). */
   readonly trail: Vec2[];
@@ -1794,8 +1796,22 @@ export class AbilityWorld {
       const d = p.def.delivery;
       if (d.type !== 'projectile') continue;
       const step = d.speedMps * dtS;
+      if (d.arcRad && p.arcPerM === undefined) {
+        // A curved throw: start turned out to one side by half the arc, then bend back round onto the target (or the end of the range).
+        let dist = d.maxRangeM;
+        for (const f of host.fighters()) {
+          if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
+          const dx = f.x - p.x;
+          const dy = f.y - p.y;
+          const along = dx * p.dir.x + dy * p.dir.y;
+          if (along > 0.3 && along < dist && Math.abs(dx * p.dir.y - dy * p.dir.x) < 1.5) dist = Math.hypot(dx, dy);
+        }
+        p.dir = rotate(p.dir, -d.arcRad / 2);
+        p.arcPerM = d.arcRad / Math.max(1, dist);
+      }
       const from = { x: p.x, y: p.y };
       const to = { x: p.x + p.dir.x * step, y: p.y + p.dir.y * step };
+      if (p.arcPerM) p.dir = rotate(p.dir, p.arcPerM * step);
 
       // An afterimage spends an enemy shot that reaches it (it is only an image: nothing passes through to hurt anyone).
       const image = this.decoys.find(

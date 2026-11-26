@@ -227,20 +227,22 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     breath: { lean: 0.8, pelvis: 0.01, hands: 0.012 },
     idle: { weight: 0.03, head: 2.5, shoulder: 0.8, fidget: { x: 0.08, y: -0.07 } },
   },
-  // Sickle Wielder: down on all fours, belly low, the sickle hand reaching forward over the ground, the head raised.
+  // Kamaw (owner, 26/11/2026): a human ape on all fours, leaning far forward over bent legs, hips a little raised, the far hand planted on
+  // its knuckles, the sickle hand raised beside the head with the long chain hanging from it to the blade on the floor.
   'sickle-wielder': {
     title: 'The Mire Reaper',
     style: 'Crawling sickle fighter: low slashes, leg sweeps, hooks and drags, and a leap on a tether',
     pelvis: 0.5,
-    leadFoot: 0.44,
-    rearFoot: -0.3,
-    lean: -64,
-    head: 44,
-    front: { x: 0.45, y: 0.62 },
-    back: { x: 0.85, y: 0.95 },
+    leadFoot: 0.24,
+    rearFoot: -0.32,
+    lean: -56,
+    head: 30,
+    front: { x: 0.36, y: -0.74 },
+    back: { x: 0.14, y: 0.985 },
     turn: 0.55,
     scale: 1.05,
-    breath: { lean: 1.4, pelvis: 0.01, hands: 0.02 },
+    breath: { lean: 1.6, pelvis: 0.012, hands: 0.0 },
+    idle: { weight: 0.03, head: 4, shoulder: 1.5, sway: { x: 0.04, y: 0.03 } },
   },
   // Voltar: a Wing Chun guard, narrow stance, lead hand up on the centreline, rear hand tucked behind it, elbows in.
   voltar: {

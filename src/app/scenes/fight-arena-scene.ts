@@ -384,6 +384,9 @@ export class FightArenaScene implements ArenaScene {
   /** 3 vs 3: both teams, their benches and tags (null in a one-on-one fight). */
   readonly teams: SceneTeams | null = null;
   private readonly events: CombatEvent[] = [];
+  /** Kamaw's chained sickle: where its blade is while it is out (thrown, embedded or hooked), and blades being reeled back in. */
+  private sickleOut = new Map<string, { x: number; y: number }>();
+  private readonly sickleReturn = new Map<string, { x: number; y: number; t: number; palette: MagicLook['palette'] }>();
   /** Contacts this frame, for sparks and bursts (presentation). */
   private readonly impacts: ImpactBurst[] = [];
   /** Limb flames and aura embers this frame (filled while drawing fighters). */
@@ -3973,7 +3976,7 @@ export class FightArenaScene implements ArenaScene {
       }
       // Eruption in the air: the whole body wrapped in flames and glowing embers (only the leaper's
       // own leap; a fighter hoisted by a grab is lifted too, without fire).
-      if (f.abilityLift > 0.05 && cast?.def.delivery.type === 'leap') {
+      if (f.abilityLift > 0.05 && cast?.def.delivery.type === 'leap' && cast.def.look?.airBody !== 'none') {
         const pts = [0.2, 0.6, 1.0, 1.4].map((z) =>
           besideOnScreen(f.x, f.y, (this.fxRng() - 0.5) * 0.3, f.abilityLift + z),
         );
@@ -3994,28 +3997,66 @@ export class FightArenaScene implements ArenaScene {
       }
     }
     const world = this.abilities.world;
-    // Grave Chains: from the caster to the flying hook, then to the enemy being dragged in.
-    const chains: { from: { x: number; y: number }; to: { x: number; y: number }; palette: MagicLook['palette'] }[] =
-      [];
+    // Grave Chains: from the caster to the flying hook, then to the enemy being dragged in. Kamaw's are a real steel chain from his hand with
+    // the sickle blade on the far end: spinning while it flies, biting into the floor (Gravehook), or hooked on the victim (Hook and Drag).
+    type Chain = {
+      from: { x: number; y: number };
+      to: { x: number; y: number };
+      palette: MagicLook['palette'];
+      steel?: { blade: 'spin' | 'hooked' | 'embedded'; toZ: number; fromZ?: number };
+    };
+    const chains: Chain[] = [];
+    const out = new Map<string, { x: number; y: number }>();
     for (const p of world.projectiles) {
       const caster = p.def.payload.pull && p.def.look ? this.fighterByName(p.casterId) : null;
-      if (caster && p.def.look)
-        chains.push({ from: { x: caster.x, y: caster.y }, to: { x: p.x, y: p.y }, palette: p.def.look.palette });
+      if (!caster || !p.def.look) continue;
+      const steel = p.def.look.steelChain ? { blade: 'spin' as const, toZ: 0.55 } : undefined;
+      chains.push({ from: { x: caster.x, y: caster.y }, to: { x: p.x, y: p.y }, palette: p.def.look.palette, ...(steel ? { steel } : {}) });
+      if (steel) out.set(p.casterId, { x: p.x, y: p.y });
     }
     // Gravehook Launch: the tether from the thrower to the sickle embedded in the ground.
     for (const t of world.tethers()) {
       const caster = this.fighterByName(t.casterId);
       const look = caster?.caster ? ABILITY_SLOTS.map((sl) => caster.caster!.def(sl)).find((d) => d.delivery.type === 'leap' && d.delivery.anchor)?.look : undefined;
-      if (caster && look) chains.push({ from: { x: caster.x, y: caster.y }, to: { x: t.x, y: t.y }, palette: look.palette });
+      if (!caster || !look) continue;
+      const steel = look.steelChain ? { blade: 'embedded' as const, toZ: 0.05, fromZ: 0.62 + caster.abilityLift } : undefined;
+      chains.push({ from: { x: caster.x, y: caster.y }, to: { x: t.x, y: t.y }, palette: look.palette, ...(steel ? { steel } : {}) });
+      if (steel) out.set(t.casterId, { x: t.x, y: t.y });
     }
     world.forEachPull((casterId, targetId) => {
       const caster = this.fighterByName(casterId);
       const target = this.fighterByName(targetId);
       const kit = caster?.caster;
       const look = kit ? ABILITY_SLOTS.map((s) => kit.def(s)).find((d) => d.payload.pull)?.look : undefined;
-      if (caster && target && look)
-        chains.push({ from: { x: caster.x, y: caster.y }, to: { x: target.x, y: target.y }, palette: look.palette });
+      if (!caster || !target || !look) return;
+      const steel = look.steelChain ? { blade: 'hooked' as const, toZ: 0.3 } : undefined;
+      chains.push({ from: { x: caster.x, y: caster.y }, to: { x: target.x, y: target.y }, palette: look.palette, ...(steel ? { steel } : {}) });
+      if (steel) out.set(casterId, { x: target.x, y: target.y });
     });
+    // When the sickle comes free (it missed, or the drag is over) the chain reels it back into the hand instead of it vanishing.
+    for (const [id, last] of this.sickleOut) {
+      if (out.has(id)) continue;
+      const caster = this.fighterByName(id);
+      const look = caster?.caster ? ABILITY_SLOTS.map((sl) => caster.caster!.def(sl)).find((d) => d.look?.steelChain)?.look : undefined;
+      if (caster && look) this.sickleReturn.set(id, { x: last.x, y: last.y, t: 0, palette: look.palette });
+    }
+    this.sickleOut = out;
+    for (const [id, r] of this.sickleReturn) {
+      const caster = this.fighterByName(id);
+      r.t += frameDtS / 0.28;
+      if (!caster || r.t >= 1 || out.has(id)) {
+        this.sickleReturn.delete(id);
+        continue;
+      }
+      const k = r.t * r.t;
+      chains.push({
+        from: { x: caster.x, y: caster.y },
+        to: { x: r.x + (caster.x - r.x) * k, y: r.y + (caster.y - r.y) * k },
+        palette: r.palette,
+        steel: { blade: 'spin', toZ: 0.55 + 0.2 * k },
+      });
+    }
+    for (const f of this.fighters) if (f.view && f.def.effects.held === 'sickle') f.view.sickleOut = out.has(f.name) || this.sickleReturn.has(f.name);
     const impacts = this.impacts.splice(0, this.impacts.length);
     const dust = this.frameDust.splice(0, this.frameDust.length);
     const limbFlames = this.frameFlames.splice(0, this.frameFlames.length);
