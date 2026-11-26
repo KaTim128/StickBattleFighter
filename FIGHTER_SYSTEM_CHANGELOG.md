@@ -105,3 +105,6 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 
 ## Voltar: Wing Chun and portrait (26/11/2026)
 - Voltar's taps, heavy and idle/select stance are Wing Chun: a narrow knees-in stance, short blows down the centreline, chain punches, a pak sao elbow, low stamp kicks, a lightning palm heavy. Damage and timing unchanged. His portrait has a yellow backdrop at the same size as the others.
+
+## Clash strength: weight and martial art (26/11/2026)
+- A fighter's clash factor is now `clashPower x weight factor x (1 + clashParry)`: the weight factor is (mass/80)^0.2 kept between 0.92 and 1.12, and `clashParry` is the martial art's bonus (Wing Chun 0.2 for Voltar; kung fu 0.06 for Inkmaster; karate 0.06 for Vexoris). It multiplies the player's mash presses (each press counts the factor, not 1) and the opponent's mash rate. Titan's strength went from 1.3 to 1.12, so its factor is about 1.25 (was 1.3): still the hardest, a little easier; Bohemeth 1.08 (about 1.21). Light fighters without a martial art now sit near 0.95.

@@ -13,6 +13,19 @@ import { CLASH } from '../data/combat/clash';
  */
 export type ClashSide = 'a' | 'b';
 
+/**
+ * How strongly a fighter wins a clash (owner, 26/11/2026), as a multiplier on its mashing: its strength (`clashPower`), its weight (heavier
+ * is stronger, lighter weaker, kept between 0.92 and 1.12) and its martial art (`clashParry`: Wing Chun parries clash shots, kung fu and karate
+ * help a little). Titan comes out highest at about 1.25, a light plain fighter about 0.95.
+ */
+export function clashFactor(def: {
+  readonly multipliers: { readonly clashPower: number; readonly clashParry?: number };
+  readonly body: { readonly massKg: number };
+}): number {
+  const weight = Math.min(1.12, Math.max(0.92, (def.body.massKg / 80) ** 0.2));
+  return def.multipliers.clashPower * weight * (1 + (def.multipliers.clashParry ?? 0));
+}
+
 /** Watches melee contacts for a sustained exchange that should become a clash. */
 export class ClashTrigger {
   private readonly contacts: { side: ClashSide; t: number }[] = [];
@@ -109,10 +122,10 @@ export class PunchClash {
   }
 
   /** A mash press from a side (only counts while mashing). */
-  press(side: ClashSide): void {
+  press(side: ClashSide, weight = 1): void {
     if (this.phase !== 'mash') return;
-    if (side === 'a') this.powerA++;
-    else this.powerB++;
+    if (side === 'a') this.powerA += weight;
+    else this.powerB += weight;
   }
 
   update(dtS: number): ClashStep {

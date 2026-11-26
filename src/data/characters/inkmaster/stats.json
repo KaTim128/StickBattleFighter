@@ -29,7 +29,8 @@
     "movementSpeed": 1.0,
     "jumpForce": 1.1,
     "clashPower": 1,
-    "specialCharge": 1
+    "specialCharge": 1,
+    "clashParry": 0.06
   },
   "hitStunResistance": 0,
   "objects": {

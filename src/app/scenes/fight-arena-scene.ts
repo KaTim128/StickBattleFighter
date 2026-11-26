@@ -12,6 +12,7 @@ import {
   type TossDelivery,
 } from '../../abilities/ability-def';
 import type { Parry } from '../../abilities/ability-world';
+import { clashFactor } from '../../combat/clash';
 import { applyLoadout, type Loadout } from '../../abilities/loadout';
 import { FighterBrain, type Hazard } from '../../ai/fighter-brain';
 import { NavGrid } from '../../ai/nav-grid';
@@ -488,11 +489,12 @@ export class FightArenaScene implements ArenaScene {
       },
       get opponentMashRate() {
         const d = scene.dummyFighter.def;
-        return d.ai.clashMashRate * d.multipliers.clashPower;
+        return d.ai.clashMashRate * clashFactor(d);
       },
+      playerClashFactor: () => clashFactor(this.playerFighter.def),
       playerAiMashRate: () => {
         const d = this.playerFighter.def;
-        return this.match?.spectate ? d.ai.clashMashRate * d.multipliers.clashPower : null;
+        return this.match?.spectate ? d.ai.clashMashRate * clashFactor(d) : null;
       },
       random: () => this.rng(),
       takeMashPresses: () => {

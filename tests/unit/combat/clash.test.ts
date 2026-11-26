@@ -1,5 +1,7 @@
+import { BUILT_IN_LIBRARY } from '../../../src/characters/library';
+import { resolveCharacter } from '../../../src/characters/resolve';
 import { describe, expect, it } from 'vitest';
-import { ClashTrigger, decideClash, PunchClash } from '../../../src/combat/clash';
+import { clashFactor, ClashTrigger, decideClash, PunchClash } from '../../../src/combat/clash';
 import { seededRandom } from '../../../src/combat/combatant';
 import { CLASH, scaleBy } from '../../../src/data/combat/clash';
 
@@ -92,5 +94,42 @@ describe('Punch Clash rules', () => {
     expect(scaleBy(CLASH.finishKnockbackMps, 1)).toBeGreaterThan(scaleBy(CLASH.finishKnockbackMps, 0));
     expect(CLASH.finishHitstopS.min).toBeGreaterThanOrEqual(3 / 60 - 1e-9);
     expect(CLASH.finishHitstopS.max).toBeLessThanOrEqual(6 / 60 + 1e-9);
+  });
+});
+
+describe('clash factor (owner, 26/11/2026: strength, weight and martial art)', () => {
+  const factorOf = (id: string): number => {
+    const d = resolveCharacter(id, BUILT_IN_LIBRARY);
+    return clashFactor(d);
+  };
+
+  it('Titan is still the strongest in a clash, but a little lower than before (1.3 x weight 1.0 became about 1.25)', () => {
+    const all = Object.values(BUILT_IN_LIBRARY.characters)
+      .filter((c) => c.template !== undefined && c.capabilities.isPlayable && c.characterType === 'fighter')
+      .map((c) => ({ id: c.id, f: factorOf(c.id) }));
+    const best = [...all].sort((a, b) => b.f - a.f)[0]!;
+    expect(best.id).toBe('rampage');
+    expect(best.f).toBeGreaterThan(1.2);
+    expect(best.f).toBeLessThan(1.3);
+    // Titan is hard, not hopeless: the next strongest is within reach.
+    const second = [...all].sort((a, b) => b.f - a.f)[1]!;
+    expect(second.f).toBeGreaterThan(best.f * 0.9);
+  });
+
+  it('heavier fighters clash harder than light ones, all else equal', () => {
+    const light = { multipliers: { clashPower: 1 }, body: { massKg: 55 } };
+    const heavy = { multipliers: { clashPower: 1 }, body: { massKg: 130 } };
+    expect(clashFactor(heavy)).toBeGreaterThan(clashFactor(light));
+  });
+
+  it('Wing Chun parries clash shots best; kung fu and karate help a little', () => {
+    const plain = { multipliers: { clashPower: 1 }, body: { massKg: 64 } };
+    const art = (clashParry: number) => ({ multipliers: { clashPower: 1, clashParry }, body: { massKg: 64 } });
+    expect(clashFactor(art(0.2))).toBeGreaterThan(clashFactor(art(0.06)));
+    expect(clashFactor(art(0.06))).toBeGreaterThan(clashFactor(plain));
+    // And the data: Voltar (Wing Chun) gains most, Inkmaster (kung fu) and Vexoris (karate) a little, more than a plain fighter of their weight.
+    expect(factorOf('voltar')).toBeGreaterThan(factorOf('inkmaster'));
+    expect(factorOf('inkmaster')).toBeGreaterThan(factorOf('reson'));
+    expect(factorOf('vexoris')).toBeGreaterThan(factorOf('reson'));
   });
 });

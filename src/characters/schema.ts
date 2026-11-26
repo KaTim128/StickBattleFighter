@@ -221,6 +221,11 @@ export interface StatsProfile {
     readonly movementSpeed: number;
     readonly jumpForce: number;
     readonly clashPower: number;
+    /**
+     * How well his martial art turns clash blows aside (owner, 26/11/2026): Wing Chun parries clash shots best (0.2), kung fu and karate help a
+     * little (0.06). Adds to the clash factor; default 0.
+     */
+    readonly clashParry?: number;
     readonly specialCharge: number;
   };
   /** 0..1: shortens hit stun. */
@@ -476,6 +481,7 @@ export const LIMITS = {
   knockbackResistance: [0, 1],
   hitStunResistance: [0, 0.9],
   multiplier: [0.1, 5],
+  clashParry: [0, 1],
   moveTimeS: [0.01, 3],
   moveRecoveryS: [0, 3],
   cancelAt: [0, 1],

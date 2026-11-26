@@ -129,7 +129,7 @@ export function validateCharacter(id: string, lib: CharacterLibrary): Validation
       if (stats.objects.liftTimeFactor !== undefined)
         num(`${s}.objects.liftTimeFactor`, stats.objects.liftTimeFactor, 'throwPower');
     }
-    for (const [k, v] of Object.entries(stats.multipliers ?? {})) num(`${s}.multipliers.${k}`, v, 'multiplier');
+    for (const [k, v] of Object.entries(stats.multipliers ?? {})) num(`${s}.multipliers.${k}`, v, k === 'clashParry' ? 'clashParry' : 'multiplier');
   }
 
   // ---- animation profile chain and clips

@@ -10,6 +10,8 @@ export interface ClashHost {
   readonly opponent: FighterEntity;
   /** The opponent's mashing speed, presses per second (from its data). */
   readonly opponentMashRate: number;
+  /** How strongly the player's fighter wins a clash (strength, weight and martial art): every mash press counts this much. */
+  readonly playerClashFactor: () => number;
   /** The player side's mashing speed when the AI plays it (a watched battle), else null. */
   readonly playerAiMashRate: () => number | null;
   random(): number;
@@ -171,7 +173,8 @@ export class SceneClash {
       }
     }
     const presses = this.host.takeMashPresses();
-    for (let i = 0; i < presses; i++) this.clash.press('a');
+    const weight = this.host.playerClashFactor();
+    for (let i = 0; i < presses; i++) this.clash.press('a', weight);
     const out = this.clash.update(stepS);
     const interval = 1 / this.rate();
     for (let i = 0; i < out.exchanges; i++) this.exchange(interval);
