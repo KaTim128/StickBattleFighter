@@ -78,6 +78,8 @@ export interface AimIndicator {
   readonly to: { readonly x: number; readonly y: number };
   readonly radiusM: number;
   readonly maxRangeM: number;
+  /** A straight line along the ground-hugging path instead of a leaping arc (a hook slingshot). */
+  readonly straight?: boolean;
 }
 
 /**
@@ -1415,13 +1417,13 @@ export class AbilityVfx {
       const pulse = 0.6 + 0.4 * Math.sin(t * 9);
       if (a.maxRangeM > 0)
         f.circle(a.from.x, a.from.y, a.maxRangeM).stroke({ width: 0.05, color: 0xffd23f, alpha: 0.35 });
-      const n = 12;
+      const n = a.straight ? 16 : 12;
       for (let i = 1; i < n; i++) {
         const k = i / n;
         const q = P(
           a.from.x + (a.to.x - a.from.x) * k,
           a.from.y + (a.to.y - a.from.y) * k,
-          Math.sin(Math.PI * k) * 1.4,
+          a.straight ? 0.7 : Math.sin(Math.PI * k) * 1.4, // a hook flies straight and low, a leap in an arc
         );
         g.circle(q.x, q.y, 0.06).fill({ color: FIRE.bright, alpha: 0.85 });
       }

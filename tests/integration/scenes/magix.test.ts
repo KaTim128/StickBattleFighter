@@ -147,7 +147,7 @@ describe('Magix', () => {
     expect(LUCKY_KINDS).toEqual(['speed', 'damage', 'defence', 'range', 'hp', 'sword', 'bomb', 'misfortune']);
   });
 
-  it('Reaper Hook (Magix): a knife on scarves from the sleeve hooks past the target, slings him in fast, the kick throws them back, and the scarves gather back in', async () => {
+  it('Fatal Stitch (Magix): a knife on scarves from the sleeve hooks past the target, slings him in fast, the kick throws them back, and the scarves gather back in', async () => {
     const { scene, scenes, run, cast, me, foe, intents } = await setup('training-dummy', 7);
     scene.playerFighter.combatant.stamina = 100;
     const x0 = me().x;

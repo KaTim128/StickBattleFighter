@@ -3,7 +3,7 @@ import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Magix's kit: the master illusionist. Misdirection and chaos rather than raw strength: vanish and strike from nowhere, a rabbit that blows
- * up in confetti, a spinning barrage of exactly 52 cards, Reaper Hook (a knife on tied scarves that slings him in for a flying kick), a hat full of surprises (one outcome is the old Wand of Misfortune's curse) and one
+ * up in confetti, a spinning barrage of exactly 52 cards, Fatal Stitch (a knife on tied scarves that slings him in for a flying kick), a hat full of surprises (one outcome is the old Wand of Misfortune's curse) and one
  * ultimate, Mirror Act, where he becomes the opponent. His own stats are middling; every trick has a counter. Values are PROVISIONAL (OQ-05).
  */
 const MAGIC = { deep: 0x1a0f2e, hot: 0x6a2fb0, bright: 0xd9a6ff, core: 0xfff4c2 } as const;
@@ -111,12 +111,12 @@ export const MAGIX_KIT: AbilityKit = {
     sfx: { cast: 'card-shuffle', release: 'card-throw', impact: 'card-hit' },
     look: { palette: MAGIC, impact: showy(0.7), hitFlash: 0xffffff },
   },
-  // A4: Reaper Hook (owner, 26/11/2026, replacing the Wand of Misfortune, whose curse is now an outcome of the Lucky Hat). A knife on a long line of
+  // A4: Fatal Stitch (the Reaper Hook redesigned for Magix, owner, 26/11/2026, replacing the Wand of Misfortune, whose curse is now an outcome of the Lucky Hat). A knife on a long line of
   // tied scarves shoots out of his sleeve, bites into the ground past the opponent, and the taut line slings him in for a flying kick.
   a4: {
     id: 'magixReaperHook',
-    name: 'Reaper Hook',
-    label: 'HOOK',
+    name: 'Fatal Stitch',
+    label: 'STITCH',
     description:
       'Raises his arm and swings it outward: a knife on a long line of knotted scarves shoots out of his sleeve, the scarves unravelling as it flies, and hooks into the ground past the opponent. The line snaps taut and he is slung forward at great speed along it, letting go at the last moment to drive a flying kick into their chest that sends them backwards. Then the scarves gather back into his sleeve.',
     icon: 'scarf-hook',

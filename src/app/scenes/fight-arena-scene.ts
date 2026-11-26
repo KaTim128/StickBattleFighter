@@ -2244,6 +2244,7 @@ export class FightArenaScene implements ArenaScene {
     to: { x: number; y: number };
     radiusM: number;
     maxRangeM: number;
+    straight: boolean;
   } | null {
     const aim = this.ultAimPoint;
     const f = this.playerFighter;
@@ -2259,7 +2260,7 @@ export class FightArenaScene implements ArenaScene {
         to = { x: from.x + ((aim.x - from.x) / want) * reach, y: from.y + ((aim.y - from.y) / want) * reach };
       }
     }
-    return { from, to, radiusM: d.radiusM, maxRangeM: leapForm(d, f.buff?.empowersLeap === true).maxRangeM };
+    return { from, to, radiusM: d.radiusM, maxRangeM: leapForm(d, f.buff?.empowersLeap === true).maxRangeM, straight: d.anchor !== undefined };
   }
 
   /** The dummy holds its ground and faces you; with "dummy attacks" on it jabs back when you are close. */
