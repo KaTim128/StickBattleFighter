@@ -2603,7 +2603,7 @@ export class FightArenaScene implements ArenaScene {
     };
     this.swapIn(side, copy);
     this.tags--; // a transformation is not a 3 vs 3 tag
-    copy.combatant.raiseBarrier(spec.shieldFraction * copy.combatant.stats.maxHp, spec.durationS);
+    if (spec.shieldFraction > 0) copy.combatant.raiseBarrier(spec.shieldFraction * copy.combatant.stats.maxHp, spec.durationS);
     return true;
   }
 

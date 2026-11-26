@@ -1107,7 +1107,7 @@ export interface LuckyHatDelivery {
 
 /**
  * Mirror Act (Magix's ultimate): confetti thrown at the floor bursts into a cloud of dust ( `dustS` ); as it clears he is an exact copy of
- * the opponent for `durationS`: its look, abilities (not its ultimate) and moves at `powerFactor` of its damage, with a temporary shield
+ * the opponent for `durationS`: its look, abilities (not its ultimate) and moves at `powerFactor` of its damage,
  * of `shieldFraction` of his own maximum HP over his own real HP. Cooldowns are the opponent's own at that moment.
  */
 export interface MirrorDelivery {

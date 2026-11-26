@@ -56,7 +56,7 @@ export const MAGIX_KIT: AbilityKit = {
     name: 'A Rabbit',
     label: 'RABBIT',
     description:
-      'Opens his hands and a white rabbit hops out and runs at the nearest opponent. A second after it reaches them it bursts into confetti, hurting and knocking back everyone close. Hitting the rabbit sets it off early, so keep your distance from it and keep your guard up.',
+      'Opens his hands and a white rabbit hops out and runs at the nearest opponent. It bursts into confetti a second after it reaches them, or after 4 seconds wherever it is, hurting and knocking back everyone close. Hitting the rabbit sets it off early, so keep your distance from it and keep your guard up.',
     icon: 'rabbit',
     slot: 'a2',
     staminaCost: 24,
@@ -71,7 +71,7 @@ export const MAGIX_KIT: AbilityKit = {
       type: 'summon',
       character: 'rabbit',
       count: 1,
-      lifeS: 9,
+      lifeS: 4, // it goes off after 4 seconds wherever it is (owner, 26/11/2026)
       maxAlive: 1,
       rabbit: { fuseS: 1, armRangeM: 1.3, radiusM: 2.4, damage: 62, knockbackMps: 9, hopSpeedMps: 6.5 },
     },
@@ -169,7 +169,7 @@ export const MAGIX_KIT: AbilityKit = {
     name: 'Mirror Act',
     label: 'ULT',
     description:
-      'Throws confetti at the ground, and in the cloud of dust he becomes an exact copy of the opponent for 12 seconds: its look, weapons, moves and normal abilities (not its ultimate), under its own cooldowns, at 90% of its damage. A temporary shield worth 20% of his maximum health soaks hits first and his real health is kept. After 12 seconds, or if he falls, the shield goes and he is Magix again with the health he really has. The opponent is never changed.',
+      'Throws confetti at the ground, and in the cloud of dust he becomes an exact copy of the opponent for 12 seconds: its look, weapons, moves and normal abilities (not its ultimate), under its own cooldowns, at 90% of its damage. After 12 seconds, or if he falls, he is Magix again with the health he really has. The opponent is never changed.',
     icon: 'mirror-act',
     slot: 'ult',
     staminaCost: 0,
@@ -180,7 +180,7 @@ export const MAGIX_KIT: AbilityKit = {
     moveFactor: 0,
     interruptible: false,
     payload: { damage: 0, knockbackMps: 0, heavy: false, strength: 0 },
-    delivery: { type: 'mirror', dustS: 0.9, durationS: 12, shieldFraction: 0.2, powerFactor: 0.9 },
+    delivery: { type: 'mirror', dustS: 0.9, durationS: 12, shieldFraction: 0, powerFactor: 0.9 },
     vfx: 'magix-mirror',
     sfx: { cast: 'confetti-throw', release: 'mirror-dust', impact: 'mirror-shatter' },
     look: { palette: MAGIC, impact: showy(3, { shake: 0.3 }), hitFlash: 0xffffff },
