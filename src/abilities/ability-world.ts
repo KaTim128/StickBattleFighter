@@ -1896,7 +1896,9 @@ export class AbilityWorld {
         const payload = p.damageFactor
           ? { ...p.def.payload, damage: p.def.payload.damage * p.damageFactor, knockbackMps: p.def.payload.knockbackMps * p.damageFactor }
           : p.def.payload;
-        if (!this.hit(host, p.casterId, f.id, payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
+        // A shotgun pellet loses its punch with the distance it has flown (damage falloff over the shot's range).
+        const landed = payload.falloff ? payloadAt(payload, p.travelledM, d.maxRangeM) : payload;
+        if (!this.hit(host, p.casterId, f.id, landed, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
         if (d.passThrough) this.streakThrough(p.casterId, p.def, f, p.dir, d.passThrough.exitM, host);
         if (d.lift) this.startLift(p, f, host);

@@ -154,3 +154,4 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - Magix's rabbit going off no longer shows "KO!" or plays a defeat sound.
 - AI channel awareness: a foe pouring a beam or stream (which a hit stops) is closed in on and attacked by smarter tiers; a planner does not start a channelled ability with a free foe at its shoulder.
 - Top HUD shows the hit points left, level with each fighter's name.
+- DX07's Explosive Rounds (id unchanged) is now the Shotgun Blast: eight pellets in a cone, full damage within 2 m falling to a fifth at 9 m (per-pellet projectile falloff); the AI uses it at close range.

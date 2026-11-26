@@ -284,7 +284,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
     hitAndRunS: 1.2,
     tactics: {
       a1: { role: 'poke', minM: 2, maxM: 10, weight: 1.2 },
-      a2: { role: 'burst', minM: 3, maxM: 10, weight: 1.1 },
+      a2: { role: 'burst', minM: 0.8, maxM: 5, weight: 1.4 }, // the shotgun: hardest up close
       a3: { role: 'poke', minM: 3, maxM: 12, weight: 1 },
       a4: { role: 'escape', minM: 0, maxM: 3, weight: 1.2 },
       ult: { role: 'burst', minM: 2, maxM: 10, weight: 1.2, when: { selfHpBelow: 0.95 } },

@@ -69,15 +69,20 @@ describe('Gunsmith', () => {
     scenes.clear();
   }, 30_000);
 
-  it('Explosive Rounds: the direct hit and then a burst that adds more damage', async () => {
-    const { scenes, fire, hitsOver, foe } = await setup('gunsmith');
-    fire('a2');
-    const hits = hitsOver(2);
-    const total = hits.reduce((a, b) => a + b, 0);
-    expect(total).toBeGreaterThan(GUNSMITH_KIT.a2.payload.damage * 1.6); // direct 34 plus an area burst of about 37
-    expect(foe().combatant.stats.maxHp - foe().combatant.hp).toBeGreaterThan(60);
-    scenes.clear();
-  }, 30_000);
+  it('Shotgun Blast: a close target takes far more than a distant one', async () => {
+    const dmg = async (gap: number) => {
+      const { scenes, fire, hitsOver, foe } = await setup('gunsmith', gap);
+      fire('a2');
+      hitsOver(1.5);
+      const lost = foe().combatant.stats.maxHp - foe().combatant.hp;
+      scenes.clear();
+      return lost;
+    };
+    const near = await dmg(1.8);
+    const far = await dmg(7.5);
+    expect(near).toBeGreaterThan(70); // most of the eight pellets land at full strength
+    expect(far).toBeLessThan(near * 0.4); // fewer pellets reach it, each at a fraction of the damage
+  }, 60_000);
 
   it('Ricochet Shot: aimed at the far wall with the dummy behind him, the bullet bounces back and hits it', async () => {
     const { scenes, fire, run, me, foe } = await setup('gunsmith', 8, 20);
