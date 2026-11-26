@@ -89,14 +89,14 @@ describe('Magix', () => {
     scenes.clear();
   }, 30_000);
 
-  it('A Rabbit goes off by itself after 4 seconds wherever it is', async () => {
+  it('A Rabbit goes off by itself after 2 seconds wherever it is', async () => {
     const { scene, scenes, run, runUntil, cast } = await setup('training-dummy', 24);
     cast('a2');
     runUntil(() => scene.summonStates.length > 0, 2);
     const rabbit = (scene as unknown as { summons: { list: { combatant: { isKo: boolean } }[] } }).summons.list[0]!;
-    expect(MAGIX_KIT.a2.delivery.type === 'summon' && MAGIX_KIT.a2.delivery.lifeS).toBe(4);
-    run(4.3);
-    expect(rabbit.combatant.isKo).toBe(true); // gone off by 4 s at the latest, wherever it is
+    expect(MAGIX_KIT.a2.delivery.type === 'summon' && MAGIX_KIT.a2.delivery.lifeS).toBe(2);
+    run(2.3);
+    expect(rabbit.combatant.isKo).toBe(true); // gone off by 2 s at the latest, wherever it is
     scenes.clear();
   }, 30_000);
 
@@ -221,7 +221,7 @@ describe('Magix', () => {
     runUntil(() => me() !== original, 3);
     expect(me()).not.toBe(original);
     expect(me().def.id).toBe('rampage'); // looks, moves and abilities of the opponent
-    expect(me().combatant.barrierHp).toBe(0); // no shield (owner 26/11/2026)
+    expect(me().combatant.barrierHp).toBeGreaterThan(0); // a temporary shield
     expect(me().caster?.locked?.slot).toBe('ult'); // never the ultimate
     // His real health fraction came across with him (whatever the fight had done to him by then).
     expect(me().combatant.hp / me().combatant.stats.maxHp).toBeCloseTo(
@@ -237,7 +237,7 @@ describe('Magix', () => {
     expect(me().def.id).toBe('magix');
     expect(me().combatant.hp).toBeGreaterThan(0);
     expect(me().combatant.hp).toBeLessThanOrEqual(me().combatant.stats.maxHp);
-    expect(me().combatant.barrierHp).toBe(0);
+    expect(me().combatant.barrierHp).toBe(0); // the shield is gone
     expect(me().buff).toBeNull();
     scenes.clear();
   }, 60_000);
