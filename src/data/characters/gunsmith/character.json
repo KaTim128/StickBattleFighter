@@ -1,8 +1,8 @@
 {
   "id": "gunsmith",
   "template": "base-stickman",
-  "displayName": "Gunsmith",
-  "description": "Gunsmith has never been seen drawing, only holstering: by the time you notice the pistols they are already empty and smoking. Sharp coat, sharper glasses, two guns and the patience of a man who reloads between sentences.",
+  "displayName": "DX07",
+  "description": "DX07 has never been seen drawing, only holstering: by the time you notice the pistols they are already empty and smoking. Sharp tuxedo, sharper glasses, two guns and the patience of a man who reloads between sentences.",
   "characterType": "fighter",
   "element": "metal",
   "combatStyle": "gunslinger",

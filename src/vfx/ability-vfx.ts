@@ -2712,6 +2712,7 @@ export class AbilityVfx {
    */
   private scarfLine(g: Graphics, a0: { x: number; y: number }, a1: { x: number; y: number }, len: number, st: { blade: 'spin' | 'hooked' | 'embedded'; reel?: number }, t: number): void {
     const COLOURS = [0xb3263a, 0xf6f3ee, 0x6a2fb0, 0xe3b94a] as const;
+    const INK = 0x1b1224;
     const ux = (a1.x - a0.x) / len;
     const uy = (a1.y - a0.y) / len;
     const nx = -uy;
@@ -2719,12 +2720,15 @@ export class AbilityVfx {
     const reel = st.reel ?? 0;
     const fade = reel > 0.7 ? 1 - (reel - 0.7) / 0.3 : 1;
     const slack = reel > 0 ? 0.06 + 0.1 * reel : st.blade === 'spin' ? 0.07 : 0.015;
-    const SECTION = reel > 0 ? 0.3 - 0.12 * reel : 0.3;
+    // The pieces are thin strips; as the line is drawn back into the sleeve (reeling in, or Magix being pulled along it) they get shorter and
+    // gather, so the line visibly shrinks into the cuff rather than just ending sooner.
+    const SECTION = 0.3 - 0.14 * Math.min(1, reel);
     const n = Math.max(2, Math.round(len / SECTION));
     const at = (u: number): { x: number; y: number } => {
       const wave = Math.sin(u * Math.PI) * Math.sin(t * 13 - u * 9) * slack * Math.min(1, len * 0.4);
       return { x: a0.x + (a1.x - a0.x) * u + nx * wave, y: a0.y + (a1.y - a0.y) * u + ny * wave };
     };
+    const W = 0.036; // a thin strip of fabric
     for (let i = 0; i < n; i++) {
       const u0 = i / n;
       const u1 = (i + 1) / n;
@@ -2732,15 +2736,35 @@ export class AbilityVfx {
       const p1 = at(u1);
       const mid = at((u0 + u1) / 2);
       const col = COLOURS[i % COLOURS.length]!;
-      // A piece of fabric: a ribbon that billows a little at its middle, with a lighter edge.
-      const w = 0.075 * (1 + 0.5 * Math.sin(t * 9 + i * 1.7) * (reel > 0 ? 1.4 : 1));
-      const bx = (mid.x - (p0.x + p1.x) / 2) * 2 + nx * w * Math.sin(t * 8 + i);
-      const by = (mid.y - (p0.y + p1.y) / 2) * 2 + ny * w * Math.sin(t * 8 + i);
-      g.moveTo(p0.x, p0.y).quadraticCurveTo(mid.x + bx * 0.5, mid.y + by * 0.5, p1.x, p1.y).stroke({ width: w * 2, color: 0x1b1224, alpha: 0.85 * fade, cap: 'round' });
-      g.moveTo(p0.x, p0.y).quadraticCurveTo(mid.x + bx * 0.5, mid.y + by * 0.5, p1.x, p1.y).stroke({ width: w * 1.5, color: col, alpha: fade, cap: 'round' });
-      g.moveTo(p0.x, p0.y).quadraticCurveTo(mid.x + bx * 0.5, mid.y + by * 0.5, p1.x, p1.y).stroke({ width: w * 0.4, color: 0xffffff, alpha: 0.35 * fade, cap: 'round' });
-      // The knot where it is tied to the next piece.
-      g.circle(p1.x, p1.y, 0.05).fill({ color: col, alpha: fade }).stroke({ width: 0.016, color: 0x1b1224, alpha: fade });
+      const flutter = 1 + 0.4 * Math.sin(t * 9 + i * 1.7) * (reel > 0 ? 1.5 : 1);
+      const bx = mid.x + nx * W * flutter * Math.sin(t * 8 + i);
+      const by = mid.y + ny * W * flutter * Math.sin(t * 8 + i);
+      g.moveTo(p0.x, p0.y).quadraticCurveTo(bx, by, p1.x, p1.y).stroke({ width: W * 2 + 0.012, color: INK, alpha: 0.8 * fade, cap: 'butt' });
+      g.moveTo(p0.x, p0.y).quadraticCurveTo(bx, by, p1.x, p1.y).stroke({ width: W * 2, color: col, alpha: fade, cap: 'butt' });
+    }
+    // The knots that tie one scarf to the next: a clear pale knot with a dark outline and two little tails, so every join can be seen.
+    for (let i = 1; i < n; i++) {
+      const p = at(i / n);
+      const ang = Math.atan2(uy, ux) + Math.sin(t * 7 + i * 2.3) * 0.5;
+      const cx = Math.cos(ang);
+      const cy = Math.sin(ang);
+      for (const sd of [-1, 1]) {
+        g.moveTo(p.x, p.y).lineTo(p.x + (cx * 0.5 - cy * sd * 0.7) * 0.07, p.y + (cy * 0.5 + cx * sd * 0.7) * 0.07).stroke({ width: 0.02, color: INK, alpha: fade, cap: 'round' });
+        g.moveTo(p.x, p.y).lineTo(p.x + (cx * 0.5 - cy * sd * 0.7) * 0.07, p.y + (cy * 0.5 + cx * sd * 0.7) * 0.07).stroke({ width: 0.011, color: COLOURS[i % COLOURS.length]!, alpha: fade, cap: 'round' });
+      }
+      g.circle(p.x, p.y, 0.05).fill({ color: 0xfff4c2, alpha: fade }).stroke({ width: 0.018, color: INK, alpha: fade });
+    }
+    // Being drawn into the sleeve: a small bundle of scarf ends fluttering at the cuff that grows as the line shortens.
+    if (reel > 0) {
+      const pieces = 2 + Math.round(4 * Math.min(1, reel));
+      for (let k = 0; k < pieces; k++) {
+        const ang = Math.atan2(uy, ux) + Math.PI + (k - pieces / 2) * 0.35 + Math.sin(t * 11 + k) * 0.2;
+        const L = (0.12 + 0.1 * Math.min(1, reel)) * (0.7 + 0.3 * Math.sin(t * 9 + k * 2));
+        const ex = a0.x + Math.cos(ang) * L;
+        const ey = a0.y + Math.sin(ang) * L;
+        g.moveTo(a0.x, a0.y).lineTo(ex, ey).stroke({ width: W * 2 + 0.012, color: INK, alpha: 0.8 * fade, cap: 'round' });
+        g.moveTo(a0.x, a0.y).lineTo(ex, ey).stroke({ width: W * 2, color: COLOURS[k % COLOURS.length]!, alpha: fade, cap: 'round' });
+      }
     }
     // The knife on the end: a short, bright blade with a dark grip, pointing the way the line runs (stuck in the floor when it has bitten).
     const tip = at(1);
@@ -2755,7 +2779,7 @@ export class AbilityVfx {
       }
     }
     g.moveTo(tip.x - kx * 0.1, tip.y - ky * 0.1).lineTo(tip.x, tip.y).stroke({ width: 0.05, color: 0x15151c, alpha: fade, cap: 'round' });
-    g.poly([tip.x, tip.y - 0 + 0, tip.x + kx * 0.3 - ky * 0.05, tip.y + ky * 0.3 + kx * 0.05, tip.x + kx * 0.42, tip.y + ky * 0.42, tip.x + kx * 0.3 + ky * 0.05, tip.y + ky * 0.3 - kx * 0.05])
+    g.poly([tip.x, tip.y, tip.x + kx * 0.3 - ky * 0.05, tip.y + ky * 0.3 + kx * 0.05, tip.x + kx * 0.42, tip.y + ky * 0.42, tip.x + kx * 0.3 + ky * 0.05, tip.y + ky * 0.3 - kx * 0.05])
       .fill({ color: 0xe8ecf4, alpha: fade })
       .stroke({ width: 0.012, color: 0x15151c, alpha: fade, join: 'round' });
   }

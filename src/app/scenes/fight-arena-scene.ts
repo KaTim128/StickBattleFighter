@@ -386,6 +386,8 @@ export class FightArenaScene implements ArenaScene {
   private readonly events: CombatEvent[] = [];
   /** Kamaw's chained sickle: where its blade is while it is out (thrown, embedded or hooked), and blades being reeled back in. */
   private sickleOut = new Map<string, { x: number; y: number }>();
+  /** How long each tether was when it began (the scarves shorten as he is slung along it). */
+  private readonly tetherStart = new Map<string, number>();
   private readonly sickleReturn = new Map<string, { x: number; y: number; t: number; palette: MagicLook['palette']; scarf: boolean }>();
   /** Contacts this frame, for sparks and bursts (presentation). */
   private readonly impacts: ImpactBurst[] = [];
@@ -4044,7 +4046,12 @@ export class FightArenaScene implements ArenaScene {
       const look = caster?.caster ? ABILITY_SLOTS.map((sl) => caster.caster!.def(sl)).find((d) => d.delivery.type === 'leap' && d.delivery.anchor)?.look : undefined;
       if (!caster || !look) continue;
       const ring = look.steelChain || look.scarfChain ? ringOf(caster) : null;
-      const steel = ring ? { blade: 'embedded' as const, toZ: 0.05, fromZ: ring.fromZ + caster.abilityLift, ...(look.scarfChain ? { scarf: true } : {}) } : undefined;
+      // Scarves: the nearer he is slung to the hook, the more of the line has been drawn back into his sleeve.
+      const dNow = Math.hypot(t.x - caster.x, t.y - caster.y);
+      const d0 = this.tetherStart.get(t.casterId) ?? dNow;
+      if (!this.tetherStart.has(t.casterId)) this.tetherStart.set(t.casterId, dNow);
+      const pulled = Math.min(0.65, Math.max(0, 1 - dNow / Math.max(0.5, d0)));
+      const steel = ring ? { blade: 'embedded' as const, toZ: 0.05, fromZ: ring.fromZ + caster.abilityLift, ...(look.scarfChain ? { scarf: true, reel: pulled } : {}) } : undefined;
       chains.push({ from: ring?.from ?? { x: caster.x, y: caster.y }, to: { x: t.x, y: t.y }, palette: look.palette, ...(steel ? { steel } : {}) });
       if (steel) out.set(t.casterId, { x: t.x, y: t.y });
     }
@@ -4060,6 +4067,7 @@ export class FightArenaScene implements ArenaScene {
       if (steel) out.set(casterId, { x: target.x, y: target.y });
     });
     // When the sickle comes free (it missed, or the drag is over) the chain reels it back into the hand instead of it vanishing.
+    for (const id of [...this.tetherStart.keys()]) if (!world.tethers().some((t) => t.casterId === id)) this.tetherStart.delete(id);
     for (const [id, last] of this.sickleOut) {
       if (out.has(id)) continue;
       const caster = this.fighterByName(id);
