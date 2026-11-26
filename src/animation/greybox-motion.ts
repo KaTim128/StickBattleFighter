@@ -823,12 +823,12 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
  * compactly opposite the legs, carried high and wide like a guard that never fully drops.
  */
 function heavyWalkPose(phase: number, bones: BoneLengths, k = 1): Pose {
-  // Owner, 12/11/2026: "reducing the excessive knee bending ... straighter legs": the hips ride
-  // close to full leg length (0.79 m for Rampage), so the planted leg is nearly straight.
+  // Owner, 12/11/2026: "reducing the excessive knee bending ... straighter legs"; then 26/11/2026: "a subtle knee bend while walking and
+  // running" for Titan and Bohemeth. So the hips ride a little below full leg length (0.79 m for Rampage): the planted leg keeps a slight bend.
   return gaitPose(phase, bones, {
-    pelvisM: 0.775,
+    pelvisM: 0.771,
     bob: 0.004,
-    plant: 0.01,
+    plant: 0.012,
     leadX: 0.04,
     rearX: -0.05,
     reach: 0.2 * k,
@@ -960,7 +960,7 @@ const SPRINT_STYLE: RunStyle = {
  * into it, and a short, firm pump of clenched fists close to the body.
  */
 const HEAVY_RUN: RunStyle = {
-  pelvisM: 0.66,
+  pelvisM: 0.652,
   bob: 0.015,
   reachM: 0.3,
   pushM: 0.32,
@@ -975,7 +975,7 @@ const HEAVY_RUN: RunStyle = {
 
 /** Heavyweight sprint (and his charge): lower and leaning further, stronger drive, still grounded. */
 const HEAVY_SPRINT: RunStyle = {
-  pelvisM: 0.645,
+  pelvisM: 0.638,
   bob: 0.02,
   reachM: 0.32,
   pushM: 0.36,

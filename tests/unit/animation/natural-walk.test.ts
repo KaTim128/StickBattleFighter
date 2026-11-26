@@ -40,7 +40,8 @@ describe('natural walks (W1)', () => {
   it('the original four fighters walk and run exactly as before', () => {
     const expected: Record<string, number> = {
       pyro: 118.370287,
-      heavyweight: 209.011198,
+      // Owner, 26/11/2026: Titan and Bohemeth walk and run with a subtle knee bend, so this one sum changed (was 209.011198).
+      heavyweight: 204.992097,
       mage: 118.370287,
       stalker: -47.595753,
     };
