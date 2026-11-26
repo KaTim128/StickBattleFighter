@@ -1556,7 +1556,7 @@ export class StickmanView {
         const nx = -uy2; // sideways (up for a pistol pointing along +x)
         const ny = ux2;
         const GUN = 0.68; // sized to sit in the hand: the grip is what the fist closes round
-        const at = (along: number, side: number) => ({ x: hd.x + (ux2 * along + nx * side) * GUN, y: hd.y + (uy2 * along + ny * side) * GUN });
+        const at = (along: number, side: number) => ({ x: hd.x + (ux2 * along + nx * (side + 0.07)) * GUN, y: hd.y + (uy2 * along + ny * (side + 0.07)) * GUN });
         const poly = (pts: { x: number; y: number }[], fill: number, edge = 0x0a0a0e) =>
           g.poly(pts.flatMap((p) => [p.x, p.y])).fill(fill).stroke({ width: 0.012 + o, color: edge, join: 'round' });
         // Grip, set back and down from the frame, with chequering and a medallion.
