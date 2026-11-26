@@ -144,3 +144,5 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - 26/11/2026: Gunsmith is now called DX07 (display name and description; the data ids are unchanged). Magix's scarf line is drawn thinner, with a clear pale knot, outlined and with two little tails, joining every scarf to the next; and while he is slung along the line the scarves get shorter and gather into a small fluttering bundle at his cuff, as if drawn back into the sleeve.
 
 - 26/11/2026: Magix's Reaper Hook is renamed Fatal Stitch. Its aiming guide is now a straight, low line from his hand to the spot (the hook flies straight, so the arc a leap needs was misleading); leaps and Aerion-style dives keep their arcs.
+
+- 26/11/2026: Fatal Stitch's kick leaves the target bleeding for 3 seconds (3 damage per second plus the shared bleeding vulnerability; reapplying refreshes it, never stacks). New optional `bleedS` on ability payloads for a wound shorter or longer than the shared 6 s.

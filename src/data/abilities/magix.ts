@@ -118,7 +118,7 @@ export const MAGIX_KIT: AbilityKit = {
     name: 'Fatal Stitch',
     label: 'STITCH',
     description:
-      'Raises his arm and swings it outward: a knife on a long line of knotted scarves shoots out of his sleeve, the scarves unravelling as it flies, and hooks into the ground past the opponent. The line snaps taut and he is slung forward at great speed along it, letting go at the last moment to drive a flying kick into their chest that sends them backwards. Then the scarves gather back into his sleeve.',
+      'Raises his arm and swings it outward: a knife on a long line of knotted scarves shoots out of his sleeve, the scarves unravelling as it flies, and hooks into the ground past the opponent. The line snaps taut and he is slung forward at great speed along it, letting go at the last moment to drive a flying kick into their chest that sends them backwards and leaves them bleeding for 3 seconds. Then the scarves gather back into his sleeve.',
     icon: 'scarf-hook',
     slot: 'a4',
     staminaCost: 28,
@@ -128,7 +128,7 @@ export const MAGIX_KIT: AbilityKit = {
     aimRangeM: 10,
     moveFactor: 0,
     interruptible: true,
-    payload: { damage: 44, knockbackMps: 8.5, heavy: true, strength: 600, impact: 'knuckle-heavy', falloff: { fullWithinM: 1.2, minFactor: 0.6 } },
+    payload: { damage: 44, knockbackMps: 8.5, heavy: true, strength: 600, impact: 'knuckle-heavy', falloff: { fullWithinM: 1.2, minFactor: 0.6 }, bleed: true, bleedDps: 3, bleedS: 3 },
     delivery: { type: 'leap', maxRangeM: 10, airS: 0.3, peakM: 0.45, radiusM: 1.5, aimSpeedMps: 5, anchor: { throwRangeM: 11, embedS: 0.16, pastM: 1.6 } },
     vfx: 'scarf-hook',
     sfx: { cast: 'sleeve-rustle', release: 'scarf-whip', impact: 'scarf-kick' },

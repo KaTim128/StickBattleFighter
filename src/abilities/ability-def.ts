@@ -106,6 +106,8 @@ export interface AbilityPayload {
   readonly bleed?: boolean;
   /** The bleeding also costs this much health per second while it lasts (Kamaw); it refreshes, never stacks. */
   readonly bleedDps?: number;
+  /** How long the bleeding lasts, seconds (default: the shared 6 s). A shorter wound (Magix's Fatal Stitch: 3 s) refreshes the same way. */
+  readonly bleedS?: number;
   /** Toxicity stacks the target gets when it lands (Vexoris, TD-115). One application per target per hit event. */
   readonly poison?: number;
   /**

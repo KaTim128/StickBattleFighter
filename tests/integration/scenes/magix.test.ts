@@ -169,6 +169,10 @@ describe('Magix', () => {
     expect(foe().combatant.stats.maxHp - foe().combatant.hp).toBeGreaterThan(30);
     expect(foe().x - fx0).toBeGreaterThan(0.5); // sent backwards, never dragged in
     expect(scene.abilities!.world.tethers().length).toBe(0); // let go at the end
+    // The wound bleeds for 3 seconds from the kick, then closes.
+    expect(foe().combatant.bleeding).toBe(true);
+    run(3.5);
+    expect(foe().combatant.bleeding).toBe(false);
     scenes.clear();
     void intents;
   }, 60_000);

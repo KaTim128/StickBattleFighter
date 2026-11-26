@@ -307,7 +307,7 @@ export class SceneAbilities implements AbilityHost {
       noFlinch: payload.noFlinch,
     });
     // Shroud's knife: deep cuts bleed.
-    if (landed && payload.bleed) target.combatant.bleed(payload.bleedDps ?? 0);
+    if (landed && payload.bleed) target.combatant.bleed(payload.bleedDps ?? 0, payload.bleedS);
     // Vexoris's poison: toxicity stacks.
     if (landed && payload.poison) target.combatant.poison(payload.poison);
     // Mental Focus (Psion): every ability that lands builds focus.
