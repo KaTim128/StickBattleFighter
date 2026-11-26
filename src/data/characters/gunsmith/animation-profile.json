@@ -4,8 +4,7 @@
   "states": {
     "Jab": "gunsmith.snap",
     "Hook": "gunsmith.cross",
-    "SideKick": "gunsmith.whip",
-    "RoundhouseKick": "gunsmith.double",
+    "RoundhouseKick": "gunsmith.boot",
     "FrontKick": "gunsmith.holster-kick",
     "JumpingFrontKick": "gunsmith.air",
     "DownwardAerialKick": "gunsmith.point-blank",

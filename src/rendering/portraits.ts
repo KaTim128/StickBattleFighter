@@ -292,11 +292,11 @@ export async function renderIdleStrips(
   const out: IdleStrip[] = [];
   for (const [defIndex, def] of defs.entries()) {
     const stance = stanceFor(def);
-    let poseAt: (k: number) => Pose;
+    let poseAt: (k: number, phase: number) => Pose;
     let spanS: number;
     if (stance) {
       // One full breath, in and out (played forward on a loop).
-      poseAt = (k) => stancePose(stance, def.bones, k);
+      poseAt = (k, phase) => stancePose(stance, def.bones, k, phase);
       spanS = 3.4;
     } else {
       const clip = def.animation.clips.Idle[0];
@@ -329,7 +329,7 @@ export async function renderIdleStrips(
       // body breathes in and out over the loop (it ends where it starts), while each frame is its
       // own moment at real speed, so the flames and glows keep burning forward, never in reverse.
       view.clockOverrideS = (i * spanS) / frames;
-      view.draw(poseAt(0.5 - 0.5 * Math.cos((2 * Math.PI * i) / frames)), -1, 0);
+      view.draw(poseAt(0.5 - 0.5 * Math.cos((2 * Math.PI * i) / frames), i / frames), -1, 0);
       view.root.scale.set(px);
       // A floating fighter hangs above the floor and bobs a little with the breath.
       const lift = (stance?.floatM ?? 0) * (1 + 0.14 * Math.sin((2 * Math.PI * i) / frames)) * px;

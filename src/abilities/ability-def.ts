@@ -1111,6 +1111,8 @@ export interface MagicLook {
     readonly shimmer: boolean;
     /** Drawn as a tumbling glass jar of glowing liquid instead of a streaming bolt (Vexoris's Toxic Jar). */
     readonly jar?: boolean;
+    /** Drawn as a small bullet with a short tracer streak, this long in metres (Gunsmith's guns). */
+    readonly bullet?: number;
     /** Drawn as a spinning tornado funnel instead of a streaming bolt (Aerion's Tornado Surge). */
     readonly tornado?: boolean;
     /** Drawn as a spinning chunk of debris (Psion's Mindstorm). */

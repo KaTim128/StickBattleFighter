@@ -19,7 +19,7 @@ import { NavGrid } from '../../ai/nav-grid';
 import { decideProp, PROP_SEEK_M } from '../../ai/prop-plan';
 import { showmanship } from '../../ai/showmanship';
 import { chooseTarget } from '../../ai/target-choice';
-import { abilityPose, assaultPose, barragePose, judgementPose, spinPose, stalkPose, swoopPose } from '../../animation/ability-poses';
+import { abilityPose, assaultPose, barragePose, gunSwapPose, judgementPose, spinPose, stalkPose, swoopPose } from '../../animation/ability-poses';
 import { smoothing } from '../../animation/animator';
 import { strikePose } from '../../animation/clips';
 import { climbPose } from '../../animation/greybox-motion';
@@ -4587,6 +4587,29 @@ export class FightArenaScene implements ArenaScene {
     f.staffSwing += ((f.combo.attack ? 1 : 0) - f.staffSwing) * smoothing(18, frameDtS);
     f.view.magic = f.magicGlow;
     f.view.heldSwing = f.staffSwing;
+    // Gunsmith's machine gun (Machine Gun Rampage): drawn over the wind-up, held while it fires and put away after, the pistols dropped and
+    // retrieved either side of it. `gunMg` runs 0..1 in about 0.6 s each way.
+    if (f.def.effects.held === 'pistols') {
+      const mgOn = f.caster?.cast?.def.id === 'machineGunRampage' || this.abilities?.world.burstOf(f.name) === 'machineGunRampage';
+      const v = f.view;
+      if (mgOn) v.gunMgDir = 1;
+      else if (v.gunMg > 0) v.gunMgDir = -1;
+      v.gunMg = Math.min(1, Math.max(0, v.gunMg + (mgOn ? 1 : -1) * frameDtS * 1.7));
+      if (f.combatant.isKo) v.gunMg = 0;
+      pose = gunSwapPose(pose, v.gunMg, v.gunMgDir);
+      // Firing: the arms and guns turn to point where the shots go (the muzzle on the enemy), up or down the screen as well as ahead.
+      const aim = c.isKo ? null : this.abilities?.world.burstAim(f.name);
+      if (aim) {
+        const sc = iso(aim.x, aim.y);
+        const ang = Math.max(-1.2, Math.min(1.2, Math.atan2(sc.y, Math.abs(sc.x) + 1e-3)));
+        v.gunAim = v.gunAim === null ? ang : v.gunAim + (ang - v.gunAim) * smoothing(18, frameDtS);
+        const root = Math.PI / 2 - v.gunAim - pose.lean;
+        pose =
+          v.gunMg > 0.7
+            ? { ...pose, armFront: { root: root + 0.05, bend: 0.12 }, armBack: { root: root - 0.5, bend: 1.45 } }
+            : { ...pose, armFront: { root, bend: 0.06 }, armBack: { root: root - 0.06, bend: 0.1 } };
+      } else v.gunAim = null;
+    }
     // Rampage Mode (owner, 13/11/2026): he swells 10% bigger over a moment, and back when it ends.
     const growTo = f.buff?.sizeFactor ?? 1;
     if (f.growth !== growTo) {

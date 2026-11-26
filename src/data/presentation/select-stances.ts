@@ -43,6 +43,19 @@ export interface SelectStance {
   readonly shoulderSpread?: number;
   /** How far a breath moves it: lean (deg), pelvis (fraction of leg), hands (fraction of arm, up). */
   readonly breath: { readonly lean: number; readonly pelvis: number; readonly hands: number };
+  /**
+   * Extra life over the loop (owner, 26/11/2026): `weight` shifts the weight between the feet or supporting hands (fraction of leg), `head`
+   * turns the head a little (deg), `shoulder` rolls the shoulders (deg of lean), and `fidget` is an occasional small move of the free hand
+   * (fraction of arm) once per loop.
+   */
+  readonly idle?: {
+    readonly weight?: number;
+    readonly head?: number;
+    readonly shoulder?: number;
+    readonly fidget?: { readonly x: number; readonly y: number };
+    /** Lets the near hand sway with the shift too (it holds the chained sickle): fraction of arm. */
+    readonly sway?: { readonly x: number; readonly y: number };
+  };
 }
 
 export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
@@ -201,16 +214,18 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   gunsmith: {
     title: 'The Two-Gun Sharpshooter',
     style: 'Dual-pistol gunslinger: volleys, explosive and ricochet rounds, a rolling dodge and a machine gun',
-    pelvis: 0.86,
-    leadFoot: 0.34,
-    rearFoot: -0.3,
-    lean: -4,
-    head: 2,
-    front: { x: 0.98, y: -0.02 },
-    back: { x: 0.32, y: 0.5 },
+    pelvis: 0.95,
+    leadFoot: 0.2,
+    rearFoot: -0.18,
+    lean: 0,
+    head: 1,
+    // Relaxed and confident (owner, 26/11/2026): both arms hang down beside the body with a little bend at the elbow, the shoulders loose.
+    front: { x: 0.14, y: 0.86 },
+    back: { x: -0.1, y: 0.88 },
     turn: 0.55,
     scale: 1,
-    breath: { lean: 1, pelvis: 0.012, hands: 0.012 },
+    breath: { lean: 0.8, pelvis: 0.01, hands: 0.012 },
+    idle: { weight: 0.03, head: 2.5, shoulder: 0.8, fidget: { x: 0.08, y: -0.07 } },
   },
   // Sickle Wielder: down on all fours, belly low, the sickle hand reaching forward over the ground, the head raised.
   'sickle-wielder': {

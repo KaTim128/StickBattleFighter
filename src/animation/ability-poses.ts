@@ -1242,8 +1242,9 @@ const SHAPES: Record<string, CastShape> = {
     settle: 0.5,
   },
   machineGunRampage: {
-    windup: { lean: deg(8), head: deg(-6), armFront: limb(30, 90), armBack: limb(40, 100), legFront: limb(34, -40), legBack: limb(-32, -36) },
-    release: { lean: deg(8), head: deg(-4), armFront: limb(84, 50), armBack: limb(70, 70), legFront: limb(36, -44), legBack: limb(-34, -38) },
+    // Shouldered two-handed: the rear hand at the pistol grip by the chest, the front hand reaching out to the foregrip.
+    windup: { lean: deg(6), head: deg(-4), armFront: limb(78, 20), armBack: limb(52, 92), legFront: limb(34, -40), legBack: limb(-32, -36) },
+    release: { lean: deg(6), head: deg(-4), armFront: limb(86, 16), armBack: limb(54, 90), legFront: limb(36, -44), legBack: limb(-34, -38) },
     tremble: deg(1.2),
     settle: 0.5,
   },
@@ -1842,4 +1843,25 @@ export function stalkPose(base: Pose, amount: number): Pose {
 export function hasAbilityPose(abilityId: string): boolean {
   if (INK_DRAWING[abilityId] || abilityId === 'inkSlash') return true;
   return abilityId in SHAPES;
+}
+
+
+/** 0 to 1 and back to 0 over [a, b]. */
+const bump = (t: number, a: number, b: number): number => (t <= a || t >= b ? 0 : Math.sin(((t - a) / (b - a)) * Math.PI) ** 1.2);
+
+/**
+ * Gunsmith swapping weapons (owner, 26/11/2026). `t` 0..1 is how far the machine gun is out and `dir` 1 while drawing it, -1 while putting it
+ * away. Drawing: the pistols drop, both hands reach behind the back for the machine gun, then bring it round. Putting it away: it goes back over
+ * the shoulder, then both hands drop to the holsters and come up with the pistols.
+ */
+export function gunSwapPose(base: Pose, t: number, dir: 1 | -1): Pose {
+  if (t <= 0 || t >= 1) return base;
+  const back = dir > 0 ? bump(t, 0.12, 0.62) : bump(t, 0.32, 0.8);
+  const hips = dir > 0 ? 0 : bump(t, 0, 0.36);
+  let p = base;
+  if (back > 0) {
+    p = blendPose(p, { ...p, lean: p.lean - deg(6), armFront: limb(-42, 40), armBack: limb(-58, 52) }, back);
+  }
+  if (hips > 0) p = blendPose(p, { ...p, armFront: limb(18, 30), armBack: limb(10, 34) }, hips);
+  return p;
 }

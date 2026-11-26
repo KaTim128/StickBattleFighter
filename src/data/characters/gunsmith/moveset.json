@@ -10,27 +10,27 @@
   "moves": [
     {
       "id": "pistol-snap",
-      "displayName": "Pistol snap",
+      "displayName": "Left jab",
       "animationState": "Jab",
       "category": "punch",
       "heavy": false,
       "aerial": false,
-      "startupS": 0.05,
-      "activeS": 0.05,
-      "recoveryS": 0.12,
+      "startupS": 0.08,
+      "activeS": 0.06,
+      "recoveryS": 0.16,
       "cancelAt": 0.55,
       "hitbox": {
-        "reachM": 3.0,
-        "radiusM": 0.3
+        "reachM": 1.15,
+        "radiusM": 0.38
       },
-      "damage": 9,
+      "damage": 11,
       "strength": 200,
       "knockbackMps": 0.8,
-      "lungeMps": 0.2,
+      "lungeMps": 0.7,
       "moveFactor": 0.4,
       "impact": "knuckle-light",
-      "shake": 0.15,
-      "zoomPunch": 0.013,
+      "shake": 0.12,
+      "zoomPunch": 0.01,
       "requires": [
         "canPunch"
       ],
@@ -41,60 +41,29 @@
     },
     {
       "id": "cross-fire",
-      "displayName": "Cross fire",
+      "displayName": "Right cross",
       "animationState": "Hook",
       "category": "punch",
       "heavy": false,
       "aerial": false,
-      "startupS": 0.06,
-      "activeS": 0.05,
-      "recoveryS": 0.12,
-      "cancelAt": 0.55,
-      "hitbox": {
-        "reachM": 3.0,
-        "radiusM": 0.3
-      },
-      "damage": 9,
-      "strength": 200,
-      "knockbackMps": 0.8,
-      "lungeMps": 0.2,
-      "moveFactor": 0.4,
-      "impact": "knuckle-light",
-      "shake": 0.15,
-      "zoomPunch": 0.013,
-      "requires": [
-        "canPunch",
-        "canUseCombos"
-      ],
-      "next": {
-        "tap": "pistol-whip"
-      },
-      "effect": "gun-hit"
-    },
-    {
-      "id": "pistol-whip",
-      "displayName": "Pistol whip",
-      "animationState": "SideKick",
-      "category": "punch",
-      "heavy": false,
-      "aerial": false,
-      "startupS": 0.11,
-      "activeS": 0.09,
-      "recoveryS": 0.24,
+      "startupS": 0.1,
+      "activeS": 0.06,
+      "recoveryS": 0.18,
       "cancelAt": 0.55,
       "hitbox": {
         "reachM": 1.2,
-        "radiusM": 0.5
+        "radiusM": 0.42
       },
-      "damage": 13,
-      "strength": 340,
-      "knockbackMps": 2.0,
-      "lungeMps": 1.0,
+      "damage": 15,
+      "strength": 260,
+      "knockbackMps": 1.6,
+      "lungeMps": 0.9,
       "moveFactor": 0.4,
       "impact": "knuckle-light",
-      "shake": 0.15,
-      "zoomPunch": 0.013,
+      "shake": 0.2,
+      "zoomPunch": 0.016,
       "requires": [
+        "canPunch",
         "canUseCombos"
       ],
       "next": {
@@ -104,29 +73,29 @@
     },
     {
       "id": "double-tap",
-      "displayName": "Double tap",
+      "displayName": "Boot finisher",
       "animationState": "RoundhouseKick",
-      "category": "punch",
-      "heavy": true,
+      "category": "kick",
+      "heavy": false,
       "aerial": false,
-      "startupS": 0.17,
+      "startupS": 0.2,
       "activeS": 0.1,
-      "recoveryS": 0.38,
+      "recoveryS": 0.42,
       "cancelAt": 0.55,
       "hitbox": {
-        "reachM": 3.0,
-        "radiusM": 0.4
+        "reachM": 1.5,
+        "radiusM": 0.5
       },
-      "damage": 26,
-      "strength": 340,
-      "knockbackMps": 4,
-      "lungeMps": 1.0,
+      "damage": 30,
+      "strength": 420,
+      "knockbackMps": 5.5,
+      "lungeMps": 1.4,
       "moveFactor": 0.4,
       "impact": "knuckle-light",
-      "shake": 0.15,
-      "zoomPunch": 0.013,
+      "shake": 0.4,
+      "zoomPunch": 0.03,
       "requires": [
-        "canPunch",
+        "canKick",
         "canUseCombos"
       ],
       "effect": "gun-wave"

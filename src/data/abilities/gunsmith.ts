@@ -40,7 +40,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     delivery: { type: 'projectile', speedMps: 34, radiusM: 0.18, maxRangeM: 11, burst: { count: 8, gapS: 0.07, jitterRad: 0.05 } },
     vfx: 'dual-barrage',
     sfx: { cast: 'gun-draw', release: 'gun-shot', impact: 'bullet-hit' },
-    look: { palette: BRASS, flight: { trailPerS: 60, sparksPerS: 10, shimmer: false }, impact: muzzle(0.5, 0.1), hitFlash: 0xffe9b0 },
+    look: { palette: BRASS, flight: { trailPerS: 60, sparksPerS: 10, bullet: 0.3, shimmer: false }, impact: muzzle(0.5, 0.1), hitFlash: 0xffe9b0 },
   },
   a2: {
     id: 'explosiveRounds',
@@ -63,7 +63,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     sfx: { cast: 'gun-load-heavy', release: 'gun-boom', impact: 'bullet-explode' },
     look: {
       palette: BRASS,
-      flight: { trailPerS: 80, sparksPerS: 18, shimmer: false },
+      flight: { trailPerS: 80, sparksPerS: 18, bullet: 0.3, shimmer: false },
       impact: { flashM: 1.4, sparks: 34, motes: 22, ringM: 2.2, smoke: 12, groundFire: true, smokeColour: 0x3a342e, shake: 0.6 },
       hitFlash: 0xffd090,
     },
@@ -87,7 +87,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     delivery: { type: 'projectile', speedMps: 30, radiusM: 0.2, maxRangeM: 24, bounces: 3 },
     vfx: 'ricochet-shot',
     sfx: { cast: 'gun-draw', release: 'gun-ricochet', impact: 'bullet-ping' },
-    look: { palette: BRASS, flight: { trailPerS: 120, sparksPerS: 24, shimmer: true }, impact: muzzle(0.6, 0.15), hitFlash: 0xffe9b0 },
+    look: { palette: BRASS, flight: { trailPerS: 120, sparksPerS: 24, bullet: 0.3, shimmer: true }, impact: muzzle(0.6, 0.15), hitFlash: 0xffe9b0 },
   },
   a4: {
     id: 'tacticalRoll',
@@ -115,7 +115,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     },
     vfx: 'tactical-roll',
     sfx: { cast: 'roll-whoosh', release: 'gun-shot-light', impact: 'bullet-hit-light' },
-    look: { palette: BRASS, flight: { trailPerS: 50, sparksPerS: 8, shimmer: false }, impact: muzzle(0.4, 0.05), hitFlash: 0xffe9b0 },
+    look: { palette: BRASS, flight: { trailPerS: 50, sparksPerS: 8, bullet: 0.28, shimmer: false }, impact: muzzle(0.4, 0.05), hitFlash: 0xffe9b0 },
   },
   a5: {
     id: 'quickdrawExecution',
@@ -142,7 +142,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     },
     vfx: 'quickdraw-execution',
     sfx: { cast: 'gun-quickdraw', release: 'gun-shot-fast', impact: 'bullet-execute' },
-    look: { palette: BRASS, flight: { trailPerS: 100, sparksPerS: 20, shimmer: true }, impact: muzzle(1, 0.4), hitFlash: 0xfff0c0 },
+    look: { palette: BRASS, flight: { trailPerS: 100, sparksPerS: 20, bullet: 0.28, shimmer: true }, impact: muzzle(1, 0.4), hitFlash: 0xfff0c0 },
   },
   ult: {
     id: 'machineGunRampage',
@@ -172,7 +172,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     look: {
       palette: BRASS,
       charge: { gatherRadiusM: 1.0, motesPerS: 50, coreMaxM: 0.15 },
-      flight: { trailPerS: 80, sparksPerS: 14, shimmer: false },
+      flight: { trailPerS: 80, sparksPerS: 14, bullet: 0.2, shimmer: false },
       impact: muzzle(0.6, 0.12),
       hitFlash: 0xffe9b0,
     },

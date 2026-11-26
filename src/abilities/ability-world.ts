@@ -2420,6 +2420,16 @@ export class AbilityWorld {
     return true;
   }
 
+  /** Where a caster's burst is aimed (its last shot), if one is under way. */
+  burstAim(casterId: string): Vec2 | null {
+    return this.bursts.find((b) => b.casterId === casterId)?.dir ?? null;
+  }
+
+  /** The id of the burst a caster is firing, if any (Gunsmith's machine gun shows its weapon while it lasts). */
+  burstOf(casterId: string): string | null {
+    return this.bursts.find((b) => b.casterId === casterId)?.def.id ?? null;
+  }
+
   /** Gunsmith's volleys: one shot every `gapS`, from alternating hands, each at the nearest enemy (or along the steered aim). */
   private updateBursts(host: AbilityHost): void {
     for (let i = this.bursts.length - 1; i >= 0; i--) {
@@ -2437,9 +2447,10 @@ export class AbilityWorld {
         else if (foe) dir = norm({ x: foe.x - at.x, y: foe.y - at.y });
         const jit = ((this.rng() - 0.5) * (d.burst.jitterRad ?? 0));
         const shot = { x: dir.x * Math.cos(jit) - dir.y * Math.sin(jit), y: dir.x * Math.sin(jit) + dir.y * Math.cos(jit) };
-        const side = b.fired % 2 === 0 ? 1 : -1; // left hand, right hand
+        const side = d.burst.aimable ? 0 : b.fired % 2 === 0 ? 1 : -1; // left hand, right hand (a machine gun has one muzzle)
         const last = b.fired === d.burst.count - 1 && d.burst.finalFactor !== undefined;
         host.face?.(b.casterId, shot);
+        b.dir = shot; // where the guns point now (the view aims the weapons along it)
         this.projectiles.push({
           casterId: b.casterId,
           def: b.def,
@@ -2451,7 +2462,8 @@ export class AbilityWorld {
           ...(d.bounces ? { bouncesLeft: d.bounces } : {}),
           ...(last ? { damageFactor: d.burst.finalFactor } : {}),
         });
-        host.emit({ kind: 'release', ability: b.def.id, look: b.def.look, vfx: b.def.vfx, sfx: b.def.sfx.release, x: at.x, y: at.y, dirX: shot.x, dirY: shot.y });
+        // The flash at the muzzle, where the bullet leaves, not at the chest.
+        host.emit({ kind: 'release', ability: b.def.id, look: b.def.look, vfx: b.def.vfx, sfx: b.def.sfx.release, x: at.x + shot.x * MUZZLE_M, y: at.y + shot.y * MUZZLE_M, dirX: shot.x, dirY: shot.y });
         b.fired++;
         b.nextS += d.burst.gapS;
       }

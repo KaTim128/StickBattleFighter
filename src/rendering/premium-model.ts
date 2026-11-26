@@ -124,10 +124,6 @@ export interface PremiumSkin {
   readonly magic?: 'magician' | 'rabbit';
   /** A second, lower pair of arms (the rig's `lowerArms` gives them their shoulders). */
   readonly fourArms?: boolean;
-  /** Glowing slanted eyes with angry brows on the bare head (Kamaw). */
-  readonly eyes?: { readonly glow: number };
-  /** A black hat with a satin band (Gunsmith). */
-  readonly hat?: { readonly band: number };
   /** Round glasses on the face (Gunsmith). */
   readonly glasses?: { readonly frame: number; readonly lens: number };
   /** Leather holsters with pistol grips on both hips (Gunsmith). */
@@ -481,16 +477,17 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
   gunslinger: {
     palette: {
       outline: 0x120a04,
-      skin: 0xe8c9a0,
-      skinLit: 0xffe4c0,
-      skinShade: 0xb08a5c,
-      skinBack: 0xc9a77a,
-      rim: 0xfff0d0,
+      // The tuxedo covers every limb: the body colours are the black cloth; only the hands and head stay skin.
+      skin: 0x15151b,
+      skinLit: 0x34343f,
+      skinShade: 0x08080b,
+      skinBack: 0x0e0e12,
+      rim: 0xf0f0f8,
       armour: 0x14141a,
       armourLit: 0x2e2e3a,
       armourEdge: 0x07070a,
-      seam: 0xe0a030,
-      lava: 0xffd070,
+      seam: null,
+      lava: null,
       glow: 0xffb347,
       hand: 0xe8c9a0,
     },
@@ -510,7 +507,6 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     // A black tuxedo jacket over a white shirt, satin lapels and a hat.
     garment: { hem: 'coat', trim: 0xe8e8f0, cloth: [0x14141a, 0x2e2e3a, 0x07070a] },
     chestPanel: 0xf6f3ee,
-    hat: { band: 0x8a1a28 },
     glasses: { frame: 0x050507, lens: 0x07080c },
     holsters: { leather: 0x4a2c14, metal: 0x8a8f9a },
   },
@@ -545,7 +541,6 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     fire: { core: false, veins: true, fists: false },
     head: 'own',
     garment: { hem: 'tattered', trim: 0x8fd04a, cloth: [0x2a3a18, 0x44582a, 0x131c0a] },
-    eyes: { glow: 0x7dff4a },
   },
   // Reson (master plan section 4): a dark charcoal stickman with glowing cyan soundwave patterns, a resonance device on each
   // forearm and geometric amplification plates on the shoulders. Not Geargrind: no backpack, no machine arm, no orange.
@@ -1077,8 +1072,6 @@ export class PremiumModel {
       if (this.skin.psyEye !== undefined) this.psyEye(g, fire, s);
       if (this.skin.crown) this.crown(g, fire, s);
       if (this.skin.ink === 'master') drawInkmasterHead(g, s, this.inkState());
-      if (this.skin.eyes) this.glowEyes(g, s);
-      if (this.skin.hat) this.hat(g, s);
       if (this.skin.magic === 'magician') drawMagixHead(g, s, this.inkState());
       if (this.skin.magic === 'rabbit') drawRabbitHead(g, s, this.inkState());
       if (this.skin.ink === 'clone') drawCloneHead(g, fire, s, this.inkState());
@@ -1746,40 +1739,27 @@ export class PremiumModel {
     const h = this.skin.holsters;
     if (!h) return;
     const { w } = this.st;
+    const ink = this.c(this.P.outline);
+    // A neat, small holster on each hip (owner, 26/11/2026): a tapered leather pouch tipped slightly back, a belt loop, a stitched seam,
+    // and a small pistol grip with its hammer showing at the top.
     for (const k of [-1, 1]) {
-      const x = s.pelvis.x + k * w * 0.9 * 0.5;
-      const y = s.pelvis.y + 0.08;
-      g.roundRect(x - 0.07, y, 0.14, 0.3, 0.04).fill(this.c(h.leather)).stroke({ width: w * 0.1, color: this.c(this.P.outline) });
-      g.roundRect(x - 0.035, y - 0.09, 0.07, 0.13, 0.02).fill(this.c(h.metal)).stroke({ width: w * 0.08, color: this.c(this.P.outline) });
+      const x = s.pelvis.x + k * w * 0.9 * 0.45;
+      const y = s.pelvis.y + 0.04;
+      const tilt = -0.18;
+      const P = (dx: number, dy: number) => [x + dx * Math.cos(tilt) - dy * Math.sin(tilt), y + dx * Math.sin(tilt) + dy * Math.cos(tilt)];
+      g.poly([...P(-0.045, 0), ...P(0.045, 0), ...P(0.032, 0.16), ...P(0.0, 0.18), ...P(-0.032, 0.16)])
+        .fill(this.c(h.leather))
+        .stroke({ width: w * 0.06, color: ink, join: 'round' });
+      g.moveTo(...(P(-0.026, 0.02) as [number, number]))
+        .lineTo(...(P(-0.018, 0.15) as [number, number]))
+        .stroke({ width: 0.006, color: 0xc89a5a, alpha: 0.8 });
+      g.poly([...P(-0.05, -0.02), ...P(0.05, -0.02), ...P(0.05, 0.012), ...P(-0.05, 0.012)]).fill(0x2a1a0c).stroke({ width: w * 0.04, color: ink });
+      // The pistol inside: just the walnut grip and the steel hammer above the pouch's lip.
+      g.poly([...P(-0.03, -0.075), ...P(0.008, -0.08), ...P(0.018, -0.015), ...P(-0.02, -0.012)])
+        .fill(0x6b3f1c)
+        .stroke({ width: w * 0.04, color: ink, join: 'round' });
+      g.poly([...P(0.008, -0.08), ...P(0.03, -0.07), ...P(0.03, -0.02), ...P(0.018, -0.015)]).fill(this.c(h.metal)).stroke({ width: w * 0.035, color: ink });
     }
-  }
-
-  /** Kamaw's eyes: two slanted, glowing green slits under heavy angry brows, with a soft halo. */
-  private glowEyes(g: Graphics, s: Skel): void {
-    const ey = this.skin.eyes;
-    if (!ey) return;
-    const r = this.st.headRadius;
-    const h = s.head;
-    for (const x of [0.62, 0.14]) {
-      const c = { x: h.x + r * x, y: h.y + r * 0.02 };
-      g.circle(c.x, c.y, r * 0.3).fill({ color: this.c(ey.glow), alpha: 0.22 });
-      g.poly([c.x - r * 0.2, c.y - r * 0.02, c.x + r * 0.2, c.y - r * 0.14, c.x + r * 0.16, c.y + r * 0.12, c.x - r * 0.14, c.y + r * 0.14]).fill(this.c(ey.glow));
-      g.moveTo(c.x - r * 0.26, c.y - r * 0.02).lineTo(c.x + r * 0.26, c.y - r * 0.24).stroke({ width: r * 0.1, color: this.c(this.skin.palette.outline), cap: 'round' });
-    }
-  }
-
-  /** Gunsmith's hat: a black homburg, a dented crown and a rolled brim, with a satin band. */
-  private hat(g: Graphics, s: Skel): void {
-    const ht = this.skin.hat;
-    if (!ht) return;
-    const r = this.st.headRadius;
-    const h = s.head;
-    const brimY = h.y - r * 0.62;
-    const ink = this.c(this.skin.palette.outline);
-    g.ellipse(h.x + r * 0.1, brimY, r * 1.35, r * 0.26).fill(0x0c0c10).stroke({ width: 0.012, color: ink });
-    g.poly([h.x - r * 0.82, brimY, h.x - r * 0.72, brimY - r * 0.95, h.x - r * 0.2, brimY - r * 1.08, h.x + r * 0.2, brimY - r * 0.98, h.x + r * 0.78, brimY - r * 1.0, h.x + r * 0.9, brimY]).fill(0x14141a).stroke({ width: 0.012, color: ink, join: 'round' });
-    g.poly([h.x - r * 0.83, brimY - r * 0.04, h.x + r * 0.91, brimY - r * 0.04, h.x + r * 0.89, brimY - r * 0.36, h.x - r * 0.8, brimY - r * 0.36]).fill(this.c(ht.band));
-    g.moveTo(h.x - r * 0.5, brimY - r * 0.55).lineTo(h.x - r * 0.45, brimY - r * 0.92).stroke({ width: 0.01, color: 0x4a4a58, alpha: 0.9, cap: 'round' });
   }
 
   /** Gunsmith's glasses: two rectangular lenses, spaced apart, with a bridge and an arm back to the ear, clearly visible on the face. */

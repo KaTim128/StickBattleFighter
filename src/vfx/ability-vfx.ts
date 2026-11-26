@@ -462,6 +462,7 @@ export class AbilityVfx {
     }
     for (const p of input.projectiles) {
       const look = p.def.look;
+      if (look?.flight?.bullet) continue; // a bullet draws its own thin tracer: no glowing particle trail
       if (look?.flight) this.flightTrail(p, look, dtS);
       else this.emitAt(p.x, p.y, BOLT_HEIGHT_M, 2, 0.6, 0.3, 0.09);
     }
@@ -2578,6 +2579,23 @@ export class AbilityVfx {
     }
     // A tornado shot is drawn as its funnel (see `funnels`), not as a bolt.
     if (look.flight?.tornado) return;
+    if (look.flight?.bullet) {
+      // A bullet: a short, bright tracer pointing the way it flies, with a thin fading streak behind it (small, so a rampage reads as a hail of
+      // bullets rather than glowing orbs).
+      const L = look.flight.bullet;
+      const ang = Math.atan2(p.dir.y * ISO_T, p.dir.x);
+      const ux = Math.cos(ang);
+      const uy = Math.sin(ang);
+      p.trail.forEach((q, i) => {
+        const k = (i + 1) / (p.trail.length + 1);
+        const tc = P(q.x, q.y, BOLT_HEIGHT_M);
+        g.circle(tc.x, tc.y, 0.012 * k).fill({ color: pal.bright, alpha: 0.5 * k });
+      });
+      g.moveTo(c.x - ux * L, c.y - uy * L).lineTo(c.x, c.y).stroke({ width: 0.03, color: pal.hot, alpha: 0.55, cap: 'round' });
+      g.moveTo(c.x - ux * L * 0.55, c.y - uy * L * 0.55).lineTo(c.x, c.y).stroke({ width: 0.016, color: pal.core, alpha: 1, cap: 'round' });
+      g.circle(c.x, c.y, 0.02).fill({ color: 0xffffff, alpha: 1 });
+      return;
+    }
     if (look.flight?.wand) {
       // Wand of Misfortune: a glittering violet bolt with a sparkling, twisting trail of little stars and a gold core.
       p.trail.forEach((q, i) => {
