@@ -164,6 +164,13 @@ export class AbilityCaster {
     return null;
   }
 
+  /** Begin a cast outside the slots (a finisher): no cooldown, meter or stamina is touched. False while another cast is on. */
+  startExtra(def: AbilityDef): boolean {
+    if (this.active) return false;
+    this.active = { def, phase: 'windup', t: 0 };
+    return true;
+  }
+
   /** Begin a cast the caller has already checked (and paid stamina for). */
   start(slot: AbilitySlot): AbilityDef {
     const def = this.kit[slot];

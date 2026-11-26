@@ -1691,7 +1691,8 @@ export class PremiumModel {
     const ch = this.skin.chains;
     if (!ch) return;
     const size = this.st.w * 0.15;
-    for (const arm of [s.armFront, s.armBack, s.armFront2, s.armBack2]) {
+    // Not the far upper arm: it is drawn behind the head, and its chain, drawn on top, floated in front of the face.
+    for (const arm of [s.armFront, s.armFront2, s.armBack2]) {
       if (!arm) continue;
       const [, el, hand] = arm;
       const a = { x: el.x + (hand.x - el.x) * 0.2, y: el.y + (hand.y - el.y) * 0.2 };

@@ -1191,7 +1191,18 @@ export class FightArenaScene implements ArenaScene {
     const slot = f.landHoldS > 0 ? null : pressedSlot; // a firm landing squat finishes first
     if (slot && f.caster?.def(slot).delivery.type === 'leap') this.ultimatePress(f, slot);
     else if (slot && this.needsPointAim(f, slot)) this.beginPointAim(f, slot);
-    else if (slot && this.abilities) this.lastAbilityBlock = this.abilities.tryCast(f, slot);
+    else if (slot && this.abilities) {
+      // Static Break bursts along the way he is moving (or straight back when he stands still).
+      const d = f.caster?.def(slot).delivery;
+      const m = this.intents.move;
+      const evadeAim =
+        d?.type === 'parry' && d.evade
+          ? Math.hypot(m.x, m.y) > 0.2
+            ? { x: f.x + m.x, y: f.y + m.y }
+            : { x: f.x - f.aim.x, y: f.y - f.aim.y }
+          : undefined;
+      this.lastAbilityBlock = this.abilities.tryCast(f, slot, evadeAim);
+    }
     if (this.pointAim || this.ultAimPoint) {
       // Targeting starts: Inferno crouches to spring, Necro gathers his smoke.
       f.sprinting = false;
@@ -2967,7 +2978,8 @@ export class FightArenaScene implements ArenaScene {
     // Summoned skeletons only hurt: no flinch, push, interruption or freeze (master plan B5).
     const staggers = attacker.def.capabilities.staggersTargets !== false;
     // Perfect Parry (Kenshiro): an attack from the front that connects while the stance is up is deflected and answered.
-    const parry = fromFront ? this.abilities?.world.parryOf(target.name) : undefined;
+    const parryNow = this.abilities?.world.parryOf(target.name);
+    const parry = fromFront || (parryNow?.def.delivery.type === 'parry' && parryNow.def.delivery.evade) ? parryNow : undefined;
     if (parry) {
       this.perfectParry(target, attacker, parry);
       return true;
@@ -3467,6 +3479,16 @@ export class FightArenaScene implements ArenaScene {
     const passive = target.caster?.kit.passive;
     if (passive?.id === 'mastery') target.combatant.gainMastery(3, passive.maxStacks);
     const p = parry.def.payload;
+    // Static Break: he is not where the blow landed; he reappears behind the attacker, in a flash of lightning, for the counter.
+    if (d.type === 'parry' && d.evade && this.abilities) {
+      const spot = {
+        x: attacker.x - attacker.aim.x * (attacker.def.body.footRadiusM + 0.75),
+        y: attacker.y - attacker.aim.y * (attacker.def.body.footRadiusM + 0.75),
+      };
+      this.abilities.emit({ kind: 'release', ability: parry.def.id, look: parry.def.look, vfx: parry.def.vfx, sfx: parry.def.sfx.release, x: target.x, y: target.y });
+      const landed = this.abilities.teleport(target.name, spot);
+      if (landed) target.faceToward(attacker.x - landed.x, attacker.y - landed.y);
+    }
     const away = { x: attacker.x - target.x, y: attacker.y - target.y };
     const len = Math.hypot(away.x, away.y) || 1;
     // The counter: the parrier's own payload, answered in the same instant (the attacker is stunned and cannot parry it).

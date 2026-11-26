@@ -413,6 +413,10 @@ export class SceneAbilities implements AbilityHost {
     f.throwFollowS = 0.28;
   }
 
+  flashChain(casterId: string): number {
+    return this.byName(casterId)?.buff?.flashChain ?? 0;
+  }
+
   empowersLeap(casterId: string): boolean {
     return this.byName(casterId)?.buff?.empowersLeap === true;
   }

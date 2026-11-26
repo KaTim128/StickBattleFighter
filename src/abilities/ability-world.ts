@@ -11,6 +11,7 @@ import {
   payloadAt,
   type SpinDelivery,
   type StrikeDelivery,
+  type TeleportDelivery,
   type SummonSpec,
   type TossDelivery,
 } from './ability-def';
@@ -141,6 +142,8 @@ export interface AbilityHost {
   swingHeld?(casterId: string, at: Vec2 | null, heightM: number): void;
   /** Throw the held object level and fast along `dir`, not overhead. Optional. */
   throwHeldFlat?(casterId: string, dir: Vec2, spec: { speedMps: number; powerFactor: number; heightM: number }): void;
+  /** How many extra Flashstep dashes the caster's buff allows (Voltar's Overdrive); 0 when none. Optional. */
+  flashChain?(casterId: string): number;
   /** Does the caster's buff empower its leaps right now (Bohemeth's ultimate)? Optional. */
   empowersLeap?(casterId: string): boolean;
   /** Heal a fighter by `amount` (never above its maximum); returns false if it is down and nothing was done. Optional. */
@@ -593,6 +596,8 @@ const norm = (v: Vec2): Vec2 => {
 const GRAB_HOLD_GAP_M = 0.12;
 /** Spin Cycle: the swing takes this much longer than its full-speed turns, as it builds up speed. */
 const SPIN_RAMP = 1.3;
+/** Seconds between a Flashstep and the extra one an Overdrive allows. */
+const FLASH_CHAIN_GAP_S = 0.25;
 /** How the swing's angle builds with its progress (slow to start, fastest at the release). */
 const SPIN_EASE = 1.6;
 /** Fastest a swung body is driven to keep its place in the circle, m/s. */
@@ -651,6 +656,8 @@ export class AbilityWorld {
 
   /** Repeating strikes still to swing (Ink Slash's 2nd and 3rd slash). */
   readonly strikes: { casterId: string; def: AbilityDef; d: StrikeDelivery; nextS: number; done: number; total: number; dir: Vec2 }[] = [];
+  /** Extra Flashsteps still to come while an Overdrive lasts. */
+  readonly flashChains: { casterId: string; def: AbilityDef; left: number; nextS: number }[] = [];
   readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -1136,6 +1143,32 @@ export class AbilityWorld {
           if (this.parries[i]!.casterId === casterId) this.parries.splice(i, 1);
         const total = d.windowS * (host.parryWindowFactor?.(casterId) ?? 1);
         this.parries.push({ casterId, def, leftS: total, totalS: total });
+        if (d.evade) {
+          // Static Break: a burst of lightning along the movement direction, afterimages in its wake.
+          this.actions.push({
+            kind: 'dash',
+            casterId,
+            def: {
+              ...def,
+              delivery: {
+                type: 'dash',
+                distanceM: d.evade.distanceM,
+                speedMps: d.evade.speedMps,
+                hitRadiusM: 0,
+                afterimages: { spacingM: 0.55, lifeS: 0.3 },
+              },
+            },
+            dir,
+            remainingS: d.evade.distanceM / d.evade.speedMps,
+            ageS: 0,
+            hit: new Set(),
+            sinceTrailM: TRAIL_SPACING_M,
+            sinceImageM: 0,
+            lastX: at.x,
+            lastY: at.y,
+            stuckS: 0,
+          });
+        }
         break;
       }
       case 'judgement': {
@@ -1260,6 +1293,15 @@ export class AbilityWorld {
           const away = foe ? norm({ x: at.x - foe.x, y: at.y - foe.y }) : { x: -dir.x, y: -dir.y };
           to = this.retreatSpot(at, away, d.retreatM, foe, host);
           if (foe) face = norm({ x: foe.x - to.x, y: foe.y - to.y });
+        } else if (d.behindTargetM !== undefined && d.flash) {
+          // Flashstep (Voltar): streak through the nearest enemy, an afterimage left behind, and punch from behind.
+          if (!this.flashStep(casterId, def, d, host)) {
+            host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: at.x, y: at.y });
+            break;
+          }
+          const extra = Math.min(d.flash.chainMax, host.flashChain?.(casterId) ?? 0);
+          if (extra > 0) this.flashChains.push({ casterId, def, left: extra, nextS: this.nowS + FLASH_CHAIN_GAP_S });
+          break;
         } else if (d.behindTargetM !== undefined) {
           // Behind the nearest enemy in range, on its far side (Shroud's "Behind You").
           const best = this.nearestEnemy(casterId, at, d.maxRangeM, host);
@@ -1540,6 +1582,7 @@ export class AbilityWorld {
     this.cancelStalk(casterId, host);
     this.magix.cancel(casterId);
     for (let i = this.strikes.length - 1; i >= 0; i--) if (this.strikes[i]!.casterId === casterId) this.strikes.splice(i, 1);
+    for (let i = this.flashChains.length - 1; i >= 0; i--) if (this.flashChains[i]!.casterId === casterId) this.flashChains.splice(i, 1);
     for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
@@ -1655,6 +1698,7 @@ export class AbilityWorld {
     this.updatePrisons(dtS, host);
     this.ink.update(dtS, host);
     this.updateStrikes(host);
+    this.updateFlashChains(host);
     this.magix.update(dtS, host);
     for (let i = this.slideTrail.length - 1; i >= 0; i--) {
       const m = this.slideTrail[i]!;
@@ -1706,6 +1750,7 @@ export class AbilityWorld {
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
         if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
+        if (d.passThrough) this.streakThrough(p.casterId, p.def, f, p.dir, d.passThrough.exitM, host);
         if (d.lift) this.startLift(p, f, host);
         done = true;
         break;
@@ -2276,6 +2321,60 @@ export class AbilityWorld {
     return true;
   }
 
+  /** Flashstep: through the nearest enemy (never through a wall), an afterimage at the start, a punch from behind. False if nobody is in range. */
+  private flashStep(casterId: string, def: AbilityDef, d: TeleportDelivery, host: AbilityHost): boolean {
+    const at = host.position(casterId);
+    const foe = this.nearestEnemy(casterId, at, d.maxRangeM, host);
+    if (!foe) return false;
+    const along = norm({ x: foe.x - at.x, y: foe.y - at.y });
+    const gap = foe.radiusM + (d.behindTargetM ?? 0.75);
+    let to = { x: foe.x + along.x * gap, y: foe.y + along.y * gap };
+    let lost = false;
+    const wall = host.blocked(at, to);
+    if (wall !== null) {
+      const reach = Math.max(0, Math.hypot(to.x - at.x, to.y - at.y) * wall - 0.3);
+      to = { x: at.x + along.x * reach, y: at.y + along.y * reach };
+      lost = true; // stopped short of the wall: no punch
+    }
+    if (d.flash) this.decoys.push({ casterId, def, x: at.x, y: at.y, dir: along, ageS: 0, lifeS: d.flash.lifeS });
+    host.emit({ kind: 'release', ability: def.id, look: def.look, vfx: def.vfx, sfx: def.sfx.release, x: at.x, y: at.y, dirX: along.x, dirY: along.y });
+    const landed = host.teleport?.(casterId, to) ?? null;
+    if (!landed) return false;
+    host.face?.(casterId, along);
+    host.emit({ kind: 'impact', ability: def.id, look: def.look, vfx: def.vfx, sfx: def.sfx.impact, x: landed.x, y: landed.y, radiusM: 0.9 });
+    if (lost || !foe.hittable) return true;
+    if (this.hit(host, casterId, foe.id, def.payload, along, def.look?.hitFlash))
+      host.emit({ kind: 'impact', ability: def.id, look: def.look, vfx: def.vfx, sfx: def.sfx.impact, x: foe.x, y: foe.y, radiusM: 1 });
+    return true;
+  }
+
+  /** The extra Flashsteps an Overdrive allows, each at the nearest enemy, 0.25 s apart. */
+  private updateFlashChains(host: AbilityHost): void {
+    for (let i = this.flashChains.length - 1; i >= 0; i--) {
+      const c = this.flashChains[i]!;
+      if (this.nowS < c.nextS) continue;
+      const d = c.def.delivery;
+      if (d.type !== 'teleport' || !this.flashStep(c.casterId, c.def, d, host) || --c.left <= 0) this.flashChains.splice(i, 1);
+      else c.nextS = this.nowS + FLASH_CHAIN_GAP_S;
+    }
+  }
+
+  /** Arc Lash: the caster turns to lightning and streaks through the struck fighter, leaving an afterimage where he began. */
+  private streakThrough(casterId: string, def: AbilityDef, foe: AbilityTarget, dir: Vec2, exitM: number, host: AbilityHost): void {
+    const at = host.position(casterId);
+    let to = { x: foe.x + dir.x * (foe.radiusM + exitM), y: foe.y + dir.y * (foe.radiusM + exitM) };
+    const wall = host.blocked(at, to);
+    if (wall !== null) {
+      const reach = Math.max(0, Math.hypot(to.x - at.x, to.y - at.y) * wall - 0.3);
+      to = { x: at.x + dir.x * reach, y: at.y + dir.y * reach };
+    }
+    this.decoys.push({ casterId, def, x: at.x, y: at.y, dir, ageS: 0, lifeS: 0.4 });
+    const landed = host.teleport?.(casterId, to) ?? null;
+    if (!landed) return;
+    host.face?.(casterId, dir);
+    host.emit({ kind: 'release', ability: def.id, look: def.look, vfx: `${def.vfx}-streak`, sfx: def.sfx.release, x: at.x, y: at.y, dirX: dir.x, dirY: dir.y });
+  }
+
   /** Spin Cycle's state for the caster's animation, or null when none is under way. */
   spinOf(casterId: string): {
     variant: 'object' | 'opponent';
@@ -2581,7 +2680,7 @@ export class AbilityWorld {
         });
       }
       if (a.cuts < d.strikes || a.t < d.strikes * d.strikeIntervalS) return false;
-      // Back to where he began, unseen: the cuts are done and nothing has landed yet.
+      // Back to where he began, unseen: the cuts are done and nothing has landed yet (Lightning Execution: he strikes from above next).
       host.teleport?.(a.casterId, a.origin);
       host.drive(a.casterId, null, 0);
       a.phase = 'wait';
@@ -2589,6 +2688,22 @@ export class AbilityWorld {
       return false;
     }
     if (a.t < d.resolveDelayS) return false;
+    if (d.dive && foe?.hittable) {
+      // Lightning Execution: he reappears above the target, dives, and the floor blast throws everyone near it away.
+      const spot = host.teleport?.(a.casterId, { x: foe.x - 0.9, y: foe.y }) ?? { x: foe.x, y: foe.y };
+      host.face?.(a.casterId, norm({ x: foe.x - spot.x, y: foe.y - spot.y }));
+      const def = {
+        ...a.def,
+        payload: {
+          ...a.def.payload,
+          damage: a.def.payload.damage * d.strikes,
+          knockbackMps: d.dive.knockbackMps,
+          heavy: true,
+        },
+      };
+      this.blast(a.casterId, def, { x: foe.x, y: foe.y }, d.dive.radiusM, host);
+      return true;
+    }
     // All the cuts land together.
     if (foe?.hittable) {
       const payload = { ...a.def.payload, damage: a.def.payload.damage * d.strikes };
@@ -2636,7 +2751,23 @@ export class AbilityWorld {
       if (a.t >= d.stabIntervalS && a.stabs < d.stabs) {
         a.t = 0;
         a.stabs++;
-        this.stab(a, at, host);
+        let from = at;
+        if (d.zigzag && foe?.hittable) {
+          // Voltage Rush: a different side of the target for every blow, an afterimage where he was.
+          const ang = a.stabs * 2.4 + 0.6;
+          const r = d.zigzag.radiusM + foe.radiusM;
+          let spot = { x: foe.x + Math.cos(ang) * r, y: foe.y + Math.sin(ang) * r };
+          const wall = host.blocked({ x: foe.x, y: foe.y }, spot);
+          if (wall !== null) spot = { x: foe.x + (spot.x - foe.x) * wall * 0.8, y: foe.y + (spot.y - foe.y) * wall * 0.8 };
+          this.decoys.push({ casterId: a.casterId, def: a.def, x: at.x, y: at.y, dir: a.dir, ageS: 0, lifeS: d.zigzag.lifeS });
+          const landed = host.teleport?.(a.casterId, spot) ?? null;
+          if (landed) {
+            from = landed;
+            a.dir = norm({ x: foe.x - landed.x, y: foe.y - landed.y });
+            host.face?.(a.casterId, a.dir);
+          }
+        }
+        this.stab(a, from, host);
       } else if (a.stabs >= d.stabs && a.t >= d.stabIntervalS * 0.6) {
         if (!d.retreat) return true;
         a.phase = 'retreat';

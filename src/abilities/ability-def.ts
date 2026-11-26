@@ -208,6 +208,11 @@ export interface ProjectileDelivery {
   readonly lift?: { readonly liftS: number; readonly liftM: number; readonly fallDamage: number };
   /** Shard Volley: `count` shots leave at once, spread evenly across `spreadRad` radians round the aim. */
   readonly fan?: { readonly count: number; readonly spreadRad: number };
+  /**
+   * Arc Lash (Voltar): on contact the caster turns to lightning and streaks straight through the target, emerging `exitM` behind it
+   * (never through a wall: the nearest free spot is used).
+   */
+  readonly passThrough?: { readonly exitM: number };
 }
 
 /** The caster rushes forward, hitting fighters in the way, optionally leaving a burning trail. */
@@ -353,6 +358,12 @@ export interface TeleportDelivery {
    * aside from walls in the way (first used by Shroud's former Shadow Escape, 12/11/2026).
    */
   readonly retreatM?: number;
+  /**
+   * Flashstep (Voltar), with `behindTargetM`: the caster streaks THROUGH the nearest enemy (never through a wall or furniture: it stops
+   * short of one and the punch is lost), leaves an afterimage at the start for `lifeS`, reappears behind them and punches with the payload.
+   * While the caster's buff has `flashChain`, up to `chainMax` more flashes follow, 0.25 s apart.
+   */
+  readonly flash?: { readonly lifeS: number; readonly chainMax: number };
 }
 
 /**
@@ -503,6 +514,11 @@ export interface AssaultDelivery {
   readonly stabSfx?: readonly string[];
   /** The last stab's damage and knockback are this many times the others' (a finishing slash). Default 1. */
   readonly finalFactor?: number;
+  /**
+   * Voltage Rush (Voltar): before every blow he streaks to a different spot `radiusM` round the target (leaving an afterimage that lasts
+   * `lifeS`), so the blows come from different directions.
+   */
+  readonly zigzag?: { readonly radiusM: number; readonly lifeS: number };
 }
 
 /**
@@ -674,6 +690,11 @@ export interface ParryDelivery {
   readonly windowS: number;
   /** How long the attacker is stunned after the deflect. */
   readonly stunS: number;
+  /**
+   * Static Break (Voltar): a reactive dodge. On cast he bursts `distanceM` along his movement direction at `speedMps`; a blow that
+   * connects during the window (from any side) is avoided and he reappears behind the attacker for the counter.
+   */
+  readonly evade?: { readonly distanceM: number; readonly speedMps: number };
 }
 
 /**
@@ -688,6 +709,11 @@ export interface JudgementDelivery {
   readonly strikes: number;
   readonly strikeIntervalS: number;
   readonly resolveDelayS: number;
+  /**
+   * Lightning Execution (Voltar): instead of returning unseen, he reappears above the target as the strikes land and dives: a blast of
+   * `radiusM` on the floor throws everyone in it `knockbackMps` away.
+   */
+  readonly dive?: { readonly radiusM: number; readonly knockbackMps: number };
 }
 
 /** A close, heavy blow straight ahead at release (Crushing Strike): hits fighters, furniture and doors in reach. */
@@ -757,6 +783,10 @@ export interface BuffDelivery {
   };
   /** The caster's leaps use their `empowered` form while it lasts (Bohemeth's Ground Smash). */
   readonly empowersLeap?: boolean;
+  /** Flashstep may chain this many extra flashes while it lasts (Voltar's Overdrive). */
+  readonly flashChain?: number;
+  /** The caster crackles with lightning while it lasts (Voltar's Overdrive): electrified hands and feet. */
+  readonly electrified?: boolean;
   /** All four fists burn (Bohemeth's Fiery Fists): flames round the hands, fire trails on punches and hotter impacts. */
   readonly fireFists?: boolean;
   readonly endsOnHit?: boolean;
@@ -1169,6 +1199,11 @@ export interface AbilityKit {
    */
   readonly a5?: AbilityDef;
   readonly ult: AbilityDef;
+  /**
+   * A finisher pressed on the ultimate button while the ultimate's buff is still running (Voltar: Lightning Execution). It ends the buff,
+   * costs no meter and has no cooldown of its own.
+   */
+  readonly finisher?: AbilityDef;
   readonly charge: UltimateCharge;
   /** The basic combo's picture on the fighter details screen (owner, 12/11/2026: unique per fighter). */
   readonly comboIcon?: string;
