@@ -1,13 +1,8 @@
-import { HOUSE_FIGHT } from '../arenas/house-fight';
-import { COLOSSEUM } from '../data/arenas/colosseum';
-import { OFFICE } from '../data/arenas/office';
-import { TRAINING_YARD } from '../data/arenas/training-yard';
 import { TournamentScreen } from '../interface/tournament-screen';
 import {
   createTournament,
   entrant,
   fightersInRound,
-  openAiMatches,
   findMatch,
   playerMatch,
   recordResult,
@@ -22,7 +17,7 @@ import {
   saveTournament,
   tournamentHistory,
 } from '../modes/tournament/tournament-store';
-import { simulateFightHeadless } from './headless-fight';
+import { seededRandom } from '../combat/combatant';
 import type { FightArenaScene } from './scenes/fight-arena-scene';
 
 /**
@@ -211,26 +206,9 @@ export function setupTournamentPage(ctx: TournamentPageContext): TournamentScree
     skipAll: () => {
       if (skipping) return; // one skip at a time (double taps do nothing)
       skipping = true;
-      const arena =
-        saved.arena === 'training-yard'
-          ? TRAINING_YARD
-          : saved.arena === 'colosseum'
-            ? COLOSSEUM
-            : saved.arena === 'house'
-              ? HOUSE_FIGHT
-              : OFFICE;
-      // Show the work at once: a slow device otherwise looks like a dead button until the first fight ends.
-      screen.setLatest(`Simulating battles… 0/${openAiMatches(saved.state).length}`);
-      screen.show(saved.state, tournamentHistory());
-      void skipBattles(
-        saved.state,
-        // Nothing is drawn, so a long slice per frame is fine and finishes the stage sooner.
-        async (a, b, seed) => await simulateFightHeadless(seed, a.fighter, b.fighter, arena, saved.difficulty, 30),
-        (done, total) => {
-          screen.setLatest(`Simulating battles… ${done}/${total}`);
-          screen.show(saved.state, tournamentHistory());
-        },
-      ).finally(() => {
+      // Owner 26/11/2026: Skip names the stage's winners at once (Top 16 shows Top 8 straight away), so each
+      // skipped battle is settled instantly from its fixed match seed rather than fought out.
+      void skipBattles(saved.state, async (_a, _b, seed) => (seededRandom(seed)() < 0.5 ? 'a' : 'b')).finally(() => {
         skipping = false;
         commit(saved);
         screen.setLatest(null);
