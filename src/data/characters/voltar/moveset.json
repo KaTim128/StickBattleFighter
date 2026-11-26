@@ -10,7 +10,7 @@
   "moves": [
     {
       "id": "volt-jab",
-      "displayName": "Volt jab",
+      "displayName": "Centreline punch",
       "animationState": "Jab",
       "category": "punch",
       "heavy": false,
@@ -41,7 +41,7 @@
     },
     {
       "id": "arc-cross",
-      "displayName": "Arc cross",
+      "displayName": "Chain punch",
       "animationState": "Hook",
       "category": "punch",
       "heavy": false,
@@ -73,7 +73,7 @@
     },
     {
       "id": "spark-elbow",
-      "displayName": "Spark elbow",
+      "displayName": "Pak sao elbow",
       "animationState": "SideKick",
       "category": "punch",
       "heavy": false,
@@ -104,7 +104,7 @@
     },
     {
       "id": "thunder-spin-kick",
-      "displayName": "Thunder spin kick",
+      "displayName": "Low stamp kick",
       "animationState": "RoundhouseKick",
       "category": "punch",
       "heavy": true,
@@ -133,7 +133,7 @@
     },
     {
       "id": "static-dart",
-      "displayName": "Static dart",
+      "displayName": "Shin dart kick",
       "animationState": "FrontKick",
       "category": "punch",
       "heavy": false,
@@ -162,7 +162,7 @@
     },
     {
       "id": "bolt-strike",
-      "displayName": "Bolt strike",
+      "displayName": "Bolt kick",
       "animationState": "JumpingFrontKick",
       "category": "punch",
       "heavy": true,
@@ -190,7 +190,7 @@
     },
     {
       "id": "down-burst",
-      "displayName": "Down burst",
+      "displayName": "Down strike",
       "animationState": "DownwardAerialKick",
       "category": "punch",
       "heavy": true,
@@ -218,7 +218,7 @@
     },
     {
       "id": "surge-blast",
-      "displayName": "Surge blast",
+      "displayName": "Lightning palm",
       "animationState": "HeavyAttack",
       "category": "punch",
       "heavy": true,

@@ -197,17 +197,17 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.014, hands: 0.012 },
   },
-  // Voltar: a coiled sprinter's stance, leaning into the fight on the balls of the feet, lead hand out ready to zap, rear hand cocked at the ribs.
+  // Voltar: a Wing Chun guard, narrow stance, lead hand up on the centreline, rear hand tucked behind it, elbows in.
   voltar: {
     title: 'The Living Storm',
     style: 'Lightning speedster: flashes through enemies, zaps to stun, rushes from every side and gathers the sky',
     pelvis: 0.84,
-    leadFoot: 0.4,
-    rearFoot: -0.32,
-    lean: -14,
+    leadFoot: 0.26,
+    rearFoot: -0.2,
+    lean: -8,
     head: 4,
-    front: { x: 0.92, y: 0.08 },
-    back: { x: 0.18, y: 0.48, elbowOut: true },
+    front: { x: 0.7, y: -0.1 },
+    back: { x: 0.4, y: 0.2 },
     turn: 0.55,
     scale: 1,
     breath: { lean: 1.4, pelvis: 0.016, hands: 0.02 },

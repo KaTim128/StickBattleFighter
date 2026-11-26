@@ -326,13 +326,15 @@ function stormIdle(timeS: number, bones: BoneLengths): Pose {
   const buzz = Math.sin(timeS * TAU * 9);
   const bounce = Math.sin(timeS * TAU * 1.6);
   const legs = bones.thigh + bones.shin;
+  // Wing Chun (owner, 26/11/2026): a narrow, knees-in stance with the weight centred, the lead hand up on the centreline (a bong sao guard),
+  // the rear hand tucked behind it (wu sao), elbows low and in, and the fine tremor of stored lightning running through it all.
   return {
-    lean: deg(-9 + bounce * 0.8 + buzz * 0.35),
+    lean: deg(-6 + bounce * 0.6 + buzz * 0.35),
     head: deg(3 + buzz * 0.3),
-    armFront: { root: deg(70 + bounce * 3 + buzz * 1.2), bend: deg(104) },
-    armBack: { root: deg(52 - bounce * 3 - buzz * 1.2), bend: deg(112) },
-    legFront: legIk(0.3 + bounce * 0.02, legs * 0.9 - Math.abs(bounce) * 0.016, bones.thigh, bones.shin),
-    legBack: legIk(-0.22 - bounce * 0.02, legs * 0.88, bones.thigh, bones.shin),
+    armFront: { root: deg(74 + bounce * 2 + buzz * 1.2), bend: deg(78) },
+    armBack: { root: deg(52 - bounce * 2 - buzz * 1.2), bend: deg(108) },
+    legFront: legIk(0.2 + bounce * 0.012, legs * 0.88 - Math.abs(bounce) * 0.012, bones.thigh, bones.shin),
+    legBack: legIk(-0.14 - bounce * 0.012, legs * 0.88, bones.thigh, bones.shin),
   };
 }
 

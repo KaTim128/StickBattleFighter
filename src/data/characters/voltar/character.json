@@ -2,7 +2,7 @@
   "id": "voltar",
   "template": "base-stickman",
   "displayName": "Voltar",
-  "description": "Voltar is what is left when a storm decides to walk. He does not run so much as arrive, and a fight against him is a series of flashes: a blur at your shoulder, a crackle behind you, a cape snapping as the lightning settles. He lives for the moment the sky answers, and he has learned to call it down himself.",
+  "description": "Voltar is what is left when a storm decides to walk. He does not run so much as arrive, and a fight against him is a series of flashes: a blur at your shoulder, a crackle behind you, a cloak snapping as the lightning settles. He lives for the moment the sky answers, and he has learned to call it down himself.",
   "characterType": "fighter",
   "element": "electric",
   "combatStyle": "lightning",

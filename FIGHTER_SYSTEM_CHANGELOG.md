@@ -102,3 +102,6 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 ## Bohemeth: Quake Barrage; no chains; Inkmaster kung fu (26/11/2026)
 - **Bohemeth:** the chains are removed from his body and arms. **Chain Grab is replaced by Quake Barrage (fifth ability):** a run of rapid punches from all four arms (upper hooks 9, lower straights 11, one every 0.2 s, in a varied order of up to 24 punches) while he walks forward at half speed; no lock: it stops when the target is out of reach for 0.4 s or he is hit; after 10 landed blows he pulls all four arms back (0.4 s) and drives four fists into the chest for 55 damage and a 7 m/s push; 16 s. No stun on the barrage's punches.
 - **Inkmaster:** the three taps borrow kung fu forms (crane-stance palm strike, tiger-claw rake, dragon lunge in a bow stance) and the idle and select stance is a low bow stance with an open palm by the chin. Damage and timing unchanged.
+
+## Voltar: Wing Chun and portrait (26/11/2026)
+- Voltar's taps, heavy and idle/select stance are Wing Chun: a narrow knees-in stance, short blows down the centreline, chain punches, a pak sao elbow, low stamp kicks, a lightning palm heavy. Damage and timing unchanged. His portrait has a yellow backdrop at the same size as the others.
