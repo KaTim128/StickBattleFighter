@@ -3,7 +3,7 @@ import { chargeFor } from '../../abilities/ultimate-charge';
 
 /**
  * Magix's kit: the master illusionist. Misdirection and chaos rather than raw strength: vanish and strike from nowhere, a rabbit that blows
- * up in confetti, a spinning barrage of exactly 52 cards, a wand that seals one of the opponent's abilities, a hat full of surprises and one
+ * up in confetti, a spinning barrage of exactly 52 cards, Reaper Hook (a knife on tied scarves that slings him in for a flying kick), a hat full of surprises (one outcome is the old Wand of Misfortune's curse) and one
  * ultimate, Mirror Act, where he becomes the opponent. His own stats are middling; every trick has a counter. Values are PROVISIONAL (OQ-05).
  */
 const MAGIC = { deep: 0x1a0f2e, hot: 0x6a2fb0, bright: 0xd9a6ff, core: 0xfff4c2 } as const;
@@ -111,39 +111,28 @@ export const MAGIX_KIT: AbilityKit = {
     sfx: { cast: 'card-shuffle', release: 'card-throw', impact: 'card-hit' },
     look: { palette: MAGIC, impact: showy(0.7), hitFlash: 0xffffff },
   },
-  // A4: Wand of Misfortune. A glittering bolt from the wand; whatever it hits cannot use one random ability for 12 seconds.
+  // A4: Reaper Hook (owner, 26/11/2026, replacing the Wand of Misfortune, whose curse is now an outcome of the Lucky Hat). A knife on a long line of
+  // tied scarves shoots out of his sleeve, bites into the ground past the opponent, and the taut line slings him in for a flying kick.
   a4: {
-    id: 'wandOfMisfortune',
-    name: 'Wand of Misfortune',
-    label: 'CURSE',
+    id: 'magixReaperHook',
+    name: 'Reaper Hook',
+    label: 'HOOK',
     description:
-      'Flicks the wand and a glittering bolt streaks out. If it hits, one random ability of the opponent, its ultimate included, is sealed for exactly 12 seconds, with a padlock and a countdown to show it. Only one seal at a time, it never lengthens, and it never touches a cooldown.',
-    icon: 'wand-misfortune',
+      'Raises his arm and swings it outward: a knife on a long line of knotted scarves shoots out of his sleeve, the scarves unravelling as it flies, and hooks into the ground past the opponent. The line snaps taut and he is slung forward at great speed along it, letting go at the last moment to drive a flying kick into their chest that sends them backwards. Then the scarves gather back into his sleeve.',
+    icon: 'scarf-hook',
     slot: 'a4',
     staminaCost: 28,
-    cooldownS: 20,
-    castS: 0.3,
-    recoveryS: 0.4,
-    aimRangeM: 12,
-    moveFactor: 0.3,
+    cooldownS: 16,
+    castS: 0.4,
+    recoveryS: 0.5,
+    aimRangeM: 10,
+    moveFactor: 0,
     interruptible: true,
-    payload: {
-      damage: 24,
-      knockbackMps: 2,
-      heavy: false,
-      strength: 120,
-      impact: 'knuckle-light',
-      lockAbility: { durationS: 12 },
-    },
-    delivery: { type: 'projectile', speedMps: 17, radiusM: 0.35, maxRangeM: 13 },
-    vfx: 'magix-wand',
-    sfx: { cast: 'wand-flick', release: 'wand-bolt', impact: 'wand-curse' },
-    look: {
-      palette: MAGIC,
-      flight: { trailPerS: 60, sparksPerS: 40, shimmer: true, wand: true },
-      impact: showy(1.3),
-      hitFlash: 0xb06cff,
-    },
+    payload: { damage: 44, knockbackMps: 8.5, heavy: true, strength: 600, impact: 'knuckle-heavy', falloff: { fullWithinM: 1.2, minFactor: 0.6 } },
+    delivery: { type: 'leap', maxRangeM: 10, airS: 0.3, peakM: 0.45, radiusM: 1.5, aimSpeedMps: 5, anchor: { throwRangeM: 11, embedS: 0.16, pastM: 1.6 } },
+    vfx: 'scarf-hook',
+    sfx: { cast: 'sleeve-rustle', release: 'scarf-whip', impact: 'scarf-kick' },
+    look: { palette: MAGIC, scarfChain: true, airBody: 'none', impact: showy(1.8, { shake: 0.4 }), hitFlash: 0xffe08a },
   },
   // A5 (fifth): Lucky Hat. A hand into the hat: a random stat boost, a thrown sword or a bomb.
   a5: {
@@ -151,7 +140,7 @@ export const MAGIX_KIT: AbilityKit = {
     name: 'Lucky Hat',
     label: 'HAT',
     description:
-      'Reaches into his top hat and pulls out something at random: either 25% more of one of his stats for 10 seconds (movement speed, attack damage, defence, attack range or maximum health, shown above his head), or a sword he throws at the opponent, or a bomb that goes off a moment after it lands. The boost ends by itself and changes nothing for good.',
+      'Reaches into his top hat and pulls out something at random: either 25% more of one of his stats for 10 seconds (movement speed, attack damage, defence, attack range or maximum health, shown above his head), or a sword he throws at the opponent, or a bomb that goes off a moment after it lands, or a glittering bolt of misfortune that, if it hits, seals one random ability of the opponent for 12 seconds. The boost ends by itself and changes nothing for good.',
     icon: 'lucky-hat',
     slot: 'a4',
     staminaCost: 22,
@@ -167,6 +156,7 @@ export const MAGIX_KIT: AbilityKit = {
       durationS: 10,
       bonus: 0.25,
       sword: { damage: 58, knockbackMps: 6, speedMps: 20 },
+      misfortune: { damage: 24, lockS: 12, speedMps: 17, rangeM: 13 },
       bomb: { damage: 70, knockbackMps: 10, radiusM: 2.2, fuseS: 1.1 },
     },
     vfx: 'magix-hat',

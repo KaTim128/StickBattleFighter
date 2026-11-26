@@ -1067,14 +1067,16 @@ export interface CardsDelivery {
 }
 
 /**
- * Lucky Hat (Magix): a hand into the hat, and one of seven things comes out at random: +`bonus` to one of five stats for `durationS`
- * (speed, damage, defence, attack range, maximum HP) or a thrown sword or a thrown bomb.
+ * Lucky Hat (Magix): a hand into the hat, and one of eight things comes out at random: +`bonus` to one of five stats for `durationS`
+ * (speed, damage, defence, attack range, maximum HP), a thrown sword, a thrown bomb, or a bolt of misfortune.
  */
 export interface LuckyHatDelivery {
   readonly type: 'luckyHat';
   readonly durationS: number;
   readonly bonus: number;
   readonly sword: { readonly damage: number; readonly knockbackMps: number; readonly speedMps: number };
+  /** The former Wand of Misfortune (owner, 26/11/2026), now one of the hat's outcomes: a glittering bolt that seals one random ability of whatever it hits. */
+  readonly misfortune: { readonly damage: number; readonly lockS: number; readonly speedMps: number; readonly rangeM: number };
   readonly bomb: {
     readonly damage: number;
     readonly knockbackMps: number;
@@ -1149,6 +1151,8 @@ export type Delivery =
 export interface MagicLook {
   /** A real steel chain with a sickle blade on its far end (Kamaw), instead of a glowing spectral chain. */
   readonly steelChain?: boolean;
+  /** A line of tied scarves from the sleeve with a knife on its far end (Magix's Reaper Hook): fabric sections with knots, not a metal chain. */
+  readonly scarfChain?: boolean;
   /** The element's colours, darkest to hottest (fire: red, orange, amber, white-yellow). */
   readonly palette: { readonly deep: number; readonly hot: number; readonly bright: number; readonly core: number };
   /** Wind-up: motes drawn in from the air to the casting hand while a core swells in the palm. */

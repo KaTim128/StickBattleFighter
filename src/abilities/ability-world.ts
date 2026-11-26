@@ -1435,9 +1435,24 @@ export class AbilityWorld {
         break;
       case 'cards':
       case 'luckyHat':
-      case 'mirror':
+      case 'mirror': {
+        const before = this.magix.luckyCount;
         this.magix.release(casterId, def, aim, host);
+        // The former Wand of Misfortune, as one of the hat's outcomes: a glittering bolt that seals one random ability of what it hits.
+        if (d.type === 'luckyHat' && this.magix.luckyCount !== before && this.magix.lastLucky === 'misfortune') {
+          const m = d.misfortune;
+          const bolt: AbilityDef = {
+            ...def,
+            payload: { damage: m.damage, knockbackMps: 2, heavy: false, strength: 120, impact: 'knuckle-light', lockAbility: { durationS: m.lockS } },
+            delivery: { type: 'projectile', speedMps: m.speedMps, radiusM: 0.35, maxRangeM: m.rangeM },
+            sfx: { cast: 'wand-flick', release: 'wand-bolt', impact: 'wand-curse' },
+            look: { ...(def.look ?? { palette: { deep: 0x1a0f2e, hot: 0x6a2fb0, bright: 0xd9a6ff, core: 0xfff4c2 } }), flight: { trailPerS: 60, sparksPerS: 40, shimmer: true, wand: true } },
+          };
+          this.projectiles.push({ casterId, def: bolt, x: at.x + dir.x * 0.6, y: at.y + dir.y * 0.6, dir, travelledM: 0, trail: [] });
+          host.emit({ kind: 'release', ability: def.id, look: bolt.look, vfx: 'magix-wand', sfx: 'wand-bolt', x: at.x, y: at.y, dirX: dir.x, dirY: dir.y });
+        }
         break;
+      }
       case 'summon':
         // A summon that is drawn first (Ink Clone) rises once its figure is finished; others rise at once.
         if (d.drawS && this.ink.release(casterId, def, aim, host)) break;

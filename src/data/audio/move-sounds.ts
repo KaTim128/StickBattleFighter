@@ -911,6 +911,10 @@ export const MOVE_RECIPES: Readonly<Record<string, readonly Layer[]>> = {
   'reaper-rise': [tone('sawtooth', 70, 160, 0.6, 0.22), noise('bandpass', 500, 200, 0.6, 0.2, 1.5)],
   'reaper-slash': [noise('bandpass', 1800, 500, 0.12, 0.45, 1.3), tone('triangle', 1200, 700, 0.1, 0.12)],
   'reaper-finish': [tone('sine', 110, 36, 0.4, 0.9), noise('bandpass', 2000, 400, 0.3, 0.6, 1.2)],
+  // Magix's scarf hook (owner, 26/11/2026): a silky rustle in the sleeve, a long whip as the scarves unravel, and a thump of the kick.
+  'sleeve-rustle': [noise('highpass', 3200, undefined, 0.22, 0.14, 1.2, 0, { flutter: 24 }), tone('triangle', 700, 1100, 0.14, 0.08)],
+  'scarf-whip': [noise('bandpass', 1500, 3200, 0.3, 0.3, 1, 0, { flutter: 50 }), tone('sine', 300, 700, 0.18, 0.12), noise('highpass', 5000, undefined, 0.1, 0.14, 2, 0.05)],
+  'scarf-kick': [tone('sine', 130, 40, 0.28, 0.85), noise('bandpass', 1800, 500, 0.18, 0.55, 1.2), tone('triangle', 1500, 700, 0.1, 0.12)],
   // Kamaw's chain work (owner, 26/11/2026): a whip of chain, a taut snap, a long rattle as it wraps, a rising whirr for the spin, and sharp cuts.
   'hook-whip': [noise('bandpass', 2200, 800, 0.18, 0.4, 1.2), tone('triangle', 1600, 900, 0.14, 0.12), noise('highpass', 4000, undefined, 0.1, 0.16, 2, 0.05, { flutter: 60 })],
   'hook-kick': [tone('sine', 140, 42, 0.3, 0.9), noise('bandpass', 2000, 500, 0.2, 0.6, 1.2)],

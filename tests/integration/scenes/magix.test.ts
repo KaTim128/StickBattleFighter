@@ -2,6 +2,8 @@ import { Container } from 'pixi.js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { FightArenaScene } from '../../../src/app/scenes/fight-arena-scene';
 import { SceneManager } from '../../../src/core/scene';
+import { LUCKY_KINDS } from '../../../src/abilities/magix-world';
+import { MAGIX_KIT } from '../../../src/data/abilities/magix';
 import { TRAINING_YARD } from '../../../src/data/arenas/training-yard';
 import { PlayerIntents } from '../../../src/input/intents';
 import { initPhysics } from '../../../src/physics/physics-world';
@@ -117,10 +119,13 @@ describe('Magix', () => {
     scenes.clear();
   }, 30_000);
 
-  it('Wand of Misfortune: a hit seals exactly one random ability for 12 s, never two, never extended', async () => {
-    const { scene, scenes, run, runUntil, cast, foe } = await setup('rampage', 4);
+  it("Lucky Hat's misfortune outcome (the former Wand of Misfortune): a hit seals exactly one random ability for 12 s, never two, never extended", async () => {
+    const { scene, scenes, run, runUntil, me, foe } = await setup('rampage', 4);
     scene.playerFighter.combatant.stamina = 100;
-    cast('a4');
+    // Force the hat's roll to its last outcome (the rest of the time it is random).
+    (scene.abilities!.world.magix as unknown as { rng: () => number }).rng = () => 0.99;
+    scene.abilities!.world.release(me().name, me().caster!.kit.a5!, { x: foe().x, y: foe().y }, scene.abilities!);
+    expect(scene.abilities!.world.magix.lastLucky).toBe('misfortune');
     runUntil(() => foe().caster?.locked != null, 3);
     const lock = foe().caster!.locked!;
     expect(lock.leftS).toBeGreaterThan(11.5);
@@ -135,7 +140,40 @@ describe('Magix', () => {
     scenes.clear();
   }, 60_000);
 
-  it('Lucky Hat: gives exactly one of seven things, and a stat boost ends by itself without changing anything for good', async () => {
+  it('the Wand of Misfortune is no longer an ability of his own, and the hat can still give every other outcome', () => {
+    const k = MAGIX_KIT;
+    expect([k.a1, k.a2, k.a3, k.a4, k.a5!, k.ult].map((d) => d.id)).not.toContain('wandOfMisfortune');
+    expect(k.a4.id).toBe('magixReaperHook');
+    expect(LUCKY_KINDS).toEqual(['speed', 'damage', 'defence', 'range', 'hp', 'sword', 'bomb', 'misfortune']);
+  });
+
+  it('Reaper Hook (Magix): a knife on scarves from the sleeve hooks past the target, slings him in fast, the kick throws them back, and the scarves gather back in', async () => {
+    const { scene, scenes, run, cast, me, foe, intents } = await setup('training-dummy', 7);
+    scene.playerFighter.combatant.stamina = 100;
+    const x0 = me().x;
+    const fx0 = foe().x;
+    cast('a4'); // aimed like every leap: the same key again confirms
+    cast('a4');
+    let fastest = 0;
+    let lastX = me().x;
+    let out = false;
+    for (let i = 0; i < 2.5 / STEP; i++) {
+      run(STEP);
+      out ||= scene.abilities!.world.tethers().length > 0;
+      fastest = Math.max(fastest, Math.abs(me().x - lastX) / STEP);
+      lastX = me().x;
+    }
+    expect(out).toBe(true); // the line was out and taut
+    expect(fastest).toBeGreaterThan(14); // the original slingshot speed
+    expect(me().x - x0).toBeGreaterThan(4);
+    expect(foe().combatant.stats.maxHp - foe().combatant.hp).toBeGreaterThan(30);
+    expect(foe().x - fx0).toBeGreaterThan(0.5); // sent backwards, never dragged in
+    expect(scene.abilities!.world.tethers().length).toBe(0); // let go at the end
+    scenes.clear();
+    void intents;
+  }, 60_000);
+
+  it('Lucky Hat: gives exactly one of eight things, and a stat boost ends by itself without changing anything for good', async () => {
     const seen = new Set<string>();
     for (let k = 0; k < 14 && seen.size < 4; k++) {
       const { scene, scenes, run, cast, me, world } = await setup('training-dummy', 8);

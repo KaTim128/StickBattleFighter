@@ -315,7 +315,7 @@ export interface AbilityVfxInput {
     readonly to: { readonly x: number; readonly y: number };
     readonly palette: Palette;
     /** A real steel chain (Kamaw): from his hand, sagging, with the sickle blade on the end, spinning in flight, bitten into the floor or hooked. */
-    readonly steel?: { readonly blade: 'spin' | 'hooked' | 'embedded'; readonly toZ: number; readonly fromZ?: number };
+    readonly steel?: { readonly blade: 'spin' | 'hooked' | 'embedded'; readonly toZ: number; readonly fromZ?: number; readonly scarf?: boolean; readonly reel?: number };
   }[];
   /** Smoke rising this frame (a burn going out, a body burning away), world points. */
   readonly smoke?: readonly { readonly x: number; readonly y: number; readonly z: number; readonly count: number }[];
@@ -2705,18 +2705,77 @@ export class AbilityVfx {
     }
   }
 
+  /**
+   * Magix's line of tied scarves (Reaper Hook): separate pieces of fabric in his colours, knotted together, streaming from the cuff to a knife.
+   * Taut it is a straight line; slack it flutters. While it is being gathered back (`reel` 0..1) the pieces bunch up and ruffle as the line
+   * shortens, and fade into the sleeve over the last of it. The knife keeps its place at the end, its trail behind it.
+   */
+  private scarfLine(g: Graphics, a0: { x: number; y: number }, a1: { x: number; y: number }, len: number, st: { blade: 'spin' | 'hooked' | 'embedded'; reel?: number }, t: number): void {
+    const COLOURS = [0xb3263a, 0xf6f3ee, 0x6a2fb0, 0xe3b94a] as const;
+    const ux = (a1.x - a0.x) / len;
+    const uy = (a1.y - a0.y) / len;
+    const nx = -uy;
+    const ny = ux;
+    const reel = st.reel ?? 0;
+    const fade = reel > 0.7 ? 1 - (reel - 0.7) / 0.3 : 1;
+    const slack = reel > 0 ? 0.06 + 0.1 * reel : st.blade === 'spin' ? 0.07 : 0.015;
+    const SECTION = reel > 0 ? 0.3 - 0.12 * reel : 0.3;
+    const n = Math.max(2, Math.round(len / SECTION));
+    const at = (u: number): { x: number; y: number } => {
+      const wave = Math.sin(u * Math.PI) * Math.sin(t * 13 - u * 9) * slack * Math.min(1, len * 0.4);
+      return { x: a0.x + (a1.x - a0.x) * u + nx * wave, y: a0.y + (a1.y - a0.y) * u + ny * wave };
+    };
+    for (let i = 0; i < n; i++) {
+      const u0 = i / n;
+      const u1 = (i + 1) / n;
+      const p0 = at(u0);
+      const p1 = at(u1);
+      const mid = at((u0 + u1) / 2);
+      const col = COLOURS[i % COLOURS.length]!;
+      // A piece of fabric: a ribbon that billows a little at its middle, with a lighter edge.
+      const w = 0.075 * (1 + 0.5 * Math.sin(t * 9 + i * 1.7) * (reel > 0 ? 1.4 : 1));
+      const bx = (mid.x - (p0.x + p1.x) / 2) * 2 + nx * w * Math.sin(t * 8 + i);
+      const by = (mid.y - (p0.y + p1.y) / 2) * 2 + ny * w * Math.sin(t * 8 + i);
+      g.moveTo(p0.x, p0.y).quadraticCurveTo(mid.x + bx * 0.5, mid.y + by * 0.5, p1.x, p1.y).stroke({ width: w * 2, color: 0x1b1224, alpha: 0.85 * fade, cap: 'round' });
+      g.moveTo(p0.x, p0.y).quadraticCurveTo(mid.x + bx * 0.5, mid.y + by * 0.5, p1.x, p1.y).stroke({ width: w * 1.5, color: col, alpha: fade, cap: 'round' });
+      g.moveTo(p0.x, p0.y).quadraticCurveTo(mid.x + bx * 0.5, mid.y + by * 0.5, p1.x, p1.y).stroke({ width: w * 0.4, color: 0xffffff, alpha: 0.35 * fade, cap: 'round' });
+      // The knot where it is tied to the next piece.
+      g.circle(p1.x, p1.y, 0.05).fill({ color: col, alpha: fade }).stroke({ width: 0.016, color: 0x1b1224, alpha: fade });
+    }
+    // The knife on the end: a short, bright blade with a dark grip, pointing the way the line runs (stuck in the floor when it has bitten).
+    const tip = at(1);
+    const ang = st.blade === 'embedded' ? Math.PI / 2 + 0.25 : Math.atan2(uy, ux);
+    const kx = Math.cos(ang);
+    const ky = Math.sin(ang);
+    if (st.blade === 'spin' && reel === 0) {
+      // A glinting streak behind the knife in flight.
+      for (let k = 1; k <= 4; k++) {
+        const tp = { x: tip.x - ux * 0.16 * k, y: tip.y - uy * 0.16 * k };
+        g.circle(tp.x, tp.y, 0.045 * (1 - k / 5)).fill({ color: 0xfff4c2, alpha: 0.6 * (1 - k / 5) });
+      }
+    }
+    g.moveTo(tip.x - kx * 0.1, tip.y - ky * 0.1).lineTo(tip.x, tip.y).stroke({ width: 0.05, color: 0x15151c, alpha: fade, cap: 'round' });
+    g.poly([tip.x, tip.y - 0 + 0, tip.x + kx * 0.3 - ky * 0.05, tip.y + ky * 0.3 + kx * 0.05, tip.x + kx * 0.42, tip.y + ky * 0.42, tip.x + kx * 0.3 + ky * 0.05, tip.y + ky * 0.3 - kx * 0.05])
+      .fill({ color: 0xe8ecf4, alpha: fade })
+      .stroke({ width: 0.012, color: 0x15151c, alpha: fade, join: 'round' });
+  }
+
   /** Kamaw's chain in the world: steel links from his hand to the far end with a little sag, and the white sickle blade on it. */
   private steelChain(
     g: Graphics,
     from: { x: number; y: number },
     to: { x: number; y: number },
-    st: { blade: 'spin' | 'hooked' | 'embedded'; toZ: number; fromZ?: number },
+    st: { blade: 'spin' | 'hooked' | 'embedded'; toZ: number; fromZ?: number; scarf?: boolean; reel?: number },
     t: number,
   ): void {
     const a0 = iso(from.x, from.y, st.fromZ ?? 0.62);
     const a1 = iso(to.x, to.y, st.toZ);
     const len = Math.hypot(a1.x - a0.x, a1.y - a0.y);
     if (len < 0.05) return;
+    if (st.scarf) {
+      this.scarfLine(g, a0, a1, len, st, t);
+      return;
+    }
     const ux = (a1.x - a0.x) / len;
     const uy = (a1.y - a0.y) / len;
     const sag = Math.min(0.35, len * 0.08);

@@ -1256,6 +1256,14 @@ const SHAPES: Record<string, CastShape> = {
     tremble: deg(1.2),
     settle: 0.5,
   },
+  // ---- Magix's Reaper Hook (owner, 26/11/2026): the sleeve arm lifts a little and whips out sideways to throw the line; slung in, he is stretched out
+  // flat with the front leg driven at the opponent's chest; he lands in an upright flourish. The rest of him keeps the magician's poise.
+  magixReaperHook: {
+    windup: { lean: deg(-2), head: deg(2), armFront: limb(118, 50), armBack: limb(22, 80), legFront: limb(26, -30), legBack: limb(-24, -26) },
+    release: { lean: deg(-14), head: deg(0), armFront: limb(104, 6), armBack: limb(-30, 70), legFront: limb(34, -34), legBack: limb(-28, -30) },
+    air: { lean: deg(14), head: deg(-4), armFront: limb(-64, 30), armBack: limb(-40, 40), legFront: limb(100, -4), legBack: limb(24, -86) },
+    settle: 0.5,
+  },
   // ---- Kamaw (owner, 26/11/2026): everything starts and ends low, from his wide predator crouch.
   reaperHook: {
     windup: { lean: deg(-30), head: deg(0), armFront: limb(-64, 50), armBack: limb(32, 50), legFront: limb(40, -84), legBack: limb(-34, -80) },

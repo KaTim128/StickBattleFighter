@@ -386,7 +386,7 @@ export class FightArenaScene implements ArenaScene {
   private readonly events: CombatEvent[] = [];
   /** Kamaw's chained sickle: where its blade is while it is out (thrown, embedded or hooked), and blades being reeled back in. */
   private sickleOut = new Map<string, { x: number; y: number }>();
-  private readonly sickleReturn = new Map<string, { x: number; y: number; t: number; palette: MagicLook['palette'] }>();
+  private readonly sickleReturn = new Map<string, { x: number; y: number; t: number; palette: MagicLook['palette']; scarf: boolean }>();
   /** Contacts this frame, for sparks and bursts (presentation). */
   private readonly impacts: ImpactBurst[] = [];
   /** Limb flames and aura embers this frame (filled while drawing fighters). */
@@ -4019,7 +4019,7 @@ export class FightArenaScene implements ArenaScene {
       from: { x: number; y: number };
       to: { x: number; y: number };
       palette: MagicLook['palette'];
-      steel?: { blade: 'spin' | 'hooked' | 'embedded'; toZ: number; fromZ?: number };
+      steel?: { blade: 'spin' | 'hooked' | 'embedded'; toZ: number; fromZ?: number; scarf?: boolean; reel?: number };
     };
     const chains: Chain[] = [];
     // A steel chain starts at the ring on the end of the sickle's handle in his hand (it is a chained weapon, like nunchucks).
@@ -4031,10 +4031,10 @@ export class FightArenaScene implements ArenaScene {
     };
     const out = new Map<string, { x: number; y: number }>();
     for (const p of world.projectiles) {
-      const caster = (p.def.payload.pull || p.def.look?.steelChain) && p.def.look ? this.fighterByName(p.casterId) : null;
+      const caster = (p.def.payload.pull || p.def.look?.steelChain || p.def.look?.scarfChain) && p.def.look ? this.fighterByName(p.casterId) : null;
       if (!caster || !p.def.look) continue;
-      const ring = p.def.look.steelChain ? ringOf(caster) : null;
-      const steel = ring ? { blade: 'spin' as const, toZ: 0.55, fromZ: ring.fromZ } : undefined;
+      const ring = p.def.look.steelChain || p.def.look.scarfChain ? ringOf(caster) : null;
+      const steel = ring ? { blade: 'spin' as const, toZ: 0.55, fromZ: ring.fromZ, ...(p.def.look.scarfChain ? { scarf: true } : {}) } : undefined;
       chains.push({ from: ring?.from ?? { x: caster.x, y: caster.y }, to: { x: p.x, y: p.y }, palette: p.def.look.palette, ...(steel ? { steel } : {}) });
       if (steel) out.set(p.casterId, { x: p.x, y: p.y });
     }
@@ -4043,8 +4043,8 @@ export class FightArenaScene implements ArenaScene {
       const caster = this.fighterByName(t.casterId);
       const look = caster?.caster ? ABILITY_SLOTS.map((sl) => caster.caster!.def(sl)).find((d) => d.delivery.type === 'leap' && d.delivery.anchor)?.look : undefined;
       if (!caster || !look) continue;
-      const ring = look.steelChain ? ringOf(caster) : null;
-      const steel = ring ? { blade: 'embedded' as const, toZ: 0.05, fromZ: ring.fromZ + caster.abilityLift } : undefined;
+      const ring = look.steelChain || look.scarfChain ? ringOf(caster) : null;
+      const steel = ring ? { blade: 'embedded' as const, toZ: 0.05, fromZ: ring.fromZ + caster.abilityLift, ...(look.scarfChain ? { scarf: true } : {}) } : undefined;
       chains.push({ from: ring?.from ?? { x: caster.x, y: caster.y }, to: { x: t.x, y: t.y }, palette: look.palette, ...(steel ? { steel } : {}) });
       if (steel) out.set(t.casterId, { x: t.x, y: t.y });
     }
@@ -4054,8 +4054,8 @@ export class FightArenaScene implements ArenaScene {
       const kit = caster?.caster;
       const look = kit ? ABILITY_SLOTS.map((s) => kit.def(s)).find((d) => d.payload.pull)?.look : undefined;
       if (!caster || !target || !look) return;
-      const ring = look.steelChain ? ringOf(caster) : null;
-      const steel = ring ? { blade: 'hooked' as const, toZ: 0.3, fromZ: ring.fromZ } : undefined;
+      const ring = look.steelChain || look.scarfChain ? ringOf(caster) : null;
+      const steel = ring ? { blade: 'hooked' as const, toZ: 0.3, fromZ: ring.fromZ, ...(look.scarfChain ? { scarf: true } : {}) } : undefined;
       chains.push({ from: ring?.from ?? { x: caster.x, y: caster.y }, to: { x: target.x, y: target.y }, palette: look.palette, ...(steel ? { steel } : {}) });
       if (steel) out.set(casterId, { x: target.x, y: target.y });
     });
@@ -4063,13 +4063,14 @@ export class FightArenaScene implements ArenaScene {
     for (const [id, last] of this.sickleOut) {
       if (out.has(id)) continue;
       const caster = this.fighterByName(id);
-      const look = caster?.caster ? ABILITY_SLOTS.map((sl) => caster.caster!.def(sl)).find((d) => d.look?.steelChain)?.look : undefined;
-      if (caster && look) this.sickleReturn.set(id, { x: last.x, y: last.y, t: 0, palette: look.palette });
+      const look = caster?.caster ? ABILITY_SLOTS.map((sl) => caster.caster!.def(sl)).find((d) => d.look?.steelChain || d.look?.scarfChain)?.look : undefined;
+      if (caster && look) this.sickleReturn.set(id, { x: last.x, y: last.y, t: 0, palette: look.palette, scarf: look.scarfChain === true });
     }
     this.sickleOut = out;
     for (const [id, r] of this.sickleReturn) {
       const caster = this.fighterByName(id);
-      r.t += frameDtS / 0.28;
+      // Steel reels in at once; scarves are gathered up into the sleeve more slowly so the bunching can be seen.
+      r.t += frameDtS / (r.scarf ? 0.55 : 0.28);
       if (!caster || r.t >= 1 || out.has(id)) {
         this.sickleReturn.delete(id);
         continue;
@@ -4080,7 +4081,7 @@ export class FightArenaScene implements ArenaScene {
         from: ring.from,
         to: { x: r.x + (ring.from.x - r.x) * k, y: r.y + (ring.from.y - r.y) * k },
         palette: r.palette,
-        steel: { blade: 'spin', toZ: 0.55 + (ring.fromZ - 0.55) * k, fromZ: ring.fromZ },
+        steel: { blade: 'spin', toZ: 0.55 + (ring.fromZ - 0.55) * k, fromZ: ring.fromZ, ...(r.scarf ? { scarf: true, reel: r.t } : {}) },
       });
     }
     for (const f of this.fighters) if (f.view && f.def.effects.held === 'sickle') f.view.sickleOut = out.has(f.name) || this.sickleReturn.has(f.name);

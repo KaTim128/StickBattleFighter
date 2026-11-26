@@ -74,8 +74,8 @@ export interface Dust {
   changed: boolean;
 }
 
-export type LuckyKind = 'speed' | 'damage' | 'defence' | 'range' | 'hp' | 'sword' | 'bomb';
-export const LUCKY_KINDS: readonly LuckyKind[] = ['speed', 'damage', 'defence', 'range', 'hp', 'sword', 'bomb'];
+export type LuckyKind = 'speed' | 'damage' | 'defence' | 'range' | 'hp' | 'sword' | 'bomb' | 'misfortune';
+export const LUCKY_KINDS: readonly LuckyKind[] = ['speed', 'damage', 'defence', 'range', 'hp', 'sword', 'bomb', 'misfortune'];
 
 /** The buff a Lucky Hat stat boost gives: exactly +`bonus` to one stat, and nothing else. */
 export function luckyBuff(kind: LuckyKind, spec: LuckyHatDelivery): BuffEffect | null {
@@ -107,8 +107,9 @@ export class MagixWorld {
   readonly volleys: Volley[] = [];
   readonly thrown: Thrown[] = [];
   readonly dusts: Dust[] = [];
-  /** What the hat gave last (tests and the HUD tag). */
+  /** What the hat gave last (tests and the HUD tag), and how many times it has been used (so the caller can tell a fresh result). */
   lastLucky: LuckyKind | null = null;
+  luckyCount = 0;
   private made = 0;
 
   constructor(
@@ -138,6 +139,7 @@ export class MagixWorld {
     if (d.type === 'luckyHat') {
       const kind = LUCKY_KINDS[Math.floor(this.rng() * LUCKY_KINDS.length)] ?? 'speed';
       this.lastLucky = kind;
+      this.luckyCount++;
       const buff = luckyBuff(kind, d);
       host.emit({
         kind: 'impact',
@@ -153,6 +155,7 @@ export class MagixWorld {
         host.buff(casterId, buff, def.id);
         return true;
       }
+      if (kind === 'misfortune') return true; // the bolt is loosed by the ability world (it is a real projectile)
       const reach =
         kind === 'bomb' ? Math.min(def.aimRangeM, Math.max(2.5, Math.hypot(aim.x - at.x, aim.y - at.y))) : 0;
       this.thrown.push({

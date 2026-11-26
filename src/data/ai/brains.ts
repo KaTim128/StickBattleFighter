@@ -204,11 +204,11 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ['a2', 'a1'],
     ],
   },
-  // Magix: a trickster. Keeps his distance, throws the rabbit and the cards, curses the opponent's best ability, vanishes to close in
+  // Magix: a trickster. Keeps his distance, throws the rabbit and the cards, slings himself in on the scarf hook, vanishes to close in
   // for a strike, and becomes the opponent with Mirror Act once the fight is on.
   'magix-ai': {
     style:
-      'Illusionist: rabbit and cards at range, a curse on their best trick, vanish to strike, Mirror Act to finish.',
+      'Illusionist: rabbit and cards at range, a hat of surprises, vanish to strike, a hook to close in and Mirror Act to finish.',
     preferredRangeM: [3.5, 7],
     movement: 'circle',
     meleeBias: 0.35,
@@ -220,11 +220,10 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       a1: { role: 'buff', minM: 4, maxM: 10, weight: 1.0 },
       a2: { role: 'zone', minM: 3, maxM: 10, weight: 1.2 },
       a3: { role: 'burst', minM: 2.5, maxM: 10, weight: 1.2 },
-      a4: { role: 'control', minM: 3, maxM: 11, weight: 1.3 },
+      a4: { role: 'gapClose', minM: 3, maxM: 10, weight: 1.3 },
       ult: { role: 'summon', minM: 0, maxM: 10, weight: 1.2, when: { selfHpBelow: 0.95 } },
     },
     combos: [
-      ['a4', 'a3'],
       ['a2', 'a3'],
     ],
   },

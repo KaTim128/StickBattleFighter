@@ -610,10 +610,10 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 17, '#fff4c2', 0.18),
     `<g filter="url(#ds)" stroke="#2a2a35" stroke-width="1.4"><rect x="6" y="14" width="15" height="21" rx="2" fill="#faf6ee" transform="rotate(-24 13 24)"/><rect x="16" y="10" width="15" height="21" rx="2" fill="#faf6ee" transform="rotate(-4 24 20)"/><rect x="27" y="14" width="15" height="21" rx="2" fill="#faf6ee" transform="rotate(18 34 24)"/></g><path d="M24 17 L28 22 L24 29 L20 22 Z" fill="#d23a4a"/><circle cx="35" cy="22" r="2.6" fill="#15151c"/>`,
   ),
-  'wand-misfortune': icon(
+  'scarf-hook': icon(
     'magic',
-    rays(24, 24, 16, '#e0b8ff', 0.2),
-    `<g filter="url(#ds)"><path d="M8 40 L32 16" stroke="#15151c" stroke-width="4.2" stroke-linecap="round"/><path d="M8 40 L12 36 M30 18 L33 15" stroke="#f6f3ee" stroke-width="4.2" stroke-linecap="round"/></g><g fill="#ffd86b" stroke="#fff4c2" stroke-width=".8"><path d="M38 8 L40 13 L45 15 L40 17 L38 22 L36 17 L31 15 L36 13 Z"/></g><path d="M34 22 L40 28 L35 29 L38 36" stroke="#b06cff" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+    rays(24, 24, 16, '#fff4c2', 0.2),
+    `<g filter="url(#ds)"><path d="M6 36 C12 26 18 40 26 28 C32 20 36 24 42 14" fill="none" stroke="#15151c" stroke-width="6" stroke-linecap="round"/><path d="M6 36 C12 26 18 40 26 28" fill="none" stroke="#b3263a" stroke-width="4" stroke-linecap="round"/><path d="M26 28 C32 20 36 24 42 14" fill="none" stroke="#f6f3ee" stroke-width="4" stroke-linecap="round"/><circle cx="17" cy="32" r="2.6" fill="#e3b94a" stroke="#15151c" stroke-width="1.2"/><circle cx="26" cy="28" r="2.6" fill="#6a2fb0" stroke="#15151c" stroke-width="1.2"/><path d="M40 14 L46 6 L44 16 Z" fill="#e8ecf4" stroke="#15151c" stroke-width="1.4" stroke-linejoin="round"/></g>`,
   ),
   'lucky-hat': icon(
     'magic',

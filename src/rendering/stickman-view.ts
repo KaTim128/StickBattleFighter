@@ -2421,6 +2421,15 @@ export class StickmanView {
   /** Where the chain leaves Kamaw's handle, as a limb tip (x across the screen, z height), or null. */
   chainTip(): { x: number; y: number; z: number } | null {
     const l = this.last;
+    if (l && this.held !== 'sickle') {
+      // No sickle in hand (Magix's scarf hook): the line comes out of the cuff of the arm that swings it.
+      const h = l.s.armFront[2];
+      const c = Math.cos(l.rot);
+      const sn = Math.sin(l.rot);
+      const lx = h.x * l.facing * this.size;
+      const ly = h.y * this.size - l.heightM;
+      return { x: lx * c - ly * sn, y: 0, z: -(lx * sn + ly * c) };
+    }
     const r = this.chainRing;
     if (!l || !r || this.held !== 'sickle') return null;
     const c = Math.cos(l.rot);
