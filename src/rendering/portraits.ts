@@ -167,6 +167,8 @@ const PREMIUM: Readonly<Record<string, PremiumLook>> = {
   ink: { deep: '#040405', mid: '#1c1c24', glow: '#6d6d78', spark: '#f2eee3', frame: '#cfcabb' },
   magix: { deep: '#07040f', mid: '#2a1450', glow: '#b3263a', spark: '#ffe08a', frame: '#d9a6ff' },
   bohemeth: { deep: '#0a0402', mid: '#3a1a10', glow: '#e8540f', spark: '#ffc890', frame: '#c8855a' },
+  gunslinger: { deep: '#140808', mid: '#5a2a14', glow: '#ff8a3a', spark: '#fff0c0', frame: '#ffb070' },
+  swamp: { deep: '#06100a', mid: '#1f3a14', glow: '#8fd04a', spark: '#e0ffb0', frame: '#8fd04a' },
   // Voltar (owner, 26/11/2026): a bright yellow backdrop, like the lightning it throws.
   storm: { deep: '#2a1d02', mid: '#9a6f08', glow: '#ffd21f', spark: '#fffbd0', frame: '#ffe066' },
   samurai: { deep: '#080204', mid: '#3a0a12', glow: '#d02438', spark: '#ffb0b8', frame: '#e5434f' },

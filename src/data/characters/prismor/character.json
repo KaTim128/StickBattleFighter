@@ -2,10 +2,10 @@
   "id": "prismor",
   "template": "base-stickman",
   "displayName": "Prismor",
-  "description": "Prismor does not carry weapons. He grows them. A blade rises out of his palms, a shield unfolds from the huge crystal limb he wears for an arm, and when the fight is over the pieces fall away as glittering dust. His crown is the only thing about him that was ever finished; everything else he makes on the spot, to fit the argument.",
+  "description": "Prismor does not carry weapons. He grows them. A blade rises out of his palms, a shield unfolds from the huge crystal limb he wears for an arm, and when the fight is over the pieces fall away as glittering dust. His crown is the only thing about him that was ever finished; everything else he makes on the spot, to fit the argument. He fights like a street fighter, quick and dirty, with whatever the moment grows: a fist, a blade, a shield, a hammer.",
   "characterType": "fighter",
   "element": "crystal",
-  "combatStyle": "crystal weapons",
+  "combatStyle": "street",
   "profiles": {
     "animation": "prismor-animation",
     "moveset": "prismor-moveset",

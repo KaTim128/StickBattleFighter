@@ -14,6 +14,8 @@ import { RAMPAGE_KIT } from '../data/abilities/rampage';
 import { RESON_KIT } from '../data/abilities/reson';
 import { SHROUD_KIT } from '../data/abilities/shroud';
 import { VEXORIS_KIT } from '../data/abilities/vexoris';
+import { GUNSMITH_KIT } from '../data/abilities/gunsmith';
+import { SICKLE_WIELDER_KIT } from '../data/abilities/sickle-wielder';
 import { VOLTAR_KIT } from '../data/abilities/voltar';
 import type { AbilityKit } from './ability-def';
 
@@ -25,6 +27,8 @@ export const ABILITY_KITS: Readonly<Record<string, AbilityKit>> = {
   'shroud-kit': SHROUD_KIT,
   'vexoris-kit': VEXORIS_KIT,
   'voltar-kit': VOLTAR_KIT,
+  'gunsmith-kit': GUNSMITH_KIT,
+  'sickle-kit': SICKLE_WIELDER_KIT,
   'aerion-kit': AERION_KIT,
   'kenshiro-kit': KENSHIRO_KIT,
   'chronos-kit': CHRONOS_KIT,

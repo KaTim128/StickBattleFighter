@@ -14,6 +14,7 @@ describe('roster', () => {
       'bohemeth',
       'chronos',
       'geargrind',
+      'gunsmith',
       'inferno',
       'inkmaster',
       'kenshiro',
@@ -24,6 +25,7 @@ describe('roster', () => {
       'rampage',
       'reson',
       'shroud',
+      'sickle-wielder',
       'vexoris',
       'voltar',
     ]);
@@ -38,16 +40,10 @@ describe('roster', () => {
       'shroud',
       'vexoris',
       'aerion',
-      'skeleton-warrior',
-      'training-dummy',
-    ])
-      expect(ids).toContain(id);
-    expect(ids).not.toContain('base-stickman'); // the shared template is not a fighter
-    expect(ids.slice(0, 16).sort()).toEqual([
-      'aerion',
       'bohemeth',
       'chronos',
       'geargrind',
+      'gunsmith',
       'inferno',
       'inkmaster',
       'kenshiro',
@@ -58,6 +54,29 @@ describe('roster', () => {
       'rampage',
       'reson',
       'shroud',
+      'sickle-wielder',
+      'vexoris',
+      'voltar',
+    ])
+      expect(ids).toContain(id);
+    expect(ids).not.toContain('base-stickman'); // the shared template is not a fighter
+    expect(ids.slice(0, 18).sort()).toEqual([
+      'aerion',
+      'bohemeth',
+      'chronos',
+      'geargrind',
+      'gunsmith',
+      'inferno',
+      'inkmaster',
+      'kenshiro',
+      'magix',
+      'necro',
+      'prismor',
+      'psion',
+      'rampage',
+      'reson',
+      'shroud',
+      'sickle-wielder',
       'vexoris',
       'voltar',
     ]); // the main roster first

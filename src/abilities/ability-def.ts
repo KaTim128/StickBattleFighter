@@ -218,6 +218,24 @@ export interface ProjectileDelivery {
    * (never through a wall: the nearest free spot is used).
    */
   readonly passThrough?: { readonly exitM: number };
+  /**
+   * Gunsmith: instead of one shot, `count` shots, one every `gapS` seconds, each re-aimed at the nearest enemy (or, with `aimable`, along the
+   * aim the player steers while it lasts), alternating between the two hands. The last is `finalFactor` times stronger. `jitterRad` is the
+   * random scatter of each shot.
+   */
+  readonly burst?: {
+    readonly count: number;
+    readonly gapS: number;
+    readonly jitterRad?: number;
+    readonly finalFactor?: number;
+    readonly aimable?: boolean;
+  };
+  /** Ricochet Shot: the bullet bounces off walls and furniture this many times before it ends. */
+  readonly bounces?: number;
+  /** Explosive Rounds: on impact (a fighter or a wall) it bursts for `damageFactor` of its damage on everyone within `radiusM`. */
+  readonly explode?: { readonly radiusM: number; readonly damageFactor: number; readonly knockbackMps: number };
+  /** Tactical Roll: the caster also rolls `distanceM` at `speedMps` along his movement direction, untouchable for `invulnerableS`, firing as he goes. */
+  readonly roll?: { readonly distanceM: number; readonly speedMps: number; readonly invulnerableS: number };
 }
 
 /** The caster rushes forward, hitting fighters in the way, optionally leaving a burning trail. */
@@ -422,6 +440,11 @@ export interface LeapDelivery {
   readonly radiusM: number;
   /** How fast WASD or the joystick moves the landing spot while aiming (owner, 12/11/2026). */
   readonly aimSpeedMps?: number;
+  /**
+   * Gravehook Launch (Sickle Wielder): a sickle is first thrown at the ground up to `throwRangeM` ahead and must embed (a wall or furniture in the way, and
+   * it fails with nothing moving: no teleport); `embedS` later a tether pulls him up and across in the leap, to land with the slice.
+   */
+  readonly anchor?: { readonly throwRangeM: number; readonly embedS: number };
   /**
    * The form it takes while the caster's buff `empowersLeap` (Bohemeth's ultimate): it carries him further, hits harder
    * (`damageFactor`) and lands with its own, hotter look, but keeps the same landing radius.

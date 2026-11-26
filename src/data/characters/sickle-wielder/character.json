@@ -1,0 +1,66 @@
+{
+  "id": "sickle-wielder",
+  "template": "base-stickman",
+  "displayName": "Sickle Wielder",
+  "description": "Nobody has seen the Sickle Wielder stand up. He comes out of the reeds on all fours, belly to the mud, and the first you know of him is the hook of a rusted sickle round your ankle. What he does to a man's legs, he does patiently.",
+  "characterType": "fighter",
+  "element": "swamp",
+  "combatStyle": "sickle",
+  "profiles": {
+    "animation": "sickle-wielder-animation",
+    "moveset": "sickle-wielder-moveset",
+    "stats": "sickle-wielder-stats",
+    "effects": "sickle-wielder-effects",
+    "audio": "sickle-wielder-audio",
+    "ai": "sickle-wielder-ai"
+  },
+  "rig": {
+    "bones": {
+      "spine": 0.54,
+      "neck": 0.08,
+      "headRadius": 0.145,
+      "upperArm": 0.3,
+      "foreArm": 0.28,
+      "thigh": 0.44,
+      "shin": 0.44
+    },
+    "colour": "#6f8a3c",
+    "colourBack": "#4f6628",
+    "outline": "#0e1606",
+    "limbWidthM": 0.08,
+    "outlineWidthM": 0.03,
+    "spine": 0.55
+  },
+  "capabilities": {
+    "canWalk": true,
+    "canRun": true,
+    "canJump": true,
+    "canPunch": true,
+    "canKick": true,
+    "canBlock": true,
+    "canParry": true,
+    "canUseCombos": true,
+    "canUseAerialPunches": true,
+    "canUseAerialKicks": true,
+    "canUseDownwardKick": true,
+    "canUseSpinningKick": false,
+    "canUsePunchClash": true,
+    "canWallBounce": true,
+    "canGroundBounce": true,
+    "canDisintegrate": true,
+    "isPlayable": true,
+    "canDoubleJump": false,
+    "usesElementalEffects": false,
+    "usesFireEffects": false,
+    "usesElectricEffects": false,
+    "usesIceEffects": false,
+    "isBossCharacter": false,
+    "isAIControlled": false
+  },
+  "unlock": {
+    "unlockedByDefault": true,
+    "tokenCost": 0,
+    "requirement": "Starter fighter."
+  },
+  "abilityKit": "sickle-kit"
+}

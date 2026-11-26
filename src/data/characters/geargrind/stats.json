@@ -1,6 +1,6 @@
 {
   "id": "geargrind-stats",
-  "maxHp": 1000,
+  "maxHp": 975,
   "maxStamina": 110,
   "staminaRegenPerS": 24,
   "staminaRegenDelayS": 0.7,

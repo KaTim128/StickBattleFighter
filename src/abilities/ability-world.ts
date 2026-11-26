@@ -167,8 +167,11 @@ export interface Projectile {
   readonly def: AbilityDef;
   x: number;
   y: number;
-  readonly dir: Vec2;
+  dir: Vec2;
   travelledM: number;
+  /** Ricochet bounces still to come, and a damage multiplier for a final shot (Gunsmith). */
+  bouncesLeft?: number;
+  damageFactor?: number;
   /** Recent positions for the trail (newest last). */
   readonly trail: Vec2[];
 }
@@ -446,6 +449,9 @@ interface LeapAction {
   volleysFired: number;
   /** The shots a volley carries: the ability with a projectile delivery and the volley's payload. */
   readonly volleyDef?: AbilityDef;
+  /** Gravehook Launch: seconds the sickle takes to embed before the pull begins, and where it is anchored. */
+  delayS: number;
+  readonly anchor?: Vec2;
   /** Cast while the caster's buff empowers leaps (Bohemeth's ultimate): flies further, lands harder and looks different. */
   readonly empowered: boolean;
   /** The range, air time and peak this leap really has. */
@@ -680,6 +686,8 @@ export class AbilityWorld {
   readonly strikes: { casterId: string; def: AbilityDef; d: StrikeDelivery; nextS: number; done: number; total: number; dir: Vec2 }[] = [];
   /** Extra Flashsteps still to come while an Overdrive lasts. */
   readonly flashChains: { casterId: string; def: AbilityDef; left: number; nextS: number }[] = [];
+  /** Gunsmith's volleys still being fired. */
+  readonly bursts: { casterId: string; def: AbilityDef; dir: Vec2; fired: number; nextS: number }[] = [];
   readonly marks: DeathMark[] = [];
   readonly telegraphs: Telegraph[] = [];
   private readonly actions: Action[] = [];
@@ -723,6 +731,7 @@ export class AbilityWorld {
     for (const c of this.clouds) if (c.casterId === casterId && c.def.holdsCooldown && !c.mine) ids.add(c.def.id);
     for (const dc of this.decoys) if (dc.casterId === casterId && dc.def.holdsCooldown) ids.add(dc.def.id);
     for (const b of this.beams) if (b.casterId === casterId) ids.add(b.def.id);
+    for (const b of this.bursts) if (b.casterId === casterId) ids.add(b.def.id);
     for (const a of this.actions) {
       if (a.casterId !== casterId) continue;
       if (a.kind === 'pull') {
@@ -792,8 +801,11 @@ export class AbilityWorld {
     // A beam holds its caster's cast open while it pours, so a hit can still end it (B4).
     return (
       this.beams.some((b) => b.casterId === casterId) ||
+      this.bursts.some((b) => b.casterId === casterId) ||
       this.actions.some(
-        (a) => (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'spin' || a.kind === 'barrage') && a.casterId === casterId,
+        (a) =>
+          (a.kind === 'dash' || a.kind === 'leap' || a.kind === 'assault' || a.kind === 'spin' || a.kind === 'barrage') &&
+          a.casterId === casterId,
       )
     );
   }
@@ -928,6 +940,27 @@ export class AbilityWorld {
     const d = def.delivery;
     switch (d.type) {
       case 'projectile': {
+        if (d.roll) {
+          // Tactical Roll: a quick roll along the aim, no hit of its own, while the volley below is fired.
+          this.actions.push({
+            kind: 'dash',
+            casterId,
+            def: { ...def, delivery: { type: 'dash', distanceM: d.roll.distanceM, speedMps: d.roll.speedMps, hitRadiusM: 0, afterimages: { spacingM: 0.8, lifeS: 0.25 } } },
+            dir,
+            remainingS: d.roll.distanceM / d.roll.speedMps,
+            ageS: 0,
+            hit: new Set(),
+            sinceTrailM: TRAIL_SPACING_M,
+            sinceImageM: 0,
+            lastX: at.x,
+            lastY: at.y,
+            stuckS: 0,
+          });
+        }
+        if (d.burst) {
+          this.bursts.push({ casterId, def, dir, fired: 0, nextS: this.nowS });
+          break;
+        }
         // A fan (Shard Volley): `count` shots spread evenly across the arc, each with a hair of its own angle.
         const shots = d.fan?.count ?? 1;
         for (let k = 0; k < shots; k++) {
@@ -947,6 +980,7 @@ export class AbilityWorld {
             dir: shotDir,
             travelledM: 0,
             trail: [],
+            ...(d.bounces ? { bouncesLeft: d.bounces } : {}),
           });
         }
         break;
@@ -1546,6 +1580,18 @@ export class AbilityWorld {
         break;
       case 'leap': {
         // Land on the target (within range), short of any wall or furniture in the way.
+        let anchorAt: Vec2 | undefined;
+        if (d.anchor) {
+          // The hook goes into the ground ahead; if anything blocks the throw it fails and nothing moves (never a teleport).
+          const wantA = Math.min(d.anchor.throwRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
+          const A = { x: at.x + dir.x * wantA, y: at.y + dir.y * wantA };
+          if (wantA < 1 || host.blocked(at, A) !== null || (host.standable && !host.standable(A))) {
+            host.emit({ kind: 'fizzle', ability: def.id, look: def.look, vfx: def.vfx, sfx: null, x: A.x, y: A.y });
+            break;
+          }
+          anchorAt = A;
+          host.emit({ kind: 'impact', ability: def.id, look: def.look, vfx: `${def.vfx}-embed`, sfx: def.sfx.release, x: A.x, y: A.y, radiusM: 0.5 });
+        }
         const empowered = d.empowered !== undefined && host.empowersLeap?.(casterId) === true;
         const form = leapForm(d, empowered);
         const want = Math.min(form.maxRangeM, Math.hypot(aim.x - at.x, aim.y - at.y));
@@ -1593,6 +1639,8 @@ export class AbilityWorld {
           volleysFired: 0,
           empowered,
           form,
+          delayS: d.anchor?.embedS ?? 0,
+          ...(anchorAt ? { anchor: anchorAt } : {}),
           ...(volleyDef ? { volleyDef } : {}),
           baseDir: dir,
         });
@@ -1608,6 +1656,7 @@ export class AbilityWorld {
     this.magix.cancel(casterId);
     for (let i = this.strikes.length - 1; i >= 0; i--) if (this.strikes[i]!.casterId === casterId) this.strikes.splice(i, 1);
     for (let i = this.flashChains.length - 1; i >= 0; i--) if (this.flashChains[i]!.casterId === casterId) this.flashChains.splice(i, 1);
+    for (let i = this.bursts.length - 1; i >= 0; i--) if (this.bursts[i]!.casterId === casterId) this.bursts.splice(i, 1);
     for (let i = this.beams.length - 1; i >= 0; i--) if (this.beams[i]!.casterId === casterId) this.beams.splice(i, 1);
     for (let i = this.actions.length - 1; i >= 0; i--) {
       if (this.actions[i]!.casterId !== casterId) continue;
@@ -1724,6 +1773,7 @@ export class AbilityWorld {
     this.ink.update(dtS, host);
     this.updateStrikes(host);
     this.updateFlashChains(host);
+    this.updateBursts(host);
     this.magix.update(dtS, host);
     for (let i = this.slideTrail.length - 1; i >= 0; i--) {
       const m = this.slideTrail[i]!;
@@ -1773,7 +1823,10 @@ export class AbilityWorld {
       for (const f of host.fighters()) {
         if (this.friendly(f, p.casterId, host) || !f.hittable) continue;
         if (segmentDistance(from, to, f) > d.radiusM + f.radiusM) continue;
-        if (!this.hit(host, p.casterId, f.id, p.def.payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
+        const payload = p.damageFactor
+          ? { ...p.def.payload, damage: p.def.payload.damage * p.damageFactor, knockbackMps: p.def.payload.knockbackMps * p.damageFactor }
+          : p.def.payload;
+        if (!this.hit(host, p.casterId, f.id, payload, p.dir, p.def.look?.hitFlash, p.def.id)) continue; // dodged: flies on
         this.impact(p, f, host, f.id);
         if (d.passThrough) this.streakThrough(p.casterId, p.def, f, p.dir, d.passThrough.exitM, host);
         if (d.lift) this.startLift(p, f, host);
@@ -1784,6 +1837,19 @@ export class AbilityWorld {
         const block = host.blocked(from, to);
         if (block !== null) {
           const at = { x: from.x + (to.x - from.x) * block, y: from.y + (to.y - from.y) * block };
+          if (p.bouncesLeft && p.bouncesLeft > 0) {
+            // Ricochet: bounce off whichever face it hit (the one it cannot move through), keep going from the contact point.
+            const xBlocked = host.blocked(from, { x: to.x, y: from.y }) !== null;
+            const yBlocked = host.blocked(from, { x: from.x, y: to.y }) !== null;
+            const flipX = xBlocked || !yBlocked;
+            const flipY = yBlocked || !xBlocked;
+            p.dir = { x: flipX ? -p.dir.x : p.dir.x, y: flipY ? -p.dir.y : p.dir.y };
+            p.bouncesLeft--;
+            p.x = at.x + p.dir.x * 0.3; // out of the wall, heading away from it
+            p.y = at.y + p.dir.y * 0.3;
+            host.emit({ kind: 'impact', ability: p.def.id, look: p.def.look, vfx: p.def.vfx, sfx: p.def.sfx.impact, x: at.x, y: at.y, radiusM: 0.3 });
+            continue;
+          }
           host.hitEnvironment(p.casterId, at, d.radiusM + 0.15, p.def.payload, p.dir, false);
           this.impact(p, at, host);
           done = true;
@@ -1811,6 +1877,12 @@ export class AbilityWorld {
   private impact(p: Projectile, at: Vec2, host: AbilityHost, hitId?: string): void {
     const d = p.def.delivery;
     if (d.type === 'projectile' && d.cloud) this.spawnCloud(p.casterId, p.def, at, d.cloud, host, hitId);
+    if (d.type === 'projectile' && d.explode) {
+      const e = d.explode;
+      const def = { ...p.def, payload: { ...p.def.payload, damage: p.def.payload.damage * e.damageFactor, knockbackMps: e.knockbackMps, heavy: true } };
+      this.blast(p.casterId, def, at, e.radiusM, host);
+      return;
+    }
     host.emit({
       kind: 'impact',
       ability: p.def.id,
@@ -2348,6 +2420,45 @@ export class AbilityWorld {
     return true;
   }
 
+  /** Gunsmith's volleys: one shot every `gapS`, from alternating hands, each at the nearest enemy (or along the steered aim). */
+  private updateBursts(host: AbilityHost): void {
+    for (let i = this.bursts.length - 1; i >= 0; i--) {
+      const b = this.bursts[i]!;
+      const d = b.def.delivery;
+      if (d.type !== 'projectile' || !d.burst) {
+        this.bursts.splice(i, 1);
+        continue;
+      }
+      while (this.bursts[i] === b && this.nowS >= b.nextS && b.fired < d.burst.count) {
+        const at = host.position(b.casterId);
+        const foe = this.nearestEnemy(b.casterId, at, Math.max(b.def.aimRangeM, d.maxRangeM), host);
+        let dir = b.dir;
+        if (d.burst.aimable) dir = host.steer?.(b.casterId, b.fired === 0) ?? dir;
+        else if (foe) dir = norm({ x: foe.x - at.x, y: foe.y - at.y });
+        const jit = ((this.rng() - 0.5) * (d.burst.jitterRad ?? 0));
+        const shot = { x: dir.x * Math.cos(jit) - dir.y * Math.sin(jit), y: dir.x * Math.sin(jit) + dir.y * Math.cos(jit) };
+        const side = b.fired % 2 === 0 ? 1 : -1; // left hand, right hand
+        const last = b.fired === d.burst.count - 1 && d.burst.finalFactor !== undefined;
+        host.face?.(b.casterId, shot);
+        this.projectiles.push({
+          casterId: b.casterId,
+          def: b.def,
+          x: at.x + shot.x * MUZZLE_M - shot.y * 0.18 * side,
+          y: at.y + shot.y * MUZZLE_M + shot.x * 0.18 * side,
+          dir: shot,
+          travelledM: 0,
+          trail: [],
+          ...(d.bounces ? { bouncesLeft: d.bounces } : {}),
+          ...(last ? { damageFactor: d.burst.finalFactor } : {}),
+        });
+        host.emit({ kind: 'release', ability: b.def.id, look: b.def.look, vfx: b.def.vfx, sfx: b.def.sfx.release, x: at.x, y: at.y, dirX: shot.x, dirY: shot.y });
+        b.fired++;
+        b.nextS += d.burst.gapS;
+      }
+      if (this.bursts[i] === b && b.fired >= d.burst.count) this.bursts.splice(i, 1);
+    }
+  }
+
   /** Flashstep: through the nearest enemy (never through a wall), an afterimage at the start, a punch from behind. False if nobody is in range. */
   private flashStep(casterId: string, def: AbilityDef, d: TeleportDelivery, host: AbilityHost): boolean {
     const at = host.position(casterId);
@@ -2460,6 +2571,11 @@ export class AbilityWorld {
       host.emit({ kind: 'impact', ability: a.def.id, look: a.def.look, vfx: a.def.vfx, sfx: a.def.sfx.release, x: foe.x, y: foe.y, radiusM: 0.55 });
     }
     return false;
+  }
+
+  /** Gravehook Launch tethers in flight: who, where the sickle is anchored, and whether the pull has begun. */
+  tethers(): { casterId: string; x: number; y: number; pulling: boolean }[] {
+    return this.actions.flatMap((a) => (a.kind === 'leap' && a.anchor ? [{ casterId: a.casterId, x: a.anchor.x, y: a.anchor.y, pulling: a.delayS <= 0 }] : []));
   }
 
   /** Spin Cycle's state for the caster's animation, or null when none is under way. */
@@ -2919,6 +3035,10 @@ export class AbilityWorld {
   private stepLeap(a: LeapAction, dtS: number, host: AbilityHost): boolean {
     const d = a.def.delivery;
     if (d.type !== 'leap') return true;
+    if (a.delayS > 0) {
+      a.delayS -= dtS; // the sickle is biting into the ground: nothing moves yet
+      return false;
+    }
     a.t += dtS;
     const vol = d.volley;
     if (vol && a.volleyDef) {

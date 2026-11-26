@@ -1,0 +1,18 @@
+{
+  "id": "sickle-wielder-effects",
+  "punchImpact": "sickle-hit",
+  "kickImpact": "sickle-hit",
+  "heavyImpact": "sickle-wave",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#b6e06a",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "swamp",
+  "held": "sickle"
+}

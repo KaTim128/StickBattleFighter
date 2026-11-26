@@ -17,6 +17,8 @@ const AI: Record<string, string> = {
   'shroud-kit': 'shroud-ai',
   'vexoris-kit': 'vexoris-ai',
   'voltar-kit': 'voltar-ai',
+  'gunsmith-kit': 'gunsmith-ai',
+  'sickle-kit': 'sickle-wielder-ai',
   'aerion-kit': 'aerion-ai',
   'kenshiro-kit': 'kenshiro-ai',
   'psion-kit': 'psion-ai',

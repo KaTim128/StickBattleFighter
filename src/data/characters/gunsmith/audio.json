@@ -1,0 +1,45 @@
+{
+  "id": "gunsmith-audio",
+  "lightPunch": [
+    "punch-light"
+  ],
+  "heavyPunch": [
+    "punch-heavy"
+  ],
+  "lightKick": [
+    "kick-heavy"
+  ],
+  "heavyKick": [
+    "kick-heavy"
+  ],
+  "block": [
+    "block"
+  ],
+  "parry": [
+    "parry"
+  ],
+  "footstep": [
+    "footstep"
+  ],
+  "jump": [
+    "jump"
+  ],
+  "land": [
+    "land"
+  ],
+  "wallImpact": [
+    "wall-thud"
+  ],
+  "clash": [
+    "clash-collide"
+  ],
+  "finisher": [
+    "clash-break"
+  ],
+  "defeat": [
+    "ko"
+  ],
+  "disintegration": [
+    "dust"
+  ]
+}

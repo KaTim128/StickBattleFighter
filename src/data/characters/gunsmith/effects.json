@@ -1,0 +1,18 @@
+{
+  "id": "gunsmith-effects",
+  "punchImpact": "gun-hit",
+  "kickImpact": "gun-hit",
+  "heavyImpact": "gun-wave",
+  "blockImpact": "block-guard",
+  "limbTrail": null,
+  "aura": null,
+  "clash": "clash-white",
+  "finisher": "finisher-white",
+  "disintegration": "dust-grey",
+  "flashColour": "#ffd98a",
+  "shakeScale": 1,
+  "hitstopScale": 1,
+  "head": "round",
+  "body": "gunslinger",
+  "held": "pistols"
+}

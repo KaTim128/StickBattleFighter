@@ -1214,6 +1214,71 @@ const SHAPES: Record<string, CastShape> = {
     },
     settle: 0.4,
   },
+  // ---- Gunsmith: two pistols. Windups bring the guns up; releases hold them level and recoiling.
+  dualBarrage: {
+    windup: { lean: deg(-4), head: deg(0), armFront: limb(50, 70), armBack: limb(46, 74), legFront: limb(30, -34), legBack: limb(-28, -30) },
+    release: { lean: deg(-8), head: deg(-2), armFront: limb(98, 4), armBack: limb(94, 8), legFront: limb(34, -34), legBack: limb(-30, -30) },
+    settle: 0.4,
+  },
+  explosiveRounds: {
+    windup: { lean: deg(6), head: deg(0), armFront: limb(110, 90), armBack: limb(100, 96), legFront: limb(32, -40), legBack: limb(-30, -36) },
+    release: { lean: deg(-14), head: deg(-4), armFront: limb(96, 4), armBack: limb(92, 12), legFront: limb(40, -44), legBack: limb(-34, -34) },
+    settle: 0.5,
+  },
+  ricochetShot: {
+    windup: { lean: deg(8), head: deg(-4), armFront: limb(30, 60), armBack: limb(90, 90), legFront: limb(30, -36), legBack: limb(-30, -34) },
+    release: { lean: deg(-10), head: deg(0), armFront: limb(72, 4), armBack: limb(40, 80), legFront: limb(38, -40), legBack: limb(-32, -34) },
+    settle: 0.4,
+  },
+  tacticalRoll: {
+    windup: { lean: deg(-30), head: deg(14), armFront: limb(60, 110), armBack: limb(50, 110), legFront: limb(50, -100), legBack: limb(-30, -80) },
+    release: { lean: deg(-66), head: deg(30), armFront: limb(90, 10), armBack: limb(84, 12), legFront: limb(60, -110), legBack: limb(-40, -100) },
+    settle: 0.4,
+  },
+  quickdrawExecution: {
+    windup: { lean: deg(8), head: deg(-4), armFront: limb(-24, 60), armBack: limb(-30, 64), legFront: limb(30, -36), legBack: limb(-30, -34) },
+    tremble: deg(1.5),
+    release: { lean: deg(-12), head: deg(0), armFront: limb(100, 2), armBack: limb(96, 6), legFront: limb(38, -40), legBack: limb(-32, -34) },
+    settle: 0.5,
+  },
+  machineGunRampage: {
+    windup: { lean: deg(8), head: deg(-6), armFront: limb(30, 90), armBack: limb(40, 100), legFront: limb(34, -40), legBack: limb(-32, -36) },
+    release: { lean: deg(8), head: deg(-4), armFront: limb(84, 50), armBack: limb(70, 70), legFront: limb(36, -44), legBack: limb(-34, -38) },
+    tremble: deg(1.2),
+    settle: 0.5,
+  },
+  // ---- Sickle Wielder: always low. Everything he does starts and ends near the ground.
+  understrike: {
+    windup: { lean: deg(-50), head: deg(26), armFront: limb(30, 40), armBack: limb(14, 40), legFront: limb(46, -100), legBack: limb(-26, -92) },
+    release: { lean: deg(-28), head: deg(8), armFront: limb(150, 10), armBack: limb(30, 50), legFront: limb(54, -80), legBack: limb(-34, -70) },
+    settle: 0.45,
+  },
+  reaperSweep: {
+    windup: { lean: deg(-40), head: deg(20), armFront: limb(-50, 40), armBack: limb(20, 50), legFront: limb(46, -100), legBack: limb(-28, -90) },
+    release: { lean: deg(-56), head: deg(28), armFront: limb(100, 6), armBack: limb(40, 50), legFront: limb(58, -94), legBack: limb(-32, -86) },
+    settle: 0.5,
+  },
+  hookAndDrag: {
+    windup: { lean: deg(-72), head: deg(40), armFront: limb(18, 20), armBack: limb(8, 24), legFront: limb(54, -118), legBack: limb(-22, -110) },
+    release: { lean: deg(-78), head: deg(44), armFront: limb(96, 4), armBack: limb(30, 20), legFront: limb(60, -120), legBack: limb(-26, -112) },
+    settle: 0.4,
+  },
+  shadowCrawl: {
+    windup: { lean: deg(-70), head: deg(40), armFront: limb(24, 20), armBack: limb(12, 24), legFront: limb(54, -118), legBack: limb(-22, -110) },
+    release: { lean: deg(-72), head: deg(38), armFront: limb(90, 8), armBack: limb(40, 20), legFront: limb(60, -118), legBack: limb(-28, -110) },
+    settle: 0.4,
+  },
+  gravehookLaunch: {
+    windup: { lean: deg(-46), head: deg(22), armFront: limb(-30, 40), armBack: limb(20, 50), legFront: limb(46, -100), legBack: limb(-28, -90) },
+    air: { lean: deg(-20), head: deg(-4), armFront: limb(160, 20), armBack: limb(120, 30), legFront: limb(50, -70), legBack: limb(-34, -60) },
+    release: { lean: deg(-66), head: deg(34), armFront: limb(30, 6), armBack: limb(24, 30), legFront: limb(60, -110), legBack: limb(-26, -100) },
+    settle: 0.5,
+  },
+  graveReaper: {
+    windup: { lean: deg(-60), head: deg(30), armFront: limb(10, 40), armBack: limb(14, 40), legFront: limb(50, -104), legBack: limb(-26, -96) },
+    release: { lean: deg(-40), head: deg(14), armFront: limb(150, 10), armBack: limb(30, 50), legFront: limb(56, -90), legBack: limb(-34, -80) },
+    settle: 0.5,
+  },
   // Fiery Fists: all four arms raised and the fists clenched, trembling, then driven down and out in a roar as the flames take.
   fieryFists: {
     windup: {
@@ -1624,6 +1689,15 @@ export function assaultPose(base: Pose, a: AssaultState, abilityId?: string): Po
   if (a.phase !== 'stab') return base;
   if (abilityId === 'rendingFlurry') return flurryPose(base, a);
   if (abilityId === 'bladeTempest') return swordCut(base, a, 0);
+  if (abilityId === 'graveReaper') {
+    // Grave Reaper: low slashes alternating sides close to the ground; the last is the rising slash.
+    const k = a.t < 0.35 ? ease(a.t / 0.35) : 1;
+    const side = a.stab % 2 === 0 ? 1 : -1;
+    const low: Pose = { ...base, lean: deg(-58), head: deg(28), armFront: limb(-20 + 10 * side, 40), armBack: limb(14, 40), legFront: limb(50, -102), legBack: limb(-26, -94) };
+    const cut: Pose = { ...base, lean: deg(-60 + 8 * side), head: deg(30), armFront: limb(100 + 14 * side, 6), armBack: limb(30, 40), legFront: limb(56, -96), legBack: limb(-30, -88) };
+    const rise: Pose = { ...base, lean: deg(-30), head: deg(10), armFront: limb(160, 8), armBack: limb(30, 50), legFront: limb(56, -80), legBack: limb(-34, -70) };
+    return blendPose(low, a.stab >= 8 ? rise : cut, k);
+  }
   const s = STABS[a.stab % STABS.length]!;
   const cock = { ...base, ...s.cock };
   const strike = { ...base, ...s.strike };

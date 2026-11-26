@@ -1,0 +1,250 @@
+{
+  "id": "sickle-wielder-moveset",
+  "starters": {
+    "tap": "low-slash",
+    "tap-forward": "crawl-lunge",
+    "air-tap": "hook-leap",
+    "falling-tap": "grave-stab",
+    "heavy": "gravedigger"
+  },
+  "moves": [
+    {
+      "id": "low-slash",
+      "displayName": "Low slash",
+      "animationState": "Jab",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.07,
+      "activeS": 0.07,
+      "recoveryS": 0.17,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.7,
+        "radiusM": 0.55
+      },
+      "damage": 13,
+      "strength": 340,
+      "knockbackMps": 1.8,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canPunch"
+      ],
+      "next": {
+        "tap": "horizontal-sweep"
+      },
+      "effect": "sickle-hit"
+    },
+    {
+      "id": "horizontal-sweep",
+      "displayName": "Horizontal sweep",
+      "animationState": "Hook",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.22,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.9,
+        "radiusM": 0.9
+      },
+      "damage": 15,
+      "strength": 340,
+      "knockbackMps": 2.2,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canPunch",
+        "canUseCombos"
+      ],
+      "next": {
+        "tap": "rising-slash"
+      },
+      "effect": "sickle-hit"
+    },
+    {
+      "id": "rising-slash",
+      "displayName": "Rising slash",
+      "animationState": "SideKick",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.11,
+      "activeS": 0.09,
+      "recoveryS": 0.24,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.6,
+        "radiusM": 0.7
+      },
+      "damage": 17,
+      "strength": 340,
+      "knockbackMps": 3.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canUseCombos"
+      ],
+      "next": {
+        "tap": "reaper-spin"
+      },
+      "effect": "sickle-hit"
+    },
+    {
+      "id": "reaper-spin",
+      "displayName": "Reaper spin",
+      "animationState": "RoundhouseKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.17,
+      "activeS": 0.1,
+      "recoveryS": 0.38,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 2.1,
+        "radiusM": 1.0
+      },
+      "damage": 28,
+      "strength": 340,
+      "knockbackMps": 4.5,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canPunch",
+        "canUseCombos"
+      ],
+      "effect": "sickle-wave"
+    },
+    {
+      "id": "crawl-lunge",
+      "displayName": "Crawl lunge",
+      "animationState": "FrontKick",
+      "category": "punch",
+      "heavy": false,
+      "aerial": false,
+      "startupS": 0.1,
+      "activeS": 0.08,
+      "recoveryS": 0.26,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.9,
+        "radiusM": 0.6
+      },
+      "damage": 15,
+      "strength": 340,
+      "knockbackMps": 3.5,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canPunch",
+        "canUseCombos"
+      ],
+      "effect": "sickle-hit"
+    },
+    {
+      "id": "hook-leap",
+      "displayName": "Hook leap",
+      "animationState": "JumpingFrontKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.09,
+      "activeS": 0.09,
+      "recoveryS": 0.3,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.6,
+        "radiusM": 0.7
+      },
+      "damage": 22,
+      "strength": 340,
+      "knockbackMps": 3.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canUseAerialPunches"
+      ],
+      "effect": "sickle-hit"
+    },
+    {
+      "id": "grave-stab",
+      "displayName": "Grave stab",
+      "animationState": "DownwardAerialKick",
+      "category": "punch",
+      "heavy": true,
+      "aerial": true,
+      "startupS": 0.07,
+      "activeS": 0.1,
+      "recoveryS": 0.3,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 1.4,
+        "radiusM": 0.8
+      },
+      "damage": 30,
+      "strength": 340,
+      "knockbackMps": 4.0,
+      "lungeMps": 1.0,
+      "moveFactor": 0.4,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canUseAerialPunches"
+      ],
+      "effect": "sickle-hit"
+    },
+    {
+      "id": "gravedigger",
+      "displayName": "Gravedigger",
+      "animationState": "HeavyAttack",
+      "category": "punch",
+      "heavy": true,
+      "aerial": false,
+      "startupS": 0.5,
+      "activeS": 0.12,
+      "recoveryS": 0.5,
+      "cancelAt": 0.55,
+      "hitbox": {
+        "reachM": 2.3,
+        "radiusM": 1.0
+      },
+      "damage": 42,
+      "strength": 340,
+      "knockbackMps": 6.5,
+      "lungeMps": 1.0,
+      "moveFactor": 0.2,
+      "impact": "knuckle-light",
+      "shake": 0.15,
+      "zoomPunch": 0.013,
+      "requires": [
+        "canPunch",
+        "canUseCombos"
+      ],
+      "effect": "sickle-wave",
+      "sfx": "hit-sickle-gravedigger"
+    }
+  ]
+}

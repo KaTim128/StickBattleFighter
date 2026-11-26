@@ -67,7 +67,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   // with the elbows thrown out to both sides.
   rampage: {
     title: 'The Unbroken Wall',
-    style: 'Heavyweight brawler: charges, grabs and crushing slams',
+    style: 'Judo fighter: throws, takedowns, broken balance and counter grapples',
     pelvis: 0.86,
     leadFoot: 0.36,
     rearFoot: -0.4,
@@ -197,6 +197,36 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
     scale: 1,
     breath: { lean: 1, pelvis: 0.014, hands: 0.012 },
   },
+  // Gunsmith: a duellist's loose stance, one pistol raised and levelled at the viewer, the other held low at the hip, weight on the back foot.
+  gunsmith: {
+    title: 'The Two-Gun Sharpshooter',
+    style: 'Dual-pistol gunslinger: volleys, explosive and ricochet rounds, a rolling dodge and a machine gun',
+    pelvis: 0.86,
+    leadFoot: 0.34,
+    rearFoot: -0.3,
+    lean: -4,
+    head: 2,
+    front: { x: 0.98, y: -0.02 },
+    back: { x: 0.32, y: 0.5 },
+    turn: 0.55,
+    scale: 1,
+    breath: { lean: 1, pelvis: 0.012, hands: 0.012 },
+  },
+  // Sickle Wielder: down on all fours, belly low, the sickle hand reaching forward over the ground, the head raised.
+  'sickle-wielder': {
+    title: 'The Mire Reaper',
+    style: 'Crawling sickle fighter: low slashes, leg sweeps, hooks and drags, and a leap on a tether',
+    pelvis: 0.5,
+    leadFoot: 0.44,
+    rearFoot: -0.3,
+    lean: -52,
+    head: 34,
+    front: { x: 0.7, y: 0.78 },
+    back: { x: 0.3, y: 0.86 },
+    turn: 0.55,
+    scale: 1.05,
+    breath: { lean: 1.4, pelvis: 0.01, hands: 0.02 },
+  },
   // Voltar: a Wing Chun guard, narrow stance, lead hand up on the centreline, rear hand tucked behind it, elbows in.
   voltar: {
     title: 'The Living Storm',
@@ -231,7 +261,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   // Prismor: planted wide like a monument, the oversized crystal arm raised across his chest, the other hand loose and open.
   prismor: {
     title: 'The Grown Armoury',
-    style: 'Crystal weaponsmith: greatsword, shield, dual blades, lance and warhammer grown from his arms',
+    style: 'Street fighter: quick, dirty brawling with a greatsword, shield, dual blades, lance and warhammer grown from his arms',
     pelvis: 0.93,
     leadFoot: 0.3,
     rearFoot: -0.32,
@@ -279,7 +309,7 @@ export const SELECT_STANCES: Readonly<Record<string, SelectStance>> = {
   // clear of the legs; the face is open. A little taller than before.
   bohemeth: {
     title: 'The Four Armed Brute',
-    style: 'Four-armed heavyweight: spins, uppercuts, claps, smashes and unleashes rapid four-fisted barrages',
+    style: 'Heavyweight wrestler: four-armed grapples, holds, lifts, throws and body slams',
     pelvis: 0.84,
     leadFoot: 0.44,
     rearFoot: -0.44,

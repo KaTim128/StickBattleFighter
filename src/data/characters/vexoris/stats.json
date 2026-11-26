@@ -1,8 +1,8 @@
 {
   "id": "vexoris-stats",
-  "maxHp": 1000,
+  "maxHp": 880,
   "maxStamina": 100,
-  "staminaRegenPerS": 34.8,
+  "staminaRegenPerS": 39,
   "staminaRegenDelayS": 0.7,
   "movement": {
     "maxSpeedMps": 5.0,

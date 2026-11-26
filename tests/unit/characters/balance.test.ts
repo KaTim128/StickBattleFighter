@@ -26,21 +26,21 @@ describe('fighter balance (owner, 12/11/2026: no fighter objectively stronger on
     for (const t of totals) expect(Math.abs(t - mean) / mean).toBeLessThan(0.03);
   });
 
-  it('but each spends it differently: every fighter is among the best four at something and among the weakest four at something', () => {
+  it('but each spends it differently: every fighter is among the best five at something and among the weakest five at something', () => {
     // There are only six stats, so with a growing roster (sixteen are planned) one fighter cannot lead each; "best at
     // something" became "top two" when the fifth fighter arrived (owner order TD-114, 20/11/2026) and "top three" when the
-    // tenth did (the six stats have twelve top-two places, fewer than the roster can fill; TD-132, 21/11/2026). "Top three" and "weakest three" became "top four" and "weakest four" with the fifteenth fighter, Bohemeth, whose huge health and slow body take places at both ends (TD-174, 25/11/2026).
+    // tenth did (the six stats have twelve top-two places, fewer than the roster can fill; TD-132, 21/11/2026). "Top three" and "weakest three" became "top four" and "weakest four" with the fifteenth fighter, Bohemeth, whose huge health and slow body take places at both ends (TD-174, 25/11/2026). With the eighteenth fighter (Gunsmith and Sickle Wielder, 26/11/2026) it became "top five" and "weakest five" (TD-178): the same share of the roster.
     for (const { id, r } of ratings) {
       const others = ratings.filter((o) => o.id !== id);
       const rankFromTop = (k: (typeof RATING_KEYS)[number]) => others.filter((o) => o.r[k] >= r[k]).length;
       const rankFromBottom = (k: (typeof RATING_KEYS)[number]) => others.filter((o) => o.r[k] <= r[k]).length;
       expect(
-        RATING_KEYS.some((k) => rankFromTop(k) <= 3),
-        `${id} is among the top four in some stat`,
+        RATING_KEYS.some((k) => rankFromTop(k) <= 4),
+        `${id} is among the top five in some stat`,
       ).toBe(true);
       expect(
-        RATING_KEYS.some((k) => rankFromBottom(k) <= 3),
-        `${id} is among the weakest four in some stat`,
+        RATING_KEYS.some((k) => rankFromBottom(k) <= 4),
+        `${id} is among the weakest five in some stat`,
       ).toBe(true);
     }
   });

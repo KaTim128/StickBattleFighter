@@ -134,7 +134,9 @@ export type IdleStyle =
   | 'calligrapher'
   | 'fourarm'
   | 'magician'
-  | 'storm';
+  | 'storm'
+  | 'gunslinger'
+  | 'crawler';
 
 /** The movement style for an Idle clip id (`proc.idle.<style>`); anything else is the boxer default. */
 export function idleStyleFor(clipId: string | undefined): IdleStyle {
@@ -155,6 +157,8 @@ export function idleStyleFor(clipId: string | undefined): IdleStyle {
   if (clipId === 'proc.idle.magician') return 'magician';
   if (clipId === 'proc.idle.fourarm') return 'fourarm';
   if (clipId === 'proc.idle.storm') return 'storm';
+  if (clipId === 'proc.idle.gunslinger') return 'gunslinger';
+  if (clipId === 'proc.idle.crawler') return 'crawler';
   return 'boxer';
 }
 
@@ -319,6 +323,42 @@ function sonicIdle(timeS: number, bones: BoneLengths): Pose {
 }
 
 /**
+ * GUNSLINGER (Gunsmith): a loose, confident duellist's stance. Weight on the back foot, the chest turned a little, both pistols held low and
+ * ready at the hips with the barrels angled forward, and a lazy sway as if listening for the other man's hand to move.
+ */
+function gunslingerIdle(timeS: number, bones: BoneLengths): Pose {
+  const sway = Math.sin(timeS * TAU * 0.3);
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.5);
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-3 + sway * 1.2),
+    head: deg(2),
+    armFront: { root: deg(58 + breath * 3), bend: deg(40) },
+    armBack: { root: deg(44 - breath * 3), bend: deg(46) },
+    legFront: legIk(0.32 + sway * 0.015, legs * 0.93, bones.thigh, bones.shin),
+    legBack: legIk(-0.28 - sway * 0.015, legs * 0.94 - breath * 0.006, bones.thigh, bones.shin),
+  };
+}
+
+/**
+ * CRAWLER (Sickle Wielder): he never stands up. Almost on all fours, the body leaning hard forward and low, the sickle hand hanging near the
+ * ground and the other planted, the knees bent under him, shifting his weight like something about to pounce out of the reeds.
+ */
+function crawlerIdle(timeS: number, bones: BoneLengths): Pose {
+  const creep = Math.sin(timeS * TAU * 0.6);
+  const breath = 0.5 + 0.5 * Math.sin(timeS * TAU * 0.4);
+  const legs = bones.thigh + bones.shin;
+  return {
+    lean: deg(-52 + creep * 2),
+    head: deg(30 + breath * 3),
+    armFront: { root: deg(22 + creep * 4), bend: deg(18) },
+    armBack: { root: deg(8 - creep * 4), bend: deg(24) },
+    legFront: legIk(0.42 + creep * 0.02, legs * 0.62, bones.thigh, bones.shin),
+    legBack: legIk(-0.34 - creep * 0.02, legs * 0.6 - breath * 0.01, bones.thigh, bones.shin),
+  };
+}
+
+/**
  * STORM (Voltar): a living lightning bolt at rest. Weight on the balls of the feet, leaning into the fight, both hands loose and ready at
  * chest height, and a fine, fast tremor through the body as if the next flash were already building.
  */
@@ -476,6 +516,8 @@ export function idlePose(timeS: number, bones: BoneLengths, style: IdleStyle = '
   if (style === 'temporal') return temporalIdle(timeS, bones);
   if (style === 'sonic') return sonicIdle(timeS, bones);
   if (style === 'storm') return stormIdle(timeS, bones);
+  if (style === 'gunslinger') return gunslingerIdle(timeS, bones);
+  if (style === 'crawler') return crawlerIdle(timeS, bones);
   if (style === 'mechanic') return mechanicIdle(timeS, bones);
   if (style === 'psychic') return psychicIdle(timeS, bones);
   if (style === 'samurai') return samuraiIdle(timeS, bones);
@@ -709,6 +751,21 @@ export function walkPose(phase: number, bones: BoneLengths, style: IdleStyle = '
       arms: { lead: { x: 0.3, y: 0.4 }, rear: { x: -0.04, y: 0.44 }, swingX: 0.07, swingY: 0.02 },
     });
   }
+  if (style === 'crawler') {
+    // A crawl: low and forward on bent legs, the arms reaching and planting alternately close to the ground.
+    return gaitPose(phase, bones, {
+      pelvisM: 0.5,
+      bob: 0.02,
+      leadX: 0.2,
+      rearX: -0.2,
+      reach: 0.14 * k,
+      lift: 0.05,
+      lean: -48,
+      sway: 2.5,
+      head: 26,
+      arms: { lead: { x: 0.34, y: 0.62 }, rear: { x: 0.2, y: 0.64 }, swingX: 0.16, swingY: 0.05 },
+    });
+  }
   if (style === 'storm') {
     // Quick, light steps leaning forward, the hands held ready: he never plods.
     return gaitPose(phase, bones, {
@@ -833,6 +890,8 @@ export function relaxedPose(timeS: number, bones: BoneLengths, style: IdleStyle 
     style === 'mechanic' ||
     style === 'sonic' ||
     style === 'storm' ||
+    style === 'gunslinger' ||
+    style === 'crawler' ||
     style === 'temporal' ||
     style === 'calligrapher' ||
     style === 'magician' ||
@@ -1092,6 +1151,21 @@ const MECHANIC_RUN: RunStyle = {
   pumpBack: { shoulder: -40, elbow: 90 },
 };
 
+/** CRAWL RUN (Sickle Wielder): a fast scuttle on all fours, belly low, the hands slapping down ahead of the knees. */
+const CRAWL_RUN: RunStyle = {
+  pelvisM: 0.46,
+  bob: 0.03,
+  reachM: 0.3,
+  pushM: 0.34,
+  stance: 0.4,
+  swingLiftM: 0.16,
+  lean: -56,
+  drive: 4,
+  head: 30,
+  pumpFront: { shoulder: 30, elbow: 40 },
+  pumpBack: { shoulder: 12, elbow: 50 },
+};
+
 /**
  * STORM RUN (Voltar): a bolt along the ground. Leaning hard into the run, long reaching strides with a real flight phase, the arms
  * pumped low and tight. The sprint leans further and drives harder.
@@ -1167,7 +1241,9 @@ const CRYSTAL_RUN: RunStyle = {
 };
 
 const runStyleFor = (style: IdleStyle, sprint: boolean): RunStyle =>
-  style === 'storm'
+  style === 'crawler'
+    ? CRAWL_RUN
+    : style === 'storm'
     ? sprint
       ? STORM_SPRINT
       : STORM_RUN

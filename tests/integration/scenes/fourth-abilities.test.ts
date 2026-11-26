@@ -161,16 +161,13 @@ describe('fourth abilities (R)', () => {
     scenes.clear();
   });
 
-  it('Necro Grave Chains: chains catch the enemy at range and drag it to his feet', async () => {
-    const { intents, scene, scenes, run, runUntil } = await setup('necro', { x: 10, y: 13 }, { x: 16.5, y: 13 });
+  it('Necro Skeletal Brute (replaced Grave Chains, owner 26/11/2026): two armoured skeletons rise beside him', async () => {
+    const { intents, scene, scenes, run } = await setup('necro', { x: 10, y: 13 }, { x: 16.5, y: 13 });
     intents.pressAbility('a4');
-    runUntil(() => scene.dummy.hp < 1000, 2);
-    expect(scene.dummy.hp).toBeLessThan(1000);
-    runUntil(() => Math.hypot(scene.dummy.x - 10, scene.dummy.y - 13) < 2, 1.5);
-    run(0.2);
-    const d = Math.hypot(scene.dummy.x - 10, scene.dummy.y - 13);
-    expect(d).toBeLessThan(2); // dragged in from 6.5 m
-    expect(d).toBeGreaterThan(0.6); // to his feet, not into him
+    run(1.2);
+    const list = (scene as unknown as { summons: { list: { summon: unknown; def: { id: string }; combatant: { isKo: boolean } }[] } }).summons.list;
+    const raised = list.filter((m) => m.summon && !m.combatant.isKo && m.def.id === 'skeleton-brute');
+    expect(raised).toHaveLength(2);
     scenes.clear();
   });
 });

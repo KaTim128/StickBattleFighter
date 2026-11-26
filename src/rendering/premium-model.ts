@@ -124,6 +124,10 @@ export interface PremiumSkin {
   readonly magic?: 'magician' | 'rabbit';
   /** A second, lower pair of arms (the rig's `lowerArms` gives them their shoulders). */
   readonly fourArms?: boolean;
+  /** Round glasses on the face (Gunsmith). */
+  readonly glasses?: { readonly frame: number; readonly lens: number };
+  /** Leather holsters with pistol grips on both hips (Gunsmith). */
+  readonly holsters?: { readonly leather: number; readonly metal: number };
   /** Lightning that flickers round the hands and feet all the time, and in forks when he moves or is electrified (Voltar). */
   readonly storm?: { readonly bolt: number; readonly fork: number };
   /** A crystal crown of sharp points on the head (Prismor). */
@@ -467,6 +471,73 @@ export const PREMIUM_SKINS: Readonly<Record<string, PremiumSkin>> = {
     head: 'own',
     garment: { hem: 'tattered', trim: 0x2ee6ff, cloth: [0x0d0d14, 0x23232e, 0x050508] },
     storm: { bolt: 0x8ff8ff, fork: 0xfff07a },
+  },
+  // Gunsmith (owner, 26/11/2026): a stylish gunslinger: tan skin, a long dark brown coat with a gold hem, leather holsters on both hips, boots, and
+  // clearly visible round glasses.
+  gunslinger: {
+    palette: {
+      outline: 0x120a04,
+      skin: 0xe8c9a0,
+      skinLit: 0xffe4c0,
+      skinShade: 0xb08a5c,
+      skinBack: 0xc9a77a,
+      rim: 0xfff0d0,
+      armour: 0x2a1c12,
+      armourLit: 0x4a3422,
+      armourEdge: 0x120a04,
+      seam: 0xe0a030,
+      lava: 0xffd070,
+      glow: 0xffb347,
+      hand: 0xe8c9a0,
+    },
+    bulk: 0.98,
+    muscle: 0.3,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'trousers',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'boots',
+      belt: true,
+    },
+    fire: { core: false, veins: false, fists: false },
+    head: 'own',
+    garment: { hem: 'coat', trim: 0xc89030, cloth: [0x2a1c12, 0x4a3422, 0x120a04] },
+    glasses: { frame: 0x111114, lens: 0x9fd0ff },
+    holsters: { leather: 0x4a2c14, metal: 0x8a8f9a },
+  },
+  // Sickle Wielder (owner, 26/11/2026): a sinister swamp-green stickman, lean and bare, in a tattered dark green wrap, always low to the ground.
+  swamp: {
+    palette: {
+      outline: 0x0e1606,
+      skin: 0x6f8a3c,
+      skinLit: 0xa8c860,
+      skinShade: 0x3e5220,
+      skinBack: 0x546c2c,
+      rim: 0xd6f08a,
+      armour: 0x2a3a14,
+      armourLit: 0x44582a,
+      armourEdge: 0x0e1606,
+      seam: 0xb6e06a,
+      lava: 0xe6ff9a,
+      glow: 0x8fd04a,
+      hand: 0x6f8a3c,
+    },
+    bulk: 0.92,
+    muscle: 0.35,
+    gear: {
+      shoulder: 'none',
+      bracers: false,
+      legs: 'none',
+      kneeGuards: false,
+      shinGuards: false,
+      feet: 'bare',
+      belt: false,
+    },
+    fire: { core: false, veins: true, fists: false },
+    head: 'own',
+    garment: { hem: 'tattered', trim: 0x8fd04a, cloth: [0x2a3a18, 0x44582a, 0x131c0a] },
   },
   // Reson (master plan section 4): a dark charcoal stickman with glowing cyan soundwave patterns, a resonance device on each
   // forearm and geometric amplification plates on the shoulders. Not Geargrind: no backpack, no machine arm, no orange.
@@ -1021,6 +1092,8 @@ export class PremiumModel {
     if ((this.st.crystalArmour ?? 0) > 0.02) this.crystalArmourOverlay(g, fire, s);
     if ((this.st.fireFists ?? 0) > 0.02) this.fistFlames(g, fire, s);
     if (this.skin.storm) this.stormSparks(g, fire, s);
+    if (this.skin.holsters) this.holsters(g, s);
+    if (this.skin.glasses) this.glasses(g, s);
     const wp = this.st.weapon;
     if (wp?.kind === 'fists') this.crystalFists(g, fire, s, wp.form);
     else if (wp?.kind === 'blades') this.shardBlades(g, fire, s, wp.form);
@@ -1658,6 +1731,34 @@ export class PremiumModel {
    * Fiery Fists: a flame round each of the four fists: a hot white-yellow core, an orange body licking upward and leaning back from the way
    * the hand is moving, a red outer lick, and a few embers that rise off it. Grows from nothing as the fire takes hold.
    */
+  /** Gunsmith's holsters: a leather pouch at each hip with a pistol grip sticking out. */
+  private holsters(g: Graphics, s: Skel): void {
+    const h = this.skin.holsters;
+    if (!h) return;
+    const { w } = this.st;
+    for (const k of [-1, 1]) {
+      const x = s.pelvis.x + k * w * 0.9 * 0.5;
+      const y = s.pelvis.y + 0.08;
+      g.roundRect(x - 0.07, y, 0.14, 0.3, 0.04).fill(this.c(h.leather)).stroke({ width: w * 0.1, color: this.c(this.P.outline) });
+      g.roundRect(x - 0.035, y - 0.09, 0.07, 0.13, 0.02).fill(this.c(h.metal)).stroke({ width: w * 0.08, color: this.c(this.P.outline) });
+    }
+  }
+
+  /** Gunsmith's glasses: two round lenses with a bridge and an arm back to the ear, clearly visible on the face. */
+  private glasses(g: Graphics, s: Skel): void {
+    const gl = this.skin.glasses;
+    if (!gl) return;
+    const r = this.st.headRadius;
+    const h = s.head;
+    const lens = [{ x: h.x + r * 0.62, y: h.y - r * 0.02 }, { x: h.x + r * 0.12, y: h.y - r * 0.02 }];
+    g.moveTo(lens[1]!.x - r * 0.26, lens[1]!.y).lineTo(h.x - r * 0.8, h.y - r * 0.06).stroke({ width: r * 0.1, color: this.c(gl.frame) });
+    g.moveTo(lens[0]!.x - r * 0.26, lens[0]!.y).lineTo(lens[1]!.x + r * 0.26, lens[1]!.y).stroke({ width: r * 0.1, color: this.c(gl.frame) });
+    for (const l of lens) {
+      g.circle(l.x, l.y, r * 0.3).fill({ color: this.c(gl.lens), alpha: 0.85 }).stroke({ width: r * 0.12, color: this.c(gl.frame) });
+      g.circle(l.x - r * 0.08, l.y - r * 0.09, r * 0.07).fill({ color: 0xffffff, alpha: 0.9 });
+    }
+  }
+
   /**
    * Voltar's lightning: short jagged bolts always flickering off both hands and both feet (cyan with a white core, now and then a yellow
    * fork), more and longer with how fast he moves and when Overdrive electrifies him. Kept thin so the body stays readable.

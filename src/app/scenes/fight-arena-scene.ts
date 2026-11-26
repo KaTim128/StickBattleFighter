@@ -1199,7 +1199,7 @@ export class FightArenaScene implements ArenaScene {
       const d = f.caster?.def(slot).delivery;
       const m = this.intents.move;
       const evadeAim =
-        d?.type === 'parry' && d.evade
+        (d?.type === 'parry' && d.evade) || (d?.type === 'projectile' && d.roll)
           ? Math.hypot(m.x, m.y) > 0.2
             ? { x: f.x + m.x, y: f.y + m.y }
             : { x: f.x - f.aim.x, y: f.y - f.aim.y }
@@ -4001,6 +4001,12 @@ export class FightArenaScene implements ArenaScene {
       const caster = p.def.payload.pull && p.def.look ? this.fighterByName(p.casterId) : null;
       if (caster && p.def.look)
         chains.push({ from: { x: caster.x, y: caster.y }, to: { x: p.x, y: p.y }, palette: p.def.look.palette });
+    }
+    // Gravehook Launch: the tether from the thrower to the sickle embedded in the ground.
+    for (const t of world.tethers()) {
+      const caster = this.fighterByName(t.casterId);
+      const look = caster?.caster ? ABILITY_SLOTS.map((sl) => caster.caster!.def(sl)).find((d) => d.delivery.type === 'leap' && d.delivery.anchor)?.look : undefined;
+      if (caster && look) chains.push({ from: { x: caster.x, y: caster.y }, to: { x: t.x, y: t.y }, palette: look.palette });
     }
     world.forEachPull((casterId, targetId) => {
       const caster = this.fighterByName(casterId);

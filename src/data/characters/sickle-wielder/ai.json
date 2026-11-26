@@ -1,0 +1,8 @@
+{
+  "id": "sickle-wielder-ai",
+  "attackEveryS": 0.95,
+  "aggression": 0.6,
+  "clashMashRate": 6,
+  "settleDecelMps2": 13,
+  "reactionS": 0.2
+}

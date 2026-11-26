@@ -143,6 +143,20 @@ import skeletonStats from '../data/characters/skeleton-warrior/stats.json';
 import dummyAi from '../data/characters/training-dummy/ai.json';
 import dummyCharacter from '../data/characters/training-dummy/character.json';
 import dummyStats from '../data/characters/training-dummy/stats.json';
+import gunsmithAi from '../data/characters/gunsmith/ai.json';
+import gunsmithAnimation from '../data/characters/gunsmith/animation-profile.json';
+import gunsmithAudio from '../data/characters/gunsmith/audio.json';
+import gunsmithCharacter from '../data/characters/gunsmith/character.json';
+import gunsmithEffects from '../data/characters/gunsmith/effects.json';
+import gunsmithMoveset from '../data/characters/gunsmith/moveset.json';
+import gunsmithStats from '../data/characters/gunsmith/stats.json';
+import sickleWielderAi from '../data/characters/sickle-wielder/ai.json';
+import sickleWielderAnimation from '../data/characters/sickle-wielder/animation-profile.json';
+import sickleWielderAudio from '../data/characters/sickle-wielder/audio.json';
+import sickleWielderCharacter from '../data/characters/sickle-wielder/character.json';
+import sickleWielderEffects from '../data/characters/sickle-wielder/effects.json';
+import sickleWielderMoveset from '../data/characters/sickle-wielder/moveset.json';
+import sickleWielderStats from '../data/characters/sickle-wielder/stats.json';
 import voltarAi from '../data/characters/voltar/ai.json';
 import voltarAnimation from '../data/characters/voltar/animation-profile.json';
 import voltarAudio from '../data/characters/voltar/audio.json';
@@ -186,6 +200,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudCharacter,
     vexorisCharacter,
     voltarCharacter,
+    sickleWielderCharacter,
+    gunsmithCharacter,
     aerionCharacter,
     kenshiroCharacter,
     psionCharacter,
@@ -215,6 +231,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudAnimation,
     vexorisAnimation,
     voltarAnimation,
+    sickleWielderAnimation,
+    gunsmithAnimation,
     aerionAnimation,
     kenshiroAnimation,
     psionAnimation,
@@ -238,6 +256,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudMoveset,
     vexorisMoveset,
     voltarMoveset,
+    sickleWielderMoveset,
+    gunsmithMoveset,
     aerionMoveset,
     kenshiroMoveset,
     psionMoveset,
@@ -263,6 +283,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudStats,
     vexorisStats,
     voltarStats,
+    sickleWielderStats,
+    gunsmithStats,
     aerionStats,
     kenshiroStats,
     psionStats,
@@ -289,6 +311,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudEffects,
     vexorisEffects,
     voltarEffects,
+    sickleWielderEffects,
+    gunsmithEffects,
     aerionEffects,
     kenshiroEffects,
     psionEffects,
@@ -314,6 +338,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudAudio,
     vexorisAudio,
     voltarAudio,
+    sickleWielderAudio,
+    gunsmithAudio,
     aerionAudio,
     kenshiroAudio,
     psionAudio,
@@ -336,6 +362,8 @@ export const BUILT_IN_LIBRARY: CharacterLibrary = {
     shroudAi,
     vexorisAi,
     voltarAi,
+    sickleWielderAi,
+    gunsmithAi,
     aerionAi,
     kenshiroAi,
     psionAi,

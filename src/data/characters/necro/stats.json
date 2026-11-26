@@ -1,6 +1,6 @@
 {
   "id": "necro-stats",
-  "maxHp": 1000,
+  "maxHp": 950,
   "maxStamina": 100,
   "staminaRegenPerS": 36,
   "staminaRegenDelayS": 0.7,
@@ -16,7 +16,7 @@
     "massKg": 60
   },
   "power": 1.04,
-  "defence": 1.155,
+  "defence": 1.2,
   "critChance": 0.05,
   "critMultiplier": 1.5,
   "knockbackResistance": 0,

@@ -1543,6 +1543,36 @@ export class StickmanView {
       g.circle(sh.x + ux * 0.06, sh.y + uy * 0.06, r * 0.72).fill(0x6a5a8c);
       g.circle(sh.x + ux * 0.06, sh.y + uy * 0.06, r * 0.22).fill(0xd9c8ff);
     }
+    if (this.held === 'pistols') {
+      // Gunsmith: a pistol in each hand, barrels along the forearms.
+      for (const arm of [s.armFront, s.armBack]) {
+        const [, el, hd] = arm;
+        const px = hd.x - el.x;
+        const py = hd.y - el.y;
+        const pl = Math.hypot(px, py) || 1;
+        const qx = px / pl;
+        const qy = py / pl;
+        const tip = { x: hd.x + qx * 0.34, y: hd.y + qy * 0.34 };
+        g.moveTo(hd.x, hd.y).lineTo(tip.x, tip.y).stroke({ width: 0.07 + o * 2, color: 0x0c0c10, cap: 'round' });
+        g.moveTo(hd.x, hd.y).lineTo(tip.x, tip.y).stroke({ width: 0.055, color: 0x8a8f9a, cap: 'round' });
+        g.moveTo(hd.x + qx * 0.04, hd.y + qy * 0.04)
+          .lineTo(hd.x - qy * 0.1 - qx * 0.02, hd.y + qx * 0.1 - qy * 0.02)
+          .stroke({ width: 0.05, color: 0x5a3a1c, cap: 'round' });
+      }
+      return;
+    }
+    if (this.held === 'sickle') {
+      // Sickle Wielder: a short handle in the lead hand and a long, curved, rusted blade hooking forward and down.
+      const tip = { x: hand.x + ux * 0.3, y: hand.y + uy * 0.3 };
+      g.moveTo(hand.x - ux * 0.1, hand.y - uy * 0.1).lineTo(tip.x, tip.y).stroke({ width: 0.05 + o * 2, color: 0x2a1c10, cap: 'round' });
+      const b1 = { x: tip.x + ux * 0.3 - uy * 0.22, y: tip.y + uy * 0.3 + ux * 0.22 };
+      const b2 = { x: tip.x + ux * 0.46 - uy * 0.52, y: tip.y + uy * 0.46 + ux * 0.52 };
+      g.moveTo(tip.x, tip.y).quadraticCurveTo(b1.x, b1.y, b2.x, b2.y).stroke({ width: 0.09 + o * 2, color: 0x14160e, cap: 'round' });
+      g.moveTo(tip.x, tip.y).quadraticCurveTo(b1.x, b1.y, b2.x, b2.y).stroke({ width: 0.06, color: 0x9aa58a, cap: 'round' });
+      g.moveTo(tip.x, tip.y).quadraticCurveTo(b1.x, b1.y, b2.x, b2.y).stroke({ width: 0.016, color: 0xe6efd6, cap: 'round', alpha: 0.9 });
+      this.bladeTip = { tip: b2, inner: tip };
+      return;
+    }
     if (this.held === 'staff') {
       this.drawStaff(g, s, o);
       return;

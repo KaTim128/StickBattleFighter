@@ -680,6 +680,86 @@ export const ABILITY_ICONS: Readonly<Record<string, string>> = {
     rays(24, 24, 15, '#8ff8ff', 0.2),
     `<path d="M24 2 L18 18 L28 18 L14 46" fill="none" stroke="#19c4e0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".7" filter="url(#gl)"/><path d="M24 2 L18 18 L28 18 L14 46" fill="none" stroke="#fffbd0" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 44 H42" stroke="#8ff8ff" stroke-width="3" stroke-linecap="round" filter="url(#gl)"/><circle cx="14" cy="45" r="7" fill="none" stroke="#fffbd0" stroke-width="2" opacity=".7"/>`,
   ),
+  'pistol-combo': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<g transform="translate(16 16) scale(1)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><g transform="translate(30 30) scale(1)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><path d="M24 14 H42" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/><path d="M38 28 H46" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/>`,
+  ),
+  'quickdraw-blast': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<g transform="translate(18 24) scale(1.3)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><circle cx="38" cy="24" r="6" fill="#fff6d0" filter="url(#gl)"/><path d="M26 24 H44" stroke="#ffd070" stroke-width="3" stroke-linecap="round"/>`,
+  ),
+  'dual-barrage': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<g transform="translate(14 14) scale(1)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><g transform="translate(14 32) scale(1)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><path d="M22 12 H22" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/><path d="M22 16 H22" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/><path d="M22 30 H22" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/><path d="M22 34 H22" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/>`,
+  ),
+  'explosive-rounds': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<circle cx="30" cy="24" r="11" fill="#ff8a1a" opacity=".85" filter="url(#gl)"/><circle cx="30" cy="24" r="5" fill="#fff6d0"/><g transform="translate(12 24) scale(1)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><path d="M22 24 H26" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/>`,
+  ),
+  'ricochet-shot': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<g transform="translate(10 38) scale(0.9)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><path d="M16 34 L30 10 L44 30" fill="none" stroke="#ffd070" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/><circle cx="44" cy="30" r="3" fill="#fff6d0"/>`,
+  ),
+  'tactical-roll': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<circle cx="24" cy="26" r="11" fill="none" stroke="#e8c9a0" stroke-width="4" stroke-dasharray="14 6" filter="url(#ds)"/><g transform="translate(34 12) scale(0.7)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><path d="M8 14 H26" stroke="#ffd070" stroke-width="2" stroke-linecap="round" opacity=".8"/>`,
+  ),
+  'quickdraw-execution': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<g transform="translate(14 14) scale(0.9)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><g transform="translate(14 32) scale(0.9)" filter="url(#ds)"><rect x="-10" y="-4" width="20" height="7" rx="2" fill="#8a8f9a" stroke="#17181d" stroke-width="1.4"/><rect x="-6" y="2" width="6" height="10" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="8" y="-2" width="7" height="3" fill="#cfd3dc"/></g><circle cx="38" cy="24" r="7" fill="#fff6d0" filter="url(#gl)"/><path d="M26 14 H34 M26 34 H34 M26 24 H40" stroke="#ffd070" stroke-width="2.4" stroke-linecap="round"/>`,
+  ),
+  'machine-gun-rampage': icon(
+    'fire',
+    rays(24, 24, 15, '#ffe9b0', 0.18),
+    `<g filter="url(#ds)"><rect x="6" y="19" width="26" height="9" rx="2" fill="#6a6f7a" stroke="#17181d" stroke-width="1.4"/><rect x="30" y="21" width="14" height="4" fill="#cfd3dc"/><rect x="14" y="26" width="7" height="14" rx="2" fill="#5a3a1c" stroke="#17181d" stroke-width="1.4"/><rect x="22" y="28" width="9" height="6" fill="#8a8f9a"/></g><path d="M44 18 H48" stroke="#ffd070" stroke-width="2" stroke-linecap="round"/><path d="M44 23 H48" stroke="#ffd070" stroke-width="2" stroke-linecap="round"/><path d="M44 28 H48" stroke="#ffd070" stroke-width="2" stroke-linecap="round"/>`,
+  ),
+  'sickle-combo': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<path d="M10 40 C10 20 24 8 40 10 C28 14 22 26 22 40" fill="#9aa58a" stroke="#14160e" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="36" width="8" height="8" rx="2" fill="#2a1c10"/>`,
+  ),
+  'gravedigger': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<path d="M10 40 C10 20 24 8 40 10 C28 14 22 26 22 40" fill="#9aa58a" stroke="#14160e" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="36" width="8" height="8" rx="2" fill="#2a1c10"/><path d="M8 44 H42" stroke="#6f8a3c" stroke-width="3" stroke-linecap="round"/>`,
+  ),
+  'understrike': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<path d="M6 40 H20" fill="none" stroke="#b6e06a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/><path d="M20 38 C24 20 34 12 42 8" fill="none" stroke="#e6ff9a" stroke-width="4" stroke-linecap="round" filter="url(#gl)"/>`,
+  ),
+  'reaper-sweep': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<path d="M6 34 C16 44 34 44 44 30" fill="none" stroke="#b6e06a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/><path d="M8 34 C18 40 32 40 42 31" fill="none" stroke="#e6ff9a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/>`,
+  ),
+  'hook-and-drag': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<path d="M10 40 C10 20 24 8 40 10 C28 14 22 26 22 40" fill="#9aa58a" stroke="#14160e" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="36" width="8" height="8" rx="2" fill="#2a1c10"/><path d="M44 40 H26" stroke="#e6ff9a" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 4"/>`,
+  ),
+  'shadow-crawl': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<ellipse cx="22" cy="34" rx="16" ry="5" fill="#0e1606" opacity=".7"/><path d="M6 32 H34" fill="none" stroke="#b6e06a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/><path d="M14 28 H40" fill="none" stroke="#e6ff9a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/>`,
+  ),
+  'gravehook-launch': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<path d="M10 40 C10 20 24 8 40 10 C28 14 22 26 22 40" fill="#9aa58a" stroke="#14160e" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="36" width="8" height="8" rx="2" fill="#2a1c10"/><path d="M10 44 L26 10" stroke="#e6ff9a" stroke-width="2.6" stroke-dasharray="3 3" stroke-linecap="round"/><path d="M30 8 L40 14 L36 22" fill="none" stroke="#b6e06a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+  ),
+  'grave-reaper': icon(
+    'decay',
+    rays(24, 24, 15, '#d6f08a', 0.2),
+    `<path d="M10 40 C10 20 24 8 40 10 C28 14 22 26 22 40" fill="#9aa58a" stroke="#14160e" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="36" width="8" height="8" rx="2" fill="#2a1c10"/><path d="M12 16 L24 24 M36 16 L24 24 M24 8 V24" fill="none" stroke="#e6ff9a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/>`,
+  ),
   'spin-cycle': icon(
     'earth',
     rays(24, 24, 16, '#f3e3c2', 0.18),

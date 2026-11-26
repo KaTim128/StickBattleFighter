@@ -5,7 +5,7 @@
   "staminaRegenPerS": 36,
   "staminaRegenDelayS": 0.7,
   "movement": {
-    "maxSpeedMps": 5.2,
+    "maxSpeedMps": 5.3,
     "accelMps2": 62,
     "decelMps2": 60,
     "jumpSpeedMps": 7.0,

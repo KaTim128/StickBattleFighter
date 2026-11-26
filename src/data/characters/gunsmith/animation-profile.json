@@ -1,0 +1,17 @@
+{
+  "id": "gunsmith-animation",
+  "extends": "style-taekwondo",
+  "states": {
+    "Jab": "gunsmith.snap",
+    "Hook": "gunsmith.cross",
+    "SideKick": "gunsmith.whip",
+    "RoundhouseKick": "gunsmith.double",
+    "FrontKick": "gunsmith.holster-kick",
+    "JumpingFrontKick": "gunsmith.air",
+    "DownwardAerialKick": "gunsmith.point-blank",
+    "HeavyAttack": "gunsmith.draw",
+    "Idle": "proc.idle.gunslinger",
+    "FightingStance": "proc.idle.gunslinger",
+    "Turn": "proc.idle.gunslinger"
+  }
+}

@@ -140,6 +140,12 @@ export const EFFECTS: Readonly<Record<string, EffectDef>> = {
     ring: { sizeM: 2.0, colour: 0x7ae8ff },
     mist: 4,
   },
+  // Gunsmith's rounds: hot yellow sparks and a short flash, a bigger burst on the heavy blast.
+  'gun-hit': { sparks: { count: 10, speedMps: 8, colour: 0xffe08a }, ring: { sizeM: 0.4, colour: 0xffb347 } },
+  'gun-wave': { sparks: { count: 24, speedMps: 11, colour: 0xfff0b0 }, ring: { sizeM: 1.2, colour: 0xffb347 }, mist: 3 },
+  // Sickle Wielder: swamp green flecks and a dull ring.
+  'sickle-hit': { sparks: { count: 10, speedMps: 6, colour: 0xb6e06a }, ring: { sizeM: 0.5, colour: 0x6f8a3c } },
+  'sickle-wave': { sparks: { count: 22, speedMps: 9, colour: 0xd6f08a }, ring: { sizeM: 1.4, colour: 0x6f8a3c }, mist: 4 },
   // Voltar's lightning: cyan and white with a yellow fork; a sharp flash on every touch and a wide arc on the surge.
   'volt-limbs': {
     limbFlames: true,

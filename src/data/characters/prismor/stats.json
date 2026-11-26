@@ -2,7 +2,7 @@
   "id": "prismor-stats",
   "maxHp": 1080,
   "maxStamina": 100,
-  "staminaRegenPerS": 29,
+  "staminaRegenPerS": 30,
   "staminaRegenDelayS": 0.7,
   "movement": {
     "maxSpeedMps": 4.7,

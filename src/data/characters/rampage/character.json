@@ -2,10 +2,10 @@
   "id": "rampage",
   "template": "base-stickman",
   "displayName": "Titan",
-  "description": "Nobody remembers Titan small. He grew up hauling steel girders in the shipyards, where the foremen bet on how many he could carry before noon. When the yards closed he took his strength to the underground fight pits and never once lost a bout by falling down. He is slow to anger and slower to stop. Titan fights for the dock workers who cheered his name, and for the brothers he left behind when the cranes fell silent.",
+  "description": "Nobody remembers Titan small. He grew up hauling steel girders in the shipyards, where the foremen bet on how many he could carry before noon. When the yards closed he took his strength to the underground fight pits and never once lost a bout by falling down. He is slow to anger and slower to stop. Titan fights for the dock workers who cheered his name, and for the brothers he left behind when the cranes fell silent. These days he fights as a judoka: he closes, takes a grip, breaks the other man's balance and puts him on the floor, and a rushed attack is just a grip waiting to be taken.",
   "characterType": "fighter",
   "element": "earth",
-  "combatStyle": "brawling",
+  "combatStyle": "judo",
   "profiles": {
     "animation": "rampage-animation",
     "moveset": "rampage-moveset",

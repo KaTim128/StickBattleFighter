@@ -232,7 +232,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   // the smash, barrages anyone up close, and lights his fists once the fight is on.
   'bohemeth-ai': {
     style:
-      'Four-armed heavyweight: straight in, a clap against charges, spin and uppercut up close, a leaping smash, a punching barrage up close.',
+      'Heavyweight wrestler: straight in to grapple, a clap against charges, spin and uppercut up close, a leaping smash, a punching barrage up close.',
     preferredRangeM: [0, 1.4],
     movement: 'direct',
     meleeBias: 0.9,
@@ -272,6 +272,50 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
       ult: { role: 'burst', minM: 0, maxM: 6.5, weight: 1.3 },
     },
     combos: [['a3', 'a1']],
+  },
+  // Gunsmith: a gunslinger. Keeps his distance, fires volleys, bounces a round off the walls, rolls out of trouble and finishes with a quickdraw.
+  'gunsmith-ai': {
+    style: 'Gunslinger: keeps range, fires volleys and ricochets, rolls away from close fights, executes a wounded target.',
+    preferredRangeM: [4, 7],
+    movement: 'kite',
+    meleeBias: 0.25,
+    heavyBias: 0.2,
+    defence: 'dodge',
+    retreatBelowHp: 0.3,
+    hitAndRunS: 1.2,
+    tactics: {
+      a1: { role: 'poke', minM: 2, maxM: 10, weight: 1.2 },
+      a2: { role: 'burst', minM: 3, maxM: 10, weight: 1.1 },
+      a3: { role: 'poke', minM: 3, maxM: 12, weight: 1 },
+      a4: { role: 'escape', minM: 0, maxM: 3, weight: 1.2 },
+      ult: { role: 'burst', minM: 2, maxM: 10, weight: 1.2, when: { selfHpBelow: 0.95 } },
+    },
+    combos: [
+      ['a2', 'a1'],
+      ['a3', 'a1'],
+    ],
+  },
+  // Sickle Wielder: a crawling ambusher. Scuttles in low, sweeps and hooks the legs, drags runners back, launches over cover.
+  'sickle-wielder-ai': {
+    style: 'Crawling ambusher: scuttles in under the guard, sweeps the legs, hooks and drags anyone who runs.',
+    preferredRangeM: [0.8, 1.6],
+    movement: 'direct',
+    meleeBias: 0.75,
+    heavyBias: 0.35,
+    defence: 'dodge',
+    retreatBelowHp: 0.15,
+    hitAndRunS: 0.8,
+    tactics: {
+      a1: { role: 'gapClose', minM: 1.5, maxM: 5, weight: 1.2 },
+      a2: { role: 'burst', minM: 0, maxM: 2.6, weight: 1.3 },
+      a3: { role: 'control', minM: 2.5, maxM: 7, weight: 1.1 },
+      a4: { role: 'gapClose', minM: 2, maxM: 6, weight: 1 },
+      ult: { role: 'burst', minM: 0, maxM: 7, weight: 1.2, when: { selfHpBelow: 0.95 } },
+    },
+    combos: [
+      ['a3', 'a2'],
+      ['a1', 'a2'],
+    ],
   },
   // Voltar: a lightning skirmisher. Flashes in and out, zaps from range, rushes close, dodges reactively, and opens Overdrive once the fight is on.
   'voltar-ai': {
@@ -337,7 +381,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   // Prismor: a crystal specialist. Arms himself first, slides in, traps legs and splits the ground under a pinned foe, fans shards from range.
   'prismor-ai': {
     style:
-      'Crystal specialist: grows a weapon, slides in, pins the legs, splits the ground under them, shards from range, Sovereign in a brawl.',
+      'Street fighter with a grown armoury: grows a weapon, slides in, pins the legs, splits the ground under them, shards from range, Sovereign in a brawl.',
     preferredRangeM: [1.4, 3.4],
     movement: 'direct',
     meleeBias: 0.55,
@@ -357,7 +401,7 @@ export const BRAIN_DESIGNS: Readonly<Record<string, BrainDesign>> = {
   // Titan: an aggressive brute. Walks straight in, blocks rather than dodges, charges anyone who
   // keeps away, smashes, grabs and slams; Rampage Mode early in the fight or when hurt.
   'rampage-ai': {
-    style: 'Aggressive brute: straight in, charges at range, heavy blows, grabs and slams, shrugs off hits.',
+    style: 'Judo fighter: straight in to take a grip, charges at range, throws and slams, breaks balance, shrugs off hits.',
     preferredRangeM: [0, 1.3],
     movement: 'direct',
     meleeBias: 0.95,
@@ -457,6 +501,9 @@ export const GENERIC_DESIGN: BrainDesign = {
  * ability in its slot, keyed by ability id. Anything not listed keeps its slot's tactic.
  */
 export const ALTERNATE_TACTICS: Readonly<Record<string, AbilityTactic>> = {
+  // Quickdraw Execution: finish a hurt target in range. Gravehook Launch: leap over distance onto a target in the open.
+  quickdrawExecution: { role: 'burst', minM: 2, maxM: 10, weight: 1.2, when: { targetHpBelow: 0.6 } },
+  gravehookLaunch: { role: 'gapClose', minM: 3, maxM: 8, weight: 1.1 },
   // Thunder Circuit: a three-second charge is only worth it against a target that is stunned, bound or far enough to be out of reach of a punish.
   thunderCircuit: { role: 'control', minM: 3, maxM: 7.5, weight: 1, when: { targetHelpless: true } },
   // Quake Barrage: a punching barrage on anyone in reach.

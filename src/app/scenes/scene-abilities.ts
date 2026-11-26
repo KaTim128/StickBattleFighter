@@ -177,6 +177,7 @@ export class SceneAbilities implements AbilityHost {
     const ev = caster.update(stepS * f.combatant.abilityPace, this.world.driving(f.name), ongoing);
     if (ev.released) {
       const def = ev.released;
+      if (def.delivery.type === 'projectile' && def.delivery.roll) f.combatant.grantInvulnerability(def.delivery.roll.invulnerableS); // Tactical Roll
       if (def.delivery.type === 'leap')
         f.combatant.grantInvulnerability(leapForm(def.delivery, f.buff?.empowersLeap === true).airS + 0.1); // airborne: untouchable
       if (def.delivery.type === 'judgement')
