@@ -878,6 +878,18 @@ export class AbilityWorld {
     return this.parries.find((p) => p.casterId === casterId);
   }
 
+  /** A counter answers a blow (Tactical Counter): `answer.shots` rounds at the nearest enemy from this caster, starting now. */
+  startAnswer(casterId: string, def: AbilityDef, dir: Vec2): void {
+    const d = def.delivery;
+    if (d.type !== 'parry' || !d.answer) return;
+    const a = d.answer;
+    const shotDef: AbilityDef = {
+      ...def,
+      delivery: { type: 'projectile', speedMps: a.speedMps, radiusM: a.radiusM, maxRangeM: a.maxRangeM, burst: { count: a.shots, gapS: a.gapS, jitterRad: 0.02 } },
+    };
+    this.bursts.push({ casterId, def: shotDef, dir, fired: 0, nextS: this.nowS });
+  }
+
   /** The stance is spent (it deflected something). */
   consumeParry(casterId: string): void {
     const i = this.parries.findIndex((p) => p.casterId === casterId);

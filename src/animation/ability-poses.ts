@@ -1238,10 +1238,11 @@ const SHAPES: Record<string, CastShape> = {
     release: { lean: deg(-10), head: deg(0), armFront: limb(72, 4), armBack: limb(40, 80), legFront: limb(38, -40), legBack: limb(-32, -34) },
     settle: 0.4,
   },
+  // Tactical Counter: side-on to the opponent in a wide, planted stance, one pistol arm out front and the other tucked, ready to answer.
   tacticalRoll: {
-    windup: { lean: deg(-30), head: deg(14), armFront: limb(60, 110), armBack: limb(50, 110), legFront: limb(50, -100), legBack: limb(-30, -80) },
-    release: { lean: deg(-66), head: deg(30), armFront: limb(90, 10), armBack: limb(84, 12), legFront: limb(60, -110), legBack: limb(-40, -100) },
-    settle: 0.4,
+    windup: { lean: deg(6), head: deg(-4), armFront: limb(70, 40), armBack: limb(10, 70), legFront: limb(42, -44), legBack: limb(-42, -40) },
+    release: { lean: deg(-6), head: deg(0), armFront: limb(98, 6), armBack: limb(94, 8), legFront: limb(46, -46), legBack: limb(-44, -42) },
+    settle: 0.6,
   },
   // Quick Draw: side-on to the target, the back arm hanging at his side with the other pistol in hand, one arm straight out with the pistol, a wide planted stance.
   quickdrawExecution: {

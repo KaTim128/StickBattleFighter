@@ -3019,7 +3019,8 @@ export class FightArenaScene implements ArenaScene {
     const staggers = attacker.def.capabilities.staggersTargets !== false;
     // Perfect Parry (Kenshiro): an attack from the front that connects while the stance is up is deflected and answered.
     const parryNow = this.abilities?.world.parryOf(target.name);
-    const parry = fromFront || (parryNow?.def.delivery.type === 'parry' && parryNow.def.delivery.evade) ? parryNow : undefined;
+    const parry =
+      fromFront || (parryNow?.def.delivery.type === 'parry' && (parryNow.def.delivery.evade || parryNow.def.delivery.answer)) ? parryNow : undefined;
     if (parry) {
       this.perfectParry(target, attacker, parry);
       return true;
@@ -3515,6 +3516,15 @@ export class FightArenaScene implements ArenaScene {
   private perfectParry(target: FighterEntity, attacker: FighterEntity, parry: Parry): void {
     const d = parry.def.delivery;
     this.abilities?.world.consumeParry(target.name);
+    if (d.type === 'parry' && d.answer && this.abilities) {
+      // Tactical Counter: the blow is dodged outright and answered with pistol rounds, side-on to the attacker.
+      target.combatant.grantInvulnerability(0.5);
+      target.faceToward(attacker.x - target.x, attacker.y - target.y);
+      this.events.push({ kind: 'dodged', target: target.name, x: target.x, y: target.y - headTop(target), amount: 0 });
+      this.abilities.world.startAnswer(target.name, parry.def, { x: target.aim.x, y: target.aim.y });
+      this.queueSound('parry', 1);
+      return;
+    }
     target.combatant.grantInvulnerability(0.4);
     target.shieldS = SHIELD_FLARE_S;
     attacker.combatant.stun(d.type === 'parry' ? d.stunS : 0.8);

@@ -105,28 +105,37 @@ describe('Gunsmith', () => {
     t.scenes.clear();
   }, 30_000);
 
-  it('Tactical Roll: rolls five metres, cannot be hit for the first half second, and fires as it goes', async () => {
-    const { scene, scenes, run, me, foe, fire, intents } = await setup('gunsmith', 5);
-    intents.setMove('t', { x: 0, y: 1 }); // roll sideways, along the movement direction
-    const y0 = me().y;
-    expect(fire('a4', { x: me().x, y: me().y + 5 })).toBeNull();
-    run(0.1);
-    const hp = me().combatant.hp;
-    (scene as unknown as { applyStrike: (a: unknown, t: unknown, s: unknown) => boolean }).applyStrike(foe(), me(), {
-      damage: 80,
-      heavy: false,
-      knockbackMps: 1,
-      dir: { x: -1, y: 0 },
-      melee: true,
-      impact: 'knuckle-light',
-    });
-    expect(me().combatant.hp).toBe(hp); // untouchable while rolling
-    intents.setMove('t', { x: 0, y: 0 });
-    run(0.8);
-    expect(Math.abs(me().y - y0)).toBeGreaterThan(3.5);
-    expect(foe().combatant.stats.maxHp - foe().combatant.hp).toBeGreaterThan(10); // the shots landed on the way
-    scenes.clear();
-  }, 30_000);
+  it('Tactical Counter: a blow inside the 1.5 s aura is dodged and answered with three shots; one after it is not', async () => {
+    const strike = (scene: unknown, from: unknown, to: unknown) =>
+      (scene as { applyStrike: (a: unknown, t: unknown, s: unknown) => boolean }).applyStrike(from, to, {
+        damage: 80,
+        heavy: false,
+        knockbackMps: 1,
+        dir: { x: -1, y: 0 },
+        melee: true,
+        impact: 'knuckle-light',
+      });
+    {
+      const { scene, scenes, run, me, foe, fire, hitsOver } = await setup('gunsmith', 3);
+      expect(fire('a4')).toBeNull();
+      run(0.3);
+      const hp = me().combatant.hp;
+      strike(scene, foe(), me());
+      expect(me().combatant.hp).toBe(hp); // dodged automatically
+      const hits = hitsOver(1.5);
+      expect(hits).toHaveLength(3); // three answering shots
+      scenes.clear();
+    }
+    {
+      const { scene, scenes, run, me, foe, fire } = await setup('gunsmith', 3);
+      expect(fire('a4')).toBeNull();
+      run(1.7); // the aura is over
+      const hp = me().combatant.hp;
+      strike(scene, foe(), me());
+      expect(me().combatant.hp).toBeLessThan(hp);
+      scenes.clear();
+    }
+  }, 60_000);
 
   it('Quick Draw: one precise shot with one pistol, harder than a single Dual Barrage shot, and the view shows one gun out', async () => {
     const { scene, scenes, fire, run, hitsOver } = await setup('gunsmith', 5, 13, {}, ['dualBarrage', 'explosiveRounds', 'ricochetShot', 'quickdrawExecution']);

@@ -782,6 +782,17 @@ export interface ParryDelivery {
    * connects during the window (from any side) is avoided and he reappears behind the attacker for the counter.
    */
   readonly evade?: { readonly distanceM: number; readonly speedMps: number };
+  /**
+   * Tactical Counter (DX07): a counter aura. The first blow that connects from any side in the window is dodged automatically (no damage, no
+   * stun on the attacker) and the caster answers with `shots` pistol rounds at the nearest enemy, `gapS` apart.
+   */
+  readonly answer?: {
+    readonly shots: number;
+    readonly gapS: number;
+    readonly speedMps: number;
+    readonly radiusM: number;
+    readonly maxRangeM: number;
+  };
 }
 
 /**

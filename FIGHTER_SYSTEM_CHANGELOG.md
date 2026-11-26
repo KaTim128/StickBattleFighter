@@ -157,3 +157,4 @@ Changes to fighter statistics, abilities, combat mechanics, status effects and f
 - DX07's Explosive Rounds (id unchanged) is now the Shotgun Blast: eight pellets in a cone, full damage within 2 m falling to a fifth at 9 m (per-pellet projectile falloff); the AI uses it at close range.
 - DX07's Quickdraw Execution is now Quick Draw: a single instant, precise shot with one pistol (the other stays holstered), 32 damage (more than one Dual Barrage shot of 9), thrown from a side-on stance. Always available to the AI (no longer only against a wounded target).
 - Ricochet Shot bounces up to six times (was three). Quick Draw works at mid to close range only (about 7.5 m), the back hand keeping its pistol down at his side.
+- DX07's Tactical Roll is now Tactical Counter (id unchanged): a 1.5 s counter aura, side-on; a blow from any side inside it is dodged automatically and answered with three pistol shots (new `answer` field on the parry delivery).
