@@ -164,7 +164,7 @@ export const GUNSMITH_KIT: AbilityKit = {
     aimRangeM: 11,
     moveFactor: 0.3,
     interruptible: false,
-    payload: { damage: 5, knockbackMps: 0.3, heavy: false, strength: 160, impact: 'knuckle-light', noFlinch: true },
+    payload: { damage: 2.5, knockbackMps: 0.3, heavy: false, strength: 160, impact: 'knuckle-light', noFlinch: true },
     delivery: {
       type: 'projectile',
       speedMps: 36,
