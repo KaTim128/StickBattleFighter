@@ -1,6 +1,6 @@
 {
   "id": "rampage-stats",
-  "maxHp": 1160,
+  "maxHp": 1200,
   "maxStamina": 100,
   "staminaRegenPerS": 34,
   "staminaRegenDelayS": 0.8,
