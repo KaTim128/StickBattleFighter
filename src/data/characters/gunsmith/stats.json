@@ -1,6 +1,6 @@
 {
   "id": "gunsmith-stats",
-  "maxHp": 850,
+  "maxHp": 970,
   "maxStamina": 100,
   "staminaRegenPerS": 36,
   "staminaRegenDelayS": 0.7,
